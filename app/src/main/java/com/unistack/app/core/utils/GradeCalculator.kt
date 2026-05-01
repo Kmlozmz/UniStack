@@ -4,9 +4,9 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import kotlin.math.round
 
 object GradeCalculator {
-    fun calculateCurrentAverage(grades: List<GradeItem>): Double {
+    fun calculateCurrentAverage(grades: List<GradeItem>): Double? {
         val evaluatedPercentage = grades.sumOf { it.percentage }
-        if (evaluatedPercentage == 0.0) return 0.0
+        if (evaluatedPercentage <= 0.0) return null
 
         val weightedPoints = grades.sumOf { it.value * it.percentage }
         return roundToOneDecimal(weightedPoints / evaluatedPercentage)
@@ -28,12 +28,13 @@ object GradeCalculator {
     fun calculateNeededGrade(
         currentWeightedPoints: Double,
         remainingPercentage: Double,
-        targetAverage: Double
+        targetAverage: Double,
+        maxGrade: Double = 5.0
     ): Double {
-        if (remainingPercentage == 0.0) return Double.NaN
+        if (remainingPercentage == 0.0) return 0.0
 
         val needed = (targetAverage - currentWeightedPoints) / remainingPercentage
-        return roundToOneDecimal(needed.coerceIn(0.0, 5.0))
+        return roundToOneDecimal(needed.coerceIn(0.0, maxGrade))
     }
 
     private fun roundToOneDecimal(value: Double): Double = round(value * 10.0) / 10.0

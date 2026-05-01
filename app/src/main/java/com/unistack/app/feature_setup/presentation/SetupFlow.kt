@@ -1,5 +1,9 @@
 package com.unistack.app.feature_setup.presentation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +38,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +91,31 @@ fun SetupFlow(
     NavHost(
         navController = navController,
         startDestination = SetupRoutes.Welcome,
-        modifier = modifier
+        modifier = modifier,
+        enterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(350)
+            ) + fadeIn(animationSpec = tween(350))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(350)
+            ) + fadeOut(animationSpec = tween(350))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(350)
+            ) + fadeIn(animationSpec = tween(350))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(350)
+            ) + fadeOut(animationSpec = tween(350))
+        }
     ) {
         composable(SetupRoutes.Welcome) {
             SetupWelcomeScreen(onStartClick = { navController.navigate(SetupRoutes.Name) })
@@ -248,31 +284,45 @@ fun SetupAcademicInfoScreen(
     onSkipClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var areaExpanded by remember { mutableStateOf(false) }
+    var programExpanded by remember { mutableStateOf(false) }
+    var schoolExpanded by remember { mutableStateOf(false) }
+
     BackHandler(onBack = onBackClick)
     SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
         if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.TECHNICAL) {
-            SetupStepTitle("¿Cuál es tu área de estudio?")
-            OptionList(
+            SetupStepTitle("Tu carrera o programa")
+            
+            UniStackDropdown(
+                label = "Área de estudio",
                 options = StudyArea.values().map { it to labelFor(it) },
                 selected = studyArea,
-                onSelected = onStudyAreaSelected
+                onSelected = onStudyAreaSelected,
+                expanded = areaExpanded,
+                onExpandedChange = { areaExpanded = it }
             )
+            
             if (studyArea != null) {
                 val area = studyArea!!
-                SetupStepTitle("¿Qué programa estudias?")
-                OptionList(
+                Spacer(modifier = Modifier.height(12.dp))
+                UniStackDropdown(
+                    label = "Programa o carrera",
                     options = programsFor(area).map { it to it },
                     selected = selectedProgram,
-                    onSelected = onProgramSelected
+                    onSelected = onProgramSelected,
+                    expanded = programExpanded,
+                    onExpandedChange = { programExpanded = it }
                 )
+                
                 if (area == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
+                    Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
                         value = customProgram,
                         onValueChange = onCustomProgramChange,
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("Escribe tu programa") },
-                        placeholder = { Text("Nombre de tu carrera") },
+                        label = { Text("Nombre del programa") },
+                        placeholder = { Text("Ej: Ingeniería Biomédica") },
                         shape = AppShapes.MediumCard,
                         isError = customProgram.isNotBlank() && customProgramValidation?.isValid == false,
                         supportingText = {
@@ -285,20 +335,20 @@ fun SetupAcademicInfoScreen(
             }
         } else if (educationLevel == EducationLevel.SCHOOL) {
             SetupStepTitle("¿En qué grado estás?")
-            OptionList(
-                options = listOf("6°", "7°", "8°", "9°", "10°", "11°", OTHER_OPTION).map { it to it },
-                selected = value.takeIf { it in listOf("6°", "7°", "8°", "9°", "10°", "11°") } ?: if (value.isNotEmpty()) OTHER_OPTION else null,
-                onSelected = {
-                    if (it == OTHER_OPTION) {
-                        onValueChange("")
-                    } else {
-                        onValueChange(it)
-                    }
-                }
+            
+            val schoolOptions = listOf("6°", "7°", "8°", "9°", "10°", "11°", OTHER_OPTION)
+            val selectedSchool = value.takeIf { it in schoolOptions } ?: if (value.isNotEmpty()) OTHER_OPTION else null
+            
+            UniStackDropdown(
+                label = "Grado escolar",
+                options = schoolOptions.map { it to it },
+                selected = selectedSchool,
+                onSelected = { 
+                    if (it == OTHER_OPTION) onValueChange("") else onValueChange(it)
+                },
+                expanded = schoolExpanded,
+                onExpandedChange = { schoolExpanded = it }
             )
-            if (value !in listOf("6°", "7°", "8°", "9°", "10°", "11°") && value.isNotEmpty() || (value.isEmpty() && (value.isNotBlank() || true))) { // Logic to show field if "Other" selected
-                 // Actually, let's simplify: if they select "Otra", we show a text field.
-            }
             
             // Re-evaluating the SCHOOL logic to be cleaner
             val isStandardGrade = value in listOf("6°", "7°", "8°", "9°", "10°", "11°")
@@ -453,8 +503,6 @@ private fun SetupScaffold(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background)
-            .statusBarsPadding()
-            .navigationBarsPadding()
             .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -621,5 +669,53 @@ fun SetupNameScreenPreview() {
 fun SetupFinishScreenPreview() {
     UniStackTheme {
         SetupFinishScreen(onBackClick = {}, onCreateSubjectClick = {}, onGoHomeClick = {})
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> UniStackDropdown(
+    label: String,
+    options: List<Pair<T, String>>,
+    selected: T?,
+    onSelected: (T) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = options.find { it.first == selected }?.second ?: "",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                focusedBorderColor = UniStackColors.Primary,
+                focusedLabelColor = UniStackColors.Primary
+            ),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+            shape = AppShapes.MediumCard
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { onExpandedChange(false) },
+            modifier = Modifier.background(Color.White)
+        ) {
+            options.forEach { (value, label) ->
+                DropdownMenuItem(
+                    text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                    onClick = {
+                        onSelected(value)
+                        onExpandedChange(false)
+                    }
+                )
+            }
+        }
     }
 }

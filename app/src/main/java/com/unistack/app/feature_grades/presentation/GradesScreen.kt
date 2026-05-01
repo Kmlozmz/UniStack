@@ -35,8 +35,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.UniStackTheme
+import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.ui.tooling.preview.Preview
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.core.utils.bounceClick
 
 @Composable
 fun GradesScreen(
@@ -47,6 +52,8 @@ fun GradesScreen(
     viewModel: GradesViewModel = viewModel()
 ) {
     val subjects by viewModel.subjects.collectAsState()
+    val profile by viewModel.userProfile.collectAsState()
+    val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
 
     LazyColumn(
         modifier = modifier
@@ -71,6 +78,7 @@ fun GradesScreen(
                     subject = subject,
                     average = viewModel.currentAverage(subject),
                     evaluatedPercentage = viewModel.evaluatedPercentage(subject),
+                    gradingScale = scale,
                     onClick = { onSubjectClick(subject.id) }
                 )
             }
@@ -105,14 +113,15 @@ fun GradesScreen(
 @Composable
 private fun SubjectListCard(
     subject: Subject,
-    average: Double,
+    average: Double?,
     evaluatedPercentage: Double,
+    gradingScale: GradingScale,
     onClick: () -> Unit
 ) {
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .bounceClick(onClick),
         brush = Brush.linearGradient(listOf(subjectBackground(subject.visualType), Color.White)),
         shape = AppShapes.MediumCard
     ) {
@@ -129,13 +138,14 @@ private fun SubjectListCard(
             ) {
                 Text(subject.name, fontWeight = FontWeight.ExtraBold, color = UniStackColors.TextPrimary)
                 Text(
-                    "Promedio ${String.format("%.1f", average)} · ${String.format("%.0f", evaluatedPercentage)}% evaluado",
+                    if (average == null) "Sin notas · 0% evaluado"
+                    else "Promedio ${GradingScaleUtils.formatGrade(average, gradingScale)} · ${String.format("%.0f", evaluatedPercentage)}% evaluado",
                     color = UniStackColors.TextSecondary,
                     fontSize = 13.sp
                 )
             }
             Text(
-                String.format("%.1f", average),
+                GradingScaleUtils.formatGrade(average, gradingScale),
                 color = UniStackColors.TextPrimary,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 24.sp
@@ -210,4 +220,39 @@ fun subjectBackground(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.CYAN -> Color(0xFFDDF7FF)
     SubjectVisualType.LIME -> Color(0xFFEAF7D7)
     SubjectVisualType.SLATE -> Color(0xFFE8EEF2)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SubjectListCardPreview() {
+    UniStackTheme {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            SubjectListCard(
+                subject = com.unistack.app.feature_grades.domain.Subject(
+                    id = "1",
+                    name = "Cálculo I",
+                    targetAverage = 3.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE
+                ),
+                average = 4.2,
+                evaluatedPercentage = 40.0,
+                gradingScale = GradingScale.ZERO_TO_FIVE,
+                onClick = {}
+            )
+            SubjectListCard(
+                subject = com.unistack.app.feature_grades.domain.Subject(
+                    id = "2",
+                    name = "Física II",
+                    targetAverage = 3.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.CORAL
+                ),
+                average = null,
+                evaluatedPercentage = 0.0,
+                gradingScale = GradingScale.ZERO_TO_FIVE,
+                onClick = {}
+            )
+        }
+    }
 }

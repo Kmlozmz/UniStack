@@ -26,19 +26,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.utils.bounceClick
+import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.core.utils.GradingScaleUtils
 
 @Composable
 fun SubjectCard(
     name: String,
-    average: Double,
+    average: Double?,
     progress: Float,
     icon: ImageVector,
     accentColor: Color,
     backgroundColor: Color,
-    modifier: Modifier = Modifier
+    gradingScale: GradingScale = GradingScale.ZERO_TO_FIVE,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     UniCard(
-        modifier = modifier.height(102.dp),
+        modifier = modifier
+            .height(102.dp)
+            .bounceClick(onClick),
         brush = Brush.linearGradient(
             listOf(
                 backgroundColor,
@@ -77,7 +84,7 @@ fun SubjectCard(
                 lineHeight = 10.sp
             )
             Text(
-                text = String.format("%.1f", average),
+                text = GradingScaleUtils.formatGrade(average, gradingScale),
                 color = UniStackColors.TextPrimary,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 22.sp,

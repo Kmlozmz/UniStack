@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,6 +35,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.UniStackTheme
+import androidx.compose.ui.tooling.preview.Preview
+import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_user.domain.GradingScale
 
 @Composable
 fun SubjectDetailScreen(
@@ -46,6 +51,8 @@ fun SubjectDetailScreen(
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsState()
     val subject = subjects.firstOrNull { it.id == subjectId }
+    val profile by viewModel.userProfile.collectAsState()
+    val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
 
     if (subject == null) {
         Column(
@@ -88,7 +95,7 @@ fun SubjectDetailScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Promedio actual", color = UniStackColors.TextSecondary)
-                        Text(String.format("%.1f", average), color = UniStackColors.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(GradingScaleUtils.formatGrade(average, scale), color = UniStackColors.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Text("${String.format("%.0f", evaluated)}% evaluado", color = subjectAccent(subject.visualType), fontWeight = FontWeight.ExtraBold)
                 }
@@ -103,7 +110,13 @@ fun SubjectDetailScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
                     Text(
-                        text = if (needed.isNaN()) "Ya no queda porcentaje disponible." else "Para terminar con ${String.format("%.1f", subject.targetAverage)} necesitas ${String.format("%.1f", needed)}.",
+                        text = if (subject.grades.isEmpty()) {
+                            "Agrega una nota para calcular cuánto necesitas."
+                        } else if (needed == null || needed.isNaN() || needed <= 0.0) {
+                            "Ya no queda porcentaje disponible."
+                        } else {
+                            "Para terminar con ${GradingScaleUtils.formatGrade(subject.targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(needed, scale)}."
+                        },
                         color = UniStackColors.TextPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(start = 10.dp)
@@ -114,7 +127,7 @@ fun SubjectDetailScreen(
         if (subject.grades.isEmpty()) {
             item {
                 UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card, shape = AppShapes.MediumCard) {
-                    Text("Aún no tienes notas en esta materia.", color = UniStackColors.TextSecondary)
+                    Text("Agrega tu primera nota para calcular tu promedio.", color = UniStackColors.TextSecondary)
                 }
             }
         } else {
@@ -125,7 +138,7 @@ fun SubjectDetailScreen(
                             Text(grade.name, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
                             Text("${String.format("%.0f", grade.percentage * 100)}%", color = UniStackColors.TextSecondary)
                         }
-                        Text(String.format("%.1f", grade.value), color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
                     }
                 }
             }
@@ -142,5 +155,17 @@ fun SubjectDetailScreen(
                 Text("Agregar nota")
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SubjectDetailScreenPreview() {
+    UniStackTheme {
+        SubjectDetailScreen(
+            subjectId = "1",
+            onBackClick = {},
+            onAddGradeClick = {}
+        )
     }
 }

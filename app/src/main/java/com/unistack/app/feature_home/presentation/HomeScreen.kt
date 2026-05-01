@@ -3,6 +3,8 @@ package com.unistack.app.feature_home.presentation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +72,7 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomeSummary
@@ -85,6 +88,7 @@ fun HomeScreen(
     onAddSubjectClick: () -> Unit,
     onSeeAllSubjectsClick: () -> Unit,
     onSeeExpensesClick: () -> Unit,
+    onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val summary = uiState.summary
@@ -102,15 +106,18 @@ fun HomeScreen(
         item {
             SubjectsSection(
                 subjects = summary.subjects,
+                gradingScale = summary.gradingScale,
                 onAddSubjectClick = onAddSubjectClick,
-                onSeeAllSubjectsClick = onSeeAllSubjectsClick
+                onSeeAllSubjectsClick = onSeeAllSubjectsClick,
+                onSubjectClick = onSubjectClick
             )
         }
-        summary.neededGrade?.let { neededGrade ->
+        if (summary.neededGrade != null || summary.nextTask != null) {
             item {
                 NeededAndNextTaskRow(
-                    neededGrade = neededGrade,
-                    nextTask = summary.nextTask
+                    neededGrade = summary.neededGrade,
+                    nextTask = summary.nextTask,
+                    gradingScale = summary.gradingScale
                 )
             }
         }
@@ -264,20 +271,20 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
                         .padding(start = 8.dp)
                 ) {
                     Text(
-                        text = if (summary.subjectsCount == 0) {
+                        text = if (summary.generalAverage == null) {
                             "Organiza tu semestre ✨"
                         } else {
                             "Vas bien 🎉"
                         },
                         color = UniStackColors.PrimaryDark,
-                        fontSize = if (summary.subjectsCount == 0) 24.sp else 29.sp,
-                        lineHeight = if (summary.subjectsCount == 0) 27.sp else 32.sp,
+                        fontSize = if (summary.generalAverage == null) 24.sp else 29.sp,
+                        lineHeight = if (summary.generalAverage == null) 27.sp else 32.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = if (summary.subjectsCount == 0) {
-                            "Agrega tus materias para\nempezar a calcular tu promedio."
+                        text = if (summary.generalAverage == null) {
+                            "Agrega tus notas para\nempezar a ver tu progreso."
                         } else {
                             "Sigue así, ¡vas por\nbuen camino!"
                         },
@@ -298,7 +305,7 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MetricCard(
-                    value = String.format("%.1f", summary.generalAverage),
+                    value = GradingScaleUtils.formatGrade(summary.generalAverage, summary.gradingScale),
                     label = "Promedio\ngeneral",
                     icon = Icons.Rounded.Star,
                     iconColor = UniStackColors.Primary,
@@ -424,8 +431,10 @@ private fun StackBlock(
 @Composable
 private fun SubjectsSection(
     subjects: List<SubjectSummary>,
+    gradingScale: com.unistack.app.feature_user.domain.GradingScale,
     onAddSubjectClick: () -> Unit,
     onSeeAllSubjectsClick: () -> Unit,
+    onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -447,7 +456,9 @@ private fun SubjectsSection(
                         icon = style.icon,
                         accentColor = style.accent,
                         backgroundColor = style.background,
-                        modifier = Modifier.weight(1f)
+                        gradingScale = gradingScale,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSubjectClick(subject.id) }
                     )
                 }
             }
@@ -514,52 +525,62 @@ private fun EmptySubjectsCard(
 
 @Composable
 private fun NeededAndNextTaskRow(
-    neededGrade: com.unistack.app.feature_home.domain.NeededGradeSummary,
-    nextTask: TaskSummary,
+    neededGrade: com.unistack.app.feature_home.domain.NeededGradeSummary?,
+    nextTask: com.unistack.app.feature_home.domain.TaskSummary?,
+    gradingScale: com.unistack.app.feature_user.domain.GradingScale,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        CompactInfoCard(
-            title = "Nota necesaria",
-            icon = Icons.Rounded.TrackChanges,
-            iconColor = UniStackColors.Yellow,
-            background = Brush.linearGradient(listOf(UniStackColors.YellowLight, Color.White.copy(alpha = 0.88f))),
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = buildAnnotatedString {
-                    append("Para terminar con\n")
-                    append(String.format("%.1f", neededGrade.targetAverage))
-                    append(" en ")
-                    append(neededGrade.subjectName)
-                    append("\nnecesitas ")
-                    withStyle(SpanStyle(color = UniStackColors.Yellow, fontWeight = FontWeight.ExtraBold)) {
-                        append(String.format("%.1f", neededGrade.neededGrade))
-                    }
-                },
-                color = UniStackColors.TextPrimary,
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+        if (neededGrade != null) {
+            CompactInfoCard(
+                title = "Nota necesaria",
+                icon = Icons.Rounded.TrackChanges,
+                iconColor = UniStackColors.Yellow,
+                background = Brush.linearGradient(listOf(UniStackColors.YellowLight, Color.White.copy(alpha = 0.88f))),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = buildAnnotatedString {
+                        append("Para terminar con\n")
+                        append(GradingScaleUtils.formatGrade(neededGrade.targetAverage, gradingScale))
+                        append(" en ")
+                        append(neededGrade.subjectName)
+                        append("\nnecesitas ")
+                        withStyle(SpanStyle(color = UniStackColors.Yellow, fontWeight = FontWeight.ExtraBold)) {
+                            append(GradingScaleUtils.formatGrade(neededGrade.neededGrade, gradingScale))
+                        }
+                    },
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else if (nextTask != null) {
+            Spacer(modifier = Modifier.weight(1f))
         }
-        CompactInfoCard(
-            title = "Próxima tarea",
-            icon = Icons.AutoMirrored.Rounded.Assignment,
-            iconColor = UniStackColors.Green,
-            background = Brush.linearGradient(listOf(UniStackColors.GreenLight, Color.White.copy(alpha = 0.88f))),
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = "${nextTask.title}\n${nextTask.dueText} · ${nextTask.estimatedTimeText}",
-                color = UniStackColors.TextPrimary,
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
-                fontWeight = FontWeight.Medium
-            )
+
+        if (nextTask != null) {
+            CompactInfoCard(
+                title = "Próxima tarea",
+                icon = Icons.AutoMirrored.Rounded.Assignment,
+                iconColor = UniStackColors.Green,
+                background = Brush.linearGradient(listOf(UniStackColors.GreenLight, Color.White.copy(alpha = 0.88f))),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "${nextTask.title}\n${nextTask.dueText} · ${nextTask.estimatedTimeText}",
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        } else if (neededGrade != null) {
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -624,7 +645,7 @@ private fun CompactInfoCard(
 
 @Composable
 fun ExpenseWeeklyCard(
-    expenses: ExpenseSummary,
+    expenses: ExpenseSummary?,
     onSeeExpensesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -685,21 +706,40 @@ fun ExpenseWeeklyCard(
                     )
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            if (expenses != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    ExpenseLine("Transporte", expenses.transport)
-                    ExpenseLine("Comida", expenses.food)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        ExpenseLine("Transporte", expenses.transport)
+                        ExpenseLine("Comida", expenses.food)
+                    }
+                    MiniBarChart(
+                        values = expenses.chartValues,
+                        modifier = Modifier.width(124.dp)
+                    )
                 }
-                MiniBarChart(
-                    values = expenses.chartValues,
-                    modifier = Modifier.width(124.dp)
-                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Aún no registras gastos esta semana.",
+                        color = UniStackColors.TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Registra un gasto para ver tu resumen.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }
@@ -732,32 +772,31 @@ private fun QuickActionsRow(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         QuickActionButton(
-            text = "Nota",
+            text = "Agregar nota",
             icon = Icons.Rounded.Add,
             backgroundColor = UniStackColors.PrimaryLight,
             contentColor = UniStackColors.Primary,
-            onClick = onAddGradeClick,
-            modifier = Modifier.weight(1f)
+            onClick = onAddGradeClick
         )
         QuickActionButton(
-            text = "Tarea",
+            text = "Nueva tarea",
             icon = Icons.Rounded.Check,
             backgroundColor = UniStackColors.BlueLight,
             contentColor = UniStackColors.Blue,
-            onClick = onNewTaskClick,
-            modifier = Modifier.weight(1f)
+            onClick = onNewTaskClick
         )
         QuickActionButton(
-            text = "Gasto",
-            icon = Icons.Rounded.CreditCard,
+            text = "Registrar gasto",
+            icon = Icons.Rounded.AccountBalanceWallet,
             backgroundColor = UniStackColors.CoralLight,
             contentColor = UniStackColors.Coral,
-            onClick = onAddExpenseClick,
-            modifier = Modifier.weight(1f)
+            onClick = onAddExpenseClick
         )
     }
 }
@@ -848,7 +887,25 @@ fun HomeScreenPreview() {
             onAddExpenseClick = {},
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
-            onSeeExpensesClick = {}
+            onSeeExpensesClick = {},
+            onSubjectClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 390, heightDp = 844)
+@Composable
+fun HomeScreenNoGradesPreview() {
+    UniStackTheme {
+        HomeScreen(
+            uiState = HomeUiState(summary = DemoData.homeSummaryNoGrades),
+            onAddGradeClick = {},
+            onNewTaskClick = {},
+            onAddExpenseClick = {},
+            onAddSubjectClick = {},
+            onSeeAllSubjectsClick = {},
+            onSeeExpensesClick = {},
+            onSubjectClick = {}
         )
     }
 }
@@ -857,12 +914,14 @@ fun HomeScreenPreview() {
 @Composable
 fun HeroSummaryCardPreview() {
     UniStackTheme {
-        Box(
+        Column(
             modifier = Modifier
                 .background(UniStackColors.Background)
-                .padding(20.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             HeroSummaryCard(summary = DemoData.homeSummary)
+            HeroSummaryCard(summary = DemoData.homeSummaryNoGrades)
         }
     }
 }
@@ -880,7 +939,9 @@ fun SubjectCardPreview() {
             icon = style.icon,
             accentColor = style.accent,
             backgroundColor = style.background,
-            modifier = Modifier.padding(20.dp)
+            gradingScale = DemoData.homeSummary.gradingScale,
+            modifier = Modifier.padding(20.dp),
+            onClick = {}
         )
     }
 }

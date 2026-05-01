@@ -35,6 +35,7 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
 
 @Composable
@@ -52,12 +53,8 @@ fun AddGradeScreen(
     var percentage by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val profile by AppContainer.userRepository.userProfile.collectAsState(null)
-    val maxGrade = when (profile?.gradingScale) {
-        GradingScale.ZERO_TO_TEN -> 10.0
-        GradingScale.ZERO_TO_ONE_HUNDRED -> 100.0
-        else -> 5.0
-    }
+    val profile by viewModel.userProfile.collectAsState()
+    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
