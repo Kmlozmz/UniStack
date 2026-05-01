@@ -38,7 +38,7 @@ class SetupViewModel(
         private set
 
     val isNameValid: Boolean
-        get() = TextValidators.isValidDisplayName(preferredName)
+        get() = TextValidators.validateDisplayName(preferredName).isValid
 
     val isAcademicInfoValid: Boolean
         get() {
@@ -46,13 +46,13 @@ class SetupViewModel(
                 val area = studyArea ?: return false
                 val program = selectedProgram ?: return false
                 if (area == StudyArea.OTHER || program == OTHER_OPTION) {
-                    return TextValidators.isValidAcademicName(customProgram)
+                    return TextValidators.validateCustomCareer(customProgram).isValid
                 }
                 return true
             }
 
             val value = academicInfo.trim()
-            return value.isEmpty() || TextValidators.isValidAcademicName(value)
+            return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
         }
 
     val isGradesValid: Boolean
@@ -139,7 +139,7 @@ class SetupViewModel(
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
         val profile = UserProfile(
-            userId = "local-user",
+            userId = "local_user",
             preferredName = TextValidators.normalizeText(preferredName),
             educationLevel = educationLevel,
             careerOrProgram = if (educationLevel == EducationLevel.SCHOOL) null else info,
@@ -161,7 +161,7 @@ class SetupViewModel(
             val area = studyArea ?: return null
             val program = selectedProgram ?: return null
             return if (area == StudyArea.OTHER || program == OTHER_OPTION) {
-                TextValidators.normalizeText(customProgram).takeIf { TextValidators.isValidAcademicName(it) }
+                TextValidators.normalizeText(customProgram).takeIf { TextValidators.validateCustomCareer(it).isValid }
             } else {
                 program
             }
