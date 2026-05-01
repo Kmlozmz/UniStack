@@ -1,7 +1,13 @@
 package com.unistack.app.core.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,9 +104,39 @@ fun MainNavGraph(
             startDestination = initialRoute,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .statusBarsPadding()
-                .then(if (showBottomBar) Modifier else Modifier.navigationBarsPadding())
+                .padding(innerPadding),
+            enterTransition = {
+                val isTab = BottomNavItem.items.any { it.route == targetState.destination.route }
+                if (isTab) {
+                    fadeIn(tween(300))
+                } else {
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) + fadeIn(tween(300))
+                }
+            },
+            exitTransition = {
+                val isTab = BottomNavItem.items.any { it.route == initialState.destination.route }
+                if (isTab) {
+                    fadeOut(tween(300))
+                } else {
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) + fadeOut(tween(300))
+                }
+            },
+            popEnterTransition = {
+                val isTab = BottomNavItem.items.any { it.route == targetState.destination.route }
+                if (isTab) {
+                    fadeIn(tween(300))
+                } else {
+                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) + fadeIn(tween(300))
+                }
+            },
+            popExitTransition = {
+                val isTab = BottomNavItem.items.any { it.route == initialState.destination.route }
+                if (isTab) {
+                    fadeOut(tween(300))
+                } else {
+                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) + fadeOut(tween(300))
+                }
+            }
         ) {
             composable(AppRoutes.Home) {
                 val viewModel: HomeViewModel = viewModel()
@@ -111,7 +148,8 @@ fun MainNavGraph(
                     onAddExpenseClick = { navController.navigate(AppRoutes.AddExpense) },
                     onAddSubjectClick = { navController.navigate(AppRoutes.AddSubject) },
                     onSeeAllSubjectsClick = { navController.navigate(AppRoutes.Grades) },
-                    onSeeExpensesClick = { navController.navigate(AppRoutes.Expenses) }
+                    onSeeExpensesClick = { navController.navigate(AppRoutes.Expenses) },
+                    onSubjectClick = { subjectId -> navController.navigate(AppRoutes.subjectDetail(subjectId)) }
                 )
             }
             composable(AppRoutes.Grades) {
@@ -208,11 +246,17 @@ private fun UniStackBottomBar(
         ) {
             BottomNavItem.items.forEach { item ->
                 val selected = currentRoute == item.route
+                val pillColor by animateColorAsState(if (selected) Color(0xFFF0EAFF) else Color.Transparent, label = "pill")
+                val contentColor by animateColorAsState(if (selected) UniStackColors.Primary else UniStackColors.TextPrimary, label = "content")
+                
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .clip(AppShapes.Pill)
-                        .clickable { onNavigate(item.route) },
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { onNavigate(item.route) },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -221,19 +265,19 @@ private fun UniStackBottomBar(
                             .height(31.dp)
                             .fillMaxWidth(0.68f)
                             .clip(AppShapes.Pill)
-                            .background(if (selected) Color(0xFFF0EAFF) else Color.Transparent),
+                            .background(pillColor),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = item.icon,
                             contentDescription = item.label,
-                            tint = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                            tint = contentColor,
                             modifier = Modifier.size(22.dp)
                         )
                     }
                     Text(
                         text = item.label,
-                        color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                        color = contentColor,
                         fontSize = 10.sp,
                         lineHeight = 12.sp,
                         fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium

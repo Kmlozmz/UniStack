@@ -1,10 +1,12 @@
 package com.unistack.app.core.design.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -25,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.AppShapes
 
+import com.unistack.app.core.utils.bounceClick
+
 @Composable
 fun QuickActionButton(
     text: String,
@@ -36,41 +40,42 @@ fun QuickActionButton(
 ) {
     UniCard(
         modifier = modifier
-            .height(48.dp)
-            .clip(AppShapes.Pill)
-            .clickable(onClick = onClick),
+            .height(40.dp)
+            .bounceClick(onClick),
         color = backgroundColor,
         shape = AppShapes.Pill,
-        tonalElevation = 3.dp,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 7.dp)
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
     ) {
         Row(
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             androidx.compose.foundation.layout.Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .clip(CircleShape),
+                    .clip(CircleShape)
+                    .background(contentColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(19.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(2.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = text,
                 color = contentColor,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(end = 1.dp)
+                modifier = Modifier.padding(end = 4.dp, bottom = 1.dp)
             )
         }
     }

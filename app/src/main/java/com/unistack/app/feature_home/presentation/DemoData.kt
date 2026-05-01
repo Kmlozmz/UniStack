@@ -54,5 +54,11 @@ object DemoData {
         )
     )
 
+    val homeSummaryNoGrades = homeSummary.copy(
+        generalAverage = null,
+        subjects = homeSummary.subjects.map { it.copy(average = null, progress = 0f) },
+        neededGrade = null
+    )
+
     val homeUiState = HomeUiState(summary = homeSummary)
 }

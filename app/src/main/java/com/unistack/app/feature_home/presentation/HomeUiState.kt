@@ -4,6 +4,8 @@ import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.TaskSummary
 
+import com.unistack.app.feature_user.domain.GradingScale
+
 data class HomeUiState(
     val summary: HomeSummary = emptySummary
 ) {
@@ -13,19 +15,12 @@ data class HomeUiState(
             avatarPhotoUrl = null,
             generalAverage = 0.0,
             subjectsCount = 0,
-            tasksToday = 3,
+            tasksToday = 0,
             subjects = emptyList(),
             neededGrade = null,
-            nextTask = TaskSummary(
-                title = "Crea tu primera tarea",
-                dueText = "cuando quieras",
-                estimatedTimeText = "15 min"
-            ),
-            weeklyExpenses = ExpenseSummary(
-                transport = 42000,
-                food = 58000,
-                chartValues = listOf(42, 26, 55, 38, 70, 35, 48)
-            )
+            nextTask = null,
+            weeklyExpenses = null,
+            gradingScale = GradingScale.ZERO_TO_FIVE
         )
     }
 }

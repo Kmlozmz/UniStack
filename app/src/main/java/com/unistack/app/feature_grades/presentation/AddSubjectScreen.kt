@@ -27,6 +27,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,8 +57,12 @@ fun AddSubjectScreen(
     viewModel: GradesViewModel = viewModel()
 ) {
     BackHandler(onBack = onBackClick)
+    val profile by viewModel.userProfile.collectAsState()
+    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+    val defaultAverage = profile?.targetAverage ?: 4.0
+
     var name by remember { mutableStateOf("") }
-    var targetAverage by remember { mutableStateOf("4.0") }
+    var targetAverage by remember { mutableStateOf(GradingScaleUtils.formatGrade(defaultAverage, profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)) }
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
     var error by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,7 +70,7 @@ fun AddSubjectScreen(
     val targetValue = targetAverage.toDoubleOrNull()
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
-    val isValid = nameValidation.isValid && targetValue != null && targetValue in 0.0..5.0
+    val isValid = nameValidation.isValid && targetValue != null && targetValue in 0.0..maxGrade
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -120,11 +126,11 @@ fun AddSubjectScreen(
                             targetAverage = it
                             error = null
                         },
-                        label = { Text("Meta de promedio") },
+                        label = { Text("Meta de promedio (0 a $maxGrade)") },
                         singleLine = true,
                         shape = AppShapes.MediumCard,
                         modifier = Modifier.fillMaxWidth(),
-                        isError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..5.0)
+                        isError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..maxGrade)
                     )
                     Text("Color", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
                     SubjectVisualType.values().toList().chunked(6).forEach { row ->
@@ -145,7 +151,7 @@ fun AddSubjectScreen(
             }
             Button(
                 onClick = {
-                    val subject = viewModel.addSubject(TextValidators.normalizeText(name), targetValue ?: 4.0, visualType)
+                    val subject = viewModel.addSubject(TextValidators.normalizeText(name), targetValue ?: defaultAverage, visualType)
                     if (subject == null) {
                         error = "Revisa el nombre y la meta antes de guardar."
                     } else {
