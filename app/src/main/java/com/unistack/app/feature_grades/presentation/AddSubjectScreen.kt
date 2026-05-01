@@ -62,8 +62,9 @@ fun AddSubjectScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val targetValue = targetAverage.toDoubleOrNull()
-    val isNameValid = name.isBlank() || TextValidators.isValidAcademicName(name)
-    val isValid = TextValidators.isValidAcademicName(name) && targetValue != null && targetValue in 0.0..5.0
+    val nameValidation = TextValidators.validateSubjectName(name)
+    val isNameValid = name.isBlank() || nameValidation.isValid
+    val isValid = nameValidation.isValid && targetValue != null && targetValue in 0.0..5.0
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -109,7 +110,7 @@ fun AddSubjectScreen(
                         isError = !isNameValid,
                         supportingText = {
                             if (!isNameValid) {
-                                Text("Ingresa un nombre de materia válido")
+                                Text(nameValidation.errorMessage ?: "Ingresa un nombre de materia válido")
                             }
                         }
                     )
@@ -146,7 +147,7 @@ fun AddSubjectScreen(
                 onClick = {
                     val subject = viewModel.addSubject(TextValidators.normalizeText(name), targetValue ?: 4.0, visualType)
                     if (subject == null) {
-                        error = "Revisa el nombre y la meta antes de guardar."
+                        error = nameValidation.errorMessage ?: "Revisa el nombre y la meta antes de guardar."
                     } else {
                         scope.launch {
                             launch {
