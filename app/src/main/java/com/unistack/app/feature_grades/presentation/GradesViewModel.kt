@@ -19,7 +19,7 @@ class GradesViewModel(
     val subjects: StateFlow<List<Subject>> = repository.subjects
 
     fun addSubject(name: String, targetAverage: Double, visualType: SubjectVisualType): Subject? {
-        if (!TextValidators.isValidAcademicName(name)) return null
+        if (!TextValidators.validateSubjectName(name).isValid) return null
         val subject = Subject(
             id = "subject-${System.currentTimeMillis()}",
             name = TextValidators.normalizeText(name),
@@ -33,7 +33,7 @@ class GradesViewModel(
 
     fun addGrade(subjectId: String, name: String, value: Double, percentageInput: Double): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
-        if (!TextValidators.isValidAcademicName(name)) return false
+        if (!TextValidators.validateActivityName(name).isValid) return false
         val percentage = percentageInput / 100.0
         val total = subject.grades.sumOf { it.percentage } + percentage
         

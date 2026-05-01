@@ -12,6 +12,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.core.utils.ValidationResult
 
 class SetupViewModel(
     private val userRepository: UserRepository = AppContainer.userRepository
@@ -37,8 +38,14 @@ class SetupViewModel(
     var enabledModules by mutableStateOf(setOf(AppModule.GRADES, AppModule.TASKS))
         private set
 
+    val nameValidation: ValidationResult
+        get() = TextValidators.validateDisplayName(preferredName)
+
+    val customProgramValidation: ValidationResult
+        get() = TextValidators.validateCustomCareer(customProgram)
+
     val isNameValid: Boolean
-        get() = TextValidators.isValidDisplayName(preferredName)
+        get() = nameValidation.isValid
 
     val isAcademicInfoValid: Boolean
         get() {
@@ -46,13 +53,13 @@ class SetupViewModel(
                 val area = studyArea ?: return false
                 val program = selectedProgram ?: return false
                 if (area == StudyArea.OTHER || program == OTHER_OPTION) {
-                    return TextValidators.isValidAcademicName(customProgram)
+                    return customProgramValidation.isValid
                 }
                 return true
             }
 
             val value = academicInfo.trim()
-            return value.isEmpty() || TextValidators.isValidAcademicName(value)
+            return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
         }
 
     val isGradesValid: Boolean
@@ -161,7 +168,7 @@ class SetupViewModel(
             val area = studyArea ?: return null
             val program = selectedProgram ?: return null
             return if (area == StudyArea.OTHER || program == OTHER_OPTION) {
-                TextValidators.normalizeText(customProgram).takeIf { TextValidators.isValidAcademicName(it) }
+                TextValidators.normalizeText(customProgram).takeIf { TextValidators.validateCustomCareer(it).isValid }
             } else {
                 program
             }
