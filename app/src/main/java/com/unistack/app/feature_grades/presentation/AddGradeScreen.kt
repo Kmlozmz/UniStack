@@ -64,12 +64,13 @@ fun AddGradeScreen(
     val currentPercentage = subject?.grades?.sumOf { it.percentage } ?: 0.0
     val totalPercentage = currentPercentage + (percentageValue ?: 0.0) / 100.0
 
-    val isNameValid = name.isBlank() || TextValidators.isValidAcademicName(name)
+    val nameValidation = TextValidators.validateActivityName(name)
+    val isNameValid = name.isBlank() || nameValidation.isValid
     val isGradeValid = gradeValue != null && gradeValue in 0.0..maxGrade
     val isPercentageValid = percentageValue != null && percentageValue > 0.0 && totalPercentage <= 1.00001
 
     val isValid = subject != null &&
-        TextValidators.isValidAcademicName(name) &&
+        nameValidation.isValid &&
         isGradeValid &&
         isPercentageValid
 
@@ -112,7 +113,7 @@ fun AddGradeScreen(
                     isError = !isNameValid,
                     supportingText = {
                         if (!isNameValid) {
-                            Text("Ingresa un nombre de actividad válido")
+                            Text(nameValidation.errorMessage ?: "Ingresa un nombre de actividad válido")
                         }
                     }
                 )
@@ -151,7 +152,7 @@ fun AddGradeScreen(
                 if (saved) {
                     onBackClick()
                 } else {
-                    error = "Revisa que la nota esté entre 0.0 y $maxGrade y que el porcentaje acumulado no supere 100%."
+                    error = nameValidation.errorMessage ?: "Revisa que la nota esté entre 0.0 y $maxGrade y que el porcentaje acumulado no supere 100%."
                 }
             },
             enabled = isValid,
