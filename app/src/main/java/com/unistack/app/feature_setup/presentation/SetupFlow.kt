@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.utils.ValidationResult
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -86,7 +87,7 @@ fun SetupFlow(
         composable(SetupRoutes.Name) {
             SetupNameScreen(
                 name = viewModel.preferredName,
-                isValid = viewModel.isNameValid,
+                nameValidation = viewModel.nameValidation,
                 onNameChange = viewModel::updatePreferredName,
                 onBackClick = { navController.navigateUp() },
                 onContinueClick = { navController.navigate(SetupRoutes.Education) }
@@ -108,6 +109,7 @@ fun SetupFlow(
                 selectedProgram = viewModel.selectedProgram,
                 customProgram = viewModel.customProgram,
                 isValid = viewModel.isAcademicInfoValid,
+                customProgramValidation = viewModel.customProgramValidation,
                 onValueChange = viewModel::updateAcademicInfo,
                 onStudyAreaSelected = viewModel::updateStudyArea,
                 onProgramSelected = viewModel::updateSelectedProgram,
@@ -174,7 +176,7 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
 @Composable
 fun SetupNameScreen(
     name: String,
-    isValid: Boolean,
+    nameValidation: ValidationResult,
     onNameChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
@@ -191,14 +193,14 @@ fun SetupNameScreen(
             label = { Text("Nombre preferido") },
             placeholder = { Text("Escribe tu nombre o apodo") },
             supportingText = {
-                if (name.isNotBlank() && !isValid) {
-                    Text("Ingresa un nombre válido")
+                if (name.isNotBlank() && !nameValidation.isValid) {
+                    Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
                 }
             },
             shape = AppShapes.MediumCard,
-            isError = name.isNotBlank() && !isValid
+            isError = name.isNotBlank() && !nameValidation.isValid
         )
-        PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
+        PrimarySetupButton(text = "Continuar", enabled = nameValidation.isValid, onClick = onContinueClick)
     }
 }
 
@@ -236,6 +238,7 @@ fun SetupAcademicInfoScreen(
     selectedProgram: String?,
     customProgram: String,
     isValid: Boolean,
+    customProgramValidation: ValidationResult? = null,
     onValueChange: (String) -> Unit,
     onStudyAreaSelected: (StudyArea) -> Unit,
     onProgramSelected: (String) -> Unit,
@@ -271,10 +274,10 @@ fun SetupAcademicInfoScreen(
                         label = { Text("Escribe tu programa") },
                         placeholder = { Text("Nombre de tu carrera") },
                         shape = AppShapes.MediumCard,
-                        isError = customProgram.isNotBlank() && !isValid,
+                        isError = customProgram.isNotBlank() && customProgramValidation?.isValid == false,
                         supportingText = {
-                            if (customProgram.isNotBlank() && !isValid) {
-                                Text("Ingresa un programa válido")
+                            if (customProgram.isNotBlank() && customProgramValidation?.isValid == false) {
+                                Text(customProgramValidation.errorMessage ?: "Ingresa un programa válido")
                             }
                         }
                     )
@@ -609,7 +612,7 @@ fun SetupWelcomeScreenPreview() {
 @Composable
 fun SetupNameScreenPreview() {
     UniStackTheme {
-        SetupNameScreen(name = "Pineda", isValid = true, onNameChange = {}, onBackClick = {}, onContinueClick = {})
+        SetupNameScreen(name = "Pineda", nameValidation = ValidationResult(true), onNameChange = {}, onBackClick = {}, onContinueClick = {})
     }
 }
 
