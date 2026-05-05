@@ -26,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
@@ -62,6 +61,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -543,7 +543,7 @@ private fun SetupHeroIcon() {
             .background(Brush.linearGradient(listOf(UniStackColors.Primary, UniStackColors.Blue))),
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+        UniStackLogoMarkWhite(size = 34.dp)
     }
 }
 

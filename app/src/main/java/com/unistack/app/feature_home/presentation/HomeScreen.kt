@@ -51,7 +51,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
@@ -68,6 +67,7 @@ import com.unistack.app.core.design.components.QuickActionButton
 import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.SubjectCard
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniStackBrandHeader
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -148,15 +148,7 @@ private fun HomeHeader(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UniStackLogo(modifier = Modifier.size(34.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "UniStack",
-            color = UniStackColors.TextPrimary,
-            fontSize = 23.sp,
-            lineHeight = 26.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
+        UniStackBrandHeader(symbolSize = 34.dp)
         Spacer(modifier = Modifier.weight(1f))
         Icon(
             imageVector = Icons.Rounded.Notifications,
@@ -188,36 +180,6 @@ private fun HomeHeader(
                 modifier = Modifier.size(23.dp)
             )
         }
-    }
-}
-
-@Composable
-private fun UniStackLogo(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        fun stackPath(centerY: Float): Path {
-            val w = size.width
-            val h = size.height
-            return Path().apply {
-                moveTo(w * 0.50f, centerY - h * 0.18f)
-                lineTo(w * 0.86f, centerY)
-                lineTo(w * 0.50f, centerY + h * 0.18f)
-                lineTo(w * 0.14f, centerY)
-                close()
-            }
-        }
-
-        drawPath(
-            path = stackPath(size.height * 0.34f),
-            brush = Brush.linearGradient(listOf(Color(0xFF8D73FF), UniStackColors.Primary))
-        )
-        drawPath(
-            path = stackPath(size.height * 0.52f),
-            brush = Brush.linearGradient(listOf(Color(0xFF6F58F5), Color(0xFF4A33D6)))
-        )
-        drawPath(
-            path = stackPath(size.height * 0.70f),
-            brush = Brush.linearGradient(listOf(Color(0xFF9584FF), Color(0xFF6B54F6)))
-        )
     }
 }
 
