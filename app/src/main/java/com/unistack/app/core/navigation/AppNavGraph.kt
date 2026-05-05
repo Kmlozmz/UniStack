@@ -88,7 +88,7 @@ fun MainNavGraph(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
                         navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
+                            popUpTo(AppRoutes.Home) {
                                 saveState = true
                             }
                             launchSingleTop = true
