@@ -76,3 +76,38 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 }
+
+fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.replaceFirstChar { it.uppercase() }}ApkToTelegram") {
+    group = "distribution"
+    description = "Sends the $variant APK to Telegram"
+
+    doLast {
+        val apkPath = layout.buildDirectory.file("outputs/apk/$variant/app-$variant.apk").get().asFile
+        val scriptPath = rootProject.file("scripts/send_apk.sh")
+
+        if (!scriptPath.exists()) {
+            throw GradleException("Telegram script not found at ${scriptPath.absolutePath}")
+        }
+        if (!apkPath.exists()) {
+            throw GradleException("$variant APK not found at ${apkPath.absolutePath}")
+        }
+
+        println("Sending ${rootProject.name} $variant APK to Telegram...")
+        providers.exec {
+            commandLine(scriptPath.absolutePath, apkPath.absolutePath, rootProject.name, variant)
+        }.result.get().assertNormalExitValue()
+    }
+}
+
+val sendDebugApkToTelegram = registerTelegramApkTask("debug")
+val sendReleaseApkToTelegram = registerTelegramApkTask("release")
+
+afterEvaluate {
+    tasks.named("assembleDebug") {
+        finalizedBy(sendDebugApkToTelegram)
+    }
+
+    tasks.named("assembleRelease") {
+        finalizedBy(sendReleaseApkToTelegram)
+    }
+}
