@@ -66,7 +66,14 @@ class RoomGradesRepository(
 
     override fun updateSubject(subject: Subject) {
         scope.launch {
-            subjectDao.updateSubject(subject.toEntity(userId))
+            subjectDao.updateSubjectFields(
+                subjectId = subject.id,
+                userId = userId,
+                name = subject.name,
+                targetAverage = subject.targetAverage,
+                visualType = subject.visualType.name,
+                updatedAt = System.currentTimeMillis()
+            )
         }
     }
 
@@ -82,6 +89,18 @@ class RoomGradesRepository(
     override fun addGrade(subjectId: String, grade: GradeItem) {
         scope.launch {
             gradeDao.insertGrade(grade.toEntity(subjectId))
+        }
+    }
+
+    override fun updateGrade(subjectId: String, grade: GradeItem) {
+        scope.launch {
+            gradeDao.updateGradeFields(
+                subjectId = subjectId,
+                gradeId = grade.id,
+                name = grade.name,
+                value = grade.value,
+                percentage = grade.percentage
+            )
         }
     }
 

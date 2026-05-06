@@ -9,13 +9,7 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
-import androidx.lifecycle.viewModelScope
 import com.unistack.app.feature_user.domain.UserProfile
 
 class GradesViewModel(
@@ -31,6 +25,7 @@ class GradesViewModel(
 
     fun addSubject(name: String, targetAverage: Double, visualType: SubjectVisualType): Subject? {
         if (!TextValidators.validateSubjectName(name).isValid) return null
+        if (targetAverage !in 0.0..getMaxGrade()) return null
         val subject = Subject(
             id = "subject-${System.currentTimeMillis()}",
             name = TextValidators.normalizeText(name),
@@ -40,6 +35,33 @@ class GradesViewModel(
         )
         repository.addSubject(subject)
         return subject
+    }
+
+    fun updateSubject(
+        subjectId: String,
+        name: String,
+        targetAverage: Double,
+        visualType: SubjectVisualType
+    ): Boolean {
+        val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
+        if (!TextValidators.validateSubjectName(name).isValid) return false
+        if (targetAverage !in 0.0..getMaxGrade()) return false
+
+        repository.updateSubject(
+            subject.copy(
+                name = TextValidators.normalizeText(name),
+                targetAverage = targetAverage,
+                visualType = visualType
+            )
+        )
+        return true
+    }
+
+    fun deleteSubject(subjectId: String): Boolean {
+        val exists = subjects.value.any { it.id == subjectId }
+        if (!exists) return false
+        repository.deleteSubject(subjectId)
+        return true
     }
 
     fun addGrade(subjectId: String, name: String, value: Double, percentageInput: Double): Boolean {
@@ -61,6 +83,43 @@ class GradesViewModel(
                 percentage = percentage
             )
         )
+        return true
+    }
+
+    fun updateGrade(
+        subjectId: String,
+        gradeId: String,
+        name: String,
+        value: Double,
+        percentageInput: Double
+    ): Boolean {
+        val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
+        val existingGrade = subject.grades.firstOrNull { it.id == gradeId } ?: return false
+        if (!TextValidators.validateActivityName(name).isValid) return false
+
+        val percentage = percentageInput / 100.0
+        val total = subject.grades
+            .filterNot { it.id == gradeId }
+            .sumOf { it.percentage } + percentage
+        val maxGrade = getMaxGrade()
+        if (value !in 0.0..maxGrade || percentage <= 0.0 || total > 1.00001) return false
+
+        repository.updateGrade(
+            subjectId = subjectId,
+            grade = existingGrade.copy(
+                name = TextValidators.normalizeText(name),
+                value = value,
+                percentage = percentage
+            )
+        )
+        return true
+    }
+
+    fun deleteGrade(subjectId: String, gradeId: String): Boolean {
+        val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
+        val exists = subject.grades.any { it.id == gradeId }
+        if (!exists) return false
+        repository.deleteGrade(subjectId, gradeId)
         return true
     }
 

@@ -40,6 +40,22 @@ class InMemoryGradesRepository : GradesRepository {
         }
     }
 
+    override fun updateGrade(subjectId: String, grade: GradeItem) {
+        _subjects.update { current ->
+            current.map { subject ->
+                if (subject.id == subjectId) {
+                    subject.copy(
+                        grades = subject.grades.map { existing ->
+                            if (existing.id == grade.id) grade else existing
+                        }
+                    )
+                } else {
+                    subject
+                }
+            }
+        }
+    }
+
     override fun deleteGrade(subjectId: String, gradeId: String) {
         _subjects.update { current ->
             current.map { subject ->

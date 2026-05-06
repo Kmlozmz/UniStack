@@ -27,6 +27,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,25 +53,46 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddSubjectScreen(
     onBackClick: () -> Unit,
-    onSubjectCreated: (String) -> Unit,
+    onSubjectSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = viewModel(),
+    subjectId: String? = null
 ) {
     BackHandler(onBack = onBackClick)
+    val subjects by viewModel.subjects.collectAsState()
     val profile by viewModel.userProfile.collectAsState()
+    val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
     val defaultAverage = profile?.targetAverage ?: 4.0
+    val isEditing = subjectId != null
+    val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
 
     var name by remember { mutableStateOf("") }
-    var targetAverage by remember { mutableStateOf(GradingScaleUtils.formatGrade(defaultAverage, profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)) }
+    var targetAverage by remember { mutableStateOf("") }
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
+    var initialized by remember(subjectId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val targetValue = targetAverage.toDoubleOrNull()
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
-    val isValid = nameValidation.isValid && targetValue != null && targetValue in 0.0..maxGrade
+    val canEditLoadedSubject = !isEditing || subject != null
+    val isValid = canEditLoadedSubject && nameValidation.isValid && targetValue != null && targetValue in 0.0..maxGrade
+
+    LaunchedEffect(subject?.id, defaultAverage, scale, subjectId) {
+        if (initialized) return@LaunchedEffect
+
+        if (subject != null) {
+            name = subject.name
+            targetAverage = GradingScaleUtils.formatGrade(subject.targetAverage, scale)
+            visualType = subject.visualType
+            initialized = true
+        } else if (!isEditing) {
+            targetAverage = GradingScaleUtils.formatGrade(defaultAverage, scale)
+            initialized = true
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -90,11 +112,20 @@ fun AddSubjectScreen(
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
             }
             Text(
-                text = "Agregar materia",
+                text = if (isEditing) "Editar materia" else "Agregar materia",
                 color = UniStackColors.TextPrimary,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold
             )
+            if (isEditing && subject == null) {
+                UniCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = UniStackColors.Card,
+                    shape = AppShapes.MediumCard
+                ) {
+                    Text("Materia no encontrada.", color = UniStackColors.TextSecondary)
+                }
+            }
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
                 color = UniStackColors.Card,
@@ -151,16 +182,33 @@ fun AddSubjectScreen(
             }
             Button(
                 onClick = {
-                    val subject = viewModel.addSubject(TextValidators.normalizeText(name), targetValue ?: defaultAverage, visualType)
-                    if (subject == null) {
+                    val savedSubjectId = if (isEditing && subjectId != null) {
+                        val saved = viewModel.updateSubject(
+                            subjectId = subjectId,
+                            name = TextValidators.normalizeText(name),
+                            targetAverage = targetValue ?: defaultAverage,
+                            visualType = visualType
+                        )
+                        if (saved) subjectId else null
+                    } else {
+                        viewModel.addSubject(
+                            name = TextValidators.normalizeText(name),
+                            targetAverage = targetValue ?: defaultAverage,
+                            visualType = visualType
+                        )?.id
+                    }
+
+                    if (savedSubjectId == null) {
                         error = "Revisa el nombre y la meta antes de guardar."
                     } else {
                         scope.launch {
                             launch {
-                                snackbarHostState.showSnackbar("Materia creada correctamente")
+                                snackbarHostState.showSnackbar(
+                                    if (isEditing) "Materia actualizada correctamente" else "Materia creada correctamente"
+                                )
                             }
                             delay(650)
-                            onSubjectCreated(subject.id)
+                            onSubjectSaved(savedSubjectId)
                         }
                     }
                 },
@@ -169,7 +217,7 @@ fun AddSubjectScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar materia")
+                Text(if (isEditing) "Guardar cambios" else "Guardar materia")
             }
         }
     }

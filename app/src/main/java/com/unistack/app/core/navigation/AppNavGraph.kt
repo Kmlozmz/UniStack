@@ -175,7 +175,7 @@ fun MainNavGraph(
                             navController.navigate(AppRoutes.Home)
                         }
                     },
-                    onSubjectCreated = { subjectId ->
+                    onSubjectSaved = { subjectId ->
                         navController.navigate(AppRoutes.subjectDetail(subjectId)) {
                             popUpTo(AppRoutes.AddSubject) {
                                 inclusive = true
@@ -193,13 +193,55 @@ fun MainNavGraph(
                             navController.navigate(AppRoutes.Grades)
                         }
                     },
-                    onAddGradeClick = { id -> navController.navigate(AppRoutes.addGrade(id)) }
+                    onAddGradeClick = { id -> navController.navigate(AppRoutes.addGrade(id)) },
+                    onEditSubjectClick = { id -> navController.navigate(AppRoutes.editSubject(id)) },
+                    onEditGradeClick = { id, gradeId -> navController.navigate(AppRoutes.editGrade(id, gradeId)) },
+                    onSubjectDeleted = {
+                        navController.navigate(AppRoutes.Grades) {
+                            popUpTo(AppRoutes.Grades) {
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable("${AppRoutes.EditSubject}/{subjectId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                AddSubjectScreen(
+                    subjectId = subjectId,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.subjectDetail(subjectId))
+                        }
+                    },
+                    onSubjectSaved = { id ->
+                        navController.navigate(AppRoutes.subjectDetail(id)) {
+                            popUpTo("${AppRoutes.EditSubject}/$id") {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
             composable("${AppRoutes.AddGrade}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 AddGradeScreen(
                     subjectId = subjectId,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.subjectDetail(subjectId))
+                        }
+                    }
+                )
+            }
+            composable("${AppRoutes.EditGrade}/{subjectId}/{gradeId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                val gradeId = backStackEntry.arguments?.getString("gradeId").orEmpty()
+                AddGradeScreen(
+                    subjectId = subjectId,
+                    gradeId = gradeId,
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.navigate(AppRoutes.subjectDetail(subjectId))
