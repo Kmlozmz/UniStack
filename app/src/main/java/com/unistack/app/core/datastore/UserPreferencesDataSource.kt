@@ -16,6 +16,7 @@ import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -34,6 +35,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val PASSING_GRADE = doublePreferencesKey("passing_grade")
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
+        val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
         val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         val CREATED_AT = longPreferencesKey("created_at")
         val UPDATED_AT = longPreferencesKey("updated_at")
@@ -55,6 +57,9 @@ class UserPreferencesDataSource(private val context: Context) {
             ?.mapNotNull { runCatching { AppModule.valueOf(it) }.getOrNull() }
             ?.toSet()
             ?: setOf(AppModule.GRADES, AppModule.TASKS)
+        val visualPreference = prefs[Keys.VISUAL_PREFERENCE]
+            ?.let { runCatching { VisualPreference.valueOf(it) }.getOrNull() }
+            ?: VisualPreference.LIGHT
 
         UserProfile(
             userId = userId,
@@ -67,6 +72,7 @@ class UserPreferencesDataSource(private val context: Context) {
             passingGrade = prefs[Keys.PASSING_GRADE] ?: 3.0,
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
+            visualPreference = visualPreference,
             setupCompleted = prefs[Keys.SETUP_COMPLETED] ?: false,
             createdAt = prefs[Keys.CREATED_AT] ?: 0L,
             updatedAt = prefs[Keys.UPDATED_AT] ?: 0L
@@ -103,6 +109,7 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.CREATED_AT] = profile.createdAt
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
+            prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
 
             if (profile.studyArea != null) {
                 prefs[Keys.STUDY_AREA] = profile.studyArea.name

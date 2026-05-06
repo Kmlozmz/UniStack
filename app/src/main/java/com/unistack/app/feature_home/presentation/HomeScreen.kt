@@ -78,6 +78,7 @@ import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_home.domain.TaskSummary
+import com.unistack.app.feature_user.domain.AppModule
 
 @Composable
 fun HomeScreen(
@@ -92,6 +93,12 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val summary = uiState.summary
+    val enabledModules = summary.enabledModules
+    val showGrades = AppModule.GRADES in enabledModules
+    val showTasks = AppModule.TASKS in enabledModules
+    val showExpenses = AppModule.EXPENSES in enabledModules
+    val neededGrade = summary.neededGrade.takeIf { showGrades }
+    val nextTask = summary.nextTask.takeIf { showTasks }
 
     LazyColumn(
         modifier = modifier
@@ -103,36 +110,43 @@ fun HomeScreen(
         item { HomeHeader(photoUrl = summary.avatarPhotoUrl) }
         item { GreetingText(name = summary.userName) }
         item { HeroSummaryCard(summary = summary) }
-        item {
-            SubjectsSection(
-                subjects = summary.subjects,
-                gradingScale = summary.gradingScale,
-                onAddSubjectClick = onAddSubjectClick,
-                onSeeAllSubjectsClick = onSeeAllSubjectsClick,
-                onSubjectClick = onSubjectClick
-            )
+        if (showGrades) {
+            item {
+                SubjectsSection(
+                    subjects = summary.subjects,
+                    gradingScale = summary.gradingScale,
+                    onAddSubjectClick = onAddSubjectClick,
+                    onSeeAllSubjectsClick = onSeeAllSubjectsClick,
+                    onSubjectClick = onSubjectClick
+                )
+            }
         }
-        if (summary.neededGrade != null || summary.nextTask != null) {
+        if (neededGrade != null || nextTask != null) {
             item {
                 NeededAndNextTaskRow(
-                    neededGrade = summary.neededGrade,
-                    nextTask = summary.nextTask,
+                    neededGrade = neededGrade,
+                    nextTask = nextTask,
                     gradingScale = summary.gradingScale
                 )
             }
         }
-        item {
-            ExpenseWeeklyCard(
-                expenses = summary.weeklyExpenses,
-                onSeeExpensesClick = onSeeExpensesClick
-            )
+        if (showExpenses) {
+            item {
+                ExpenseWeeklyCard(
+                    expenses = summary.weeklyExpenses,
+                    onSeeExpensesClick = onSeeExpensesClick
+                )
+            }
         }
-        item {
-            QuickActionsRow(
-                onAddGradeClick = onAddGradeClick,
-                onNewTaskClick = onNewTaskClick,
-                onAddExpenseClick = onAddExpenseClick
-            )
+        if (showGrades || showTasks || showExpenses) {
+            item {
+                QuickActionsRow(
+                    enabledModules = enabledModules,
+                    onAddGradeClick = onAddGradeClick,
+                    onNewTaskClick = onNewTaskClick,
+                    onAddExpenseClick = onAddExpenseClick
+                )
+            }
         }
     }
 }
@@ -728,6 +742,7 @@ private fun ExpenseLine(label: String, amount: Int) {
 
 @Composable
 private fun QuickActionsRow(
+    enabledModules: Set<AppModule>,
     onAddGradeClick: () -> Unit,
     onNewTaskClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
@@ -739,27 +754,33 @@ private fun QuickActionsRow(
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        QuickActionButton(
-            text = "Agregar nota",
-            icon = Icons.Rounded.Add,
-            backgroundColor = UniStackColors.PrimaryLight,
-            contentColor = UniStackColors.Primary,
-            onClick = onAddGradeClick
-        )
-        QuickActionButton(
-            text = "Nueva tarea",
-            icon = Icons.Rounded.Check,
-            backgroundColor = UniStackColors.BlueLight,
-            contentColor = UniStackColors.Blue,
-            onClick = onNewTaskClick
-        )
-        QuickActionButton(
-            text = "Registrar gasto",
-            icon = Icons.Rounded.AccountBalanceWallet,
-            backgroundColor = UniStackColors.CoralLight,
-            contentColor = UniStackColors.Coral,
-            onClick = onAddExpenseClick
-        )
+        if (AppModule.GRADES in enabledModules) {
+            QuickActionButton(
+                text = "Agregar nota",
+                icon = Icons.Rounded.Add,
+                backgroundColor = UniStackColors.PrimaryLight,
+                contentColor = UniStackColors.Primary,
+                onClick = onAddGradeClick
+            )
+        }
+        if (AppModule.TASKS in enabledModules) {
+            QuickActionButton(
+                text = "Nueva tarea",
+                icon = Icons.Rounded.Check,
+                backgroundColor = UniStackColors.BlueLight,
+                contentColor = UniStackColors.Blue,
+                onClick = onNewTaskClick
+            )
+        }
+        if (AppModule.EXPENSES in enabledModules) {
+            QuickActionButton(
+                text = "Registrar gasto",
+                icon = Icons.Rounded.AccountBalanceWallet,
+                backgroundColor = UniStackColors.CoralLight,
+                contentColor = UniStackColors.Coral,
+                onClick = onAddExpenseClick
+            )
+        }
     }
 }
 

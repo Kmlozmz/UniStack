@@ -11,6 +11,7 @@ data class UserProfile(
     val passingGrade: Double,
     val targetAverage: Double,
     val enabledModules: Set<AppModule>,
+    val visualPreference: VisualPreference = VisualPreference.LIGHT,
     val setupCompleted: Boolean,
     val createdAt: Long,
     val updatedAt: Long
@@ -49,4 +50,10 @@ enum class AppModule {
     TASKS,
     EXPENSES,
     ACADEMIC_TEMPLATES
+}
+
+enum class VisualPreference {
+    SYSTEM,
+    LIGHT,
+    DARK
 }

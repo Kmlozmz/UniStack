@@ -18,10 +18,11 @@ import com.unistack.app.feature_home.domain.TaskSummary
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
-import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -128,7 +129,8 @@ class HomeViewModel(
             neededGrade = neededGrade,
             nextTask = nextTask,
             weeklyExpenses = weeklyExpenses,
-            gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+            gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
+            enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )
     }
 

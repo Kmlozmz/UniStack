@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.unistack.app.feature_user.domain.AppModule
 
 object AppRoutes {
     const val Home = "home"
@@ -38,11 +39,20 @@ data class BottomNavItem(
     val icon: ImageVector
 ) {
     companion object {
-        val items = listOf(
-            BottomNavItem(AppRoutes.Home, "Inicio", Icons.Rounded.Home),
-            BottomNavItem(AppRoutes.Grades, "Materias", Icons.AutoMirrored.Rounded.MenuBook),
-            BottomNavItem(AppRoutes.Tasks, "Tareas", Icons.AutoMirrored.Rounded.Assignment),
-            BottomNavItem(AppRoutes.Profile, "Perfil", Icons.Rounded.Person)
-        )
+        private val homeItem = BottomNavItem(AppRoutes.Home, "Inicio", Icons.Rounded.Home)
+        private val gradesItem = BottomNavItem(AppRoutes.Grades, "Materias", Icons.AutoMirrored.Rounded.MenuBook)
+        private val tasksItem = BottomNavItem(AppRoutes.Tasks, "Tareas", Icons.AutoMirrored.Rounded.Assignment)
+        private val profileItem = BottomNavItem(AppRoutes.Profile, "Perfil", Icons.Rounded.Person)
+
+        val items = listOf(homeItem, gradesItem, tasksItem, profileItem)
+
+        fun itemsFor(enabledModules: Set<AppModule>): List<BottomNavItem> {
+            return buildList {
+                add(homeItem)
+                if (AppModule.GRADES in enabledModules) add(gradesItem)
+                if (AppModule.TASKS in enabledModules) add(tasksItem)
+                add(profileItem)
+            }
+        }
     }
 }
