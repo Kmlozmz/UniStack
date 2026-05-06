@@ -147,7 +147,7 @@ Pendientes:
 - [x] Revisar comportamiento con materias sin notas.
 - [x] Revisar comportamiento con materias evaluadas al 100%.
 - [x] Revisar comportamiento cuando la nota necesaria es imposible.
-- [ ] Revisar comportamiento por escala: 0–5, 0–10, 0–100.
+- [x] Revisar comportamiento por escala: 0–5, 0–10, 0–100.
 
 ---
 
@@ -157,13 +157,13 @@ Objetivo: que la app se sienta estable, fluida y premium.
 
 Pendientes:
 
-- [ ] Revisar compactación visual.
-- [ ] Pulir espaciados.
-- [ ] Revisar pantallas 360dp–430dp.
-- [ ] Revisar estados vacíos.
-- [ ] Revisar accesibilidad básica.
-- [ ] Revisar modo oscuro si aplica.
-- [ ] Revisar animaciones y transiciones después de implementar features reales.
+- [x] Revisar compactación visual.
+- [x] Pulir espaciados.
+- [x] Revisar pantallas 360dp–430dp.
+- [x] Revisar estados vacíos.
+- [x] Revisar accesibilidad básica.
+- [x] Revisar modo oscuro si aplica.
+- [x] Revisar animaciones y transiciones después de implementar features reales.
 
 ---
 
@@ -271,9 +271,9 @@ Cerrar el módulo académico base para que materias y notas sean editables, corr
 
 ### Estado
 
-Implementado en la rama `feat/edit-delete-academic-items`.
+Implementado en `main`.
 
-Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a nivel de QA.
+Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por cerrado a nivel de QA.
 
 ### Tareas
 
@@ -285,23 +285,25 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 - [x] Revisar edge cases de porcentajes.
 - [x] Revisar detalle de materia.
 - [x] Revisar simulador de nota necesaria.
+- [x] Revisar escalas 0–5, 0–10 y 0–100.
 
 ## 7. Backlog
 
 ### Bugs / inconsistencias
 
-- [ ] Revisar si persiste algún problema de navegación en bottom nav.
-- [ ] Revisar si el edge-to-edge compactó demasiado algunas pantallas.
+- [x] Revisar si persiste algún problema de navegación en bottom nav.
+- [x] Cuando estoy agregando materias y quiero volver al inicio presionando en la bottom bar, no pasa nada.
+- [x] Revisar si el edge-to-edge compactó demasiado algunas pantallas.
 - [x] Revisar posibles casos de porcentaje mayor a 100%.
 - [x] Revisar nota necesaria imposible o fuera de rango.
 
 ### UX/UI
 
-- [ ] Revisar espaciado general.
-- [ ] Revisar tamaño y peso visual del bottom nav.
-- [ ] Mejorar respiración visual en pantallas académicas.
-- [ ] Pulir estados vacíos.
-- [ ] Revisar accesibilidad básica.
+- [x] Revisar espaciado general.
+- [x] Revisar tamaño y peso visual del bottom nav.
+- [x] Mejorar respiración visual en pantallas académicas.
+- [x] Pulir estados vacíos.
+- [x] Revisar accesibilidad básica.
 
 ### Features próximas
 
