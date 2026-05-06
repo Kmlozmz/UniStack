@@ -63,6 +63,7 @@ fun AddSubjectScreen(
     val profile by viewModel.userProfile.collectAsState()
     val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+    val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
@@ -157,7 +158,7 @@ fun AddSubjectScreen(
                             targetAverage = it
                             error = null
                         },
-                        label = { Text("Meta de promedio (0 a $maxGrade)") },
+                        label = { Text("Meta de promedio (0 a $maxGradeLabel)") },
                         singleLine = true,
                         shape = AppShapes.MediumCard,
                         modifier = Modifier.fillMaxWidth(),

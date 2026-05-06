@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -69,9 +68,8 @@ fun MainNavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route ?: AppRoutes.Home
-    val showBottomBar = BottomNavItem.items.any { item ->
-        currentDestination?.hierarchy?.any { it.route == item.route } == true
-    }
+    val selectedBottomRoute = bottomRouteFor(currentRoute)
+    val showBottomBar = selectedBottomRoute != null
 
     LaunchedEffect(launchRoute) {
         launchRoute?.let { route ->
@@ -85,10 +83,10 @@ fun MainNavGraph(
         bottomBar = {
             if (showBottomBar) {
                 UniStackBottomBar(
-                    currentRoute = currentRoute,
+                    currentRoute = selectedBottomRoute ?: currentRoute,
                     onNavigate = { route ->
                         navController.navigate(route) {
-                            popUpTo(AppRoutes.Home) {
+                            popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
                             launchSingleTop = true
@@ -259,6 +257,23 @@ fun MainNavGraph(
                 GradeSimulatorScreen(onBackClick = { navController.navigateUp() })
             }
         }
+    }
+}
+
+private fun bottomRouteFor(route: String?): String? {
+    return when {
+        route == AppRoutes.Home -> AppRoutes.Home
+        route == AppRoutes.Grades -> AppRoutes.Grades
+        route == AppRoutes.AddSubject -> AppRoutes.Grades
+        route == AppRoutes.GradeSimulator -> AppRoutes.Grades
+        route == "${AppRoutes.SubjectDetail}/{subjectId}" -> AppRoutes.Grades
+        route == "${AppRoutes.EditSubject}/{subjectId}" -> AppRoutes.Grades
+        route == "${AppRoutes.AddGrade}/{subjectId}" -> AppRoutes.Grades
+        route == "${AppRoutes.EditGrade}/{subjectId}/{gradeId}" -> AppRoutes.Grades
+        route == AppRoutes.Tasks -> AppRoutes.Tasks
+        route == AppRoutes.AddTask -> AppRoutes.Tasks
+        route == AppRoutes.Profile -> AppRoutes.Profile
+        else -> null
     }
 }
 

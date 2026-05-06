@@ -58,7 +58,9 @@ fun AddGradeScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     val profile by viewModel.userProfile.collectAsState()
-    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+    val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+    val maxGrade = GradingScaleUtils.maxGradeFor(scale)
+    val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
@@ -82,7 +84,7 @@ fun AddGradeScreen(
         if (initialized) return@LaunchedEffect
         if (grade != null) {
             name = grade.name
-            value = GradingScaleUtils.formatGrade(grade.value, profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE)
+            value = GradingScaleUtils.formatGrade(grade.value, scale)
             percentage = String.format(java.util.Locale.US, "%.0f", grade.percentage * 100)
             initialized = true
         } else if (!isEditing) {
@@ -142,7 +144,7 @@ fun AddGradeScreen(
                         value = it
                         error = null
                     },
-                    label = { Text("Nota 0.0 a $maxGrade") },
+                    label = { Text("Nota 0 a $maxGradeLabel") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = AppShapes.MediumCard,
@@ -186,7 +188,7 @@ fun AddGradeScreen(
                 if (saved) {
                     onBackClick()
                 } else {
-                    error = "Revisa que la nota esté entre 0.0 y $maxGrade y que el porcentaje acumulado no supere 100%."
+                    error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el porcentaje acumulado no supere 100%."
                 }
             },
             enabled = isValid,
