@@ -49,6 +49,7 @@ import com.unistack.app.core.design.theme.UniStackTheme
 import androidx.compose.ui.tooling.preview.Preview
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
+import java.util.Locale
 
 @Composable
 fun SubjectDetailScreen(
@@ -153,12 +154,44 @@ fun SubjectDetailScreen(
                 color = subjectBackground(subject.visualType),
                 shape = AppShapes.LargeCard
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Promedio actual", color = UniStackColors.TextSecondary)
-                        Text(GradingScaleUtils.formatGrade(average, scale), color = UniStackColors.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Promedio actual", color = UniStackColors.TextSecondary)
+                            Text(
+                                GradingScaleUtils.formatGrade(average, scale),
+                                color = UniStackColors.TextPrimary,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("Meta", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                            Text(
+                                GradingScaleUtils.formatGrade(subject.targetAverage, scale),
+                                color = subjectAccent(subject.visualType),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 20.sp
+                            )
+                        }
                     }
-                    Text("${String.format("%.0f", evaluated)}% evaluado", color = subjectAccent(subject.visualType), fontWeight = FontWeight.ExtraBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        SubjectDetailMetric(
+                            label = "Evaluado",
+                            value = "${String.format(Locale.US, "%.0f", evaluated)}%",
+                            modifier = Modifier.weight(1f)
+                        )
+                        SubjectDetailMetric(
+                            label = "Restante",
+                            value = "${String.format(Locale.US, "%.0f", remainingPercentage * 100)}%",
+                            modifier = Modifier.weight(1f)
+                        )
+                        SubjectDetailMetric(
+                            label = "Notas",
+                            value = subject.grades.size.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -168,8 +201,16 @@ fun SubjectDetailScreen(
                 color = UniStackColors.YellowLight,
                 shape = AppShapes.MediumCard
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
+                        Text(
+                            "Nota necesaria",
+                            color = UniStackColors.TextPrimary,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                    }
                     Text(
                         text = neededGradeMessage(
                             hasGrades = subject.grades.isNotEmpty(),
@@ -181,10 +222,28 @@ fun SubjectDetailScreen(
                             scale = scale
                         ),
                         color = UniStackColors.TextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(start = 10.dp)
+                        fontWeight = FontWeight.Bold
                     )
                 }
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Notas",
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${subject.grades.size} registradas",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 13.sp
+                )
             }
         }
         if (subject.grades.isEmpty()) {
@@ -199,7 +258,10 @@ fun SubjectDetailScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(grade.name, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                            Text("${String.format("%.0f", grade.percentage * 100)}%", color = UniStackColors.TextSecondary)
+                            Text(
+                                "${String.format(Locale.US, "%.0f", grade.percentage * 100)}% del curso",
+                                color = UniStackColors.TextSecondary
+                            )
                         }
                         Text(GradingScaleUtils.formatGrade(grade.value, scale), color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
                         IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
@@ -278,6 +340,21 @@ fun SubjectDetailScreen(
             },
             containerColor = UniStackColors.Card
         )
+    }
+}
+
+@Composable
+private fun SubjectDetailMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(label, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+        Text(value, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
     }
 }
 
