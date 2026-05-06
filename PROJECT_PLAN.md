@@ -213,13 +213,13 @@ Objetivo: que el usuario pueda revisar y ajustar sus datos.
 
 Pendientes:
 
-- [ ] ProfileScreen con datos reales.
-- [ ] Editar nombre preferido.
-- [ ] Editar escala de notas.
-- [ ] Editar promedio objetivo.
-- [ ] Reiniciar onboarding.
-- [ ] Configuración de módulos.
-- [ ] Preferencias visuales.
+- [x] ProfileScreen con datos reales.
+- [x] Editar nombre preferido.
+- [x] Editar escala de notas.
+- [x] Editar promedio objetivo.
+- [x] Reiniciar onboarding.
+- [x] Configuración de módulos.
+- [x] Preferencias visuales.
 
 ---
 
@@ -267,7 +267,7 @@ Pendientes:
 
 ### Objetivo
 
-Cerrar gastos reales con persistencia local y conexión a Home.
+Cerrar perfil local y configuración editable del usuario.
 
 ### Estado
 
@@ -277,16 +277,14 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Crear modelo Expense.
-- [x] Crear ExpenseEntity y ExpenseDao.
-- [x] Crear RoomExpensesRepository.
-- [x] Registrar gasto real.
-- [x] Editar gasto real.
-- [x] Eliminar gasto real.
-- [x] Mostrar resumen semanal real.
-- [x] Mostrar gráfico real por días.
-- [x] Mostrar resumen por categoría.
-- [x] Mostrar gastos reales en Home.
+- [x] Mostrar ProfileScreen con datos reales.
+- [x] Editar nombre preferido.
+- [x] Editar escala de notas.
+- [x] Editar promedio objetivo.
+- [x] Reiniciar onboarding con confirmación.
+- [x] Configurar módulos activos.
+- [x] Aplicar módulos activos en Home y bottom nav.
+- [x] Guardar preferencia visual local.
 
 ## 7. Backlog
 
@@ -312,7 +310,7 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 - [x] Editar/eliminar notas.
 - [x] Tareas reales con Room.
 - [x] Gastos reales con Room.
-- [ ] Perfil funcional.
+- [x] Perfil funcional.
 
 ### Ideas futuras
 

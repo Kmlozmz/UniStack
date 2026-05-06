@@ -4,6 +4,7 @@ import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.TaskSummary
 
+import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 
 data class HomeUiState(
@@ -20,7 +21,8 @@ data class HomeUiState(
             neededGrade = null,
             nextTask = null,
             weeklyExpenses = null,
-            gradingScale = GradingScale.ZERO_TO_FIVE
+            gradingScale = GradingScale.ZERO_TO_FIVE,
+            enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )
     }
 }

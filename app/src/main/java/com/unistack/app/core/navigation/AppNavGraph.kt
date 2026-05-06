@@ -43,6 +43,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
@@ -57,6 +58,7 @@ import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_profile.presentation.ProfileScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
+import com.unistack.app.feature_user.domain.AppModule
 
 @Composable
 fun MainNavGraph(
@@ -66,10 +68,13 @@ fun MainNavGraph(
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val profile by AppContainer.userRepository.userProfile.collectAsState()
+    val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
+    val bottomItems = BottomNavItem.itemsFor(enabledModules)
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route ?: AppRoutes.Home
     val selectedBottomRoute = bottomRouteFor(currentRoute)
-    val showBottomBar = selectedBottomRoute != null
+    val showBottomBar = selectedBottomRoute != null && bottomItems.any { it.route == selectedBottomRoute }
 
     LaunchedEffect(launchRoute) {
         launchRoute?.let { route ->
@@ -84,6 +89,7 @@ fun MainNavGraph(
             if (showBottomBar) {
                 UniStackBottomBar(
                     currentRoute = selectedBottomRoute ?: currentRoute,
+                    items = bottomItems,
                     onNavigate = { route ->
                         navController.navigate(route) {
                             popUpTo(navController.graph.findStartDestination().id) {
@@ -104,7 +110,7 @@ fun MainNavGraph(
                 .fillMaxSize()
                 .padding(innerPadding),
             enterTransition = {
-                val isTab = BottomNavItem.items.any { it.route == targetState.destination.route }
+                val isTab = bottomItems.any { it.route == targetState.destination.route }
                 if (isTab) {
                     fadeIn(tween(300))
                 } else {
@@ -112,7 +118,7 @@ fun MainNavGraph(
                 }
             },
             exitTransition = {
-                val isTab = BottomNavItem.items.any { it.route == initialState.destination.route }
+                val isTab = bottomItems.any { it.route == initialState.destination.route }
                 if (isTab) {
                     fadeOut(tween(300))
                 } else {
@@ -120,7 +126,7 @@ fun MainNavGraph(
                 }
             },
             popEnterTransition = {
-                val isTab = BottomNavItem.items.any { it.route == targetState.destination.route }
+                val isTab = bottomItems.any { it.route == targetState.destination.route }
                 if (isTab) {
                     fadeIn(tween(300))
                 } else {
@@ -128,7 +134,7 @@ fun MainNavGraph(
                 }
             },
             popExitTransition = {
-                val isTab = BottomNavItem.items.any { it.route == initialState.destination.route }
+                val isTab = bottomItems.any { it.route == initialState.destination.route }
                 if (isTab) {
                     fadeOut(tween(300))
                 } else {
@@ -309,6 +315,7 @@ private fun bottomRouteFor(route: String?): String? {
 @Composable
 private fun UniStackBottomBar(
     currentRoute: String,
+    items: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -330,7 +337,7 @@ private fun UniStackBottomBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomNavItem.items.forEach { item ->
+            items.forEach { item ->
                 val selected = currentRoute == item.route
                 val pillColor by animateColorAsState(if (selected) Color(0xFFF0EAFF) else Color.Transparent, label = "pill")
                 val contentColor by animateColorAsState(if (selected) UniStackColors.Primary else UniStackColors.TextPrimary, label = "content")

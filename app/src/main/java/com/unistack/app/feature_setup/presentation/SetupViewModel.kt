@@ -12,6 +12,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.ValidationResult
 
 class SetupViewModel(
@@ -156,6 +157,7 @@ class SetupViewModel(
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
+            visualPreference = VisualPreference.LIGHT,
             setupCompleted = true,
             createdAt = now,
             updatedAt = now
