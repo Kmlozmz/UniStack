@@ -10,6 +10,10 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_home.domain.NeededGradeSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
+import com.unistack.app.feature_home.domain.TaskSummary
+import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
@@ -21,14 +25,16 @@ import kotlinx.coroutines.flow.stateIn
 
 class HomeViewModel(
     private val gradesRepository: GradesRepository = AppContainer.gradesRepository,
+    private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val uiState: StateFlow<HomeUiState> = combine(
         gradesRepository.subjects,
+        tasksRepository.tasks,
         userRepository.userProfile,
         userRepository.currentUser
-    ) { subjects, profile, user ->
-        HomeUiState(summary = HomeUiState.emptySummary.copyFrom(subjects, profile, user))
+    ) { subjects, tasks, profile, user ->
+        HomeUiState(summary = HomeUiState.emptySummary.copyFrom(subjects, tasks, profile, user))
     }
         .stateIn(
             scope = viewModelScope,
@@ -38,6 +44,7 @@ class HomeViewModel(
 
     private fun com.unistack.app.feature_home.domain.HomeSummary.copyFrom(
         subjects: List<Subject>,
+        tasks: List<StudentTask>,
         profile: UserProfile?,
         user: AppUser
     ): com.unistack.app.feature_home.domain.HomeSummary {
@@ -91,6 +98,15 @@ class HomeViewModel(
                 )
             }
         }
+        val pendingTasks = tasks.filterNot { it.completed }
+        val tasksToday = pendingTasks.count { TaskDateUtils.isToday(it.dueDateMillis) }
+        val nextTask = pendingTasks.minByOrNull { it.dueDateMillis }?.let { task ->
+            TaskSummary(
+                title = task.title,
+                dueText = TaskDateUtils.dueText(task.dueDateMillis),
+                estimatedTimeText = TaskDateUtils.estimatedTimeText(task.estimatedMinutes)
+            )
+        }
 
         return copy(
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
@@ -99,8 +115,10 @@ class HomeViewModel(
             avatarPhotoUrl = user.photoUrl,
             generalAverage = generalAverage,
             subjectsCount = subjects.size,
+            tasksToday = tasksToday,
             subjects = summaries,
             neededGrade = neededGrade,
+            nextTask = nextTask,
             gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
         )
     }

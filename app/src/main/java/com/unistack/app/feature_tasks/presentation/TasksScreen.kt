@@ -4,30 +4,59 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.rounded.AddTask
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_tasks.domain.TaskDifficulty
 
 @Composable
-fun TasksScreen(onNewTaskClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TasksScreen(
+    onNewTaskClick: () -> Unit,
+    onEditTaskClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: TasksViewModel = viewModel()
+) {
+    val tasks by viewModel.tasks.collectAsState()
+    val subjects by viewModel.subjects.collectAsState()
+    var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -41,22 +70,19 @@ fun TasksScreen(onNewTaskClick: () -> Unit, modifier: Modifier = Modifier) {
                 Text("Organiza entregas, parciales y actividades académicas.", color = UniStackColors.TextSecondary)
             }
         }
-        item {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.BlueLight,
-                shape = AppShapes.LargeCard,
-                contentPadding = PaddingValues(20.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.AutoMirrored.Rounded.EventNote, contentDescription = null, tint = UniStackColors.Blue)
-                    Text("Aún no tienes tareas reales.", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        "Cuando implementemos tareas con Room, aquí verás tus entregas y pendientes guardados.",
-                        color = UniStackColors.TextSecondary,
-                        fontSize = 13.sp
-                    )
-                }
+        if (tasks.isEmpty()) {
+            item {
+                EmptyTasksCard()
+            }
+        } else {
+            items(tasks, key = { it.id }) { task ->
+                TaskCard(
+                    task = task,
+                    subjects = subjects,
+                    onCheckedChange = { checked -> viewModel.setTaskCompleted(task.id, checked) },
+                    onEditClick = { onEditTaskClick(task.id) },
+                    onDeleteClick = { taskIdPendingDelete = task.id }
+                )
             }
         }
         item {
@@ -71,5 +97,121 @@ fun TasksScreen(onNewTaskClick: () -> Unit, modifier: Modifier = Modifier) {
                 Text("Nueva tarea")
             }
         }
+    }
+
+    taskIdPendingDelete?.let { taskId ->
+        AlertDialog(
+            onDismissRequest = { taskIdPendingDelete = null },
+            title = { Text("¿Eliminar tarea?") },
+            text = { Text("Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteTask(taskId)
+                        taskIdPendingDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { taskIdPendingDelete = null }) {
+                    Text("Cancelar")
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+}
+
+@Composable
+private fun EmptyTasksCard() {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.BlueLight,
+        shape = AppShapes.LargeCard,
+        contentPadding = PaddingValues(20.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.AutoMirrored.Rounded.EventNote, contentDescription = null, tint = UniStackColors.Blue)
+            Text("Aún no tienes tareas reales.", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text(
+                "Crea tu primera tarea para ver entregas, tiempos estimados y pendientes desde Home.",
+                color = UniStackColors.TextSecondary,
+                fontSize = 13.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun TaskCard(
+    task: StudentTask,
+    subjects: List<Subject>,
+    onCheckedChange: (Boolean) -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    val subjectName = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: "General"
+    val titleDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None
+    val titleColor = if (task.completed) UniStackColors.TextSecondary else UniStackColors.TextPrimary
+
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.MediumCard
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = task.completed,
+                onCheckedChange = onCheckedChange
+            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    task.title,
+                    color = titleColor,
+                    fontWeight = FontWeight.ExtraBold,
+                    textDecoration = titleDecoration
+                )
+                Text(
+                    "$subjectName · ${TaskDateUtils.dueText(task.dueDateMillis)} · ${TaskDateUtils.estimatedTimeText(task.estimatedMinutes)}",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 13.sp
+                )
+                Text(
+                    task.difficulty.label(),
+                    color = task.difficulty.color(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            IconButton(onClick = onEditClick) {
+                Icon(Icons.Rounded.Edit, contentDescription = "Editar tarea")
+            }
+            IconButton(onClick = onDeleteClick) {
+                Icon(Icons.Rounded.Delete, contentDescription = "Eliminar tarea", tint = UniStackColors.Coral)
+            }
+        }
+    }
+}
+
+private fun TaskDifficulty.label(): String {
+    return when (this) {
+        TaskDifficulty.EASY -> "Dificultad baja"
+        TaskDifficulty.MEDIUM -> "Dificultad media"
+        TaskDifficulty.HARD -> "Dificultad alta"
+    }
+}
+
+private fun TaskDifficulty.color(): androidx.compose.ui.graphics.Color {
+    return when (this) {
+        TaskDifficulty.EASY -> UniStackColors.Green
+        TaskDifficulty.MEDIUM -> UniStackColors.Yellow
+        TaskDifficulty.HARD -> UniStackColors.Coral
     }
 }

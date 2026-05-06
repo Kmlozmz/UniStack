@@ -3,11 +3,13 @@ package com.unistack.app.feature_tasks.domain
 data class StudentTask(
     val id: String,
     val title: String,
-    val subjectName: String?,
-    val dueDateText: String,
+    val subjectId: String?,
+    val dueDateMillis: Long,
     val difficulty: TaskDifficulty,
     val estimatedMinutes: Int,
-    val completed: Boolean
+    val completed: Boolean,
+    val createdAt: Long,
+    val updatedAt: Long
 )
 
 enum class TaskDifficulty {

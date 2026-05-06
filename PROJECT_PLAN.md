@@ -173,17 +173,17 @@ Objetivo: tareas persistentes con Room.
 
 Pendientes:
 
-- [ ] Modelo StudentTask.
-- [ ] TaskEntity.
-- [ ] TaskDao.
-- [ ] RoomTasksRepository.
-- [ ] Crear tarea.
-- [ ] Editar tarea.
-- [ ] Eliminar tarea.
-- [ ] Marcar tarea como completada.
-- [ ] Asociar tarea a materia opcionalmente.
-- [ ] Mostrar tareas reales de hoy en Home.
-- [ ] Mostrar próxima tarea real en Home.
+- [x] Modelo StudentTask.
+- [x] TaskEntity.
+- [x] TaskDao.
+- [x] RoomTasksRepository.
+- [x] Crear tarea.
+- [x] Editar tarea.
+- [x] Eliminar tarea.
+- [x] Marcar tarea como completada.
+- [x] Asociar tarea a materia opcionalmente.
+- [x] Mostrar tareas reales de hoy en Home.
+- [x] Mostrar próxima tarea real en Home.
 
 ---
 
@@ -267,7 +267,7 @@ Pendientes:
 
 ### Objetivo
 
-Cerrar el módulo académico base para que materias y notas sean editables, corregibles y confiables.
+Cerrar tareas reales con persistencia local y conexión a Home.
 
 ### Estado
 
@@ -277,15 +277,16 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Implementar edición de materias.
-- [x] Implementar eliminación de materias.
-- [x] Implementar edición de notas.
-- [x] Implementar eliminación de notas.
-- [x] Agregar confirmaciones antes de eliminar.
-- [x] Revisar edge cases de porcentajes.
-- [x] Revisar detalle de materia.
-- [x] Revisar simulador de nota necesaria.
-- [x] Revisar escalas 0–5, 0–10 y 0–100.
+- [x] Crear modelo StudentTask.
+- [x] Crear TaskEntity y TaskDao.
+- [x] Crear RoomTasksRepository.
+- [x] Crear tarea real.
+- [x] Editar tarea real.
+- [x] Eliminar tarea real.
+- [x] Marcar tarea como completada.
+- [x] Asociar tarea a materia opcionalmente.
+- [x] Mostrar tareas reales de hoy en Home.
+- [x] Mostrar próxima tarea real en Home.
 
 ## 7. Backlog
 
@@ -309,7 +310,7 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 - [x] Editar/eliminar materias.
 - [x] Editar/eliminar notas.
-- [ ] Tareas reales con Room.
+- [x] Tareas reales con Room.
 - [ ] Gastos reales con Room.
 - [ ] Perfil funcional.
 
