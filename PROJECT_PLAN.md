@@ -136,16 +136,16 @@ Objetivo: que UniStack sea realmente útil solo con materias y notas.
 
 Pendientes:
 
-- [ ] Editar materia.
-- [ ] Eliminar materia.
-- [ ] Editar nota.
-- [ ] Eliminar nota.
-- [ ] Confirmaciones de eliminación.
+- [x] Editar materia.
+- [x] Eliminar materia.
+- [x] Editar nota.
+- [x] Eliminar nota.
+- [x] Confirmaciones de eliminación.
 - [ ] Mejorar detalle de materia.
 - [ ] Simulador real de nota necesaria.
-- [ ] Revisar edge cases de porcentajes.
-- [ ] Revisar comportamiento con materias sin notas.
-- [ ] Revisar comportamiento con materias evaluadas al 100%.
+- [x] Revisar edge cases de porcentajes.
+- [x] Revisar comportamiento con materias sin notas.
+- [x] Revisar comportamiento con materias evaluadas al 100%.
 - [ ] Revisar comportamiento cuando la nota necesaria es imposible.
 - [ ] Revisar comportamiento por escala: 0–5, 0–10, 0–100.
 
@@ -271,16 +271,22 @@ Pendientes:
 
 Cerrar el módulo académico base para que materias y notas sean editables, corregibles y confiables.
 
+### Estado
+
+Implementado en la rama `feat/edit-delete-academic-items`.
+
+Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a nivel de QA.
+
 ### Tareas
 
-1. Implementar edición de materias.
-2. Implementar eliminación de materias.
-3. Implementar edición de notas.
-4. Implementar eliminación de notas.
-5. Agregar confirmaciones antes de eliminar.
-6. Revisar edge cases de porcentajes.
-7. Revisar detalle de materia.
-8. Revisar simulador de nota necesaria.
+- [x] Implementar edición de materias.
+- [x] Implementar eliminación de materias.
+- [x] Implementar edición de notas.
+- [x] Implementar eliminación de notas.
+- [x] Agregar confirmaciones antes de eliminar.
+- [x] Revisar edge cases de porcentajes.
+- [ ] Revisar detalle de materia.
+- [ ] Revisar simulador de nota necesaria.
 
 ### Rama sugerida
 
@@ -298,7 +304,7 @@ Cerrar el módulo académico base para que materias y notas sean editables, corr
 
 - [ ] Revisar si persiste algún problema de navegación en bottom nav.
 - [ ] Revisar si el edge-to-edge compactó demasiado algunas pantallas.
-- [ ] Revisar posibles casos de porcentaje mayor a 100%.
+- [x] Revisar posibles casos de porcentaje mayor a 100%.
 - [ ] Revisar nota necesaria imposible o fuera de rango.
 
 ### UX/UI
@@ -311,8 +317,8 @@ Cerrar el módulo académico base para que materias y notas sean editables, corr
 
 ### Features próximas
 
-- [ ] Editar/eliminar materias.
-- [ ] Editar/eliminar notas.
+- [x] Editar/eliminar materias.
+- [x] Editar/eliminar notas.
 - [ ] Tareas reales con Room.
 - [ ] Gastos reales con Room.
 - [ ] Perfil funcional.
