@@ -158,7 +158,10 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.Tasks) {
-                TasksScreen(onNewTaskClick = { navController.navigate(AppRoutes.AddTask) })
+                TasksScreen(
+                    onNewTaskClick = { navController.navigate(AppRoutes.AddTask) },
+                    onEditTaskClick = { taskId -> navController.navigate(AppRoutes.editTask(taskId)) }
+                )
             }
             composable(AppRoutes.Profile) {
                 ProfileScreen()
@@ -250,6 +253,17 @@ fun MainNavGraph(
             composable(AppRoutes.AddTask) {
                 AddTaskScreen(onBackClick = { navController.navigateUp() })
             }
+            composable("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
+                val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
+                AddTaskScreen(
+                    taskId = taskId,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Tasks)
+                        }
+                    }
+                )
+            }
             composable(AppRoutes.AddExpense) {
                 AddExpenseScreen(onBackClick = { navController.navigateUp() })
             }
@@ -272,6 +286,7 @@ private fun bottomRouteFor(route: String?): String? {
         route == "${AppRoutes.EditGrade}/{subjectId}/{gradeId}" -> AppRoutes.Grades
         route == AppRoutes.Tasks -> AppRoutes.Tasks
         route == AppRoutes.AddTask -> AppRoutes.Tasks
+        route == "${AppRoutes.EditTask}/{taskId}" -> AppRoutes.Tasks
         route == AppRoutes.Profile -> AppRoutes.Profile
         else -> null
     }
