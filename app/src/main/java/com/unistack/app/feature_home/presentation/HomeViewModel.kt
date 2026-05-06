@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_expenses.domain.Expense
+import com.unistack.app.feature_expenses.domain.ExpenseCategory
+import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
+import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
@@ -26,15 +30,17 @@ import kotlinx.coroutines.flow.stateIn
 class HomeViewModel(
     private val gradesRepository: GradesRepository = AppContainer.gradesRepository,
     private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
+    private val expensesRepository: ExpensesRepository = AppContainer.expensesRepository,
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val uiState: StateFlow<HomeUiState> = combine(
         gradesRepository.subjects,
         tasksRepository.tasks,
+        expensesRepository.expenses,
         userRepository.userProfile,
         userRepository.currentUser
-    ) { subjects, tasks, profile, user ->
-        HomeUiState(summary = HomeUiState.emptySummary.copyFrom(subjects, tasks, profile, user))
+    ) { subjects, tasks, expenses, profile, user ->
+        HomeUiState(summary = HomeUiState.emptySummary.copyFrom(subjects, tasks, expenses, profile, user))
     }
         .stateIn(
             scope = viewModelScope,
@@ -45,6 +51,7 @@ class HomeViewModel(
     private fun com.unistack.app.feature_home.domain.HomeSummary.copyFrom(
         subjects: List<Subject>,
         tasks: List<StudentTask>,
+        expenses: List<Expense>,
         profile: UserProfile?,
         user: AppUser
     ): com.unistack.app.feature_home.domain.HomeSummary {
@@ -107,6 +114,7 @@ class HomeViewModel(
                 estimatedTimeText = TaskDateUtils.estimatedTimeText(task.estimatedMinutes)
             )
         }
+        val weeklyExpenses = weeklyExpenseSummary(expenses)
 
         return copy(
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
@@ -119,7 +127,27 @@ class HomeViewModel(
             subjects = summaries,
             neededGrade = neededGrade,
             nextTask = nextTask,
+            weeklyExpenses = weeklyExpenses,
             gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+        )
+    }
+
+    private fun weeklyExpenseSummary(expenses: List<Expense>): com.unistack.app.feature_home.domain.ExpenseSummary? {
+        val weekly = expenses.filter { ExpenseDateUtils.isInCurrentWeek(it.dateMillis) }
+        if (weekly.isEmpty()) return null
+
+        val start = ExpenseDateUtils.startOfWeek()
+        val chartValues = (0..6).map { dayOffset ->
+            val date = start.plusDays(dayOffset.toLong())
+            weekly
+                .filter { ExpenseDateUtils.fromMillis(it.dateMillis) == date }
+                .sumOf { it.amount }
+        }
+
+        return com.unistack.app.feature_home.domain.ExpenseSummary(
+            transport = weekly.filter { it.category == ExpenseCategory.TRANSPORT }.sumOf { it.amount },
+            food = weekly.filter { it.category == ExpenseCategory.FOOD }.sumOf { it.amount },
+            chartValues = chartValues
         )
     }
 }

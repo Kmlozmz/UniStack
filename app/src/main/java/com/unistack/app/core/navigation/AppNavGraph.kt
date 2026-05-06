@@ -167,7 +167,10 @@ fun MainNavGraph(
                 ProfileScreen()
             }
             composable(AppRoutes.Expenses) {
-                ExpensesScreen(onAddExpenseClick = { navController.navigate(AppRoutes.AddExpense) })
+                ExpensesScreen(
+                    onAddExpenseClick = { navController.navigate(AppRoutes.AddExpense) },
+                    onEditExpenseClick = { expenseId -> navController.navigate(AppRoutes.editExpense(expenseId)) }
+                )
             }
             composable(AppRoutes.AddSubject) {
                 AddSubjectScreen(
@@ -266,6 +269,17 @@ fun MainNavGraph(
             }
             composable(AppRoutes.AddExpense) {
                 AddExpenseScreen(onBackClick = { navController.navigateUp() })
+            }
+            composable("${AppRoutes.EditExpense}/{expenseId}") { backStackEntry ->
+                val expenseId = backStackEntry.arguments?.getString("expenseId").orEmpty()
+                AddExpenseScreen(
+                    expenseId = expenseId,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Expenses)
+                        }
+                    }
+                )
             }
             composable(AppRoutes.GradeSimulator) {
                 GradeSimulatorScreen(onBackClick = { navController.navigateUp() })

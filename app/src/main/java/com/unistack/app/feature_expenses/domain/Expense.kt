@@ -4,7 +4,9 @@ data class Expense(
     val id: String,
     val category: ExpenseCategory,
     val amount: Int,
-    val dateText: String
+    val dateMillis: Long,
+    val createdAt: Long,
+    val updatedAt: Long
 )
 
 enum class ExpenseCategory {

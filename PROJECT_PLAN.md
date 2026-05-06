@@ -193,17 +193,17 @@ Objetivo: gastos persistentes con Room.
 
 Pendientes:
 
-- [ ] Modelo Expense.
-- [ ] ExpenseEntity.
-- [ ] ExpenseDao.
-- [ ] RoomExpensesRepository.
-- [ ] Registrar gasto.
-- [ ] Editar gasto.
-- [ ] Eliminar gasto.
-- [ ] Resumen semanal real.
-- [ ] Gráfico real por días.
-- [ ] Resumen por categoría.
-- [ ] Estados vacíos de gastos.
+- [x] Modelo Expense.
+- [x] ExpenseEntity.
+- [x] ExpenseDao.
+- [x] RoomExpensesRepository.
+- [x] Registrar gasto.
+- [x] Editar gasto.
+- [x] Eliminar gasto.
+- [x] Resumen semanal real.
+- [x] Gráfico real por días.
+- [x] Resumen por categoría.
+- [x] Estados vacíos de gastos.
 
 ---
 
@@ -267,7 +267,7 @@ Pendientes:
 
 ### Objetivo
 
-Cerrar tareas reales con persistencia local y conexión a Home.
+Cerrar gastos reales con persistencia local y conexión a Home.
 
 ### Estado
 
@@ -277,16 +277,16 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Crear modelo StudentTask.
-- [x] Crear TaskEntity y TaskDao.
-- [x] Crear RoomTasksRepository.
-- [x] Crear tarea real.
-- [x] Editar tarea real.
-- [x] Eliminar tarea real.
-- [x] Marcar tarea como completada.
-- [x] Asociar tarea a materia opcionalmente.
-- [x] Mostrar tareas reales de hoy en Home.
-- [x] Mostrar próxima tarea real en Home.
+- [x] Crear modelo Expense.
+- [x] Crear ExpenseEntity y ExpenseDao.
+- [x] Crear RoomExpensesRepository.
+- [x] Registrar gasto real.
+- [x] Editar gasto real.
+- [x] Eliminar gasto real.
+- [x] Mostrar resumen semanal real.
+- [x] Mostrar gráfico real por días.
+- [x] Mostrar resumen por categoría.
+- [x] Mostrar gastos reales en Home.
 
 ## 7. Backlog
 
@@ -311,7 +311,7 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 - [x] Editar/eliminar materias.
 - [x] Editar/eliminar notas.
 - [x] Tareas reales con Room.
-- [ ] Gastos reales con Room.
+- [x] Gastos reales con Room.
 - [ ] Perfil funcional.
 
 ### Ideas futuras
