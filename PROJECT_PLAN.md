@@ -1,70 +1,122 @@
 # UniStack Project Plan
 
 ## 1. Visión del producto
-Explicar brevemente que UniStack es una app Android para estudiantes que permite organizar notas, materias, tareas, gastos y entregas académicas desde un solo lugar.
+
+UniStack es una app Android para estudiantes que centraliza la gestión académica y personal del semestre. Permite organizar materias, notas, promedios, tareas, gastos y entregas desde un solo lugar.
+
+El objetivo de UniStack es que el estudiante pueda responder rápidamente preguntas como:
+
+- ¿Cómo voy en mis materias?
+- ¿Qué nota necesito para alcanzar mi promedio objetivo?
+- ¿Qué tareas debo priorizar?
+- ¿En qué estoy gastando durante la semana?
+- ¿Qué tengo pendiente por entregar?
+
+UniStack debe sentirse moderna, clara, organizada, fácil de usar y visualmente premium.
+
+---
 
 ## 2. Estado actual del proyecto
-Marcar como completado lo que ya existe:
+
+### Base técnica
+
 - [x] Android project scaffold.
 - [x] Kotlin + Jetpack Compose.
 - [x] Material 3 / estilo visual UniStack.
+- [x] Navegación principal.
+- [x] Bottom navigation personalizada.
+- [x] DataStore para persistir UserProfile/setup.
+- [x] Room para materias y notas.
+- [x] Validaciones semánticas básicas.
+- [x] Escala de notas dinámica.
+
+### Producto / UX
+
 - [x] HomeScreen visual.
 - [x] Onboarding inicial.
 - [x] Nombre preferido dinámico.
 - [x] Setup académico.
-- [x] DataStore para persistir UserProfile/setup.
-- [x] Room para materias y notas.
-- [x] Validaciones semánticas básicas.
-- [x] Navegación principal.
-- [x] Bottom navigation personalizada.
 - [x] Eliminación de mock data en runtime.
+- [x] Estados pendientes en vez de 0.0.
 - [x] Animaciones básicas.
-- [x] Escala de notas dinámica.
+- [x] Branding oficial.
+- [x] Launcher icon oficial.
+- [x] Header con símbolo oficial.
+- [x] Launch animation de marca.
+
+---
 
 ## 3. Reglas de trabajo
-Agregar reglas claras:
+
 - No implementar varias features grandes al mismo tiempo.
 - Máximo una feature grande activa.
 - Los bugs P0 se arreglan antes de nuevas features.
 - Los datos mock solo pueden existir en previews o DemoData.
 - Cada cambio importante debe compilar con `./gradlew :app:assembleDebug`.
 - Cada feature debe mantener la estética visual de UniStack.
-- No implementar backend, Firebase, Billing o Google Sign-In hasta que el MVP local esté sólido.
-- Si aparece una idea nueva, va primero a Backlog y no interrumpe la fase actual salvo que sea crítica.
+- No implementar backend, Firebase, Billing, sincronización, IA o Google Sign-In hasta que el MVP local esté sólido.
+- Si aparece una idea nueva, primero va al backlog y no interrumpe la fase actual salvo que sea crítica.
+- No mezclar branding, lógica, navegación y persistencia en el mismo PR.
+- Cada PR debe tener un objetivo claro y verificable.
+
+---
 
 ## 4. Sistema de prioridades
-Crear clasificación:
-- **P0 Bloqueante**: rompe la app o impide usar una función principal.
-- **P1 Importante**: confunde al usuario o afecta una función principal.
-- **P2 Pulido**: mejora visual, UX o comodidad.
-- **P3 Futuro**: idea útil pero no necesaria para el MVP actual.
 
-Incluir ejemplos:
-**P0**:
+### P0 — Bloqueante
+
+Rompe la app o impide usar una función principal.
+
+Ejemplos:
+
 - La app crashea.
-- No se puede volver al Home.
+- No se puede navegar.
 - No se guardan datos.
+- El setup queda bloqueado.
 
-**P1**:
+### P1 — Importante
+
+Afecta una función principal o puede confundir al usuario.
+
+Ejemplos:
+
+- Mostrar datos falsos.
 - Mostrar 0.0 cuando no hay notas.
-- Mostrar datos fake.
 - Validaciones incorrectas.
+- Cálculos académicos incorrectos.
 
-**P2**:
+### P2 — Pulido
+
+Mejora UX, diseño, claridad o comodidad.
+
+Ejemplos:
+
 - Ajustar espaciado.
-- Mejorar animaciones.
-- Pulir bottom nav.
+- Pulir animaciones.
+- Mejorar estados vacíos.
+- Revisar accesibilidad.
 
-**P3**:
+### P3 — Futuro
+
+Idea útil, pero no necesaria para el MVP actual.
+
+Ejemplos:
+
 - Google Sign-In.
 - Billing Pro.
 - Exportar PDF.
 - Sincronización en nube.
+- IA.
+- Widgets Android.
+
+---
 
 ## 5. Roadmap por fases
 
-### Fase 0 — Base del proyecto
-Debe estar marcada como completada:
+## Fase 0 — Base del proyecto
+
+Estado: completada.
+
 - [x] Scaffold Android.
 - [x] Kotlin + Compose.
 - [x] Home visual.
@@ -72,14 +124,18 @@ Debe estar marcada como completada:
 - [x] DataStore.
 - [x] Room materias/notas.
 - [x] Validaciones.
-- [x] Animaciones básicas.
+- [x] Escala dinámica de notas.
+- [x] Branding oficial.
+- [x] Animación inicial de marca.
 
-### Fase 1 — Módulo académico sólido
-Objetivo: que UniStack sea realmente útil con materias y notas.
+---
+
+## Fase 1 — Módulo académico sólido
+
+Objetivo: que UniStack sea realmente útil solo con materias y notas.
+
 Pendientes:
-- [x] Corregir estados pendientes: mostrar "--" o "Sin notas" en vez de 0.0.
-- [ ] Arreglar bug de bottom nav: Inicio no navega desde Materias.
-- [ ] Revisar espaciado visual tras edge-to-edge.
+
 - [ ] Editar materia.
 - [ ] Eliminar materia.
 - [ ] Editar nota.
@@ -88,22 +144,35 @@ Pendientes:
 - [ ] Mejorar detalle de materia.
 - [ ] Simulador real de nota necesaria.
 - [ ] Revisar edge cases de porcentajes.
+- [ ] Revisar comportamiento con materias sin notas.
+- [ ] Revisar comportamiento con materias evaluadas al 100%.
+- [ ] Revisar comportamiento cuando la nota necesaria es imposible.
+- [ ] Revisar comportamiento por escala: 0–5, 0–10, 0–100.
 
-### Fase 2 — UX y estabilidad
+---
+
+## Fase 2 — UX y estabilidad
+
 Objetivo: que la app se sienta estable, fluida y premium.
+
 Pendientes:
+
 - [ ] Revisar compactación visual.
 - [ ] Pulir espaciados.
-- [ ] Pulir animaciones.
 - [ ] Revisar pantallas 360dp–430dp.
 - [ ] Revisar estados vacíos.
-- [ ] Revisar modo oscuro si aplica.
-- [ ] Mejorar icono/logo.
 - [ ] Revisar accesibilidad básica.
+- [ ] Revisar modo oscuro si aplica.
+- [ ] Revisar animaciones y transiciones después de implementar features reales.
 
-### Fase 3 — Tareas reales
+---
+
+## Fase 3 — Tareas reales
+
 Objetivo: tareas persistentes con Room.
+
 Pendientes:
+
 - [ ] Modelo StudentTask.
 - [ ] TaskEntity.
 - [ ] TaskDao.
@@ -112,12 +181,18 @@ Pendientes:
 - [ ] Editar tarea.
 - [ ] Eliminar tarea.
 - [ ] Marcar tarea como completada.
+- [ ] Asociar tarea a materia opcionalmente.
 - [ ] Mostrar tareas reales de hoy en Home.
 - [ ] Mostrar próxima tarea real en Home.
 
-### Fase 4 — Gastos reales
+---
+
+## Fase 4 — Gastos reales
+
 Objetivo: gastos persistentes con Room.
+
 Pendientes:
+
 - [ ] Modelo Expense.
 - [ ] ExpenseEntity.
 - [ ] ExpenseDao.
@@ -128,9 +203,16 @@ Pendientes:
 - [ ] Resumen semanal real.
 - [ ] Gráfico real por días.
 - [ ] Resumen por categoría.
+- [ ] Estados vacíos de gastos.
 
-### Fase 5 — Perfil y configuración
+---
+
+## Fase 5 — Perfil y configuración
+
+Objetivo: que el usuario pueda revisar y ajustar sus datos.
+
 Pendientes:
+
 - [ ] ProfileScreen con datos reales.
 - [ ] Editar nombre preferido.
 - [ ] Editar escala de notas.
@@ -139,8 +221,14 @@ Pendientes:
 - [ ] Configuración de módulos.
 - [ ] Preferencias visuales.
 
-### Fase 6 — Monetización preparada
+---
+
+## Fase 6 — Monetización preparada
+
+Objetivo: preparar estructura Pro sin pagos reales.
+
 Pendientes:
+
 - [ ] UserPlan.
 - [ ] FeatureGate.
 - [ ] Límite gratis de 5 materias.
@@ -149,94 +237,162 @@ Pendientes:
 - [ ] Placeholder de upgrade.
 - [ ] No implementar Billing todavía.
 
-### Fase 7 — Login y sincronización futura
+---
+
+## Fase 7 — Login y sincronización futura
+
+Objetivo: preparar identidad de usuario y backup futuro.
+
 Pendientes:
+
 - [ ] Google Sign-In.
 - [ ] Foto de perfil real.
 - [ ] Vincular datos a usuario.
 - [ ] Backup/sync futuro.
 
-### Fase 8 — Plantillas académicas
+---
+
+## Fase 8 — Plantillas académicas
+
+Objetivo: agregar herramientas para entregas académicas.
+
 Pendientes:
+
 - [ ] Checklist de trabajos.
 - [ ] Plantillas de ensayo.
 - [ ] Formato APA básico.
 - [ ] Exportar PDF/Word futuro.
 
-## 6. Backlog actual
-Dividir en:
+---
 
-### Bugs actuales
-- Bottom nav: desde Materias, Inicio no navega.
-- SubjectDetail muestra 0.0 cuando no hay notas.
-- Revisar si el edge-to-edge compactó demasiado algunas pantallas.
+## 6. Sprint actual
+
+### Objetivo
+
+Cerrar el módulo académico base para que materias y notas sean editables, corregibles y confiables.
+
+### Tareas
+
+1. Implementar edición de materias.
+2. Implementar eliminación de materias.
+3. Implementar edición de notas.
+4. Implementar eliminación de notas.
+5. Agregar confirmaciones antes de eliminar.
+6. Revisar edge cases de porcentajes.
+7. Revisar detalle de materia.
+8. Revisar simulador de nota necesaria.
+
+### Rama sugerida
+
+`feat/edit-delete-academic-items`
+
+### Commit sugerido
+
+`feat: edit and delete academic items`
+
+---
+
+## 7. Backlog
+
+### Bugs / inconsistencias
+
+- [ ] Revisar si persiste algún problema de navegación en bottom nav.
+- [ ] Revisar si el edge-to-edge compactó demasiado algunas pantallas.
+- [ ] Revisar posibles casos de porcentaje mayor a 100%.
+- [ ] Revisar nota necesaria imposible o fuera de rango.
 
 ### UX/UI
-- Revisar espaciado general.
-- Revisar tamaño y peso visual del bottom nav.
-- Mejorar respiración visual en pantallas académicas.
-- Pulir animaciones.
-- Mejorar icono/logo.
+
+- [ ] Revisar espaciado general.
+- [ ] Revisar tamaño y peso visual del bottom nav.
+- [ ] Mejorar respiración visual en pantallas académicas.
+- [ ] Pulir estados vacíos.
+- [ ] Revisar accesibilidad básica.
 
 ### Features próximas
-- Editar/eliminar materias.
-- Editar/eliminar notas.
-- Tareas reales con Room.
-- Gastos reales con Room.
-- Perfil funcional.
+
+- [ ] Editar/eliminar materias.
+- [ ] Editar/eliminar notas.
+- [ ] Tareas reales con Room.
+- [ ] Gastos reales con Room.
+- [ ] Perfil funcional.
 
 ### Ideas futuras
-- Google Sign-In.
-- Pro/Billing.
-- Exportar PDF.
-- Plantillas académicas.
-- Notificaciones.
-- Widgets Android.
-- Enviar carreras faltantes como sugerencia futura.
 
-## 7. Flujo de trabajo recomendado
-Explicar:
+- [ ] Google Sign-In.
+- [ ] Pro/Billing.
+- [ ] Exportar PDF.
+- [ ] Plantillas académicas.
+- [ ] Notificaciones.
+- [ ] Widgets Android.
+- [ ] Enviar carreras faltantes como sugerencia futura.
 
-Para bugfix:
-- crear rama `fix/nombre-del-bug`
-- hacer cambio pequeño
-- ejecutar `./gradlew :app:assembleDebug`
-- commit
-- PR
+---
 
-Para feature:
-- crear rama `feat/nombre-feature`
-- no mezclar con otros cambios
-- ejecutar build
-- PR
+## 8. Flujo de trabajo recomendado
 
-Para UX:
-- crear rama `ux/nombre-ajuste`
-- revisar visualmente en 360dp–430dp
-- build
-- PR
+### Bugfix
 
-## 8. Convención de ramas
-Agregar ejemplos:
+1. Crear rama `fix/nombre-del-bug`.
+2. Hacer cambio pequeño y enfocado.
+3. Ejecutar `./gradlew :app:assembleDebug`.
+4. Probar manualmente.
+5. Commit.
+6. PR.
+
+### Feature
+
+1. Crear rama `feat/nombre-feature`.
+2. No mezclar con otros cambios.
+3. Implementar vertical slice completo.
+4. Ejecutar `./gradlew :app:assembleDebug`.
+5. Probar manualmente.
+6. Commit.
+7. PR.
+
+### UX
+
+1. Crear rama `ux/nombre-ajuste`.
+2. Revisar visualmente en 360dp–430dp.
+3. Ejecutar build.
+4. Commit.
+5. PR.
+
+---
+
+## 9. Convención de ramas
+
 - `fix/bottom-nav-home`
 - `fix/pending-grade-states`
 - `ux/spacing-polish`
-- `feat/edit-delete-grades`
+- `ux/final-branding`
+- `ux/animated-launch-screen`
+- `feat/edit-delete-academic-items`
 - `feat/tasks-room`
 - `feat/expenses-room`
+- `feat/profile-settings`
 - `refactor/academic-state-models`
 
-## 9. Convención de commits
-Agregar ejemplos:
+---
+
+## 10. Convención de commits
+
 - `fix: restore home navigation from bottom bar`
 - `fix: show pending state when subject has no grades`
 - `ux: improve spacing across academic screens`
-- `feat: add subject and grade editing`
+- `ux: integrate official UniStack branding`
+- `ux: add animated UniStack launch screen`
+- `feat: edit and delete academic items`
 - `feat: persist tasks with Room`
+- `feat: persist expenses with Room`
 - `refactor: centralize grading scale logic`
 
-## 10. Definición de MVP 1.0
+---
+
+## 11. Definición de MVP 1.0
+
 El MVP 1.0 debe incluir:
+
 - Onboarding persistente.
 - Perfil local.
 - Materias reales.
@@ -253,6 +409,7 @@ El MVP 1.0 debe incluir:
 - Sin datos mock en runtime.
 
 No incluir todavía:
+
 - Google Sign-In.
 - Firebase.
 - Billing real.
@@ -261,8 +418,10 @@ No incluir todavía:
 - IA.
 - Notificaciones inteligentes.
 
-## 11. Decisiones tomadas
-Agregar:
+---
+
+## 12. Decisiones tomadas
+
 - DataStore se usa para UserProfile/setup.
 - Room se usa para datos estructurados como materias, notas, tareas y gastos.
 - Mock data solo se permite en previews/DemoData.
@@ -270,10 +429,5 @@ Agregar:
 - La escala de notas debe ser configurable.
 - Primero se construye MVP local, luego login/sync.
 - No se implementa monetización real hasta que el producto base sea sólido.
-
-## 12. Próximas tareas inmediatas
-Orden:
-1. Arreglar bottom nav: Inicio no navega desde Materias.
-2. Corregir estados pendientes: no mostrar 0.0 cuando no hay notas.
-3. Revisar espaciado visual tras edge-to-edge.
-4. Implementar editar/eliminar materias y notas.
+- El branding oficial de UniStack es la opción A / S modular.
+- El header mantiene `Uni` oscuro y `Stack` morado.
