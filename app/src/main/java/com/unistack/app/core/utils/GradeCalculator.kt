@@ -30,11 +30,13 @@ object GradeCalculator {
         remainingPercentage: Double,
         targetAverage: Double,
         maxGrade: Double = 5.0
-    ): Double {
-        if (remainingPercentage == 0.0) return 0.0
+    ): Double? {
+        if (remainingPercentage <= 0.0 || maxGrade <= 0.0) return null
 
         val needed = (targetAverage - currentWeightedPoints) / remainingPercentage
-        return roundToOneDecimal(needed.coerceIn(0.0, maxGrade))
+        if (needed.isNaN() || needed.isInfinite()) return null
+
+        return roundToOneDecimal(needed)
     }
 
     private fun roundToOneDecimal(value: Double): Double = round(value * 10.0) / 10.0
