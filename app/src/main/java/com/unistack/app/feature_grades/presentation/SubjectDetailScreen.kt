@@ -66,6 +66,7 @@ fun SubjectDetailScreen(
     val subject = subjects.firstOrNull { it.id == subjectId }
     val profile by viewModel.userProfile.collectAsState()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
@@ -88,6 +89,7 @@ fun SubjectDetailScreen(
     val average = viewModel.currentAverage(subject)
     val evaluated = viewModel.evaluatedPercentage(subject)
     val needed = viewModel.neededGrade(subject)
+    val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
 
     LazyColumn(
         modifier = modifier
@@ -169,13 +171,15 @@ fun SubjectDetailScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
                     Text(
-                        text = if (subject.grades.isEmpty()) {
-                            "Agrega una nota para calcular cuánto necesitas."
-                        } else if (needed == null || needed.isNaN() || needed <= 0.0) {
-                            "Ya no queda porcentaje disponible."
-                        } else {
-                            "Para terminar con ${GradingScaleUtils.formatGrade(subject.targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(needed, scale)}."
-                        },
+                        text = neededGradeMessage(
+                            hasGrades = subject.grades.isNotEmpty(),
+                            average = average,
+                            targetAverage = subject.targetAverage,
+                            neededGrade = needed,
+                            maxGrade = maxGrade,
+                            remainingPercentage = remainingPercentage,
+                            scale = scale
+                        ),
                         color = UniStackColors.TextPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(start = 10.dp)
@@ -275,6 +279,42 @@ fun SubjectDetailScreen(
             containerColor = UniStackColors.Card
         )
     }
+}
+
+private fun neededGradeMessage(
+    hasGrades: Boolean,
+    average: Double?,
+    targetAverage: Double,
+    neededGrade: Double?,
+    maxGrade: Double,
+    remainingPercentage: Double,
+    scale: GradingScale
+): String {
+    if (!hasGrades) {
+        return "Agrega una nota para calcular cuánto necesitas."
+    }
+
+    if (neededGrade != null && neededGrade <= 0.0) {
+        return "Ya alcanzaste la meta de ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+    }
+
+    if (remainingPercentage <= 0.0) {
+        return if (average != null && average >= targetAverage) {
+            "Materia completa. Alcanzaste la meta de ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        } else {
+            "Materia completa. Ya no queda porcentaje para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        }
+    }
+
+    if (neededGrade == null) {
+        return "No se puede calcular una nota necesaria con el porcentaje actual."
+    }
+
+    if (neededGrade > maxGrade) {
+        return "Con el porcentaje restante no es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+    }
+
+    return "Para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(neededGrade, scale)}."
 }
 
 @Preview(showBackground = true)

@@ -70,7 +70,7 @@ class HomeViewModel(
             if (validGrades.isEmpty()) null else GradeCalculator.calculateCurrentAverage(validGrades)
         }
 
-        val focusSubject = subjects.firstOrNull()
+        val focusSubject = subjects.firstOrNull { it.grades.isNotEmpty() }
         val neededGrade = focusSubject?.let { subject ->
             val currentWeightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades)
             val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
@@ -81,7 +81,7 @@ class HomeViewModel(
                 targetAverage = subject.targetAverage,
                 maxGrade = maxGrade
             )
-            if (needed == null || needed.isNaN() || needed <= 0.0) {
+            if (needed == null || needed <= 0.0 || needed > maxGrade) {
                 null
             } else {
                 NeededGradeSummary(

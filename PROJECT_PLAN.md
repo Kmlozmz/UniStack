@@ -146,7 +146,7 @@ Pendientes:
 - [x] Revisar edge cases de porcentajes.
 - [x] Revisar comportamiento con materias sin notas.
 - [x] Revisar comportamiento con materias evaluadas al 100%.
-- [ ] Revisar comportamiento cuando la nota necesaria es imposible.
+- [x] Revisar comportamiento cuando la nota necesaria es imposible.
 - [ ] Revisar comportamiento por escala: 0–5, 0–10, 0–100.
 
 ---
@@ -293,7 +293,7 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 - [ ] Revisar si persiste algún problema de navegación en bottom nav.
 - [ ] Revisar si el edge-to-edge compactó demasiado algunas pantallas.
 - [x] Revisar posibles casos de porcentaje mayor a 100%.
-- [ ] Revisar nota necesaria imposible o fuera de rango.
+- [x] Revisar nota necesaria imposible o fuera de rango.
 
 ### UX/UI
 
