@@ -6,18 +6,21 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.unistack.app.feature_expenses.data.local.ExpenseDao
+import com.unistack.app.feature_expenses.data.local.ExpenseEntity
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
-    entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class],
-    version = 2,
+    entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class UniStackDatabase : RoomDatabase() {
     abstract fun subjectDao(): SubjectDao
     abstract fun gradeDao(): GradeDao
     abstract fun taskDao(): TaskDao
+    abstract fun expenseDao(): ExpenseDao
 
     companion object {
         @Volatile
@@ -48,6 +51,28 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS expenses (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        amount INTEGER NOT NULL,
+                        dateMillis INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_expenses_userId ON expenses(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_expenses_category ON expenses(category)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_expenses_dateMillis ON expenses(dateMillis)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -56,6 +81,7 @@ abstract class UniStackDatabase : RoomDatabase() {
                     "unistack.db"
                 )
                     .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_2_3)
                     .build()
                     .also { INSTANCE = it }
             }

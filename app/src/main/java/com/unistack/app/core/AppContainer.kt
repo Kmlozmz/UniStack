@@ -2,6 +2,8 @@ package com.unistack.app.core
 
 import android.content.Context
 import com.unistack.app.core.datastore.UserPreferencesDataSource
+import com.unistack.app.feature_expenses.data.RoomExpensesRepository
+import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.data.RoomGradesRepository
 import com.unistack.app.feature_grades.data.local.UniStackDatabase
 import com.unistack.app.feature_grades.domain.GradesRepository
@@ -20,6 +22,9 @@ object AppContainer {
     lateinit var tasksRepository: TasksRepository
         private set
 
+    lateinit var expensesRepository: ExpensesRepository
+        private set
+
     fun init(context: Context) {
         val dataSource = UserPreferencesDataSource(context.applicationContext)
         userRepository = DataStoreUserRepository(dataSource)
@@ -32,6 +37,10 @@ object AppContainer {
         )
         tasksRepository = RoomTasksRepository(
             taskDao = database.taskDao(),
+            userRepository = userRepository
+        )
+        expensesRepository = RoomExpensesRepository(
+            expenseDao = database.expenseDao(),
             userRepository = userRepository
         )
     }
