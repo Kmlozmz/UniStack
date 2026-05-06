@@ -17,6 +17,23 @@ interface GradeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGrade(grade: GradeEntity)
 
+    @Query(
+        """
+        UPDATE grades
+        SET name = :name,
+            value = :value,
+            percentage = :percentage
+        WHERE id = :gradeId AND subjectId = :subjectId
+        """
+    )
+    suspend fun updateGradeFields(
+        subjectId: String,
+        gradeId: String,
+        name: String,
+        value: Double,
+        percentage: Double
+    )
+
     @Query("DELETE FROM grades WHERE id = :gradeId")
     suspend fun deleteGradeById(gradeId: String)
 

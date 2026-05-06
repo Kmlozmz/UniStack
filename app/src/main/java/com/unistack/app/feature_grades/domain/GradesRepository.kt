@@ -9,5 +9,6 @@ interface GradesRepository {
     fun updateSubject(subject: Subject)
     fun deleteSubject(subjectId: String)
     fun addGrade(subjectId: String, grade: GradeItem)
+    fun updateGrade(subjectId: String, grade: GradeItem)
     fun deleteGrade(subjectId: String, gradeId: String)
 }

@@ -14,18 +14,28 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.TrackChanges
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +55,9 @@ fun SubjectDetailScreen(
     subjectId: String,
     onBackClick: () -> Unit,
     onAddGradeClick: (String) -> Unit,
+    onEditSubjectClick: (String) -> Unit,
+    onEditGradeClick: (String, String) -> Unit,
+    onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
 ) {
@@ -53,6 +66,9 @@ fun SubjectDetailScreen(
     val subject = subjects.firstOrNull { it.id == subjectId }
     val profile by viewModel.userProfile.collectAsState()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+    var showSubjectMenu by remember { mutableStateOf(false) }
+    var showDeleteSubjectDialog by remember { mutableStateOf(false) }
+    var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
 
     if (subject == null) {
         Column(
@@ -81,10 +97,53 @@ fun SubjectDetailScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+                }
+                Text(
+                    subject.name,
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Box {
+                    IconButton(onClick = { showSubjectMenu = true }) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = "Opciones de materia")
+                    }
+                    DropdownMenu(
+                        expanded = showSubjectMenu,
+                        onDismissRequest = { showSubjectMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Editar materia") },
+                            leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                            onClick = {
+                                showSubjectMenu = false
+                                onEditSubjectClick(subject.id)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Eliminar materia", color = UniStackColors.Coral) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = null,
+                                    tint = UniStackColors.Coral
+                                )
+                            },
+                            onClick = {
+                                showSubjectMenu = false
+                                showDeleteSubjectDialog = true
+                            }
+                        )
+                    }
+                }
             }
-            Text(subject.name, color = UniStackColors.TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
         }
         item {
             UniCard(
@@ -139,6 +198,16 @@ fun SubjectDetailScreen(
                             Text("${String.format("%.0f", grade.percentage * 100)}%", color = UniStackColors.TextSecondary)
                         }
                         Text(GradingScaleUtils.formatGrade(grade.value, scale), color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                        IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
+                            Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
+                        }
+                        IconButton(onClick = { gradeIdPendingDelete = grade.id }) {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = "Eliminar nota",
+                                tint = UniStackColors.Coral
+                            )
+                        }
                     }
                 }
             }
@@ -156,6 +225,56 @@ fun SubjectDetailScreen(
             }
         }
     }
+
+    if (showDeleteSubjectDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteSubjectDialog = false },
+            title = { Text("¿Eliminar materia?") },
+            text = { Text("También se eliminarán sus notas.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteSubjectDialog = false
+                        if (viewModel.deleteSubject(subject.id)) {
+                            onSubjectDeleted()
+                        }
+                    }
+                ) {
+                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteSubjectDialog = false }) {
+                    Text("Cancelar")
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+
+    gradeIdPendingDelete?.let { gradeId ->
+        AlertDialog(
+            onDismissRequest = { gradeIdPendingDelete = null },
+            title = { Text("¿Eliminar nota?") },
+            text = { Text("Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteGrade(subject.id, gradeId)
+                        gradeIdPendingDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { gradeIdPendingDelete = null }) {
+                    Text("Cancelar")
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
 }
 
 @Preview(showBackground = true)
@@ -165,7 +284,10 @@ fun SubjectDetailScreenPreview() {
         SubjectDetailScreen(
             subjectId = "1",
             onBackClick = {},
-            onAddGradeClick = {}
+            onAddGradeClick = {},
+            onEditSubjectClick = {},
+            onEditGradeClick = { _, _ -> },
+            onSubjectDeleted = {}
         )
     }
 }

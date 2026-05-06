@@ -14,14 +14,18 @@ object AppRoutes {
     const val Profile = "profile"
     const val Expenses = "expenses"
     const val AddSubject = "add_subject"
+    const val EditSubject = "edit_subject"
     const val SubjectDetail = "subject_detail"
     const val AddGrade = "add_grade"
+    const val EditGrade = "edit_grade"
     const val AddTask = "add_task"
     const val AddExpense = "add_expense"
     const val GradeSimulator = "grade_simulator"
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
     fun addGrade(subjectId: String) = "$AddGrade/$subjectId"
+    fun editSubject(subjectId: String) = "$EditSubject/$subjectId"
+    fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
 }
 
 data class BottomNavItem(

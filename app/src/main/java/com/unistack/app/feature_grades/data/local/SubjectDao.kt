@@ -21,6 +21,25 @@ interface SubjectDao {
     @Update
     suspend fun updateSubject(subject: SubjectEntity)
 
+    @Query(
+        """
+        UPDATE subjects
+        SET name = :name,
+            targetAverage = :targetAverage,
+            visualType = :visualType,
+            updatedAt = :updatedAt
+        WHERE id = :subjectId AND userId = :userId
+        """
+    )
+    suspend fun updateSubjectFields(
+        subjectId: String,
+        userId: String,
+        name: String,
+        targetAverage: Double,
+        visualType: String,
+        updatedAt: Long
+    )
+
     @Query("DELETE FROM subjects WHERE id = :subjectId")
     suspend fun deleteSubjectById(subjectId: String)
 }

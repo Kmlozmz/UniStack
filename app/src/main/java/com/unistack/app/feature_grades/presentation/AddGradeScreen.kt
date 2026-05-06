@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -43,14 +43,18 @@ fun AddGradeScreen(
     subjectId: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = viewModel(),
+    gradeId: String? = null
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsState()
     val subject = subjects.firstOrNull { it.id == subjectId }
+    val grade = gradeId?.let { id -> subject?.grades?.firstOrNull { it.id == id } }
+    val isEditing = gradeId != null
     var name by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
     var percentage by remember { mutableStateOf("") }
+    var initialized by remember(subjectId, gradeId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val profile by viewModel.userProfile.collectAsState()
@@ -58,7 +62,9 @@ fun AddGradeScreen(
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
-    val currentPercentage = subject?.grades?.sumOf { it.percentage } ?: 0.0
+    val currentPercentage = subject?.grades
+        ?.filterNot { it.id == gradeId }
+        ?.sumOf { it.percentage } ?: 0.0
     val totalPercentage = currentPercentage + (percentageValue ?: 0.0) / 100.0
 
     val nameValidation = TextValidators.validateActivityName(name)
@@ -67,9 +73,22 @@ fun AddGradeScreen(
     val isPercentageValid = percentageValue != null && percentageValue > 0.0 && totalPercentage <= 1.00001
 
     val isValid = subject != null &&
+        (!isEditing || grade != null) &&
         nameValidation.isValid &&
         isGradeValid &&
         isPercentageValid
+
+    LaunchedEffect(grade?.id, subjectId, gradeId) {
+        if (initialized) return@LaunchedEffect
+        if (grade != null) {
+            name = grade.name
+            value = GradingScaleUtils.formatGrade(grade.value, profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE)
+            percentage = String.format(java.util.Locale.US, "%.0f", grade.percentage * 100)
+            initialized = true
+        } else if (!isEditing) {
+            initialized = true
+        }
+    }
 
     Column(
         modifier = modifier
@@ -83,7 +102,7 @@ fun AddGradeScreen(
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
         Text(
-            text = "Agregar nota",
+            text = if (isEditing) "Editar nota" else "Agregar nota",
             color = UniStackColors.TextPrimary,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold
@@ -97,6 +116,9 @@ fun AddGradeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Icon(Icons.Rounded.EditNote, contentDescription = null, tint = UniStackColors.Primary)
                 Text(subject?.name ?: "Materia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                if (isEditing && grade == null) {
+                    Text("Nota no encontrada.", color = UniStackColors.TextSecondary)
+                }
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
@@ -145,7 +167,22 @@ fun AddGradeScreen(
         }
         Button(
             onClick = {
-                val saved = viewModel.addGrade(subjectId, TextValidators.normalizeText(name), gradeValue ?: 0.0, percentageValue ?: 0.0)
+                val saved = if (isEditing && gradeId != null) {
+                    viewModel.updateGrade(
+                        subjectId = subjectId,
+                        gradeId = gradeId,
+                        name = TextValidators.normalizeText(name),
+                        value = gradeValue ?: 0.0,
+                        percentageInput = percentageValue ?: 0.0
+                    )
+                } else {
+                    viewModel.addGrade(
+                        subjectId = subjectId,
+                        name = TextValidators.normalizeText(name),
+                        value = gradeValue ?: 0.0,
+                        percentageInput = percentageValue ?: 0.0
+                    )
+                }
                 if (saved) {
                     onBackClick()
                 } else {
@@ -156,7 +193,7 @@ fun AddGradeScreen(
             shape = AppShapes.Pill,
             colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
         ) {
-            Text("Guardar nota")
+            Text(if (isEditing) "Guardar cambios" else "Guardar nota")
         }
     }
 }
