@@ -263,8 +263,6 @@ Pendientes:
 - [ ] Formato APA básico.
 - [ ] Exportar PDF/Word futuro.
 
----
-
 ## 6. Sprint actual
 
 ### Objetivo
@@ -287,16 +285,6 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 - [x] Revisar edge cases de porcentajes.
 - [ ] Revisar detalle de materia.
 - [ ] Revisar simulador de nota necesaria.
-
-### Rama sugerida
-
-`feat/edit-delete-academic-items`
-
-### Commit sugerido
-
-`feat: edit and delete academic items`
-
----
 
 ## 7. Backlog
 
@@ -333,55 +321,7 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 - [ ] Widgets Android.
 - [ ] Enviar carreras faltantes como sugerencia futura.
 
----
-
-## 8. Flujo de trabajo recomendado
-
-### Bugfix
-
-1. Crear rama `fix/nombre-del-bug`.
-2. Hacer cambio pequeño y enfocado.
-3. Ejecutar `./gradlew :app:assembleDebug`.
-4. Probar manualmente.
-5. Commit.
-6. PR.
-
-### Feature
-
-1. Crear rama `feat/nombre-feature`.
-2. No mezclar con otros cambios.
-3. Implementar vertical slice completo.
-4. Ejecutar `./gradlew :app:assembleDebug`.
-5. Probar manualmente.
-6. Commit.
-7. PR.
-
-### UX
-
-1. Crear rama `ux/nombre-ajuste`.
-2. Revisar visualmente en 360dp–430dp.
-3. Ejecutar build.
-4. Commit.
-5. PR.
-
----
-
-## 9. Convención de ramas
-
-- `fix/bottom-nav-home`
-- `fix/pending-grade-states`
-- `ux/spacing-polish`
-- `ux/final-branding`
-- `ux/animated-launch-screen`
-- `feat/edit-delete-academic-items`
-- `feat/tasks-room`
-- `feat/expenses-room`
-- `feat/profile-settings`
-- `refactor/academic-state-models`
-
----
-
-## 10. Convención de commits
+## 8. Convención de commits
 
 - `fix: restore home navigation from bottom bar`
 - `fix: show pending state when subject has no grades`
@@ -395,7 +335,7 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 
 ---
 
-## 11. Definición de MVP 1.0
+## 9. Definición de MVP 1.0
 
 El MVP 1.0 debe incluir:
 
@@ -426,7 +366,7 @@ No incluir todavía:
 
 ---
 
-## 12. Decisiones tomadas
+## 10. Decisiones tomadas
 
 - DataStore se usa para UserProfile/setup.
 - Room se usa para datos estructurados como materias, notas, tareas y gastos.
