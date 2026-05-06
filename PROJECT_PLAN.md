@@ -142,7 +142,7 @@ Pendientes:
 - [x] Eliminar nota.
 - [x] Confirmaciones de eliminación.
 - [ ] Mejorar detalle de materia.
-- [ ] Simulador real de nota necesaria.
+- [x] Simulador real de nota necesaria.
 - [x] Revisar edge cases de porcentajes.
 - [x] Revisar comportamiento con materias sin notas.
 - [x] Revisar comportamiento con materias evaluadas al 100%.
@@ -284,7 +284,7 @@ Pendiente de prueba manual en dispositivo/emulador antes de darlo por cerrado a 
 - [x] Agregar confirmaciones antes de eliminar.
 - [x] Revisar edge cases de porcentajes.
 - [ ] Revisar detalle de materia.
-- [ ] Revisar simulador de nota necesaria.
+- [x] Revisar simulador de nota necesaria.
 
 ## 7. Backlog
 
