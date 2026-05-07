@@ -91,6 +91,7 @@ fun HomeScreen(
     onAddSubjectClick: () -> Unit,
     onSeeAllSubjectsClick: () -> Unit,
     onSeeExpensesClick: () -> Unit,
+    onOpenTemplatesClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -99,6 +100,7 @@ fun HomeScreen(
     val showGrades = AppModule.GRADES in enabledModules
     val showTasks = AppModule.TASKS in enabledModules
     val showExpenses = AppModule.EXPENSES in enabledModules
+    val showTemplates = AppModule.ACADEMIC_TEMPLATES in enabledModules
     val neededGrade = summary.neededGrade.takeIf { showGrades }
     val nextTask = summary.nextTask.takeIf { showTasks }
 
@@ -140,13 +142,19 @@ fun HomeScreen(
                 )
             }
         }
-        if (showGrades || showTasks || showExpenses) {
+        if (showTemplates) {
+            item {
+                AcademicTemplatesCard(onOpenTemplatesClick = onOpenTemplatesClick)
+            }
+        }
+        if (showGrades || showTasks || showExpenses || showTemplates) {
             item {
                 QuickActionsRow(
                     enabledModules = enabledModules,
                     onAddGradeClick = onAddGradeClick,
                     onNewTaskClick = onNewTaskClick,
-                    onAddExpenseClick = onAddExpenseClick
+                    onAddExpenseClick = onAddExpenseClick,
+                    onOpenTemplatesClick = onOpenTemplatesClick
                 )
             }
         }
@@ -756,6 +764,7 @@ private fun QuickActionsRow(
     onAddGradeClick: () -> Unit,
     onNewTaskClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
+    onOpenTemplatesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -790,6 +799,79 @@ private fun QuickActionsRow(
                 contentColor = UniStackColors.Coral,
                 onClick = onAddExpenseClick
             )
+        }
+        if (AppModule.ACADEMIC_TEMPLATES in enabledModules) {
+            QuickActionButton(
+                text = "Plantillas",
+                icon = Icons.AutoMirrored.Rounded.Assignment,
+                backgroundColor = UniStackColors.GreenLight,
+                contentColor = UniStackColors.Green,
+                onClick = onOpenTemplatesClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun AcademicTemplatesCard(
+    onOpenTemplatesClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    UniCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(118.dp),
+        brush = Brush.linearGradient(
+            listOf(
+                UniStackColors.GreenLight,
+                Color.White
+            )
+        ),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 5.dp,
+        contentPadding = PaddingValues(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(UniStackColors.Green),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Assignment,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = "Trabajos académicos",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp
+                )
+                Text(
+                    text = "Checklist, plantillas de ensayo y formato APA.",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
+            Row(
+                modifier = Modifier.clickable(onClick = onOpenTemplatesClick),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Abrir", color = UniStackColors.Green, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = UniStackColors.Green, modifier = Modifier.size(16.dp))
+            }
         }
     }
 }
@@ -881,6 +963,7 @@ fun HomeScreenPreview() {
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
             onSeeExpensesClick = {},
+            onOpenTemplatesClick = {},
             onSubjectClick = {}
         )
     }
@@ -898,6 +981,7 @@ fun HomeScreenNoGradesPreview() {
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
             onSeeExpensesClick = {},
+            onOpenTemplatesClick = {},
             onSubjectClick = {}
         )
     }

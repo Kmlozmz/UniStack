@@ -59,6 +59,7 @@ import com.unistack.app.feature_profile.presentation.ProfileScreen
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
+import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_user.domain.AppModule
 
 @Composable
@@ -154,6 +155,7 @@ fun MainNavGraph(
                     onAddSubjectClick = { navController.navigate(AppRoutes.AddSubject) },
                     onSeeAllSubjectsClick = { navController.navigate(AppRoutes.Grades) },
                     onSeeExpensesClick = { navController.navigate(AppRoutes.Expenses) },
+                    onOpenTemplatesClick = { navController.navigate(AppRoutes.AcademicTemplates) },
                     onSubjectClick = { subjectId -> navController.navigate(AppRoutes.subjectDetail(subjectId)) }
                 )
             }
@@ -303,6 +305,15 @@ fun MainNavGraph(
             composable(AppRoutes.GradeSimulator) {
                 GradeSimulatorScreen(onBackClick = { navController.navigateUp() })
             }
+            composable(AppRoutes.AcademicTemplates) {
+                AcademicTemplatesScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Home)
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -322,6 +333,7 @@ private fun bottomRouteFor(route: String?): String? {
         route == "${AppRoutes.EditTask}/{taskId}" -> AppRoutes.Tasks
         route == AppRoutes.Profile -> AppRoutes.Profile
         route == AppRoutes.Pro -> AppRoutes.Profile
+        route == AppRoutes.AcademicTemplates -> AppRoutes.Home
         else -> null
     }
 }

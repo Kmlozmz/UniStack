@@ -258,16 +258,16 @@ Objetivo: agregar herramientas para entregas académicas.
 
 Pendientes:
 
-- [ ] Checklist de trabajos.
-- [ ] Plantillas de ensayo.
-- [ ] Formato APA básico.
-- [ ] Exportar PDF/Word futuro.
+- [x] Checklist de trabajos.
+- [x] Plantillas de ensayo.
+- [x] Formato APA básico.
+- [x] Exportar PDF/Word futuro.
 
 ## 6. Sprint actual
 
 ### Objetivo
 
-Preparar identidad de usuario y backup futuro.
+Agregar herramientas para entregas académicas.
 
 ### Estado
 
@@ -277,13 +277,13 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Definir modelos de cuenta vinculada.
-- [x] Persistir proveedor, email, foto y estado de sync.
-- [x] Mostrar cuenta y backup en Perfil.
-- [x] Preparar acción de Google Sign-In sin OAuth activo.
-- [x] Soportar foto remota en Home y Perfil.
-- [x] Mantener datos locales vinculados a userId estable.
-- [x] Preparar estados para backup/sync futuro.
+- [x] Crear módulo de plantillas académicas.
+- [x] Agregar checklist de trabajos.
+- [x] Agregar plantillas de ensayo.
+- [x] Agregar guía APA básica.
+- [x] Agregar placeholder de exportación PDF/Word.
+- [x] Conectar módulo Trabajos desde Home.
+- [x] Respetar toggle `ACADEMIC_TEMPLATES`.
 
 ## 7. Backlog
 
@@ -312,13 +312,14 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 - [x] Perfil funcional.
 - [x] Monetización preparada sin Billing.
 - [x] Identidad y sync futuro preparados.
+- [x] Plantillas académicas base.
 
 ### Ideas futuras
 
 - [ ] Google Sign-In real con OAuth.
 - [ ] Pro/Billing.
-- [ ] Exportar PDF.
-- [ ] Plantillas académicas.
+- [ ] Exportar PDF real.
+- [x] Plantillas académicas.
 - [ ] Notificaciones.
 - [ ] Widgets Android.
 - [ ] Enviar carreras faltantes como sugerencia futura.

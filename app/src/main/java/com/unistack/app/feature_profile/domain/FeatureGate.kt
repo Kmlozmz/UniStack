@@ -26,7 +26,7 @@ object FeatureGate {
         ),
         ProBenefit(
             title = "Plantillas académicas",
-            description = "Espacio reservado para ensayos, entregas y formato APA."
+            description = "Más formatos y estructuras para ensayos, entregas y normas académicas."
         ),
         ProBenefit(
             title = "Recordatorios inteligentes",

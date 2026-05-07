@@ -727,7 +727,7 @@ private fun AppModule.description(): String {
         AppModule.GRADES -> "Materias, notas y simulador."
         AppModule.TASKS -> "Entregas y pendientes."
         AppModule.EXPENSES -> "Registro y resumen de gastos."
-        AppModule.ACADEMIC_TEMPLATES -> "Plantillas académicas futuras."
+        AppModule.ACADEMIC_TEMPLATES -> "Checklist, ensayos y formato APA."
     }
 }
 
