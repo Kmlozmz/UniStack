@@ -275,7 +275,13 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.AddTask) {
-                AddTaskScreen(onBackClick = { navController.navigateUp() })
+                AddTaskScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Tasks)
+                        }
+                    }
+                )
             }
             composable("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
@@ -289,7 +295,13 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.AddExpense) {
-                AddExpenseScreen(onBackClick = { navController.navigateUp() })
+                AddExpenseScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Expenses)
+                        }
+                    }
+                )
             }
             composable("${AppRoutes.EditExpense}/{expenseId}") { backStackEntry ->
                 val expenseId = backStackEntry.arguments?.getString("expenseId").orEmpty()
@@ -303,7 +315,13 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.GradeSimulator) {
-                GradeSimulatorScreen(onBackClick = { navController.navigateUp() })
+                GradeSimulatorScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Grades)
+                        }
+                    }
+                )
             }
             composable(AppRoutes.AcademicTemplates) {
                 AcademicTemplatesScreen(
