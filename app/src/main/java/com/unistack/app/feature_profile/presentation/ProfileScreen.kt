@@ -40,11 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -52,9 +54,12 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_profile.domain.UserPlan
+import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.AuthProvider
+import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.VisualPreference
 
@@ -65,6 +70,7 @@ fun ProfileScreen(
     onOpenProClick: () -> Unit = {}
 ) {
     val profile by viewModel.profile.collectAsState()
+    val currentUser by viewModel.currentUser.collectAsState()
     val plan = viewModel.userPlan
     var nameInput by rememberSaveable { mutableStateOf("") }
     var selectedScale by rememberSaveable { mutableStateOf(GradingScale.ZERO_TO_FIVE) }
@@ -72,6 +78,8 @@ fun ProfileScreen(
     var targetAverageInput by rememberSaveable { mutableStateOf("") }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
+    var showGoogleDialog by remember { mutableStateOf(false) }
+    var showUnlinkDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(profile?.updatedAt, profile?.userId) {
         val current = profile ?: return@LaunchedEffect
@@ -105,6 +113,13 @@ fun ProfileScreen(
         } else {
             val current = profile!!
             item { ProfileHeaderCard(profile = current) }
+            item {
+                AccountSyncCard(
+                    currentUser = currentUser,
+                    onGoogleClick = { showGoogleDialog = true },
+                    onUnlinkClick = { showUnlinkDialog = true }
+                )
+            }
             item {
                 NameSettingsCard(
                     nameInput = nameInput,
@@ -220,6 +235,165 @@ fun ProfileScreen(
             containerColor = UniStackColors.Card
         )
     }
+
+    if (showGoogleDialog) {
+        AlertDialog(
+            onDismissRequest = { showGoogleDialog = false },
+            title = { Text("Google Sign-In preparado") },
+            text = { Text("La app ya tiene la estructura de cuenta, foto y backup futuro. Falta configurar el proveedor OAuth para activar el inicio de sesión real.") },
+            confirmButton = {
+                TextButton(onClick = { showGoogleDialog = false }) {
+                    Text("Entendido", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+
+    if (showUnlinkDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnlinkDialog = false },
+            title = { Text("¿Desvincular cuenta?") },
+            text = { Text("Tus datos locales se mantienen en este dispositivo.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnlinkDialog = false
+                        feedback = if (viewModel.unlinkAccount()) {
+                            "Cuenta desvinculada."
+                        } else {
+                            "No hay cuenta vinculada."
+                        }
+                    }
+                ) {
+                    Text("Desvincular", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnlinkDialog = false }) {
+                    Text("Cancelar")
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+}
+
+@Composable
+private fun AccountSyncCard(
+    currentUser: AppUser,
+    onGoogleClick: () -> Unit,
+    onUnlinkClick: () -> Unit
+) {
+    SettingsCard(title = "Cuenta y backup") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AccountAvatar(
+                photoUrl = currentUser.photoUrl,
+                contentDescription = if (currentUser.photoUrl.isNullOrBlank()) "Perfil" else "Foto de perfil",
+                modifier = Modifier.size(52.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = currentUser.accountLabel(),
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = currentUser.email ?: "Sin cuenta vinculada",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+            SyncStatusPill(status = currentUser.syncStatus)
+        }
+        Text(
+            text = "Backup local listo para vinculación futura.",
+            color = UniStackColors.TextSecondary,
+            fontSize = 12.sp,
+            lineHeight = 16.sp
+        )
+        Button(
+            onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
+            shape = AppShapes.Pill,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (currentUser.isLinked) UniStackColors.SurfaceVariant else UniStackColors.Primary,
+                contentColor = if (currentUser.isLinked) UniStackColors.TextPrimary else Color.White
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (currentUser.isLinked) "Desvincular cuenta" else "Conectar con Google")
+        }
+    }
+}
+
+@Composable
+private fun AccountAvatar(
+    photoUrl: String?,
+    contentDescription: String?,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFFFFD8C8),
+                        Color(0xFFE6E0FF),
+                        Color(0xFFDDEBFF)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (photoUrl.isNullOrBlank()) {
+            Icon(Icons.Rounded.Person, contentDescription = contentDescription, tint = UniStackColors.PrimaryDark)
+        } else {
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncStatusPill(status: SyncStatus) {
+    val color = when (status) {
+        SyncStatus.LOCAL_ONLY -> UniStackColors.SurfaceVariant
+        SyncStatus.READY_FOR_BACKUP -> UniStackColors.PrimaryLight
+        SyncStatus.SYNC_PENDING -> UniStackColors.YellowLight
+        SyncStatus.SYNCED -> UniStackColors.GreenLight
+        SyncStatus.SYNC_ERROR -> UniStackColors.CoralLight
+    }
+    val textColor = when (status) {
+        SyncStatus.LOCAL_ONLY -> UniStackColors.TextSecondary
+        SyncStatus.READY_FOR_BACKUP -> UniStackColors.Primary
+        SyncStatus.SYNC_PENDING -> UniStackColors.Yellow
+        SyncStatus.SYNCED -> UniStackColors.Green
+        SyncStatus.SYNC_ERROR -> UniStackColors.Coral
+    }
+    UniCard(
+        color = color,
+        shape = AppShapes.Pill,
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = status.label(),
+            color = textColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            maxLines = 1
+        )
+    }
 }
 
 @Composable
@@ -261,15 +435,11 @@ private fun ProfileHeaderCard(profile: UserProfile) {
         shape = AppShapes.LargeCard
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(54.dp)
-                    .clip(CircleShape)
-                    .background(UniStackColors.Primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Rounded.Person, contentDescription = null, tint = Color.White)
-            }
+            AccountAvatar(
+                photoUrl = profile.accountPhotoUrl,
+                contentDescription = "Foto de perfil",
+                modifier = Modifier.size(54.dp)
+            )
             Column(modifier = Modifier.padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(name, color = UniStackColors.TextPrimary, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
                 Text(profile.educationSummary(), color = UniStackColors.TextSecondary)
@@ -566,5 +736,22 @@ private fun VisualPreference.label(): String {
         VisualPreference.SYSTEM -> "Sistema"
         VisualPreference.LIGHT -> "Claro"
         VisualPreference.DARK -> "Oscuro"
+    }
+}
+
+private fun AppUser.accountLabel(): String {
+    return when (authProvider) {
+        AuthProvider.LOCAL -> "Cuenta local"
+        AuthProvider.GOOGLE -> "Google conectado"
+    }
+}
+
+private fun SyncStatus.label(): String {
+    return when (this) {
+        SyncStatus.LOCAL_ONLY -> "Local"
+        SyncStatus.READY_FOR_BACKUP -> "Backup listo"
+        SyncStatus.SYNC_PENDING -> "Pendiente"
+        SyncStatus.SYNCED -> "Sincronizado"
+        SyncStatus.SYNC_ERROR -> "Revisar"
     }
 }

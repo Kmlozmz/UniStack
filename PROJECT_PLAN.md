@@ -245,10 +245,10 @@ Objetivo: preparar identidad de usuario y backup futuro.
 
 Pendientes:
 
-- [ ] Google Sign-In.
-- [ ] Foto de perfil real.
-- [ ] Vincular datos a usuario.
-- [ ] Backup/sync futuro.
+- [x] Google Sign-In preparado.
+- [x] Foto de perfil real desde cuenta vinculada.
+- [x] Vincular datos a usuario.
+- [x] Backup/sync futuro preparado.
 
 ---
 
@@ -267,7 +267,7 @@ Pendientes:
 
 ### Objetivo
 
-Preparar estructura Pro sin pagos reales.
+Preparar identidad de usuario y backup futuro.
 
 ### Estado
 
@@ -277,13 +277,13 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Definir UserPlan.
-- [x] Definir FeatureGate.
-- [x] Aplicar límite gratis de 5 materias.
-- [x] Agregar pantalla Pro.
-- [x] Mostrar beneficios Pro.
-- [x] Agregar placeholder de upgrade.
-- [x] Mantener Billing sin implementar.
+- [x] Definir modelos de cuenta vinculada.
+- [x] Persistir proveedor, email, foto y estado de sync.
+- [x] Mostrar cuenta y backup en Perfil.
+- [x] Preparar acción de Google Sign-In sin OAuth activo.
+- [x] Soportar foto remota en Home y Perfil.
+- [x] Mantener datos locales vinculados a userId estable.
+- [x] Preparar estados para backup/sync futuro.
 
 ## 7. Backlog
 
@@ -311,10 +311,11 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 - [x] Gastos reales con Room.
 - [x] Perfil funcional.
 - [x] Monetización preparada sin Billing.
+- [x] Identidad y sync futuro preparados.
 
 ### Ideas futuras
 
-- [ ] Google Sign-In.
+- [ ] Google Sign-In real con OAuth.
 - [ ] Pro/Billing.
 - [ ] Exportar PDF.
 - [ ] Plantillas académicas.

@@ -2,6 +2,7 @@ package com.unistack.app.feature_user.data
 
 import com.unistack.app.core.datastore.UserPreferencesDataSource
 import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.CoroutineScope
@@ -52,5 +53,13 @@ class DataStoreUserRepository(
 
     override fun markSetupCompleted() {
         scope.launch { dataSource.markSetupCompleted() }
+    }
+
+    override fun linkAccount(account: LinkedAccount) {
+        scope.launch { dataSource.linkAccount(account) }
+    }
+
+    override fun unlinkAccount() {
+        scope.launch { dataSource.unlinkAccount() }
     }
 }

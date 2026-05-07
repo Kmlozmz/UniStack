@@ -3,6 +3,12 @@ package com.unistack.app.feature_user.domain
 data class UserProfile(
     val userId: String,
     val preferredName: String,
+    val accountProvider: AuthProvider = AuthProvider.LOCAL,
+    val accountProviderUserId: String? = null,
+    val accountEmail: String? = null,
+    val accountPhotoUrl: String? = null,
+    val syncStatus: SyncStatus = SyncStatus.LOCAL_ONLY,
+    val lastSyncAt: Long? = null,
     val educationLevel: EducationLevel,
     val careerOrProgram: String?,
     val studyArea: StudyArea?,

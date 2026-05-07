@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
@@ -79,6 +80,7 @@ import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_home.domain.TaskSummary
 import com.unistack.app.feature_user.domain.AppModule
+import coil.compose.AsyncImage
 
 @Composable
 fun HomeScreen(
@@ -186,13 +188,21 @@ private fun HomeHeader(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Future Google Sign-In can replace this placeholder when photoUrl is available.
-            Icon(
-                imageVector = Icons.Rounded.Person,
-                contentDescription = avatarDescription,
-                tint = UniStackColors.PrimaryDark,
-                modifier = Modifier.size(23.dp)
-            )
+            if (photoUrl.isNullOrBlank()) {
+                Icon(
+                    imageVector = Icons.Rounded.Person,
+                    contentDescription = avatarDescription,
+                    tint = UniStackColors.PrimaryDark,
+                    modifier = Modifier.size(23.dp)
+                )
+            } else {
+                AsyncImage(
+                    model = photoUrl,
+                    contentDescription = avatarDescription,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

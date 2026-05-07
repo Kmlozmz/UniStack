@@ -12,4 +12,6 @@ interface UserRepository {
     fun saveUserProfile(profile: UserProfile)
     fun updatePreferredName(name: String)
     fun markSetupCompleted()
+    fun linkAccount(account: LinkedAccount)
+    fun unlinkAccount()
 }
