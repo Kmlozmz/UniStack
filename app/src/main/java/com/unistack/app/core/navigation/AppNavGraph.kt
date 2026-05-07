@@ -56,6 +56,7 @@ import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_profile.presentation.ProfileScreen
+import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_user.domain.AppModule
@@ -170,7 +171,18 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.Profile) {
-                ProfileScreen()
+                ProfileScreen(
+                    onOpenProClick = { navController.navigate(AppRoutes.Pro) }
+                )
+            }
+            composable(AppRoutes.Pro) {
+                ProScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Profile)
+                        }
+                    }
+                )
             }
             composable(AppRoutes.Expenses) {
                 ExpensesScreen(
@@ -191,7 +203,8 @@ fun MainNavGraph(
                                 inclusive = true
                             }
                         }
-                    }
+                    },
+                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
                 )
             }
             composable("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
@@ -308,6 +321,7 @@ private fun bottomRouteFor(route: String?): String? {
         route == AppRoutes.AddTask -> AppRoutes.Tasks
         route == "${AppRoutes.EditTask}/{taskId}" -> AppRoutes.Tasks
         route == AppRoutes.Profile -> AppRoutes.Profile
+        route == AppRoutes.Pro -> AppRoutes.Profile
         else -> null
     }
 }

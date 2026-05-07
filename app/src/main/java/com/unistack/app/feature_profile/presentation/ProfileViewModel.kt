@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
@@ -15,6 +16,7 @@ class ProfileViewModel(
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
+    val userPlan = FeatureGate.freePlan
 
     fun updatePreferredName(name: String): Boolean {
         val current = profile.value ?: return false

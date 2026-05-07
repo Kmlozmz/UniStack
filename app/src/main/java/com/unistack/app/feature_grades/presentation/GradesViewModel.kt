@@ -9,6 +9,7 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_profile.domain.FeatureGate
 import kotlinx.coroutines.flow.StateFlow
 import com.unistack.app.feature_user.domain.UserProfile
 
@@ -24,6 +25,7 @@ class GradesViewModel(
     }
 
     fun addSubject(name: String, targetAverage: Double, visualType: SubjectVisualType): Subject? {
+        if (!FeatureGate.canCreateSubject(FeatureGate.freePlan, subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
         val subject = Subject(

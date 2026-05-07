@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
@@ -47,6 +49,8 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_profile.domain.FeatureGate
+import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -56,7 +60,8 @@ fun AddSubjectScreen(
     onSubjectSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel(),
-    subjectId: String? = null
+    subjectId: String? = null,
+    onUpgradeClick: () -> Unit = {}
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsState()
@@ -67,6 +72,8 @@ fun AddSubjectScreen(
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
+    val userPlan = FeatureGate.freePlan
+    val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
 
     var name by remember { mutableStateOf("") }
     var targetAverage by remember { mutableStateOf("") }
@@ -79,7 +86,11 @@ fun AddSubjectScreen(
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
     val canEditLoadedSubject = !isEditing || subject != null
-    val isValid = canEditLoadedSubject && nameValidation.isValid && targetValue != null && targetValue in 0.0..maxGrade
+    val isValid = canEditLoadedSubject &&
+        !freeLimitReached &&
+        nameValidation.isValid &&
+        targetValue != null &&
+        targetValue in 0.0..maxGrade
 
     LaunchedEffect(subject?.id, defaultAverage, scale, subjectId) {
         if (initialized) return@LaunchedEffect
@@ -126,6 +137,13 @@ fun AddSubjectScreen(
                 ) {
                     Text("Materia no encontrada.", color = UniStackColors.TextSecondary)
                 }
+            }
+            if (!isEditing) {
+                SubjectPlanGateCard(
+                    plan = userPlan,
+                    currentSubjectCount = subjects.size,
+                    onUpgradeClick = onUpgradeClick
+                )
             }
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -183,6 +201,11 @@ fun AddSubjectScreen(
             }
             Button(
                 onClick = {
+                    if (freeLimitReached) {
+                        error = "Alcanzaste el límite gratis de ${userPlan.maxSubjects} materias."
+                        return@Button
+                    }
+
                     val savedSubjectId = if (isEditing && subjectId != null) {
                         val saved = viewModel.updateSubject(
                             subjectId = subjectId,
@@ -219,6 +242,67 @@ fun AddSubjectScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isEditing) "Guardar cambios" else "Guardar materia")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubjectPlanGateCard(
+    plan: UserPlan,
+    currentSubjectCount: Int,
+    onUpgradeClick: () -> Unit
+) {
+    val remaining = FeatureGate.remainingSubjects(plan, currentSubjectCount) ?: Int.MAX_VALUE
+    val limitReached = remaining == 0
+
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = if (limitReached) UniStackColors.CoralLight else UniStackColors.PrimaryLight,
+        shape = AppShapes.MediumCard,
+        tonalElevation = if (limitReached) 3.dp else 0.dp,
+        contentPadding = PaddingValues(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(if (limitReached) UniStackColors.Coral else UniStackColors.Primary)
+                    .padding(9.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = Color.White)
+            }
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = if (limitReached) "Límite gratis alcanzado" else "Plan ${plan.name}",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = if (limitReached) {
+                        "${plan.maxSubjects} materias incluidas. Pro desbloqueará materias ilimitadas."
+                    } else {
+                        "$currentSubjectCount de ${plan.maxSubjects} materias usadas."
+                    },
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
+            if (limitReached) {
+                Button(
+                    onClick = onUpgradeClick,
+                    shape = AppShapes.Pill,
+                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text("Ver Pro", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
