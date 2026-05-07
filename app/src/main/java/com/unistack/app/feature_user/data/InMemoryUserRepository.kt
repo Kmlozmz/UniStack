@@ -1,6 +1,9 @@
 package com.unistack.app.feature_user.data
 
 import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_user.domain.AuthProvider
+import com.unistack.app.feature_user.domain.LinkedAccount
+import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +47,55 @@ class InMemoryUserRepository : UserRepository {
         val now = System.currentTimeMillis()
         _userProfile.update { profile ->
             profile?.copy(setupCompleted = true, updatedAt = now)
+        }
+    }
+
+    override fun linkAccount(account: LinkedAccount) {
+        val now = System.currentTimeMillis()
+        _userProfile.update { profile ->
+            profile?.copy(
+                preferredName = account.displayName?.takeIf { it.isNotBlank() } ?: profile.preferredName,
+                accountProvider = account.provider,
+                accountProviderUserId = account.providerUserId,
+                accountEmail = account.email,
+                accountPhotoUrl = account.photoUrl,
+                syncStatus = SyncStatus.READY_FOR_BACKUP,
+                updatedAt = now
+            )
+        }
+        _currentUser.update { user ->
+            user.copy(
+                displayName = account.displayName?.takeIf { it.isNotBlank() } ?: user.displayName,
+                email = account.email,
+                photoUrl = account.photoUrl,
+                authProvider = account.provider,
+                providerUserId = account.providerUserId,
+                syncStatus = SyncStatus.READY_FOR_BACKUP
+            )
+        }
+    }
+
+    override fun unlinkAccount() {
+        val now = System.currentTimeMillis()
+        _userProfile.update { profile ->
+            profile?.copy(
+                accountProvider = AuthProvider.LOCAL,
+                accountProviderUserId = null,
+                accountEmail = null,
+                accountPhotoUrl = null,
+                syncStatus = SyncStatus.LOCAL_ONLY,
+                lastSyncAt = null,
+                updatedAt = now
+            )
+        }
+        _currentUser.update { user ->
+            user.copy(
+                email = null,
+                photoUrl = null,
+                authProvider = AuthProvider.LOCAL,
+                providerUserId = null,
+                syncStatus = SyncStatus.LOCAL_ONLY
+            )
         }
     }
 }

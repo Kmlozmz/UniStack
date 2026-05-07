@@ -12,9 +12,12 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.StudyArea
+import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +30,12 @@ class UserPreferencesDataSource(private val context: Context) {
     private object Keys {
         val USER_ID = stringPreferencesKey("user_id")
         val PREFERRED_NAME = stringPreferencesKey("preferred_name")
+        val ACCOUNT_PROVIDER = stringPreferencesKey("account_provider")
+        val ACCOUNT_PROVIDER_USER_ID = stringPreferencesKey("account_provider_user_id")
+        val ACCOUNT_EMAIL = stringPreferencesKey("account_email")
+        val ACCOUNT_PHOTO_URL = stringPreferencesKey("account_photo_url")
+        val SYNC_STATUS = stringPreferencesKey("sync_status")
+        val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
         val EDUCATION_LEVEL = stringPreferencesKey("education_level")
         val STUDY_AREA = stringPreferencesKey("study_area")
         val CAREER_OR_PROGRAM = stringPreferencesKey("career_or_program")
@@ -60,10 +69,22 @@ class UserPreferencesDataSource(private val context: Context) {
         val visualPreference = prefs[Keys.VISUAL_PREFERENCE]
             ?.let { runCatching { VisualPreference.valueOf(it) }.getOrNull() }
             ?: VisualPreference.LIGHT
+        val accountProvider = prefs[Keys.ACCOUNT_PROVIDER]
+            ?.let { runCatching { AuthProvider.valueOf(it) }.getOrNull() }
+            ?: AuthProvider.LOCAL
+        val syncStatus = prefs[Keys.SYNC_STATUS]
+            ?.let { runCatching { SyncStatus.valueOf(it) }.getOrNull() }
+            ?: SyncStatus.LOCAL_ONLY
 
         UserProfile(
             userId = userId,
             preferredName = prefs[Keys.PREFERRED_NAME] ?: "",
+            accountProvider = accountProvider,
+            accountProviderUserId = prefs[Keys.ACCOUNT_PROVIDER_USER_ID],
+            accountEmail = prefs[Keys.ACCOUNT_EMAIL],
+            accountPhotoUrl = prefs[Keys.ACCOUNT_PHOTO_URL],
+            syncStatus = syncStatus,
+            lastSyncAt = prefs[Keys.LAST_SYNC_AT],
             educationLevel = educationLevel,
             studyArea = studyArea,
             careerOrProgram = prefs[Keys.CAREER_OR_PROGRAM],
@@ -84,8 +105,11 @@ class UserPreferencesDataSource(private val context: Context) {
             AppUser(
                 userId = profile.userId,
                 displayName = profile.preferredName.takeIf { it.isNotBlank() },
-                email = null,
-                photoUrl = null
+                email = profile.accountEmail,
+                photoUrl = profile.accountPhotoUrl,
+                authProvider = profile.accountProvider,
+                providerUserId = profile.accountProviderUserId,
+                syncStatus = profile.syncStatus
             )
         } else {
             AppUser(
@@ -110,6 +134,29 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
             prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
+            prefs[Keys.ACCOUNT_PROVIDER] = profile.accountProvider.name
+            prefs[Keys.SYNC_STATUS] = profile.syncStatus.name
+
+            if (profile.lastSyncAt != null) {
+                prefs[Keys.LAST_SYNC_AT] = profile.lastSyncAt
+            } else {
+                prefs.remove(Keys.LAST_SYNC_AT)
+            }
+            if (profile.accountProviderUserId != null) {
+                prefs[Keys.ACCOUNT_PROVIDER_USER_ID] = profile.accountProviderUserId
+            } else {
+                prefs.remove(Keys.ACCOUNT_PROVIDER_USER_ID)
+            }
+            if (profile.accountEmail != null) {
+                prefs[Keys.ACCOUNT_EMAIL] = profile.accountEmail
+            } else {
+                prefs.remove(Keys.ACCOUNT_EMAIL)
+            }
+            if (profile.accountPhotoUrl != null) {
+                prefs[Keys.ACCOUNT_PHOTO_URL] = profile.accountPhotoUrl
+            } else {
+                prefs.remove(Keys.ACCOUNT_PHOTO_URL)
+            }
 
             if (profile.studyArea != null) {
                 prefs[Keys.STUDY_AREA] = profile.studyArea.name
@@ -140,6 +187,41 @@ class UserPreferencesDataSource(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[Keys.SETUP_COMPLETED] = true
             prefs[Keys.UPDATED_AT] = System.currentTimeMillis()
+        }
+    }
+
+    suspend fun linkAccount(account: LinkedAccount) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.ACCOUNT_PROVIDER] = account.provider.name
+            prefs[Keys.ACCOUNT_PROVIDER_USER_ID] = account.providerUserId
+            prefs[Keys.SYNC_STATUS] = SyncStatus.READY_FOR_BACKUP.name
+            prefs[Keys.UPDATED_AT] = System.currentTimeMillis()
+
+            if (!account.displayName.isNullOrBlank()) {
+                prefs[Keys.PREFERRED_NAME] = account.displayName
+            }
+            if (!account.email.isNullOrBlank()) {
+                prefs[Keys.ACCOUNT_EMAIL] = account.email
+            } else {
+                prefs.remove(Keys.ACCOUNT_EMAIL)
+            }
+            if (!account.photoUrl.isNullOrBlank()) {
+                prefs[Keys.ACCOUNT_PHOTO_URL] = account.photoUrl
+            } else {
+                prefs.remove(Keys.ACCOUNT_PHOTO_URL)
+            }
+        }
+    }
+
+    suspend fun unlinkAccount() {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.ACCOUNT_PROVIDER] = AuthProvider.LOCAL.name
+            prefs[Keys.SYNC_STATUS] = SyncStatus.LOCAL_ONLY.name
+            prefs[Keys.UPDATED_AT] = System.currentTimeMillis()
+            prefs.remove(Keys.ACCOUNT_PROVIDER_USER_ID)
+            prefs.remove(Keys.ACCOUNT_EMAIL)
+            prefs.remove(Keys.ACCOUNT_PHOTO_URL)
+            prefs.remove(Keys.LAST_SYNC_AT)
         }
     }
 }

@@ -16,6 +16,7 @@ class ProfileViewModel(
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
+    val currentUser = userRepository.currentUser
     val userPlan = FeatureGate.freePlan
 
     fun updatePreferredName(name: String): Boolean {
@@ -70,6 +71,12 @@ class ProfileViewModel(
     fun restartOnboarding(): Boolean {
         val current = profile.value ?: return false
         save(current.copy(setupCompleted = false))
+        return true
+    }
+
+    fun unlinkAccount(): Boolean {
+        if (!currentUser.value.isLinked) return false
+        userRepository.unlinkAccount()
         return true
     }
 
