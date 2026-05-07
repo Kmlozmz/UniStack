@@ -61,10 +61,11 @@ import com.unistack.app.feature_user.domain.VisualPreference
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = viewModel(),
+    onOpenProClick: () -> Unit = {}
 ) {
     val profile by viewModel.profile.collectAsState()
-    val plan = UserPlan(isPro = false, maxSubjects = 5)
+    val plan = viewModel.userPlan
     var nameInput by rememberSaveable { mutableStateOf("") }
     var selectedScale by rememberSaveable { mutableStateOf(GradingScale.ZERO_TO_FIVE) }
     var passingGradeInput by rememberSaveable { mutableStateOf("") }
@@ -176,17 +177,10 @@ fun ProfileScreen(
                 )
             }
             item {
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = UniStackColors.Card,
-                    shape = AppShapes.LargeCard
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
-                        Text("Plan actual: Gratis", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                        Text("${plan.maxSubjects} materias disponibles", color = UniStackColors.TextSecondary)
-                    }
-                }
+                PlanStatusCard(
+                    plan = plan,
+                    onOpenProClick = onOpenProClick
+                )
             }
             item {
                 ResetOnboardingCard(onRestartClick = { showRestartDialog = true })
@@ -225,6 +219,35 @@ fun ProfileScreen(
             },
             containerColor = UniStackColors.Card
         )
+    }
+}
+
+@Composable
+private fun PlanStatusCard(
+    plan: UserPlan,
+    onOpenProClick: () -> Unit
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.Card)),
+        shape = AppShapes.LargeCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
+            Text("Plan actual: ${plan.name}", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text(
+                if (plan.hasSubjectLimit) "${plan.maxSubjects} materias disponibles" else "Materias ilimitadas",
+                color = UniStackColors.TextSecondary
+            )
+            Button(
+                onClick = onOpenProClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Ver UniStack Pro")
+            }
+        }
     }
 }
 

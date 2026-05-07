@@ -229,13 +229,13 @@ Objetivo: preparar estructura Pro sin pagos reales.
 
 Pendientes:
 
-- [ ] UserPlan.
-- [ ] FeatureGate.
-- [ ] Límite gratis de 5 materias.
-- [ ] Pantalla Pro.
-- [ ] Beneficios Pro.
-- [ ] Placeholder de upgrade.
-- [ ] No implementar Billing todavía.
+- [x] UserPlan.
+- [x] FeatureGate.
+- [x] Límite gratis de 5 materias.
+- [x] Pantalla Pro.
+- [x] Beneficios Pro.
+- [x] Placeholder de upgrade.
+- [x] No implementar Billing todavía.
 
 ---
 
@@ -267,7 +267,7 @@ Pendientes:
 
 ### Objetivo
 
-Cerrar perfil local y configuración editable del usuario.
+Preparar estructura Pro sin pagos reales.
 
 ### Estado
 
@@ -277,14 +277,13 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 
 ### Tareas
 
-- [x] Mostrar ProfileScreen con datos reales.
-- [x] Editar nombre preferido.
-- [x] Editar escala de notas.
-- [x] Editar promedio objetivo.
-- [x] Reiniciar onboarding con confirmación.
-- [x] Configurar módulos activos.
-- [x] Aplicar módulos activos en Home y bottom nav.
-- [x] Guardar preferencia visual local.
+- [x] Definir UserPlan.
+- [x] Definir FeatureGate.
+- [x] Aplicar límite gratis de 5 materias.
+- [x] Agregar pantalla Pro.
+- [x] Mostrar beneficios Pro.
+- [x] Agregar placeholder de upgrade.
+- [x] Mantener Billing sin implementar.
 
 ## 7. Backlog
 
@@ -311,6 +310,7 @@ Pendiente de prueba manual completa en dispositivo/emulador antes de darlo por c
 - [x] Tareas reales con Room.
 - [x] Gastos reales con Room.
 - [x] Perfil funcional.
+- [x] Monetización preparada sin Billing.
 
 ### Ideas futuras
 
