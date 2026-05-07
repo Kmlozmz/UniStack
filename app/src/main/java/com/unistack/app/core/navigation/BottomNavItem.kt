@@ -14,6 +14,7 @@ object AppRoutes {
     const val Tasks = "tasks"
     const val Profile = "profile"
     const val Pro = "pro"
+    const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"
     const val AddSubject = "add_subject"
     const val EditSubject = "edit_subject"
