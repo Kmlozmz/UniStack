@@ -22,7 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,8 +51,8 @@ fun GradesScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
 ) {
-    val subjects by viewModel.subjects.collectAsState()
-    val profile by viewModel.userProfile.collectAsState()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
 
     LazyColumn(

@@ -9,21 +9,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
 import com.unistack.app.feature_setup.presentation.SetupFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun RootNavGraph(modifier: Modifier = Modifier) {
-    val profile by AppContainer.userRepository.userProfile.collectAsState()
+    val setupCompleted by remember {
+        AppContainer.userRepository.userProfile
+            .map { it?.setupCompleted }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(
+        initialValue = AppContainer.userRepository.userProfile.value?.setupCompleted
+    )
     var launchRoute by remember { mutableStateOf<String?>(null) }
     var launchAnimationFinished by rememberSaveable { mutableStateOf(false) }
     var repositoryDidLoad by remember { mutableStateOf(AppContainer.userRepository.didLoad) }
@@ -37,13 +45,13 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
         }
     }
 
-    val isLoading = profile == null && !repositoryDidLoad
+    val isLoading = setupCompleted == null && !repositoryDidLoad
     val showLaunchScreen = !launchAnimationFinished || isLoading
 
     Box(modifier = modifier.fillMaxSize()) {
         if (!isLoading) {
             when {
-                profile?.setupCompleted == true -> MainNavGraph(
+                setupCompleted == true -> MainNavGraph(
                     modifier = Modifier.fillMaxSize(),
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute,

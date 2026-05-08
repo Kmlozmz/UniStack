@@ -23,7 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,7 +49,7 @@ fun AddExpenseScreen(
 ) {
     BackHandler(onBack = onBackClick)
 
-    val expenses by viewModel.expenses.collectAsState()
+    val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val expense = expenseId?.let { id -> expenses.firstOrNull { it.id == id } }
     val isEditing = expenseId != null
 

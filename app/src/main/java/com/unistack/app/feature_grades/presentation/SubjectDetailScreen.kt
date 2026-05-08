@@ -31,7 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,9 +63,9 @@ fun SubjectDetailScreen(
     viewModel: GradesViewModel = viewModel()
 ) {
     BackHandler(onBack = onBackClick)
-    val subjects by viewModel.subjects.collectAsState()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
-    val profile by viewModel.userProfile.collectAsState()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
     var showSubjectMenu by remember { mutableStateOf(false) }

@@ -26,7 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,8 +53,8 @@ fun TasksScreen(
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = viewModel()
 ) {
-    val tasks by viewModel.tasks.collectAsState()
-    val subjects by viewModel.subjects.collectAsState()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(

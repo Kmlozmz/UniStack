@@ -25,8 +25,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -61,9 +62,12 @@ import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_user.domain.AppModule
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 private const val MAIN_TRANSITION_MILLIS = 220
 private const val MAIN_EXIT_MILLIS = 150
+private val DefaultEnabledModules = setOf(AppModule.GRADES, AppModule.TASKS)
 
 @Composable
 fun MainNavGraph(
@@ -73,14 +77,14 @@ fun MainNavGraph(
     onLaunchRouteConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val profile by AppContainer.userRepository.userProfile.collectAsState()
-    val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS)
-    val bottomItems = BottomNavItem.itemsFor(enabledModules)
-    val currentDestination = navBackStackEntry?.destination
-    val currentRoute = currentDestination?.route ?: AppRoutes.Home
-    val selectedBottomRoute = bottomRouteFor(currentRoute)
-    val showBottomBar = selectedBottomRoute != null && bottomItems.any { it.route == selectedBottomRoute }
+    val enabledModules by remember {
+        AppContainer.userRepository.userProfile
+            .map { it?.enabledModules ?: DefaultEnabledModules }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(
+        initialValue = AppContainer.userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
+    )
+    val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -89,34 +93,19 @@ fun MainNavGraph(
         }
     }
 
-    LaunchedEffect(currentRoute, enabledModules) {
-        val module = moduleForRoute(currentRoute)
-        if (module != null && module !in enabledModules) {
-            navController.navigate(AppRoutes.Home) {
-                popUpTo(navController.graph.findStartDestination().id) {
-                    inclusive = false
-                }
-                launchSingleTop = true
-            }
-        }
-    }
+    ModuleAccessGuard(
+        navController = navController,
+        enabledModules = enabledModules
+    )
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = UniStackColors.Background,
         bottomBar = {
-            if (showBottomBar) {
-                UniStackBottomBar(
-                    currentRoute = selectedBottomRoute ?: currentRoute,
-                    items = bottomItems,
-                    onNavigate = { route ->
-                        navController.navigateToBottomRoute(
-                            currentRoute = currentRoute,
-                            targetRoute = route
-                        )
-                    }
-                )
-            }
+            UniStackBottomBarHost(
+                navController = navController,
+                items = bottomItems
+            )
         }
     ) { innerPadding ->
         NavHost(
@@ -140,7 +129,7 @@ fun MainNavGraph(
         ) {
             composable(AppRoutes.Home) {
                 val viewModel: HomeViewModel = viewModel()
-                val uiState by viewModel.uiState.collectAsState()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 HomeScreen(
                     uiState = uiState,
                     onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
@@ -302,6 +291,27 @@ fun MainNavGraph(
     }
 }
 
+@Composable
+private fun ModuleAccessGuard(
+    navController: NavHostController,
+    enabledModules: Set<AppModule>
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+
+    LaunchedEffect(currentRoute, enabledModules) {
+        val module = moduleForRoute(currentRoute)
+        if (module != null && module !in enabledModules) {
+            navController.navigate(AppRoutes.Home) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = false
+                }
+                launchSingleTop = true
+            }
+        }
+    }
+}
+
 internal fun bottomRouteFor(route: String?): String? {
     return when {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
@@ -432,6 +442,30 @@ private fun NavHostController.navigateBackOr(
 
 private fun routeBelongsTo(route: String?, baseRoute: String): Boolean {
     return route == baseRoute || route?.startsWith("$baseRoute/") == true
+}
+
+@Composable
+private fun UniStackBottomBarHost(
+    navController: NavHostController,
+    items: List<BottomNavItem>
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+    val selectedBottomRoute = bottomRouteFor(currentRoute)
+    val showBottomBar = selectedBottomRoute != null && items.any { it.route == selectedBottomRoute }
+
+    if (showBottomBar) {
+        UniStackBottomBar(
+            currentRoute = selectedBottomRoute ?: currentRoute,
+            items = items,
+            onNavigate = { route ->
+                navController.navigateToBottomRoute(
+                    currentRoute = currentRoute,
+                    targetRoute = route
+                )
+            }
+        )
+    }
 }
 
 @Composable

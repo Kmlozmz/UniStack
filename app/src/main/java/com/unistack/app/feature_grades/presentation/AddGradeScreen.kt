@@ -22,7 +22,7 @@ import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +47,7 @@ fun AddGradeScreen(
     gradeId: String? = null
 ) {
     BackHandler(onBack = onBackClick)
-    val subjects by viewModel.subjects.collectAsState()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
     val grade = gradeId?.let { id -> subject?.grades?.firstOrNull { it.id == id } }
     val isEditing = gradeId != null
@@ -57,7 +57,7 @@ fun AddGradeScreen(
     var initialized by remember(subjectId, gradeId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    val profile by viewModel.userProfile.collectAsState()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = GradingScaleUtils.maxGradeFor(scale)
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)

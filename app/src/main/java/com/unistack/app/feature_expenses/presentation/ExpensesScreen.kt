@@ -26,7 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +53,7 @@ fun ExpensesScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = viewModel()
 ) {
-    val expenses by viewModel.expenses.collectAsState()
+    val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val weeklyExpenses = remember(expenses) { viewModel.weeklyExpenses() }
     val categoryTotals = remember(weeklyExpenses) { viewModel.categoryTotals(weeklyExpenses) }
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }

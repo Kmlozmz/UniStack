@@ -29,7 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,13 +69,22 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onOpenProClick: () -> Unit = {}
 ) {
-    val profile by viewModel.profile.collectAsState()
-    val currentUser by viewModel.currentUser.collectAsState()
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val plan = viewModel.userPlan
-    var nameInput by rememberSaveable { mutableStateOf("") }
-    var selectedScale by rememberSaveable { mutableStateOf(GradingScale.ZERO_TO_FIVE) }
-    var passingGradeInput by rememberSaveable { mutableStateOf("") }
-    var targetAverageInput by rememberSaveable { mutableStateOf("") }
+    val currentProfile = profile
+    var nameInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.preferredName.orEmpty())
+    }
+    var selectedScale by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(initialSupportedScale(currentProfile))
+    }
+    var passingGradeInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(initialPassingGradeInput(currentProfile))
+    }
+    var targetAverageInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(initialTargetAverageInput(currentProfile))
+    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showGoogleDialog by remember { mutableStateOf(false) }
@@ -83,10 +92,11 @@ fun ProfileScreen(
 
     LaunchedEffect(profile?.updatedAt, profile?.userId) {
         val current = profile ?: return@LaunchedEffect
+        val scale = current.gradingScale.supportedNumericScale()
         nameInput = current.preferredName
-        selectedScale = current.gradingScale.supportedNumericScale()
-        passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, selectedScale)
-        targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, selectedScale)
+        selectedScale = scale
+        passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
+        targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, scale)
     }
 
     LazyColumn(
@@ -691,6 +701,20 @@ private fun UserProfile.educationSummary(): String {
     }
     val detail = gradeLevel ?: careerOrProgram
     return if (detail.isNullOrBlank()) level else "$level · $detail"
+}
+
+private fun initialSupportedScale(profile: UserProfile?): GradingScale {
+    return profile?.gradingScale?.supportedNumericScale() ?: GradingScale.ZERO_TO_FIVE
+}
+
+private fun initialPassingGradeInput(profile: UserProfile?): String {
+    val scale = initialSupportedScale(profile)
+    return profile?.let { GradingScaleUtils.formatGrade(it.passingGrade, scale) }.orEmpty()
+}
+
+private fun initialTargetAverageInput(profile: UserProfile?): String {
+    val scale = initialSupportedScale(profile)
+    return profile?.let { GradingScaleUtils.formatGrade(it.targetAverage, scale) }.orEmpty()
 }
 
 private fun GradingScale.supportedNumericScale(): GradingScale {

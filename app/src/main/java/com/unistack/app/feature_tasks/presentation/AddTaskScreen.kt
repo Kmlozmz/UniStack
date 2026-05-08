@@ -25,7 +25,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -52,8 +52,8 @@ fun AddTaskScreen(
 ) {
     BackHandler(onBack = onBackClick)
 
-    val tasks by viewModel.tasks.collectAsState()
-    val subjects by viewModel.subjects.collectAsState()
+    val tasks by viewModel.tasks.collectAsStateWithLifecycle()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val task = taskId?.let { id -> tasks.firstOrNull { it.id == id } }
     val isEditing = taskId != null
 
