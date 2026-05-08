@@ -4,8 +4,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -86,8 +84,8 @@ private object SetupRoutes {
     const val Finish = "setup_finish"
 }
 
-private const val SETUP_TRANSITION_MILLIS = 260
-private const val SETUP_EXIT_MILLIS = 180
+private const val SETUP_TRANSITION_MILLIS = 220
+private const val SETUP_EXIT_MILLIS = 150
 
 @Composable
 fun SetupFlow(
@@ -103,45 +101,33 @@ fun SetupFlow(
         modifier = modifier.background(UniStackColors.Background),
         enterTransition = {
             slideInHorizontally(
-                initialOffsetX = { it / 5 },
+                initialOffsetX = { it / 3 },
                 animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
             ) + fadeIn(
-                animationSpec = tween(180, delayMillis = 40, easing = FastOutSlowInEasing)
-            ) + scaleIn(
-                initialScale = 0.985f,
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = tween(110, delayMillis = 25, easing = FastOutSlowInEasing)
             )
         },
         exitTransition = {
             slideOutHorizontally(
-                targetOffsetX = { -it / 8 },
+                targetOffsetX = { -it / 4 },
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             ) + fadeOut(
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
-            ) + scaleOut(
-                targetScale = 0.99f,
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             )
         },
         popEnterTransition = {
             slideInHorizontally(
-                initialOffsetX = { -it / 5 },
+                initialOffsetX = { -it / 3 },
                 animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
             ) + fadeIn(
-                animationSpec = tween(180, delayMillis = 40, easing = FastOutSlowInEasing)
-            ) + scaleIn(
-                initialScale = 0.985f,
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = tween(110, delayMillis = 25, easing = FastOutSlowInEasing)
             )
         },
         popExitTransition = {
             slideOutHorizontally(
-                targetOffsetX = { it / 8 },
+                targetOffsetX = { it / 4 },
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             ) + fadeOut(
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
-            ) + scaleOut(
-                targetScale = 0.99f,
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             )
         }

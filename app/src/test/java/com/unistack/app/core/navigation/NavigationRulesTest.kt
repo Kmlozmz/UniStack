@@ -43,4 +43,13 @@ class NavigationRulesTest {
         assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AcademicTemplates, AppRoutes.Home))
         assertFalse(shouldPopSelectedBottomRoute(AppRoutes.Home, AppRoutes.Home))
     }
+
+    @Test
+    fun slideDirectionFollowsTabOrderAndChildDepth() {
+        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Grades))
+        assertTrue(isForwardNavigation(AppRoutes.Grades, AppRoutes.Tasks))
+        assertFalse(isForwardNavigation(AppRoutes.Expenses, AppRoutes.Tasks))
+        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Profile))
+        assertFalse(isForwardNavigation(AppRoutes.Profile, AppRoutes.Home))
+    }
 }

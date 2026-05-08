@@ -1,14 +1,13 @@
 package com.unistack.app.core.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,8 +62,8 @@ import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_user.domain.AppModule
 
-private const val MAIN_TRANSITION_MILLIS = 260
-private const val MAIN_EXIT_MILLIS = 180
+private const val MAIN_TRANSITION_MILLIS = 220
+private const val MAIN_EXIT_MILLIS = 150
 
 @Composable
 fun MainNavGraph(
@@ -127,54 +126,16 @@ fun MainNavGraph(
                 .fillMaxSize()
                 .padding(innerPadding),
             enterTransition = {
-                val isTab = bottomItems.any { it.route == targetState.destination.route }
-                if (isTab) {
-                    fadeIn(tween(180, easing = FastOutSlowInEasing)) +
-                        scaleIn(initialScale = 0.99f, animationSpec = tween(180, easing = FastOutSlowInEasing))
-                } else {
-                    slideIntoContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Left,
-                        tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
-                    ) + fadeIn(tween(180, delayMillis = 35, easing = FastOutSlowInEasing)) +
-                        scaleIn(initialScale = 0.985f, animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing))
-                }
+                mainSlideIn(fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route))
             },
             exitTransition = {
-                val isTab = bottomItems.any { it.route == initialState.destination.route }
-                if (isTab) {
-                    fadeOut(tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing))
-                } else {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Left,
-                        tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
-                    ) + fadeOut(tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)) +
-                        scaleOut(targetScale = 0.99f, animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing))
-                }
+                mainSlideOut(toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route))
             },
             popEnterTransition = {
-                val isTab = bottomItems.any { it.route == targetState.destination.route }
-                if (isTab) {
-                    fadeIn(tween(180, easing = FastOutSlowInEasing)) +
-                        scaleIn(initialScale = 0.99f, animationSpec = tween(180, easing = FastOutSlowInEasing))
-                } else {
-                    slideIntoContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Right,
-                        tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
-                    ) + fadeIn(tween(180, delayMillis = 35, easing = FastOutSlowInEasing)) +
-                        scaleIn(initialScale = 0.985f, animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing))
-                }
+                mainSlideIn(fromRight = false)
             },
             popExitTransition = {
-                val isTab = bottomItems.any { it.route == initialState.destination.route }
-                if (isTab) {
-                    fadeOut(tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing))
-                } else {
-                    slideOutOfContainer(
-                        AnimatedContentTransitionScope.SlideDirection.Right,
-                        tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
-                    ) + fadeOut(tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)) +
-                        scaleOut(targetScale = 0.99f, animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing))
-                }
+                mainSlideOut(toLeft = false)
             }
         ) {
             composable(AppRoutes.Home) {
@@ -390,6 +351,44 @@ internal fun shouldRestoreBottomRouteState(currentRoute: String?, targetRoute: S
 
 internal fun shouldPopSelectedBottomRoute(currentRoute: String?, targetRoute: String): Boolean {
     return currentRoute != targetRoute && bottomRouteFor(currentRoute) == targetRoute
+}
+
+internal fun isForwardNavigation(initialRoute: String?, targetRoute: String?): Boolean {
+    val initialRank = routeRank(initialRoute)
+    val targetRank = routeRank(targetRoute)
+    if (initialRank != targetRank) return targetRank > initialRank
+    return routeDepth(targetRoute) >= routeDepth(initialRoute)
+}
+
+private fun mainSlideIn(fromRight: Boolean) =
+    slideInHorizontally(
+        initialOffsetX = { width -> if (fromRight) width / 3 else -width / 3 },
+        animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+    ) + fadeIn(
+        animationSpec = tween(110, delayMillis = 25, easing = FastOutSlowInEasing)
+    )
+
+private fun mainSlideOut(toLeft: Boolean) =
+    slideOutHorizontally(
+        targetOffsetX = { width -> if (toLeft) -width / 4 else width / 4 },
+        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+    ) + fadeOut(
+        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+    )
+
+private fun routeRank(route: String?): Int {
+    return when (bottomRouteFor(route)) {
+        AppRoutes.Home -> 0
+        AppRoutes.Grades -> 1
+        AppRoutes.Tasks -> 2
+        AppRoutes.Expenses -> 3
+        else -> 0
+    }
+}
+
+private fun routeDepth(route: String?): Int {
+    val bottomRoute = bottomRouteFor(route)
+    return if (route != null && bottomRoute != null && route != bottomRoute) 1 else 0
 }
 
 private fun NavHostController.navigateToBottomRoute(
