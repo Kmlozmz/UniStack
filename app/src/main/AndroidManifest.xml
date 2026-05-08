@@ -5,7 +5,7 @@
 
     <application
         android:name=".UniStackApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="UniStack"
         android:roundIcon="@mipmap/ic_launcher_round"
