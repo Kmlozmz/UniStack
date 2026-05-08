@@ -37,7 +37,7 @@ class SetupViewModel(
         private set
     var targetAverageText by mutableStateOf("4.0")
         private set
-    var enabledModules by mutableStateOf(setOf(AppModule.GRADES, AppModule.TASKS))
+    var enabledModules by mutableStateOf(AppModule.values().toSet())
         private set
 
     val nameValidation: ValidationResult
@@ -138,7 +138,7 @@ class SetupViewModel(
 
     fun toggleModule(module: AppModule) {
         enabledModules = if (module in enabledModules) {
-            enabledModules - module
+            (enabledModules - module).takeIf { it.isNotEmpty() } ?: enabledModules
         } else {
             enabledModules + module
         }
@@ -158,7 +158,7 @@ class SetupViewModel(
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
-            visualPreference = VisualPreference.LIGHT,
+            visualPreference = VisualPreference.SYSTEM,
             setupCompleted = true,
             createdAt = now,
             updatedAt = now

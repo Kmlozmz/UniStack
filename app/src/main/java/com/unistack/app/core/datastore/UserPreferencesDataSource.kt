@@ -69,7 +69,7 @@ class UserPreferencesDataSource(private val context: Context) {
             ?: setOf(AppModule.GRADES, AppModule.TASKS)
         val visualPreference = prefs[Keys.VISUAL_PREFERENCE]
             ?.let { runCatching { VisualPreference.valueOf(it) }.getOrNull() }
-            ?: VisualPreference.LIGHT
+            ?: VisualPreference.SYSTEM
         val accountProvider = prefs[Keys.ACCOUNT_PROVIDER]
             ?.let { runCatching { AuthProvider.valueOf(it) }.getOrNull() }
             ?: AuthProvider.LOCAL

@@ -25,7 +25,7 @@ object UniStackColors {
         surfaceVariant = Color(0xFFF4F0FA),
         textPrimary = Color(0xFF171427),
         textSecondary = Color(0xFF5F5B6B),
-        softOutline = Color(0xFFECE6F5),
+        softOutline = Color(0xFFDCD2EA),
         gradientEnd = Color(0xFFFFFFFF),
         bottomBar = Color(0xFFFFFCFF),
         bottomBarSelected = Color(0xFFF0EAFF)
@@ -50,7 +50,7 @@ object UniStackColors {
         surfaceVariant = Color(0xFF25212F),
         textPrimary = Color(0xFFF7F3FF),
         textSecondary = Color(0xFFD0C7DC),
-        softOutline = Color(0xFF3A3448),
+        softOutline = Color(0xFF4A435A),
         gradientEnd = Color(0xFF1A1722),
         bottomBar = Color(0xFF1E1A28),
         bottomBarSelected = Color(0xFF312755)

@@ -1,5 +1,6 @@
 package com.unistack.app
 
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
@@ -10,7 +11,7 @@ import androidx.activity.compose.setContent
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        applyEdgeToEdge(darkTheme = false)
+        applyEdgeToEdge(darkTheme = isSystemInDarkMode())
         setContent {
             UniStackApp(
                 onDarkThemeChanged = { darkTheme ->
@@ -30,5 +31,10 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = systemBarStyle,
             navigationBarStyle = systemBarStyle
         )
+    }
+
+    private fun isSystemInDarkMode(): Boolean {
+        val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        return uiMode == Configuration.UI_MODE_NIGHT_YES
     }
 }

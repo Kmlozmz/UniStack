@@ -1,6 +1,7 @@
 package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,8 @@ fun UniCard(
     brush: Brush? = null,
     shape: Shape = AppShapes.MediumCard,
     tonalElevation: Dp = 6.dp,
+    borderColor: Color = Color.Transparent,
+    borderWidth: Dp = 0.dp,
     contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable () -> Unit
 ) {
@@ -42,6 +45,13 @@ fun UniCard(
             )
             .clip(shape)
             .then(backgroundModifier)
+            .then(
+                if (borderWidth > 0.dp) {
+                    Modifier.border(borderWidth, borderColor, shape)
+                } else {
+                    Modifier
+                }
+            )
             .padding(contentPadding)
     ) {
         content()

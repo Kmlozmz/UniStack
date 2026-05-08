@@ -18,7 +18,7 @@ fun UniStackApp(
 ) {
     val profile by AppContainer.userRepository.userProfile.collectAsState()
     val systemDark = isSystemInDarkTheme()
-    val darkTheme = when (profile?.visualPreference ?: VisualPreference.LIGHT) {
+    val darkTheme = when (profile?.visualPreference ?: VisualPreference.SYSTEM) {
         VisualPreference.SYSTEM -> systemDark
         VisualPreference.LIGHT -> false
         VisualPreference.DARK -> true

@@ -17,7 +17,7 @@ data class UserProfile(
     val passingGrade: Double,
     val targetAverage: Double,
     val enabledModules: Set<AppModule>,
-    val visualPreference: VisualPreference = VisualPreference.LIGHT,
+    val visualPreference: VisualPreference = VisualPreference.SYSTEM,
     val setupCompleted: Boolean,
     val createdAt: Long,
     val updatedAt: Long

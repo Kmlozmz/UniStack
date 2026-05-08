@@ -1,9 +1,13 @@
 package com.unistack.app.feature_setup.presentation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,15 +22,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,7 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -80,6 +86,9 @@ private object SetupRoutes {
     const val Finish = "setup_finish"
 }
 
+private const val SETUP_TRANSITION_MILLIS = 260
+private const val SETUP_EXIT_MILLIS = 180
+
 @Composable
 fun SetupFlow(
     onSetupFinished: (createFirstSubject: Boolean) -> Unit,
@@ -93,28 +102,48 @@ fun SetupFlow(
         startDestination = SetupRoutes.Welcome,
         modifier = modifier,
         enterTransition = {
-            slideIntoContainer(
-                AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(350)
-            ) + fadeIn(animationSpec = tween(350))
+            slideInHorizontally(
+                initialOffsetX = { it / 5 },
+                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+            ) + fadeIn(
+                animationSpec = tween(180, delayMillis = 40, easing = FastOutSlowInEasing)
+            ) + scaleIn(
+                initialScale = 0.985f,
+                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+            )
         },
         exitTransition = {
-            slideOutOfContainer(
-                AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(350)
-            ) + fadeOut(animationSpec = tween(350))
+            slideOutHorizontally(
+                targetOffsetX = { -it / 8 },
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            ) + fadeOut(
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            ) + scaleOut(
+                targetScale = 0.99f,
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            )
         },
         popEnterTransition = {
-            slideIntoContainer(
-                AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(350)
-            ) + fadeIn(animationSpec = tween(350))
+            slideInHorizontally(
+                initialOffsetX = { -it / 5 },
+                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+            ) + fadeIn(
+                animationSpec = tween(180, delayMillis = 40, easing = FastOutSlowInEasing)
+            ) + scaleIn(
+                initialScale = 0.985f,
+                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+            )
         },
         popExitTransition = {
-            slideOutOfContainer(
-                AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(350)
-            ) + fadeOut(animationSpec = tween(350))
+            slideOutHorizontally(
+                targetOffsetX = { it / 8 },
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            ) + fadeOut(
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            ) + scaleOut(
+                targetScale = 0.99f,
+                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+            )
         }
     ) {
         composable(SetupRoutes.Welcome) {
@@ -181,6 +210,7 @@ fun SetupFlow(
         }
         composable(SetupRoutes.Finish) {
             SetupFinishScreen(
+                createSubjectEnabled = AppModule.GRADES in viewModel.enabledModules,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
                     viewModel.finishSetup()
@@ -303,7 +333,7 @@ fun SetupAcademicInfoScreen(
             )
             
             if (studyArea != null) {
-                val area = studyArea!!
+                val area = studyArea
                 Spacer(modifier = Modifier.height(12.dp))
                 UniStackDropdown(
                     label = "Programa o carrera",
@@ -460,12 +490,32 @@ fun SetupModulesScreen(
     BackHandler(onBack = onBackClick)
     SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
         SetupStepTitle("¿Qué quieres organizar primero?")
-        OptionList(
+        ModuleOptionList(
             options = listOf(
-                AppModule.GRADES to "Mis notas",
-                AppModule.TASKS to "Mis tareas",
-                AppModule.EXPENSES to "Mis gastos",
-                AppModule.ACADEMIC_TEMPLATES to "Mis trabajos"
+                ModuleOption(
+                    module = AppModule.GRADES,
+                    label = "Notas y materias",
+                    description = "Promedios, porcentajes y simulador.",
+                    icon = Icons.AutoMirrored.Rounded.MenuBook
+                ),
+                ModuleOption(
+                    module = AppModule.TASKS,
+                    label = "Tareas",
+                    description = "Entregas, fechas y pendientes.",
+                    icon = Icons.Rounded.CheckCircle
+                ),
+                ModuleOption(
+                    module = AppModule.EXPENSES,
+                    label = "Gastos",
+                    description = "Registros rápidos y resumen semanal.",
+                    icon = Icons.Rounded.AccountBalanceWallet
+                ),
+                ModuleOption(
+                    module = AppModule.ACADEMIC_TEMPLATES,
+                    label = "Trabajos",
+                    description = "Checklist, ensayos y formato APA.",
+                    icon = Icons.AutoMirrored.Rounded.Assignment
+                )
             ),
             selectedValues = selectedModules,
             onToggle = onToggleModule
@@ -476,6 +526,7 @@ fun SetupModulesScreen(
 
 @Composable
 fun SetupFinishScreen(
+    createSubjectEnabled: Boolean = true,
     onBackClick: () -> Unit,
     onCreateSubjectClick: () -> Unit,
     onGoHomeClick: () -> Unit,
@@ -486,9 +537,13 @@ fun SetupFinishScreen(
         SetupHeroIcon()
         Text("Todo listo", style = MaterialTheme.typography.headlineLarge, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
         Text("Ahora puedes empezar a organizar tu semestre.", color = UniStackColors.TextSecondary)
-        PrimarySetupButton(text = "Crear mi primera materia", onClick = onCreateSubjectClick)
-        TextButton(onClick = onGoHomeClick) {
-            Text("Ir al inicio", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+        if (createSubjectEnabled) {
+            PrimarySetupButton(text = "Crear mi primera materia", onClick = onCreateSubjectClick)
+            TextButton(onClick = onGoHomeClick) {
+                Text("Ir al inicio", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+            }
+        } else {
+            PrimarySetupButton(text = "Ir al inicio", onClick = onGoHomeClick)
         }
     }
 }
@@ -527,12 +582,21 @@ private fun SetupScaffold(
             brush = Brush.linearGradient(listOf(UniStackColors.Card, UniStackColors.SurfaceVariant)),
             shape = AppShapes.LargeCard,
             tonalElevation = 6.dp,
+            borderColor = UniStackColors.SoftOutline,
+            borderWidth = 1.4.dp,
             contentPadding = PaddingValues(22.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
         }
     }
 }
+
+private data class ModuleOption(
+    val module: AppModule,
+    val label: String,
+    val description: String,
+    val icon: ImageVector
+)
 
 @Composable
 private fun SetupHeroIcon() {
@@ -586,14 +650,80 @@ private fun <T> OptionList(
 }
 
 @Composable
-private fun OptionList(
-    options: List<Pair<AppModule, String>>,
+private fun ModuleOptionList(
+    options: List<ModuleOption>,
     selectedValues: Set<AppModule>,
     onToggle: (AppModule) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        options.forEach { (value, label) ->
-            SelectableCard(label = label, selected = value in selectedValues, onClick = { onToggle(value) })
+        options.forEach { option ->
+            ModuleSelectableCard(
+                option = option,
+                selected = option.module in selectedValues,
+                onClick = { onToggle(option.module) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModuleSelectableCard(
+    option: ModuleOption,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    UniCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        shape = AppShapes.MediumCard,
+        tonalElevation = if (selected) 4.dp else 1.dp,
+        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderWidth = if (selected) 1.6.dp else 1.2.dp,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) UniStackColors.Card else UniStackColors.SurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = option.icon,
+                    contentDescription = null,
+                    tint = if (selected) UniStackColors.Primary else UniStackColors.TextSecondary,
+                    modifier = Modifier.size(21.dp)
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = option.label,
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = option.description,
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 14.sp
+                )
+            }
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = UniStackColors.Primary
+                )
+            }
         }
     }
 }
@@ -607,6 +737,8 @@ private fun SelectableCard(label: String, selected: Boolean, onClick: () -> Unit
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = AppShapes.MediumCard,
         tonalElevation = 2.dp,
+        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderWidth = if (selected) 1.5.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
