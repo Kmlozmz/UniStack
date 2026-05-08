@@ -10,6 +10,7 @@ import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import kotlinx.coroutines.flow.StateFlow
+import java.util.UUID
 
 class TasksViewModel(
     private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
@@ -43,7 +44,7 @@ class TasksViewModel(
         val now = System.currentTimeMillis()
         tasksRepository.addTask(
             StudentTask(
-                id = "task-$now",
+                id = "task-${UUID.randomUUID()}",
                 title = TextValidators.normalizeText(title),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
                 dueDateMillis = parsed.dueDateMillis,

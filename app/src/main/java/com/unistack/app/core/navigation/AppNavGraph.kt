@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -66,21 +67,35 @@ import com.unistack.app.feature_user.domain.AppModule
 fun MainNavGraph(
     modifier: Modifier = Modifier,
     initialRoute: String = AppRoutes.Home,
-    launchRoute: String? = null
+    launchRoute: String? = null,
+    onLaunchRouteConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val profile by AppContainer.userRepository.userProfile.collectAsState()
-    val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
+    val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS)
     val bottomItems = BottomNavItem.itemsFor(enabledModules)
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route ?: AppRoutes.Home
     val selectedBottomRoute = bottomRouteFor(currentRoute)
     val showBottomBar = selectedBottomRoute != null && bottomItems.any { it.route == selectedBottomRoute }
 
-    LaunchedEffect(launchRoute) {
+    LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
-            navController.navigate(route)
+            navController.navigateIfModuleEnabled(route, enabledModules)
+            onLaunchRouteConsumed()
+        }
+    }
+
+    LaunchedEffect(currentRoute, enabledModules) {
+        val module = moduleForRoute(currentRoute)
+        if (module != null && module !in enabledModules) {
+            navController.navigate(AppRoutes.Home) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    inclusive = false
+                }
+                launchSingleTop = true
+            }
         }
     }
 
@@ -149,27 +164,27 @@ fun MainNavGraph(
                 val uiState by viewModel.uiState.collectAsState()
                 HomeScreen(
                     uiState = uiState,
-                    onAddGradeClick = { navController.navigate(AppRoutes.Grades) },
-                    onNewTaskClick = { navController.navigate(AppRoutes.AddTask) },
-                    onAddExpenseClick = { navController.navigate(AppRoutes.AddExpense) },
-                    onAddSubjectClick = { navController.navigate(AppRoutes.AddSubject) },
-                    onSeeAllSubjectsClick = { navController.navigate(AppRoutes.Grades) },
-                    onSeeExpensesClick = { navController.navigate(AppRoutes.Expenses) },
-                    onOpenTemplatesClick = { navController.navigate(AppRoutes.AcademicTemplates) },
-                    onSubjectClick = { subjectId -> navController.navigate(AppRoutes.subjectDetail(subjectId)) }
+                    onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                    onNewTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
+                    onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
+                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
+                    onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                    onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
+                    onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
+                    onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) }
                 )
             }
             composable(AppRoutes.Grades) {
                 GradesScreen(
-                    onAddSubjectClick = { navController.navigate(AppRoutes.AddSubject) },
-                    onOpenSimulatorClick = { navController.navigate(AppRoutes.GradeSimulator) },
-                    onSubjectClick = { subjectId -> navController.navigate(AppRoutes.subjectDetail(subjectId)) }
+                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
+                    onOpenSimulatorClick = { navController.navigateIfModuleEnabled(AppRoutes.GradeSimulator, enabledModules) },
+                    onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) }
                 )
             }
             composable(AppRoutes.Tasks) {
                 TasksScreen(
-                    onNewTaskClick = { navController.navigate(AppRoutes.AddTask) },
-                    onEditTaskClick = { taskId -> navController.navigate(AppRoutes.editTask(taskId)) }
+                    onNewTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
+                    onEditTaskClick = { taskId -> navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules) }
                 )
             }
             composable(AppRoutes.Profile) {
@@ -188,16 +203,14 @@ fun MainNavGraph(
             }
             composable(AppRoutes.Expenses) {
                 ExpensesScreen(
-                    onAddExpenseClick = { navController.navigate(AppRoutes.AddExpense) },
-                    onEditExpenseClick = { expenseId -> navController.navigate(AppRoutes.editExpense(expenseId)) }
+                    onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
+                    onEditExpenseClick = { expenseId -> navController.navigateIfModuleEnabled(AppRoutes.editExpense(expenseId), enabledModules) }
                 )
             }
             composable(AppRoutes.AddSubject) {
                 AddSubjectScreen(
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Home)
-                        }
+                        navController.navigateBackOr(AppRoutes.Grades, enabledModules)
                     },
                     onSubjectSaved = { subjectId ->
                         navController.navigate(AppRoutes.subjectDetail(subjectId)) {
@@ -214,19 +227,19 @@ fun MainNavGraph(
                 SubjectDetailScreen(
                     subjectId = subjectId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Grades)
-                        }
+                        navController.navigateBackOr(AppRoutes.Grades, enabledModules)
                     },
-                    onAddGradeClick = { id -> navController.navigate(AppRoutes.addGrade(id)) },
-                    onEditSubjectClick = { id -> navController.navigate(AppRoutes.editSubject(id)) },
-                    onEditGradeClick = { id, gradeId -> navController.navigate(AppRoutes.editGrade(id, gradeId)) },
+                    onAddGradeClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id), enabledModules) },
+                    onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
+                    onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
                     onSubjectDeleted = {
-                        navController.navigate(AppRoutes.Grades) {
-                            popUpTo(AppRoutes.Grades) {
-                                inclusive = false
+                        if (!navController.popBackStack(AppRoutes.Grades, inclusive = false)) {
+                            navController.navigate(AppRoutes.Grades) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
                             }
-                            launchSingleTop = true
                         }
                     }
                 )
@@ -236,16 +249,11 @@ fun MainNavGraph(
                 AddSubjectScreen(
                     subjectId = subjectId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.subjectDetail(subjectId))
-                        }
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     },
                     onSubjectSaved = { id ->
-                        navController.navigate(AppRoutes.subjectDetail(id)) {
-                            popUpTo("${AppRoutes.EditSubject}/$id") {
-                                inclusive = true
-                            }
-                            launchSingleTop = true
+                        if (!navController.navigateUp()) {
+                            navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(id), enabledModules)
                         }
                     }
                 )
@@ -255,9 +263,7 @@ fun MainNavGraph(
                 AddGradeScreen(
                     subjectId = subjectId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.subjectDetail(subjectId))
-                        }
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     }
                 )
             }
@@ -268,42 +274,36 @@ fun MainNavGraph(
                     subjectId = subjectId,
                     gradeId = gradeId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.subjectDetail(subjectId))
-                        }
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     }
                 )
             }
             composable(AppRoutes.AddTask) {
-                AddTaskScreen(onBackClick = { navController.navigateUp() })
+                AddTaskScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Tasks, enabledModules) })
             }
             composable("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
                 AddTaskScreen(
                     taskId = taskId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Tasks)
-                        }
+                        navController.navigateBackOr(AppRoutes.Tasks, enabledModules)
                     }
                 )
             }
             composable(AppRoutes.AddExpense) {
-                AddExpenseScreen(onBackClick = { navController.navigateUp() })
+                AddExpenseScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Expenses, enabledModules) })
             }
             composable("${AppRoutes.EditExpense}/{expenseId}") { backStackEntry ->
                 val expenseId = backStackEntry.arguments?.getString("expenseId").orEmpty()
                 AddExpenseScreen(
                     expenseId = expenseId,
                     onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Expenses)
-                        }
+                        navController.navigateBackOr(AppRoutes.Expenses, enabledModules)
                     }
                 )
             }
             composable(AppRoutes.GradeSimulator) {
-                GradeSimulatorScreen(onBackClick = { navController.navigateUp() })
+                GradeSimulatorScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Grades, enabledModules) })
             }
             composable(AppRoutes.AcademicTemplates) {
                 AcademicTemplatesScreen(
@@ -318,24 +318,70 @@ fun MainNavGraph(
     }
 }
 
-private fun bottomRouteFor(route: String?): String? {
+internal fun bottomRouteFor(route: String?): String? {
     return when {
-        route == AppRoutes.Home -> AppRoutes.Home
-        route == AppRoutes.Grades -> AppRoutes.Grades
-        route == AppRoutes.AddSubject -> AppRoutes.Grades
-        route == AppRoutes.GradeSimulator -> AppRoutes.Grades
-        route == "${AppRoutes.SubjectDetail}/{subjectId}" -> AppRoutes.Grades
-        route == "${AppRoutes.EditSubject}/{subjectId}" -> AppRoutes.Grades
-        route == "${AppRoutes.AddGrade}/{subjectId}" -> AppRoutes.Grades
-        route == "${AppRoutes.EditGrade}/{subjectId}/{gradeId}" -> AppRoutes.Grades
-        route == AppRoutes.Tasks -> AppRoutes.Tasks
-        route == AppRoutes.AddTask -> AppRoutes.Tasks
-        route == "${AppRoutes.EditTask}/{taskId}" -> AppRoutes.Tasks
-        route == AppRoutes.Profile -> AppRoutes.Profile
-        route == AppRoutes.Pro -> AppRoutes.Profile
-        route == AppRoutes.AcademicTemplates -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.GradeSimulator) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Tasks
+        routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Tasks
+        routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Tasks
+        routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
+        routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
+        routeBelongsTo(route, AppRoutes.EditExpense) -> AppRoutes.Expenses
+        routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null
     }
+}
+
+internal fun moduleForRoute(route: String?): AppModule? {
+    return when {
+        routeBelongsTo(route, AppRoutes.Grades) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.GradeSimulator) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.EditGrade) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.Tasks) -> AppModule.TASKS
+        routeBelongsTo(route, AppRoutes.AddTask) -> AppModule.TASKS
+        routeBelongsTo(route, AppRoutes.EditTask) -> AppModule.TASKS
+        routeBelongsTo(route, AppRoutes.Expenses) -> AppModule.EXPENSES
+        routeBelongsTo(route, AppRoutes.AddExpense) -> AppModule.EXPENSES
+        routeBelongsTo(route, AppRoutes.EditExpense) -> AppModule.EXPENSES
+        routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppModule.ACADEMIC_TEMPLATES
+        else -> null
+    }
+}
+
+private fun NavHostController.navigateIfModuleEnabled(
+    route: String,
+    enabledModules: Set<AppModule>
+) {
+    val module = moduleForRoute(route)
+    navigate(if (module == null || module in enabledModules) route else AppRoutes.Home) {
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.navigateBackOr(
+    fallbackRoute: String,
+    enabledModules: Set<AppModule>
+) {
+    if (!navigateUp()) {
+        navigateIfModuleEnabled(fallbackRoute, enabledModules)
+    }
+}
+
+private fun routeBelongsTo(route: String?, baseRoute: String): Boolean {
+    return route == baseRoute || route?.startsWith("$baseRoute/") == true
 }
 
 @Composable
@@ -351,7 +397,7 @@ private fun UniStackBottomBar(
             .navigationBarsPadding()
             .padding(horizontal = 20.dp, vertical = 8.dp),
         shape = AppShapes.BottomBar,
-        color = Color(0xFFFFFCFF),
+        color = UniStackColors.BottomBar,
         tonalElevation = 4.dp,
         shadowElevation = 5.dp
     ) {
@@ -365,7 +411,7 @@ private fun UniStackBottomBar(
         ) {
             items.forEach { item ->
                 val selected = currentRoute == item.route
-                val pillColor by animateColorAsState(if (selected) Color(0xFFF0EAFF) else Color.Transparent, label = "pill")
+                val pillColor by animateColorAsState(if (selected) UniStackColors.BottomBarSelected else Color.Transparent, label = "pill")
                 val contentColor by animateColorAsState(if (selected) UniStackColors.Primary else UniStackColors.TextPrimary, label = "content")
                 
                 Column(

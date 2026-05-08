@@ -6,6 +6,7 @@ import com.unistack.app.feature_tasks.data.local.toEntity
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,13 +26,16 @@ class RoomTasksRepository(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val userId: String
-        get() = userRepository.currentUser.value.userId.ifBlank { "local_user" }
+        get() = UserIds.normalize(userRepository.currentUser.value.userId)
+
+    private val userIds: List<String>
+        get() = UserIds.storageIdsFor(userId)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val tasks: StateFlow<List<StudentTask>> = userRepository.currentUser
-        .map { it.userId.ifBlank { "local_user" } }
-        .flatMapLatest { uid ->
-            taskDao.observeTasksForUser(uid).map { entities ->
+        .map { UserIds.storageIdsFor(it.userId) }
+        .flatMapLatest { ids ->
+            taskDao.observeTasksForUsers(ids).map { entities ->
                 entities.map { it.toDomain() }
             }
         }
@@ -51,7 +55,7 @@ class RoomTasksRepository(
         scope.launch {
             taskDao.updateTaskFields(
                 taskId = task.id,
-                userId = userId,
+                userIds = userIds,
                 title = task.title,
                 subjectId = task.subjectId,
                 dueDateMillis = task.dueDateMillis,
@@ -64,7 +68,7 @@ class RoomTasksRepository(
 
     override fun deleteTask(taskId: String) {
         scope.launch {
-            taskDao.deleteTaskById(taskId, userId)
+            taskDao.deleteTaskById(taskId, userIds)
         }
     }
 
@@ -72,7 +76,7 @@ class RoomTasksRepository(
         scope.launch {
             taskDao.updateTaskCompleted(
                 taskId = taskId,
-                userId = userId,
+                userIds = userIds,
                 completed = completed,
                 updatedAt = System.currentTimeMillis()
             )

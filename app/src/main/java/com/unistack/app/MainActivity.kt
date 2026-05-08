@@ -1,21 +1,34 @@
 package com.unistack.app
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import android.graphics.Color
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-        )
+        applyEdgeToEdge(darkTheme = false)
         setContent {
-            UniStackApp()
+            UniStackApp(
+                onDarkThemeChanged = { darkTheme ->
+                    applyEdgeToEdge(darkTheme = darkTheme)
+                }
+            )
         }
+    }
+
+    private fun applyEdgeToEdge(darkTheme: Boolean) {
+        val systemBarStyle = if (darkTheme) {
+            SystemBarStyle.dark(Color.TRANSPARENT)
+        } else {
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        }
+        enableEdgeToEdge(
+            statusBarStyle = systemBarStyle,
+            navigationBarStyle = systemBarStyle
+        )
     }
 }

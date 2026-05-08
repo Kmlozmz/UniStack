@@ -5,6 +5,7 @@ import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -36,7 +37,7 @@ class DataStoreUserRepository(
         scope = scope,
         started = SharingStarted.Eagerly,
         initialValue = AppUser(
-            userId = "local_user",
+            userId = UserIds.LOCAL,
             displayName = null,
             email = null,
             photoUrl = null

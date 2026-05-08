@@ -6,6 +6,7 @@ import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +16,7 @@ class InMemoryUserRepository : UserRepository {
     override val didLoad: Boolean = true
 
     private val anonymousUser = AppUser(
-        userId = "local-user",
+        userId = UserIds.LOCAL,
         displayName = null,
         email = null,
         photoUrl = null
@@ -28,9 +29,9 @@ class InMemoryUserRepository : UserRepository {
     override val userProfile: StateFlow<UserProfile?> = _userProfile.asStateFlow()
 
     override fun saveUserProfile(profile: UserProfile) {
-        _userProfile.value = profile
+        _userProfile.value = profile.copy(userId = UserIds.normalize(profile.userId))
         _currentUser.value = _currentUser.value.copy(
-            userId = profile.userId,
+            userId = UserIds.normalize(profile.userId),
             displayName = profile.preferredName
         )
     }

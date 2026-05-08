@@ -46,7 +46,8 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
                 profile?.setupCompleted == true -> MainNavGraph(
                     modifier = Modifier.fillMaxSize(),
                     initialRoute = AppRoutes.Home,
-                    launchRoute = launchRoute
+                    launchRoute = launchRoute,
+                    onLaunchRouteConsumed = { launchRoute = null }
                 )
                 else -> SetupFlow(
                     modifier = Modifier.fillMaxSize(),

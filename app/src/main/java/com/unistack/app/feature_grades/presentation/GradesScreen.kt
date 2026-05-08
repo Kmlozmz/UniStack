@@ -122,7 +122,7 @@ private fun SubjectListCard(
         modifier = Modifier
             .fillMaxWidth()
             .bounceClick(onClick),
-        brush = Brush.linearGradient(listOf(subjectBackground(subject.visualType), Color.White)),
+        brush = Brush.linearGradient(listOf(subjectBackground(subject.visualType), UniStackColors.GradientEnd)),
         shape = AppShapes.MediumCard
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -214,12 +214,12 @@ fun subjectBackground(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.PURPLE -> UniStackColors.PrimaryLight
     SubjectVisualType.GREEN -> UniStackColors.GreenLight
     SubjectVisualType.YELLOW -> UniStackColors.YellowLight
-    SubjectVisualType.ROSE -> Color(0xFFFFE4EF)
-    SubjectVisualType.INDIGO -> Color(0xFFE5E8FF)
-    SubjectVisualType.ORANGE -> Color(0xFFFFE8D3)
-    SubjectVisualType.CYAN -> Color(0xFFDDF7FF)
-    SubjectVisualType.LIME -> Color(0xFFEAF7D7)
-    SubjectVisualType.SLATE -> Color(0xFFE8EEF2)
+    SubjectVisualType.ROSE -> if (UniStackColors.IsDarkTheme) Color(0xFF3B1F2D) else Color(0xFFFFE4EF)
+    SubjectVisualType.INDIGO -> if (UniStackColors.IsDarkTheme) Color(0xFF20274A) else Color(0xFFE5E8FF)
+    SubjectVisualType.ORANGE -> if (UniStackColors.IsDarkTheme) Color(0xFF3D2817) else Color(0xFFFFE8D3)
+    SubjectVisualType.CYAN -> if (UniStackColors.IsDarkTheme) Color(0xFF123444) else Color(0xFFDDF7FF)
+    SubjectVisualType.LIME -> if (UniStackColors.IsDarkTheme) Color(0xFF243719) else Color(0xFFEAF7D7)
+    SubjectVisualType.SLATE -> if (UniStackColors.IsDarkTheme) Color(0xFF25313A) else Color(0xFFE8EEF2)
 }
 
 @Preview(showBackground = true)

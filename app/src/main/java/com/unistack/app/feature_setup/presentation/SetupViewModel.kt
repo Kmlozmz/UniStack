@@ -12,6 +12,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.ValidationResult
 
@@ -147,7 +148,7 @@ class SetupViewModel(
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
         val profile = UserProfile(
-            userId = "local-user",
+            userId = UserIds.LOCAL,
             preferredName = TextValidators.normalizeText(preferredName),
             educationLevel = educationLevel,
             careerOrProgram = if (educationLevel == EducationLevel.SCHOOL) null else info,

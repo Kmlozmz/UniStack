@@ -8,6 +8,7 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,7 +29,10 @@ class RoomGradesRepository(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val userId: String
-        get() = userRepository.currentUser.value.userId.ifBlank { "local_user" }
+        get() = UserIds.normalize(userRepository.currentUser.value.userId)
+
+    private val userIds: List<String>
+        get() = UserIds.storageIdsFor(userId)
 
     /**
      * Combines all subjects for the current user with their respective grades.
@@ -37,10 +41,10 @@ class RoomGradesRepository(
      */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override val subjects: StateFlow<List<Subject>> = userRepository.currentUser
-        .map { it.userId.ifBlank { "local_user" } }
-        .flatMapLatest { uid ->
+        .map { UserIds.storageIdsFor(it.userId) }
+        .flatMapLatest { ids ->
             combine(
-                subjectDao.observeSubjectsForUser(uid),
+                subjectDao.observeSubjectsForUsers(ids),
                 gradeDao.observeAllGrades()
             ) { subjectEntities, allGrades ->
                 val gradesBySubject = allGrades.groupBy { it.subjectId }
@@ -68,7 +72,7 @@ class RoomGradesRepository(
         scope.launch {
             subjectDao.updateSubjectFields(
                 subjectId = subject.id,
-                userId = userId,
+                userIds = userIds,
                 name = subject.name,
                 targetAverage = subject.targetAverage,
                 visualType = subject.visualType.name,

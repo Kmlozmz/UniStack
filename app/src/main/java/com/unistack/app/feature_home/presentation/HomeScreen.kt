@@ -243,9 +243,9 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
             .height(188.dp),
         brush = Brush.linearGradient(
             listOf(
-                Color(0xFFF0E7FF),
-                Color(0xFFE8E0FF),
-                Color(0xFFF8F5FF)
+                UniStackColors.PrimaryLight,
+                UniStackColors.SurfaceVariant,
+                UniStackColors.Card
             )
         ),
         shape = AppShapes.LargeCard,
@@ -467,7 +467,7 @@ private fun EmptySubjectsCard(
 ) {
     UniCard(
         modifier = modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, Color.White)),
+        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.GradientEnd)),
         shape = AppShapes.MediumCard,
         tonalElevation = 4.dp,
         contentPadding = PaddingValues(16.dp)
@@ -533,7 +533,7 @@ private fun NeededAndNextTaskRow(
                 title = "Nota necesaria",
                 icon = Icons.Rounded.TrackChanges,
                 iconColor = UniStackColors.Yellow,
-                background = Brush.linearGradient(listOf(UniStackColors.YellowLight, Color.White.copy(alpha = 0.88f))),
+                background = Brush.linearGradient(listOf(UniStackColors.YellowLight, UniStackColors.GradientEnd)),
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
@@ -562,7 +562,7 @@ private fun NeededAndNextTaskRow(
                 title = "Próxima tarea",
                 icon = Icons.AutoMirrored.Rounded.Assignment,
                 iconColor = UniStackColors.Green,
-                background = Brush.linearGradient(listOf(UniStackColors.GreenLight, Color.White.copy(alpha = 0.88f))),
+                background = Brush.linearGradient(listOf(UniStackColors.GreenLight, UniStackColors.GradientEnd)),
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
@@ -649,9 +649,9 @@ fun ExpenseWeeklyCard(
             .height(124.dp),
         brush = Brush.linearGradient(
             listOf(
-                Color(0xFFF4EDFF),
-                Color(0xFFFBF8FF),
-                Color.White
+                UniStackColors.PrimaryLight,
+                UniStackColors.SurfaceVariant,
+                UniStackColors.Card
             )
         ),
         shape = AppShapes.MediumCard,
@@ -664,13 +664,13 @@ fun ExpenseWeeklyCard(
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFE0D6FF)),
+                        .background(UniStackColors.PrimaryLight),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.AccountBalanceWallet,
                         contentDescription = null,
-                        tint = UniStackColors.PrimaryDark,
+                        tint = UniStackColors.Primary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -775,8 +775,8 @@ private fun QuickActionsRow(
     ) {
         if (AppModule.GRADES in enabledModules) {
             QuickActionButton(
-                text = "Agregar nota",
-                icon = Icons.Rounded.Add,
+                text = "Ver notas",
+                icon = Icons.AutoMirrored.Rounded.MenuBook,
                 backgroundColor = UniStackColors.PrimaryLight,
                 contentColor = UniStackColors.Primary,
                 onClick = onAddGradeClick
@@ -824,7 +824,7 @@ private fun AcademicTemplatesCard(
         brush = Brush.linearGradient(
             listOf(
                 UniStackColors.GreenLight,
-                Color.White
+                UniStackColors.GradientEnd
             )
         ),
         shape = AppShapes.MediumCard,
@@ -921,32 +921,32 @@ private fun subjectStyle(type: SubjectVisualType): SubjectVisualStyle {
         SubjectVisualType.ROSE -> SubjectVisualStyle(
             icon = Icons.Rounded.ChatBubble,
             accent = Color(0xFFE84A8A),
-            background = Color(0xFFFFE4EF)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF3B1F2D) else Color(0xFFFFE4EF)
         )
         SubjectVisualType.INDIGO -> SubjectVisualStyle(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             accent = Color(0xFF4D5BD7),
-            background = Color(0xFFE5E8FF)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF20274A) else Color(0xFFE5E8FF)
         )
         SubjectVisualType.ORANGE -> SubjectVisualStyle(
             icon = Icons.Rounded.Calculate,
             accent = Color(0xFFF57C00),
-            background = Color(0xFFFFE8D3)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF3D2817) else Color(0xFFFFE8D3)
         )
         SubjectVisualType.CYAN -> SubjectVisualStyle(
             icon = Icons.Rounded.BarChart,
             accent = Color(0xFF00A6D6),
-            background = Color(0xFFDDF7FF)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF123444) else Color(0xFFDDF7FF)
         )
         SubjectVisualType.LIME -> SubjectVisualStyle(
             icon = Icons.Rounded.Check,
             accent = Color(0xFF7CB342),
-            background = Color(0xFFEAF7D7)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF243719) else Color(0xFFEAF7D7)
         )
         SubjectVisualType.SLATE -> SubjectVisualStyle(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             accent = Color(0xFF607D8B),
-            background = Color(0xFFE8EEF2)
+            background = if (UniStackColors.IsDarkTheme) Color(0xFF25313A) else Color(0xFFE8EEF2)
         )
     }
 }

@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SubjectDao {
-    @Query("SELECT * FROM subjects WHERE userId = :userId ORDER BY createdAt DESC")
-    fun observeSubjectsForUser(userId: String): Flow<List<SubjectEntity>>
+    @Query("SELECT * FROM subjects WHERE userId IN (:userIds) ORDER BY createdAt DESC")
+    fun observeSubjectsForUsers(userIds: List<String>): Flow<List<SubjectEntity>>
 
     @Query("SELECT * FROM subjects WHERE id = :subjectId")
     fun getSubjectById(subjectId: String): Flow<SubjectEntity?>
@@ -28,12 +28,12 @@ interface SubjectDao {
             targetAverage = :targetAverage,
             visualType = :visualType,
             updatedAt = :updatedAt
-        WHERE id = :subjectId AND userId = :userId
+        WHERE id = :subjectId AND userId IN (:userIds)
         """
     )
     suspend fun updateSubjectFields(
         subjectId: String,
-        userId: String,
+        userIds: List<String>,
         name: String,
         targetAverage: Double,
         visualType: String,

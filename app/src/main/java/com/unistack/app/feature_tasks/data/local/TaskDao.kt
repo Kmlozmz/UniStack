@@ -11,11 +11,11 @@ interface TaskDao {
     @Query(
         """
         SELECT * FROM tasks
-        WHERE userId = :userId
+        WHERE userId IN (:userIds)
         ORDER BY completed ASC, dueDateMillis ASC, createdAt DESC
         """
     )
-    fun observeTasksForUser(userId: String): Flow<List<TaskEntity>>
+    fun observeTasksForUsers(userIds: List<String>): Flow<List<TaskEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskEntity)
@@ -29,12 +29,12 @@ interface TaskDao {
             difficulty = :difficulty,
             estimatedMinutes = :estimatedMinutes,
             updatedAt = :updatedAt
-        WHERE id = :taskId AND userId = :userId
+        WHERE id = :taskId AND userId IN (:userIds)
         """
     )
     suspend fun updateTaskFields(
         taskId: String,
-        userId: String,
+        userIds: List<String>,
         title: String,
         subjectId: String?,
         dueDateMillis: Long,
@@ -48,16 +48,16 @@ interface TaskDao {
         UPDATE tasks
         SET completed = :completed,
             updatedAt = :updatedAt
-        WHERE id = :taskId AND userId = :userId
+        WHERE id = :taskId AND userId IN (:userIds)
         """
     )
     suspend fun updateTaskCompleted(
         taskId: String,
-        userId: String,
+        userIds: List<String>,
         completed: Boolean,
         updatedAt: Long
     )
 
-    @Query("DELETE FROM tasks WHERE id = :taskId AND userId = :userId")
-    suspend fun deleteTaskById(taskId: String, userId: String)
+    @Query("DELETE FROM tasks WHERE id = :taskId AND userId IN (:userIds)")
+    suspend fun deleteTaskById(taskId: String, userIds: List<String>)
 }

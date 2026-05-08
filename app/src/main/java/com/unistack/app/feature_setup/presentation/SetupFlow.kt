@@ -524,7 +524,7 @@ private fun SetupScaffold(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
-            brush = Brush.linearGradient(listOf(Color.White, Color(0xFFF8F3FF))),
+            brush = Brush.linearGradient(listOf(UniStackColors.Card, UniStackColors.SurfaceVariant)),
             shape = AppShapes.LargeCard,
             tonalElevation = 6.dp,
             contentPadding = PaddingValues(22.dp)
@@ -604,7 +604,7 @@ private fun SelectableCard(label: String, selected: Boolean, onClick: () -> Unit
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        color = if (selected) UniStackColors.PrimaryLight else Color.White,
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = AppShapes.MediumCard,
         tonalElevation = 2.dp,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
@@ -705,7 +705,7 @@ private fun <T> UniStackDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { onExpandedChange(false) },
-            modifier = Modifier.background(Color.White)
+            modifier = Modifier.background(UniStackColors.Card)
         ) {
             options.forEach { (value, label) ->
                 DropdownMenuItem(

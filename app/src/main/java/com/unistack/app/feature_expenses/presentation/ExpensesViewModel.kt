@@ -7,6 +7,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import kotlinx.coroutines.flow.StateFlow
+import java.util.UUID
 
 class ExpensesViewModel(
     private val repository: ExpensesRepository = AppContainer.expensesRepository
@@ -26,7 +27,7 @@ class ExpensesViewModel(
         val now = System.currentTimeMillis()
         repository.addExpense(
             Expense(
-                id = "expense-$now",
+                id = "expense-${UUID.randomUUID()}",
                 category = category,
                 amount = parsed.amount,
                 dateMillis = parsed.dateMillis,

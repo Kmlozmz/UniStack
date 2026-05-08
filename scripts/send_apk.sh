@@ -27,12 +27,16 @@ if [ ! -f "$APK_PATH" ]; then
 fi
 
 APK_SIZE=$(du -h "$APK_PATH" | cut -f1)
+UPLOAD_MAX_TIME=${TELEGRAM_UPLOAD_MAX_TIME:-600}
 CAPTION="🚀 Nuevo APK de $APP_NAME ($VARIANT)
 📦 $(basename "$APK_PATH") · $APK_SIZE
 📅 $(date '+%Y-%m-%d %H:%M:%S')"
 
 echo "Sending $VARIANT APK to Telegram..."
 if ! response=$(curl --silent --show-error --fail-with-body \
+    --http1.1 \
+    --connect-timeout 20 \
+    --max-time "$UPLOAD_MAX_TIME" \
     -F "chat_id=$TELEGRAM_CHAT_ID" \
     -F "document=@$APK_PATH" \
     -F "caption=$CAPTION" \

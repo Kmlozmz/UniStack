@@ -154,8 +154,8 @@ private fun HeaderCard() {
         brush = Brush.linearGradient(
             listOf(
                 UniStackColors.PrimaryLight,
-                Color(0xFFF7F2FF),
-                Color.White
+                UniStackColors.SurfaceVariant,
+                UniStackColors.Card
             )
         ),
         shape = AppShapes.LargeCard,

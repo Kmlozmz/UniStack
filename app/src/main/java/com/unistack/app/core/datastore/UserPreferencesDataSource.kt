@@ -19,6 +19,7 @@ import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -51,7 +52,7 @@ class UserPreferencesDataSource(private val context: Context) {
     }
 
     val userProfileFlow: Flow<UserProfile?> = context.dataStore.data.map { prefs ->
-        val userId = prefs[Keys.USER_ID] ?: return@map null
+        val userId = UserIds.normalize(prefs[Keys.USER_ID] ?: return@map null)
         val educationLevelStr = prefs[Keys.EDUCATION_LEVEL] ?: return@map null
         val gradingScaleStr = prefs[Keys.GRADING_SCALE] ?: return@map null
 
@@ -103,7 +104,7 @@ class UserPreferencesDataSource(private val context: Context) {
     val currentUserFlow: Flow<AppUser> = userProfileFlow.map { profile ->
         if (profile != null) {
             AppUser(
-                userId = profile.userId,
+                userId = UserIds.normalize(profile.userId),
                 displayName = profile.preferredName.takeIf { it.isNotBlank() },
                 email = profile.accountEmail,
                 photoUrl = profile.accountPhotoUrl,
@@ -113,7 +114,7 @@ class UserPreferencesDataSource(private val context: Context) {
             )
         } else {
             AppUser(
-                userId = "local_user",
+                userId = UserIds.LOCAL,
                 displayName = null,
                 email = null,
                 photoUrl = null
@@ -123,7 +124,7 @@ class UserPreferencesDataSource(private val context: Context) {
 
     suspend fun saveUserProfile(profile: UserProfile) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.USER_ID] = profile.userId
+            prefs[Keys.USER_ID] = UserIds.normalize(profile.userId)
             prefs[Keys.PREFERRED_NAME] = profile.preferredName
             prefs[Keys.EDUCATION_LEVEL] = profile.educationLevel.name
             prefs[Keys.GRADING_SCALE] = profile.gradingScale.name

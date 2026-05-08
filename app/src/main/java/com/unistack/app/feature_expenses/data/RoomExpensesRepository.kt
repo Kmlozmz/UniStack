@@ -6,6 +6,7 @@ import com.unistack.app.feature_expenses.data.local.toEntity
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,13 +26,16 @@ class RoomExpensesRepository(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val userId: String
-        get() = userRepository.currentUser.value.userId.ifBlank { "local_user" }
+        get() = UserIds.normalize(userRepository.currentUser.value.userId)
+
+    private val userIds: List<String>
+        get() = UserIds.storageIdsFor(userId)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val expenses: StateFlow<List<Expense>> = userRepository.currentUser
-        .map { it.userId.ifBlank { "local_user" } }
-        .flatMapLatest { uid ->
-            expenseDao.observeExpensesForUser(uid).map { entities ->
+        .map { UserIds.storageIdsFor(it.userId) }
+        .flatMapLatest { ids ->
+            expenseDao.observeExpensesForUsers(ids).map { entities ->
                 entities.map { it.toDomain() }
             }
         }
@@ -51,7 +55,7 @@ class RoomExpensesRepository(
         scope.launch {
             expenseDao.updateExpenseFields(
                 expenseId = expense.id,
-                userId = userId,
+                userIds = userIds,
                 category = expense.category.name,
                 amount = expense.amount,
                 dateMillis = expense.dateMillis,
@@ -62,7 +66,7 @@ class RoomExpensesRepository(
 
     override fun deleteExpense(expenseId: String) {
         scope.launch {
-            expenseDao.deleteExpenseById(expenseId, userId)
+            expenseDao.deleteExpenseById(expenseId, userIds)
         }
     }
 }

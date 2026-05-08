@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ExpenseDao {
-    @Query("SELECT * FROM expenses WHERE userId = :userId ORDER BY dateMillis DESC, createdAt DESC")
-    fun observeExpensesForUser(userId: String): Flow<List<ExpenseEntity>>
+    @Query("SELECT * FROM expenses WHERE userId IN (:userIds) ORDER BY dateMillis DESC, createdAt DESC")
+    fun observeExpensesForUsers(userIds: List<String>): Flow<List<ExpenseEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertExpense(expense: ExpenseEntity)
@@ -21,18 +21,18 @@ interface ExpenseDao {
             amount = :amount,
             dateMillis = :dateMillis,
             updatedAt = :updatedAt
-        WHERE id = :expenseId AND userId = :userId
+        WHERE id = :expenseId AND userId IN (:userIds)
         """
     )
     suspend fun updateExpenseFields(
         expenseId: String,
-        userId: String,
+        userIds: List<String>,
         category: String,
         amount: Int,
         dateMillis: Long,
         updatedAt: Long
     )
 
-    @Query("DELETE FROM expenses WHERE id = :expenseId AND userId = :userId")
-    suspend fun deleteExpenseById(expenseId: String, userId: String)
+    @Query("DELETE FROM expenses WHERE id = :expenseId AND userId IN (:userIds)")
+    suspend fun deleteExpenseById(expenseId: String, userIds: List<String>)
 }

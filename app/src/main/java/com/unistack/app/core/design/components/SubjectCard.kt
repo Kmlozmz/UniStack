@@ -49,7 +49,7 @@ fun SubjectCard(
         brush = Brush.linearGradient(
             listOf(
                 backgroundColor,
-                Color.White.copy(alpha = 0.78f)
+                UniStackColors.GradientEnd
             )
         ),
         shape = AppShapes.MediumCard,

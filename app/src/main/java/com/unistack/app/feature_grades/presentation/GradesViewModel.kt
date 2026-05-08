@@ -12,6 +12,7 @@ import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_profile.domain.FeatureGate
 import kotlinx.coroutines.flow.StateFlow
 import com.unistack.app.feature_user.domain.UserProfile
+import java.util.UUID
 
 class GradesViewModel(
     private val repository: GradesRepository = AppContainer.gradesRepository
@@ -29,7 +30,7 @@ class GradesViewModel(
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
         val subject = Subject(
-            id = "subject-${System.currentTimeMillis()}",
+            id = "subject-${UUID.randomUUID()}",
             name = TextValidators.normalizeText(name),
             targetAverage = targetAverage,
             grades = emptyList(),
@@ -79,7 +80,7 @@ class GradesViewModel(
         repository.addGrade(
             subjectId = subjectId,
             grade = GradeItem(
-                id = "grade-${System.currentTimeMillis()}",
+                id = "grade-${UUID.randomUUID()}",
                 name = TextValidators.normalizeText(name),
                 value = value,
                 percentage = percentage
