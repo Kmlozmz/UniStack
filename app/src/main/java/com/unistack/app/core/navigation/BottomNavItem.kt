@@ -5,7 +5,6 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unistack.app.feature_user.domain.AppModule
 
@@ -46,9 +45,8 @@ data class BottomNavItem(
         private val gradesItem = BottomNavItem(AppRoutes.Grades, "Materias", Icons.AutoMirrored.Rounded.MenuBook)
         private val tasksItem = BottomNavItem(AppRoutes.Tasks, "Tareas", Icons.AutoMirrored.Rounded.Assignment)
         private val expensesItem = BottomNavItem(AppRoutes.Expenses, "Gastos", Icons.Rounded.AccountBalanceWallet)
-        private val profileItem = BottomNavItem(AppRoutes.Profile, "Perfil", Icons.Rounded.Person)
 
-        val items = listOf(homeItem, gradesItem, tasksItem, expensesItem, profileItem)
+        val items = listOf(homeItem, gradesItem, tasksItem, expensesItem)
 
         fun itemsFor(enabledModules: Set<AppModule>): List<BottomNavItem> {
             return buildList {
@@ -56,7 +54,6 @@ data class BottomNavItem(
                 if (AppModule.GRADES in enabledModules) add(gradesItem)
                 if (AppModule.TASKS in enabledModules) add(tasksItem)
                 if (AppModule.EXPENSES in enabledModules) add(expensesItem)
-                add(profileItem)
             }
         }
     }

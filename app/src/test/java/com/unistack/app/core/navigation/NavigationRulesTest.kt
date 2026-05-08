@@ -16,6 +16,8 @@ class NavigationRulesTest {
         assertEquals(AppRoutes.Tasks, bottomRouteFor("${AppRoutes.EditTask}/task-1"))
         assertEquals(AppRoutes.Expenses, bottomRouteFor(AppRoutes.AddExpense))
         assertEquals(AppRoutes.Expenses, bottomRouteFor("${AppRoutes.EditExpense}/expense-1"))
+        assertEquals(AppRoutes.Home, bottomRouteFor(AppRoutes.Profile))
+        assertEquals(AppRoutes.Home, bottomRouteFor(AppRoutes.Pro))
         assertEquals(AppRoutes.Home, bottomRouteFor(AppRoutes.AcademicTemplates))
     }
 

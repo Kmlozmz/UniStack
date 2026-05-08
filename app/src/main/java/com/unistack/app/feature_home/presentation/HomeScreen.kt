@@ -72,6 +72,7 @@ import com.unistack.app.core.design.components.UniStackBrandHeader
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
+import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -93,6 +94,7 @@ fun HomeScreen(
     onSeeExpensesClick: () -> Unit,
     onOpenTemplatesClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
+    onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val summary = uiState.summary
@@ -111,7 +113,7 @@ fun HomeScreen(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(11.dp)
     ) {
-        item { HomeHeader(photoUrl = summary.avatarPhotoUrl) }
+        item { HomeHeader(photoUrl = summary.avatarPhotoUrl, onProfileClick = onProfileClick) }
         item { GreetingText(name = summary.userName) }
         item { HeroSummaryCard(summary = summary) }
         if (showGrades) {
@@ -164,6 +166,7 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(
     photoUrl: String?,
+    onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val avatarDescription = if (photoUrl.isNullOrBlank()) "Perfil" else "Foto de perfil"
@@ -193,7 +196,8 @@ private fun HomeHeader(
                             Color(0xFFDDEBFF)
                         )
                     )
-                ),
+                )
+                .bounceClick(onProfileClick),
             contentAlignment = Alignment.Center
         ) {
             if (photoUrl.isNullOrBlank()) {
@@ -964,7 +968,8 @@ fun HomeScreenPreview() {
             onSeeAllSubjectsClick = {},
             onSeeExpensesClick = {},
             onOpenTemplatesClick = {},
-            onSubjectClick = {}
+            onSubjectClick = {},
+            onProfileClick = {}
         )
     }
 }
@@ -982,7 +987,8 @@ fun HomeScreenNoGradesPreview() {
             onSeeAllSubjectsClick = {},
             onSeeExpensesClick = {},
             onOpenTemplatesClick = {},
-            onSubjectClick = {}
+            onSubjectClick = {},
+            onProfileClick = {}
         )
     }
 }
