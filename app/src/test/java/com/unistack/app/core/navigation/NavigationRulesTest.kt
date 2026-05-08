@@ -2,7 +2,9 @@ package com.unistack.app.core.navigation
 
 import com.unistack.app.feature_user.domain.AppModule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NavigationRulesTest {
@@ -24,5 +26,19 @@ class NavigationRulesTest {
         assertEquals(AppModule.EXPENSES, moduleForRoute("${AppRoutes.EditExpense}/expense-1"))
         assertEquals(AppModule.ACADEMIC_TEMPLATES, moduleForRoute(AppRoutes.AcademicTemplates))
         assertNull(moduleForRoute(AppRoutes.Profile))
+    }
+
+    @Test
+    fun bottomNavigationDoesNotRestoreHomeChildRoutes() {
+        assertFalse(shouldRestoreBottomRouteState(AppRoutes.AddTask, AppRoutes.Home))
+        assertFalse(shouldRestoreBottomRouteState(AppRoutes.AcademicTemplates, AppRoutes.Home))
+        assertTrue(shouldRestoreBottomRouteState(AppRoutes.Home, AppRoutes.Tasks))
+    }
+
+    @Test
+    fun selectedBottomRoutePopsToItsRoot() {
+        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AddTask, AppRoutes.Tasks))
+        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AcademicTemplates, AppRoutes.Home))
+        assertFalse(shouldPopSelectedBottomRoute(AppRoutes.Home, AppRoutes.Home))
     }
 }

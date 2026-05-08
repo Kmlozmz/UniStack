@@ -100,7 +100,7 @@ fun SetupFlow(
     NavHost(
         navController = navController,
         startDestination = SetupRoutes.Welcome,
-        modifier = modifier,
+        modifier = modifier.background(UniStackColors.Background),
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it / 5 },

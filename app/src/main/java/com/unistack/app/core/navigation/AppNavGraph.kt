@@ -108,13 +108,10 @@ fun MainNavGraph(
                     currentRoute = selectedBottomRoute ?: currentRoute,
                     items = bottomItems,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateToBottomRoute(
+                            currentRoute = currentRoute,
+                            targetRoute = route
+                        )
                     }
                 )
             }
@@ -358,6 +355,34 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppModule.EXPENSES
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppModule.ACADEMIC_TEMPLATES
         else -> null
+    }
+}
+
+internal fun shouldRestoreBottomRouteState(currentRoute: String?, targetRoute: String): Boolean {
+    return targetRoute != AppRoutes.Home && bottomRouteFor(currentRoute) != targetRoute
+}
+
+internal fun shouldPopSelectedBottomRoute(currentRoute: String?, targetRoute: String): Boolean {
+    return currentRoute != targetRoute && bottomRouteFor(currentRoute) == targetRoute
+}
+
+private fun NavHostController.navigateToBottomRoute(
+    currentRoute: String?,
+    targetRoute: String
+) {
+    if (currentRoute == targetRoute) return
+
+    if (shouldPopSelectedBottomRoute(currentRoute, targetRoute) && popBackStack(targetRoute, inclusive = false)) {
+        return
+    }
+
+    val restoreState = shouldRestoreBottomRouteState(currentRoute, targetRoute)
+    navigate(targetRoute) {
+        popUpTo(graph.findStartDestination().id) {
+            saveState = restoreState
+        }
+        launchSingleTop = true
+        this.restoreState = restoreState
     }
 }
 
