@@ -166,7 +166,7 @@ private fun WeeklyExpenseSummaryCard(
                     fontSize = 30.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
-                Text("${weeklyExpenses.size} registros", color = UniStackColors.TextSecondary, fontSize = 13.sp)
+                Text(recordCountLabel(weeklyExpenses.size), color = UniStackColors.TextSecondary, fontSize = 13.sp)
             }
             MiniBarChart(
                 values = chartValues,
@@ -175,6 +175,9 @@ private fun WeeklyExpenseSummaryCard(
         }
     }
 }
+
+private fun recordCountLabel(count: Int): String =
+    if (count == 1) "1 registro" else "$count registros"
 
 @Composable
 private fun CategorySummaryCard(categoryTotals: Map<ExpenseCategory, Int>) {

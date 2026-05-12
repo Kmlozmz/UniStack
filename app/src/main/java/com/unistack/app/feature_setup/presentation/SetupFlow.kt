@@ -7,7 +7,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
@@ -55,6 +56,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -661,7 +665,14 @@ private fun ModuleSelectableCard(
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .toggleable(
+                value = selected,
+                role = Role.Checkbox,
+                onValueChange = { onClick() }
+            )
+            .semantics {
+                stateDescription = if (selected) "Activo" else "Inactivo"
+            },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = AppShapes.MediumCard,
         tonalElevation = if (selected) 4.dp else 1.dp,
@@ -719,7 +730,14 @@ private fun SelectableCard(label: String, selected: Boolean, onClick: () -> Unit
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick
+            )
+            .semantics {
+                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
+            },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = AppShapes.MediumCard,
         tonalElevation = 2.dp,
@@ -829,8 +847,8 @@ private fun <T> UniStackDropdown(
                 DropdownMenuItem(
                     text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
                     onClick = {
-                        onSelected(value)
                         onExpandedChange(false)
+                        onSelected(value)
                     }
                 )
             }

@@ -240,7 +240,7 @@ fun SubjectDetailScreen(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${subject.grades.size} registradas",
+                    gradeCountLabel(subject.grades.size),
                     color = UniStackColors.TextSecondary,
                     fontSize = 13.sp
                 )
@@ -342,6 +342,9 @@ fun SubjectDetailScreen(
         )
     }
 }
+
+private fun gradeCountLabel(count: Int): String =
+    if (count == 1) "1 registrada" else "$count registradas"
 
 @Composable
 private fun SubjectDetailMetric(

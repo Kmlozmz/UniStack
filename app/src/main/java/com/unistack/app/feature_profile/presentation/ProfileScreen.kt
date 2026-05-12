@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -41,6 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -576,8 +581,18 @@ private fun ModulesSettingsCard(
 ) {
     SettingsCard(title = "Módulos activos") {
         AppModule.values().forEach { module: AppModule ->
+            val enabled = module in enabledModules
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = enabled,
+                        role = Role.Checkbox,
+                        onValueChange = { onToggleModule(module) }
+                    )
+                    .semantics {
+                        stateDescription = if (enabled) "Activo" else "Inactivo"
+                    },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -585,8 +600,9 @@ private fun ModulesSettingsCard(
                     Text(module.description(), color = UniStackColors.TextSecondary, fontSize = 12.sp)
                 }
                 Checkbox(
-                    checked = module in enabledModules,
-                    onCheckedChange = { onToggleModule(module) }
+                    checked = enabled,
+                    onCheckedChange = null,
+                    modifier = Modifier.clearAndSetSemantics {}
                 )
             }
         }

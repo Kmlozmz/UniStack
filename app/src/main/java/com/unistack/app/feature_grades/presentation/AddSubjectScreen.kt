@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +40,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -188,6 +193,7 @@ fun AddSubjectScreen(
                             row.forEach { type ->
                                 ColorSwatch(
                                     color = subjectAccent(type),
+                                    label = type.accessibilityLabel(),
                                     selected = visualType == type,
                                     onClick = { visualType = type }
                                 )
@@ -309,12 +315,21 @@ private fun SubjectPlanGateCard(
 }
 
 @Composable
-private fun ColorSwatch(color: Color, selected: Boolean, onClick: () -> Unit) {
+private fun ColorSwatch(color: Color, label: String, selected: Boolean, onClick: () -> Unit) {
     androidx.compose.foundation.layout.Box(
         modifier = Modifier
+            .size(44.dp)
             .clip(CircleShape)
             .background(color.copy(alpha = if (selected) 1f else 0.22f))
-            .clickable(onClick = onClick)
+            .clickable(
+                onClickLabel = "Seleccionar color $label",
+                role = Role.RadioButton,
+                onClick = onClick
+            )
+            .semantics {
+                contentDescription = "Color $label"
+                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
+            }
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -322,4 +337,19 @@ private fun ColorSwatch(color: Color, selected: Boolean, onClick: () -> Unit) {
             Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White)
         }
     }
+}
+
+private fun SubjectVisualType.accessibilityLabel(): String = when (this) {
+    SubjectVisualType.TEAL -> "turquesa"
+    SubjectVisualType.BLUE -> "azul"
+    SubjectVisualType.CORAL -> "coral"
+    SubjectVisualType.PURPLE -> "morado"
+    SubjectVisualType.GREEN -> "verde"
+    SubjectVisualType.YELLOW -> "amarillo"
+    SubjectVisualType.ROSE -> "rosa"
+    SubjectVisualType.INDIGO -> "indigo"
+    SubjectVisualType.ORANGE -> "naranja"
+    SubjectVisualType.CYAN -> "cian"
+    SubjectVisualType.LIME -> "lima"
+    SubjectVisualType.SLATE -> "gris azulado"
 }

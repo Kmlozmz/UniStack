@@ -532,13 +532,14 @@ private fun NeededAndNextTaskRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        val singleCard = neededGrade == null || nextTask == null
         if (neededGrade != null) {
             CompactInfoCard(
                 title = "Nota necesaria",
                 icon = Icons.Rounded.TrackChanges,
                 iconColor = UniStackColors.Yellow,
                 background = Brush.linearGradient(listOf(UniStackColors.YellowLight, UniStackColors.GradientEnd)),
-                modifier = Modifier.weight(1f)
+                modifier = if (singleCard) Modifier.fillMaxWidth() else Modifier.weight(1f)
             ) {
                 Text(
                     text = buildAnnotatedString {
@@ -557,8 +558,6 @@ private fun NeededAndNextTaskRow(
                     fontWeight = FontWeight.Medium
                 )
             }
-        } else if (nextTask != null) {
-            Spacer(modifier = Modifier.weight(1f))
         }
 
         if (nextTask != null) {
@@ -567,7 +566,7 @@ private fun NeededAndNextTaskRow(
                 icon = Icons.AutoMirrored.Rounded.Assignment,
                 iconColor = UniStackColors.Green,
                 background = Brush.linearGradient(listOf(UniStackColors.GreenLight, UniStackColors.GradientEnd)),
-                modifier = Modifier.weight(1f)
+                modifier = if (singleCard) Modifier.fillMaxWidth() else Modifier.weight(1f)
             ) {
                 Text(
                     text = "${nextTask.title}\n${nextTask.dueText} · ${nextTask.estimatedTimeText}",
@@ -577,8 +576,6 @@ private fun NeededAndNextTaskRow(
                     fontWeight = FontWeight.Medium
                 )
             }
-        } else if (neededGrade != null) {
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
