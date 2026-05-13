@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -704,7 +705,12 @@ private fun SelectionPill(
     modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = modifier.bounceClick(onClick),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .semantics {
+                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
+            }
+            .bounceClick(onClick),
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant,
         shape = AppShapes.Pill,
         tonalElevation = if (selected) 5.dp else 0.dp,
@@ -717,7 +723,11 @@ private fun SelectionPill(
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
             maxLines = 1,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    stateDescription = if (selected) "Seleccionado" else "No seleccionado"
+                }
         )
     }
 }

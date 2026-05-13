@@ -40,7 +40,7 @@ fun QuickActionButton(
 ) {
     UniCard(
         modifier = modifier
-            .height(40.dp)
+            .height(48.dp)
             .bounceClick(onClick),
         color = backgroundColor,
         shape = AppShapes.Pill,

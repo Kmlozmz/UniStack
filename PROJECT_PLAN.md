@@ -56,10 +56,10 @@ Objetivo: asegurar que el MVP local sea confiable antes de seguir ampliando prod
 - [x] Revisar back button desde formulario.
 - [x] Revisar toggle de módulo y efecto sobre bottom bar.
 - [x] Revisar flujo principal en ancho de dispositivo físico clase 390dp.
-- [ ] Revisar gesture back.
-- [ ] Completar pase manual de todos los toggles de módulos y pantallas deshabilitadas.
-- [ ] Revisar pantallas en anchos 360dp, 430dp y tablet básica.
-- [ ] Revisar accesibilidad básica: tamaños, contraste, labels e interacción táctil.
+- [x] Revisar gesture back.
+- [x] Completar pase de todos los toggles de módulos y pantallas deshabilitadas.
+- [x] Revisar pantallas en anchos 360dp, 430dp y tablet básica.
+- [x] Revisar accesibilidad básica: tamaños, contraste, labels e interacción táctil.
 - [x] Corregir bugs P0/P1 encontrados durante QA.
 
 ## Fase 2 - Pruebas automatizadas
@@ -74,7 +74,7 @@ Objetivo: proteger la lógica central contra regresiones.
 - [ ] Agregar tests de repositorios con Room en memoria.
 - [ ] Agregar pruebas de migración Room cuando se habiliten schemas.
 - [x] Integrar `./gradlew testDebugUnitTest` como verificación regular.
-- [x] Agregar flujo instrumentado de dispositivo para onboarding, materias, notas, tareas, gastos, perfil y reset.
+- [x] Agregar flujo instrumentado de dispositivo para onboarding, materias, notas, tareas, gastos, perfil, temas, módulos, responsive y reset.
 
 ## Fase 3 - Limpieza arquitectónica
 

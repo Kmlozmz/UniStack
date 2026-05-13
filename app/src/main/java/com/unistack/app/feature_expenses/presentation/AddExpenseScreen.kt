@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -205,7 +206,9 @@ private fun CategoryChip(
     modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = modifier.bounceClick(onClick),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .bounceClick(onClick),
         color = if (selected) UniStackColors.CoralLight else UniStackColors.Card,
         shape = AppShapes.Pill,
         tonalElevation = if (selected) 5.dp else 1.dp,

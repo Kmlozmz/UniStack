@@ -1,9 +1,12 @@
 package com.unistack.app
 
+import android.os.ParcelFileDescriptor
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -17,9 +20,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 class UniStackDeviceFlowTest {
@@ -28,6 +33,11 @@ class UniStackDeviceFlowTest {
 
     @Test
     fun onboardingCoreDataFlowAndActivityRecreate() {
+        val today = LocalDate.now()
+        val yesterdayInput = today.minusDays(1).toString()
+        val currentWeekExpenseInput = today.toString()
+        val previousWeekExpenseInput = today.minusWeeks(2).toString()
+
         composeRule.waitForText("Bienvenido a UniStack")
         composeRule.tapText("Empezar")
 
@@ -145,10 +155,12 @@ class UniStackDeviceFlowTest {
 
         composeRule.waitForText("Nueva tarea")
         composeRule.inputTextField(index = 0, value = "Ensayo final")
+        composeRule.inputTextField(index = 1, value = yesterdayInput, clear = true)
         composeRule.tapText("Fisica")
         composeRule.tapText("Crear tarea")
 
         composeRule.waitForText("Ensayo final")
+        composeRule.waitForTextContaining("Fisica · venció ayer · 1 h")
         composeRule.waitForText("Dificultad media")
         composeRule.tapContentDescription("Editar tarea")
         composeRule.waitForText("Editar tarea")
@@ -165,6 +177,7 @@ class UniStackDeviceFlowTest {
             composeRule.tapText("Tareas")
         }
         composeRule.waitForText("Proyecto final")
+        composeRule.waitForTextContaining("venció ayer")
         composeRule.onAllNodes(isToggleable(), useUnmergedTree = true)[0].assertIsOn()
         composeRule.tapContentDescription("Eliminar tarea")
         composeRule.waitForText("¿Eliminar tarea?")
@@ -204,6 +217,34 @@ class UniStackDeviceFlowTest {
         composeRule.tapText("Eliminar")
         composeRule.waitForText("Aún no tienes gastos reales.")
 
+        composeRule.tapText("Registrar gasto")
+        composeRule.waitForText("Registrar gasto")
+        composeRule.inputTextField(index = 0, value = "10000")
+        composeRule.inputTextField(index = 1, value = currentWeekExpenseInput, clear = true)
+        composeRule.tapText("Guardar gasto")
+        composeRule.waitForText("$10.000")
+        composeRule.waitForText("1 registro")
+
+        composeRule.tapText("Registrar gasto")
+        composeRule.waitForText("Registrar gasto")
+        composeRule.inputTextField(index = 0, value = "9000")
+        composeRule.inputTextField(index = 1, value = previousWeekExpenseInput, clear = true)
+        composeRule.tapText("Copias")
+        composeRule.tapText("Guardar gasto")
+        composeRule.waitForText("Copias")
+        composeRule.waitForText("$9.000")
+        composeRule.waitForText("$10.000")
+        composeRule.waitForText("1 registro")
+
+        composeRule.tapContentDescription("Eliminar gasto")
+        composeRule.waitForText("¿Eliminar gasto?")
+        composeRule.tapText("Eliminar")
+        composeRule.waitForText("$0")
+        composeRule.tapContentDescription("Eliminar gasto")
+        composeRule.waitForText("¿Eliminar gasto?")
+        composeRule.tapText("Eliminar")
+        composeRule.waitForText("Aún no tienes gastos reales.")
+
         composeRule.tapText("Materias")
         composeRule.waitForText("Fisica")
         composeRule.tapText("Fisica")
@@ -216,15 +257,76 @@ class UniStackDeviceFlowTest {
         composeRule.tapText("Inicio")
         composeRule.tapContentDescription("Perfil")
         composeRule.waitForText("Perfil")
+
+        composeRule.scrollToText("Configuración académica")
+        composeRule.waitForSelectedText("0-5")
+        composeRule.tapText("0-10")
+        composeRule.waitForSelectedText("0-10")
+        composeRule.waitForText("Rango activo: 0 a 10.0")
+        composeRule.tapText("Guardar escala")
+        composeRule.tapText("0-100")
+        composeRule.waitForSelectedText("0-100")
+        composeRule.waitForText("Rango activo: 0 a 100")
+        composeRule.tapText("Guardar escala")
+        composeRule.tapText("0-5")
+        composeRule.waitForSelectedText("0-5")
+        composeRule.waitForText("Rango activo: 0 a 5.0")
+        composeRule.tapText("Guardar escala")
+
         composeRule.scrollToText("Entregas y pendientes.")
-        composeRule.tapText("Entregas y pendientes.")
+        composeRule.tapContentDescription("Módulo Tareas")
+        composeRule.waitForToggleState("Módulo Tareas", "Inactivo")
         composeRule.waitForTextCount("Tareas", count = 1)
-        composeRule.tapText("Entregas y pendientes.")
+        composeRule.tapContentDescription("Módulo Gastos")
+        composeRule.waitForToggleState("Módulo Gastos", "Inactivo")
+        composeRule.waitForTextCount("Gastos", count = 1)
+        composeRule.tapContentDescription("Módulo Notas")
+        composeRule.waitForToggleState("Módulo Notas", "Inactivo")
+        composeRule.waitForTextCount("Materias", count = 0)
+        composeRule.tapContentDescription("Módulo Trabajos")
+        composeRule.waitForToggleState("Módulo Trabajos", "Activo")
+        composeRule.tapContentDescription("Módulo Notas")
+        composeRule.waitForToggleState("Módulo Notas", "Activo")
+        composeRule.waitForTextCount("Materias", count = 1)
+        composeRule.tapContentDescription("Módulo Gastos")
+        composeRule.waitForToggleState("Módulo Gastos", "Activo")
+        composeRule.waitForTextCount("Gastos", count = 2)
+        composeRule.tapContentDescription("Módulo Tareas")
+        composeRule.waitForToggleState("Módulo Tareas", "Activo")
         composeRule.waitForTextCount("Tareas", count = 2)
+
+        composeRule.scrollToText("Preferencia visual")
+        composeRule.waitForSelectedText("Sistema")
+        composeRule.tapText("Claro")
+        composeRule.waitForSelectedText("Claro")
+        composeRule.tapText("Oscuro")
+        composeRule.waitForSelectedText("Oscuro")
+        composeRule.tapText("Sistema")
+        composeRule.waitForSelectedText("Sistema")
+
         composeRule.scrollToText("Nombre preferido")
         composeRule.inputTextField(index = 0, value = "QA Tester", clear = true)
         composeRule.tapText("Guardar nombre")
         composeRule.waitForText("QA Tester")
+
+        composeRule.tapText("Inicio")
+        composeRule.waitForText("Hola, ")
+        val restoreDensityCommand = currentDensityRestoreCommand()
+        try {
+            listOf(542, 454, 325).forEach { density ->
+                executeDeviceCommand("wm density $density")
+                composeRule.activityRule.scenario.recreate()
+                composeRule.waitForText("Hola, ")
+                composeRule.waitForText("QA Tester 👋")
+            }
+        } finally {
+            executeDeviceCommand(restoreDensityCommand)
+            composeRule.activityRule.scenario.recreate()
+            composeRule.waitForText("Hola, ")
+        }
+
+        composeRule.tapContentDescription("Perfil")
+        composeRule.waitForText("Perfil")
         composeRule.scrollToText("Reiniciar onboarding")
         composeRule.tapText("Reiniciar onboarding")
         composeRule.waitForText("¿Reiniciar onboarding?")
@@ -239,6 +341,12 @@ private fun ComposeTestRule.waitForText(text: String, timeoutMillis: Long = 12_0
     }
 }
 
+private fun ComposeTestRule.waitForTextContaining(text: String, timeoutMillis: Long = 12_000) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        hasAnyTextContaining(text)
+    }
+}
+
 private fun ComposeTestRule.hasAnyText(text: String): Boolean =
     try {
         onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -246,9 +354,38 @@ private fun ComposeTestRule.hasAnyText(text: String): Boolean =
         false
     }
 
+private fun ComposeTestRule.hasAnyTextContaining(text: String): Boolean =
+    try {
+        onAllNodes(hasText(text, substring = true), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+    } catch (_: IllegalStateException) {
+        false
+    }
+
 private fun ComposeTestRule.waitForTextCount(text: String, count: Int, timeoutMillis: Long = 12_000) {
     waitUntil(timeoutMillis = timeoutMillis) {
         onAllNodesWithText(text, useUnmergedTree = true).fetchSemanticsNodes().size == count
+    }
+}
+
+private fun ComposeTestRule.waitForSelectedText(text: String, timeoutMillis: Long = 12_000) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onAllNodes(
+            hasText(text) and hasStateDescription("Seleccionado"),
+            useUnmergedTree = true
+        ).fetchSemanticsNodes().isNotEmpty()
+    }
+}
+
+private fun ComposeTestRule.waitForToggleState(
+    description: String,
+    state: String,
+    timeoutMillis: Long = 12_000
+) {
+    waitUntil(timeoutMillis = timeoutMillis) {
+        onAllNodes(
+            hasContentDescription(description) and hasStateDescription(state),
+            useUnmergedTree = true
+        ).fetchSemanticsNodes().isNotEmpty()
     }
 }
 
@@ -285,4 +422,21 @@ private fun ComposeTestRule.inputTextField(index: Int, value: String, clear: Boo
         field.performTextClearance()
     }
     field.performTextInput(value)
+}
+
+private fun currentDensityRestoreCommand(): String {
+    val output = executeDeviceCommand("wm density")
+    val overrideDensity = Regex("Override density: (\\d+)").find(output)?.groupValues?.get(1)
+    return if (overrideDensity != null) {
+        "wm density $overrideDensity"
+    } else {
+        "wm density reset"
+    }
+}
+
+private fun executeDeviceCommand(command: String): String {
+    val descriptor = InstrumentationRegistry.getInstrumentation()
+        .uiAutomation
+        .executeShellCommand(command)
+    return ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readText() }
 }

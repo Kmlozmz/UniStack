@@ -139,14 +139,20 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
 
 val sendDebugApkToTelegram = registerTelegramApkTask("debug")
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
+val autoSendTelegramApk = providers.gradleProperty("autoSendTelegramApk")
+    .orElse(providers.environmentVariable("AUTO_SEND_TELEGRAM_APK"))
+    .map { it.toBoolean() }
+    .orElse(false)
 
 afterEvaluate {
-    tasks.named("assembleDebug") {
-        finalizedBy(sendDebugApkToTelegram)
-    }
+    if (autoSendTelegramApk.get()) {
+        tasks.named("assembleDebug") {
+            finalizedBy(sendDebugApkToTelegram)
+        }
 
-    tasks.named("assembleRelease") {
-        finalizedBy(sendReleaseApkToTelegram)
+        tasks.named("assembleRelease") {
+            finalizedBy(sendReleaseApkToTelegram)
+        }
     }
 }
 
