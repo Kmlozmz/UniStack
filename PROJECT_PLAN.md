@@ -2,7 +2,7 @@
 
 ## Estado base
 
-UniStack ya tiene un MVP local funcional con onboarding, perfil, materias, notas, tareas, gastos, branding oficial, animación inicial, preparación Pro, preparación de cuenta/sync y plantillas académicas base.
+UniStack ya tiene un MVP local funcional con onboarding, perfil, materias, notas, tareas, gastos, branding oficial, animación inicial, Pro conectado a BillingClient, cuenta Google conectada al servicio de auth cuando exista configuración OAuth y plantillas académicas accionables mediante copia al portapapeles.
 
 El foco desde este punto es convertir el MVP local en una beta estable, verificable y lista para crecer sin comprometer la arquitectura ni la experiencia visual.
 
@@ -14,7 +14,7 @@ El foco desde este punto es convertir el MVP local en una beta estable, verifica
 - Corregir bugs bloqueantes antes de agregar nuevas features.
 - Mantener los datos mock solo en previews, `DemoData` o entornos explícitamente de muestra.
 - Validar cambios relevantes con `./gradlew :app:assembleDebug`.
-- No introducir backend, Billing real o sincronización real hasta cerrar la estabilidad beta.
+- No ampliar backend, monetización o sincronización sin prueba de dispositivo y fallback local claro.
 - Mantener el estilo UniStack: limpio, claro, premium, consistente y útil.
 - Evitar cambios no relacionados en branding, launcher icon, onboarding o lógica estable.
 
@@ -47,28 +47,34 @@ Ideas útiles que no son necesarias para la beta inicial.
 Objetivo: asegurar que el MVP local sea confiable antes de seguir ampliando producto.
 
 - [x] Crear matriz de QA manual para flujos críticos.
-- [ ] Probar materias sin notas, con una nota, con varias notas y evaluadas al 100%.
-- [ ] Probar tareas vacías, vencidas, completadas y asociadas a materias.
-- [ ] Probar gastos vacíos, semanales, editados y eliminados.
-- [ ] Revisar cold start, launch animation y navegación inicial.
-- [ ] Revisar navegación con bottom bar, back button y gesture back.
-- [ ] Revisar toggles de módulos y pantallas deshabilitadas.
-- [ ] Revisar pantallas en anchos 360dp, 390dp, 430dp y tablet básica.
+- [x] Probar materias sin notas, con una nota, edición y eliminación en dispositivo físico.
+- [x] Probar varias notas, porcentaje acumulado y materia evaluada al 100% desde UI.
+- [x] Probar tareas vacías, creadas, completadas, editadas y eliminadas en dispositivo físico.
+- [x] Probar gastos vacíos, creados, editados, persistidos tras recreate y eliminados en dispositivo físico.
+- [x] Revisar cold start, instalación limpia y navegación inicial.
+- [x] Revisar navegación con bottom bar en flujo principal.
+- [x] Revisar back button desde formulario.
+- [x] Revisar toggle de módulo y efecto sobre bottom bar.
+- [x] Revisar flujo principal en ancho de dispositivo físico clase 390dp.
+- [ ] Revisar gesture back.
+- [ ] Completar pase manual de todos los toggles de módulos y pantallas deshabilitadas.
+- [ ] Revisar pantallas en anchos 360dp, 430dp y tablet básica.
 - [ ] Revisar accesibilidad básica: tamaños, contraste, labels e interacción táctil.
-- [ ] Corregir bugs P0/P1 encontrados durante QA.
+- [x] Corregir bugs P0/P1 encontrados durante QA.
 
 ## Fase 2 - Pruebas automatizadas
 
 Objetivo: proteger la lógica central contra regresiones.
 
-- [ ] Agregar tests unitarios para cálculos académicos.
-- [ ] Cubrir nota necesaria, porcentaje evaluado y promedio actual.
-- [ ] Cubrir escalas 0-5, 0-10 y 0-100.
-- [ ] Agregar tests para validadores de texto.
-- [ ] Agregar tests para utilidades de fecha usadas en tareas y gastos.
+- [x] Agregar tests unitarios para cálculos académicos.
+- [x] Cubrir nota necesaria, porcentaje evaluado y promedio actual.
+- [x] Cubrir escalas 0-5, 0-10 y 0-100.
+- [x] Agregar tests para validadores de texto.
+- [x] Agregar tests para utilidades de fecha usadas en tareas y gastos.
 - [ ] Agregar tests de repositorios con Room en memoria.
 - [ ] Agregar pruebas de migración Room cuando se habiliten schemas.
-- [ ] Integrar `./gradlew testDebugUnitTest` como verificación regular.
+- [x] Integrar `./gradlew testDebugUnitTest` como verificación regular.
+- [x] Agregar flujo instrumentado de dispositivo para onboarding, materias, notas, tareas, gastos, perfil y reset.
 
 ## Fase 3 - Limpieza arquitectónica
 
@@ -76,7 +82,7 @@ Objetivo: reducir acoplamiento y preparar el proyecto para crecer.
 
 - [ ] Dividir pantallas grandes en secciones/composables privados claros.
 - [ ] Revisar `HomeScreen`, `ProfileScreen` y pantallas académicas con mayor tamaño.
-- [ ] Centralizar gates de módulos y plan Pro.
+- [x] Centralizar gates de módulos y plan Pro.
 - [ ] Revisar creación de ViewModels y dependencia del contenedor de app.
 - [ ] Activar exportación de schemas de Room.
 - [ ] Revisar modelos de UI para evitar lógica pesada dentro de composables.
@@ -132,7 +138,7 @@ Objetivo: pasar de preparación visual/técnica a identidad real con estrategia 
 Objetivo: convertir la preparación Pro en monetización funcional.
 
 - [ ] Definir productos e IDs reales.
-- [ ] Integrar BillingClient.
+- [x] Integrar BillingClient.
 - [ ] Persistir entitlement Pro de forma segura.
 - [ ] Implementar restaurar compras.
 - [ ] Revisar límites Free vs Pro.
@@ -172,8 +178,8 @@ Objetivo: preparar una entrega instalable y confiable para usuarios reales.
 
 - Room se usa para datos estructurados locales.
 - DataStore se usa para setup, perfil y preferencias.
-- El MVP local se estabiliza antes de backend, cloud sync o Billing real.
-- El plan Free mantiene límite de materias hasta integrar Billing real.
+- El MVP local debe seguir funcionando sin backend, cuenta ni conexión.
+- El plan Free mantiene límite de materias; Pro usa BillingClient y solo se habilita cuando hay entitlement activo.
 - El branding oficial no se toca salvo que la tarea sea explícitamente de marca.
 - La app debe seguir siendo útil sin cuenta ni conexión.
 
@@ -183,9 +189,9 @@ Objetivo: preparar una entrega instalable y confiable para usuarios reales.
 
 - No hay bugs P0/P1 conocidos.
 - `./gradlew :app:assembleDebug` pasa.
-- `./gradlew testDebugUnitTest` pasa cuando la suite esté creada.
+- `./gradlew testDebugUnitTest` pasa.
 - Los flujos principales pasan QA manual.
 - No hay datos mock en runtime.
 - La información persiste correctamente tras cerrar y abrir la app.
 - La navegación no tiene loops, flicker ni pantallas muertas.
-- Los placeholders futuros están claramente identificados como no disponibles.
+- No hay controles visibles que prometan una acción sin respuesta; cuando una integración no está configurada, la UI muestra estado real o error claro.

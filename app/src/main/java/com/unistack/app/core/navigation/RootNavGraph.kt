@@ -1,5 +1,6 @@
 package com.unistack.app.core.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -23,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun RootNavGraph(modifier: Modifier = Modifier) {
     val setupCompleted by remember {

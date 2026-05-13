@@ -19,14 +19,17 @@ class GradesViewModel(
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
     val userProfile: StateFlow<UserProfile?> = AppContainer.userRepository.userProfile
+    val billingState = AppContainer.billingRepository.state
 
     private fun getMaxGrade(): Double {
         val profile = userProfile.value ?: return 5.0
         return GradingScaleUtils.maxGradeFor(profile.gradingScale)
     }
 
+    fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
+
     fun addSubject(name: String, targetAverage: Double, visualType: SubjectVisualType): Subject? {
-        if (!FeatureGate.canCreateSubject(FeatureGate.freePlan, subjects.value.size)) return null
+        if (!FeatureGate.canCreateSubject(currentPlan(), subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
         val subject = Subject(

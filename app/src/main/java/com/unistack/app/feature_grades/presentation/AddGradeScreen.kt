@@ -160,7 +160,12 @@ fun AddGradeScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = AppShapes.MediumCard,
-                    isError = percentage.isNotBlank() && !isPercentageValid
+                    isError = percentage.isNotBlank() && !isPercentageValid,
+                    supportingText = {
+                        if (percentage.isNotBlank() && !isPercentageValid) {
+                            Text("El porcentaje debe ser mayor que 0 y no superar 100% acumulado.")
+                        }
+                    }
                 )
                 error?.let {
                     Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
@@ -169,10 +174,11 @@ fun AddGradeScreen(
         }
         Button(
             onClick = {
-                val saved = if (isEditing && gradeId != null) {
+                val editingGradeId = gradeId
+                val saved = if (editingGradeId != null) {
                     viewModel.updateGrade(
                         subjectId = subjectId,
-                        gradeId = gradeId,
+                        gradeId = editingGradeId,
                         name = TextValidators.normalizeText(name),
                         value = gradeValue ?: 0.0,
                         percentageInput = percentageValue ?: 0.0

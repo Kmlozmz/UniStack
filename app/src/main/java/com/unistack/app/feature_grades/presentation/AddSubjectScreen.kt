@@ -71,13 +71,14 @@ fun AddSubjectScreen(
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
-    val userPlan = FeatureGate.freePlan
+    val userPlan = FeatureGate.planFor(billingState.isPro)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
 
     var name by remember { mutableStateOf("") }
@@ -212,14 +213,15 @@ fun AddSubjectScreen(
                         return@Button
                     }
 
-                    val savedSubjectId = if (isEditing && subjectId != null) {
+                    val editingSubjectId = subjectId
+                    val savedSubjectId = if (editingSubjectId != null) {
                         val saved = viewModel.updateSubject(
-                            subjectId = subjectId,
+                            subjectId = editingSubjectId,
                             name = TextValidators.normalizeText(name),
                             targetAverage = targetValue ?: defaultAverage,
                             visualType = visualType
                         )
-                        if (saved) subjectId else null
+                        if (saved) editingSubjectId else null
                     } else {
                         viewModel.addSubject(
                             name = TextValidators.normalizeText(name),

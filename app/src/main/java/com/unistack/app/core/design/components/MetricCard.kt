@@ -35,10 +35,10 @@ fun MetricCard(
     modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = modifier.height(62.dp),
+        modifier = modifier.height(70.dp),
         shape = AppShapes.SmallCard,
         tonalElevation = 4.dp,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 9.dp)
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -65,8 +65,8 @@ fun MetricCard(
                 Text(
                     text = value,
                     color = UniStackColors.TextPrimary,
-                    fontSize = 23.sp,
-                    lineHeight = 24.sp,
+                    fontSize = 22.sp,
+                    lineHeight = 23.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
@@ -74,7 +74,7 @@ fun MetricCard(
                     color = UniStackColors.TextPrimary,
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 9.sp,
-                    lineHeight = 9.sp,
+                    lineHeight = 10.sp,
                     textAlign = TextAlign.Start
                 )
             }

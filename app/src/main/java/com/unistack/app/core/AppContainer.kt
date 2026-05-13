@@ -46,7 +46,7 @@ object AppContainer {
         userRepository = DataStoreUserRepository(dataSource)
 
         accountAuthService = FirebaseGoogleAuthService()
-        billingRepository = PlayBillingRepository(appContext).also { it.start() }
+        billingRepository = PlayBillingRepository(appContext)
 
         val database = UniStackDatabase.getInstance(appContext)
         gradesRepository = RoomGradesRepository(

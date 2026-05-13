@@ -189,9 +189,10 @@ fun AddTaskScreen(
         }
         Button(
             onClick = {
-                val saved = if (isEditing && taskId != null) {
+                val editingTaskId = taskId
+                val saved = if (editingTaskId != null) {
                     viewModel.updateTask(
-                        taskId = taskId,
+                        taskId = editingTaskId,
                         title = title,
                         subjectId = selectedSubjectId,
                         dueDateInput = dueDate,

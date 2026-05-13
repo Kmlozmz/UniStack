@@ -23,7 +23,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -32,7 +31,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +42,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -66,8 +66,9 @@ fun AcademicTemplatesScreen(
     val templates = AcademicTemplateLibrary.essayTemplates
     var selectedTemplateId by rememberSaveable { mutableStateOf(templates.first().id) }
     var completedChecklistIds by rememberSaveable { mutableStateOf(emptyList<String>()) }
-    var showExportDialog by rememberSaveable { mutableStateOf(false) }
+    var copyMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val selectedTemplate = templates.firstOrNull { it.id == selectedTemplateId } ?: templates.first()
+    val clipboard = LocalClipboardManager.current
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -127,23 +128,25 @@ fun AcademicTemplatesScreen(
                 ApaTipCard(tip = tip)
             }
             item {
-                ExportPlaceholderCard(onExportClick = { showExportDialog = true })
+                CopyTemplateCard(
+                    onCopyClick = {
+                        clipboard.setText(
+                            AnnotatedString(
+                                selectedTemplate.exportText(
+                                    completedChecklistIds = completedChecklistIds
+                                )
+                            )
+                        )
+                        copyMessage = "Guía copiada al portapapeles."
+                    }
+                )
+            }
+            copyMessage?.let { message ->
+                item {
+                    Text(message, color = UniStackColors.Green, fontWeight = FontWeight.Bold)
+                }
             }
         }
-    }
-
-    if (showExportDialog) {
-        AlertDialog(
-            onDismissRequest = { showExportDialog = false },
-            title = { Text("Exportación preparada") },
-            text = { Text("La estructura queda lista para PDF/Word, pero la exportación real se implementará en una fase posterior.") },
-            confirmButton = {
-                TextButton(onClick = { showExportDialog = false }) {
-                    Text("Entendido", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = UniStackColors.Card
-        )
     }
 }
 
@@ -369,7 +372,7 @@ private fun ApaTipCard(tip: ApaTip) {
 }
 
 @Composable
-private fun ExportPlaceholderCard(onExportClick: () -> Unit) {
+private fun CopyTemplateCard(onCopyClick: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.SurfaceVariant,
@@ -385,20 +388,47 @@ private fun ExportPlaceholderCard(onExportClick: () -> Unit) {
                     tint = UniStackColors.Primary
                 )
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Exportar PDF/Word", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    Text("Preparado para una fase posterior.", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text("Copiar guía", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                    Text("Copia la plantilla y el checklist para usarlo en tu editor.", color = UniStackColors.TextSecondary, fontSize = 12.sp)
                 }
             }
             Button(
-                onClick = onExportClick,
+                onClick = onCopyClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Exportar próximamente")
+                Text("Copiar al portapapeles")
             }
         }
     }
+}
+
+private fun EssayTemplate.exportText(completedChecklistIds: List<String>): String {
+    val checklist = AcademicTemplateLibrary.checklist.joinToString(separator = "\n") { item ->
+        val mark = if (item.id in completedChecklistIds) "[x]" else "[ ]"
+        "$mark ${item.title}: ${item.detail}"
+    }
+    val sections = sections.joinToString(separator = "\n\n") { section ->
+        "${section.title}\n${section.prompt}"
+    }
+    val apa = AcademicTemplateLibrary.apaTips.joinToString(separator = "\n") { tip ->
+        "- ${tip.title}: ${tip.description}"
+    }
+
+    return """
+        $title
+        $description
+
+        Checklist
+        $checklist
+
+        Estructura
+        $sections
+
+        APA básico
+        $apa
+    """.trimIndent()
 }
 
 @Composable

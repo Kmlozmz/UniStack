@@ -11,26 +11,14 @@ object FeatureGate {
         maxSubjects = Int.MAX_VALUE
     )
 
+    fun planFor(isPro: Boolean): UserPlan {
+        return if (isPro) proPreviewPlan else freePlan
+    }
+
     val proBenefits = listOf(
         ProBenefit(
             title = "Materias ilimitadas",
             description = "Gestiona semestres completos sin el límite del plan gratis."
-        ),
-        ProBenefit(
-            title = "Reportes y exportación",
-            description = "Estructura preparada para PDF, resúmenes y evidencias académicas."
-        ),
-        ProBenefit(
-            title = "Simulación avanzada",
-            description = "Base lista para escenarios de notas, metas y recuperación."
-        ),
-        ProBenefit(
-            title = "Plantillas académicas",
-            description = "Más formatos y estructuras para ensayos, entregas y normas académicas."
-        ),
-        ProBenefit(
-            title = "Recordatorios inteligentes",
-            description = "Preparado para notificaciones y alertas prioritarias."
         )
     )
 

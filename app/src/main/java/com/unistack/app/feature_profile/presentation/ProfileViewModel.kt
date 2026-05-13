@@ -1,6 +1,8 @@
 package com.unistack.app.feature_profile.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
@@ -10,14 +12,34 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.VisualPreference
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class ProfileActionState(
+    val isAccountBusy: Boolean = false,
+    val message: String? = null,
+    val errorMessage: String? = null
+)
 
 class ProfileViewModel(
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
     val currentUser = userRepository.currentUser
-    val userPlan = FeatureGate.freePlan
+    val billingState = AppContainer.billingRepository.state
+    private val accountAuthService = AppContainer.accountAuthService
+    private val billingRepository = AppContainer.billingRepository
+
+    private val _actionState = MutableStateFlow(ProfileActionState())
+    val actionState: StateFlow<ProfileActionState> = _actionState
+
+    fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
+
+    fun refreshBilling() {
+        billingRepository.refreshPurchases()
+    }
 
     fun updatePreferredName(name: String): Boolean {
         val current = profile.value ?: return false
@@ -74,10 +96,57 @@ class ProfileViewModel(
         return true
     }
 
-    fun unlinkAccount(): Boolean {
-        if (!currentUser.value.isLinked) return false
-        userRepository.unlinkAccount()
-        return true
+    fun connectGoogle(context: Context) {
+        if (_actionState.value.isAccountBusy) return
+        viewModelScope.launch {
+            _actionState.update { it.copy(isAccountBusy = true, message = null, errorMessage = null) }
+            accountAuthService.signInWithGoogle(context)
+                .onSuccess { account ->
+                    userRepository.linkAccount(account)
+                    _actionState.update {
+                        it.copy(
+                            isAccountBusy = false,
+                            message = "Cuenta de Google conectada.",
+                            errorMessage = null
+                        )
+                    }
+                }
+                .onFailure { throwable ->
+                    _actionState.update {
+                        it.copy(
+                            isAccountBusy = false,
+                            message = null,
+                            errorMessage = throwable.message ?: "No se pudo conectar con Google."
+                        )
+                    }
+                }
+        }
+    }
+
+    fun unlinkAccount() {
+        if (_actionState.value.isAccountBusy) return
+        viewModelScope.launch {
+            _actionState.update { it.copy(isAccountBusy = true, message = null, errorMessage = null) }
+            accountAuthService.signOut()
+            if (currentUser.value.isLinked) {
+                userRepository.unlinkAccount()
+                _actionState.update {
+                    it.copy(
+                        isAccountBusy = false,
+                        message = "Cuenta desvinculada.",
+                        errorMessage = null
+                    )
+                }
+            } else {
+                _actionState.update {
+                    it.copy(
+                        isAccountBusy = false,
+                        message = null,
+                        errorMessage = "No hay cuenta vinculada."
+                    )
+                }
+            }
+        }
     }
 
     private fun save(profile: UserProfile) {

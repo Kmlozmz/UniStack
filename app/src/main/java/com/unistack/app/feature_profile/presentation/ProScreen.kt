@@ -1,5 +1,8 @@
 package com.unistack.app.feature_profile.presentation
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,8 +22,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -28,23 +31,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.ProBenefit
 
@@ -54,7 +59,14 @@ fun ProScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    var showUpgradeDialog by rememberSaveable { mutableStateOf(false) }
+    val billingRepository = remember { AppContainer.billingRepository }
+    val billingState by billingRepository.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val activity = context.findActivity()
+
+    LaunchedEffect(Unit) {
+        billingRepository.start()
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -73,7 +85,16 @@ fun ProScreen(
                     Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
                 }
             }
-            item { ProHeroCard(onUpgradeClick = { showUpgradeDialog = true }) }
+            item {
+                ProHeroCard(
+                    billingState = billingState,
+                    onUpgradeClick = {
+                        val product = billingState.products.firstOrNull() ?: return@ProHeroCard
+                        val host = activity ?: return@ProHeroCard
+                        billingRepository.launchPurchase(host, product.productId)
+                    }
+                )
+            }
             item {
                 Text(
                     text = "Beneficios Pro",
@@ -85,27 +106,24 @@ fun ProScreen(
             items(FeatureGate.proBenefits) { benefit ->
                 BenefitCard(benefit = benefit)
             }
-            item { BillingPlaceholderCard() }
+            item {
+                BillingStatusCard(
+                    billingState = billingState,
+                    onRefreshClick = billingRepository::refreshPurchases
+                )
+            }
         }
-    }
-
-    if (showUpgradeDialog) {
-        AlertDialog(
-            onDismissRequest = { showUpgradeDialog = false },
-            title = { Text("Upgrade próximamente") },
-            text = { Text("La estructura Pro ya está preparada, pero Billing aún no está integrado.") },
-            confirmButton = {
-                TextButton(onClick = { showUpgradeDialog = false }) {
-                    Text("Entendido", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = UniStackColors.Card
-        )
     }
 }
 
 @Composable
-private fun ProHeroCard(onUpgradeClick: () -> Unit) {
+private fun ProHeroCard(
+    billingState: BillingState,
+    onUpgradeClick: () -> Unit
+) {
+    val product = billingState.products.firstOrNull()
+    val canBuy = product != null && billingState.isBillingAvailable && !billingState.isLoading && !billingState.isPro
+
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         brush = Brush.linearGradient(
@@ -141,13 +159,18 @@ private fun ProHeroCard(onUpgradeClick: () -> Unit) {
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                text = "Listo para desbloquear materias ilimitadas, reportes y herramientas académicas avanzadas.",
+                text = if (billingState.isPro) {
+                    "Tu plan Pro está activo en este dispositivo."
+                } else {
+                    "Desbloquea materias ilimitadas para organizar todos tus semestres."
+                },
                 color = Color.White.copy(alpha = 0.88f),
                 fontSize = 14.sp,
                 lineHeight = 19.sp
             )
             Button(
                 onClick = onUpgradeClick,
+                enabled = canBuy,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
@@ -157,7 +180,12 @@ private fun ProHeroCard(onUpgradeClick: () -> Unit) {
             ) {
                 Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(
-                    text = "Upgrade próximamente",
+                    text = when {
+                        billingState.isPro -> "Pro activo"
+                        billingState.isLoading -> "Cargando oferta..."
+                        product != null -> "Activar por ${product.price}"
+                        else -> "Oferta no disponible"
+                    },
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 8.dp)
                 )
@@ -207,22 +235,67 @@ private fun BenefitCard(benefit: ProBenefit) {
 }
 
 @Composable
-private fun BillingPlaceholderCard() {
+private fun BillingStatusCard(
+    billingState: BillingState,
+    onRefreshClick: () -> Unit
+) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = if (billingState.errorMessage == null) UniStackColors.SurfaceVariant else UniStackColors.CoralLight,
         shape = AppShapes.LargeCard,
-        tonalElevation = 0.dp
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(14.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.CreditCard, contentDescription = null, tint = UniStackColors.Primary)
-            Column(
-                modifier = Modifier.padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.CreditCard,
+                    contentDescription = null,
+                    tint = if (billingState.errorMessage == null) UniStackColors.Primary else UniStackColors.Coral
+                )
+                Column(
+                    modifier = Modifier.padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = when {
+                            billingState.isPro -> "Compra verificada"
+                            billingState.isLoading -> "Consultando Google Play"
+                            billingState.isBillingAvailable -> "Google Play Billing disponible"
+                            else -> "Google Play Billing no disponible"
+                        },
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = billingState.errorMessage
+                            ?: billingState.message
+                            ?: billingState.products.firstOrNull()?.description
+                            ?: "Verifica que la app esté instalada desde una cuenta con acceso al producto Pro.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+            }
+            Button(
+                onClick = onRefreshClick,
+                enabled = !billingState.isLoading,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Billing no implementado", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                Text("Esta pantalla deja la estructura lista sin activar pagos reales.", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                Text("Revisar estado", modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.ExtraBold)
             }
         }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? {
+    return when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
     }
 }

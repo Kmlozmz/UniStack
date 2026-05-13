@@ -165,9 +165,10 @@ fun AddExpenseScreen(
         }
         Button(
             onClick = {
-                val saved = if (isEditing && expenseId != null) {
+                val editingExpenseId = expenseId
+                val saved = if (editingExpenseId != null) {
                     viewModel.updateExpense(
-                        expenseId = expenseId,
+                        expenseId = editingExpenseId,
                         category = category,
                         amountInput = amount,
                         dateInput = date

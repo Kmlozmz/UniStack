@@ -33,7 +33,6 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.TrackChanges
@@ -177,13 +176,6 @@ private fun HomeHeader(
     ) {
         UniStackBrandHeader(symbolSize = 34.dp)
         Spacer(modifier = Modifier.weight(1f))
-        Icon(
-            imageVector = Icons.Rounded.Notifications,
-            contentDescription = "Notificaciones",
-            tint = UniStackColors.TextPrimary,
-            modifier = Modifier.size(23.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
         Box(
             modifier = Modifier
                 .size(40.dp)
@@ -244,7 +236,7 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
     UniCard(
         modifier = modifier
             .fillMaxWidth()
-            .height(188.dp),
+            .height(202.dp),
         brush = Brush.linearGradient(
             listOf(
                 UniStackColors.PrimaryLight,
@@ -590,7 +582,7 @@ private fun CompactInfoCard(
     body: @Composable () -> Unit
 ) {
     UniCard(
-        modifier = modifier.height(94.dp),
+        modifier = modifier.height(124.dp),
         brush = background,
         shape = AppShapes.MediumCard,
         tonalElevation = 4.dp,
@@ -617,8 +609,8 @@ private fun CompactInfoCard(
                     Text(
                         text = title,
                         color = UniStackColors.TextPrimary,
-                        fontSize = 13.sp,
-                        lineHeight = 15.sp,
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

@@ -42,8 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +60,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
+import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppModule
@@ -76,7 +79,10 @@ fun ProfileScreen(
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
-    val plan = viewModel.userPlan
+    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
+    val actionState by viewModel.actionState.collectAsStateWithLifecycle()
+    val plan = FeatureGate.planFor(billingState.isPro)
+    val context = LocalContext.current
     val currentProfile = profile
     var nameInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.preferredName.orEmpty())
@@ -92,8 +98,11 @@ fun ProfileScreen(
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
-    var showGoogleDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshBilling()
+    }
 
     LaunchedEffect(profile?.updatedAt, profile?.userId) {
         val current = profile ?: return@LaunchedEffect
@@ -131,7 +140,8 @@ fun ProfileScreen(
             item {
                 AccountSyncCard(
                     currentUser = currentUser,
-                    onGoogleClick = { showGoogleDialog = true },
+                    isBusy = actionState.isAccountBusy,
+                    onGoogleClick = { viewModel.connectGoogle(context) },
                     onUnlinkClick = { showUnlinkDialog = true }
                 )
             }
@@ -224,6 +234,16 @@ fun ProfileScreen(
                     )
                 }
             }
+            actionState.message?.let { message ->
+                item {
+                    Text(message, color = UniStackColors.Green, fontWeight = FontWeight.Bold)
+                }
+            }
+            actionState.errorMessage?.let { message ->
+                item {
+                    Text(message, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 
@@ -251,20 +271,6 @@ fun ProfileScreen(
         )
     }
 
-    if (showGoogleDialog) {
-        AlertDialog(
-            onDismissRequest = { showGoogleDialog = false },
-            title = { Text("Google Sign-In preparado") },
-            text = { Text("La app ya tiene la estructura de cuenta, foto y backup futuro. Falta configurar el proveedor OAuth para activar el inicio de sesión real.") },
-            confirmButton = {
-                TextButton(onClick = { showGoogleDialog = false }) {
-                    Text("Entendido", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
-                }
-            },
-            containerColor = UniStackColors.Card
-        )
-    }
-
     if (showUnlinkDialog) {
         AlertDialog(
             onDismissRequest = { showUnlinkDialog = false },
@@ -274,11 +280,7 @@ fun ProfileScreen(
                 TextButton(
                     onClick = {
                         showUnlinkDialog = false
-                        feedback = if (viewModel.unlinkAccount()) {
-                            "Cuenta desvinculada."
-                        } else {
-                            "No hay cuenta vinculada."
-                        }
+                        viewModel.unlinkAccount()
                     }
                 ) {
                     Text("Desvincular", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
@@ -297,10 +299,11 @@ fun ProfileScreen(
 @Composable
 private fun AccountSyncCard(
     currentUser: AppUser,
+    isBusy: Boolean,
     onGoogleClick: () -> Unit,
     onUnlinkClick: () -> Unit
 ) {
-    SettingsCard(title = "Cuenta y backup") {
+    SettingsCard(title = "Cuenta") {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AccountAvatar(
                 photoUrl = currentUser.photoUrl,
@@ -327,13 +330,18 @@ private fun AccountSyncCard(
             SyncStatusPill(status = currentUser.syncStatus)
         }
         Text(
-            text = "Backup local listo para vinculación futura.",
+            text = if (currentUser.isLinked) {
+                "Tu perfil está vinculado a esta cuenta."
+            } else {
+                "Puedes usar la app localmente o vincular una cuenta de Google."
+            },
             color = UniStackColors.TextSecondary,
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
         Button(
             onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
+            enabled = !isBusy,
             shape = AppShapes.Pill,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (currentUser.isLinked) UniStackColors.SurfaceVariant else UniStackColors.Primary,
@@ -341,7 +349,13 @@ private fun AccountSyncCard(
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (currentUser.isLinked) "Desvincular cuenta" else "Conectar con Google")
+            Text(
+                when {
+                    isBusy -> "Procesando..."
+                    currentUser.isLinked -> "Desvincular cuenta"
+                    else -> "Conectar con Google"
+                }
+            )
         }
     }
 }
@@ -591,6 +605,7 @@ private fun ModulesSettingsCard(
                         onValueChange = { onToggleModule(module) }
                     )
                     .semantics {
+                        contentDescription = "Módulo ${module.label()}"
                         stateDescription = if (enabled) "Activo" else "Inactivo"
                     },
                 verticalAlignment = Alignment.CenterVertically
