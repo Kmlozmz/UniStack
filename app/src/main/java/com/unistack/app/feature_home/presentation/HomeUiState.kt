@@ -14,13 +14,19 @@ data class HomeUiState(
         val emptySummary = HomeSummary(
             userName = "Estudiante",
             avatarPhotoUrl = null,
+            dashboardMessage = "Configura tu semestre para ver prioridades reales.",
             generalAverage = 0.0,
             subjectsCount = 0,
             tasksToday = 0,
+            overdueTasks = 0,
             subjects = emptyList(),
+            riskSubject = null,
             neededGrade = null,
             nextTask = null,
+            nextAcademicWork = null,
             weeklyExpenses = null,
+            weeklyExpenseTotal = 0,
+            productivitySummary = "Sin tareas todavía.",
             gradingScale = GradingScale.ZERO_TO_FIVE,
             enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )

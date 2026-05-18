@@ -61,6 +61,32 @@ Usar esta tabla durante pruebas en dispositivo o emulador. Registrar evidencia b
 | QA-42 | Accesibilidad | Contraste | Revisar claro, oscuro y sistema | Texto y controles mantienen contraste suficiente | OK 2026-05-13: temas Claro/Oscuro/Sistema seleccionables; `lintDebug` sin errores |  |
 | QA-43 | Datos | Persistencia general | Crear materia, nota, tarea y gasto; cerrar y reabrir | Todos los datos siguen disponibles | OK 2026-05-13: materias/notas, tareas y gastos validados tras recreate de Activity |  |
 | QA-44 | Datos | Sin mock runtime | Revisar Home y módulos sin datos reales | No aparecen datos demo fuera de previews | OK 2026-05-13: flujo vacío validado y escaneo sin mock runtime accionable |  |
+| QA-45 | Home | Tablero de prioridades | Crear materia con riesgo, tarea próxima y gasto semanal | Home muestra prioridades accionables hacia materia, tareas, gastos y trabajos | Parcial OK 2026-05-15: el flujo ADB extendido llegó a prioridades, productividad y semana sin crash; falta rerun final por desconexión del dispositivo | P2 |
+| QA-46 | Tareas | Filtros compactos | Crear tareas pendientes, vencidas, completadas y asociadas a materia | Filtros por estado y materia actualizan la lista sin romper acciones | Parcial OK 2026-05-15: ADB extendido validó filtros principales y acciones de lista; falta rerun final por desconexión | P2 |
+| QA-47 | Gastos | Filtros compactos | Crear gastos de semana, mes y diferentes categorías | Filtros por periodo y categoría actualizan lista y resumen por categoría | Parcial OK 2026-05-15: ADB validó semana actual, exclusión de gasto antiguo, alta y categorías configurables; falta rerun final | P2 |
+| QA-48 | Notas | Simulador desde materia | Abrir detalle de materia > Simular esta materia | El simulador abre con esa materia seleccionada y mantiene back correcto | Parcial OK 2026-05-15: escenario guardado desde simulador validado en ADB extendido; falta rerun final | P2 |
+| QA-49 | Formularios | Consistencia y preview | Abrir crear/editar tarea y gasto | Header, validaciones, preview y guardar/cancelar son coherentes | Parcial OK 2026-05-15: tareas, gastos y trabajos recorren formularios reales en ADB extendido; falta rerun final | P2 |
+| QA-50 | Responsive | Prioridades en tablet | Forzar ancho tablet o emulador | Prioridades de Home usan dos columnas sin solapes | Parcial OK 2026-05-15: densidades 542/454/325 siguen cubiertas; falta rerun final tras ajuste de limpieza | P2 |
+| QA-51 | Trabajos | Crear desde plantilla | Abrir Trabajos, elegir plantilla y crear trabajo con fecha/materia | El trabajo se guarda, aparece en lista y mantiene plantilla seleccionada | Parcial OK 2026-05-15: ADB extendido creó trabajo desde plantilla y lo mostró en lista; falta rerun final | P1 |
+| QA-52 | Trabajos | Editar y eliminar trabajo | Cambiar título, fecha, estado, prioridad, notas y luego eliminar | Cambios persisten y eliminar limpia el trabajo sin romper navegación | Parcial OK 2026-05-15: edición y diálogo de eliminación cubiertos; navegación de limpieza ajustada y pendiente de rerun | P1 |
+| QA-53 | Trabajos | Checklist persistente | Marcar checklist, cerrar app y volver a Trabajos | Progreso y checks se conservan por trabajo | Parcial OK 2026-05-15: checklist y exportación usan datos persistidos en el flujo extendido; falta rerun final | P1 |
+| QA-54 | Trabajos | Asociación con materia | Crear trabajo asociado a una materia y abrir detalle de materia | El trabajo aparece en la materia con fecha, estado y progreso | Parcial OK 2026-05-15: asociación con materia validada en detalle durante ADB extendido; falta rerun final | P1 |
+| QA-55 | Trabajos | Exportación y APA | Registrar fuentes, copiar referencias y exportar trabajo | Portapapeles recibe texto con checklist, secciones y referencias APA | Parcial OK 2026-05-15: portapapeles APA/exportación validado en ADB extendido; falta rerun final | P2 |
+| QA-56 | Home | Próximo trabajo y semana | Crear tarea, gasto y trabajo próximo | Home muestra prioridad de trabajo y vista "Esta semana" sin solapes | Parcial OK 2026-05-15: Home mostró prioridades y productividad con datos reales; falta rerun final | P2 |
+| QA-57 | Perfil | Preferencias de notificación | Cambiar toggles y horas de anticipación | Preferencias se guardan y validan rango 1-168 horas | Parcial OK 2026-05-15: preferencias recorridas en ADB extendido y persistencia local verde; falta rerun final | P1 |
+| QA-58 | Android | Permiso de notificaciones | Instalar limpio en Android 13+ y abrir app | Solicita permiso cuando corresponde y no bloquea uso si se rechaza | Parcial OK 2026-05-15: instrumentación concede `POST_NOTIFICATIONS`; rechazo manual del permiso sigue pendiente | P1 |
+| QA-59 | Recordatorios | Tareas/trabajos próximos | Crear tarea y trabajo con fecha futura, esperar o inspeccionar alarmas | Se programan recordatorios respetando perfil y módulos activos | Parcial OK 2026-05-15: programación/cancelación cubierta por tests locales y flujo ADB de creación; falta inspección manual de alarmas | P1 |
+| QA-60 | Recordatorios | Sin duplicados | Editar, completar y eliminar tarea/trabajo con recordatorio | No quedan notificaciones duplicadas ni alarmas obsoletas visibles | Parcial OK 2026-05-15: lógica local y acciones ADB cubiertas; falta inspección manual de alarmas | P1 |
+| QA-61 | Insights | Escenarios guardados | Abrir simulador, guardar escenario y reabrir la app | El escenario queda asociado a la materia y puede eliminarse | Parcial OK 2026-05-15: escenario guardado validado en ADB extendido; falta rerun final | P1 |
+| QA-62 | Gastos | Presupuesto y alerta | Configurar presupuesto semanal/mensual y registrar gastos | Gastos muestra alerta al superar umbral y tendencia semanal | Parcial OK 2026-05-15: presupuesto y resumen de gastos validados localmente y en ADB extendido; falta rerun final | P1 |
+| QA-63 | Gastos | Categorías configurables | Desactivar categorías en Perfil y abrir registrar gasto/filtros | Solo categorías activas aparecen, sin ocultar registros existentes | Parcial OK 2026-05-15: ADB extendido validó que una categoría desactivada no aparece al registrar gasto; falta rerun final | P2 |
+| QA-64 | Home | Productividad | Crear tareas completadas, pendientes y vencidas | Home muestra resumen de productividad coherente | Parcial OK 2026-05-15: productividad visible con tareas completadas/vencidas en ADB extendido; falta rerun final | P2 |
+| QA-65 | Backup local | Copiar backup JSON | Perfil > Datos y exportación > Copiar backup JSON | Portapapeles contiene JSON versionado con materias, tareas, gastos y trabajos | Parcial OK 2026-05-15: portapapeles con `schemaVersion` y trabajo real validado en ADB extendido; falta rerun final | P1 |
+| QA-66 | Backup local | Vista previa restore | Pegar backup JSON válido y tocar Vista previa | Muestra resumen de materias, notas, tareas, gastos y trabajos antes de restaurar | Parcial OK 2026-05-15: preview inválido y válido validados con JSON mínimo versionado; falta rerun final | P1 |
+| QA-67 | Backup local | Restore sin duplicados | Restaurar dos veces el mismo backup | No duplica materias, notas, tareas, gastos ni trabajos con el mismo ID | OK local 2026-05-14 para IDs estables y restore sin duplicados; UI restauró un backup mínimo en ADB extendido, falta doble restore desde UI | P1 |
+| QA-68 | Backup local | JSON inválido | Pegar texto corrupto y tocar Vista previa/Restaurar | Muestra error y no modifica datos existentes | Parcial OK 2026-05-15: error de JSON inválido visible en ADB extendido; falta rerun final | P1 |
+| QA-69 | Exportación | CSV y reporte | Copiar reporte académico, tareas CSV y gastos CSV | El portapapeles contiene datos estructurados y legibles | Parcial OK 2026-05-15: reporte, tareas CSV y gastos CSV validados por portapapeles en ADB extendido; falta rerun final | P2 |
+| QA-70 | Exportación | PDF académico | Perfil > Datos y exportación > PDF | Se crea PDF local y la app muestra confirmación sin crashear | Parcial OK 2026-05-15: acción PDF ejecutada en ADB extendido sin crash; falta validación manual del archivo generado | P2 |
 
 ## Comandos de validación
 
@@ -76,6 +102,15 @@ Usar esta tabla durante pruebas en dispositivo o emulador. Registrar evidencia b
 
 ## Última ejecución
 
+- Fecha: 2026-05-15.
+- `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug`: OK, 90 tasks, 1 min 58 s.
+- `./gradlew :app:compileDebugAndroidTestKotlin`: OK.
+- `./gradlew connectedDebugAndroidTest`: instalación ADB superada tras reintento; el flujo extendido avanzó por onboarding, materias/notas, simulador, tareas, Home, trabajos, perfil, backup/exportación, temas y responsive. El último pase no quedó verde porque el dispositivo se desconectó antes de repetir el ajuste final de navegación (`adb devices` quedó vacío).
+- Dispositivo usado antes de la desconexión: Xiaomi `OBCQDAPVU8AMFAMJ`, modelo `2412DPC0AG`, Android 16.
+- Último fallo accionable antes de la desconexión: retorno desde limpieza de Trabajos esperaba Home tras `Volver`; se ajustó para navegar por tab `Inicio`. Pendiente: reconectar el teléfono y reintentar `./gradlew connectedDebugAndroidTest`.
+
+## Última ejecución ADB verde
+
 - Fecha: 2026-05-13.
 - Dispositivo físico: `OBCQDAPVU8AMFAMJ`, modelo `2412DPC0AG`, Android 16.
 - Densidad antes/después: `Physical density: 520`, `Override density: 500`.
@@ -85,10 +120,51 @@ Usar esta tabla durante pruebas en dispositivo o emulador. Registrar evidencia b
 - Tema del sistema: `cmd uimode night yes/no/auto` responde; se restauró a `Night mode: yes`.
 - Crash log durante instrumentación: sin `FATAL EXCEPTION` de `com.unistack.app`.
 
-## Cierre de Fase 1
+## Última ejecución local Fase 1/2
+
+- Fecha local: 2026-05-13.
+- `./gradlew testDebugUnitTest`: OK, incluye repositorios Room en memoria, migraciones 1->2/2->3, navegación y exportación de plantillas.
+- `./gradlew assembleDebug assembleDebugAndroidTest lintDebug`: OK, 81 tasks, 3 min 27 s.
+- Pase ADB base ejecutado el 2026-05-14; quedan pendientes pases UI específicos para QA-45/46/48/50 y filtros exhaustivos de QA-47.
+
+## Última ejecución local Fase 3/4
+
+- Fecha local: 2026-05-14.
+- `./gradlew testDebugUnitTest`: OK, incluye repositorios Room en memoria, migraciones 1->2/2->3/3->4, trabajos académicos y exportación APA.
+- `./gradlew assembleDebug assembleDebugAndroidTest lintDebug`: OK, 81 tasks, 3 min 1 s.
+- Bot Telegram: APK final de Fase 3/4 enviado con `./gradlew sendDebugApkToTelegram`.
+- Pase ADB base ejecutado el 2026-05-14; quedan pendientes pases UI específicos para QA-51 a QA-60.
+
+## Última ejecución local Fase 5/6
+
+- Fecha local: 2026-05-14.
+- `./gradlew testDebugUnitTest`: OK, incluye escenarios, presupuesto persistido, backup local JSON, restore sin duplicados y rechazo de JSON corrupto.
+- `./gradlew assembleDebug assembleDebugAndroidTest lintDebug`: OK, 81 tasks, 1 min 18 s.
+- Bot Telegram: APK final de Fase 5/6 enviado con `./gradlew sendDebugApkToTelegram`.
+- Pase de dispositivo base ejecutado el 2026-05-14; quedan pendientes pases UI específicos para QA-45/46/48/50-64/70 y portapapeles de QA-65-69.
+
+## Última ejecución ADB Fases 1-6
+
+- Fecha local: 2026-05-14.
+- Dispositivo físico: `OBCQDAPVU8AMFAMJ`, modelo `2412DPC0AG`, Android 16.
+- `./gradlew connectedDebugAndroidTest`: OK, 1 test, 1 min 4 s.
+- `./gradlew testDebugUnitTest assembleDebug assembleDebugAndroidTest lintDebug`: OK, 90 tasks, 4 min 48 s.
+- Cobertura ADB confirmada: onboarding limpio, creación/edición/eliminación de materia, notas ponderadas, bloqueo de porcentaje >100, recreación de Activity, navegación base de tareas, alta/edición/eliminación de gastos, filtro Semana/Todo, escalas 0-5/0-10/0-100, toggles de módulos, preferencia visual Claro/Oscuro/Sistema, cambio de nombre, densidades 542/454/325 y reinicio de onboarding.
+- El permiso `POST_NOTIFICATIONS` se concede en instrumentación con `GrantPermissionRule` para evitar bloqueo del flujo; el rechazo manual queda pendiente.
+- No se detectaron crashes en el pase automatizado.
+
+## QA extendido preparado
+
+- Fecha local: 2026-05-15.
+- `UniStackDeviceFlowTest` amplía el recorrido para cubrir simulador con escenario guardado, filtros avanzados de tareas, Home/Productividad, trabajos académicos con checklist/exportación APA, presupuesto/categorías, backup JSON, CSV/PDF y limpieza final.
+- `./gradlew :app:compileDebugAndroidTestKotlin`: OK.
+- Estado actual: la instalación ya no bloquea el pase. El flujo extendido se estabilizó hasta la limpieza final; queda repetir el pase completo cuando el teléfono vuelva a aparecer en `adb devices`.
+
+## Cierre de QA base
 
 - Todos los casos P0/P1 pasan o tienen bug corregido.
 - No hay datos mock visibles en runtime.
 - La app persiste información tras cerrar y abrir.
 - La navegación no presenta loops, flicker bloqueante ni pantallas muertas.
 - Claro, oscuro y sistema funcionan desde Perfil.
+- Fase 1/2/3/4/5/6 tienen verificación local verde y pase ADB base verde. El QA extendido está instrumentado, compila y ya recorrió la mayoría de los flujos en dispositivo; falta repetirlo de punta a punta cuando el teléfono esté reconectado.

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -14,8 +15,10 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.EducationLevel
+import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.LinkedAccount
+import com.unistack.app.feature_user.domain.SavedGradeScenario
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
@@ -23,6 +26,8 @@ import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.json.JSONArray
+import org.json.JSONObject
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
@@ -46,6 +51,15 @@ class UserPreferencesDataSource(private val context: Context) {
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
         val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
+        val TASK_REMINDERS_ENABLED = booleanPreferencesKey("task_reminders_enabled")
+        val ACADEMIC_WORK_REMINDERS_ENABLED = booleanPreferencesKey("academic_work_reminders_enabled")
+        val OVERDUE_REMINDERS_ENABLED = booleanPreferencesKey("overdue_reminders_enabled")
+        val REMINDER_LEAD_HOURS = intPreferencesKey("reminder_lead_hours")
+        val WEEKLY_BUDGET = intPreferencesKey("weekly_budget")
+        val MONTHLY_BUDGET = intPreferencesKey("monthly_budget")
+        val EXPENSE_ALERT_THRESHOLD_PERCENT = intPreferencesKey("expense_alert_threshold_percent")
+        val ENABLED_EXPENSE_CATEGORIES = stringSetPreferencesKey("enabled_expense_categories")
+        val GRADE_SCENARIOS_JSON = stringPreferencesKey("grade_scenarios_json")
         val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         val CREATED_AT = longPreferencesKey("created_at")
         val UPDATED_AT = longPreferencesKey("updated_at")
@@ -95,6 +109,19 @@ class UserPreferencesDataSource(private val context: Context) {
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
             visualPreference = visualPreference,
+            taskRemindersEnabled = prefs[Keys.TASK_REMINDERS_ENABLED] ?: true,
+            academicWorkRemindersEnabled = prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] ?: true,
+            overdueRemindersEnabled = prefs[Keys.OVERDUE_REMINDERS_ENABLED] ?: true,
+            reminderLeadHours = prefs[Keys.REMINDER_LEAD_HOURS] ?: 24,
+            weeklyBudget = prefs[Keys.WEEKLY_BUDGET] ?: 0,
+            monthlyBudget = prefs[Keys.MONTHLY_BUDGET] ?: 0,
+            expenseAlertThresholdPercent = prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] ?: 80,
+            enabledExpenseCategories = prefs[Keys.ENABLED_EXPENSE_CATEGORIES]
+                ?.mapNotNull { runCatching { ExpenseCategory.valueOf(it) }.getOrNull() }
+                ?.toSet()
+                ?.ifEmpty { ExpenseCategory.entries.toSet() }
+                ?: ExpenseCategory.entries.toSet(),
+            gradeScenarios = parseGradeScenarios(prefs[Keys.GRADE_SCENARIOS_JSON]),
             setupCompleted = prefs[Keys.SETUP_COMPLETED] ?: false,
             createdAt = prefs[Keys.CREATED_AT] ?: 0L,
             updatedAt = prefs[Keys.UPDATED_AT] ?: 0L
@@ -135,6 +162,15 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
             prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
+            prefs[Keys.TASK_REMINDERS_ENABLED] = profile.taskRemindersEnabled
+            prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] = profile.academicWorkRemindersEnabled
+            prefs[Keys.OVERDUE_REMINDERS_ENABLED] = profile.overdueRemindersEnabled
+            prefs[Keys.REMINDER_LEAD_HOURS] = profile.reminderLeadHours
+            prefs[Keys.WEEKLY_BUDGET] = profile.weeklyBudget
+            prefs[Keys.MONTHLY_BUDGET] = profile.monthlyBudget
+            prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] = profile.expenseAlertThresholdPercent
+            prefs[Keys.ENABLED_EXPENSE_CATEGORIES] = profile.enabledExpenseCategories.map { it.name }.toSet()
+            prefs[Keys.GRADE_SCENARIOS_JSON] = profile.gradeScenarios.toJsonArrayString()
             prefs[Keys.ACCOUNT_PROVIDER] = profile.accountProvider.name
             prefs[Keys.SYNC_STATUS] = profile.syncStatus.name
 
@@ -224,5 +260,45 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs.remove(Keys.ACCOUNT_PHOTO_URL)
             prefs.remove(Keys.LAST_SYNC_AT)
         }
+    }
+
+    private fun parseGradeScenarios(json: String?): List<SavedGradeScenario> {
+        if (json.isNullOrBlank()) return emptyList()
+        return runCatching {
+            val array = JSONArray(json)
+            buildList {
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    add(
+                        SavedGradeScenario(
+                            id = item.optString("id"),
+                            subjectId = item.optString("subjectId"),
+                            subjectName = item.optString("subjectName"),
+                            name = item.optString("name"),
+                            targetAverage = item.optDouble("targetAverage"),
+                            neededGrade = if (item.isNull("neededGrade")) null else item.optDouble("neededGrade"),
+                            createdAt = item.optLong("createdAt")
+                        )
+                    )
+                }
+            }.filter { it.id.isNotBlank() && it.subjectId.isNotBlank() && it.name.isNotBlank() }
+        }.getOrDefault(emptyList())
+    }
+
+    private fun List<SavedGradeScenario>.toJsonArrayString(): String {
+        val array = JSONArray()
+        forEach { scenario ->
+            array.put(
+                JSONObject()
+                    .put("id", scenario.id)
+                    .put("subjectId", scenario.subjectId)
+                    .put("subjectName", scenario.subjectName)
+                    .put("name", scenario.name)
+                    .put("targetAverage", scenario.targetAverage)
+                    .put("neededGrade", scenario.neededGrade)
+                    .put("createdAt", scenario.createdAt)
+            )
+        }
+        return array.toString()
     }
 }

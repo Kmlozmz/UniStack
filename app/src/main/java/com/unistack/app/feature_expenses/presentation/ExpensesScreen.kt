@@ -17,14 +17,12 @@ import androidx.compose.material.icons.rounded.AddCard
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -37,6 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniEmptyStateCard
+import com.unistack.app.core.design.components.UniFilterChipRow
+import com.unistack.app.core.design.components.UniFilterOption
+import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.MiniBarChart
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
@@ -54,10 +57,24 @@ fun ExpensesScreen(
     viewModel: ExpensesViewModel = viewModel()
 ) {
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val weeklyExpenses = remember(expenses) { viewModel.weeklyExpenses() }
-    val categoryTotals = remember(weeklyExpenses) { viewModel.categoryTotals(weeklyExpenses) }
+    val monthlyExpenses = remember(expenses) { viewModel.monthlyExpenses() }
+    val previousWeekTotal = remember(expenses) { viewModel.previousWeekTotal() }
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
     var expenseIdPendingDelete by remember { mutableStateOf<String?>(null) }
+    var selectedPeriod by remember { mutableStateOf(ExpensePeriodFilter.WEEK) }
+    var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
+    val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
+    val filterCategories = remember(expenses, enabledCategories) {
+        (enabledCategories + expenses.map { it.category }).toList().sortedBy { it.ordinal }
+    }
+    val filteredExpenses = remember(expenses, selectedPeriod, selectedCategory) {
+        expenses
+            .filter { expense -> selectedPeriod.matches(expense) }
+            .filter { expense -> selectedCategory == null || expense.category == selectedCategory }
+    }
+    val categoryTotals = remember(filteredExpenses) { viewModel.categoryTotals(filteredExpenses) }
 
     LazyColumn(
         modifier = modifier
@@ -67,15 +84,35 @@ fun ExpensesScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Gastos", color = UniStackColors.TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-                Text("Registra gastos personales y académicos.", color = UniStackColors.TextSecondary)
-            }
+            UniScreenHeader(
+                title = "Gastos",
+                subtitle = "Registra gastos personales y académicos."
+            )
         }
         item {
             WeeklyExpenseSummaryCard(
                 weeklyExpenses = weeklyExpenses,
+                monthlyExpenses = monthlyExpenses,
+                previousWeekTotal = previousWeekTotal,
+                weeklyBudget = profile?.weeklyBudget ?: 0,
+                monthlyBudget = profile?.monthlyBudget ?: 0,
+                alertThresholdPercent = profile?.expenseAlertThresholdPercent ?: 80,
                 chartValues = chartValues
+            )
+        }
+        item {
+            UniFilterChipRow(
+                options = ExpensePeriodFilter.entries.map { UniFilterOption(it, it.label) },
+                selected = selectedPeriod,
+                onSelected = { selectedPeriod = it }
+            )
+        }
+        item {
+            UniFilterChipRow(
+                options = listOf(UniFilterOption<ExpenseCategory?>(null, "Todas")) +
+                    filterCategories.map { UniFilterOption<ExpenseCategory?>(it, it.label()) },
+                selected = selectedCategory,
+                onSelected = { selectedCategory = it }
             )
         }
         if (categoryTotals.isNotEmpty()) {
@@ -85,7 +122,23 @@ fun ExpensesScreen(
         }
         if (expenses.isEmpty()) {
             item {
-                EmptyExpensesCard()
+                UniEmptyStateCard(
+                    title = "Aún no tienes gastos reales.",
+                    body = "Registra tu primer gasto para ver el resumen semanal y categorías.",
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    actionText = "Registrar gasto",
+                    onActionClick = onAddExpenseClick,
+                    iconColor = UniStackColors.Coral
+                )
+            }
+        } else if (filteredExpenses.isEmpty()) {
+            item {
+                UniEmptyStateCard(
+                    title = "No hay gastos con este filtro.",
+                    body = "Cambia el periodo o la categoría para ver otros registros.",
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    iconColor = UniStackColors.Coral
+                )
             }
         } else {
             item {
@@ -96,7 +149,7 @@ fun ExpensesScreen(
                     fontWeight = FontWeight.ExtraBold
                 )
             }
-            items(expenses, key = { it.id }) { expense ->
+            items(filteredExpenses, key = { it.id }) { expense ->
                 ExpenseListItem(
                     expense = expense,
                     onEditClick = { onEditExpenseClick(expense.id) },
@@ -119,26 +172,14 @@ fun ExpensesScreen(
     }
 
     expenseIdPendingDelete?.let { expenseId ->
-        AlertDialog(
-            onDismissRequest = { expenseIdPendingDelete = null },
-            title = { Text("¿Eliminar gasto?") },
-            text = { Text("Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteExpense(expenseId)
-                        expenseIdPendingDelete = null
-                    }
-                ) {
-                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
-                }
+        UniConfirmDeleteDialog(
+            title = "¿Eliminar gasto?",
+            body = "Esta acción no se puede deshacer.",
+            onConfirm = {
+                viewModel.deleteExpense(expenseId)
+                expenseIdPendingDelete = null
             },
-            dismissButton = {
-                TextButton(onClick = { expenseIdPendingDelete = null }) {
-                    Text("Cancelar")
-                }
-            },
-            containerColor = UniStackColors.Card
+            onDismiss = { expenseIdPendingDelete = null }
         )
     }
 }
@@ -146,9 +187,33 @@ fun ExpensesScreen(
 @Composable
 private fun WeeklyExpenseSummaryCard(
     weeklyExpenses: List<Expense>,
+    monthlyExpenses: List<Expense>,
+    previousWeekTotal: Int,
+    weeklyBudget: Int,
+    monthlyBudget: Int,
+    alertThresholdPercent: Int,
     chartValues: List<Int>
 ) {
     val total = weeklyExpenses.sumOf { it.amount }
+    val monthlyTotal = monthlyExpenses.sumOf { it.amount }
+    val weeklyProgress = if (weeklyBudget > 0) total.toFloat() / weeklyBudget else 0f
+    val monthlyProgress = if (monthlyBudget > 0) monthlyTotal.toFloat() / monthlyBudget else 0f
+    val threshold = alertThresholdPercent / 100f
+    val trendText = when {
+        previousWeekTotal <= 0 && total > 0 -> "Primera semana con datos recientes."
+        previousWeekTotal <= 0 -> "Sin tendencia suficiente todavía."
+        total > previousWeekTotal -> "Subió ${CurrencyFormatter.formatCop(total - previousWeekTotal)} frente a la semana pasada."
+        total < previousWeekTotal -> "Bajó ${CurrencyFormatter.formatCop(previousWeekTotal - total)} frente a la semana pasada."
+        else -> "Gasto estable frente a la semana pasada."
+    }
+    val alertText = when {
+        weeklyBudget > 0 && weeklyProgress >= 1f -> "Superaste el presupuesto semanal."
+        weeklyBudget > 0 && weeklyProgress >= threshold -> "Estás cerca del límite semanal."
+        monthlyBudget > 0 && monthlyProgress >= 1f -> "Superaste el presupuesto mensual."
+        monthlyBudget > 0 && monthlyProgress >= threshold -> "Estás cerca del límite mensual."
+        weeklyBudget > 0 || monthlyBudget > 0 -> "Presupuesto bajo control."
+        else -> "Configura un presupuesto en Perfil para activar alertas."
+    }
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
@@ -167,6 +232,8 @@ private fun WeeklyExpenseSummaryCard(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(recordCountLabel(weeklyExpenses.size), color = UniStackColors.TextSecondary, fontSize = 13.sp)
+                Text(trendText, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
+                Text(alertText, color = budgetAlertColor(alertText), fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             MiniBarChart(
                 values = chartValues,
@@ -176,8 +243,27 @@ private fun WeeklyExpenseSummaryCard(
     }
 }
 
+private fun budgetAlertColor(text: String) =
+    if (text.contains("Superaste") || text.contains("cerca")) UniStackColors.Coral else UniStackColors.Green
+
 private fun recordCountLabel(count: Int): String =
     if (count == 1) "1 registro" else "$count registros"
+
+private enum class ExpensePeriodFilter(val label: String) {
+    WEEK("Semana"),
+    MONTH("Mes"),
+    ALL("Todo");
+
+    fun matches(expense: Expense): Boolean {
+        val today = ExpenseDateUtils.today()
+        val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
+        return when (this) {
+            WEEK -> ExpenseDateUtils.isInCurrentWeek(expense.dateMillis, today)
+            MONTH -> date.month == today.month && date.year == today.year
+            ALL -> true
+        }
+    }
+}
 
 @Composable
 private fun CategorySummaryCard(categoryTotals: Map<ExpenseCategory, Int>) {

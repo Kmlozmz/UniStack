@@ -90,6 +90,7 @@ fun HomeScreen(
     onAddExpenseClick: () -> Unit,
     onAddSubjectClick: () -> Unit,
     onSeeAllSubjectsClick: () -> Unit,
+    onSeeTasksClick: () -> Unit,
     onSeeExpensesClick: () -> Unit,
     onOpenTemplatesClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
@@ -115,6 +116,20 @@ fun HomeScreen(
         item { HomeHeader(photoUrl = summary.avatarPhotoUrl, onProfileClick = onProfileClick) }
         item { GreetingText(name = summary.userName) }
         item { HeroSummaryCard(summary = summary) }
+        item {
+            PriorityDashboardSection(
+                summary = summary,
+                showGrades = showGrades,
+                showTasks = showTasks,
+                showExpenses = showExpenses,
+                showTemplates = showTemplates,
+                onSubjectClick = onSubjectClick,
+                onSeeTasksClick = onSeeTasksClick,
+                onSeeExpensesClick = onSeeExpensesClick,
+                onOpenTemplatesClick = onOpenTemplatesClick
+            )
+        }
+        item { WeekOverviewSection(summary = summary) }
         if (showGrades) {
             item {
                 SubjectsSection(
@@ -262,9 +277,9 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = if (summary.generalAverage == null) {
-                            "Organiza tu semestre ✨"
+                            "Organiza tu semestre"
                         } else {
-                            "Vas bien 🎉"
+                            "Panel actualizado"
                         },
                         color = UniStackColors.PrimaryDark,
                         fontSize = if (summary.generalAverage == null) 24.sp else 29.sp,
@@ -276,7 +291,7 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
                         text = if (summary.generalAverage == null) {
                             "Agrega tus notas para\nempezar a ver tu progreso."
                         } else {
-                            "Sigue así, ¡vas por\nbuen camino!"
+                            "Revisa tus prioridades\nantes de seguir."
                         },
                         color = UniStackColors.TextPrimary,
                         fontSize = 13.sp,
@@ -955,6 +970,7 @@ fun HomeScreenPreview() {
             onAddExpenseClick = {},
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
+            onSeeTasksClick = {},
             onSeeExpensesClick = {},
             onOpenTemplatesClick = {},
             onSubjectClick = {},
@@ -974,6 +990,7 @@ fun HomeScreenNoGradesPreview() {
             onAddExpenseClick = {},
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
+            onSeeTasksClick = {},
             onSeeExpensesClick = {},
             onOpenTemplatesClick = {},
             onSubjectClick = {},

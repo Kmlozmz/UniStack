@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.TrackChanges
+import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -49,6 +50,9 @@ import com.unistack.app.core.design.theme.UniStackTheme
 import androidx.compose.ui.tooling.preview.Preview
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_templates.domain.AcademicWork
+import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import java.util.Locale
 
 @Composable
@@ -58,6 +62,7 @@ fun SubjectDetailScreen(
     onAddGradeClick: (String) -> Unit,
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
+    onOpenSimulatorClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
@@ -65,6 +70,7 @@ fun SubjectDetailScreen(
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
+    val academicWorks by viewModel.academicWorks.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
@@ -91,6 +97,7 @@ fun SubjectDetailScreen(
     val evaluated = viewModel.evaluatedPercentage(subject)
     val needed = viewModel.neededGrade(subject)
     val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
+    val subjectWorks = academicWorks.filter { it.subjectId == subject.id }
 
     LazyColumn(
         modifier = modifier
@@ -228,6 +235,31 @@ fun SubjectDetailScreen(
             }
         }
         item {
+            Button(
+                onClick = { onOpenSimulatorClick(subject.id) },
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Blue),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.TrackChanges, contentDescription = null)
+                Spacer(modifier = Modifier.padding(3.dp))
+                Text("Simular esta materia")
+            }
+        }
+        if (subjectWorks.isNotEmpty()) {
+            item {
+                Text(
+                    "Trabajos asociados",
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            items(subjectWorks, key = { it.id }) { work ->
+                SubjectWorkCard(work = work)
+            }
+        }
+        item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -343,6 +375,46 @@ fun SubjectDetailScreen(
     }
 }
 
+@Composable
+private fun SubjectWorkCard(work: AcademicWork) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.MediumCard
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Rounded.Assignment, contentDescription = null, tint = UniStackColors.Blue)
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(work.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    listOfNotNull(
+                        work.status.label(),
+                        work.dueDateMillis?.let(TaskDateUtils::dueText),
+                        "${(work.checklistProgress * 100).toInt()}% listo"
+                    ).joinToString(" · "),
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 13.sp
+                )
+            }
+        }
+    }
+}
+
+private fun AcademicWorkStatus.label(): String {
+    return when (this) {
+        AcademicWorkStatus.IDEA -> "Idea"
+        AcademicWorkStatus.DRAFT -> "Borrador"
+        AcademicWorkStatus.REVIEW -> "Revisión"
+        AcademicWorkStatus.READY -> "Listo"
+        AcademicWorkStatus.SUBMITTED -> "Entregado"
+    }
+}
+
 private fun gradeCountLabel(count: Int): String =
     if (count == 1) "1 registrada" else "$count registradas"
 
@@ -407,6 +479,7 @@ fun SubjectDetailScreenPreview() {
             onAddGradeClick = {},
             onEditSubjectClick = {},
             onEditGradeClick = { _, _ -> },
+            onOpenSimulatorClick = {},
             onSubjectDeleted = {}
         )
     }

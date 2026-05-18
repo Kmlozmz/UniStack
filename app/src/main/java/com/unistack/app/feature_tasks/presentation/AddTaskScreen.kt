@@ -21,7 +21,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -101,11 +101,9 @@ fun AddTaskScreen(
         IconButton(onClick = onBackClick) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
-        Text(
-            if (isEditing) "Editar tarea" else "Nueva tarea",
-            color = UniStackColors.TextPrimary,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
+        UniScreenHeader(
+            title = if (isEditing) "Editar tarea" else "Nueva tarea",
+            subtitle = "Define actividad, fecha, tiempo estimado, materia y dificultad."
         )
         UniCard(
             modifier = Modifier.fillMaxWidth(),
@@ -182,6 +180,10 @@ fun AddTaskScreen(
                         difficulty = it
                         error = null
                     }
+                )
+                Text(
+                    text = "Vista previa: ${title.ifBlank { "Actividad" }} · ${parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it)) } ?: "fecha pendiente"} · ${parsedMinutes?.let { TaskDateUtils.estimatedTimeText(it) } ?: "tiempo pendiente"}",
+                    color = UniStackColors.TextSecondary
                 )
                 error?.let {
                     Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)

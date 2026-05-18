@@ -19,7 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -51,6 +51,7 @@ fun AddExpenseScreen(
     BackHandler(onBack = onBackClick)
 
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val expense = expenseId?.let { id -> expenses.firstOrNull { it.id == id } }
     val isEditing = expenseId != null
 
@@ -62,6 +63,8 @@ fun AddExpenseScreen(
 
     val parsedAmount = amount.toIntOrNull()
     val parsedDate = ExpenseDateUtils.parseInput(date)
+    val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
+    val visibleCategories = (enabledCategories + listOfNotNull(expense?.category)).toList().sortedBy { it.ordinal }
     val isValid = (!isEditing || expense != null) &&
         parsedAmount != null &&
         parsedAmount in 1..99_999_999 &&
@@ -90,11 +93,9 @@ fun AddExpenseScreen(
         IconButton(onClick = onBackClick) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
-        Text(
-            if (isEditing) "Editar gasto" else "Registrar gasto",
-            color = UniStackColors.TextPrimary,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
+        UniScreenHeader(
+            title = if (isEditing) "Editar gasto" else "Registrar gasto",
+            subtitle = "Guarda valor, fecha y categoría con el mismo formato del resumen."
         )
         UniCard(
             modifier = Modifier.fillMaxWidth(),
@@ -144,7 +145,7 @@ fun AddExpenseScreen(
                     }
                 )
                 Text("Categoría", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                ExpenseCategory.values().toList().chunked(2).forEach { row ->
+                visibleCategories.chunked(2).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { option ->
                             CategoryChip(
@@ -159,6 +160,10 @@ fun AddExpenseScreen(
                         }
                     }
                 }
+                Text(
+                    text = "Vista previa: ${category.label()} · ${parsedAmount?.let { CurrencyFormatter.formatCop(it) } ?: CurrencyFormatter.formatCop(0)} · ${parsedDate?.let { ExpenseDateUtils.formatDisplay(ExpenseDateUtils.toMillis(it)) } ?: "fecha pendiente"}",
+                    color = UniStackColors.TextSecondary
+                )
                 error?.let {
                     Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
                 }

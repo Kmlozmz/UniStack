@@ -16,18 +16,16 @@ import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.rounded.AddTask
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +36,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniEmptyStateCard
+import com.unistack.app.core.design.components.UniFilterChipRow
+import com.unistack.app.core.design.components.UniFilterOption
+import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -56,6 +59,20 @@ fun TasksScreen(
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
+    var selectedFilter by remember { mutableStateOf(TaskListFilter.ALL) }
+    var selectedSubjectId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(subjects) {
+        if (selectedSubjectId != null && subjects.none { it.id == selectedSubjectId }) {
+            selectedSubjectId = null
+        }
+    }
+
+    val filteredTasks = remember(tasks, selectedFilter, selectedSubjectId) {
+        tasks
+            .filter { task -> selectedFilter.matches(task) }
+            .filter { task -> selectedSubjectId == null || task.subjectId == selectedSubjectId }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -65,17 +82,52 @@ fun TasksScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Tareas", color = UniStackColors.TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
-                Text("Organiza entregas, parciales y actividades académicas.", color = UniStackColors.TextSecondary)
+            UniScreenHeader(
+                title = "Tareas",
+                subtitle = "Organiza entregas, parciales y actividades académicas."
+            )
+        }
+        item {
+            UniFilterChipRow(
+                options = TaskListFilter.entries.map { UniFilterOption(it, it.label) },
+                selected = selectedFilter,
+                onSelected = { selectedFilter = it }
+            )
+        }
+        if (subjects.isNotEmpty()) {
+            item {
+                UniFilterChipRow(
+                    options = listOf(UniFilterOption<String?>(null, "Todas")) +
+                        subjects.map { UniFilterOption<String?>(it.id, it.name) },
+                    selected = selectedSubjectId,
+                    onSelected = { selectedSubjectId = it }
+                )
             }
         }
         if (tasks.isEmpty()) {
             item {
-                EmptyTasksCard()
+                UniEmptyStateCard(
+                    title = "Aún no tienes tareas reales.",
+                    body = "Crea tu primera tarea para ver entregas, tiempos estimados y pendientes desde Home.",
+                    icon = Icons.AutoMirrored.Rounded.EventNote,
+                    actionText = "Nueva tarea",
+                    onActionClick = onNewTaskClick,
+                    color = UniStackColors.BlueLight,
+                    iconColor = UniStackColors.Blue
+                )
+            }
+        } else if (filteredTasks.isEmpty()) {
+            item {
+                UniEmptyStateCard(
+                    title = "No hay tareas con este filtro.",
+                    body = "Cambia el estado o la materia para revisar otros pendientes.",
+                    icon = Icons.AutoMirrored.Rounded.EventNote,
+                    color = UniStackColors.Card,
+                    iconColor = UniStackColors.Blue
+                )
             }
         } else {
-            items(tasks, key = { it.id }) { task ->
+            items(filteredTasks, key = { it.id }) { task ->
                 TaskCard(
                     task = task,
                     subjects = subjects,
@@ -100,26 +152,14 @@ fun TasksScreen(
     }
 
     taskIdPendingDelete?.let { taskId ->
-        AlertDialog(
-            onDismissRequest = { taskIdPendingDelete = null },
-            title = { Text("¿Eliminar tarea?") },
-            text = { Text("Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteTask(taskId)
-                        taskIdPendingDelete = null
-                    }
-                ) {
-                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
-                }
+        UniConfirmDeleteDialog(
+            title = "¿Eliminar tarea?",
+            body = "Esta acción no se puede deshacer.",
+            onConfirm = {
+                viewModel.deleteTask(taskId)
+                taskIdPendingDelete = null
             },
-            dismissButton = {
-                TextButton(onClick = { taskIdPendingDelete = null }) {
-                    Text("Cancelar")
-                }
-            },
-            containerColor = UniStackColors.Card
+            onDismiss = { taskIdPendingDelete = null }
         )
     }
 }
@@ -205,6 +245,22 @@ private fun TaskDifficulty.label(): String {
         TaskDifficulty.EASY -> "Dificultad baja"
         TaskDifficulty.MEDIUM -> "Dificultad media"
         TaskDifficulty.HARD -> "Dificultad alta"
+    }
+}
+
+private enum class TaskListFilter(val label: String) {
+    ALL("Todas"),
+    PENDING("Pendientes"),
+    OVERDUE("Vencidas"),
+    COMPLETED("Completadas");
+
+    fun matches(task: StudentTask): Boolean {
+        return when (this) {
+            ALL -> true
+            PENDING -> !task.completed
+            OVERDUE -> !task.completed && TaskDateUtils.fromMillis(task.dueDateMillis).isBefore(TaskDateUtils.today())
+            COMPLETED -> task.completed
+        }
     }
 }
 

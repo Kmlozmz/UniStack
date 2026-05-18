@@ -11,6 +11,7 @@ import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.UserIds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ class RoomGradesRepository(
     private val userRepository: UserRepository
 ) : GradesRepository {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
 
     private val userId: String
         get() = UserIds.normalize(userRepository.currentUser.value.userId)

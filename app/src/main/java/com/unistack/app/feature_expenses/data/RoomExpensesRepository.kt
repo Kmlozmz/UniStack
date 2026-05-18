@@ -23,7 +23,8 @@ class RoomExpensesRepository(
     private val userRepository: UserRepository
 ) : ExpensesRepository {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
 
     private val userId: String
         get() = UserIds.normalize(userRepository.currentUser.value.userId)

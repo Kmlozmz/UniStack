@@ -137,6 +137,7 @@ fun MainNavGraph(
                     onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
                     onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
                     onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                    onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
                     onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
                     onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
                     onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
@@ -205,6 +206,7 @@ fun MainNavGraph(
                     onAddGradeClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
+                    onOpenSimulatorClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.gradeSimulator(id), enabledModules) },
                     onSubjectDeleted = {
                         if (!navController.popBackStack(AppRoutes.Grades, inclusive = false)) {
                             navController.navigate(AppRoutes.Grades) {
@@ -277,6 +279,12 @@ fun MainNavGraph(
             }
             composable(AppRoutes.GradeSimulator) {
                 GradeSimulatorScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Grades, enabledModules) })
+            }
+            composable("${AppRoutes.GradeSimulator}/{subjectId}") { backStackEntry ->
+                GradeSimulatorScreen(
+                    initialSubjectId = backStackEntry.arguments?.getString("subjectId"),
+                    onBackClick = { navController.navigateBackOr(AppRoutes.Grades, enabledModules) }
+                )
             }
             composable(AppRoutes.AcademicTemplates) {
                 AcademicTemplatesScreen(

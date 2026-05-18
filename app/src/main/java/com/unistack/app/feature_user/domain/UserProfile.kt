@@ -1,5 +1,7 @@
 package com.unistack.app.feature_user.domain
 
+import com.unistack.app.feature_expenses.domain.ExpenseCategory
+
 data class UserProfile(
     val userId: String,
     val preferredName: String,
@@ -18,9 +20,28 @@ data class UserProfile(
     val targetAverage: Double,
     val enabledModules: Set<AppModule>,
     val visualPreference: VisualPreference = VisualPreference.SYSTEM,
+    val taskRemindersEnabled: Boolean = true,
+    val academicWorkRemindersEnabled: Boolean = true,
+    val overdueRemindersEnabled: Boolean = true,
+    val reminderLeadHours: Int = 24,
+    val weeklyBudget: Int = 0,
+    val monthlyBudget: Int = 0,
+    val expenseAlertThresholdPercent: Int = 80,
+    val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
+    val gradeScenarios: List<SavedGradeScenario> = emptyList(),
     val setupCompleted: Boolean,
     val createdAt: Long,
     val updatedAt: Long
+)
+
+data class SavedGradeScenario(
+    val id: String,
+    val subjectId: String,
+    val subjectName: String,
+    val name: String,
+    val targetAverage: Double,
+    val neededGrade: Double?,
+    val createdAt: Long
 )
 
 enum class EducationLevel {

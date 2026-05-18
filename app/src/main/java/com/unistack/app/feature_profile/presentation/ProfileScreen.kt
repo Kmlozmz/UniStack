@@ -44,12 +44,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,6 +66,7 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
+import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
@@ -84,6 +88,7 @@ fun ProfileScreen(
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
     val plan = FeatureGate.planFor(billingState.isPro)
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val currentProfile = profile
     var nameInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.preferredName.orEmpty())
@@ -97,7 +102,21 @@ fun ProfileScreen(
     var targetAverageInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(initialTargetAverageInput(currentProfile))
     }
+    var reminderLeadInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.reminderLeadHours?.toString() ?: "24")
+    }
+    var weeklyBudgetInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.weeklyBudget?.toString() ?: "0")
+    }
+    var monthlyBudgetInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.monthlyBudget?.toString() ?: "0")
+    }
+    var alertThresholdInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.expenseAlertThresholdPercent?.toString() ?: "80")
+    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var localBackupInput by rememberSaveable { mutableStateOf("") }
+    var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
 
@@ -112,6 +131,10 @@ fun ProfileScreen(
         selectedScale = scale
         passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
         targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, scale)
+        reminderLeadInput = current.reminderLeadHours.toString()
+        weeklyBudgetInput = current.weeklyBudget.toString()
+        monthlyBudgetInput = current.monthlyBudget.toString()
+        alertThresholdInput = current.expenseAlertThresholdPercent.toString()
     }
 
     LazyColumn(
@@ -125,7 +148,8 @@ fun ProfileScreen(
             Text("Perfil", color = UniStackColors.TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
         }
 
-        if (profile == null) {
+        val loadedProfile = currentProfile
+        if (loadedProfile == null) {
             item {
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
@@ -136,7 +160,7 @@ fun ProfileScreen(
                 }
             }
         } else {
-            val current = profile!!
+            val current = loadedProfile
             item { ProfileHeaderCard(profile = current) }
             item {
                 AccountSyncCard(
@@ -209,6 +233,104 @@ fun ProfileScreen(
                 )
             }
             item {
+                NotificationSettingsCard(
+                    taskRemindersEnabled = current.taskRemindersEnabled,
+                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                    overdueRemindersEnabled = current.overdueRemindersEnabled,
+                    reminderLeadInput = reminderLeadInput,
+                    onTaskToggle = {
+                        feedback = if (viewModel.updateReminderSettings(
+                                taskRemindersEnabled = !current.taskRemindersEnabled,
+                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                            )
+                        ) {
+                            "Recordatorios actualizados."
+                        } else {
+                            "Revisa las horas de anticipación."
+                        }
+                    },
+                    onAcademicWorkToggle = {
+                        feedback = if (viewModel.updateReminderSettings(
+                                taskRemindersEnabled = current.taskRemindersEnabled,
+                                academicWorkRemindersEnabled = !current.academicWorkRemindersEnabled,
+                                overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                            )
+                        ) {
+                            "Recordatorios actualizados."
+                        } else {
+                            "Revisa las horas de anticipación."
+                        }
+                    },
+                    onOverdueToggle = {
+                        feedback = if (viewModel.updateReminderSettings(
+                                taskRemindersEnabled = current.taskRemindersEnabled,
+                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                overdueRemindersEnabled = !current.overdueRemindersEnabled,
+                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                            )
+                        ) {
+                            "Recordatorios actualizados."
+                        } else {
+                            "Revisa las horas de anticipación."
+                        }
+                    },
+                    onLeadChange = {
+                        reminderLeadInput = it.filter(Char::isDigit).take(3)
+                        feedback = null
+                    },
+                    onSaveLead = {
+                        feedback = if (viewModel.updateReminderSettings(
+                                taskRemindersEnabled = current.taskRemindersEnabled,
+                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: -1
+                            )
+                        ) {
+                            "Recordatorios actualizados."
+                        } else {
+                            "Revisa las horas de anticipación."
+                        }
+                    }
+                )
+            }
+            item {
+                BudgetSettingsCard(
+                    weeklyBudgetInput = weeklyBudgetInput,
+                    monthlyBudgetInput = monthlyBudgetInput,
+                    alertThresholdInput = alertThresholdInput,
+                    enabledExpenseCategories = current.enabledExpenseCategories,
+                    onWeeklyBudgetChange = {
+                        weeklyBudgetInput = it.filter(Char::isDigit).take(9)
+                        feedback = null
+                    },
+                    onMonthlyBudgetChange = {
+                        monthlyBudgetInput = it.filter(Char::isDigit).take(9)
+                        feedback = null
+                    },
+                    onAlertThresholdChange = {
+                        alertThresholdInput = it.filter(Char::isDigit).take(3)
+                        feedback = null
+                    },
+                    onSaveClick = {
+                        feedback = if (viewModel.updateBudgetSettings(weeklyBudgetInput, monthlyBudgetInput, alertThresholdInput)) {
+                            "Presupuesto actualizado."
+                        } else {
+                            "Revisa presupuesto y alerta."
+                        }
+                    },
+                    onToggleCategory = { category ->
+                        feedback = if (viewModel.toggleExpenseCategory(category)) {
+                            "Categorías actualizadas."
+                        } else {
+                            "Debe quedar al menos una categoría activa."
+                        }
+                    }
+                )
+            }
+            item {
                 VisualSettingsCard(
                     selected = current.visualPreference,
                     onSelected = { preference ->
@@ -221,6 +343,51 @@ fun ProfileScreen(
                 PlanStatusCard(
                     plan = plan,
                     onOpenProClick = onOpenProClick
+                )
+            }
+            item {
+                DataManagementCard(
+                    backupInput = localBackupInput,
+                    backupPreview = localBackupPreview,
+                    onBackupInputChange = {
+                        localBackupInput = it
+                        localBackupPreview = null
+                    },
+                    onCopyBackupClick = {
+                        clipboard.setText(AnnotatedString(viewModel.exportLocalBackup()))
+                        feedback = "Backup JSON copiado."
+                    },
+                    onPreviewBackupClick = {
+                        localBackupPreview = viewModel.previewLocalBackup(localBackupInput)
+                    },
+                    onRestoreBackupClick = {
+                        feedback = if (viewModel.restoreLocalBackup(localBackupInput)) {
+                            localBackupInput = ""
+                            localBackupPreview = null
+                            "Backup local restaurado."
+                        } else {
+                            "Revisa el JSON del backup."
+                        }
+                    },
+                    onCopyAcademicReportClick = {
+                        clipboard.setText(AnnotatedString(viewModel.exportAcademicReport()))
+                        feedback = "Reporte académico copiado."
+                    },
+                    onCreateAcademicPdfClick = {
+                        feedback = if (viewModel.exportAcademicPdf(context)) {
+                            "PDF académico creado."
+                        } else {
+                            "No se pudo crear el PDF."
+                        }
+                    },
+                    onCopyTasksCsvClick = {
+                        clipboard.setText(AnnotatedString(viewModel.exportTasksCsv()))
+                        feedback = "CSV de tareas copiado."
+                    },
+                    onCopyExpensesCsvClick = {
+                        clipboard.setText(AnnotatedString(viewModel.exportExpensesCsv()))
+                        feedback = "CSV de gastos copiado."
+                    }
                 )
             }
             item {
@@ -294,6 +461,174 @@ fun ProfileScreen(
             },
             containerColor = UniStackColors.Card
         )
+    }
+}
+
+@Composable
+private fun BudgetSettingsCard(
+    weeklyBudgetInput: String,
+    monthlyBudgetInput: String,
+    alertThresholdInput: String,
+    enabledExpenseCategories: Set<ExpenseCategory>,
+    onWeeklyBudgetChange: (String) -> Unit,
+    onMonthlyBudgetChange: (String) -> Unit,
+    onAlertThresholdChange: (String) -> Unit,
+    onSaveClick: () -> Unit,
+    onToggleCategory: (ExpenseCategory) -> Unit
+) {
+    val weekly = weeklyBudgetInput.toIntOrNull()
+    val monthly = monthlyBudgetInput.toIntOrNull()
+    val threshold = alertThresholdInput.toIntOrNull()
+    val isValid = weekly != null && monthly != null && threshold != null &&
+        weekly in 0..99_999_999 && monthly in 0..999_999_999 && threshold in 1..100
+    SettingsCard(title = "Presupuesto") {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = weeklyBudgetInput,
+                onValueChange = onWeeklyBudgetChange,
+                label = { Text("Semanal") },
+                singleLine = true,
+                shape = AppShapes.MediumCard,
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value = monthlyBudgetInput,
+                onValueChange = onMonthlyBudgetChange,
+                label = { Text("Mensual") },
+                singleLine = true,
+                shape = AppShapes.MediumCard,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        OutlinedTextField(
+            value = alertThresholdInput,
+            onValueChange = onAlertThresholdChange,
+            label = { Text("Alerta al %") },
+            singleLine = true,
+            shape = AppShapes.MediumCard,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Button(
+            onClick = onSaveClick,
+            enabled = isValid,
+            shape = AppShapes.Pill,
+            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Guardar presupuesto")
+        }
+        Text("Categorías visibles", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        ExpenseCategory.entries.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { category ->
+                    SelectionPill(
+                        text = category.profileLabel(),
+                        selected = category in enabledExpenseCategories,
+                        onClick = { onToggleCategory(category) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DataManagementCard(
+    backupInput: String,
+    backupPreview: String?,
+    onBackupInputChange: (String) -> Unit,
+    onCopyBackupClick: () -> Unit,
+    onPreviewBackupClick: () -> Unit,
+    onRestoreBackupClick: () -> Unit,
+    onCopyAcademicReportClick: () -> Unit,
+    onCreateAcademicPdfClick: () -> Unit,
+    onCopyTasksCsvClick: () -> Unit,
+    onCopyExpensesCsvClick: () -> Unit
+) {
+    SettingsCard(title = "Datos y exportación") {
+        Button(
+            onClick = onCopyBackupClick,
+            shape = AppShapes.Pill,
+            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Copiar backup JSON")
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onCopyAcademicReportClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Notas")
+            }
+            Button(
+                onClick = onCreateAcademicPdfClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("PDF")
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onCopyTasksCsvClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Tareas CSV")
+            }
+        }
+        Button(
+            onClick = onCopyExpensesCsvClick,
+            shape = AppShapes.Pill,
+            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Gastos CSV")
+        }
+        OutlinedTextField(
+            value = backupInput,
+            onValueChange = onBackupInputChange,
+            label = { Text("Pegar backup JSON") },
+            minLines = 3,
+            maxLines = 5,
+            shape = AppShapes.MediumCard,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("profile-backup-json-input")
+        )
+        backupPreview?.let {
+            Text(it, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onPreviewBackupClick,
+                enabled = backupInput.isNotBlank(),
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.PrimaryLight, contentColor = UniStackColors.Primary),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("profile-backup-preview")
+            ) {
+                Text("Vista previa")
+            }
+            Button(
+                onClick = onRestoreBackupClick,
+                enabled = backupInput.isNotBlank(),
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("profile-backup-restore")
+            ) {
+                Text("Restaurar")
+            }
+        }
     }
 }
 
@@ -626,6 +961,91 @@ private fun ModulesSettingsCard(
 }
 
 @Composable
+private fun NotificationSettingsCard(
+    taskRemindersEnabled: Boolean,
+    academicWorkRemindersEnabled: Boolean,
+    overdueRemindersEnabled: Boolean,
+    reminderLeadInput: String,
+    onTaskToggle: () -> Unit,
+    onAcademicWorkToggle: () -> Unit,
+    onOverdueToggle: () -> Unit,
+    onLeadChange: (String) -> Unit,
+    onSaveLead: () -> Unit
+) {
+    SettingsCard(title = "Recordatorios") {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            ReminderToggleRow(
+                title = "Tareas",
+                description = "Avisos antes de tareas pendientes.",
+                checked = taskRemindersEnabled,
+                onToggle = onTaskToggle
+            )
+            ReminderToggleRow(
+                title = "Trabajos",
+                description = "Avisos antes de entregas académicas.",
+                checked = academicWorkRemindersEnabled,
+                onToggle = onAcademicWorkToggle
+            )
+            ReminderToggleRow(
+                title = "Vencidos",
+                description = "Avisos cuando una tarea o trabajo vence.",
+                checked = overdueRemindersEnabled,
+                onToggle = onOverdueToggle
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = reminderLeadInput,
+                    onValueChange = onLeadChange,
+                    label = { Text("Horas antes") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    shape = AppShapes.MediumCard
+                )
+                Button(
+                    onClick = onSaveLead,
+                    shape = AppShapes.Pill,
+                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
+                ) {
+                    Text("Guardar")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReminderToggleRow(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(AppShapes.MediumCard)
+            .toggleable(
+                value = checked,
+                role = Role.Checkbox,
+                onValueChange = { onToggle() }
+            )
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null)
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text(description, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
 private fun VisualSettingsCard(
     selected: VisualPreference,
     onSelected: (VisualPreference) -> Unit
@@ -793,6 +1213,17 @@ private fun AppModule.description(): String {
         AppModule.TASKS -> "Entregas y pendientes."
         AppModule.EXPENSES -> "Registro y resumen de gastos."
         AppModule.ACADEMIC_TEMPLATES -> "Checklist, ensayos y formato APA."
+    }
+}
+
+private fun ExpenseCategory.profileLabel(): String {
+    return when (this) {
+        ExpenseCategory.TRANSPORT -> "Transporte"
+        ExpenseCategory.FOOD -> "Comida"
+        ExpenseCategory.COPIES -> "Copias"
+        ExpenseCategory.MATERIALS -> "Materiales"
+        ExpenseCategory.OUTINGS -> "Salidas"
+        ExpenseCategory.OTHER -> "Otros"
     }
 }
 

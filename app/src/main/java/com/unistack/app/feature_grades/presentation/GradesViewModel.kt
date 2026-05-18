@@ -10,16 +10,21 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_profile.domain.FeatureGate
+import com.unistack.app.feature_templates.domain.AcademicWork
 import kotlinx.coroutines.flow.StateFlow
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_user.domain.SavedGradeScenario
+import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
 
 class GradesViewModel(
-    private val repository: GradesRepository = AppContainer.gradesRepository
+    private val repository: GradesRepository = AppContainer.gradesRepository,
+    private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
-    val userProfile: StateFlow<UserProfile?> = AppContainer.userRepository.userProfile
+    val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
     val billingState = AppContainer.billingRepository.state
+    val academicWorks: StateFlow<List<AcademicWork>> = AppContainer.academicWorksRepository.works
 
     private fun getMaxGrade(): Double {
         val profile = userProfile.value ?: return 5.0
@@ -145,5 +150,44 @@ class GradesViewModel(
             targetAverage = subject.targetAverage,
             maxGrade = getMaxGrade()
         )
+    }
+
+    fun saveScenario(
+        subject: Subject,
+        name: String,
+        targetAverage: Double,
+        neededGrade: Double?
+    ): Boolean {
+        val current = userProfile.value ?: return false
+        val normalizedName = TextValidators.normalizeText(name)
+        if (!TextValidators.validateActivityName(normalizedName).isValid) return false
+        val maxGrade = getMaxGrade()
+        if (targetAverage !in 0.0..maxGrade) return false
+        val scenario = SavedGradeScenario(
+            id = "scenario-${UUID.randomUUID()}",
+            subjectId = subject.id,
+            subjectName = subject.name,
+            name = normalizedName,
+            targetAverage = targetAverage,
+            neededGrade = neededGrade,
+            createdAt = System.currentTimeMillis()
+        )
+        userRepository.saveUserProfile(
+            current.copy(
+                gradeScenarios = (listOf(scenario) + current.gradeScenarios)
+                    .distinctBy { it.id }
+                    .take(12),
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+        return true
+    }
+
+    fun deleteScenario(scenarioId: String): Boolean {
+        val current = userProfile.value ?: return false
+        val next = current.gradeScenarios.filterNot { it.id == scenarioId }
+        if (next.size == current.gradeScenarios.size) return false
+        userRepository.saveUserProfile(current.copy(gradeScenarios = next, updatedAt = System.currentTimeMillis()))
+        return true
     }
 }

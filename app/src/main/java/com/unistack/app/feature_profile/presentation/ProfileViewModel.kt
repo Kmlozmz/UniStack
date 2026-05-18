@@ -7,6 +7,7 @@ import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_profile.domain.FeatureGate
+import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
@@ -31,6 +32,7 @@ class ProfileViewModel(
     val billingState = AppContainer.billingRepository.state
     private val accountAuthService = AppContainer.accountAuthService
     private val billingRepository = AppContainer.billingRepository
+    private val localBackupRepository = AppContainer.localBackupRepository
 
     private val _actionState = MutableStateFlow(ProfileActionState())
     val actionState: StateFlow<ProfileActionState> = _actionState
@@ -87,6 +89,59 @@ class ProfileViewModel(
     fun updateVisualPreference(preference: VisualPreference): Boolean {
         val current = profile.value ?: return false
         save(current.copy(visualPreference = preference))
+        return true
+    }
+
+    fun updateReminderSettings(
+        taskRemindersEnabled: Boolean,
+        academicWorkRemindersEnabled: Boolean,
+        overdueRemindersEnabled: Boolean,
+        reminderLeadHours: Int
+    ): Boolean {
+        val current = profile.value ?: return false
+        if (reminderLeadHours !in 1..168) return false
+        save(
+            current.copy(
+                taskRemindersEnabled = taskRemindersEnabled,
+                academicWorkRemindersEnabled = academicWorkRemindersEnabled,
+                overdueRemindersEnabled = overdueRemindersEnabled,
+                reminderLeadHours = reminderLeadHours
+            )
+        )
+        return true
+    }
+
+    fun updateBudgetSettings(
+        weeklyBudgetInput: String,
+        monthlyBudgetInput: String,
+        thresholdInput: String
+    ): Boolean {
+        val current = profile.value ?: return false
+        val weeklyBudget = weeklyBudgetInput.toIntOrNull() ?: return false
+        val monthlyBudget = monthlyBudgetInput.toIntOrNull() ?: return false
+        val threshold = thresholdInput.toIntOrNull() ?: return false
+        if (weeklyBudget !in 0..99_999_999) return false
+        if (monthlyBudget !in 0..999_999_999) return false
+        if (threshold !in 1..100) return false
+        save(
+            current.copy(
+                weeklyBudget = weeklyBudget,
+                monthlyBudget = monthlyBudget,
+                expenseAlertThresholdPercent = threshold
+            )
+        )
+        return true
+    }
+
+    fun toggleExpenseCategory(category: ExpenseCategory): Boolean {
+        val current = profile.value ?: return false
+        val next = if (category in current.enabledExpenseCategories) {
+            current.enabledExpenseCategories - category
+        } else {
+            current.enabledExpenseCategories + category
+        }
+        if (next.isEmpty()) return false
+        save(current.copy(enabledExpenseCategories = next))
         return true
     }
 
@@ -147,6 +202,48 @@ class ProfileViewModel(
                 }
             }
         }
+    }
+
+    fun exportLocalBackup(): String = localBackupRepository.exportBackupJson()
+
+    fun exportAcademicReport(): String = localBackupRepository.exportAcademicReport()
+
+    fun exportAcademicPdf(context: Context): Boolean {
+        return localBackupRepository.exportAcademicPdf(context)
+            .onSuccess { path ->
+                _actionState.update { it.copy(message = "PDF académico creado: $path", errorMessage = null) }
+            }
+            .onFailure { throwable ->
+                _actionState.update { it.copy(message = null, errorMessage = throwable.message ?: "No se pudo crear el PDF.") }
+            }
+            .isSuccess
+    }
+
+    fun exportTasksCsv(): String = localBackupRepository.exportTasksCsv()
+
+    fun exportExpensesCsv(): String = localBackupRepository.exportExpensesCsv()
+
+    fun previewLocalBackup(json: String): String {
+        return localBackupRepository.previewBackupJson(json)
+            .fold(
+                onSuccess = { it.summary() },
+                onFailure = { it.message ?: "Backup inválido." }
+            )
+    }
+
+    fun restoreLocalBackup(json: String): Boolean {
+        return localBackupRepository.restoreBackupJson(json)
+            .onSuccess { preview ->
+                _actionState.update {
+                    it.copy(message = "Backup local restaurado: ${preview.summary()}", errorMessage = null)
+                }
+            }
+            .onFailure { throwable ->
+                _actionState.update {
+                    it.copy(message = null, errorMessage = throwable.message ?: "No se pudo restaurar el backup.")
+                }
+            }
+            .isSuccess
     }
 
     private fun save(profile: UserProfile) {

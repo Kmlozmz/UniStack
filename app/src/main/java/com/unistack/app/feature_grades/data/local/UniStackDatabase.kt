@@ -8,25 +8,28 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.unistack.app.feature_expenses.data.local.ExpenseDao
 import com.unistack.app.feature_expenses.data.local.ExpenseEntity
+import com.unistack.app.feature_templates.data.local.AcademicWorkDao
+import com.unistack.app.feature_templates.data.local.AcademicWorkEntity
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
-    entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class],
-    version = 3,
-    exportSchema = false
+    entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
+    version = 4,
+    exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
     abstract fun subjectDao(): SubjectDao
     abstract fun gradeDao(): GradeDao
     abstract fun taskDao(): TaskDao
     abstract fun expenseDao(): ExpenseDao
+    abstract fun academicWorkDao(): AcademicWorkDao
 
     companion object {
         @Volatile
         private var INSTANCE: UniStackDatabase? = null
 
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     """
@@ -51,7 +54,7 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
+        val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     """
@@ -73,6 +76,37 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS academic_works (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        templateId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        subjectId TEXT,
+                        dueDateMillis INTEGER,
+                        status TEXT NOT NULL,
+                        priority TEXT NOT NULL,
+                        completedChecklistIdsJson TEXT NOT NULL,
+                        thesis TEXT NOT NULL,
+                        outline TEXT NOT NULL,
+                        sources TEXT NOT NULL,
+                        notes TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_works_userId ON academic_works(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_works_subjectId ON academic_works(subjectId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_works_dueDateMillis ON academic_works(dueDateMillis)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_works_status ON academic_works(status)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -80,11 +114,12 @@ abstract class UniStackDatabase : RoomDatabase() {
                     UniStackDatabase::class.java,
                     "unistack.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(*ALL_MIGRATIONS)
                     .build()
                     .also { INSTANCE = it }
             }
         }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
     }
 }

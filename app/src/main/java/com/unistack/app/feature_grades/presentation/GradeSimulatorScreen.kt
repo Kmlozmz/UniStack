@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material3.Button
@@ -45,12 +46,14 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.SavedGradeScenario
 import java.util.Locale
 
 @Composable
 fun GradeSimulatorScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    initialSubjectId: String? = null,
     viewModel: GradesViewModel = viewModel()
 ) {
     BackHandler(onBack = onBackClick)
@@ -60,9 +63,11 @@ fun GradeSimulatorScreen(
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = GradingScaleUtils.maxGradeFor(scale)
 
-    var selectedSubjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSubjectId by rememberSaveable(initialSubjectId) { mutableStateOf(initialSubjectId) }
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId } ?: subjects.firstOrNull()
     var targetAverageInput by rememberSaveable { mutableStateOf("") }
+    var scenarioNameInput by rememberSaveable { mutableStateOf("") }
+    var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LaunchedEffect(subjects, selectedSubjectId) {
         if (selectedSubjectId == null || subjects.none { it.id == selectedSubjectId }) {
@@ -219,7 +224,86 @@ fun GradeSimulatorScreen(
                                 color = UniStackColors.TextPrimary,
                                 fontWeight = FontWeight.Bold
                             )
+                            OutlinedTextField(
+                                value = scenarioNameInput,
+                                onValueChange = {
+                                    scenarioNameInput = it.take(28)
+                                    feedback = null
+                                },
+                                label = { Text("Nombre del escenario") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = AppShapes.MediumCard
+                            )
+                            Button(
+                                onClick = {
+                                    if (targetAverage != null && viewModel.saveScenario(subject, scenarioNameInput, targetAverage, neededGrade)) {
+                                        scenarioNameInput = ""
+                                        feedback = "Escenario guardado."
+                                    } else {
+                                        feedback = "Revisa el nombre y la meta."
+                                    }
+                                },
+                                enabled = targetIsValid,
+                                shape = AppShapes.Pill,
+                                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Yellow),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Guardar escenario")
+                            }
+                            feedback?.let { message ->
+                                Text(
+                                    message,
+                                    color = if (message.startsWith("Revisa")) UniStackColors.Coral else UniStackColors.Green,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
+                    }
+                }
+                val scenarios = profile?.gradeScenarios
+                    ?.filter { it.subjectId == subject.id }
+                    .orEmpty()
+                if (scenarios.isNotEmpty()) {
+                    item {
+                        SavedScenariosCard(
+                            scenarios = scenarios,
+                            scale = scale,
+                            onDeleteClick = { scenarioId -> viewModel.deleteScenario(scenarioId) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedScenariosCard(
+    scenarios: List<SavedGradeScenario>,
+    scale: GradingScale,
+    onDeleteClick: (String) -> Unit
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.LargeCard,
+        contentPadding = PaddingValues(18.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Escenarios guardados", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            scenarios.forEach { scenario ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(scenario.name, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Meta ${GradingScaleUtils.formatGrade(scenario.targetAverage, scale)} · Necesaria ${GradingScaleUtils.formatGrade(scenario.neededGrade, scale)}",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(onClick = { onDeleteClick(scenario.id) }) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Eliminar escenario", tint = UniStackColors.Coral)
                     }
                 }
             }

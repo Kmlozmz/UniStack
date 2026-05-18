@@ -16,7 +16,10 @@ import com.unistack.app.feature_sync.domain.CloudBackupState
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TasksRepository
-import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_templates.domain.AcademicWork
+import com.unistack.app.feature_templates.domain.AcademicWorkPriority
+import com.unistack.app.feature_templates.domain.AcademicWorkStatus
+import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +31,8 @@ class FirebaseCloudBackupRepository(
     private val userRepository: UserRepository,
     private val gradesRepository: GradesRepository,
     private val tasksRepository: TasksRepository,
-    private val expensesRepository: ExpensesRepository
+    private val expensesRepository: ExpensesRepository,
+    private val academicWorksRepository: AcademicWorksRepository
 ) : CloudBackupRepository {
 
     private val _state = MutableStateFlow(CloudBackupState())
@@ -36,7 +40,7 @@ class FirebaseCloudBackupRepository(
 
     override suspend fun backupNow(): Result<Unit> = runCatching {
         _state.update { it.copy(inProgress = true, message = null, errorMessage = null) }
-        val user = linkedUser()
+        val userId = linkedUserId()
         ensureFirebaseConfigured()
 
         val now = System.currentTimeMillis()
@@ -46,12 +50,13 @@ class FirebaseCloudBackupRepository(
             "profile" to profileMap(),
             "subjects" to gradesRepository.subjects.value.map(::subjectMap),
             "tasks" to tasksRepository.tasks.value.map(::taskMap),
-            "expenses" to expensesRepository.expenses.value.map(::expenseMap)
+            "expenses" to expensesRepository.expenses.value.map(::expenseMap),
+            "academicWorks" to academicWorksRepository.works.value.map(::academicWorkMap)
         )
 
         Firebase.firestore
             .collection("users")
-            .document(user.providerUserId!!)
+            .document(userId)
             .collection("backups")
             .document("current")
             .set(payload)
@@ -77,12 +82,12 @@ class FirebaseCloudBackupRepository(
 
     override suspend fun restoreLatest(): Result<Unit> = runCatching {
         _state.update { it.copy(inProgress = true, message = null, errorMessage = null) }
-        val user = linkedUser()
+        val userId = linkedUserId()
         ensureFirebaseConfigured()
 
         val snapshot = Firebase.firestore
             .collection("users")
-            .document(user.providerUserId!!)
+            .document(userId)
             .collection("backups")
             .document("current")
             .get()
@@ -99,6 +104,7 @@ class FirebaseCloudBackupRepository(
         }
         parseTasks(data["tasks"]).forEach(tasksRepository::addTask)
         parseExpenses(data["expenses"]).forEach(expensesRepository::addExpense)
+        parseAcademicWorks(data["academicWorks"]).forEach(academicWorksRepository::addWork)
 
         val now = System.currentTimeMillis()
         _state.update {
@@ -119,12 +125,13 @@ class FirebaseCloudBackupRepository(
         }
     }
 
-    private fun linkedUser(): AppUser {
+    private fun linkedUserId(): String {
         val user = userRepository.currentUser.value
-        check(user.isLinked && !user.providerUserId.isNullOrBlank()) {
+        val providerUserId = user.providerUserId
+        check(user.isLinked && !providerUserId.isNullOrBlank()) {
             "Conecta una cuenta de Google antes de usar backup cloud."
         }
-        return user
+        return providerUserId
     }
 
     private fun ensureFirebaseConfigured() {
@@ -148,7 +155,26 @@ class FirebaseCloudBackupRepository(
             "passingGrade" to profile.passingGrade,
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },
-            "visualPreference" to profile.visualPreference.name
+            "visualPreference" to profile.visualPreference.name,
+            "taskRemindersEnabled" to profile.taskRemindersEnabled,
+            "academicWorkRemindersEnabled" to profile.academicWorkRemindersEnabled,
+            "overdueRemindersEnabled" to profile.overdueRemindersEnabled,
+            "reminderLeadHours" to profile.reminderLeadHours,
+            "weeklyBudget" to profile.weeklyBudget,
+            "monthlyBudget" to profile.monthlyBudget,
+            "expenseAlertThresholdPercent" to profile.expenseAlertThresholdPercent,
+            "enabledExpenseCategories" to profile.enabledExpenseCategories.map { it.name },
+            "gradeScenarios" to profile.gradeScenarios.map { scenario ->
+                mapOf(
+                    "id" to scenario.id,
+                    "subjectId" to scenario.subjectId,
+                    "subjectName" to scenario.subjectName,
+                    "name" to scenario.name,
+                    "targetAverage" to scenario.targetAverage,
+                    "neededGrade" to scenario.neededGrade,
+                    "createdAt" to scenario.createdAt
+                )
+            }
         )
     }
 
@@ -186,6 +212,23 @@ class FirebaseCloudBackupRepository(
         "dateMillis" to expense.dateMillis,
         "createdAt" to expense.createdAt,
         "updatedAt" to expense.updatedAt
+    )
+
+    private fun academicWorkMap(work: AcademicWork): Map<String, Any?> = mapOf(
+        "id" to work.id,
+        "templateId" to work.templateId,
+        "title" to work.title,
+        "subjectId" to work.subjectId,
+        "dueDateMillis" to work.dueDateMillis,
+        "status" to work.status.name,
+        "priority" to work.priority.name,
+        "completedChecklistIds" to work.completedChecklistIds.toList(),
+        "thesis" to work.thesis,
+        "outline" to work.outline,
+        "sources" to work.sources,
+        "notes" to work.notes,
+        "createdAt" to work.createdAt,
+        "updatedAt" to work.updatedAt
     )
 
     private fun parseSubjects(value: Any?): List<Subject> {
@@ -241,6 +284,36 @@ class FirebaseCloudBackupRepository(
                 category = category,
                 amount = map.int("amount") ?: return@mapNotNull null,
                 dateMillis = map.long("dateMillis") ?: return@mapNotNull null,
+                createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
+                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
+            )
+        }
+    }
+
+    private fun parseAcademicWorks(value: Any?): List<AcademicWork> {
+        return asMapList(value).mapNotNull { map ->
+            val status = map.string("status")
+                ?.let { runCatching { AcademicWorkStatus.valueOf(it) }.getOrNull() }
+                ?: AcademicWorkStatus.DRAFT
+            val priority = map.string("priority")
+                ?.let { runCatching { AcademicWorkPriority.valueOf(it) }.getOrNull() }
+                ?: AcademicWorkPriority.MEDIUM
+            AcademicWork(
+                id = map.string("id") ?: return@mapNotNull null,
+                templateId = map.string("templateId") ?: return@mapNotNull null,
+                title = map.string("title") ?: return@mapNotNull null,
+                subjectId = map.string("subjectId"),
+                dueDateMillis = map.long("dueDateMillis"),
+                status = status,
+                priority = priority,
+                completedChecklistIds = (map["completedChecklistIds"] as? List<*>)
+                    ?.mapNotNull { it as? String }
+                    ?.toSet()
+                    .orEmpty(),
+                thesis = map.string("thesis").orEmpty(),
+                outline = map.string("outline").orEmpty(),
+                sources = map.string("sources").orEmpty(),
+                notes = map.string("notes").orEmpty(),
                 createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
                 updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
             )

@@ -33,6 +33,7 @@ object AppRoutes {
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
     fun editTask(taskId: String) = "$EditTask/$taskId"
     fun editExpense(expenseId: String) = "$EditExpense/$expenseId"
+    fun gradeSimulator(subjectId: String) = "$GradeSimulator/$subjectId"
 }
 
 data class BottomNavItem(
