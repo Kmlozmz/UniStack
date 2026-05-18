@@ -126,7 +126,7 @@ fun ProfileScreen(
 
     LaunchedEffect(profile?.updatedAt, profile?.userId) {
         val current = profile ?: return@LaunchedEffect
-        val scale = current.gradingScale.supportedNumericScale()
+        val scale = current.gradingScale
         nameInput = current.preferredName
         selectedScale = scale
         passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
@@ -189,18 +189,14 @@ fun ProfileScreen(
             item {
                 GradingSettingsCard(
                     selectedScale = selectedScale,
+                    customGradeMax = current.customGradeMax,
                     passingGradeInput = passingGradeInput,
                     targetAverageInput = targetAverageInput,
                     onScaleSelected = { scale ->
                         selectedScale = scale
-                        passingGradeInput = GradingScaleUtils.formatGrade(
-                            GradingScaleUtils.defaultPassingGradeFor(scale),
-                            scale
-                        )
-                        targetAverageInput = GradingScaleUtils.formatGrade(
-                            GradingScaleUtils.defaultTargetAverageFor(scale),
-                            scale
-                        )
+                        val maxGrade = if (scale == GradingScale.CUSTOM) current.customGradeMax else GradingScaleUtils.maxGradeFor(scale)
+                        passingGradeInput = defaultGradeInput(maxGrade * 0.6)
+                        targetAverageInput = defaultGradeInput(maxGrade * 0.8)
                         feedback = null
                     },
                     onPassingGradeChange = {
@@ -809,7 +805,7 @@ private fun ProfileHeaderCard(profile: UserProfile) {
                 Text(name, color = UniStackColors.TextPrimary, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
                 Text(profile.educationSummary(), color = UniStackColors.TextSecondary)
                 Text(
-                    "Meta ${GradingScaleUtils.formatGrade(profile.targetAverage, profile.gradingScale.supportedNumericScale())}",
+                    "Meta ${GradingScaleUtils.formatGrade(profile.targetAverage, profile.gradingScale)}",
                     color = UniStackColors.Primary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
@@ -856,6 +852,7 @@ private fun NameSettingsCard(
 @Composable
 private fun GradingSettingsCard(
     selectedScale: GradingScale,
+    customGradeMax: Double,
     passingGradeInput: String,
     targetAverageInput: String,
     onScaleSelected: (GradingScale) -> Unit,
@@ -863,7 +860,11 @@ private fun GradingSettingsCard(
     onTargetAverageChange: (String) -> Unit,
     onSaveClick: () -> Unit
 ) {
-    val maxGrade = GradingScaleUtils.maxGradeFor(selectedScale)
+    val maxGrade = if (selectedScale == GradingScale.CUSTOM) {
+        customGradeMax.coerceIn(1.0, 100.0)
+    } else {
+        GradingScaleUtils.maxGradeFor(selectedScale)
+    }
     val passing = passingGradeInput.toDoubleOrNull()
     val target = targetAverageInput.toDoubleOrNull()
     val isValid = passing != null &&
@@ -876,8 +877,7 @@ private fun GradingSettingsCard(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf<GradingScale>(
                 GradingScale.ZERO_TO_FIVE,
-                GradingScale.ZERO_TO_TEN,
-                GradingScale.ZERO_TO_ONE_HUNDRED
+                GradingScale.CUSTOM
             ).forEach { scale ->
                 SelectionPill(
                     text = scale.label(),
@@ -930,7 +930,7 @@ private fun ModulesSettingsCard(
     onToggleModule: (AppModule) -> Unit
 ) {
     SettingsCard(title = "Módulos activos") {
-        AppModule.values().forEach { module: AppModule ->
+        AppModule.entries.forEach { module: AppModule ->
             val enabled = module in enabledModules
             Row(
                 modifier = Modifier
@@ -1052,7 +1052,7 @@ private fun VisualSettingsCard(
 ) {
     SettingsCard(title = "Preferencia visual") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VisualPreference.values().forEach { preference: VisualPreference ->
+            VisualPreference.entries.forEach { preference: VisualPreference ->
                 SelectionPill(
                     text = preference.label(),
                     selected = selected == preference,
@@ -1154,10 +1154,9 @@ private fun SelectionPill(
 
 private fun UserProfile.educationSummary(): String {
     val level = when (educationLevel) {
-        EducationLevel.SCHOOL -> "Colegio"
+        EducationLevel.PRIMARY -> "Primaria"
+        EducationLevel.SECONDARY -> "Secundaria"
         EducationLevel.UNIVERSITY -> "Universidad"
-        EducationLevel.TECHNICAL -> "Técnico / Tecnólogo"
-        EducationLevel.INDEPENDENT_COURSE -> "Curso independiente"
         EducationLevel.OTHER -> "Otro"
     }
     val detail = gradeLevel ?: careerOrProgram
@@ -1165,7 +1164,7 @@ private fun UserProfile.educationSummary(): String {
 }
 
 private fun initialSupportedScale(profile: UserProfile?): GradingScale {
-    return profile?.gradingScale?.supportedNumericScale() ?: GradingScale.ZERO_TO_FIVE
+    return profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
 }
 
 private fun initialPassingGradeInput(profile: UserProfile?): String {
@@ -1178,22 +1177,17 @@ private fun initialTargetAverageInput(profile: UserProfile?): String {
     return profile?.let { GradingScaleUtils.formatGrade(it.targetAverage, scale) }.orEmpty()
 }
 
-private fun GradingScale.supportedNumericScale(): GradingScale {
-    return when (this) {
-        GradingScale.ZERO_TO_FIVE,
-        GradingScale.ZERO_TO_TEN,
-        GradingScale.ZERO_TO_ONE_HUNDRED -> this
-        GradingScale.LETTERS,
-        GradingScale.CUSTOM -> GradingScale.ZERO_TO_FIVE
+private fun defaultGradeInput(value: Double): String {
+    return if (value % 1.0 == 0.0) {
+        value.toInt().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.1f", value)
     }
 }
 
 private fun GradingScale.label(): String {
     return when (this) {
         GradingScale.ZERO_TO_FIVE -> "0-5"
-        GradingScale.ZERO_TO_TEN -> "0-10"
-        GradingScale.ZERO_TO_ONE_HUNDRED -> "0-100"
-        GradingScale.LETTERS -> "Letras"
         GradingScale.CUSTOM -> "Personalizada"
     }
 }

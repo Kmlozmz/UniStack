@@ -59,7 +59,7 @@ fun AddGradeScreen(
 
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
-    val maxGrade = GradingScaleUtils.maxGradeFor(scale)
+    val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(scale)
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
 
     val gradeValue = value.toDoubleOrNull()

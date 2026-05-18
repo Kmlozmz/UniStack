@@ -40,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
@@ -77,6 +78,7 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
+import kotlin.math.roundToInt
 
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
@@ -180,10 +182,15 @@ fun SetupFlow(
         composable(SetupRoutes.Scale) {
             SetupGradingScaleScreen(
                 selectedScale = viewModel.gradingScale,
+                customGradeMax = viewModel.customGradeMax,
+                customGradeRangeConfirmed = viewModel.customGradeRangeConfirmed,
                 passingGrade = viewModel.passingGradeText,
                 targetAverage = viewModel.targetAverageText,
                 isValid = viewModel.isGradesValid,
                 onScaleSelected = viewModel::updateGradingScale,
+                onCustomGradeMaxChange = viewModel::updateCustomGradeMax,
+                onConfirmCustomGradeRange = viewModel::confirmCustomGradeRange,
+                onEditCustomGradeRange = viewModel::editCustomGradeRange,
                 onPassingGradeChange = viewModel::updatePassingGrade,
                 onTargetAverageChange = viewModel::updateTargetAverage,
                 onBackClick = { navController.navigateUp() },
@@ -273,10 +280,9 @@ fun SetupEducationLevelScreen(
         SetupStepTitle("¿Dónde estudias actualmente?")
         OptionList(
             options = listOf(
-                EducationLevel.SCHOOL to "Colegio",
+                EducationLevel.PRIMARY to "Primaria",
+                EducationLevel.SECONDARY to "Secundaria",
                 EducationLevel.UNIVERSITY to "Universidad",
-                EducationLevel.TECHNICAL to "Técnico / Tecnólogo",
-                EducationLevel.INDEPENDENT_COURSE to "Curso independiente",
                 EducationLevel.OTHER to "Otro"
             ),
             selected = selected,
@@ -310,12 +316,12 @@ fun SetupAcademicInfoScreen(
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.TECHNICAL) {
+        if (educationLevel == EducationLevel.UNIVERSITY) {
             SetupStepTitle("Tu carrera o programa")
             
             UniStackDropdown(
                 label = "Área de estudio",
-                options = StudyArea.values().map { it to labelFor(it) },
+                options = StudyArea.entries.map { it to labelFor(it) },
                 selected = studyArea,
                 onSelected = onStudyAreaSelected,
                 expanded = areaExpanded,
@@ -353,10 +359,15 @@ fun SetupAcademicInfoScreen(
                     )
                 }
             }
-        } else if (educationLevel == EducationLevel.SCHOOL) {
+        } else if (educationLevel == EducationLevel.PRIMARY || educationLevel == EducationLevel.SECONDARY) {
             SetupStepTitle("¿En qué grado estás?")
             
-            val schoolOptions = listOf("6°", "7°", "8°", "9°", "10°", "11°", OTHER_OPTION)
+            val standardGrades = if (educationLevel == EducationLevel.PRIMARY) {
+                listOf("1°", "2°", "3°", "4°", "5°")
+            } else {
+                listOf("6°", "7°", "8°", "9°", "10°", "11°")
+            }
+            val schoolOptions = standardGrades + OTHER_OPTION
             val selectedSchool = value.takeIf { it in schoolOptions } ?: if (value.isNotEmpty()) OTHER_OPTION else null
             
             UniStackDropdown(
@@ -370,9 +381,7 @@ fun SetupAcademicInfoScreen(
                 onExpandedChange = { schoolExpanded = it }
             )
             
-            // Re-evaluating the SCHOOL logic to be cleaner
-            val isStandardGrade = value in listOf("6°", "7°", "8°", "9°", "10°", "11°")
-            if (!isStandardGrade) {
+            if (selectedSchool == OTHER_OPTION) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -385,12 +394,7 @@ fun SetupAcademicInfoScreen(
                 )
             }
         } else {
-            val question = when (educationLevel) {
-                EducationLevel.INDEPENDENT_COURSE -> "¿Qué estás aprendiendo?"
-                EducationLevel.OTHER -> "Cuéntanos qué estudias"
-                else -> "Información académica"
-            }
-            SetupStepTitle(question)
+            SetupStepTitle("Cuéntanos qué estudias")
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
@@ -408,7 +412,7 @@ fun SetupAcademicInfoScreen(
             }
             Button(
                 onClick = onContinueClick,
-                enabled = isValid || educationLevel == EducationLevel.OTHER || educationLevel == EducationLevel.INDEPENDENT_COURSE,
+                enabled = isValid || educationLevel == EducationLevel.OTHER,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
                 modifier = Modifier.weight(1f)
@@ -422,10 +426,15 @@ fun SetupAcademicInfoScreen(
 @Composable
 fun SetupGradingScaleScreen(
     selectedScale: GradingScale,
+    customGradeMax: Double,
+    customGradeRangeConfirmed: Boolean,
     passingGrade: String,
     targetAverage: String,
     isValid: Boolean,
     onScaleSelected: (GradingScale) -> Unit,
+    onCustomGradeMaxChange: (Double) -> Unit,
+    onConfirmCustomGradeRange: () -> Unit,
+    onEditCustomGradeRange: () -> Unit,
     onPassingGradeChange: (String) -> Unit,
     onTargetAverageChange: (String) -> Unit,
     onBackClick: () -> Unit,
@@ -438,34 +447,98 @@ fun SetupGradingScaleScreen(
         FlowOptions(
             options = listOf(
                 GradingScale.ZERO_TO_FIVE to "0.0 a 5.0",
-                GradingScale.ZERO_TO_TEN to "0 a 10",
-                GradingScale.ZERO_TO_ONE_HUNDRED to "0 a 100",
-                GradingScale.LETTERS to "Letras",
                 GradingScale.CUSTOM to "Personalizada"
             ),
             selected = selectedScale,
             onSelected = onScaleSelected
         )
-        OutlinedTextField(
-            value = passingGrade,
-            onValueChange = onPassingGradeChange,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("¿Cuál es la nota mínima para aprobar?") },
-            shape = AppShapes.MediumCard
-        )
-        OutlinedTextField(
-            value = targetAverage,
-            onValueChange = onTargetAverageChange,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("¿Cuál es tu promedio objetivo?") },
-            shape = AppShapes.MediumCard
-        )
+        if (selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed) {
+            CustomGradeRangeSelector(
+                customGradeMax = customGradeMax,
+                onCustomGradeMaxChange = onCustomGradeMaxChange,
+                onConfirmClick = onConfirmCustomGradeRange
+            )
+        } else {
+            val gradeRangeLabel = if (selectedScale == GradingScale.CUSTOM) {
+                "0 a ${customGradeMax.toInt()}"
+            } else {
+                "0.0 a 5.0"
+            }
+            if (selectedScale == GradingScale.CUSTOM) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        "Rango confirmado: $gradeRangeLabel",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onEditCustomGradeRange) {
+                        Text("Cambiar", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = passingGrade,
+                onValueChange = onPassingGradeChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Nota mínima para aprobar ($gradeRangeLabel)") },
+                shape = AppShapes.MediumCard
+            )
+            OutlinedTextField(
+                value = targetAverage,
+                onValueChange = onTargetAverageChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Promedio objetivo ($gradeRangeLabel)") },
+                shape = AppShapes.MediumCard
+            )
+        }
         if (!isValid) {
             Text("Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.", color = UniStackColors.Coral, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
         PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
+    }
+}
+
+@Composable
+private fun CustomGradeRangeSelector(
+    customGradeMax: Double,
+    onCustomGradeMaxChange: (Double) -> Unit,
+    onConfirmClick: () -> Unit
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.PrimaryLight,
+        shape = AppShapes.MediumCard,
+        contentPadding = PaddingValues(14.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "Define el máximo de tu escala",
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                "Rango actual: 0 a ${customGradeMax.toInt()}",
+                color = UniStackColors.TextSecondary,
+                fontSize = 13.sp
+            )
+            Slider(
+                value = customGradeMax.toFloat(),
+                onValueChange = { value ->
+                    onCustomGradeMaxChange(value.roundToInt().coerceIn(1, 100).toDouble())
+                },
+                valueRange = 1f..100f,
+                steps = 98
+            )
+            PrimarySetupButton(text = "Confirmar rango", onClick = onConfirmClick)
+        }
     }
 }
 
@@ -761,26 +834,29 @@ private fun FlowOptions(
     onSelected: (GradingScale) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-            options.take(3).forEach { (scale, label) ->
-                ScaleChip(label, selected == scale) { onSelected(scale) }
-            }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
-            options.drop(3).forEach { (scale, label) ->
-                ScaleChip(label, selected == scale) { onSelected(scale) }
-            }
+        options.forEach { (scale, label) ->
+            ScaleChip(
+                label = label,
+                selected = selected == scale,
+                onClick = { onSelected(scale) },
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
 
 @Composable
-private fun ScaleChip(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun ScaleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label, fontWeight = FontWeight.Bold) },
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
     )
 }
 

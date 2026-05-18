@@ -29,56 +29,85 @@ import com.unistack.app.feature_home.domain.HomeSummary
 @Composable
 internal fun WeekOverviewSection(
     summary: HomeSummary,
+    showTasks: Boolean,
+    showExpenses: Boolean,
+    showTemplates: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val cards = buildList {
+        if (showTasks) {
+            add(
+                WeekMetric(
+                    icon = Icons.Rounded.CheckCircle,
+                    title = "Hoy",
+                    value = "${summary.tasksToday}",
+                    detail = if (summary.overdueTasks > 0) "${summary.overdueTasks} vencidas" else "tareas",
+                    accent = if (summary.overdueTasks > 0) UniStackColors.Coral else UniStackColors.Green
+                )
+            )
+            add(
+                WeekMetric(
+                    icon = Icons.AutoMirrored.Rounded.Assignment,
+                    title = "Tarea",
+                    value = summary.nextTask?.dueText ?: "--",
+                    detail = summary.nextTask?.title ?: "sin pendientes",
+                    accent = UniStackColors.Primary
+                )
+            )
+        }
+        if (showTemplates) {
+            add(
+                WeekMetric(
+                    icon = Icons.AutoMirrored.Rounded.Assignment,
+                    title = "Trabajo",
+                    value = summary.nextAcademicWork?.dueText ?: "--",
+                    detail = summary.nextAcademicWork?.title ?: "sin entregas",
+                    accent = UniStackColors.Blue
+                )
+            )
+        }
+        if (showExpenses) {
+            add(
+                WeekMetric(
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    title = "Gastos",
+                    value = CurrencyFormatter.formatCop(summary.weeklyExpenseTotal),
+                    detail = "semana actual",
+                    accent = UniStackColors.Coral
+                )
+            )
+        }
+    }
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader(title = "Esta semana")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            WeekMetricCard(
-                icon = Icons.Rounded.CheckCircle,
-                title = "Hoy",
-                value = "${summary.tasksToday}",
-                detail = if (summary.overdueTasks > 0) "${summary.overdueTasks} vencidas" else "tareas",
-                accent = if (summary.overdueTasks > 0) UniStackColors.Coral else UniStackColors.Green,
-                modifier = Modifier.weight(1f)
-            )
-            WeekMetricCard(
-                icon = Icons.AutoMirrored.Rounded.Assignment,
-                title = "Trabajo",
-                value = summary.nextAcademicWork?.dueText ?: "--",
-                detail = summary.nextAcademicWork?.title ?: "sin entregas",
-                accent = UniStackColors.Blue,
-                modifier = Modifier.weight(1f)
-            )
+        cards.chunked(2).forEach { rowCards ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                rowCards.forEach { card ->
+                    WeekMetricCard(
+                        icon = card.icon,
+                        title = card.title,
+                        value = card.value,
+                        detail = card.detail,
+                        accent = card.accent,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowCards.size == 1) {
+                    Column(modifier = Modifier.weight(1f)) {}
+                }
+            }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            WeekMetricCard(
-                icon = Icons.AutoMirrored.Rounded.Assignment,
-                title = "Tarea",
-                value = summary.nextTask?.dueText ?: "--",
-                detail = summary.nextTask?.title ?: "sin pendientes",
-                accent = UniStackColors.Primary,
-                modifier = Modifier.weight(1f)
-            )
-            WeekMetricCard(
-                icon = Icons.Rounded.AccountBalanceWallet,
-                title = "Gastos",
-                value = CurrencyFormatter.formatCop(summary.weeklyExpenseTotal),
-                detail = "semana actual",
-                accent = UniStackColors.Coral,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        WeekMetricCard(
-            icon = Icons.Rounded.CheckCircle,
-            title = "Productividad",
-            value = summary.productivitySummary,
-            detail = "estado de tareas",
-            accent = UniStackColors.Green,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
+
+private data class WeekMetric(
+    val icon: ImageVector,
+    val title: String,
+    val value: String,
+    val detail: String,
+    val accent: Color
+)
 
 @Composable
 private fun WeekMetricCard(

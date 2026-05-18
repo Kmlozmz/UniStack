@@ -73,7 +73,7 @@ fun SubjectDetailScreen(
     val academicWorks by viewModel.academicWorks.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
-    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+    val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }

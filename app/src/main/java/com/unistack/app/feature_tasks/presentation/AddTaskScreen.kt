@@ -258,7 +258,7 @@ private fun DifficultySelector(
     onSelected: (TaskDifficulty) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        TaskDifficulty.values().forEach { difficulty ->
+        TaskDifficulty.entries.forEach { difficulty ->
             SelectionChip(
                 text = difficulty.label(),
                 selected = selected == difficulty,

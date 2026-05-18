@@ -112,7 +112,7 @@ internal object HomeSummaryFactory {
         val focusSubject = subjects.firstOrNull { it.grades.isNotEmpty() } ?: return null
         val currentWeightedPoints = GradeCalculator.calculateWeightedPoints(focusSubject.grades)
         val remainingPercentage = remainingPercentage(focusSubject)
-        val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+        val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
         val needed = GradeCalculator.calculateNeededGrade(
             currentWeightedPoints = currentWeightedPoints,
             remainingPercentage = remainingPercentage,
@@ -181,7 +181,7 @@ internal object HomeSummaryFactory {
         profile: UserProfile?,
         gradingScale: GradingScale
     ): SubjectRiskSummary? {
-        val maxGrade = GradingScaleUtils.maxGradeFor(gradingScale)
+        val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(gradingScale)
         val passingGrade = profile?.passingGrade ?: maxGrade * 0.6
         val candidates = subjects.mapNotNull { subject ->
             val average = GradeCalculator.calculateCurrentAverage(subject.grades) ?: return@mapNotNull null
@@ -210,6 +210,7 @@ internal object HomeSummaryFactory {
                     neededGrade = needed,
                     remainingPercentage = remainingPercentage,
                     targetAverage = subject.targetAverage,
+                    maxGrade = maxGrade,
                     gradingScale = gradingScale
                 ),
                 severity = severity
@@ -252,12 +253,13 @@ internal object HomeSummaryFactory {
         neededGrade: Double?,
         remainingPercentage: Double,
         targetAverage: Double,
+        maxGrade: Double,
         gradingScale: GradingScale
     ): String {
         return when {
             severity == SubjectRiskSeverity.CRITICAL && average < passingGrade ->
                 "Promedio bajo la nota mínima: ${GradingScaleUtils.formatGrade(average, gradingScale)}."
-            neededGrade != null && neededGrade in 0.0..GradingScaleUtils.maxGradeFor(gradingScale) && remainingPercentage > 0.0 ->
+            neededGrade != null && neededGrade in 0.0..maxGrade && remainingPercentage > 0.0 ->
                 "Necesitas ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} en lo restante."
             average >= targetAverage ->
                 "Va sobre la meta con ${GradingScaleUtils.formatGrade(average, gradingScale)}."

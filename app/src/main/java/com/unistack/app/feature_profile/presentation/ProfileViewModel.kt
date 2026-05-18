@@ -56,7 +56,11 @@ class ProfileViewModel(
         targetAverageInput: String
     ): Boolean {
         val current = profile.value ?: return false
-        val maxGrade = GradingScaleUtils.maxGradeFor(gradingScale)
+        val maxGrade = if (gradingScale == GradingScale.CUSTOM) {
+            current.customGradeMax
+        } else {
+            GradingScaleUtils.maxGradeFor(gradingScale)
+        }
         val passingGrade = passingGradeInput.toDoubleOrNull() ?: return false
         val targetAverage = targetAverageInput.toDoubleOrNull() ?: return false
 

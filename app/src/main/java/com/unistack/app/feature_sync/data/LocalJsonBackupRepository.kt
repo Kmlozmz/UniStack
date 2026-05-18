@@ -165,6 +165,7 @@ class LocalJsonBackupRepository(
     private fun profileJson(profile: UserProfile?): JSONObject {
         return JSONObject()
             .put("preferredName", profile?.preferredName)
+            .put("customGradeMax", profile?.customGradeMax ?: 100.0)
             .put("weeklyBudget", profile?.weeklyBudget ?: 0)
             .put("monthlyBudget", profile?.monthlyBudget ?: 0)
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
@@ -188,6 +189,7 @@ class LocalJsonBackupRepository(
         userRepository.saveUserProfile(
             current.copy(
                 preferredName = profileJson.optString("preferredName", current.preferredName).takeIf { it.isNotBlank() } ?: current.preferredName,
+                customGradeMax = profileJson.optDouble("customGradeMax", current.customGradeMax).coerceIn(1.0, 100.0),
                 weeklyBudget = profileJson.optInt("weeklyBudget", current.weeklyBudget),
                 monthlyBudget = profileJson.optInt("monthlyBudget", current.monthlyBudget),
                 expenseAlertThresholdPercent = profileJson.optInt("expenseAlertThresholdPercent", current.expenseAlertThresholdPercent),

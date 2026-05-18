@@ -61,7 +61,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.components.MiniBarChart
 import com.unistack.app.core.design.components.QuickActionButton
 import com.unistack.app.core.design.components.SectionHeader
@@ -129,7 +128,16 @@ fun HomeScreen(
                 onOpenTemplatesClick = onOpenTemplatesClick
             )
         }
-        item { WeekOverviewSection(summary = summary) }
+        if (showTasks || showExpenses || showTemplates) {
+            item {
+                WeekOverviewSection(
+                    summary = summary,
+                    showTasks = showTasks,
+                    showExpenses = showExpenses,
+                    showTemplates = showTemplates
+                )
+            }
+        }
         if (showGrades) {
             item {
                 SubjectsSection(
@@ -251,7 +259,7 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
     UniCard(
         modifier = modifier
             .fillMaxWidth()
-            .height(202.dp),
+            .height(150.dp),
         brush = Brush.linearGradient(
             listOf(
                 UniStackColors.PrimaryLight,
@@ -303,32 +311,6 @@ fun HeroSummaryCard(summary: HomeSummary, modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .width(128.dp)
                         .height(92.dp)
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                MetricCard(
-                    value = GradingScaleUtils.formatGrade(summary.generalAverage, summary.gradingScale),
-                    label = "Promedio\ngeneral",
-                    icon = Icons.Rounded.Star,
-                    iconColor = UniStackColors.Primary,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricCard(
-                    value = summary.subjectsCount.toString(),
-                    label = "materias",
-                    icon = Icons.AutoMirrored.Rounded.MenuBook,
-                    iconColor = UniStackColors.Blue,
-                    modifier = Modifier.weight(1f)
-                )
-                MetricCard(
-                    value = summary.tasksToday.toString(),
-                    label = "tareas hoy",
-                    icon = Icons.Rounded.CheckCircle,
-                    iconColor = UniStackColors.Teal,
-                    modifier = Modifier.weight(1f)
                 )
             }
         }

@@ -73,7 +73,7 @@ fun AddSubjectScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
-    val maxGrade = profile?.let { GradingScaleUtils.maxGradeFor(it.gradingScale) } ?: 5.0
+    val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
@@ -189,7 +189,7 @@ fun AddSubjectScreen(
                         isError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..maxGrade)
                     )
                     Text("Color", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    SubjectVisualType.values().toList().chunked(6).forEach { row ->
+                    SubjectVisualType.entries.chunked(6).forEach { row ->
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             row.forEach { type ->
                                 ColorSwatch(

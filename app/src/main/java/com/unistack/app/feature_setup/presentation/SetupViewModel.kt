@@ -33,11 +33,15 @@ class SetupViewModel(
         private set
     var gradingScale by mutableStateOf(GradingScale.ZERO_TO_FIVE)
         private set
+    var customGradeMax by mutableStateOf(100.0)
+        private set
+    var customGradeRangeConfirmed by mutableStateOf(false)
+        private set
     var passingGradeText by mutableStateOf("3.0")
         private set
     var targetAverageText by mutableStateOf("4.0")
         private set
-    var enabledModules by mutableStateOf(AppModule.values().toSet())
+    var enabledModules by mutableStateOf(AppModule.entries.toSet())
         private set
 
     val nameValidation: ValidationResult
@@ -51,7 +55,7 @@ class SetupViewModel(
 
     val isAcademicInfoValid: Boolean
         get() {
-            if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.TECHNICAL) {
+            if (educationLevel == EducationLevel.UNIVERSITY) {
                 val area = studyArea ?: return false
                 val program = selectedProgram ?: return false
                 if (area == StudyArea.OTHER || program == OTHER_OPTION) {
@@ -60,15 +64,22 @@ class SetupViewModel(
                 return true
             }
 
+            if (educationLevel.isSchoolLevel()) {
+                val value = academicInfo.trim()
+                if (value in educationLevel.standardGradeOptions()) return true
+                return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
+            }
+
             val value = academicInfo.trim()
             return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
         }
 
     val isGradesValid: Boolean
         get() {
+            if (gradingScale == GradingScale.CUSTOM && !customGradeRangeConfirmed) return false
             val passing = passingGradeText.toDoubleOrNull() ?: return false
             val target = targetAverageText.toDoubleOrNull() ?: return false
-            val max = gradingScale.maxNumericValue ?: 100.0
+            val max = if (gradingScale == GradingScale.CUSTOM) customGradeMax else gradingScale.maxNumericValue
             return passing in 0.0..max &&
                 target in 0.0..max &&
                 target >= passing
@@ -116,16 +127,26 @@ class SetupViewModel(
 
     fun updateGradingScale(value: GradingScale) {
         gradingScale = value
-        if (value == GradingScale.ZERO_TO_FIVE) {
-            passingGradeText = "3.0"
-            targetAverageText = "4.0"
-        } else if (value == GradingScale.ZERO_TO_TEN) {
-            passingGradeText = "6.0"
-            targetAverageText = "8.0"
-        } else if (value == GradingScale.ZERO_TO_ONE_HUNDRED) {
-            passingGradeText = "60"
-            targetAverageText = "80"
-        }
+        customGradeRangeConfirmed = value != GradingScale.CUSTOM
+        passingGradeText = value.defaultPassingGradeText
+        targetAverageText = value.defaultTargetAverageText
+    }
+
+    fun updateCustomGradeMax(value: Double) {
+        customGradeMax = value.coerceIn(1.0, 100.0)
+        customGradeRangeConfirmed = false
+        passingGradeText = customDefaultPassingGradeText()
+        targetAverageText = customDefaultTargetAverageText()
+    }
+
+    fun confirmCustomGradeRange() {
+        customGradeRangeConfirmed = true
+        passingGradeText = customDefaultPassingGradeText()
+        targetAverageText = customDefaultTargetAverageText()
+    }
+
+    fun editCustomGradeRange() {
+        customGradeRangeConfirmed = false
     }
 
     fun updatePassingGrade(value: String) {
@@ -151,10 +172,11 @@ class SetupViewModel(
             userId = UserIds.LOCAL,
             preferredName = TextValidators.normalizeText(preferredName),
             educationLevel = educationLevel,
-            careerOrProgram = if (educationLevel == EducationLevel.SCHOOL) null else info,
+            careerOrProgram = if (educationLevel.isSchoolLevel()) null else info,
             studyArea = studyArea,
-            gradeLevel = if (educationLevel == EducationLevel.SCHOOL) info else null,
+            gradeLevel = if (educationLevel.isSchoolLevel()) info else null,
             gradingScale = gradingScale,
+            customGradeMax = customGradeMax.coerceIn(1.0, 100.0),
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
@@ -167,7 +189,7 @@ class SetupViewModel(
     }
 
     private fun academicInfoValue(): String? {
-        if (educationLevel == EducationLevel.UNIVERSITY || educationLevel == EducationLevel.TECHNICAL) {
+        if (educationLevel == EducationLevel.UNIVERSITY) {
             val area = studyArea ?: return null
             val program = selectedProgram ?: return null
             return if (area == StudyArea.OTHER || program == OTHER_OPTION) {
@@ -177,6 +199,16 @@ class SetupViewModel(
             }
         }
         return TextValidators.normalizeText(academicInfo).takeIf { it.isNotEmpty() }
+    }
+
+    private fun EducationLevel.isSchoolLevel(): Boolean = this == EducationLevel.PRIMARY || this == EducationLevel.SECONDARY
+
+    private fun EducationLevel.standardGradeOptions(): List<String> {
+        return if (this == EducationLevel.PRIMARY) {
+            listOf("1°", "2°", "3°", "4°", "5°")
+        } else {
+            listOf("6°", "7°", "8°", "9°", "10°", "11°")
+        }
     }
 }
 
@@ -230,29 +262,48 @@ fun programsFor(area: StudyArea): List<String> = when (area) {
     StudyArea.OTHER -> listOf(OTHER_OPTION)
 }
 
-val GradingScale.maxNumericValue: Double?
+val GradingScale.maxNumericValue: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 5.0
-        GradingScale.ZERO_TO_TEN -> 10.0
-        GradingScale.ZERO_TO_ONE_HUNDRED -> 100.0
-        GradingScale.LETTERS,
-        GradingScale.CUSTOM -> null
+        GradingScale.CUSTOM -> 100.0
     }
 
 val GradingScale.defaultPassingGrade: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 3.0
-        GradingScale.ZERO_TO_TEN -> 6.0
-        GradingScale.ZERO_TO_ONE_HUNDRED -> 60.0
-        GradingScale.LETTERS,
-        GradingScale.CUSTOM -> 3.0
+        GradingScale.CUSTOM -> 60.0
     }
 
 val GradingScale.defaultTargetAverage: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 4.0
-        GradingScale.ZERO_TO_TEN -> 8.0
-        GradingScale.ZERO_TO_ONE_HUNDRED -> 80.0
-        GradingScale.LETTERS,
-        GradingScale.CUSTOM -> 4.0
+        GradingScale.CUSTOM -> 80.0
+    }
+
+private val GradingScale.defaultPassingGradeText: String
+    get() = when (this) {
+        GradingScale.CUSTOM -> defaultPassingGrade.toInt().toString()
+        GradingScale.ZERO_TO_FIVE -> defaultPassingGrade.toString()
+    }
+
+private fun SetupViewModel.customDefaultPassingGradeText(): String {
+    return (customGradeMax * 0.6).roundGradeInput()
+}
+
+private fun SetupViewModel.customDefaultTargetAverageText(): String {
+    return (customGradeMax * 0.8).roundGradeInput()
+}
+
+private fun Double.roundGradeInput(): String {
+    return if (this % 1.0 == 0.0) {
+        toInt().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.1f", this)
+    }
+}
+
+private val GradingScale.defaultTargetAverageText: String
+    get() = when (this) {
+        GradingScale.CUSTOM -> defaultTargetAverage.toInt().toString()
+        GradingScale.ZERO_TO_FIVE -> defaultTargetAverage.toString()
     }

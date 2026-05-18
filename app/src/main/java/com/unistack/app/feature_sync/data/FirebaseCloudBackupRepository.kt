@@ -152,6 +152,7 @@ class FirebaseCloudBackupRepository(
             "studyArea" to profile.studyArea?.name,
             "gradeLevel" to profile.gradeLevel,
             "gradingScale" to profile.gradingScale.name,
+            "customGradeMax" to profile.customGradeMax,
             "passingGrade" to profile.passingGrade,
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },

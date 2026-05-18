@@ -28,7 +28,7 @@ class GradesViewModel(
 
     private fun getMaxGrade(): Double {
         val profile = userProfile.value ?: return 5.0
-        return GradingScaleUtils.maxGradeFor(profile.gradingScale)
+        return GradingScaleUtils.maxGradeFor(profile)
     }
 
     fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)

@@ -47,6 +47,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val CAREER_OR_PROGRAM = stringPreferencesKey("career_or_program")
         val GRADE_LEVEL = stringPreferencesKey("grade_level")
         val GRADING_SCALE = stringPreferencesKey("grading_scale")
+        val CUSTOM_GRADE_MAX = doublePreferencesKey("custom_grade_max")
         val PASSING_GRADE = doublePreferencesKey("passing_grade")
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
@@ -70,9 +71,9 @@ class UserPreferencesDataSource(private val context: Context) {
         val educationLevelStr = prefs[Keys.EDUCATION_LEVEL] ?: return@map null
         val gradingScaleStr = prefs[Keys.GRADING_SCALE] ?: return@map null
 
-        val educationLevel = runCatching { EducationLevel.valueOf(educationLevelStr) }.getOrNull()
+        val educationLevel = educationLevelStr.toEducationLevelOrNull()
             ?: return@map null
-        val gradingScale = runCatching { GradingScale.valueOf(gradingScaleStr) }.getOrNull()
+        val gradingScale = gradingScaleStr.toGradingScaleOrNull()
             ?: return@map null
         val studyArea = prefs[Keys.STUDY_AREA]?.let {
             runCatching { StudyArea.valueOf(it) }.getOrNull()
@@ -105,6 +106,7 @@ class UserPreferencesDataSource(private val context: Context) {
             careerOrProgram = prefs[Keys.CAREER_OR_PROGRAM],
             gradeLevel = prefs[Keys.GRADE_LEVEL],
             gradingScale = gradingScale,
+            customGradeMax = prefs[Keys.CUSTOM_GRADE_MAX]?.coerceIn(1.0, 100.0) ?: 100.0,
             passingGrade = prefs[Keys.PASSING_GRADE] ?: 3.0,
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
@@ -155,6 +157,7 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.PREFERRED_NAME] = profile.preferredName
             prefs[Keys.EDUCATION_LEVEL] = profile.educationLevel.name
             prefs[Keys.GRADING_SCALE] = profile.gradingScale.name
+            prefs[Keys.CUSTOM_GRADE_MAX] = profile.customGradeMax.coerceIn(1.0, 100.0)
             prefs[Keys.PASSING_GRADE] = profile.passingGrade
             prefs[Keys.TARGET_AVERAGE] = profile.targetAverage
             prefs[Keys.SETUP_COMPLETED] = profile.setupCompleted
@@ -300,5 +303,20 @@ class UserPreferencesDataSource(private val context: Context) {
             )
         }
         return array.toString()
+    }
+
+    private fun String.toEducationLevelOrNull(): EducationLevel? {
+        return when (this) {
+            "SCHOOL" -> EducationLevel.SECONDARY
+            "TECHNICAL", "INDEPENDENT_COURSE" -> EducationLevel.OTHER
+            else -> runCatching { EducationLevel.valueOf(this) }.getOrNull()
+        }
+    }
+
+    private fun String.toGradingScaleOrNull(): GradingScale? {
+        return when (this) {
+            "ZERO_TO_TEN", "ZERO_TO_ONE_HUNDRED", "LETTERS" -> GradingScale.CUSTOM
+            else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
+        }
     }
 }

@@ -16,6 +16,7 @@ data class UserProfile(
     val studyArea: StudyArea?,
     val gradeLevel: String?,
     val gradingScale: GradingScale,
+    val customGradeMax: Double = 100.0,
     val passingGrade: Double,
     val targetAverage: Double,
     val enabledModules: Set<AppModule>,
@@ -45,18 +46,14 @@ data class SavedGradeScenario(
 )
 
 enum class EducationLevel {
-    SCHOOL,
+    PRIMARY,
+    SECONDARY,
     UNIVERSITY,
-    TECHNICAL,
-    INDEPENDENT_COURSE,
     OTHER
 }
 
 enum class GradingScale {
     ZERO_TO_FIVE,
-    ZERO_TO_TEN,
-    ZERO_TO_ONE_HUNDRED,
-    LETTERS,
     CUSTOM
 }
 

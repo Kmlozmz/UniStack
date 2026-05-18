@@ -61,7 +61,7 @@ fun GradeSimulatorScreen(
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
-    val maxGrade = GradingScaleUtils.maxGradeFor(scale)
+    val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(scale)
 
     var selectedSubjectId by rememberSaveable(initialSubjectId) { mutableStateOf(initialSubjectId) }
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId } ?: subjects.firstOrNull()
