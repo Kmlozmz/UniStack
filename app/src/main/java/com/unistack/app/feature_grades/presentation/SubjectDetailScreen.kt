@@ -248,6 +248,7 @@ fun SubjectDetailScreen(
                     onTargetAverageChange = { targetAverageInput = it.take(6) },
                     quickTargets = quickTargets,
                     onQuickTargetClick = { targetAverageInput = gradeInputText(it, scale) },
+                    currentAverage = average,
                     targetAverage = targetAverage,
                     targetIsValid = targetIsValid,
                     neededGrade = needed,
@@ -446,6 +447,7 @@ private fun NeededGradePlannerCard(
     onTargetAverageChange: (String) -> Unit,
     quickTargets: List<Double>,
     onQuickTargetClick: (Double) -> Unit,
+    currentAverage: Double?,
     targetAverage: Double?,
     targetIsValid: Boolean,
     neededGrade: Double?,
@@ -455,21 +457,33 @@ private fun NeededGradePlannerCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.YellowLight,
+        color = UniStackColors.Card,
         shape = AppShapes.MediumCard
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
+                Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
                 Text(
-                    "Qué necesitas",
+                    "Plan para alcanzar tu meta",
                     color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
             Text(
+                text = planStatusLabel(
+                    currentAverage = currentAverage,
+                    targetAverage = targetAverage,
+                    targetIsValid = targetIsValid,
+                    neededGrade = neededGrade,
+                    maxGrade = maxGrade
+                ),
+                color = UniStackColors.Primary,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
                 text = neededGradeMessage(
+                    currentAverage = currentAverage,
                     targetAverage = targetAverage,
                     targetIsValid = targetIsValid,
                     neededGrade = neededGrade,
@@ -480,10 +494,16 @@ private fun NeededGradePlannerCard(
                 color = UniStackColors.TextPrimary,
                 fontWeight = FontWeight.Bold
             )
+            Text(
+                text = "Quiero terminar con:",
+                color = UniStackColors.TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
             OutlinedTextField(
                 value = targetAverageInput,
                 onValueChange = onTargetAverageChange,
-                label = { Text("Meta de la materia") },
+                label = { Text("Meta") },
                 singleLine = true,
                 shape = AppShapes.MediumCard,
                 isError = targetAverageInput.isNotBlank() && !targetIsValid,
@@ -494,7 +514,16 @@ private fun NeededGradePlannerCard(
             )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(quickTargets, key = { it }) { target ->
-                    TextButton(onClick = { onQuickTargetClick(target) }) {
+                    val selected = targetAverage?.let { roundToOneDecimal(it) == roundToOneDecimal(target) } == true
+                    Button(
+                        onClick = { onQuickTargetClick(target) },
+                        shape = AppShapes.Pill,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
+                            contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else UniStackColors.Primary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
                         Text(GradingScaleUtils.formatGrade(target, scale), fontWeight = FontWeight.Bold)
                     }
                 }
@@ -536,21 +565,21 @@ private fun WhatIfPlannerCard(
         color = UniStackColors.PrimaryLight,
         shape = AppShapes.MediumCard
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
                 Text(
-                    "Qué pasa si...",
+                    "¿Y si saco...?",
                     color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
             Text(
-                text = whatIfMessage(
+                text = whatIfHeadline(
+                    grade = grade,
+                    percentage = percentage,
                     projectedAverage = projectedAverage,
-                    evaluatedAfter = evaluatedAfter,
-                    remainingPercentage = remainingPercentage,
                     percentageWeight = percentageWeight,
                     scale = scale
                 ),
@@ -577,8 +606,39 @@ private fun WhatIfPlannerCard(
                     modifier = Modifier.weight(1f)
                 )
             }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(UniStackColors.Card, AppShapes.SmallCard)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Promedio proyectado",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = projectedAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                    color = UniStackColors.Primary,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = whatIfDetail(
+                        projectedAverage = projectedAverage,
+                        evaluatedAfter = evaluatedAfter,
+                        remainingPercentage = remainingPercentage,
+                        percentageWeight = percentageWeight,
+                        scale = scale
+                    ),
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp
+                )
+            }
             Text(
-                text = "Puedes simular hasta ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante.",
+                text = "Puedes probar hasta ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante.",
                 color = UniStackColors.TextSecondary,
                 fontSize = 12.sp
             )
@@ -645,6 +705,7 @@ private fun SubjectDetailMetric(
 }
 
 private fun neededGradeMessage(
+    currentAverage: Double?,
     targetAverage: Double?,
     targetIsValid: Boolean,
     neededGrade: Double?,
@@ -661,7 +722,7 @@ private fun neededGradeMessage(
     }
 
     if (neededGrade != null && neededGrade <= 0.0) {
-        return "Ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        return "Con lo que llevas, ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
     }
 
     if (neededGrade == null) {
@@ -672,10 +733,42 @@ private fun neededGradeMessage(
         return "Con el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante no es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
     }
 
-    return "Para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante."
+    val current = currentAverage?.let { "Con tu ${GradingScaleUtils.formatGrade(it, scale)} actual, " }.orEmpty()
+    return "${current}necesitas sacar mínimo ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
 }
 
-private fun whatIfMessage(
+private fun planStatusLabel(
+    currentAverage: Double?,
+    targetAverage: Double?,
+    targetIsValid: Boolean,
+    neededGrade: Double?,
+    maxGrade: Double
+): String {
+    if (targetAverage == null || !targetIsValid) return "Define una meta válida"
+    if (neededGrade == null) return "Calculando tu ruta"
+    if (neededGrade <= 0.0 || (currentAverage != null && currentAverage >= targetAverage)) return "Vas sobre la meta"
+    if (neededGrade > maxGrade) return "Meta muy exigente"
+    return "Necesitas mantener el ritmo"
+}
+
+private fun whatIfHeadline(
+    grade: Double?,
+    percentage: Double?,
+    projectedAverage: Double?,
+    percentageWeight: Double,
+    scale: GradingScale
+): String {
+    if (grade == null || percentage == null || projectedAverage == null || percentageWeight <= 0.0) {
+        return "Prueba una nota futura y mira cómo movería tu promedio."
+    }
+
+    val gradeText = GradingScaleUtils.formatGrade(grade, scale)
+    val projected = GradingScaleUtils.formatGrade(projectedAverage, scale)
+    val percentText = String.format(Locale.US, "%.0f", percentageWeight * 100)
+    return "Si sacas $gradeText en una nota de $percentText%, tu promedio quedaría en $projected."
+}
+
+private fun whatIfDetail(
     projectedAverage: Double?,
     evaluatedAfter: Double,
     remainingPercentage: Double,
@@ -686,12 +779,11 @@ private fun whatIfMessage(
         return "Escribe una nota y el peso de la próxima evaluación."
     }
 
-    val projected = GradingScaleUtils.formatGrade(projectedAverage, scale)
     val evaluatedText = String.format(Locale.US, "%.0f", evaluatedAfter * 100)
     return if (percentageWeight >= remainingPercentage) {
-        "Tu promedio final sería $projected."
+        "Ese sería tu promedio final si cubre todo lo que falta."
     } else {
-        "Tu promedio quedaría en $projected con $evaluatedText% evaluado."
+        "Después de esa evaluación tendrías $evaluatedText% del curso evaluado."
     }
 }
 
