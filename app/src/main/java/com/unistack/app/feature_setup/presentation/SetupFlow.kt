@@ -612,7 +612,7 @@ fun SetupModulesScreen(
                 ModuleOption(
                     module = AppModule.GRADES,
                     label = "Notas y materias",
-                    description = "Promedios, porcentajes y simulador.",
+                    description = "Promedios, porcentajes y metas.",
                     icon = Icons.AutoMirrored.Rounded.MenuBook
                 ),
                 ModuleOption(

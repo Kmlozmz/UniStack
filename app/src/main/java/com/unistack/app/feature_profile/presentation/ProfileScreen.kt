@@ -1203,7 +1203,7 @@ private fun AppModule.label(): String {
 
 private fun AppModule.description(): String {
     return when (this) {
-        AppModule.GRADES -> "Materias, notas y simulador."
+        AppModule.GRADES -> "Materias, notas y metas."
         AppModule.TASKS -> "Entregas y pendientes."
         AppModule.EXPENSES -> "Registro y resumen de gastos."
         AppModule.ACADEMIC_TEMPLATES -> "Checklist, ensayos y formato APA."
