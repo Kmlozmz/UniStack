@@ -44,6 +44,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.AppContainer
+import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.bounceClick
@@ -85,6 +86,9 @@ fun MainNavGraph(
         initialValue = AppContainer.userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
     )
     val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+    val showHomeFab = routeBelongsTo(currentRoute, AppRoutes.Home)
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -108,46 +112,44 @@ fun MainNavGraph(
             )
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = initialRoute,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            enterTransition = {
-                mainSlideIn(fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route))
-            },
-            exitTransition = {
-                mainSlideOut(toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route))
-            },
-            popEnterTransition = {
-                mainSlideIn(fromRight = false)
-            },
-            popExitTransition = {
-                mainSlideOut(toLeft = false)
-            }
-        ) {
-            composable(AppRoutes.Home) {
-                val viewModel: HomeViewModel = viewModel()
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                HomeScreen(
-                    uiState = uiState,
-                    onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                    onNewTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                    onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
-                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                    onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                    onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
-                    onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
-                    onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
-                    onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
-                    onProfileClick = {
-                        navController.navigate(AppRoutes.Profile) {
-                            launchSingleTop = true
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = initialRoute,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                enterTransition = {
+                    mainSlideIn(fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route))
+                },
+                exitTransition = {
+                    mainSlideOut(toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route))
+                },
+                popEnterTransition = {
+                    mainSlideIn(fromRight = false)
+                },
+                popExitTransition = {
+                    mainSlideOut(toLeft = false)
+                }
+            ) {
+                composable(AppRoutes.Home) {
+                    val viewModel: HomeViewModel = viewModel()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    HomeScreen(
+                        uiState = uiState,
+                        onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
+                        onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                        onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
+                        onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
+                        onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
+                        onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
+                        onProfileClick = {
+                            navController.navigate(AppRoutes.Profile) {
+                                launchSingleTop = true
+                            }
                         }
-                    }
-                )
-            }
+                    )
+                }
             composable(AppRoutes.Grades) {
                 GradesScreen(
                     onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
@@ -293,6 +295,22 @@ fun MainNavGraph(
                             navController.navigate(AppRoutes.Home)
                         }
                     }
+                )
+            }
+            }
+
+            if (showHomeFab) {
+                UniStackFabMenu(
+                    onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                    onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
+                    onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
+                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
+                    showAddGrade = AppModule.GRADES in enabledModules,
+                    showAddTask = AppModule.TASKS in enabledModules,
+                    showAddExpense = AppModule.EXPENSES in enabledModules,
+                    showAddSubject = AppModule.GRADES in enabledModules,
+                    expandedBottomPadding = 104.dp,
+                    expandedEndPadding = 20.dp
                 )
             }
         }

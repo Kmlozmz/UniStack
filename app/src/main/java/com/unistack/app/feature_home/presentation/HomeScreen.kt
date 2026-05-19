@@ -3,8 +3,6 @@ package com.unistack.app.feature_home.presentation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.ChatBubble
@@ -62,7 +59,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.MiniBarChart
-import com.unistack.app.core.design.components.QuickActionButton
 import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.SubjectCard
 import com.unistack.app.core.design.components.UniCard
@@ -84,9 +80,6 @@ import coil.compose.AsyncImage
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
-    onAddGradeClick: () -> Unit,
-    onNewTaskClick: () -> Unit,
-    onAddExpenseClick: () -> Unit,
     onAddSubjectClick: () -> Unit,
     onSeeAllSubjectsClick: () -> Unit,
     onSeeTasksClick: () -> Unit,
@@ -109,7 +102,7 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 104.dp),
         verticalArrangement = Arrangement.spacedBy(11.dp)
     ) {
         item { HomeHeader(photoUrl = summary.avatarPhotoUrl, onProfileClick = onProfileClick) }
@@ -169,17 +162,6 @@ fun HomeScreen(
         if (showTemplates) {
             item {
                 AcademicTemplatesCard(onOpenTemplatesClick = onOpenTemplatesClick)
-            }
-        }
-        if (showGrades || showTasks || showExpenses || showTemplates) {
-            item {
-                QuickActionsRow(
-                    enabledModules = enabledModules,
-                    onAddGradeClick = onAddGradeClick,
-                    onNewTaskClick = onNewTaskClick,
-                    onAddExpenseClick = onAddExpenseClick,
-                    onOpenTemplatesClick = onOpenTemplatesClick
-                )
             }
         }
     }
@@ -749,60 +731,6 @@ private fun ExpenseLine(label: String, amount: Int) {
 }
 
 @Composable
-private fun QuickActionsRow(
-    enabledModules: Set<AppModule>,
-    onAddGradeClick: () -> Unit,
-    onNewTaskClick: () -> Unit,
-    onAddExpenseClick: () -> Unit,
-    onOpenTemplatesClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        if (AppModule.GRADES in enabledModules) {
-            QuickActionButton(
-                text = "Ver notas",
-                icon = Icons.AutoMirrored.Rounded.MenuBook,
-                backgroundColor = UniStackColors.PrimaryLight,
-                contentColor = UniStackColors.Primary,
-                onClick = onAddGradeClick
-            )
-        }
-        if (AppModule.TASKS in enabledModules) {
-            QuickActionButton(
-                text = "Nueva tarea",
-                icon = Icons.Rounded.Check,
-                backgroundColor = UniStackColors.BlueLight,
-                contentColor = UniStackColors.Blue,
-                onClick = onNewTaskClick
-            )
-        }
-        if (AppModule.EXPENSES in enabledModules) {
-            QuickActionButton(
-                text = "Registrar gasto",
-                icon = Icons.Rounded.AccountBalanceWallet,
-                backgroundColor = UniStackColors.CoralLight,
-                contentColor = UniStackColors.Coral,
-                onClick = onAddExpenseClick
-            )
-        }
-        if (AppModule.ACADEMIC_TEMPLATES in enabledModules) {
-            QuickActionButton(
-                text = "Plantillas",
-                icon = Icons.AutoMirrored.Rounded.Assignment,
-                backgroundColor = UniStackColors.GreenLight,
-                contentColor = UniStackColors.Green,
-                onClick = onOpenTemplatesClick
-            )
-        }
-    }
-}
-
-@Composable
 private fun AcademicTemplatesCard(
     onOpenTemplatesClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -947,9 +875,6 @@ fun HomeScreenPreview() {
     UniStackTheme {
         HomeScreen(
             uiState = HomeUiState(),
-            onAddGradeClick = {},
-            onNewTaskClick = {},
-            onAddExpenseClick = {},
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
             onSeeTasksClick = {},
@@ -967,9 +892,6 @@ fun HomeScreenNoGradesPreview() {
     UniStackTheme {
         HomeScreen(
             uiState = HomeUiState(summary = DemoData.homeSummaryNoGrades),
-            onAddGradeClick = {},
-            onNewTaskClick = {},
-            onAddExpenseClick = {},
             onAddSubjectClick = {},
             onSeeAllSubjectsClick = {},
             onSeeTasksClick = {},
@@ -1031,20 +953,5 @@ fun ExpenseWeeklyCardPreview() {
                 onSeeExpensesClick = {}
             )
         }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 150)
-@Composable
-fun QuickActionButtonPreview() {
-    UniStackTheme {
-        QuickActionButton(
-            text = "Agregar nota",
-            icon = Icons.Rounded.Add,
-            backgroundColor = UniStackColors.PrimaryLight,
-            contentColor = UniStackColors.Primary,
-            onClick = {},
-            modifier = Modifier.padding(20.dp)
-        )
     }
 }

@@ -41,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
@@ -51,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -313,6 +315,7 @@ fun SetupAcademicInfoScreen(
     var areaExpanded by remember { mutableStateOf(false) }
     var programExpanded by remember { mutableStateOf(false) }
     var schoolExpanded by remember { mutableStateOf(false) }
+    var customSchoolGradeSelected by rememberSaveable(educationLevel) { mutableStateOf(false) }
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
@@ -368,20 +371,26 @@ fun SetupAcademicInfoScreen(
                 listOf("6°", "7°", "8°", "9°", "10°", "11°")
             }
             val schoolOptions = standardGrades + OTHER_OPTION
-            val selectedSchool = value.takeIf { it in schoolOptions } ?: if (value.isNotEmpty()) OTHER_OPTION else null
+            val isCustomSchoolGrade = customSchoolGradeSelected || (value.isNotBlank() && value !in standardGrades)
+            val selectedSchool = when {
+                isCustomSchoolGrade -> OTHER_OPTION
+                value in standardGrades -> value
+                else -> null
+            }
             
             UniStackDropdown(
                 label = "Grado escolar",
                 options = schoolOptions.map { it to it },
                 selected = selectedSchool,
-                onSelected = { 
+                onSelected = {
+                    customSchoolGradeSelected = it == OTHER_OPTION
                     if (it == OTHER_OPTION) onValueChange("") else onValueChange(it)
                 },
                 expanded = schoolExpanded,
                 onExpandedChange = { schoolExpanded = it }
             )
             
-            if (selectedSchool == OTHER_OPTION) {
+            if (isCustomSchoolGrade) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -499,7 +508,8 @@ fun SetupGradingScaleScreen(
                 shape = AppShapes.MediumCard
             )
         }
-        if (!isValid) {
+        val waitingForCustomRange = selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed
+        if (!isValid && !waitingForCustomRange) {
             Text("Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.", color = UniStackColors.Coral, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
         PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
@@ -514,20 +524,48 @@ private fun CustomGradeRangeSelector(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
-        shape = AppShapes.MediumCard,
-        contentPadding = PaddingValues(14.dp)
+        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.SurfaceVariant)),
+        shape = AppShapes.LargeCard,
+        tonalElevation = 6.dp,
+        borderColor = UniStackColors.Primary.copy(alpha = 0.18f),
+        borderWidth = 1.dp,
+        contentPadding = PaddingValues(16.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                "Define el máximo de tu escala",
-                color = UniStackColors.TextPrimary,
-                fontWeight = FontWeight.ExtraBold
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "Define el máximo",
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        "Tu escala irá de 0 hasta este valor.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+                UniCard(
+                    color = UniStackColors.Primary,
+                    shape = AppShapes.Pill,
+                    tonalElevation = 4.dp,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        customGradeMax.toInt().toString(),
+                        color = UniStackColors.Card,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
             Text(
                 "Rango actual: 0 a ${customGradeMax.toInt()}",
-                color = UniStackColors.TextSecondary,
-                fontSize = 13.sp
+                color = UniStackColors.TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
             )
             Slider(
                 value = customGradeMax.toFloat(),
@@ -535,8 +573,24 @@ private fun CustomGradeRangeSelector(
                     onCustomGradeMaxChange(value.roundToInt().coerceIn(1, 100).toDouble())
                 },
                 valueRange = 1f..100f,
-                steps = 98
+                steps = 98,
+                colors = SliderDefaults.colors(
+                    thumbColor = UniStackColors.Primary,
+                    activeTrackColor = UniStackColors.Primary,
+                    inactiveTrackColor = UniStackColors.Primary.copy(alpha = 0.18f),
+                    activeTickColor = UniStackColors.Card.copy(alpha = 0.35f),
+                    inactiveTickColor = UniStackColors.Primary.copy(alpha = 0.22f)
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                listOf("1", "25", "50", "75", "100").forEach { mark ->
+                    Text(mark, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             PrimarySetupButton(text = "Confirmar rango", onClick = onConfirmClick)
         }
     }
