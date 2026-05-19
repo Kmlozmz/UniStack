@@ -429,13 +429,31 @@ private fun routeDepth(route: String?): Int {
     return if (route != null && bottomRoute != null && route != bottomRoute) 1 else 0
 }
 
-private fun NavHostController.navigateToBottomRoute(targetRoute: String) {
+private fun NavHostController.navigateToBottomRoute(
+    currentRoute: String?,
+    targetRoute: String
+) {
+    if (currentRoute == targetRoute) return
+
+    val targetIsCurrentSection = bottomRouteFor(currentRoute) == targetRoute
+    if (targetIsCurrentSection && popBackStack(targetRoute, inclusive = false)) {
+        return
+    }
+
+    if (targetRoute == AppRoutes.Home && popBackStack(AppRoutes.Home, inclusive = false)) {
+        return
+    }
+
+    if (targetRoute != AppRoutes.Home && popBackStack(targetRoute, inclusive = false)) {
+        return
+    }
+
     navigate(targetRoute) {
         popUpTo(graph.findStartDestination().id) {
             saveState = true
         }
         launchSingleTop = true
-        restoreState = true
+        restoreState = targetRoute != AppRoutes.Home
     }
 }
 
@@ -475,10 +493,13 @@ fun UniStackBottomBar(
 
     if (showBottomBar) {
         UniStackBottomBarContent(
-            currentRoute = selectedBottomRoute ?: currentRoute,
+            selectedRoute = selectedBottomRoute ?: currentRoute,
             items = items,
             onNavigate = { route ->
-                navController.navigateToBottomRoute(targetRoute = route)
+                navController.navigateToBottomRoute(
+                    currentRoute = currentRoute,
+                    targetRoute = route
+                )
             },
             modifier = modifier
         )
@@ -487,7 +508,7 @@ fun UniStackBottomBar(
 
 @Composable
 private fun UniStackBottomBarContent(
-    currentRoute: String,
+    selectedRoute: String,
     items: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -523,14 +544,12 @@ private fun UniStackBottomBarContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
-                val selected = currentRoute == item.route
+                val selected = selectedRoute == item.route
                 UniStackBottomBarItem(
                     item = item,
                     selected = selected,
                     inactiveColor = inactiveColor,
-                    onClick = {
-                        if (!selected) onNavigate(item.route)
-                    },
+                    onClick = { onNavigate(item.route) },
                     modifier = Modifier.weight(1f)
                 )
             }
