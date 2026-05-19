@@ -1,10 +1,16 @@
 package com.unistack.app.core.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Assignment
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unistack.app.feature_user.domain.AppModule
 
@@ -37,15 +43,42 @@ object AppRoutes {
 data class BottomNavItem(
     val route: String,
     val label: String,
-    val icon: ImageVector
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
 ) {
     companion object {
-        private val homeItem = BottomNavItem(AppRoutes.Home, "Inicio", Icons.Rounded.Home)
-        private val gradesItem = BottomNavItem(AppRoutes.Grades, "Materias", Icons.AutoMirrored.Rounded.MenuBook)
-        private val tasksItem = BottomNavItem(AppRoutes.Tasks, "Tareas", Icons.AutoMirrored.Rounded.Assignment)
-        private val expensesItem = BottomNavItem(AppRoutes.Expenses, "Gastos", Icons.Rounded.AccountBalanceWallet)
+        private val homeItem = BottomNavItem(
+            route = AppRoutes.Home,
+            label = "Inicio",
+            selectedIcon = Icons.Rounded.Home,
+            unselectedIcon = Icons.Outlined.Home
+        )
+        private val gradesItem = BottomNavItem(
+            route = AppRoutes.Grades,
+            label = "Materias",
+            selectedIcon = Icons.AutoMirrored.Rounded.MenuBook,
+            unselectedIcon = Icons.AutoMirrored.Outlined.MenuBook
+        )
+        private val tasksItem = BottomNavItem(
+            route = AppRoutes.Tasks,
+            label = "Tareas",
+            selectedIcon = Icons.AutoMirrored.Rounded.Assignment,
+            unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
+        )
+        private val expensesItem = BottomNavItem(
+            route = AppRoutes.Expenses,
+            label = "Gastos",
+            selectedIcon = Icons.Rounded.AccountBalanceWallet,
+            unselectedIcon = Icons.Outlined.AccountBalanceWallet
+        )
+        private val profileItem = BottomNavItem(
+            route = AppRoutes.Profile,
+            label = "Perfil",
+            selectedIcon = Icons.Rounded.Person,
+            unselectedIcon = Icons.Outlined.Person
+        )
 
-        val items = listOf(homeItem, gradesItem, tasksItem, expensesItem)
+        val items = listOf(homeItem, gradesItem, tasksItem, expensesItem, profileItem)
 
         fun itemsFor(enabledModules: Set<AppModule>): List<BottomNavItem> {
             return buildList {
@@ -53,6 +86,7 @@ data class BottomNavItem(
                 if (AppModule.GRADES in enabledModules) add(gradesItem)
                 if (AppModule.TASKS in enabledModules) add(tasksItem)
                 if (AppModule.EXPENSES in enabledModules) add(expensesItem)
+                add(profileItem)
             }
         }
     }

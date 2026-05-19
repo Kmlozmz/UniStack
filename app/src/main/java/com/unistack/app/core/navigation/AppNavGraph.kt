@@ -8,10 +8,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +22,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -29,8 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,9 +48,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.components.UniStackFabMenu
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
@@ -105,7 +106,7 @@ fun MainNavGraph(
         modifier = modifier.fillMaxSize(),
         containerColor = UniStackColors.Background,
         bottomBar = {
-            UniStackBottomBarHost(
+            UniStackBottomBar(
                 navController = navController,
                 items = bottomItems
             )
@@ -341,8 +342,8 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppRoutes.Expenses
-        routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Home
-        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null
     }
@@ -404,6 +405,7 @@ private fun routeRank(route: String?): Int {
         AppRoutes.Grades -> 1
         AppRoutes.Tasks -> 2
         AppRoutes.Expenses -> 3
+        AppRoutes.Profile -> 4
         else -> 0
     }
 }
@@ -419,17 +421,25 @@ private fun NavHostController.navigateToBottomRoute(
 ) {
     if (currentRoute == targetRoute) return
 
-    if (shouldPopSelectedBottomRoute(currentRoute, targetRoute) && popBackStack(targetRoute, inclusive = false)) {
+    val targetIsCurrentSection = bottomRouteFor(currentRoute) == targetRoute
+    if (targetIsCurrentSection && popBackStack(targetRoute, inclusive = false)) {
         return
     }
 
-    val restoreState = shouldRestoreBottomRouteState(currentRoute, targetRoute)
+    if (targetRoute == AppRoutes.Home && popBackStack(AppRoutes.Home, inclusive = false)) {
+        return
+    }
+
+    if (targetRoute != AppRoutes.Home && popBackStack(targetRoute, inclusive = false)) {
+        return
+    }
+
     navigate(targetRoute) {
         popUpTo(graph.findStartDestination().id) {
-            saveState = restoreState
+            saveState = true
         }
         launchSingleTop = true
-        this.restoreState = restoreState
+        restoreState = targetRoute != AppRoutes.Home
     }
 }
 
@@ -457,9 +467,10 @@ private fun routeBelongsTo(route: String?, baseRoute: String): Boolean {
 }
 
 @Composable
-private fun UniStackBottomBarHost(
+fun UniStackBottomBar(
     navController: NavHostController,
-    items: List<BottomNavItem>
+    modifier: Modifier = Modifier,
+    items: List<BottomNavItem> = BottomNavItem.items
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
@@ -467,90 +478,145 @@ private fun UniStackBottomBarHost(
     val showBottomBar = selectedBottomRoute != null && items.any { it.route == selectedBottomRoute }
 
     if (showBottomBar) {
-        UniStackBottomBar(
-            currentRoute = selectedBottomRoute ?: currentRoute,
+        UniStackBottomBarContent(
+            selectedRoute = selectedBottomRoute ?: currentRoute,
             items = items,
             onNavigate = { route ->
                 navController.navigateToBottomRoute(
                     currentRoute = currentRoute,
                     targetRoute = route
                 )
-            }
+            },
+            modifier = modifier
         )
     }
 }
 
 @Composable
-private fun UniStackBottomBar(
-    currentRoute: String,
+private fun UniStackBottomBarContent(
+    selectedRoute: String,
     items: List<BottomNavItem>,
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val barColor = MaterialTheme.colorScheme.surface
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
+    val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-        shape = AppShapes.BottomBar,
-        color = UniStackColors.BottomBar,
-        tonalElevation = 4.dp,
-        shadowElevation = 5.dp
+            .height(82.dp),
+        shape = RoundedCornerShape(
+            topStart = 28.dp,
+            topEnd = 28.dp,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        ),
+        color = barColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(
+            width = 0.5.dp,
+            color = borderColor
+        )
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = 8.dp, vertical = 5.dp),
+                .fillMaxSize()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
-                val selected = currentRoute == item.route
-                val pillColor by animateColorAsState(if (selected) UniStackColors.BottomBarSelected else Color.Transparent, label = "pill")
-                val contentColor by animateColorAsState(if (selected) UniStackColors.Primary else UniStackColors.TextPrimary, label = "content")
-                val iconScale by animateFloatAsState(
-                    targetValue = if (selected) 1.07f else 1f,
-                    animationSpec = tween(180, easing = FastOutSlowInEasing),
-                    label = "bottomIconScale"
+                val selected = selectedRoute == item.route
+                UniStackBottomBarItem(
+                    item = item,
+                    selected = selected,
+                    inactiveColor = inactiveColor,
+                    onClick = { onNavigate(item.route) },
+                    modifier = Modifier.weight(1f)
                 )
-                
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(AppShapes.Pill)
-                        .bounceClick { onNavigate(item.route) },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .height(31.dp)
-                            .fillMaxWidth(0.68f)
-                            .clip(AppShapes.Pill)
-                            .graphicsLayer {
-                                scaleX = iconScale
-                                scaleY = iconScale
-                            }
-                            .background(pillColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.label,
-                            tint = contentColor,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Text(
-                        text = item.label,
-                        color = contentColor,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium
-                    )
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun UniStackBottomBarItem(
+    item: BottomNavItem,
+    selected: Boolean,
+    inactiveColor: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            inactiveColor
+        },
+        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        label = "bottomItemColor"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (selected) 1.05f else 1f,
+        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        label = "bottomItemIconScale"
+    )
+    val indicatorAlpha by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        label = "bottomItemIndicatorAlpha"
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(top = 7.dp, bottom = 3.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+            contentDescription = item.label,
+            tint = contentColor,
+            modifier = Modifier
+                .size(24.dp)
+                .graphicsLayer {
+                    scaleX = iconScale
+                    scaleY = iconScale
+                }
+        )
+        Text(
+            text = item.label,
+            color = contentColor,
+            fontSize = 11.sp,
+            lineHeight = 14.sp,
+            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        Box(
+            modifier = Modifier
+                .padding(top = 5.dp)
+                .size(width = 18.dp, height = 3.dp)
+                .graphicsLayer { alpha = indicatorAlpha },
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.primary,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {}
         }
     }
 }
