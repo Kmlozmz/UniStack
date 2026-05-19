@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -46,7 +45,6 @@ import com.unistack.app.core.utils.bounceClick
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
-    onOpenSimulatorClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
@@ -84,27 +82,15 @@ fun GradesScreen(
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = onAddSubjectClick,
-                    shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.padding(3.dp))
-                    Text("Agregar materia")
-                }
-                Button(
-                    onClick = onOpenSimulatorClick,
-                    shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Blue),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Rounded.Calculate, contentDescription = null)
-                    Spacer(modifier = Modifier.padding(3.dp))
-                    Text("Simulador")
-                }
+            Button(
+                onClick = onAddSubjectClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = null)
+                Spacer(modifier = Modifier.padding(3.dp))
+                Text("Agregar materia")
             }
         }
     }

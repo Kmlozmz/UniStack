@@ -52,7 +52,6 @@ import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AddSubjectScreen
-import com.unistack.app.feature_grades.presentation.GradeSimulatorScreen
 import com.unistack.app.feature_grades.presentation.GradesScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
@@ -153,7 +152,6 @@ fun MainNavGraph(
             composable(AppRoutes.Grades) {
                 GradesScreen(
                     onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                    onOpenSimulatorClick = { navController.navigateIfModuleEnabled(AppRoutes.GradeSimulator, enabledModules) },
                     onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) }
                 )
             }
@@ -208,7 +206,6 @@ fun MainNavGraph(
                     onAddGradeClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
-                    onOpenSimulatorClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.gradeSimulator(id), enabledModules) },
                     onSubjectDeleted = {
                         if (!navController.popBackStack(AppRoutes.Grades, inclusive = false)) {
                             navController.navigate(AppRoutes.Grades) {
@@ -279,15 +276,6 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.GradeSimulator) {
-                GradeSimulatorScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Grades, enabledModules) })
-            }
-            composable("${AppRoutes.GradeSimulator}/{subjectId}") { backStackEntry ->
-                GradeSimulatorScreen(
-                    initialSubjectId = backStackEntry.arguments?.getString("subjectId"),
-                    onBackClick = { navController.navigateBackOr(AppRoutes.Grades, enabledModules) }
-                )
-            }
             composable(AppRoutes.AcademicTemplates) {
                 AcademicTemplatesScreen(
                     onBackClick = {
@@ -343,7 +331,6 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.GradeSimulator) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Grades
@@ -365,7 +352,6 @@ internal fun moduleForRoute(route: String?): AppModule? {
     return when {
         routeBelongsTo(route, AppRoutes.Grades) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
-        routeBelongsTo(route, AppRoutes.GradeSimulator) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES

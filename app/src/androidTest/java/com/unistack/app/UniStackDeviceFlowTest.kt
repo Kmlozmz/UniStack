@@ -131,21 +131,7 @@ class UniStackDeviceFlowTest {
         }
         composeRule.waitForText("Proyecto 2")
 
-        composeRule.scrollToText("Simular esta materia")
-        composeRule.tapText("Simular esta materia")
-        composeRule.waitForText("Nota necesaria")
-        composeRule.waitForText("Matematicas")
-        composeRule.inputTextField(index = 1, value = "Plan final")
-        composeRule.closeKeyboard()
-        composeRule.scrollToText("Guardar escenario")
-        composeRule.tapText("Guardar escenario")
-        composeRule.waitForText("Escenario guardado.")
-        composeRule.scrollToText("Escenarios guardados")
-        composeRule.waitForText("Plan final")
-        composeRule.activityRule.scenario.recreate()
-        composeRule.waitForText("Plan final")
-        composeRule.tapContentDescription("Volver")
-        composeRule.waitForText("Proyecto 2")
+        composeRule.waitForText("Materia finalizada")
 
         composeRule.tapContentDescription("Opciones de materia")
         composeRule.tapText("Editar materia")

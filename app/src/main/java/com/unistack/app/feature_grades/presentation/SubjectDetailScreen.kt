@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
@@ -27,15 +29,18 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,12 +53,14 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import androidx.compose.ui.tooling.preview.Preview
+import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import java.util.Locale
+import kotlin.math.round
 
 @Composable
 fun SubjectDetailScreen(
@@ -62,7 +69,6 @@ fun SubjectDetailScreen(
     onAddGradeClick: (String) -> Unit,
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
-    onOpenSimulatorClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
@@ -77,6 +83,9 @@ fun SubjectDetailScreen(
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
+    var targetAverageInput by rememberSaveable { mutableStateOf("") }
+    var whatIfGradeInput by rememberSaveable { mutableStateOf("") }
+    var whatIfPercentageInput by rememberSaveable { mutableStateOf("") }
 
     if (subject == null) {
         Column(
@@ -95,9 +104,33 @@ fun SubjectDetailScreen(
 
     val average = viewModel.currentAverage(subject)
     val evaluated = viewModel.evaluatedPercentage(subject)
-    val needed = viewModel.neededGrade(subject)
+    val evaluatedPercentage = subject.grades.sumOf { it.percentage }.coerceIn(0.0, 1.0)
     val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
     val subjectWorks = academicWorks.filter { it.subjectId == subject.id }
+    val weightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades)
+    val targetAverage = parseDecimalInput(targetAverageInput)
+    val targetIsValid = targetAverage != null && targetAverage in 0.0..maxGrade
+    val needed = if (targetIsValid && remainingPercentage > 0.0) {
+        GradeCalculator.calculateNeededGrade(
+            currentWeightedPoints = weightedPoints,
+            remainingPercentage = remainingPercentage,
+            targetAverage = targetAverage ?: subject.targetAverage,
+            maxGrade = maxGrade
+        )
+    } else {
+        null
+    }
+    val quickTargets = quickTargetOptions(
+        passingGrade = profile?.passingGrade,
+        subjectTarget = subject.targetAverage,
+        maxGrade = maxGrade
+    )
+
+    LaunchedEffect(subject.id, subject.targetAverage, scale) {
+        targetAverageInput = gradeInputText(subject.targetAverage, scale)
+        whatIfGradeInput = gradeInputText(maxGrade, scale)
+        whatIfPercentageInput = wholePercentInput((remainingPercentage * 100).coerceAtMost(20.0).coerceAtLeast(0.0))
+    }
 
     LazyColumn(
         modifier = modifier
@@ -203,47 +236,40 @@ fun SubjectDetailScreen(
             }
         }
         item {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.YellowLight,
-                shape = AppShapes.MediumCard
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
-                        Text(
-                            "Nota necesaria",
-                            color = UniStackColors.TextPrimary,
-                            fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.padding(start = 10.dp)
-                        )
-                    }
-                    Text(
-                        text = neededGradeMessage(
-                            hasGrades = subject.grades.isNotEmpty(),
-                            average = average,
-                            targetAverage = subject.targetAverage,
-                            neededGrade = needed,
-                            maxGrade = maxGrade,
-                            remainingPercentage = remainingPercentage,
-                            scale = scale
-                        ),
-                        color = UniStackColors.TextPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+            if (remainingPercentage <= 0.0) {
+                CompletedSubjectInsightCard(
+                    average = average,
+                    targetAverage = subject.targetAverage,
+                    scale = scale
+                )
+            } else {
+                NeededGradePlannerCard(
+                    targetAverageInput = targetAverageInput,
+                    onTargetAverageChange = { targetAverageInput = it.take(6) },
+                    quickTargets = quickTargets,
+                    onQuickTargetClick = { targetAverageInput = gradeInputText(it, scale) },
+                    targetAverage = targetAverage,
+                    targetIsValid = targetIsValid,
+                    neededGrade = needed,
+                    remainingPercentage = remainingPercentage,
+                    maxGrade = maxGrade,
+                    scale = scale
+                )
             }
         }
-        item {
-            Button(
-                onClick = { onOpenSimulatorClick(subject.id) },
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Blue),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Rounded.TrackChanges, contentDescription = null)
-                Spacer(modifier = Modifier.padding(3.dp))
-                Text("Simular esta materia")
+        if (remainingPercentage > 0.0) {
+            item {
+                WhatIfPlannerCard(
+                    gradeInput = whatIfGradeInput,
+                    onGradeChange = { whatIfGradeInput = it.take(6) },
+                    percentageInput = whatIfPercentageInput,
+                    onPercentageChange = { whatIfPercentageInput = it.take(5) },
+                    weightedPoints = weightedPoints,
+                    evaluatedPercentage = evaluatedPercentage,
+                    remainingPercentage = remainingPercentage,
+                    maxGrade = maxGrade,
+                    scale = scale
+                )
             }
         }
         if (subjectWorks.isNotEmpty()) {
@@ -376,6 +402,191 @@ fun SubjectDetailScreen(
 }
 
 @Composable
+private fun CompletedSubjectInsightCard(
+    average: Double?,
+    targetAverage: Double,
+    scale: GradingScale
+) {
+    val targetReached = average != null && average >= targetAverage
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = if (targetReached) UniStackColors.GreenLight else UniStackColors.CoralLight,
+        shape = AppShapes.MediumCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = if (targetReached) UniStackColors.Green else UniStackColors.Coral
+                )
+                Text(
+                    "Materia finalizada",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(start = 10.dp)
+                )
+            }
+            Text(
+                text = if (targetReached) {
+                    "Terminaste con ${GradingScaleUtils.formatGrade(average, scale)} y alcanzaste la meta de ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+                } else {
+                    "Terminaste con ${GradingScaleUtils.formatGrade(average, scale)}. La meta era ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+                },
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
+private fun NeededGradePlannerCard(
+    targetAverageInput: String,
+    onTargetAverageChange: (String) -> Unit,
+    quickTargets: List<Double>,
+    onQuickTargetClick: (Double) -> Unit,
+    targetAverage: Double?,
+    targetIsValid: Boolean,
+    neededGrade: Double?,
+    remainingPercentage: Double,
+    maxGrade: Double,
+    scale: GradingScale
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.YellowLight,
+        shape = AppShapes.MediumCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Yellow)
+                Text(
+                    "Qué necesitas",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(start = 10.dp)
+                )
+            }
+            Text(
+                text = neededGradeMessage(
+                    targetAverage = targetAverage,
+                    targetIsValid = targetIsValid,
+                    neededGrade = neededGrade,
+                    maxGrade = maxGrade,
+                    remainingPercentage = remainingPercentage,
+                    scale = scale
+                ),
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+            OutlinedTextField(
+                value = targetAverageInput,
+                onValueChange = onTargetAverageChange,
+                label = { Text("Meta de la materia") },
+                singleLine = true,
+                shape = AppShapes.MediumCard,
+                isError = targetAverageInput.isNotBlank() && !targetIsValid,
+                supportingText = {
+                    Text("Usa una meta entre 0 y ${GradingScaleUtils.formatGrade(maxGrade, scale)}.")
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(quickTargets, key = { it }) { target ->
+                    TextButton(onClick = { onQuickTargetClick(target) }) {
+                        Text(GradingScaleUtils.formatGrade(target, scale), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WhatIfPlannerCard(
+    gradeInput: String,
+    onGradeChange: (String) -> Unit,
+    percentageInput: String,
+    onPercentageChange: (String) -> Unit,
+    weightedPoints: Double,
+    evaluatedPercentage: Double,
+    remainingPercentage: Double,
+    maxGrade: Double,
+    scale: GradingScale
+) {
+    val grade = parseDecimalInput(gradeInput)
+    val percentage = parseDecimalInput(percentageInput)
+    val percentageWeight = ((percentage ?: 0.0) / 100.0).coerceIn(0.0, remainingPercentage)
+    val evaluatedAfter = (evaluatedPercentage + percentageWeight).coerceAtMost(1.0)
+    val projectedAverage = if (
+        grade != null &&
+        percentage != null &&
+        grade in 0.0..maxGrade &&
+        percentageWeight > 0.0 &&
+        evaluatedAfter > 0.0
+    ) {
+        roundToOneDecimal((weightedPoints + grade * percentageWeight) / evaluatedAfter)
+    } else {
+        null
+    }
+
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.PrimaryLight,
+        shape = AppShapes.MediumCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
+                Text(
+                    "Qué pasa si...",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(start = 10.dp)
+                )
+            }
+            Text(
+                text = whatIfMessage(
+                    projectedAverage = projectedAverage,
+                    evaluatedAfter = evaluatedAfter,
+                    remainingPercentage = remainingPercentage,
+                    percentageWeight = percentageWeight,
+                    scale = scale
+                ),
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.Bold
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = gradeInput,
+                    onValueChange = onGradeChange,
+                    label = { Text("Nota") },
+                    singleLine = true,
+                    shape = AppShapes.MediumCard,
+                    isError = gradeInput.isNotBlank() && (grade == null || grade !in 0.0..maxGrade),
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = percentageInput,
+                    onValueChange = onPercentageChange,
+                    label = { Text("Peso %") },
+                    singleLine = true,
+                    shape = AppShapes.MediumCard,
+                    isError = percentageInput.isNotBlank() && (percentage == null || percentage <= 0.0 || percentageWeight <= 0.0),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = "Puedes simular hasta ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante.",
+                color = UniStackColors.TextSecondary,
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun SubjectWorkCard(work: AcademicWork) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
@@ -434,40 +645,82 @@ private fun SubjectDetailMetric(
 }
 
 private fun neededGradeMessage(
-    hasGrades: Boolean,
-    average: Double?,
-    targetAverage: Double,
+    targetAverage: Double?,
+    targetIsValid: Boolean,
     neededGrade: Double?,
     maxGrade: Double,
     remainingPercentage: Double,
     scale: GradingScale
 ): String {
-    if (!hasGrades) {
-        return "Agrega una nota para calcular cuánto necesitas."
-    }
-
-    if (neededGrade != null && neededGrade <= 0.0) {
-        return "Ya alcanzaste la meta de ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+    if (targetAverage == null || !targetIsValid) {
+        return "Elige una meta válida para calcular el camino más claro."
     }
 
     if (remainingPercentage <= 0.0) {
-        return if (average != null && average >= targetAverage) {
-            "Materia completa. Alcanzaste la meta de ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
-        } else {
-            "Materia completa. Ya no queda porcentaje para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
-        }
+        return "La materia ya está completa. No queda porcentaje para planear."
+    }
+
+    if (neededGrade != null && neededGrade <= 0.0) {
+        return "Ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
     }
 
     if (neededGrade == null) {
-        return "No se puede calcular una nota necesaria con el porcentaje actual."
+        return "No se puede calcular una nota necesaria con el porcentaje restante."
     }
 
     if (neededGrade > maxGrade) {
-        return "Con el porcentaje restante no es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        return "Con el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante no es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
     }
 
-    return "Para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(neededGrade, scale)}."
+    return "Para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)} necesitas ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante."
 }
+
+private fun whatIfMessage(
+    projectedAverage: Double?,
+    evaluatedAfter: Double,
+    remainingPercentage: Double,
+    percentageWeight: Double,
+    scale: GradingScale
+): String {
+    if (projectedAverage == null) {
+        return "Escribe una nota y el peso de la próxima evaluación."
+    }
+
+    val projected = GradingScaleUtils.formatGrade(projectedAverage, scale)
+    val evaluatedText = String.format(Locale.US, "%.0f", evaluatedAfter * 100)
+    return if (percentageWeight >= remainingPercentage) {
+        "Tu promedio final sería $projected."
+    } else {
+        "Tu promedio quedaría en $projected con $evaluatedText% evaluado."
+    }
+}
+
+private fun parseDecimalInput(value: String): Double? {
+    return value.trim().replace(',', '.').toDoubleOrNull()
+}
+
+private fun gradeInputText(value: Double, scale: GradingScale): String {
+    return when (scale) {
+        GradingScale.CUSTOM -> String.format(Locale.US, "%.0f", value)
+        GradingScale.ZERO_TO_FIVE -> String.format(Locale.US, "%.1f", value)
+    }
+}
+
+private fun wholePercentInput(value: Double): String =
+    String.format(Locale.US, "%.0f", value)
+
+private fun quickTargetOptions(
+    passingGrade: Double?,
+    subjectTarget: Double,
+    maxGrade: Double
+): List<Double> {
+    return listOfNotNull(passingGrade, subjectTarget, maxGrade)
+        .map { it.coerceIn(0.0, maxGrade) }
+        .distinctBy { roundToOneDecimal(it) }
+}
+
+private fun roundToOneDecimal(value: Double): Double =
+    round(value * 10.0) / 10.0
 
 @Preview(showBackground = true)
 @Composable
@@ -479,7 +732,6 @@ fun SubjectDetailScreenPreview() {
             onAddGradeClick = {},
             onEditSubjectClick = {},
             onEditGradeClick = { _, _ -> },
-            onOpenSimulatorClick = {},
             onSubjectDeleted = {}
         )
     }
