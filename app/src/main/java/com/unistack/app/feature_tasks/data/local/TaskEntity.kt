@@ -17,6 +17,7 @@ data class TaskEntity(
     val userId: String,
     val title: String,
     val subjectId: String?,
+    val type: String,
     val dueDateMillis: Long,
     val difficulty: String,
     val estimatedMinutes: Int,

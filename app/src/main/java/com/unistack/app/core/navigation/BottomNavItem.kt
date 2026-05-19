@@ -23,6 +23,7 @@ object AppRoutes {
     const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"
     const val AddSubject = "add_subject"
+    const val AddSubjectFromTask = "add_subject_from_task"
     const val EditSubject = "edit_subject"
     const val SubjectDetail = "subject_detail"
     const val AddGrade = "add_grade"

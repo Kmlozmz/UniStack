@@ -18,6 +18,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_tasks.data.RoomTasksRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_user.data.InMemoryUserRepository
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
@@ -121,6 +122,7 @@ class RoomRepositoriesTest {
             id = "task-1",
             title = "Entrega ensayo",
             subjectId = null,
+            type = TaskType.ESSAY,
             dueDateMillis = 1_800_000_000_000,
             difficulty = TaskDifficulty.MEDIUM,
             estimatedMinutes = 90,

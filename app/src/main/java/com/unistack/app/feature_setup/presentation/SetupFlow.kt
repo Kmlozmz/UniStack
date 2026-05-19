@@ -63,7 +63,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
@@ -75,7 +74,6 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
@@ -914,29 +912,6 @@ private fun ScaleChip(
     )
 }
 
-@Preview(showBackground = true, widthDp = 390)
-@Composable
-fun SetupWelcomeScreenPreview() {
-    UniStackTheme {
-        SetupWelcomeScreen(onStartClick = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390)
-@Composable
-fun SetupNameScreenPreview() {
-    UniStackTheme {
-        SetupNameScreen(name = "Pineda", nameValidation = ValidationResult(true), onNameChange = {}, onBackClick = {}, onContinueClick = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390)
-@Composable
-fun SetupFinishScreenPreview() {
-    UniStackTheme {
-        SetupFinishScreen(onBackClick = {}, onCreateSubjectClick = {}, onGoHomeClick = {})
-    }
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun <T> UniStackDropdown(

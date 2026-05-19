@@ -15,7 +15,7 @@ import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
     entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -107,6 +107,12 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tasks ADD COLUMN type TEXT NOT NULL DEFAULT 'WORKSHOP'")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -120,6 +126,6 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     }
 }

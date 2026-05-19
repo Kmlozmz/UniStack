@@ -8,6 +8,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
@@ -31,6 +32,7 @@ class TasksViewModel(
     fun addTask(
         title: String,
         subjectId: String?,
+        type: TaskType,
         dueDateInput: String,
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty
@@ -47,6 +49,7 @@ class TasksViewModel(
                 id = "task-${UUID.randomUUID()}",
                 title = TextValidators.normalizeText(title),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
+                type = type,
                 dueDateMillis = parsed.dueDateMillis,
                 difficulty = difficulty,
                 estimatedMinutes = parsed.estimatedMinutes,
@@ -62,6 +65,7 @@ class TasksViewModel(
         taskId: String,
         title: String,
         subjectId: String?,
+        type: TaskType,
         dueDateInput: String,
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty
@@ -77,6 +81,7 @@ class TasksViewModel(
             existing.copy(
                 title = TextValidators.normalizeText(title),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
+                type = type,
                 dueDateMillis = parsed.dueDateMillis,
                 difficulty = difficulty,
                 estimatedMinutes = parsed.estimatedMinutes,

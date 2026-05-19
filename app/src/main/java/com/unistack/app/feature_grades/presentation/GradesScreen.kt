@@ -34,10 +34,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
-import androidx.compose.ui.tooling.preview.Preview
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
@@ -206,39 +204,4 @@ fun subjectBackground(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.CYAN -> if (UniStackColors.IsDarkTheme) Color(0xFF123444) else Color(0xFFDDF7FF)
     SubjectVisualType.LIME -> if (UniStackColors.IsDarkTheme) Color(0xFF243719) else Color(0xFFEAF7D7)
     SubjectVisualType.SLATE -> if (UniStackColors.IsDarkTheme) Color(0xFF25313A) else Color(0xFFE8EEF2)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SubjectListCardPreview() {
-    UniStackTheme {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            SubjectListCard(
-                subject = com.unistack.app.feature_grades.domain.Subject(
-                    id = "1",
-                    name = "Cálculo I",
-                    targetAverage = 3.0,
-                    grades = emptyList(),
-                    visualType = SubjectVisualType.BLUE
-                ),
-                average = 4.2,
-                evaluatedPercentage = 40.0,
-                gradingScale = GradingScale.ZERO_TO_FIVE,
-                onClick = {}
-            )
-            SubjectListCard(
-                subject = com.unistack.app.feature_grades.domain.Subject(
-                    id = "2",
-                    name = "Física II",
-                    targetAverage = 3.0,
-                    grades = emptyList(),
-                    visualType = SubjectVisualType.CORAL
-                ),
-                average = null,
-                evaluatedPercentage = 0.0,
-                gradingScale = GradingScale.ZERO_TO_FIVE,
-                onClick = {}
-            )
-        }
-    }
 }

@@ -26,7 +26,7 @@ UniStack debe sentirse como un centro de mando académico ligero:
 - Persistencia antes que brillo: si el usuario crea algo importante, debe sobrevivir cierre, reinicio y recreación.
 - Diseño compacto, premium y académico: menos hero marketing, más información escaneable y acciones claras.
 - Pro no debe bloquear el valor básico; debe ampliar límites, automatización, exportación o conveniencia.
-- Los datos de demo solo viven en previews, `DemoData` o entornos explícitos de muestra.
+- Los datos de demo no viven en código productivo; cualquier muestra debe estar aislada fuera de `main`.
 - Cada feature nueva trae su fallback: error claro, estado vacío útil, permisos explicados y prueba mínima.
 
 ## Prioridades

@@ -55,7 +55,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.MiniBarChart
@@ -65,7 +64,6 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackBrandHeader
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -866,92 +864,5 @@ private fun subjectStyle(type: SubjectVisualType): SubjectVisualStyle {
             accent = Color(0xFF607D8B),
             background = if (UniStackColors.IsDarkTheme) Color(0xFF25313A) else Color(0xFFE8EEF2)
         )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390, heightDp = 844)
-@Composable
-fun HomeScreenPreview() {
-    UniStackTheme {
-        HomeScreen(
-            uiState = HomeUiState(),
-            onAddSubjectClick = {},
-            onSeeAllSubjectsClick = {},
-            onSeeTasksClick = {},
-            onSeeExpensesClick = {},
-            onOpenTemplatesClick = {},
-            onSubjectClick = {},
-            onProfileClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390, heightDp = 844)
-@Composable
-fun HomeScreenNoGradesPreview() {
-    UniStackTheme {
-        HomeScreen(
-            uiState = HomeUiState(summary = DemoData.homeSummaryNoGrades),
-            onAddSubjectClick = {},
-            onSeeAllSubjectsClick = {},
-            onSeeTasksClick = {},
-            onSeeExpensesClick = {},
-            onOpenTemplatesClick = {},
-            onSubjectClick = {},
-            onProfileClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390)
-@Composable
-fun HeroSummaryCardPreview() {
-    UniStackTheme {
-        Column(
-            modifier = Modifier
-                .background(UniStackColors.Background)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            HeroSummaryCard(summary = DemoData.homeSummary)
-            HeroSummaryCard(summary = DemoData.homeSummaryNoGrades)
-        }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 180)
-@Composable
-fun SubjectCardPreview() {
-    UniStackTheme {
-        val subject = DemoData.homeSummary.subjects.first()
-        val style = subjectStyle(subject.type)
-        SubjectCard(
-            name = subject.name,
-            average = subject.average,
-            progress = subject.progress,
-            icon = style.icon,
-            accentColor = style.accent,
-            backgroundColor = style.background,
-            gradingScale = DemoData.homeSummary.gradingScale,
-            modifier = Modifier.padding(20.dp),
-            onClick = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, widthDp = 390)
-@Composable
-fun ExpenseWeeklyCardPreview() {
-    UniStackTheme {
-        Box(
-            modifier = Modifier
-                .background(UniStackColors.Background)
-                .padding(20.dp)
-        ) {
-            ExpenseWeeklyCard(
-                expenses = DemoData.homeSummary.weeklyExpenses,
-                onSeeExpensesClick = {}
-            )
-        }
     }
 }

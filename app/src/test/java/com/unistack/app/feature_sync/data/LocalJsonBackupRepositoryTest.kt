@@ -9,6 +9,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
@@ -111,6 +112,7 @@ class LocalJsonBackupRepositoryTest {
         id = "task-1",
         title = "Entrega",
         subjectId = "subject-1",
+        type = TaskType.WORKSHOP,
         dueDateMillis = 1_800_000_000_000,
         difficulty = TaskDifficulty.MEDIUM,
         estimatedMinutes = 60,

@@ -7,6 +7,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -164,6 +165,7 @@ class HomeSummaryFactoryTest {
             id = id,
             title = "Resolver taller",
             subjectId = null,
+            type = TaskType.WORKSHOP,
             dueDateMillis = dueDateMillis,
             difficulty = TaskDifficulty.MEDIUM,
             estimatedMinutes = 60,

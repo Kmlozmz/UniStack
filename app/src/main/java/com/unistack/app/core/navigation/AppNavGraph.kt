@@ -19,7 +19,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -197,6 +199,21 @@ fun MainNavGraph(
                     onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
                 )
             }
+            composable(AppRoutes.AddSubjectFromTask) {
+                AddSubjectScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
+                        }
+                    },
+                    onSubjectSaved = {
+                        if (!navController.navigateUp()) {
+                            navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
+                        }
+                    },
+                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
+                )
+            }
             composable("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 SubjectDetailScreen(
@@ -254,12 +271,16 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.AddTask) {
-                AddTaskScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Tasks, enabledModules) })
+                AddTaskScreen(
+                    onBackClick = { navController.navigateBackOr(AppRoutes.Tasks, enabledModules) },
+                    onCreateSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubjectFromTask, enabledModules) }
+                )
             }
             composable("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
                 AddTaskScreen(
                     taskId = taskId,
+                    onCreateSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubjectFromTask, enabledModules) },
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.Tasks, enabledModules)
                     }
@@ -332,6 +353,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Tasks
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Grades
@@ -353,6 +375,7 @@ internal fun moduleForRoute(route: String?): AppModule? {
     return when {
         routeBelongsTo(route, AppRoutes.Grades) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES
@@ -502,12 +525,13 @@ private fun UniStackBottomBarContent(
     val barColor = MaterialTheme.colorScheme.surface
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
     val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+    val density = LocalDensity.current
+    val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .height(82.dp),
+            .height(82.dp + navigationBarBottom),
         shape = RoundedCornerShape(
             topStart = 28.dp,
             topEnd = 28.dp,
@@ -525,7 +549,12 @@ private fun UniStackBottomBarContent(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(
+                    start = 12.dp,
+                    top = 8.dp,
+                    end = 12.dp,
+                    bottom = 8.dp + navigationBarBottom
+                ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

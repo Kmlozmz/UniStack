@@ -51,8 +51,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.UniStackTheme
-import androidx.compose.ui.tooling.preview.Preview
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
@@ -813,18 +811,3 @@ private fun quickTargetOptions(
 
 private fun roundToOneDecimal(value: Double): Double =
     round(value * 10.0) / 10.0
-
-@Preview(showBackground = true)
-@Composable
-fun SubjectDetailScreenPreview() {
-    UniStackTheme {
-        SubjectDetailScreen(
-            subjectId = "1",
-            onBackClick = {},
-            onAddGradeClick = {},
-            onEditSubjectClick = {},
-            onEditGradeClick = { _, _ -> },
-            onSubjectDeleted = {}
-        )
-    }
-}

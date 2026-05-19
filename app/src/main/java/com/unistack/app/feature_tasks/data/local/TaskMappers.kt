@@ -2,15 +2,19 @@ package com.unistack.app.feature_tasks.data.local
 
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 
 fun TaskEntity.toDomain(): StudentTask {
     val parsedDifficulty = runCatching { TaskDifficulty.valueOf(difficulty) }
         .getOrDefault(TaskDifficulty.MEDIUM)
+    val parsedType = runCatching { TaskType.valueOf(type) }
+        .getOrDefault(TaskType.WORKSHOP)
 
     return StudentTask(
         id = id,
         title = title,
         subjectId = subjectId,
+        type = parsedType,
         dueDateMillis = dueDateMillis,
         difficulty = parsedDifficulty,
         estimatedMinutes = estimatedMinutes,
@@ -26,6 +30,7 @@ fun StudentTask.toEntity(userId: String): TaskEntity {
         userId = userId,
         title = title,
         subjectId = subjectId,
+        type = type.name,
         dueDateMillis = dueDateMillis,
         difficulty = difficulty.name,
         estimatedMinutes = estimatedMinutes,

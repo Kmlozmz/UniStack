@@ -2,39 +2,61 @@ package com.unistack.app.feature_tasks.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.EventNote
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -43,10 +65,18 @@ import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     onBackClick: () -> Unit,
+    onCreateSubjectClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = viewModel(),
     taskId: String? = null
@@ -59,30 +89,29 @@ fun AddTaskScreen(
     val isEditing = taskId != null
 
     var title by rememberSaveable(taskId) { mutableStateOf("") }
-    var dueDate by rememberSaveable(taskId) { mutableStateOf(TaskDateUtils.formatInput(TaskDateUtils.today())) }
-    var estimatedMinutes by rememberSaveable(taskId) { mutableStateOf("60") }
+    var dueDate by rememberSaveable(taskId) { mutableStateOf("") }
     var selectedSubjectId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
+    var selectedType by rememberSaveable(taskId) { mutableStateOf(TaskType.WORKSHOP) }
     var difficulty by rememberSaveable(taskId) { mutableStateOf(TaskDifficulty.MEDIUM) }
     var initialized by rememberSaveable(taskId) { mutableStateOf(false) }
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val estimatedMinutes = "60"
 
     val titleValidation = TextValidators.validateActivityName(title)
     val isTitleValid = title.isBlank() || titleValidation.isValid
     val parsedDueDate = TaskDateUtils.parseInput(dueDate)
-    val parsedMinutes = estimatedMinutes.toIntOrNull()
     val isValid = (!isEditing || task != null) &&
         titleValidation.isValid &&
-        parsedDueDate != null &&
-        parsedMinutes != null &&
-        parsedMinutes in 1..1440
+        parsedDueDate != null
 
     LaunchedEffect(task?.id, taskId) {
         if (initialized) return@LaunchedEffect
         if (task != null) {
             title = task.title
             dueDate = TaskDateUtils.formatInput(TaskDateUtils.fromMillis(task.dueDateMillis))
-            estimatedMinutes = task.estimatedMinutes.toString()
             selectedSubjectId = task.subjectId
+            selectedType = task.type
             difficulty = task.difficulty
             initialized = true
         } else if (!isEditing) {
@@ -90,207 +119,669 @@ fun AddTaskScreen(
         }
     }
 
+    AddTaskContent(
+        title = title,
+        isEditing = isEditing,
+        taskMissing = isEditing && task == null,
+        titleIsValid = isTitleValid,
+        titleError = titleValidation.errorMessage,
+        dueDateLabel = parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it)) }.orEmpty(),
+        subjects = subjects,
+        selectedSubjectId = selectedSubjectId,
+        selectedType = selectedType,
+        selectedPriority = difficulty,
+        isSaveEnabled = isValid,
+        error = error,
+        onBackClick = onBackClick,
+        onTitleChange = {
+            title = it.take(40)
+            error = null
+        },
+        onDateClick = {
+            showDatePicker = true
+            error = null
+        },
+        onTypeSelected = {
+            selectedType = it
+            error = null
+        },
+        onSubjectSelected = {
+            selectedSubjectId = it
+            error = null
+        },
+        onCreateSubjectClick = onCreateSubjectClick,
+        onPrioritySelected = {
+            difficulty = it
+            error = null
+        },
+        onSaveClick = {
+            val editingTaskId = taskId
+            val saved = if (editingTaskId != null) {
+                viewModel.updateTask(
+                    taskId = editingTaskId,
+                    title = title,
+                    subjectId = selectedSubjectId,
+                    type = selectedType,
+                    dueDateInput = dueDate,
+                    estimatedMinutesInput = estimatedMinutes,
+                    difficulty = difficulty
+                )
+            } else {
+                viewModel.addTask(
+                    title = title,
+                    subjectId = selectedSubjectId,
+                    type = selectedType,
+                    dueDateInput = dueDate,
+                    estimatedMinutesInput = estimatedMinutes,
+                    difficulty = difficulty
+                )
+            }
+
+            if (saved) {
+                onBackClick()
+            } else {
+                error = "Revisa la actividad y la fecha antes de guardar."
+            }
+        },
+        modifier = modifier
+    )
+
+    if (showDatePicker) {
+        MonthCalendarDialog(
+            selectedDate = parsedDueDate,
+            onDateSelected = { selectedDate ->
+                dueDate = TaskDateUtils.formatInput(selectedDate)
+                error = null
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+@Composable
+private fun AddTaskContent(
+    title: String,
+    isEditing: Boolean,
+    taskMissing: Boolean,
+    titleIsValid: Boolean,
+    titleError: String?,
+    dueDateLabel: String,
+    subjects: List<Subject>,
+    selectedSubjectId: String?,
+    selectedType: TaskType,
+    selectedPriority: TaskDifficulty,
+    isSaveEnabled: Boolean,
+    error: String?,
+    onBackClick: () -> Unit,
+    onTitleChange: (String) -> Unit,
+    onDateClick: () -> Unit,
+    onTypeSelected: (TaskType) -> Unit,
+    onSubjectSelected: (String?) -> Unit,
+    onCreateSubjectClick: () -> Unit,
+    onPrioritySelected: (TaskDifficulty) -> Unit,
+    onSaveClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 20.dp)
+            .padding(top = 16.dp, bottom = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
+        TaskHeader(
+            title = if (isEditing) "Editar tarea" else "Nueva tarea",
+            subtitle = "Agrega los detalles principales de tu actividad.",
+            onBackClick = onBackClick
+        )
+        SectionTitle("Información básica")
+        BasicInfoCard(
+            title = title,
+            titleIsValid = titleIsValid,
+            titleError = titleError,
+            dueDateLabel = dueDateLabel,
+            onTitleChange = onTitleChange,
+            onDateClick = onDateClick
+        )
+        SectionTitle("Detalles")
+        DetailsCard(
+            subjects = subjects,
+            selectedType = selectedType,
+            selectedSubjectId = selectedSubjectId,
+            onTypeSelected = onTypeSelected,
+            onSubjectSelected = onSubjectSelected,
+            onCreateSubjectClick = onCreateSubjectClick
+        )
+        SectionTitle("Prioridad")
+        PrioritySegmentedControl(
+            selected = selectedPriority,
+            onSelected = onPrioritySelected
+        )
+        if (taskMissing) {
+            Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+        }
+        error?.let {
+            Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+        }
+        CreateTaskButton(
+            text = if (isEditing) "Guardar tarea" else "Crear tarea",
+            enabled = isSaveEnabled,
+            onClick = onSaveClick,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun TaskHeader(
+    title: String,
+    subtitle: String,
+    onBackClick: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         IconButton(onClick = onBackClick) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
-        UniScreenHeader(
-            title = if (isEditing) "Editar tarea" else "Nueva tarea",
-            subtitle = "Define actividad, fecha, tiempo estimado, materia y dificultad."
-        )
-        UniCard(
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onBackground,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.ExtraBold
+    )
+}
+
+@Composable
+private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shape = AppShapes.MediumCard,
+        tonalElevation = 1.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+        borderWidth = 0.5.dp,
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+    }
+}
+
+@Composable
+private fun BasicInfoCard(
+    title: String,
+    titleIsValid: Boolean,
+    titleError: String?,
+    dueDateLabel: String,
+    onTitleChange: (String) -> Unit,
+    onDateClick: () -> Unit
+) {
+    FormSectionCard {
+        FieldLabel(icon = Icons.Rounded.TaskAlt, text = "Nombre de la tarea")
+        OutlinedTextField(
+            value = title,
+            onValueChange = onTitleChange,
+            placeholder = { Text("Ej: Ensayo sobre Hume") },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            color = UniStackColors.BlueLight,
-            shape = AppShapes.LargeCard,
-            contentPadding = PaddingValues(20.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Icon(Icons.AutoMirrored.Rounded.EventNote, contentDescription = null, tint = UniStackColors.Blue)
-                if (isEditing && task == null) {
-                    Text("Tarea no encontrada.", color = UniStackColors.TextSecondary)
+            shape = AppShapes.SmallCard,
+            isError = !titleIsValid,
+            supportingText = {
+                if (!titleIsValid) {
+                    Text(titleError ?: "Ingresa una actividad válida")
                 }
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = {
-                        title = it.take(40)
-                        error = null
-                    },
-                    label = { Text("Actividad") },
-                    placeholder = { Text("Entrega, parcial, lectura...") },
-                    singleLine = true,
+            }
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        DateSelectorRow(
+            value = dueDateLabel,
+            onClick = onDateClick
+        )
+    }
+}
+
+@Composable
+private fun DetailsCard(
+    subjects: List<Subject>,
+    selectedType: TaskType,
+    selectedSubjectId: String?,
+    onTypeSelected: (TaskType) -> Unit,
+    onSubjectSelected: (String?) -> Unit,
+    onCreateSubjectClick: () -> Unit
+) {
+    FormSectionCard {
+        FieldLabel(icon = Icons.Rounded.TaskAlt, text = "Tipo de tarea")
+        TaskTypeSelector(
+            selected = selectedType,
+            onSelected = onTypeSelected
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        FieldLabel(icon = Icons.AutoMirrored.Rounded.MenuBook, text = "Materia")
+        SubjectDropdown(
+            subjects = subjects,
+            selectedSubjectId = selectedSubjectId,
+            onCreateSubjectClick = onCreateSubjectClick,
+            onSubjectSelected = onSubjectSelected
+        )
+    }
+}
+
+@Composable
+private fun FieldLabel(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
+}
+
+@Composable
+private fun DateSelectorRow(
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 58.dp)
+            .bounceClick(onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Rounded.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                text = "Fecha límite",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = value.ifBlank { "Seleccionar fecha" },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun MonthCalendarDialog(
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val today = TaskDateUtils.today()
+    val minMonth = YearMonth.from(today)
+    val maxMonth = minMonth.plusMonths(18)
+    var visibleMonth by androidx.compose.runtime.remember(selectedDate) {
+        mutableStateOf(YearMonth.from(selectedDate ?: today))
+    }
+    val canGoBack = visibleMonth > minMonth
+    val canGoForward = visibleMonth < maxMonth
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Fecha límite",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.ExtraBold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = AppShapes.MediumCard,
-                    isError = !isTitleValid,
-                    supportingText = {
-                        if (!isTitleValid) {
-                            Text(titleValidation.errorMessage ?: "Ingresa una actividad válida")
-                        }
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { visibleMonth = visibleMonth.minusMonths(1) },
+                        enabled = canGoBack
+                    ) {
+                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Mes anterior")
                     }
-                )
-                OutlinedTextField(
-                    value = dueDate,
-                    onValueChange = {
-                        dueDate = it.take(10)
-                        error = null
-                    },
-                    label = { Text("Fecha límite") },
-                    placeholder = { Text("YYYY-MM-DD") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = AppShapes.MediumCard,
-                    isError = dueDate.isNotBlank() && parsedDueDate == null,
-                    supportingText = {
-                        if (dueDate.isNotBlank() && parsedDueDate == null) {
-                            Text("Usa el formato YYYY-MM-DD")
-                        }
+                    Text(
+                        text = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "CO"))
+                            .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    IconButton(
+                        onClick = { visibleMonth = visibleMonth.plusMonths(1) },
+                        enabled = canGoForward
+                    ) {
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Mes siguiente")
                     }
+                }
+                CalendarMonthGrid(
+                    month = visibleMonth,
+                    selectedDate = selectedDate,
+                    minDate = today,
+                    maxDate = maxMonth.atEndOfMonth(),
+                    onDateSelected = onDateSelected
                 )
-                OutlinedTextField(
-                    value = estimatedMinutes,
-                    onValueChange = {
-                        estimatedMinutes = it.take(4)
-                        error = null
-                    },
-                    label = { Text("Tiempo estimado en minutos") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = AppShapes.MediumCard,
-                    isError = estimatedMinutes.isNotBlank() && (parsedMinutes == null || parsedMinutes !in 1..1440)
-                )
-                Text("Materia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                SubjectSelectorRow(
-                    subjects = subjects,
-                    selectedSubjectId = selectedSubjectId,
-                    onSubjectSelected = {
-                        selectedSubjectId = it
-                        error = null
-                    }
-                )
-                Text("Dificultad", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                DifficultySelector(
-                    selected = difficulty,
-                    onSelected = {
-                        difficulty = it
-                        error = null
-                    }
-                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+@Composable
+private fun CalendarMonthGrid(
+    month: YearMonth,
+    selectedDate: LocalDate?,
+    minDate: LocalDate,
+    maxDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
+) {
+    val firstDay = month.atDay(1)
+    val leadingEmptyCells = firstDay.dayOfWeek.isoIndex() - 1
+    val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
+    val cells = List(leadingEmptyCells) { null } + days
+    val weeks = cells.chunked(7)
+    val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            dayLabels.forEach { label ->
                 Text(
-                    text = "Vista previa: ${title.ifBlank { "Actividad" }} · ${parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it)) } ?: "fecha pendiente"} · ${parsedMinutes?.let { TaskDateUtils.estimatedTimeText(it) } ?: "tiempo pendiente"}",
-                    color = UniStackColors.TextSecondary
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
                 )
-                error?.let {
-                    Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+            }
+        }
+        weeks.forEach { week ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (0 until 7).forEach { index ->
+                    val date = week.getOrNull(index)
+                    val enabled = date != null && !date.isBefore(minDate) && !date.isAfter(maxDate)
+                    val selected = date != null && date == selectedDate
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 38.dp)
+                            .then(
+                                if (enabled) Modifier.bounceClick { onDateSelected(date!!) } else Modifier
+                            )
+                            .background(
+                                color = when {
+                                    selected -> MaterialTheme.colorScheme.primary
+                                    enabled -> MaterialTheme.colorScheme.surfaceVariant
+                                    else -> Color.Transparent
+                                },
+                                shape = AppShapes.Pill
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = date?.dayOfMonth?.toString().orEmpty(),
+                            color = when {
+                                selected -> MaterialTheme.colorScheme.onPrimary
+                                enabled -> MaterialTheme.colorScheme.onSurface
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                            },
+                            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
                 }
             }
         }
-        Button(
-            onClick = {
-                val editingTaskId = taskId
-                val saved = if (editingTaskId != null) {
-                    viewModel.updateTask(
-                        taskId = editingTaskId,
-                        title = title,
-                        subjectId = selectedSubjectId,
-                        dueDateInput = dueDate,
-                        estimatedMinutesInput = estimatedMinutes,
-                        difficulty = difficulty
-                    )
-                } else {
-                    viewModel.addTask(
-                        title = title,
-                        subjectId = selectedSubjectId,
-                        dueDateInput = dueDate,
-                        estimatedMinutesInput = estimatedMinutes,
-                        difficulty = difficulty
-                    )
-                }
-
-                if (saved) {
-                    onBackClick()
-                } else {
-                    error = "Revisa la actividad, fecha y tiempo estimado antes de guardar."
-                }
-            },
-            enabled = isValid,
-            shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Blue),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (isEditing) "Guardar cambios" else "Crear tarea")
-        }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SubjectSelectorRow(
+private fun SubjectDropdown(
     subjects: List<Subject>,
     selectedSubjectId: String?,
+    onCreateSubjectClick: () -> Unit,
     onSubjectSelected: (String?) -> Unit
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        item {
-            SelectionChip(
-                text = "General",
-                selected = selectedSubjectId == null,
-                onClick = { onSubjectSelected(null) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val selectedLabel = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedLabel ?: "Seleccionar materia",
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            shape = AppShapes.SmallCard
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Sin materia asignada") },
+                onClick = {
+                    onSubjectSelected(null)
+                    expanded = false
+                }
             )
-        }
-        items(subjects, key = { it.id }) { subject ->
-            SelectionChip(
-                text = subject.name,
-                selected = selectedSubjectId == subject.id,
-                onClick = { onSubjectSelected(subject.id) }
+            subjects.forEach { subject ->
+                DropdownMenuItem(
+                    text = { Text(subject.name) },
+                    onClick = {
+                        onSubjectSelected(subject.id)
+                        expanded = false
+                    }
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("Crear nueva materia", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                onClick = {
+                    expanded = false
+                    onCreateSubjectClick()
+                }
             )
         }
     }
 }
 
 @Composable
-private fun DifficultySelector(
-    selected: TaskDifficulty,
-    onSelected: (TaskDifficulty) -> Unit
+private fun TaskTypeSelector(
+    selected: TaskType,
+    onSelected: (TaskType) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        TaskDifficulty.entries.forEach { difficulty ->
-            SelectionChip(
-                text = difficulty.label(),
-                selected = selected == difficulty,
-                onClick = { onSelected(difficulty) },
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(TaskType.WORKSHOP, TaskType.EXAM).forEach { type ->
+                TaskChoiceChip(
+                    text = type.label(),
+                    selected = selected == type,
+                    onClick = { onSelected(type) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(TaskType.ESSAY, TaskType.PRESENTATION).forEach { type ->
+                TaskChoiceChip(
+                    text = type.label(),
+                    selected = selected == type,
+                    onClick = { onSelected(type) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            TaskChoiceChip(
+                text = TaskType.OTHER.label(),
+                selected = selected == TaskType.OTHER,
+                onClick = { onSelected(TaskType.OTHER) },
                 modifier = Modifier.weight(1f)
             )
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun SelectionChip(
+private fun TaskChoiceChip(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    UniCard(
+    val background = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
+    val textColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+
+    Row(
         modifier = modifier
-            .heightIn(min = 48.dp)
-            .bounceClick(onClick),
-        color = if (selected) UniStackColors.BlueLight else UniStackColors.Card,
-        shape = AppShapes.Pill,
-        tonalElevation = if (selected) 5.dp else 1.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp)
+            .height(46.dp)
+            .background(background, AppShapes.SmallCard)
+            .border(1.dp, border, AppShapes.SmallCard)
+            .bounceClick(onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
+        if (selected) {
+            Icon(
+                imageVector = Icons.Rounded.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+        }
         Text(
             text = text,
-            color = if (selected) UniStackColors.Blue else UniStackColors.TextPrimary,
+            color = textColor,
             fontWeight = FontWeight.ExtraBold,
             maxLines = 1
         )
+    }
+}
+
+@Composable
+private fun PrioritySegmentedControl(
+    selected: TaskDifficulty,
+    onSelected: (TaskDifficulty) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f), AppShapes.Pill)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), AppShapes.Pill)
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        TaskDifficulty.entries.forEach { priority ->
+            val isSelected = selected == priority
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .background(
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                        shape = AppShapes.Pill
+                    )
+                    .bounceClick { onSelected(priority) },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = priority.label(),
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateTaskButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = AppShapes.Pill,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+        ),
+        contentPadding = PaddingValues(vertical = 0.dp),
+        modifier = modifier.height(56.dp)
+    ) {
+        Text(text, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+private fun TaskType.label(): String {
+    return when (this) {
+        TaskType.WORKSHOP -> "Taller"
+        TaskType.EXAM -> "Parcial"
+        TaskType.ESSAY -> "Ensayo"
+        TaskType.PRESENTATION -> "Exposición"
+        TaskType.OTHER -> "Otro"
     }
 }
 
@@ -301,3 +792,5 @@ private fun TaskDifficulty.label(): String {
         TaskDifficulty.HARD -> "Alta"
     }
 }
+
+private fun DayOfWeek.isoIndex(): Int = value

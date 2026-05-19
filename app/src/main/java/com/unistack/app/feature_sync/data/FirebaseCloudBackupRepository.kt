@@ -15,6 +15,7 @@ import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.CloudBackupState
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
@@ -198,6 +199,7 @@ class FirebaseCloudBackupRepository(
         "id" to task.id,
         "title" to task.title,
         "subjectId" to task.subjectId,
+        "type" to task.type.name,
         "dueDateMillis" to task.dueDateMillis,
         "difficulty" to task.difficulty.name,
         "estimatedMinutes" to task.estimatedMinutes,
@@ -265,6 +267,9 @@ class FirebaseCloudBackupRepository(
                 id = map.string("id") ?: return@mapNotNull null,
                 title = map.string("title") ?: return@mapNotNull null,
                 subjectId = map.string("subjectId"),
+                type = map.string("type")
+                    ?.let { runCatching { TaskType.valueOf(it) }.getOrNull() }
+                    ?: TaskType.WORKSHOP,
                 dueDateMillis = map.long("dueDateMillis") ?: return@mapNotNull null,
                 difficulty = difficulty,
                 estimatedMinutes = map.int("estimatedMinutes") ?: return@mapNotNull null,

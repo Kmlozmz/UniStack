@@ -18,6 +18,7 @@ import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
@@ -146,9 +147,9 @@ class LocalJsonBackupRepository(
 
     override fun exportTasksCsv(): String {
         return buildCsv(
-            header = listOf("id", "title", "subjectId", "dueDate", "difficulty", "estimatedMinutes", "completed"),
+            header = listOf("id", "title", "subjectId", "type", "dueDate", "difficulty", "estimatedMinutes", "completed"),
             rows = tasksRepository.tasks.value.map { task ->
-                listOf(task.id, task.title, task.subjectId.orEmpty(), TaskDateUtils.fromMillis(task.dueDateMillis).toString(), task.difficulty.name, task.estimatedMinutes.toString(), task.completed.toString())
+                listOf(task.id, task.title, task.subjectId.orEmpty(), task.type.name, TaskDateUtils.fromMillis(task.dueDateMillis).toString(), task.difficulty.name, task.estimatedMinutes.toString(), task.completed.toString())
             }
         )
     }
@@ -217,6 +218,7 @@ class LocalJsonBackupRepository(
         .put("id", task.id)
         .put("title", task.title)
         .put("subjectId", task.subjectId)
+        .put("type", task.type.name)
         .put("dueDateMillis", task.dueDateMillis)
         .put("difficulty", task.difficulty.name)
         .put("estimatedMinutes", task.estimatedMinutes)
@@ -272,6 +274,7 @@ class LocalJsonBackupRepository(
             id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             title = item.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             subjectId = item.optNullableString("subjectId"),
+            type = item.optString("type").toEnum(TaskType.WORKSHOP),
             dueDateMillis = item.optLong("dueDateMillis"),
             difficulty = item.optString("difficulty").toEnum(TaskDifficulty.MEDIUM),
             estimatedMinutes = item.optInt("estimatedMinutes"),
