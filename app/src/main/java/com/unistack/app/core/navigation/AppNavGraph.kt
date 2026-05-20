@@ -91,6 +91,13 @@ fun MainNavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
     val showHomeFab = routeBelongsTo(currentRoute, AppRoutes.Home)
+    val showBottomBar = currentRoute in setOf(
+        AppRoutes.Home,
+        AppRoutes.Grades,
+        AppRoutes.Tasks,
+        AppRoutes.Expenses,
+        AppRoutes.Profile
+    )
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -108,10 +115,12 @@ fun MainNavGraph(
         modifier = modifier.fillMaxSize(),
         containerColor = UniStackColors.Background,
         bottomBar = {
-            UniStackBottomBar(
-                navController = navController,
-                items = bottomItems
-            )
+            if (showBottomBar) {
+                UniStackBottomBar(
+                    navController = navController,
+                    items = bottomItems
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {

@@ -1,22 +1,28 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -114,103 +120,76 @@ fun AddSubjectScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(UniStackColors.Background)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 22.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-            }
-            Text(
-                text = if (isEditing) "Editar materia" else "Agregar materia",
-                color = UniStackColors.TextPrimary,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
+            SubjectFormHeader(
+                title = if (isEditing) "Editar materia" else "Agregar materia",
+                onBackClick = onBackClick
             )
             if (isEditing && subject == null) {
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
-                    color = UniStackColors.Card,
-                    shape = AppShapes.MediumCard
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    shape = AppShapes.MediumCard,
+                    tonalElevation = 0.dp,
+                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                    borderWidth = 0.5.dp
                 ) {
-                    Text("Materia no encontrada.", color = UniStackColors.TextSecondary)
+                    Text("Materia no encontrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (!isEditing) {
-                SubjectPlanGateCard(
+                PlanBanner(
                     plan = userPlan,
                     currentSubjectCount = subjects.size,
                     onUpgradeClick = onUpgradeClick
                 )
             }
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.Card,
-                shape = AppShapes.LargeCard,
-                contentPadding = PaddingValues(18.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = {
-                            name = it.take(40)
-                            error = null
-                        },
-                        label = { Text("Nombre") },
-                        placeholder = { Text("Cálculo, Derecho civil, Biología...") },
-                        singleLine = true,
-                        shape = AppShapes.MediumCard,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = !isNameValid,
-                        supportingText = {
-                            if (!isNameValid) {
-                                Text(nameValidation.errorMessage ?: "Ingresa un nombre de materia válido")
-                            }
-                        }
-                    )
-                    OutlinedTextField(
-                        value = targetAverage,
-                        onValueChange = {
-                            targetAverage = it
-                            error = null
-                        },
-                        label = { Text("Meta de promedio (0 a $maxGradeLabel)") },
-                        singleLine = true,
-                        shape = AppShapes.MediumCard,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..maxGrade)
-                    )
-                    Text("Color", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    SubjectVisualType.entries.chunked(6).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEach { type ->
-                                ColorSwatch(
-                                    color = subjectAccent(type),
-                                    label = type.accessibilityLabel(),
-                                    selected = visualType == type,
-                                    onClick = { visualType = type }
-                                )
-                            }
-                        }
-                    }
-                    error?.let {
-                        Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
-                    }
+            SubjectBasicInfoCard(
+                name = name,
+                onNameChange = {
+                    name = it.take(40)
+                    error = null
+                },
+                nameIsValid = isNameValid,
+                nameError = nameValidation.errorMessage,
+                targetAverage = targetAverage,
+                targetLabel = maxGradeLabel,
+                targetHasError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..maxGrade),
+                onTargetChange = {
+                    targetAverage = it
+                    error = null
                 }
+            )
+            SubjectColorPicker(
+                selected = visualType,
+                onSelected = { visualType = it }
+            )
+            SubjectPreviewCard(
+                name = name,
+                targetAverage = targetAverage.ifBlank { GradingScaleUtils.formatGrade(defaultAverage, scale) },
+                visualType = visualType
+            )
+            error?.let {
+                Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
             }
-            Button(
+            SaveSubjectButton(
+                text = if (isEditing) "Guardar cambios" else "Guardar materia",
+                enabled = isValid,
                 onClick = {
                     if (freeLimitReached) {
                         error = "Alcanzaste el límite gratis de ${userPlan.maxSubjects} materias."
-                        return@Button
+                        return@SaveSubjectButton
                     }
 
                     val editingSubjectId = subjectId
@@ -244,19 +223,37 @@ fun AddSubjectScreen(
                         }
                     }
                 },
-                enabled = isValid,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isEditing) "Guardar cambios" else "Guardar materia")
-            }
+            )
         }
     }
 }
 
 @Composable
-private fun SubjectPlanGateCard(
+private fun SubjectFormHeader(
+    title: String,
+    onBackClick: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .size(44.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)
+        ) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+        }
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
+}
+
+@Composable
+private fun PlanBanner(
     plan: UserPlan,
     currentSubjectCount: Int,
     onUpgradeClick: () -> Unit
@@ -266,20 +263,28 @@ private fun SubjectPlanGateCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = if (limitReached) UniStackColors.CoralLight else UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
         shape = AppShapes.MediumCard,
-        tonalElevation = if (limitReached) 3.dp else 0.dp,
+        tonalElevation = 0.dp,
+        borderColor = if (limitReached) UniStackColors.Coral.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.foundation.layout.Box(
+            Box(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .background(if (limitReached) UniStackColors.Coral else UniStackColors.Primary)
-                    .padding(9.dp),
+                    .size(44.dp)
+                    .background(
+                        if (limitReached) UniStackColors.Coral.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        AppShapes.SmallCard
+                    ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = Color.White)
+                Icon(
+                    Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = if (limitReached) UniStackColors.Coral else MaterialTheme.colorScheme.primary
+                )
             }
             Column(
                 modifier = Modifier
@@ -289,7 +294,7 @@ private fun SubjectPlanGateCard(
             ) {
                 Text(
                     text = if (limitReached) "Límite gratis alcanzado" else "Plan ${plan.name}",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
@@ -298,7 +303,7 @@ private fun SubjectPlanGateCard(
                     } else {
                         "$currentSubjectCount de ${plan.maxSubjects} materias usadas."
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -317,12 +322,177 @@ private fun SubjectPlanGateCard(
 }
 
 @Composable
+private fun SubjectBasicInfoCard(
+    name: String,
+    onNameChange: (String) -> Unit,
+    nameIsValid: Boolean,
+    nameError: String?,
+    targetAverage: String,
+    targetLabel: String,
+    targetHasError: Boolean,
+    onTargetChange: (String) -> Unit
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
+        shape = AppShapes.LargeCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp,
+        contentPadding = PaddingValues(18.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Información básica", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            OutlinedTextField(
+                value = name,
+                onValueChange = onNameChange,
+                label = { Text("Nombre") },
+                placeholder = { Text("Ej: Estadística inferencial") },
+                singleLine = true,
+                shape = AppShapes.SmallCard,
+                modifier = Modifier.fillMaxWidth(),
+                isError = !nameIsValid,
+                supportingText = {
+                    if (!nameIsValid) {
+                        Text(nameError ?: "Ingresa un nombre de materia válido")
+                    }
+                }
+            )
+            OutlinedTextField(
+                value = targetAverage,
+                onValueChange = onTargetChange,
+                label = { Text("Meta de promedio (0 a $targetLabel)") },
+                singleLine = true,
+                shape = AppShapes.SmallCard,
+                modifier = Modifier.fillMaxWidth(),
+                isError = targetHasError
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubjectColorPicker(
+    selected: SubjectVisualType,
+    onSelected: (SubjectVisualType) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Color", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
+        SubjectVisualType.entries.chunked(6).forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                row.forEach { type ->
+                    ColorSwatch(
+                        color = subjectAccent(type),
+                        label = type.accessibilityLabel(),
+                        selected = selected == type,
+                        onClick = { onSelected(type) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubjectPreviewCard(
+    name: String,
+    targetAverage: String,
+    visualType: SubjectVisualType
+) {
+    val accent = subjectAccent(visualType)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("Vista previa", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
+        UniCard(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+            shape = AppShapes.MediumCard,
+            tonalElevation = 0.dp,
+            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+            borderWidth = 0.5.dp,
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .height(74.dp)
+                        .background(accent)
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(start = 16.dp)
+                        .size(44.dp)
+                        .background(accent.copy(alpha = 0.14f), AppShapes.SmallCard),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.School, contentDescription = null, tint = accent)
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        text = name.ifBlank { "Nombre de la materia" },
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = "Meta objetivo: $targetAverage",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                }
+                Icon(
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 14.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveSubjectButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = AppShapes.Pill,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White,
+            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
+        ),
+        contentPadding = PaddingValues(vertical = 0.dp),
+        modifier = modifier.height(56.dp)
+    ) {
+        Text(text, fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+@Composable
 private fun ColorSwatch(color: Color, label: String, selected: Boolean, onClick: () -> Unit) {
-    androidx.compose.foundation.layout.Box(
+    Box(
         modifier = Modifier
-            .size(44.dp)
+            .size(46.dp)
             .clip(CircleShape)
-            .background(color.copy(alpha = if (selected) 1f else 0.22f))
+            .background(color.copy(alpha = if (selected) 1f else 0.55f))
+            .border(
+                width = if (selected) 2.dp else 0.dp,
+                color = if (selected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f) else Color.Transparent,
+                shape = CircleShape
+            )
             .clickable(
                 onClickLabel = "Seleccionar color $label",
                 role = Role.RadioButton,
