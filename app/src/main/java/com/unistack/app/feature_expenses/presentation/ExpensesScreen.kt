@@ -596,7 +596,10 @@ private fun ExpensesFilters(
     scale: Float
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        if (maxWidth < scaledDp(292f, scale)) {
+        val segmentedWidth = scaledDp(206f, scale)
+        val categoryWidth = scaledDp(156f, scale)
+
+        if (maxWidth < 300.dp) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(scaledDp(12f, scale)),
@@ -606,14 +609,14 @@ private fun ExpensesFilters(
                     selectedPeriod = selectedPeriod,
                     onPeriodSelected = onPeriodSelected,
                     scale = scale,
-                    modifier = Modifier.width(scaledDp(168f, scale))
+                    modifier = Modifier.width(segmentedWidth)
                 )
                 CategoryChip(
                     selectedCategory = selectedCategory,
                     categories = categories,
                     onCategorySelected = onCategorySelected,
                     scale = scale,
-                    modifier = Modifier.width(scaledDp(178f, scale))
+                    modifier = Modifier.width(categoryWidth)
                 )
             }
         } else {
@@ -626,14 +629,14 @@ private fun ExpensesFilters(
                     selectedPeriod = selectedPeriod,
                     onPeriodSelected = onPeriodSelected,
                     scale = scale,
-                    modifier = Modifier.width(scaledDp(168f, scale))
+                    modifier = Modifier.width(segmentedWidth)
                 )
                 CategoryChip(
                     selectedCategory = selectedCategory,
                     categories = categories,
                     onCategorySelected = onCategorySelected,
                     scale = scale,
-                    modifier = Modifier.width(scaledDp(178f, scale))
+                    modifier = Modifier.width(categoryWidth)
                 )
             }
         }
@@ -656,7 +659,11 @@ private fun PeriodSegmentedControl(
         shadowElevation = 0.dp
     ) {
         Row(modifier = Modifier.padding(scaledDp(3f, scale))) {
-            ExpensePeriodFilter.entries.forEach { period ->
+            listOf(
+                ExpensePeriodFilter.ALL,
+                ExpensePeriodFilter.WEEK,
+                ExpensePeriodFilter.MONTH
+            ).forEach { period ->
                 val selected = selectedPeriod == period
                 Box(
                     modifier = Modifier
@@ -717,8 +724,7 @@ private fun CategoryChip(
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     softWrap = false,
-                    overflow = TextOverflow.Clip,
-                    modifier = Modifier.weight(1f)
+                    overflow = TextOverflow.Clip
                 )
                 Icon(
                     imageVector = Icons.Rounded.KeyboardArrowDown,
@@ -833,7 +839,7 @@ private fun RegisterExpenseButton(
 ) {
     Surface(
         modifier = modifier
-            .width(scaledDp(214f, scale))
+            .width(scaledDp(240f, scale))
             .height(scaledDp(50f, scale))
             .cleanClickable(onClick),
         shape = RoundedCornerShape(scaledDp(16f, scale)),
