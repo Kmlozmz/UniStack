@@ -639,6 +639,8 @@ private fun UniStackBottomBarItem(
             fontSize = 11.sp,
             lineHeight = 14.sp,
             fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
             modifier = Modifier.padding(top = 4.dp)
         )
         Box(
