@@ -3,10 +3,12 @@ package com.unistack.app.feature_tasks.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -26,20 +29,17 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,7 +73,6 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     onBackClick: () -> Unit,
@@ -228,38 +228,41 @@ private fun AddTaskContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp)
-            .padding(top = 16.dp, bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+            .padding(horizontal = 22.dp)
+            .padding(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(22.dp)
     ) {
         TaskHeader(
             title = if (isEditing) "Editar tarea" else "Nueva tarea",
             subtitle = "Agrega los detalles principales de tu actividad.",
             onBackClick = onBackClick
         )
-        SectionTitle("Información básica")
-        BasicInfoCard(
-            title = title,
-            titleIsValid = titleIsValid,
-            titleError = titleError,
-            dueDateLabel = dueDateLabel,
-            onTitleChange = onTitleChange,
-            onDateClick = onDateClick
-        )
-        SectionTitle("Detalles")
-        DetailsCard(
-            subjects = subjects,
-            selectedType = selectedType,
-            selectedSubjectId = selectedSubjectId,
-            onTypeSelected = onTypeSelected,
-            onSubjectSelected = onSubjectSelected,
-            onCreateSubjectClick = onCreateSubjectClick
-        )
-        SectionTitle("Prioridad")
-        PrioritySegmentedControl(
-            selected = selectedPriority,
-            onSelected = onPrioritySelected
-        )
+        FormSection(title = "Información básica") {
+            BasicInfoCard(
+                title = title,
+                titleIsValid = titleIsValid,
+                titleError = titleError,
+                dueDateLabel = dueDateLabel,
+                subjects = subjects,
+                selectedSubjectId = selectedSubjectId,
+                onTitleChange = onTitleChange,
+                onDateClick = onDateClick,
+                onSubjectSelected = onSubjectSelected,
+                onCreateSubjectClick = onCreateSubjectClick
+            )
+        }
+        FormSection(title = "Tipo de tarea") {
+            TaskTypeSelector(
+                selected = selectedType,
+                onSelected = onTypeSelected
+            )
+        }
+        FormSection(title = "Prioridad") {
+            PrioritySegmentedControl(
+                selected = selectedPriority,
+                onSelected = onPrioritySelected
+            )
+        }
         if (taskMissing) {
             Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
         }
@@ -281,8 +284,16 @@ private fun TaskHeader(
     subtitle: String,
     onBackClick: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        IconButton(onClick = onBackClick) {
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .size(44.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                    shape = AppShapes.Pill
+                )
+        ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -303,27 +314,49 @@ private fun TaskHeader(
 }
 
 @Composable
+private fun FormSection(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SectionTitle(title)
+        content()
+    }
+}
+
+@Composable
 private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.ExtraBold
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(width = 4.dp, height = 24.dp)
+                .background(MaterialTheme.colorScheme.primary, AppShapes.Pill)
+        )
+        Text(
+            text = text.uppercase(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.4.sp
+        )
+    }
 }
 
 @Composable
 private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
         shape = AppShapes.MediumCard,
-        tonalElevation = 1.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
         borderWidth = 0.5.dp,
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+        Column(content = content)
     }
 }
 
@@ -333,50 +366,29 @@ private fun BasicInfoCard(
     titleIsValid: Boolean,
     titleError: String?,
     dueDateLabel: String,
-    onTitleChange: (String) -> Unit,
-    onDateClick: () -> Unit
-) {
-    FormSectionCard {
-        FieldLabel(icon = Icons.Rounded.TaskAlt, text = "Nombre de la tarea")
-        OutlinedTextField(
-            value = title,
-            onValueChange = onTitleChange,
-            placeholder = { Text("Ej: Ensayo sobre Hume") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = AppShapes.SmallCard,
-            isError = !titleIsValid,
-            supportingText = {
-                if (!titleIsValid) {
-                    Text(titleError ?: "Ingresa una actividad válida")
-                }
-            }
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-        DateSelectorRow(
-            value = dueDateLabel,
-            onClick = onDateClick
-        )
-    }
-}
-
-@Composable
-private fun DetailsCard(
     subjects: List<Subject>,
-    selectedType: TaskType,
     selectedSubjectId: String?,
-    onTypeSelected: (TaskType) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onDateClick: () -> Unit,
     onSubjectSelected: (String?) -> Unit,
     onCreateSubjectClick: () -> Unit
 ) {
     FormSectionCard {
-        FieldLabel(icon = Icons.Rounded.TaskAlt, text = "Tipo de tarea")
-        TaskTypeSelector(
-            selected = selectedType,
-            onSelected = onTypeSelected
+        TaskNameRow(
+            value = title,
+            onValueChange = onTitleChange,
+            isValid = titleIsValid,
+            error = titleError
         )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-        FieldLabel(icon = Icons.AutoMirrored.Rounded.MenuBook, text = "Materia")
+        FormDivider()
+        BasicInfoActionRow(
+            icon = Icons.Rounded.CalendarMonth,
+            label = "Fecha límite",
+            value = dueDateLabel,
+            placeholder = "Seleccionar fecha",
+            onClick = onDateClick
+        )
+        FormDivider()
         SubjectDropdown(
             subjects = subjects,
             selectedSubjectId = selectedSubjectId,
@@ -387,58 +399,134 @@ private fun DetailsCard(
 }
 
 @Composable
-private fun FieldLabel(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    text: String
+private fun FormDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 64.dp),
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.13f)
+    )
+}
+
+@Composable
+private fun TaskNameRow(
+    value: String,
+    onValueChange: (String) -> Unit,
+    isValid: Boolean,
+    error: String?
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    BasicInfoRowShell(
+        icon = Icons.Rounded.Edit,
+        label = "Nombre de la tarea"
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.ExtraBold
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { innerTextField ->
+                Box {
+                    if (value.isBlank()) {
+                        Text(
+                            text = "Ej: Ensayo sobre Hume",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
         )
+        if (!isValid) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = error ?: "Ingresa una actividad válida",
+                color = UniStackColors.Coral,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 
 @Composable
-private fun DateSelectorRow(
+private fun BasicInfoActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
     value: String,
+    placeholder: String,
     onClick: () -> Unit
 ) {
-    Row(
+    BasicInfoRowShell(
         modifier = Modifier
+            .heightIn(min = 72.dp)
+            .bounceClick(onClick),
+        icon = icon,
+        label = label
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = value.ifBlank { placeholder },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun BasicInfoRowShell(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 58.dp)
-            .bounceClick(onClick)
-            .padding(vertical = 4.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Rounded.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Box(
+            modifier = Modifier
+                .size(46.dp)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.SmallCard),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(23.dp)
+            )
+        }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                text = "Fecha límite",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = value.ifBlank { "Seleccionar fecha" },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                .padding(start = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            content = {
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                content()
+            }
+        )
     }
 }
 
@@ -580,7 +668,6 @@ private fun CalendarMonthGrid(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SubjectDropdown(
     subjects: List<Subject>,
@@ -591,27 +678,30 @@ private fun SubjectDropdown(
     var expanded by rememberSaveable { mutableStateOf(false) }
     val selectedLabel = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
+    Box(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        OutlinedTextField(
-            value = selectedLabel ?: "Seleccionar materia",
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            singleLine = true,
+        BasicInfoActionRow(
+            icon = Icons.AutoMirrored.Rounded.MenuBook,
+            label = "Materia",
+            value = selectedLabel.orEmpty(),
+            placeholder = "Seleccionar materia",
+            onClick = { expanded = true }
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor(),
-            shape = AppShapes.SmallCard
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+                .background(MaterialTheme.colorScheme.surface, AppShapes.SmallCard)
         ) {
             DropdownMenuItem(
-                text = { Text("Sin materia asignada") },
+                text = {
+                    DropdownOptionText(
+                        text = "Sin materia asignada",
+                        selected = selectedSubjectId == null
+                    )
+                },
                 onClick = {
                     onSubjectSelected(null)
                     expanded = false
@@ -619,7 +709,12 @@ private fun SubjectDropdown(
             )
             subjects.forEach { subject ->
                 DropdownMenuItem(
-                    text = { Text(subject.name) },
+                    text = {
+                        DropdownOptionText(
+                            text = subject.name,
+                            selected = selectedSubjectId == subject.id
+                        )
+                    },
                     onClick = {
                         onSubjectSelected(subject.id)
                         expanded = false
@@ -627,7 +722,13 @@ private fun SubjectDropdown(
                 )
             }
             DropdownMenuItem(
-                text = { Text("Crear nueva materia", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Crear nueva materia",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                },
                 onClick = {
                     expanded = false
                     onCreateSubjectClick()
@@ -638,39 +739,53 @@ private fun SubjectDropdown(
 }
 
 @Composable
+private fun DropdownOptionText(
+    text: String,
+    selected: Boolean
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.weight(1f),
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Rounded.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
 private fun TaskTypeSelector(
     selected: TaskType,
     onSelected: (TaskType) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            listOf(TaskType.WORKSHOP, TaskType.EXAM).forEach { type ->
-                TaskChoiceChip(
-                    text = type.label(),
-                    selected = selected == type,
-                    onClick = { onSelected(type) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            listOf(TaskType.ESSAY, TaskType.PRESENTATION).forEach { type ->
-                TaskChoiceChip(
-                    text = type.label(),
-                    selected = selected == type,
-                    onClick = { onSelected(type) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        listOf(
+            TaskType.WORKSHOP,
+            TaskType.EXAM,
+            TaskType.ESSAY,
+            TaskType.PRESENTATION,
+            TaskType.OTHER
+        ).forEach { type ->
             TaskChoiceChip(
-                text = TaskType.OTHER.label(),
-                selected = selected == TaskType.OTHER,
-                onClick = { onSelected(TaskType.OTHER) },
-                modifier = Modifier.weight(1f)
+                text = type.label(),
+                selected = selected == type,
+                onClick = { onSelected(type) }
             )
-            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
@@ -689,10 +804,10 @@ private fun TaskChoiceChip(
     Row(
         modifier = modifier
             .height(46.dp)
-            .background(background, AppShapes.SmallCard)
-            .border(1.dp, border, AppShapes.SmallCard)
+            .background(background, AppShapes.Pill)
+            .border(1.dp, border, AppShapes.Pill)
             .bounceClick(onClick)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = if (selected) 18.dp else 22.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -701,7 +816,7 @@ private fun TaskChoiceChip(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(17.dp)
             )
             Spacer(modifier = Modifier.size(8.dp))
         }
@@ -722,8 +837,8 @@ private fun PrioritySegmentedControl(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f), AppShapes.Pill)
+            .height(50.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f), AppShapes.Pill)
             .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), AppShapes.Pill)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -764,14 +879,25 @@ private fun CreateTaskButton(
         shape = AppShapes.Pill,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+            contentColor = Color.White,
+            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
         ),
         contentPadding = PaddingValues(vertical = 0.dp),
         modifier = modifier.height(56.dp)
     ) {
-        Text(text, fontWeight = FontWeight.ExtraBold)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.TaskAlt,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp)
+            )
+            Spacer(modifier = Modifier.size(10.dp))
+            Text(text, fontWeight = FontWeight.ExtraBold)
+        }
     }
 }
 

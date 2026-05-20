@@ -193,7 +193,7 @@ fun TasksScreen(
             }
             when {
                 tasks.isEmpty() -> item {
-                    TasksEmptyState(onNewTaskClick = onNewTaskClick)
+                    TasksEmptyState()
                 }
                 filteredTasks.isEmpty() -> item {
                     FilteredEmptyState(onOpenFilters = { showFiltersSheet = true })
@@ -698,7 +698,7 @@ private fun TaskCard(
 }
 
 @Composable
-private fun TasksEmptyState(onNewTaskClick: () -> Unit) {
+private fun TasksEmptyState() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -727,15 +727,6 @@ private fun TasksEmptyState(onNewTaskClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            Button(
-                onClick = onNewTaskClick,
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = null)
-                Spacer(modifier = Modifier.size(8.dp))
-                Text("Nueva tarea", fontWeight = FontWeight.ExtraBold)
-            }
         }
     }
 }

@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,7 +48,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,13 +95,13 @@ fun SubjectDetailScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(UniStackColors.Background)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(20.dp)
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
             }
-            Text("Materia no encontrada", color = UniStackColors.TextPrimary)
+            Text("Materia no encontrada", color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
@@ -133,9 +139,9 @@ fun SubjectDetailScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background),
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
             Row(
@@ -147,10 +153,14 @@ fun SubjectDetailScreen(
                 }
                 Text(
                     subject.name,
-                    color = UniStackColors.TextPrimary,
-                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.weight(1f)
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
                 )
                 Box {
                     IconButton(onClick = { showSubjectMenu = true }) {
@@ -187,51 +197,13 @@ fun SubjectDetailScreen(
             }
         }
         item {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = subjectBackground(subject.visualType),
-                shape = AppShapes.LargeCard
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Promedio actual", color = UniStackColors.TextSecondary)
-                            Text(
-                                GradingScaleUtils.formatGrade(average, scale),
-                                color = UniStackColors.TextPrimary,
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text("Meta", color = UniStackColors.TextSecondary, fontSize = 12.sp)
-                            Text(
-                                GradingScaleUtils.formatGrade(subject.targetAverage, scale),
-                                color = subjectAccent(subject.visualType),
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 20.sp
-                            )
-                        }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        SubjectDetailMetric(
-                            label = "Evaluado",
-                            value = "${String.format(Locale.US, "%.0f", evaluated)}%",
-                            modifier = Modifier.weight(1f)
-                        )
-                        SubjectDetailMetric(
-                            label = "Restante",
-                            value = "${String.format(Locale.US, "%.0f", remainingPercentage * 100)}%",
-                            modifier = Modifier.weight(1f)
-                        )
-                        SubjectDetailMetric(
-                            label = "Notas",
-                            value = subject.grades.size.toString(),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
-            }
+            SubjectSummaryCard(
+                subject = subject,
+                average = average,
+                evaluated = evaluated,
+                remainingPercentage = remainingPercentage,
+                scale = scale
+            )
         }
         item {
             if (remainingPercentage <= 0.0) {
@@ -246,7 +218,6 @@ fun SubjectDetailScreen(
                     onTargetAverageChange = { targetAverageInput = it.take(6) },
                     quickTargets = quickTargets,
                     onQuickTargetClick = { targetAverageInput = gradeInputText(it, scale) },
-                    currentAverage = average,
                     targetAverage = targetAverage,
                     targetIsValid = targetIsValid,
                     neededGrade = needed,
@@ -275,7 +246,7 @@ fun SubjectDetailScreen(
             item {
                 Text(
                     "Trabajos asociados",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -291,36 +262,41 @@ fun SubjectDetailScreen(
             ) {
                 Text(
                     "Notas",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     gradeCountLabel(subject.grades.size),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             }
         }
         if (subject.grades.isEmpty()) {
             item {
-                UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card, shape = AppShapes.MediumCard) {
-                    Text("Agrega tu primera nota para calcular tu promedio.", color = UniStackColors.TextSecondary)
-                }
+                EmptyNotesCard()
             }
         } else {
             items(subject.grades, key = { it.id }) { grade ->
-                UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card, shape = AppShapes.MediumCard) {
+                UniCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+                    shape = AppShapes.MediumCard,
+                    tonalElevation = 0.dp,
+                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                    borderWidth = 0.5.dp
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(grade.name, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                            Text(grade.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                             Text(
                                 "${String.format(Locale.US, "%.0f", grade.percentage * 100)}% del curso",
-                                color = UniStackColors.TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
                         IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
                         }
@@ -339,12 +315,18 @@ fun SubjectDetailScreen(
             Button(
                 onClick = { onAddGradeClick(subject.id) },
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-                modifier = Modifier.fillMaxWidth()
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White
+                ),
+                contentPadding = PaddingValues(vertical = 0.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = null)
-                Spacer(modifier = Modifier.padding(3.dp))
-                Text("Agregar nota")
+                Spacer(modifier = Modifier.size(10.dp))
+                Text("Agregar nota", fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -371,7 +353,7 @@ fun SubjectDetailScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 
@@ -395,8 +377,120 @@ fun SubjectDetailScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surface
         )
+    }
+}
+
+@Composable
+private fun SubjectSummaryCard(
+    subject: com.unistack.app.feature_grades.domain.Subject,
+    average: Double?,
+    evaluated: Double,
+    remainingPercentage: Double,
+    scale: GradingScale
+) {
+    val accent = subjectAccent(subject.visualType)
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.LargeCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp,
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(136.dp)
+                    .background(accent)
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(accent.copy(alpha = 0.14f), AppShapes.SmallCard),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.School, contentDescription = null, tint = accent)
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(start = 14.dp)
+                            .weight(1f)
+                    ) {
+                        Text("Promedio actual", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(
+                            GradingScaleUtils.formatGrade(average, scale),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Meta", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(
+                            GradingScaleUtils.formatGrade(subject.targetAverage, scale),
+                            color = accent,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 20.sp
+                        )
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SubjectDetailMetric(
+                        label = "evaluado",
+                        value = "${String.format(Locale.US, "%.0f", evaluated)}%",
+                        modifier = Modifier.weight(1f)
+                    )
+                    SubjectDetailMetric(
+                        label = "restante",
+                        value = "${String.format(Locale.US, "%.0f", remainingPercentage * 100)}%",
+                        modifier = Modifier.weight(1f)
+                    )
+                    SubjectDetailMetric(
+                        label = "notas",
+                        value = subject.grades.size.toString(),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyNotesCard() {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Rounded.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier.padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text("Aún no has registrado notas.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    "Agrega la primera para empezar a calcular tu promedio.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp
+                )
+            }
+        }
     }
 }
 
@@ -409,8 +503,11 @@ private fun CompletedSubjectInsightCard(
     val targetReached = average != null && average >= targetAverage
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = if (targetReached) UniStackColors.GreenLight else UniStackColors.CoralLight,
-        shape = AppShapes.MediumCard
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -421,7 +518,7 @@ private fun CompletedSubjectInsightCard(
                 )
                 Text(
                     "Materia finalizada",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
@@ -432,7 +529,7 @@ private fun CompletedSubjectInsightCard(
                 } else {
                     "Terminaste con ${GradingScaleUtils.formatGrade(average, scale)}. La meta era ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
                 },
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -445,7 +542,6 @@ private fun NeededGradePlannerCard(
     onTargetAverageChange: (String) -> Unit,
     quickTargets: List<Double>,
     onQuickTargetClick: (Double) -> Unit,
-    currentAverage: Double?,
     targetAverage: Double?,
     targetIsValid: Boolean,
     neededGrade: Double?,
@@ -455,46 +551,37 @@ private fun NeededGradePlannerCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.MediumCard
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
                 Text(
-                    "Plan para alcanzar tu meta",
-                    color = UniStackColors.TextPrimary,
+                    "Tu meta",
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
             Text(
-                text = planStatusLabel(
-                    currentAverage = currentAverage,
+                text = goalSummaryMessage(
                     targetAverage = targetAverage,
                     targetIsValid = targetIsValid,
                     neededGrade = neededGrade,
-                    maxGrade = maxGrade
-                ),
-                color = UniStackColors.Primary,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = neededGradeMessage(
-                    currentAverage = currentAverage,
-                    targetAverage = targetAverage,
-                    targetIsValid = targetIsValid,
-                    neededGrade = neededGrade,
-                    maxGrade = maxGrade,
                     remainingPercentage = remainingPercentage,
+                    maxGrade = maxGrade,
                     scale = scale
                 ),
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Quiero terminar con:",
-                color = UniStackColors.TextSecondary,
+                text = "Meta objetivo",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -517,8 +604,8 @@ private fun NeededGradePlannerCard(
                         onClick = { onQuickTargetClick(target) },
                         shape = AppShapes.Pill,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
-                            contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else UniStackColors.Primary
+                            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                            contentColor = if (selected) Color.White else MaterialTheme.colorScheme.primary
                         ),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                     ) {
@@ -560,15 +647,18 @@ private fun WhatIfPlannerCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
-        shape = AppShapes.MediumCard
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
                 Text(
-                    "¿Y si saco...?",
-                    color = UniStackColors.TextPrimary,
+                    "Simulador rápido",
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
@@ -581,7 +671,7 @@ private fun WhatIfPlannerCard(
                     percentageWeight = percentageWeight,
                     scale = scale
                 ),
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -607,22 +697,22 @@ private fun WhatIfPlannerCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(UniStackColors.Card, AppShapes.SmallCard)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.72f), AppShapes.SmallCard)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Promedio proyectado",
-                    color = UniStackColors.TextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = projectedAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
-                    color = UniStackColors.Primary,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                            text = "Promedio proyectado",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = projectedAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
                 Text(
                     text = whatIfDetail(
                         projectedAverage = projectedAverage,
@@ -631,13 +721,13 @@ private fun WhatIfPlannerCard(
                         percentageWeight = percentageWeight,
                         scale = scale
                     ),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
             Text(
                 text = "Puedes probar hasta ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
         }
@@ -648,8 +738,11 @@ private fun WhatIfPlannerCard(
 private fun SubjectWorkCard(work: AcademicWork) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.MediumCard
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderWidth = 0.5.dp
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.AutoMirrored.Rounded.Assignment, contentDescription = null, tint = UniStackColors.Blue)
@@ -659,14 +752,14 @@ private fun SubjectWorkCard(work: AcademicWork) {
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text(work.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                Text(work.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                 Text(
                     listOfNotNull(
                         work.status.label(),
                         work.dueDateMillis?.let(TaskDateUtils::dueText),
                         "${(work.checklistProgress * 100).toInt()}% listo"
                     ).joinToString(" · "),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             }
@@ -697,56 +790,35 @@ private fun SubjectDetailMetric(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 12.sp)
-        Text(value, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+        Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
     }
 }
 
-private fun neededGradeMessage(
-    currentAverage: Double?,
+private fun goalSummaryMessage(
     targetAverage: Double?,
     targetIsValid: Boolean,
     neededGrade: Double?,
-    maxGrade: Double,
     remainingPercentage: Double,
+    maxGrade: Double,
     scale: GradingScale
 ): String {
     if (targetAverage == null || !targetIsValid) {
-        return "Elige una meta válida para calcular el camino más claro."
+        return "Elige una meta válida."
     }
-
     if (remainingPercentage <= 0.0) {
-        return "La materia ya está completa. No queda porcentaje para planear."
+        return "La materia ya está completa."
     }
-
     if (neededGrade != null && neededGrade <= 0.0) {
-        return "Con lo que llevas, ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        return "Ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
     }
-
     if (neededGrade == null) {
-        return "No se puede calcular una nota necesaria con el porcentaje restante."
+        return "No se puede calcular con el porcentaje restante."
     }
-
     if (neededGrade > maxGrade) {
-        return "Con el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante no es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
+        return "No es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)} con el porcentaje restante."
     }
-
-    val current = currentAverage?.let { "Con tu ${GradingScaleUtils.formatGrade(it, scale)} actual, " }.orEmpty()
-    return "${current}necesitas sacar mínimo ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el ${String.format(Locale.US, "%.0f", remainingPercentage * 100)}% restante para terminar con ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
-}
-
-private fun planStatusLabel(
-    currentAverage: Double?,
-    targetAverage: Double?,
-    targetIsValid: Boolean,
-    neededGrade: Double?,
-    maxGrade: Double
-): String {
-    if (targetAverage == null || !targetIsValid) return "Define una meta válida"
-    if (neededGrade == null) return "Calculando tu ruta"
-    if (neededGrade <= 0.0 || (currentAverage != null && currentAverage >= targetAverage)) return "Vas sobre la meta"
-    if (neededGrade > maxGrade) return "Meta muy exigente"
-    return "Necesitas mantener el ritmo"
+    return "Necesitas mantener ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el porcentaje restante."
 }
 
 private fun whatIfHeadline(
