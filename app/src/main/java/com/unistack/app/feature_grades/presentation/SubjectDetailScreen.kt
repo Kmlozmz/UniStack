@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -87,7 +86,6 @@ fun SubjectDetailScreen(
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
-    var targetAverageInput by rememberSaveable { mutableStateOf("") }
     var whatIfGradeInput by rememberSaveable { mutableStateOf("") }
     var whatIfPercentageInput by rememberSaveable { mutableStateOf("") }
 
@@ -112,26 +110,8 @@ fun SubjectDetailScreen(
     val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
     val subjectWorks = academicWorks.filter { it.subjectId == subject.id }
     val weightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades)
-    val targetAverage = parseDecimalInput(targetAverageInput)
-    val targetIsValid = targetAverage != null && targetAverage in 0.0..maxGrade
-    val needed = if (targetIsValid && remainingPercentage > 0.0) {
-        GradeCalculator.calculateNeededGrade(
-            currentWeightedPoints = weightedPoints,
-            remainingPercentage = remainingPercentage,
-            targetAverage = targetAverage ?: subject.targetAverage,
-            maxGrade = maxGrade
-        )
-    } else {
-        null
-    }
-    val quickTargets = quickTargetOptions(
-        passingGrade = profile?.passingGrade,
-        subjectTarget = subject.targetAverage,
-        maxGrade = maxGrade
-    )
 
-    LaunchedEffect(subject.id, subject.targetAverage, scale) {
-        targetAverageInput = gradeInputText(subject.targetAverage, scale)
+    LaunchedEffect(subject.id, scale, maxGrade, remainingPercentage) {
         whatIfGradeInput = gradeInputText(maxGrade, scale)
         whatIfPercentageInput = wholePercentInput((remainingPercentage * 100).coerceAtMost(20.0).coerceAtLeast(0.0))
     }
@@ -205,24 +185,11 @@ fun SubjectDetailScreen(
                 scale = scale
             )
         }
-        item {
-            if (remainingPercentage <= 0.0) {
+        if (remainingPercentage <= 0.0) {
+            item {
                 CompletedSubjectInsightCard(
                     average = average,
                     targetAverage = subject.targetAverage,
-                    scale = scale
-                )
-            } else {
-                NeededGradePlannerCard(
-                    targetAverageInput = targetAverageInput,
-                    onTargetAverageChange = { targetAverageInput = it.take(6) },
-                    quickTargets = quickTargets,
-                    onQuickTargetClick = { targetAverageInput = gradeInputText(it, scale) },
-                    targetAverage = targetAverage,
-                    targetIsValid = targetIsValid,
-                    neededGrade = needed,
-                    remainingPercentage = remainingPercentage,
-                    maxGrade = maxGrade,
                     scale = scale
                 )
             }
@@ -537,87 +504,6 @@ private fun CompletedSubjectInsightCard(
 }
 
 @Composable
-private fun NeededGradePlannerCard(
-    targetAverageInput: String,
-    onTargetAverageChange: (String) -> Unit,
-    quickTargets: List<Double>,
-    onQuickTargetClick: (Double) -> Unit,
-    targetAverage: Double?,
-    targetIsValid: Boolean,
-    neededGrade: Double?,
-    remainingPercentage: Double,
-    maxGrade: Double,
-    scale: GradingScale
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.MediumCard,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-        borderWidth = 0.5.dp
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.TrackChanges, contentDescription = null, tint = UniStackColors.Primary)
-                Text(
-                    "Tu meta",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(start = 10.dp)
-                )
-            }
-            Text(
-                text = goalSummaryMessage(
-                    targetAverage = targetAverage,
-                    targetIsValid = targetIsValid,
-                    neededGrade = neededGrade,
-                    remainingPercentage = remainingPercentage,
-                    maxGrade = maxGrade,
-                    scale = scale
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Meta objetivo",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-            OutlinedTextField(
-                value = targetAverageInput,
-                onValueChange = onTargetAverageChange,
-                label = { Text("Meta") },
-                singleLine = true,
-                shape = AppShapes.MediumCard,
-                isError = targetAverageInput.isNotBlank() && !targetIsValid,
-                supportingText = {
-                    Text("Usa una meta entre 0 y ${GradingScaleUtils.formatGrade(maxGrade, scale)}.")
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(quickTargets, key = { it }) { target ->
-                    val selected = targetAverage?.let { roundToOneDecimal(it) == roundToOneDecimal(target) } == true
-                    Button(
-                        onClick = { onQuickTargetClick(target) },
-                        shape = AppShapes.Pill,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                            contentColor = if (selected) Color.White else MaterialTheme.colorScheme.primary
-                        ),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
-                    ) {
-                        Text(GradingScaleUtils.formatGrade(target, scale), fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun WhatIfPlannerCard(
     gradeInput: String,
     onGradeChange: (String) -> Unit,
@@ -795,32 +681,6 @@ private fun SubjectDetailMetric(
     }
 }
 
-private fun goalSummaryMessage(
-    targetAverage: Double?,
-    targetIsValid: Boolean,
-    neededGrade: Double?,
-    remainingPercentage: Double,
-    maxGrade: Double,
-    scale: GradingScale
-): String {
-    if (targetAverage == null || !targetIsValid) {
-        return "Elige una meta válida."
-    }
-    if (remainingPercentage <= 0.0) {
-        return "La materia ya está completa."
-    }
-    if (neededGrade != null && neededGrade <= 0.0) {
-        return "Ya tienes puntos suficientes para alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
-    }
-    if (neededGrade == null) {
-        return "No se puede calcular con el porcentaje restante."
-    }
-    if (neededGrade > maxGrade) {
-        return "No es posible alcanzar ${GradingScaleUtils.formatGrade(targetAverage, scale)} con el porcentaje restante."
-    }
-    return "Necesitas mantener ${GradingScaleUtils.formatGrade(neededGrade, scale)} en el porcentaje restante."
-}
-
 private fun whatIfHeadline(
     grade: Double?,
     percentage: Double?,
@@ -870,16 +730,6 @@ private fun gradeInputText(value: Double, scale: GradingScale): String {
 
 private fun wholePercentInput(value: Double): String =
     String.format(Locale.US, "%.0f", value)
-
-private fun quickTargetOptions(
-    passingGrade: Double?,
-    subjectTarget: Double,
-    maxGrade: Double
-): List<Double> {
-    return listOfNotNull(passingGrade, subjectTarget, maxGrade)
-        .map { it.coerceIn(0.0, maxGrade) }
-        .distinctBy { roundToOneDecimal(it) }
-}
 
 private fun roundToOneDecimal(value: Double): Double =
     round(value * 10.0) / 10.0
