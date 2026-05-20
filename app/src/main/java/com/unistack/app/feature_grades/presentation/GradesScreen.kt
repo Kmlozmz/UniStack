@@ -93,7 +93,7 @@ fun GradesScreen(
         }
         if (subjects.isEmpty()) {
             item {
-                EmptyGradesCard(onAddSubjectClick = onAddSubjectClick)
+                EmptyGradesCard()
             }
         } else {
             items(subjects, key = { it.id }) { subject ->
@@ -339,7 +339,7 @@ private fun SubjectProgressMetric(progressVisual: SubjectProgressVisual) {
 }
 
 @Composable
-private fun EmptyGradesCard(onAddSubjectClick: () -> Unit) {
+private fun EmptyGradesCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
@@ -352,7 +352,6 @@ private fun EmptyGradesCard(onAddSubjectClick: () -> Unit) {
             Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Text("Aún no tienes materias.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             Text("Crea tu primera materia para empezar a calcular tu promedio.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            AddSubjectButton(onClick = onAddSubjectClick, modifier = Modifier.fillMaxWidth())
         }
     }
 }
