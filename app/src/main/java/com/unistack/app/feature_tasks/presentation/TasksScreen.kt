@@ -3,16 +3,19 @@ package com.unistack.app.feature_tasks.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,14 +23,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.EventNote
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,6 +48,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -446,7 +457,7 @@ private fun TaskStatCard(
     Surface(
         modifier = modifier
             .height(104.dp)
-            .clickable(onClick = onClick),
+            .cleanClickable(onClick),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)),
@@ -548,7 +559,7 @@ private fun TaskFilterSummaryChip(
     )
 
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.cleanClickable(onClick),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
@@ -603,7 +614,7 @@ private fun TaskCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onCardClick),
+            .cleanClickable(onCardClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
@@ -793,6 +804,7 @@ private fun TasksFilterBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -806,93 +818,74 @@ private fun TasksFilterBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 20.dp, end = 20.dp, bottom = 26.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+                .fillMaxHeight(0.85f)
+                .navigationBarsPadding()
+                .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Filtros",
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                TextButton(onClick = onClear) {
-                    Text("Limpiar", fontWeight = FontWeight.Bold)
-                }
-            }
+            FiltersSheetHeader(
+                onClear = onClear
+            )
 
-            FilterSheetSection(title = "Estado") {
-                FilterWrapRow {
-                    visibleStatusFilters.forEach { filter ->
-                        FilterPill(
-                            text = filter.label,
-                            selected = selectedStatus == filter,
-                            onClick = { onStatusSelected(filter) }
-                        )
-                    }
-                }
-            }
-
-            FilterSheetSection(title = "Materia") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectSheetRow(
-                        label = "Todas las materias",
-                        selected = selectedSubjectId == null,
-                        onClick = { onSubjectSelected(null) }
-                    )
-                    subjects.forEach { subject ->
-                        SubjectSheetRow(
-                            label = subject.name,
-                            selected = selectedSubjectId == subject.id,
-                            onClick = { onSubjectSelected(subject.id) }
-                        )
-                    }
-                }
-            }
-
-            FilterSheetSection(title = "Prioridad") {
-                FilterWrapRow {
-                    PriorityFilterOption(
-                        label = "Todas",
-                        selected = selectedPriority == null,
-                        onClick = { onPrioritySelected(null) }
-                    )
-                    TaskDifficulty.entries.forEach { difficulty ->
-                        PriorityFilterOption(
-                            label = difficulty.shortLabel(),
-                            selected = selectedPriority == difficulty,
-                            onClick = { onPrioritySelected(difficulty) }
-                        )
-                    }
-                }
-            }
-
-            FilterSheetSection(title = "Ordenar por") {
-                FilterWrapRow {
-                    TaskSortOrder.entries.forEach { option ->
-                        FilterPill(
-                            text = option.label,
-                            selected = sortOrder == option,
-                            onClick = { onSortSelected(option) }
-                        )
-                    }
-                }
-            }
-
-            Button(
-                onClick = onDismiss,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Text("Ver resultados", fontWeight = FontWeight.ExtraBold)
+                FilterSheetSection(title = "Estado") {
+                    StatusFilterGrid(
+                        selectedStatus = selectedStatus,
+                        onStatusSelected = onStatusSelected
+                    )
+                }
+
+                SubjectDropdownSelector(
+                    subjects = subjects,
+                    selectedSubjectId = selectedSubjectId,
+                    onSubjectSelected = onSubjectSelected
+                )
+
+                FilterSheetSection(title = "Prioridad") {
+                    PrioritySegmentedControl(
+                        selectedPriority = selectedPriority,
+                        onPrioritySelected = onPrioritySelected
+                    )
+                }
+
+                FilterSheetSection(title = "Ordenar por") {
+                    SortRadioGroup(
+                        selected = sortOrder,
+                        onSelected = onSortSelected
+                    )
+                }
             }
+
+            FiltersSheetFooter(onDismiss = onDismiss)
+        }
+    }
+}
+
+@Composable
+private fun FiltersSheetHeader(onClear: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Filtros",
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold
+        )
+        TextButton(onClick = onClear) {
+            Text(
+                text = "Limpiar",
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -914,90 +907,322 @@ private fun FilterSheetSection(
 }
 
 @Composable
-private fun FilterWrapRow(content: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        content()
+private fun StatusFilterGrid(
+    selectedStatus: TaskListFilter,
+    onStatusSelected: (TaskListFilter) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        visibleStatusFilters.chunked(2).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                rowItems.forEach { filter ->
+                    StatusFilterOption(
+                        label = filter.label,
+                        icon = filter.icon(),
+                        selected = selectedStatus == filter,
+                        onClick = { onStatusSelected(filter) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun FilterPill(
-    text: String,
+private fun StatusFilterOption(
+    label: String,
+    icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
+        modifier = modifier.cleanClickable(onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
         border = BorderStroke(
             width = 0.8.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else Color.Transparent
+            color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.42f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Text(
+                text = label,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubjectDropdownSelector(
+    subjects: List<Subject>,
+    selectedSubjectId: String?,
+    onSubjectSelected: (String?) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = subjects.firstOrNull { it.id == selectedSubjectId }?.name ?: "Todas las materias"
+
+    FilterSheetSection(title = "Materia") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .cleanClickable { expanded = !expanded },
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = selectedLabel,
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Icon(
+                        imageVector = Icons.Rounded.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                        modifier = Modifier.size(19.dp)
+                    )
+                }
+            }
+
+            if (expanded) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 240.dp)
+                            .verticalScroll(rememberScrollState())
+                            .padding(vertical = 6.dp)
+                    ) {
+                        SubjectDropdownRow(
+                            label = "Todas las materias",
+                            selected = selectedSubjectId == null,
+                            onClick = {
+                                onSubjectSelected(null)
+                                expanded = false
+                            }
+                        )
+                        subjects.forEach { subject ->
+                            SubjectDropdownRow(
+                                label = subject.name,
+                                selected = selectedSubjectId == subject.id,
+                                onClick = {
+                                    onSubjectSelected(subject.id)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubjectDropdownRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .cleanClickable(onClick)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Rounded.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrioritySegmentedControl(
+    selectedPriority: TaskDifficulty?,
+    onPrioritySelected: (TaskDifficulty?) -> Unit
+) {
+    val options = listOf<Pair<TaskDifficulty?, String>>(
+        null to "Todas",
+        TaskDifficulty.EASY to "Baja",
+        TaskDifficulty.MEDIUM to "Media",
+        TaskDifficulty.HARD to "Alta"
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
+        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f))
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            options.forEach { (priority, label) ->
+                val selected = selectedPriority == priority
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(3.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.88f) else Color.Transparent)
+                        .cleanClickable { onPrioritySelected(priority) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        priority?.let {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(it.color())
+                            )
+                        }
+                        Text(
+                            text = label,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortRadioGroup(
+    selected: TaskSortOrder,
+    onSelected: (TaskSortOrder) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        TaskSortOrder.entries.forEach { option ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .cleanClickable { onSelected(option) },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = selected == option,
+                    onClick = { onSelected(option) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = MaterialTheme.colorScheme.primary,
+                        unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+                Text(
+                    text = option.label,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FiltersSheetFooter(onDismiss: () -> Unit) {
+    Button(
+        onClick = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White
         )
     ) {
         Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
-            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelLarge,
+            "Ver resultados",
+            color = Color.White,
             fontWeight = FontWeight.ExtraBold
         )
     }
 }
 
-@Composable
-private fun PriorityFilterOption(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    FilterPill(
-        text = label,
-        selected = selected,
-        onClick = onClick
-    )
-}
-
-@Composable
-private fun SubjectSheetRow(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f),
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                modifier = Modifier.weight(1f),
-                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
+private fun TaskListFilter.icon(): ImageVector {
+    return when (this) {
+        TaskListFilter.ALL -> Icons.Rounded.Check
+        TaskListFilter.PENDING -> Icons.Rounded.Schedule
+        TaskListFilter.COMPLETED -> Icons.Rounded.CheckCircle
+        TaskListFilter.OVERDUE -> Icons.Rounded.CalendarMonth
     }
 }
 
@@ -1100,6 +1325,15 @@ private data class TaskStatDetail(
     val description: String,
     val tasks: List<StudentTask>
 )
+
+@Composable
+private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
+    return clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = null,
+        onClick = onClick
+    )
+}
 
 private val visibleStatusFilters = listOf(
     TaskListFilter.ALL,
