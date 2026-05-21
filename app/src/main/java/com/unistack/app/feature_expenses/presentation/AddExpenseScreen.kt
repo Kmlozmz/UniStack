@@ -29,19 +29,18 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Celebration
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Restaurant
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,8 +68,11 @@ import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
 private val ExpenseFormBackground = Color(0xFF080B13)
@@ -79,12 +82,11 @@ private val ExpenseFormBorder = Color.White.copy(alpha = 0.08f)
 private val ExpenseFormCoral = Color(0xFFFF746D)
 private val ExpenseFormText = Color(0xFFF8F7FC)
 private val ExpenseFormMuted = Color(0xFFA9A7B7)
-private val ExpenseFormDisabled = Color(0xFF2A2534)
+private val ExpenseFormDisabled = Color(0xFF242631)
 private val ExpenseFormShape = RoundedCornerShape(18.dp)
 private val ExpenseFieldShape = RoundedCornerShape(14.dp)
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es", "CO"))
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseScreen(
     onBackClick: () -> Unit,
@@ -173,32 +175,15 @@ fun AddExpenseScreen(
     )
 
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = parsedDate?.let(ExpenseDateUtils::toMillis)
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        datePickerState.selectedDateMillis?.let { selected ->
-                            date = ExpenseDateUtils.formatInput(datePickerMillisToLocalDate(selected))
-                            error = null
-                        }
-                        showDatePicker = false
-                    }
-                ) {
-                    Text("Elegir")
-                }
+        ExpenseMonthCalendarDialog(
+            selectedDate = parsedDate ?: ExpenseDateUtils.today(),
+            onDateSelected = { selected ->
+                date = ExpenseDateUtils.formatInput(selected)
+                error = null
+                showDatePicker = false
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
+            onDismiss = { showDatePicker = false }
+        )
     }
 }
 
@@ -225,7 +210,7 @@ private fun AddExpenseContent(
             .background(ExpenseFormBackground)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp)
+        verticalArrangement = Arrangement.spacedBy(17.dp)
     ) {
         IconButton(
             onClick = onBackClick,
@@ -279,15 +264,15 @@ private fun AddExpenseHeader(isEditing: Boolean) {
         Text(
             text = if (isEditing) "Editar gasto" else "Registrar gasto",
             color = ExpenseFormText,
-            fontSize = 36.sp,
-            lineHeight = 40.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontSize = 32.sp,
+            lineHeight = 37.sp,
+            fontWeight = FontWeight.Bold
         )
         Text(
             text = "Guarda valor, fecha y categoría con el mismo formato del resumen.",
             color = ExpenseFormMuted,
-            fontSize = 17.sp,
-            lineHeight = 26.sp,
+            fontSize = 15.sp,
+            lineHeight = 22.sp,
             fontWeight = FontWeight.Medium
         )
     }
@@ -302,7 +287,7 @@ private fun ExpenseInfoCard(
     expenseMissing: Boolean
 ) {
     FormCard {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -311,13 +296,13 @@ private fun ExpenseInfoCard(
                     imageVector = Icons.Rounded.AccountBalanceWallet,
                     contentDescription = null,
                     tint = ExpenseFormCoral,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(27.dp)
                 )
                 Text(
                     text = "Información del gasto",
                     color = ExpenseFormText,
-                    fontSize = 21.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             if (expenseMissing) {
@@ -344,30 +329,30 @@ private fun ExpenseAmountField(
     amount: String,
     onAmountChange: (String) -> Unit
 ) {
-    PremiumFieldContainer(minHeight = 92.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    PremiumFieldContainer(minHeight = 78.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = "Valor",
                 color = ExpenseFormMuted,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "$ ",
                     color = ExpenseFormText,
-                    fontSize = 30.sp,
-                    lineHeight = 34.sp,
-                    fontWeight = FontWeight.Medium
+                    fontSize = 25.sp,
+                    lineHeight = 29.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
                 Box(modifier = Modifier.weight(1f)) {
                     if (amount.isBlank()) {
                         Text(
                             text = "0",
                             color = ExpenseFormText,
-                            fontSize = 30.sp,
-                            lineHeight = 34.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 25.sp,
+                            lineHeight = 29.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                     BasicTextField(
@@ -379,9 +364,9 @@ private fun ExpenseAmountField(
                         ),
                         textStyle = TextStyle(
                             color = ExpenseFormText,
-                            fontSize = 30.sp,
-                            lineHeight = 34.sp,
-                            fontWeight = FontWeight.Medium
+                            fontSize = 25.sp,
+                            lineHeight = 29.sp,
+                            fontWeight = FontWeight.SemiBold
                         ),
                         cursorBrush = SolidColor(ExpenseFormCoral),
                         modifier = Modifier.fillMaxWidth()
@@ -398,7 +383,7 @@ private fun ExpenseDateField(
     onClick: () -> Unit
 ) {
     PremiumFieldContainer(
-        minHeight = 76.dp,
+        minHeight = 70.dp,
         modifier = Modifier.cleanClickable(onClick)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -409,28 +394,28 @@ private fun ExpenseDateField(
                 Text(
                     text = "Fecha",
                     color = ExpenseFormMuted,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = longDateFormatter.format(date),
                     color = ExpenseFormText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             Icon(
                 imageVector = Icons.Rounded.CalendarMonth,
                 contentDescription = null,
                 tint = ExpenseFormMuted,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(22.dp)
             )
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = ExpenseFormMuted,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(25.dp)
             )
         }
     }
@@ -442,12 +427,12 @@ private fun ExpenseCategorySection(
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = "Categoría",
             color = ExpenseFormText,
-            fontSize = 21.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
         )
         categories.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -476,10 +461,10 @@ private fun ExpenseCategoryOption(
 ) {
     Surface(
         modifier = modifier
-            .height(62.dp)
+            .height(56.dp)
             .cleanClickable(onClick),
         shape = ExpenseFieldShape,
-        color = if (selected) ExpenseFormCoral.copy(alpha = 0.13f) else Color.Transparent,
+        color = if (selected) ExpenseFormCoral.copy(alpha = 0.10f) else Color.Transparent,
         border = BorderStroke(
             width = 1.dp,
             color = if (selected) ExpenseFormCoral else ExpenseFormBorder
@@ -488,21 +473,21 @@ private fun ExpenseCategoryOption(
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Icon(
                 imageVector = category.icon(),
                 contentDescription = null,
                 tint = if (selected) ExpenseFormCoral else Color(0xFFD3D0DD),
-                modifier = Modifier.size(25.dp)
+                modifier = Modifier.size(22.dp)
             )
             Text(
                 text = category.label(),
                 color = if (selected) ExpenseFormCoral else Color(0xFFD3D0DD),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -520,8 +505,8 @@ private fun ExpensePreviewCard(
         Text(
             text = "Vista previa",
             color = ExpenseFormText,
-            fontSize = 21.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
         )
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -538,29 +523,29 @@ private fun ExpensePreviewCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(54.dp)
+                        .size(46.dp)
                         .clip(CircleShape)
-                        .background(ExpenseFormCoral.copy(alpha = 0.17f)),
+                        .background(ExpenseFormCoral.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = category.icon(),
                         contentDescription = null,
                         tint = ExpenseFormCoral,
-                        modifier = Modifier.size(27.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
                         text = category.label(),
                         color = ExpenseFormText,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = "${CurrencyFormatter.formatCop(amount)} · ${ExpenseDateUtils.formatDisplay(ExpenseDateUtils.toMillis(date))}",
                         color = ExpenseFormMuted,
-                        fontSize = 15.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -580,7 +565,7 @@ private fun SaveExpenseButton(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(54.dp)
+            .height(52.dp)
             .then(if (enabled) Modifier.cleanClickable(onClick) else Modifier),
         shape = RoundedCornerShape(16.dp),
         color = container,
@@ -591,8 +576,8 @@ private fun SaveExpenseButton(
             Text(
                 text = text,
                 color = content,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -608,7 +593,7 @@ private fun FormCard(content: @Composable () -> Unit) {
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(modifier = Modifier.padding(22.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
             content()
         }
     }
@@ -631,7 +616,7 @@ private fun PremiumFieldContainer(
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.Center
         ) {
             content()
@@ -659,8 +644,144 @@ private fun ExpenseCategory.icon(): ImageVector {
     }
 }
 
-private fun datePickerMillisToLocalDate(value: Long): LocalDate =
-    LocalDate.ofEpochDay(value / 86_400_000L)
+@Composable
+private fun ExpenseMonthCalendarDialog(
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var visibleMonth by remember(selectedDate) {
+        mutableStateOf(YearMonth.from(selectedDate))
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Seleccionar fecha",
+                color = ExpenseFormText,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { visibleMonth = visibleMonth.minusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronLeft,
+                            contentDescription = "Mes anterior",
+                            tint = ExpenseFormMuted
+                        )
+                    }
+                    Text(
+                        text = visibleMonth.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "CO"))
+                            .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        color = ExpenseFormText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    IconButton(onClick = { visibleMonth = visibleMonth.plusMonths(1) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = "Mes siguiente",
+                            tint = ExpenseFormMuted
+                        )
+                    }
+                }
+                ExpenseCalendarMonthGrid(
+                    month = visibleMonth,
+                    selectedDate = selectedDate,
+                    onDateSelected = onDateSelected
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = ExpenseFormCoral, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        containerColor = ExpenseFormCard,
+        shape = ExpenseFormShape
+    )
+}
+
+@Composable
+private fun ExpenseCalendarMonthGrid(
+    month: YearMonth,
+    selectedDate: LocalDate,
+    onDateSelected: (LocalDate) -> Unit
+) {
+    val firstDay = month.atDay(1)
+    val leadingEmptyCells = firstDay.dayOfWeek.isoIndex() - 1
+    val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
+    val cells = List(leadingEmptyCells) { null } + days
+    val weeks = cells.chunked(7)
+    val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
+
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            dayLabels.forEach { label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = ExpenseFormMuted,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+        weeks.forEach { week ->
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                (0 until 7).forEach { index ->
+                    val date = week.getOrNull(index)
+                    val selected = date == selectedDate
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 34.dp)
+                            .then(if (date != null) Modifier.cleanClickable { onDateSelected(date) } else Modifier)
+                            .background(
+                                color = when {
+                                    selected -> ExpenseFormCoral
+                                    date != null -> ExpenseFormCardHigh.copy(alpha = 0.72f)
+                                    else -> Color.Transparent
+                                },
+                                shape = RoundedCornerShape(10.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = date?.dayOfMonth?.toString().orEmpty(),
+                            color = if (selected) Color(0xFF15131D) else ExpenseFormText,
+                            fontSize = 12.sp,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun DayOfWeek.isoIndex(): Int {
+    return when (this) {
+        DayOfWeek.MONDAY -> 1
+        DayOfWeek.TUESDAY -> 2
+        DayOfWeek.WEDNESDAY -> 3
+        DayOfWeek.THURSDAY -> 4
+        DayOfWeek.FRIDAY -> 5
+        DayOfWeek.SATURDAY -> 6
+        DayOfWeek.SUNDAY -> 7
+    }
+}
 
 fun ExpenseCategory.label(): String {
     return when (this) {
