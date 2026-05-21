@@ -48,6 +48,8 @@ import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
 
+private val SubjectCardShape = RoundedCornerShape(10.dp)
+
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
@@ -112,8 +114,7 @@ fun GradesScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 AddSubjectButton(
-                    onClick = onAddSubjectClick,
-                    modifier = Modifier.width(214.dp)
+                    onClick = onAddSubjectClick
                 )
             }
         }
@@ -228,7 +229,7 @@ private fun SubjectListCard(
             .height(80.dp)
             .bounceClick(onClick),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-        shape = RoundedCornerShape(10.dp),
+        shape = SubjectCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
         borderWidth = 0.5.dp,
@@ -380,7 +381,7 @@ private fun AddSubjectButton(
 ) {
     ExtendedFloatingActionButton(
         onClick = onClick,
-        shape = AppShapes.Pill,
+        shape = RoundedCornerShape(22.dp),
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = Color.White,
         icon = {
@@ -389,7 +390,9 @@ private fun AddSubjectButton(
         text = {
             Text("Agregar materia", fontWeight = FontWeight.ExtraBold)
         },
-        modifier = modifier.height(56.dp)
+        modifier = modifier
+            .width(214.dp)
+            .height(56.dp)
     )
 }
 

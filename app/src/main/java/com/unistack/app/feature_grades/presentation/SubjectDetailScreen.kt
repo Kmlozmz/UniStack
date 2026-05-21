@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,6 +65,8 @@ import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import java.util.Locale
 import kotlin.math.round
+
+private val SubjectDetailCardShape = RoundedCornerShape(10.dp)
 
 @Composable
 fun SubjectDetailScreen(
@@ -250,7 +253,7 @@ fun SubjectDetailScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-                    shape = AppShapes.MediumCard,
+                    shape = SubjectDetailCardShape,
                     tonalElevation = 0.dp,
                     borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
                     borderWidth = 0.5.dp
@@ -361,7 +364,7 @@ private fun SubjectSummaryCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.LargeCard,
+        shape = SubjectDetailCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
@@ -439,7 +442,7 @@ private fun EmptyNotesCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.MediumCard,
+        shape = SubjectDetailCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp
@@ -471,7 +474,7 @@ private fun CompletedSubjectInsightCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.MediumCard,
+        shape = SubjectDetailCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp
@@ -534,7 +537,7 @@ private fun WhatIfPlannerCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.MediumCard,
+        shape = SubjectDetailCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp
@@ -583,7 +586,7 @@ private fun WhatIfPlannerCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.72f), AppShapes.SmallCard)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.72f), SubjectDetailCardShape)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -625,7 +628,7 @@ private fun SubjectWorkCard(work: AcademicWork) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-        shape = AppShapes.MediumCard,
+        shape = SubjectDetailCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp
