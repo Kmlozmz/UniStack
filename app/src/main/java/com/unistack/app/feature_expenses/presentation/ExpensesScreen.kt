@@ -839,22 +839,22 @@ private fun RegisterExpenseButton(
 ) {
     Surface(
         modifier = modifier
-            .width(scaledDp(240f, scale))
-            .height(scaledDp(50f, scale))
+            .width(214.dp)
+            .height(56.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(scaledDp(16f, scale)),
+        shape = RoundedCornerShape(22.dp),
         color = ExpenseCoral,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = scaledDp(16f, scale)),
+            modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(scaledDp(10f, scale), Alignment.CenterHorizontally)
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
         ) {
             Box(
                 modifier = Modifier
-                    .size(scaledDp(24f, scale))
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
@@ -863,14 +863,14 @@ private fun RegisterExpenseButton(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
                     tint = Color(0xFF15131D),
-                    modifier = Modifier.size(scaledDp(18f, scale))
+                    modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Registrar gasto",
                 color = Color(0xFF15131D),
-                fontSize = scaledSp(14f, scale),
-                lineHeight = scaledSp(18f, scale),
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 softWrap = false

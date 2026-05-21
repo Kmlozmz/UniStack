@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -64,6 +65,8 @@ import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private val SubjectFormCardShape = RoundedCornerShape(10.dp)
 
 @Composable
 fun AddSubjectScreen(
@@ -140,7 +143,7 @@ fun AddSubjectScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    shape = AppShapes.MediumCard,
+                    shape = SubjectFormCardShape,
                     tonalElevation = 0.dp,
                     borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
                     borderWidth = 0.5.dp
@@ -264,7 +267,7 @@ private fun PlanBanner(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = AppShapes.MediumCard,
+        shape = SubjectFormCardShape,
         tonalElevation = 0.dp,
         borderColor = if (limitReached) UniStackColors.Coral.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
@@ -335,7 +338,7 @@ private fun SubjectBasicInfoCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = AppShapes.LargeCard,
+        shape = SubjectFormCardShape,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
@@ -408,7 +411,7 @@ private fun SubjectPreviewCard(
         UniCard(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-            shape = AppShapes.MediumCard,
+            shape = SubjectFormCardShape,
             tonalElevation = 0.dp,
             borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
             borderWidth = 0.5.dp,
