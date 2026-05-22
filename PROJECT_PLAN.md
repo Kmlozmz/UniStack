@@ -25,6 +25,7 @@ UniStack debe sentirse como un centro de mando académico ligero:
 - Cero callejones muertos: ningún botón, toggle, card o CTA debe prometer algo que no responda.
 - Persistencia antes que brillo: si el usuario crea algo importante, debe sobrevivir cierre, reinicio y recreación.
 - Diseño compacto, premium y académico: menos hero marketing, más información escaneable y acciones claras.
+- Lenguaje visual documentado: radios, fondos, CTAs, sheets, tipografía y date pickers deben seguir `UI_GUIDELINES.md`.
 - Pro no debe bloquear el valor básico; debe ampliar límites, automatización, exportación o conveniencia.
 - Los datos de demo no viven en código productivo; cualquier muestra debe estar aislada fuera de `main`.
 - Cada feature nueva trae su fallback: error claro, estado vacío útil, permisos explicados y prueba mínima.
@@ -55,7 +56,7 @@ Ideas potentes para diferenciar la app, pero que no son necesarias para una beta
 | Home                | Funcional con prioridades y semana | Profundizar insights: recomendación de siguiente acción y tendencias |
 | Materias y notas    | Funcional                  | Mejorar insights por materia, historial y simulación desde detalle                                      |
 | Tareas              | Funcional con filtros y recordatorios locales | Recurrencia simple y agrupación por materia/semana                                      |
-| Gastos              | Funcional                  | Presupuesto semanal/mensual, categorías configurables y alertas suaves                                  |
+| Gastos              | Funcional                  | Alertas suaves por presupuesto y mejores insights por categoría                                         |
 | Trabajos académicos | Funcional con Room         | Mejorar fuentes, APA y posible vista kanban por estado                                                  |
 | Perfil              | Funcional con preferencias de notificación | Dividir secciones, editar configuración académica completa y mejorar estados de cuenta/backup |
 | Pro                 | Integrado técnicamente     | Entitlement persistente, restaurar compras, límites Free/Pro y copy legal claro                         |

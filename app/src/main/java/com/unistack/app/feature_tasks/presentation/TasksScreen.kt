@@ -42,7 +42,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -766,15 +765,45 @@ private fun NewTaskFab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ExtendedFloatingActionButton(
-        onClick = onClick,
-        modifier = modifier,
-        icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-        text = { Text("Nueva tarea", fontWeight = FontWeight.ExtraBold) },
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        shape = RoundedCornerShape(22.dp)
-    )
+    Surface(
+        modifier = modifier
+            .height(56.dp)
+            .cleanClickable(onClick),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.primary,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = null,
+                    tint = Color(0xFF15131D),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Text(
+                text = "Nueva tarea",
+                color = Color(0xFF15131D),
+                fontSize = 14.sp,
+                lineHeight = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

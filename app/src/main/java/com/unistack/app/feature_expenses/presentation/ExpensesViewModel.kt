@@ -103,6 +103,20 @@ class ExpensesViewModel(
         return true
     }
 
+    fun toggleExpenseCategory(category: ExpenseCategory): Boolean {
+        val current = AppContainer.userRepository.userProfile.value ?: return false
+        val next = if (category in current.enabledExpenseCategories) {
+            current.enabledExpenseCategories - category
+        } else {
+            current.enabledExpenseCategories + category
+        }
+        if (next.isEmpty()) return false
+        AppContainer.userRepository.saveUserProfile(
+            current.copy(enabledExpenseCategories = next)
+        )
+        return true
+    }
+
     fun monthlyExpenses(): List<Expense> {
         val today = ExpenseDateUtils.today()
         return expenses.value.filter { expense ->

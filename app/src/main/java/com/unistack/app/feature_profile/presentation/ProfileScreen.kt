@@ -66,7 +66,6 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
-import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
@@ -281,18 +280,6 @@ fun ProfileScreen(
                 )
             }
             item {
-                ExpenseCategoriesSettingsCard(
-                    enabledExpenseCategories = current.enabledExpenseCategories,
-                    onToggleCategory = { category ->
-                        feedback = if (viewModel.toggleExpenseCategory(category)) {
-                            "Categorías actualizadas."
-                        } else {
-                            "Debe quedar al menos una categoría activa."
-                        }
-                    }
-                )
-            }
-            item {
                 VisualSettingsCard(
                     selected = current.visualPreference,
                     onSelected = { preference ->
@@ -423,33 +410,6 @@ fun ProfileScreen(
             },
             containerColor = UniStackColors.Background
         )
-    }
-}
-
-@Composable
-private fun ExpenseCategoriesSettingsCard(
-    enabledExpenseCategories: Set<ExpenseCategory>,
-    onToggleCategory: (ExpenseCategory) -> Unit
-) {
-    SettingsCard(title = "Categorías de gastos") {
-        Text(
-            "Elige qué categorías aparecen disponibles al registrar gastos.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 13.sp,
-            lineHeight = 18.sp
-        )
-        ExpenseCategory.entries.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { category ->
-                    SelectionPill(
-                        text = category.profileLabel(),
-                        selected = category in enabledExpenseCategories,
-                        onClick = { onToggleCategory(category) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -1131,17 +1091,6 @@ private fun AppModule.description(): String {
         AppModule.TASKS -> "Entregas y pendientes."
         AppModule.EXPENSES -> "Registro y resumen de gastos."
         AppModule.ACADEMIC_TEMPLATES -> "Checklist, ensayos y formato APA."
-    }
-}
-
-private fun ExpenseCategory.profileLabel(): String {
-    return when (this) {
-        ExpenseCategory.TRANSPORT -> "Transporte"
-        ExpenseCategory.FOOD -> "Comida"
-        ExpenseCategory.COPIES -> "Copias"
-        ExpenseCategory.MATERIALS -> "Materiales"
-        ExpenseCategory.OUTINGS -> "Salidas"
-        ExpenseCategory.OTHER -> "Otros"
     }
 }
 

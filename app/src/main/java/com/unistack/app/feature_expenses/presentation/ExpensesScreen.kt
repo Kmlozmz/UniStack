@@ -33,12 +33,18 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Celebration
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DirectionsBus
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.DropdownMenu
@@ -136,6 +142,8 @@ fun ExpensesScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     var expenseIdPendingDelete by remember { mutableStateOf<String?>(null) }
     var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
+    var showCategorySheet by rememberSaveable { mutableStateOf(false) }
+    var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.ALL) }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
@@ -175,6 +183,10 @@ fun ExpensesScreen(
             selectedCategory = selectedCategory,
             categories = filterCategories,
             onCategorySelected = { selectedCategory = it },
+            onCategoryClick = {
+                categoryFeedback = null
+                showCategorySheet = true
+            },
             periodTotal = periodTotal,
             recordCount = selectedPeriodExpenses.size,
             previousTotal = previousTotal,
@@ -187,6 +199,35 @@ fun ExpensesScreen(
             onBudgetClick = { showBudgetSheet = true },
             scale = scale,
             bottomPadding = scaledDp(118f, scale)
+        )
+    }
+
+    if (showCategorySheet) {
+        ExpenseCategorySheet(
+            selectedCategory = selectedCategory,
+            enabledCategories = enabledCategories,
+            filterCategories = filterCategories,
+            feedback = categoryFeedback,
+            onFilterSelected = {
+                selectedCategory = it
+                categoryFeedback = null
+                showCategorySheet = false
+            },
+            onToggleCategory = { category ->
+                val updated = viewModel.toggleExpenseCategory(category)
+                if (updated) {
+                    if (category == selectedCategory && category in enabledCategories) {
+                        selectedCategory = null
+                    }
+                    categoryFeedback = "Categorías actualizadas."
+                } else {
+                    categoryFeedback = "Debe quedar al menos una categoría activa."
+                }
+            },
+            onDismiss = {
+                showCategorySheet = false
+                categoryFeedback = null
+            }
         )
     }
 
@@ -224,6 +265,7 @@ private fun ExpensesContent(
     selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory?) -> Unit,
+    onCategoryClick: () -> Unit,
     periodTotal: Int,
     recordCount: Int,
     previousTotal: Int,
@@ -270,6 +312,7 @@ private fun ExpensesContent(
                     selectedCategory = selectedCategory,
                     categories = categories,
                     onCategorySelected = onCategorySelected,
+                    onCategoryClick = onCategoryClick,
                     scale = scale
                 )
             }
@@ -707,6 +750,7 @@ private fun ExpensesFilters(
     selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory?) -> Unit,
+    onCategoryClick: () -> Unit,
     scale: Float
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -727,8 +771,7 @@ private fun ExpensesFilters(
                 )
                 CategoryChip(
                     selectedCategory = selectedCategory,
-                    categories = categories,
-                    onCategorySelected = onCategorySelected,
+                    onClick = onCategoryClick,
                     scale = scale,
                     modifier = Modifier.width(categoryWidth)
                 )
@@ -747,8 +790,7 @@ private fun ExpensesFilters(
                 )
                 CategoryChip(
                     selectedCategory = selectedCategory,
-                    categories = categories,
-                    onCategorySelected = onCategorySelected,
+                    onClick = onCategoryClick,
                     scale = scale,
                     modifier = Modifier.width(categoryWidth)
                 )
@@ -806,71 +848,221 @@ private fun PeriodSegmentedControl(
 @Composable
 private fun CategoryChip(
     selectedCategory: ExpenseCategory?,
-    categories: List<ExpenseCategory>,
-    onCategorySelected: (ExpenseCategory?) -> Unit,
+    onClick: () -> Unit,
     scale: Float,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        modifier = modifier
+            .height(scaledDp(42f, scale))
+            .cleanClickable(onClick),
+        shape = RoundedCornerShape(scaledDp(14f, scale)),
+        color = ExpenseCard,
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = scaledDp(12f, scale)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(scaledDp(6f, scale))
+        ) {
+            Text(
+                text = "Categoría: ${selectedCategory?.label() ?: "Todas"}",
+                color = ExpenseMuted,
+                fontSize = scaledSp(13f, scale),
+                lineHeight = scaledSp(15f, scale),
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Clip
+            )
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = null,
+                tint = ExpenseMuted,
+                modifier = Modifier.size(scaledDp(14f, scale))
+            )
+        }
+    }
+}
 
-    Box(modifier = modifier) {
-        Surface(
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpenseCategorySheet(
+    selectedCategory: ExpenseCategory?,
+    enabledCategories: Set<ExpenseCategory>,
+    filterCategories: List<ExpenseCategory>,
+    feedback: String?,
+    onFilterSelected: (ExpenseCategory?) -> Unit,
+    onToggleCategory: (ExpenseCategory) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = ExpenseBackground,
+        contentColor = ExpenseText,
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(scaledDp(42f, scale))
-                .cleanClickable { expanded = true },
-            shape = RoundedCornerShape(scaledDp(14f, scale)),
-            color = ExpenseCard,
-            border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+                .navigationBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = scaledDp(12f, scale)),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(scaledDp(6f, scale))
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Categoría: ${selectedCategory?.label() ?: "Todas"}",
+                    text = "Categorías",
+                    color = ExpenseText,
+                    fontSize = 22.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Filtra tus gastos o decide qué categorías aparecen al registrar.",
                     color = ExpenseMuted,
-                    fontSize = scaledSp(13f, scale),
-                    lineHeight = scaledSp(15f, scale),
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip
-                )
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = ExpenseMuted,
-                    modifier = Modifier.size(scaledDp(14f, scale))
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
-        }
 
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(ExpenseCardHigh)
-        ) {
-            DropdownMenuItem(
-                text = { Text("Todas") },
-                onClick = {
-                    onCategorySelected(null)
-                    expanded = false
-                }
-            )
-            categories.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(category.label()) },
-                    onClick = {
-                        onCategorySelected(category)
-                        expanded = false
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Filtro actual",
+                    color = ExpenseText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                ExpenseCategorySheetOption(
+                    label = "Todas las categorías",
+                    icon = Icons.Rounded.Check,
+                    selected = selectedCategory == null,
+                    accent = ExpensePurple,
+                    onClick = { onFilterSelected(null) }
+                )
+                filterCategories.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { category ->
+                            ExpenseCategorySheetOption(
+                                label = category.label(),
+                                icon = category.expenseSheetIcon(),
+                                selected = selectedCategory == category,
+                                accent = ExpenseCoral,
+                                onClick = { onFilterSelected(category) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (row.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Administrar categorías",
+                    color = ExpenseText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                ExpenseCategory.entries.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { category ->
+                            val enabled = category in enabledCategories
+                            ExpenseCategorySheetOption(
+                                label = category.label(),
+                                icon = category.expenseSheetIcon(),
+                                selected = enabled,
+                                accent = ExpenseCoral,
+                                trailingCheck = enabled,
+                                onClick = { onToggleCategory(category) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+                feedback?.let { message ->
+                    Text(
+                        text = message,
+                        color = if (message.startsWith("Debe")) ExpenseCoral else ExpenseMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun ExpenseCategorySheetOption(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailingCheck: Boolean = false
+) {
+    Surface(
+        modifier = modifier
+            .height(50.dp)
+            .cleanClickable(onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) accent.copy(alpha = 0.12f) else ExpenseCardHigh,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) accent.copy(alpha = 0.62f) else ExpenseBorder
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = if (selected) accent else ExpenseMuted,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = label,
+                color = if (selected) ExpenseText else ExpenseMuted,
+                fontSize = 13.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            if (trailingCheck) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
+    }
+}
+
+private fun ExpenseCategory.expenseSheetIcon(): ImageVector {
+    return when (this) {
+        ExpenseCategory.TRANSPORT -> Icons.Rounded.DirectionsBus
+        ExpenseCategory.FOOD -> Icons.Rounded.Restaurant
+        ExpenseCategory.COPIES -> Icons.Rounded.ContentCopy
+        ExpenseCategory.MATERIALS -> Icons.AutoMirrored.Rounded.MenuBook
+        ExpenseCategory.OUTINGS -> Icons.Rounded.Celebration
+        ExpenseCategory.OTHER -> Icons.Rounded.MoreHoriz
     }
 }
 
@@ -1337,6 +1529,7 @@ private fun ExpensesReferencePreview(widthDp: Int) {
                 selectedCategory = null,
                 categories = ExpenseCategory.entries,
                 onCategorySelected = {},
+                onCategoryClick = {},
                 periodTotal = 48_500,
                 recordCount = 6,
                 previousTotal = 43_300,
@@ -1366,6 +1559,7 @@ private fun ExpensesContent(
     selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory?) -> Unit,
+    onCategoryClick: () -> Unit,
     periodTotal: Int,
     recordCount: Int,
     previousTotal: Int,
@@ -1412,6 +1606,7 @@ private fun ExpensesContent(
                 selectedCategory = selectedCategory,
                 categories = categories,
                 onCategorySelected = onCategorySelected,
+                onCategoryClick = onCategoryClick,
                 scale = scale
             )
         }

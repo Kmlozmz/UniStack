@@ -7,7 +7,6 @@ import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_profile.domain.FeatureGate
-import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
@@ -112,18 +111,6 @@ class ProfileViewModel(
                 reminderLeadHours = reminderLeadHours
             )
         )
-        return true
-    }
-
-    fun toggleExpenseCategory(category: ExpenseCategory): Boolean {
-        val current = profile.value ?: return false
-        val next = if (category in current.enabledExpenseCategories) {
-            current.enabledExpenseCategories - category
-        } else {
-            current.enabledExpenseCategories + category
-        }
-        if (next.isEmpty()) return false
-        save(current.copy(enabledExpenseCategories = next))
         return true
     }
 
