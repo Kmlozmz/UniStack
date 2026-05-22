@@ -539,7 +539,7 @@ private fun TaskStatDialog(
                 Text("Entendido", fontWeight = FontWeight.Bold)
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = UniStackColors.Background
     )
 }
 
@@ -794,7 +794,7 @@ private fun TasksFilterBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = UniStackColors.Background,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         dragHandle = {
             Box(

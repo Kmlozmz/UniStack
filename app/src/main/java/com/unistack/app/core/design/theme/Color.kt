@@ -45,14 +45,14 @@ object UniStackColors {
         coralLight = Color(0xFF3E211F),
         yellow = Color(0xFFE0B642),
         yellowLight = Color(0xFF382B0C),
-        background = Color(0xFF0F0D16),
-        card = Color(0xFF1A1722),
-        surfaceVariant = Color(0xFF25212F),
+        background = Color(0xFF080B13),
+        card = Color(0xFF10131B),
+        surfaceVariant = Color(0xFF121620),
         textPrimary = Color(0xFFF7F3FF),
         textSecondary = Color(0xFFD0C7DC),
         softOutline = Color(0xFF4A435A),
-        gradientEnd = Color(0xFF1A1722),
-        bottomBar = Color(0xFF1E1A28),
+        gradientEnd = Color(0xFF080B13),
+        bottomBar = Color(0xFF080B13),
         bottomBarSelected = Color(0xFF312755)
     )
 

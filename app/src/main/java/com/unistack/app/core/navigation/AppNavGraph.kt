@@ -531,7 +531,7 @@ private fun UniStackBottomBarContent(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val barColor = MaterialTheme.colorScheme.surface
+    val barColor = UniStackColors.BottomBar
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
     val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
     val density = LocalDensity.current
@@ -638,7 +638,7 @@ private fun UniStackBottomBarItem(
             color = contentColor,
             fontSize = 11.sp,
             lineHeight = 14.sp,
-            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             softWrap = false,
             modifier = Modifier.padding(top = 4.dp)

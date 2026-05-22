@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.theme.UniStackDatePickerColors
+import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
@@ -75,14 +77,28 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
-private val ExpenseFormBackground = Color(0xFF080B13)
-private val ExpenseFormCard = Color(0xFF15141E)
-private val ExpenseFormCardHigh = Color(0xFF1B1824)
-private val ExpenseFormBorder = Color.White.copy(alpha = 0.08f)
-private val ExpenseFormCoral = Color(0xFFFF746D)
-private val ExpenseFormText = Color(0xFFF8F7FC)
-private val ExpenseFormMuted = Color(0xFFA9A7B7)
-private val ExpenseFormDisabled = Color(0xFF242631)
+private val ExpenseFormBackground: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF080B13) else Color(0xFFFCFBFF)
+private val ExpenseFormCard: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF10131B) else Color.White
+private val ExpenseFormCardHigh: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF121620) else Color(0xFFF4F0FA)
+private val ExpenseFormBorder: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) {
+        Color.White.copy(alpha = 0.08f)
+    } else {
+        Color(0xFFDCD2EA).copy(alpha = 0.72f)
+    }
+private val ExpenseFormCoral: Color
+    @Composable get() = UniStackColors.Coral
+private val ExpenseFormText: Color
+    @Composable get() = UniStackColors.TextPrimary
+private val ExpenseFormMuted: Color
+    @Composable get() = UniStackColors.TextSecondary
+private val ExpenseFormOptionText: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFD3D0DD) else UniStackColors.TextSecondary
+private val ExpenseFormDisabled: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF242631) else Color(0xFFE8E2F0)
 private val ExpenseFormShape = RoundedCornerShape(18.dp)
 private val ExpenseFieldShape = RoundedCornerShape(14.dp)
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es", "CO"))
@@ -480,12 +496,12 @@ private fun ExpenseCategoryOption(
             Icon(
                 imageVector = category.icon(),
                 contentDescription = null,
-                tint = if (selected) ExpenseFormCoral else Color(0xFFD3D0DD),
+                tint = if (selected) ExpenseFormCoral else ExpenseFormOptionText,
                 modifier = Modifier.size(22.dp)
             )
             Text(
                 text = category.label(),
-                color = if (selected) ExpenseFormCoral else Color(0xFFD3D0DD),
+                color = if (selected) ExpenseFormCoral else ExpenseFormOptionText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -659,7 +675,7 @@ private fun ExpenseMonthCalendarDialog(
         title = {
             Text(
                 text = "Seleccionar fecha",
-                color = ExpenseFormText,
+                color = UniStackDatePickerColors.Text,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -674,7 +690,7 @@ private fun ExpenseMonthCalendarDialog(
                         Icon(
                             imageVector = Icons.Rounded.ChevronLeft,
                             contentDescription = "Mes anterior",
-                            tint = ExpenseFormMuted
+                            tint = UniStackDatePickerColors.Muted
                         )
                     }
                     Text(
@@ -682,7 +698,7 @@ private fun ExpenseMonthCalendarDialog(
                             .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
-                        color = ExpenseFormText,
+                        color = UniStackDatePickerColors.Text,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -690,7 +706,7 @@ private fun ExpenseMonthCalendarDialog(
                         Icon(
                             imageVector = Icons.Rounded.ChevronRight,
                             contentDescription = "Mes siguiente",
-                            tint = ExpenseFormMuted
+                            tint = UniStackDatePickerColors.Muted
                         )
                     }
                 }
@@ -704,10 +720,10 @@ private fun ExpenseMonthCalendarDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = ExpenseFormCoral, fontWeight = FontWeight.SemiBold)
+                Text("Cancelar", color = UniStackDatePickerColors.Accent, fontWeight = FontWeight.Medium)
             }
         },
-        containerColor = ExpenseFormCard,
+        containerColor = UniStackDatePickerColors.Surface,
         shape = ExpenseFormShape
     )
 }
@@ -732,7 +748,7 @@ private fun ExpenseCalendarMonthGrid(
                     text = label,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = ExpenseFormMuted,
+                    color = UniStackDatePickerColors.Muted,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -750,8 +766,8 @@ private fun ExpenseCalendarMonthGrid(
                             .then(if (date != null) Modifier.cleanClickable { onDateSelected(date) } else Modifier)
                             .background(
                                 color = when {
-                                    selected -> ExpenseFormCoral
-                                    date != null -> ExpenseFormCardHigh.copy(alpha = 0.72f)
+                                    selected -> UniStackDatePickerColors.Accent
+                                    date != null -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
                                 shape = RoundedCornerShape(10.dp)
@@ -760,9 +776,9 @@ private fun ExpenseCalendarMonthGrid(
                     ) {
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
-                            color = if (selected) Color(0xFF15131D) else ExpenseFormText,
+                            color = if (selected) Color.White else UniStackDatePickerColors.Text,
                             fontSize = 12.sp,
-                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
                         )
                     }
                 }

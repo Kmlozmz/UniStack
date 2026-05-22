@@ -85,6 +85,24 @@ class ExpensesViewModel(
         }
     }
 
+    fun updateBudgetSettings(
+        weeklyBudgetInput: String,
+        monthlyBudgetInput: String
+    ): Boolean {
+        val current = AppContainer.userRepository.userProfile.value ?: return false
+        val weeklyBudget = weeklyBudgetInput.toIntOrNull() ?: return false
+        val monthlyBudget = monthlyBudgetInput.toIntOrNull() ?: return false
+        if (weeklyBudget !in 0..99_999_999) return false
+        if (monthlyBudget !in 0..999_999_999) return false
+        AppContainer.userRepository.saveUserProfile(
+            current.copy(
+                weeklyBudget = weeklyBudget,
+                monthlyBudget = monthlyBudget
+            )
+        )
+        return true
+    }
+
     fun monthlyExpenses(): List<Expense> {
         val today = ExpenseDateUtils.today()
         return expenses.value.filter { expense ->

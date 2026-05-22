@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -138,7 +139,7 @@ fun SubjectDetailScreen(
                     subject.name,
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
@@ -218,7 +219,7 @@ fun SubjectDetailScreen(
                     "Trabajos asociados",
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Bold
                 )
             }
             items(subjectWorks, key = { it.id }) { work ->
@@ -234,7 +235,7 @@ fun SubjectDetailScreen(
                     "Notas",
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -260,13 +261,13 @@ fun SubjectDetailScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(grade.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                            Text(grade.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                             Text(
                                 "${String.format(Locale.US, "%.0f", grade.percentage * 100)}% del curso",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
+                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.Bold, fontSize = 22.sp)
                         IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
                             Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
                         }
@@ -296,7 +297,7 @@ fun SubjectDetailScreen(
             ) {
                 Icon(Icons.Rounded.Add, contentDescription = null)
                 Spacer(modifier = Modifier.size(10.dp))
-                Text("Agregar nota", fontWeight = FontWeight.ExtraBold)
+                Text("Agregar nota", fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -323,7 +324,7 @@ fun SubjectDetailScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = UniStackColors.Background
         )
     }
 
@@ -347,7 +348,7 @@ fun SubjectDetailScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = UniStackColors.Background
         )
     }
 }
@@ -370,11 +371,16 @@ private fun SubjectSummaryCard(
         borderWidth = 0.5.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(136.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
                     .width(4.dp)
-                    .height(136.dp)
+                    .fillMaxHeight()
                     .background(accent)
             )
             Column(
@@ -402,7 +408,7 @@ private fun SubjectSummaryCard(
                             GradingScaleUtils.formatGrade(average, scale),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.Bold
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
@@ -410,24 +416,24 @@ private fun SubjectSummaryCard(
                         Text(
                             GradingScaleUtils.formatGrade(subject.targetAverage, scale),
                             color = accent,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         )
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     SubjectDetailMetric(
-                        label = "evaluado",
+                        label = "Evaluado",
                         value = "${String.format(Locale.US, "%.0f", evaluated)}%",
                         modifier = Modifier.weight(1f)
                     )
                     SubjectDetailMetric(
-                        label = "restante",
+                        label = "Restante",
                         value = "${String.format(Locale.US, "%.0f", remainingPercentage * 100)}%",
                         modifier = Modifier.weight(1f)
                     )
                     SubjectDetailMetric(
-                        label = "notas",
+                        label = "Notas",
                         value = subject.grades.size.toString(),
                         modifier = Modifier.weight(1f)
                     )
@@ -453,7 +459,7 @@ private fun EmptyNotesCard() {
                 modifier = Modifier.padding(start = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text("Aún no has registrado notas.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                Text("Aún no has registrado notas.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                 Text(
                     "Agrega la primera para empezar a calcular tu promedio.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -489,7 +495,7 @@ private fun CompletedSubjectInsightCard(
                 Text(
                     "Materia finalizada",
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
@@ -500,7 +506,7 @@ private fun CompletedSubjectInsightCard(
                     "Terminaste con ${GradingScaleUtils.formatGrade(average, scale)}. La meta era ${GradingScaleUtils.formatGrade(targetAverage, scale)}."
                 },
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -548,7 +554,7 @@ private fun WhatIfPlannerCard(
                 Text(
                     "Simulador rápido",
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
             }
@@ -561,7 +567,7 @@ private fun WhatIfPlannerCard(
                     scale = scale
                 ),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Medium
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
@@ -594,13 +600,13 @@ private fun WhatIfPlannerCard(
                             text = "Promedio proyectado",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = projectedAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.Bold
                         )
                 Text(
                     text = whatIfDetail(
@@ -641,7 +647,7 @@ private fun SubjectWorkCard(work: AcademicWork) {
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text(work.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                Text(work.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                 Text(
                     listOfNotNull(
                         work.status.label(),
@@ -679,8 +685,8 @@ private fun SubjectDetailMetric(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-        Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(value, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
     }
 }
 

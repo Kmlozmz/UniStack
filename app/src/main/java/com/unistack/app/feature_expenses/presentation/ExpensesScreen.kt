@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -41,25 +43,33 @@ import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -79,15 +89,40 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
 
-private val ExpenseBackground = Color(0xFF080B13)
-private val ExpenseCard = Color(0xFF15141E)
-private val ExpenseCardHigh = Color(0xFF1B1824)
-private val ExpenseCoral = Color(0xFFFF746D)
-private val ExpenseCoralDeep = Color(0xFFFF5F66)
-private val ExpensePurple = Color(0xFF8B5CF6)
-private val ExpenseText = Color(0xFFF8F7FC)
-private val ExpenseMuted = Color(0xFFA9A7B7)
-private val ExpenseTrack = Color(0xFF292633)
+private val ExpenseBackground: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF080B13) else Color(0xFFFCFBFF)
+private val ExpenseCard: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF10131B) else Color.White
+private val ExpenseCardHigh: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF121620) else Color(0xFFF4F0FA)
+private val ExpenseCoral: Color
+    @Composable get() = UniStackColors.Coral
+private val ExpenseCoralDeep: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFFF5F66) else Color(0xFFE84F44)
+private val ExpensePurple: Color
+    @Composable get() = UniStackColors.Primary
+private val ExpenseText: Color
+    @Composable get() = UniStackColors.TextPrimary
+private val ExpenseMuted: Color
+    @Composable get() = UniStackColors.TextSecondary
+private val ExpenseTrack: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF292633) else Color(0xFFE6DEF2)
+private val ExpenseBorder: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) {
+        Color.White.copy(alpha = 0.06f)
+    } else {
+        UniStackColors.SoftOutline.copy(alpha = 0.7f)
+    }
+private val ExpenseDivider: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) {
+        Color.White.copy(alpha = 0.08f)
+    } else {
+        UniStackColors.SoftOutline.copy(alpha = 0.5f)
+    }
+private val ExpenseSelectedText: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA78BFA) else UniStackColors.Primary
+private val ExpenseNeutralIcon: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFD8D6E3) else UniStackColors.TextSecondary
 private val ReferenceBars = listOf(28, 55, 35, 78, 32, 52, 40)
 
 @Composable
@@ -100,8 +135,9 @@ fun ExpensesScreen(
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     var expenseIdPendingDelete by remember { mutableStateOf<String?>(null) }
-    var selectedPeriod by remember { mutableStateOf(ExpensePeriodFilter.WEEK) }
-    var selectedCategory by remember { mutableStateOf<ExpenseCategory?>(null) }
+    var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
+    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.ALL) }
+    var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
     val filterCategories = remember(expenses, enabledCategories) {
@@ -116,7 +152,9 @@ fun ExpensesScreen(
         }
     }
     val weeklyExpenses = remember(expenses) { viewModel.weeklyExpenses() }
-    val previousWeekTotal = remember(expenses) { viewModel.previousWeekTotal() }
+    val previousTotal = remember(expenses, selectedPeriod) {
+        previousTotalForPeriod(expenses, selectedPeriod)
+    }
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
     val periodTotal = selectedPeriodExpenses.sumOf { it.amount }
     val activeBudget = when (selectedPeriod) {
@@ -139,15 +177,30 @@ fun ExpensesScreen(
             onCategorySelected = { selectedCategory = it },
             periodTotal = periodTotal,
             recordCount = selectedPeriodExpenses.size,
-            previousTotal = previousWeekTotal,
+            previousTotal = previousTotal,
             budget = activeBudget,
             chartValues = chartValues,
             expenses = filteredExpenses,
             onAddExpenseClick = onAddExpenseClick,
             onEditExpenseClick = onEditExpenseClick,
             onDeleteExpenseClick = { expenseIdPendingDelete = it },
+            onBudgetClick = { showBudgetSheet = true },
             scale = scale,
-            bottomPadding = scaledDp(40f, scale)
+            bottomPadding = scaledDp(118f, scale)
+        )
+    }
+
+    val currentProfile = profile
+    if (showBudgetSheet && currentProfile != null) {
+        ExpenseBudgetSheet(
+            weeklyBudget = currentProfile.weeklyBudget,
+            monthlyBudget = currentProfile.monthlyBudget,
+            onDismiss = { showBudgetSheet = false },
+            onSave = { weeklyInput, monthlyInput ->
+                if (viewModel.updateBudgetSettings(weeklyInput, monthlyInput)) {
+                    showBudgetSheet = false
+                }
+            }
         )
     }
 
@@ -180,73 +233,75 @@ private fun ExpensesContent(
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
     onDeleteExpenseClick: (String) -> Unit,
+    onBudgetClick: () -> Unit,
     scale: Float,
     bottomPadding: Dp
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = scaledDp(24f, scale),
-            top = scaledDp(48f, scale),
-            end = scaledDp(24f, scale),
-            bottom = bottomPadding
-        ),
-        verticalArrangement = Arrangement.spacedBy(scaledDp(20f, scale))
-    ) {
-        item { ExpensesHeader(scale = scale) }
-        item {
-            ExpensesHeroCard(
-                periodLabel = selectedPeriod.heroLabel,
-                amount = periodTotal,
-                recordCount = recordCount,
-                trendText = trendText(periodTotal, previousTotal),
-                budget = budget,
-                budgetProgress = if (budget > 0) (periodTotal / budget.toFloat()).coerceIn(0f, 1f) else 0f,
-                chartValues = chartValues,
-                scale = scale
-            )
-        }
-        item {
-            ExpensesFilters(
-                selectedPeriod = selectedPeriod,
-                onPeriodSelected = onPeriodSelected,
-                selectedCategory = selectedCategory,
-                categories = categories,
-                onCategorySelected = onCategorySelected,
-                scale = scale
-            )
-        }
-        if (expenses.isEmpty()) {
-            item { ExpensesEmptyState(period = selectedPeriod, scale = scale) }
-        } else {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = scaledDp(24f, scale),
+                top = scaledDp(24f, scale),
+                end = scaledDp(24f, scale),
+                bottom = bottomPadding
+            ),
+            verticalArrangement = Arrangement.spacedBy(scaledDp(20f, scale))
+        ) {
+            item { ExpensesHeader(scale = scale) }
             item {
-                Text(
-                    text = "Últimos gastos",
-                    color = ExpenseText,
-                    fontSize = scaledSp(20f, scale),
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-            items(expenses, key = { it.id }) { expense ->
-                ExpenseListItem(
-                    expense = expense,
-                    onEditClick = { onEditExpenseClick(expense.id) },
-                    onDeleteClick = { onDeleteExpenseClick(expense.id) },
+                ExpensesHeroCard(
+                    selectedPeriod = selectedPeriod,
+                    onPeriodSelected = onPeriodSelected,
+                    amount = periodTotal,
+                    recordCount = recordCount,
+                    trendText = trendText(periodTotal, previousTotal),
+                    budget = budget,
+                    budgetProgress = if (budget > 0) (periodTotal / budget.toFloat()).coerceIn(0f, 1f) else 0f,
+                    chartValues = chartValues,
+                    onBudgetClick = onBudgetClick,
                     scale = scale
                 )
             }
-        }
-        item {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                RegisterExpenseButton(
-                    onClick = onAddExpenseClick,
+            item {
+                ExpensesFilters(
+                    selectedPeriod = selectedPeriod,
+                    onPeriodSelected = onPeriodSelected,
+                    selectedCategory = selectedCategory,
+                    categories = categories,
+                    onCategorySelected = onCategorySelected,
                     scale = scale
                 )
             }
+            if (expenses.isEmpty()) {
+                item { ExpensesEmptyState(period = selectedPeriod, scale = scale) }
+            } else {
+                item {
+                    Text(
+                        text = "Últimos gastos",
+                        color = ExpenseText,
+                        fontSize = scaledSp(20f, scale),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                items(expenses, key = { it.id }) { expense ->
+                    ExpenseListItem(
+                        expense = expense,
+                        onEditClick = { onEditExpenseClick(expense.id) },
+                        onDeleteClick = { onDeleteExpenseClick(expense.id) },
+                        scale = scale
+                    )
+                }
+            }
         }
+
+        RegisterExpenseButton(
+            onClick = onAddExpenseClick,
+            scale = scale,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 20.dp)
+        )
     }
 }
 
@@ -258,7 +313,7 @@ private fun ExpensesHeader(scale: Float) {
             color = ExpenseText,
             fontSize = scaledSp(34f, scale),
             lineHeight = scaledSp(38f, scale),
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.Bold,
             maxLines = 1,
             softWrap = false
         )
@@ -274,13 +329,15 @@ private fun ExpensesHeader(scale: Float) {
 
 @Composable
 private fun ExpensesHeroCard(
-    periodLabel: String,
+    selectedPeriod: ExpensePeriodFilter,
+    onPeriodSelected: (ExpensePeriodFilter) -> Unit,
     amount: Int,
     recordCount: Int,
     trendText: String,
     budget: Int,
     budgetProgress: Float,
     chartValues: List<Int>,
+    onBudgetClick: () -> Unit,
     scale: Float
 ) {
     Surface(
@@ -289,7 +346,7 @@ private fun ExpensesHeroCard(
             .heightIn(min = scaledDp(250f, scale)),
         shape = RoundedCornerShape(scaledDp(18f, scale)),
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -319,23 +376,11 @@ private fun ExpensesHeroCard(
                                 size = scaledDp(42f, scale),
                                 iconSize = scaledDp(21f, scale)
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = periodLabel,
-                                    color = ExpenseText,
-                                    fontSize = scaledSp(18f, scale),
-                                    lineHeight = scaledSp(22f, scale),
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                                Icon(
-                                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                                    contentDescription = null,
-                                    tint = ExpenseMuted,
-                                    modifier = Modifier.size(scaledDp(18f, scale))
-                                )
-                            }
+                            HeroPeriodSelector(
+                                selectedPeriod = selectedPeriod,
+                                onPeriodSelected = onPeriodSelected,
+                                scale = scale
+                            )
                         }
                         Text(
                             text = CurrencyFormatter.formatCop(amount),
@@ -378,15 +423,73 @@ private fun ExpensesHeroCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(scaledDp(1f, scale))
-                    .background(Color.White.copy(alpha = 0.08f))
+                    .background(ExpenseDivider)
             )
             Spacer(modifier = Modifier.height(scaledDp(13f, scale)))
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
                 scale = scale,
+                onClick = onBudgetClick,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+@Composable
+private fun HeroPeriodSelector(
+    selectedPeriod: ExpensePeriodFilter,
+    onPeriodSelected: (ExpensePeriodFilter) -> Unit,
+    scale: Float
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
+            modifier = Modifier.cleanClickable { expanded = true },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = selectedPeriod.heroLabel,
+                color = ExpenseText,
+                fontSize = scaledSp(18f, scale),
+                lineHeight = scaledSp(22f, scale),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false
+            )
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = "Cambiar periodo",
+                tint = ExpenseMuted,
+                modifier = Modifier.size(scaledDp(18f, scale))
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.background(ExpenseCardHigh)
+        ) {
+            listOf(
+                ExpensePeriodFilter.ALL,
+                ExpensePeriodFilter.WEEK,
+                ExpensePeriodFilter.MONTH
+            ).forEach { period ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = period.heroLabel,
+                            color = if (period == selectedPeriod) ExpensePurple else ExpenseText,
+                            fontWeight = if (period == selectedPeriod) FontWeight.SemiBold else FontWeight.Medium
+                        )
+                    },
+                    onClick = {
+                        onPeriodSelected(period)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }
@@ -404,7 +507,7 @@ private fun ExpenseTrendLine(
         text = buildAnnotatedString {
             append(recordCountLabel(recordCount))
             append("  •  ")
-            withStyle(SpanStyle(color = ExpenseCoral, fontWeight = FontWeight.ExtraBold)) {
+            withStyle(SpanStyle(color = ExpenseCoral, fontWeight = FontWeight.SemiBold)) {
                 append(percent)
             }
             append(suffix)
@@ -430,7 +533,8 @@ private fun WeeklyMiniChart(
     val normalizedValues = values.take(7).let { current ->
         if (current.size == 7) current else current + List(7 - current.size) { 0 }
     }
-    val bars = if (normalizedValues.all { it == 0 }) ReferenceBars else normalizedValues
+    val hasData = normalizedValues.any { it > 0 }
+    val bars = if (hasData) normalizedValues else List(7) { 1 }
     val max = bars.maxOrNull()?.takeIf { it > 0 } ?: 1
 
     Column(
@@ -451,7 +555,7 @@ private fun WeeklyMiniChart(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(scaledDp(1f, scale))
-                            .background(Color.White.copy(alpha = 0.09f))
+                            .background(ExpenseDivider)
                     )
                 }
             }
@@ -463,16 +567,23 @@ private fun WeeklyMiniChart(
                 verticalAlignment = Alignment.Bottom
             ) {
                 bars.forEach { value ->
-                    val normalized = value / max.toFloat()
+                    val normalized = if (hasData) value / max.toFloat() else 0.15f
                     Box(
                         modifier = Modifier
                             .width(scaledDp(9f, scale))
                             .height(scaledDp(16f + normalized * 42f, scale))
                             .clip(RoundedCornerShape(scaledDp(5f, scale)))
                             .background(
-                                Brush.verticalGradient(
-                                    listOf(ExpenseCoral, ExpenseCoralDeep)
-                                )
+                                if (hasData) {
+                                    Brush.verticalGradient(listOf(ExpenseCoral, ExpenseCoralDeep))
+                                } else {
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            ExpenseCoral.copy(alpha = 0.38f),
+                                            ExpenseCoralDeep.copy(alpha = 0.28f)
+                                        )
+                                    )
+                                }
                             )
                     )
                 }
@@ -503,13 +614,16 @@ private fun BudgetRow(
     budget: Int,
     progress: Float,
     scale: Float,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val hasBudget = budget > 0
     BoxWithConstraints(modifier = modifier) {
         val progressWidth = if (maxWidth < 300.dp) scaledDp(58f, scale) else scaledDp(96f, scale)
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .cleanClickable(onClick),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, scale))
         ) {
@@ -534,7 +648,7 @@ private fun BudgetRow(
                     overflow = TextOverflow.Clip
                 )
                 Text(
-                    text = if (hasBudget) "${(progress * 100).roundToInt()}% usado" else "Configúralo en Perfil",
+                    text = if (hasBudget) "${(progress * 100).roundToInt()}% usado" else "Configurar presupuesto",
                     color = ExpensePurple,
                     fontSize = scaledSp(13f, scale),
                     lineHeight = scaledSp(16f, scale),
@@ -654,7 +768,7 @@ private fun PeriodSegmentedControl(
         modifier = modifier.height(scaledDp(42f, scale)),
         shape = RoundedCornerShape(scaledDp(14f, scale)),
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -676,7 +790,7 @@ private fun PeriodSegmentedControl(
                 ) {
                     Text(
                         text = period.label,
-                        color = if (selected) Color(0xFFA78BFA) else ExpenseMuted,
+                        color = if (selected) ExpenseSelectedText else ExpenseMuted,
                         fontSize = scaledSp(13f, scale),
                         lineHeight = scaledSp(15f, scale),
                         fontWeight = FontWeight.Medium,
@@ -707,7 +821,7 @@ private fun CategoryChip(
                 .cleanClickable { expanded = true },
             shape = RoundedCornerShape(scaledDp(14f, scale)),
             color = ExpenseCard,
-            border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+            border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
             tonalElevation = 0.dp,
             shadowElevation = 0.dp
         ) {
@@ -771,7 +885,7 @@ private fun ExpensesEmptyState(
             .height(scaledDp(250f, scale)),
         shape = RoundedCornerShape(scaledDp(18f, scale)),
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -790,7 +904,7 @@ private fun ExpensesEmptyState(
                 Icon(
                     imageVector = Icons.Rounded.Wallet,
                     contentDescription = null,
-                    tint = Color(0xFFD8D6E3),
+                    tint = ExpenseNeutralIcon,
                     modifier = Modifier.size(scaledDp(34f, scale))
                 )
                 Box(
@@ -814,7 +928,7 @@ private fun ExpensesEmptyState(
                 color = ExpenseText,
                 fontSize = scaledSp(19f, scale),
                 lineHeight = scaledSp(24f, scale),
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2
             )
@@ -839,7 +953,6 @@ private fun RegisterExpenseButton(
 ) {
     Surface(
         modifier = modifier
-            .width(214.dp)
             .height(56.dp)
             .cleanClickable(onClick),
         shape = RoundedCornerShape(22.dp),
@@ -879,6 +992,159 @@ private fun RegisterExpenseButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpenseBudgetSheet(
+    weeklyBudget: Int,
+    monthlyBudget: Int,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit
+) {
+    var weeklyInput by rememberSaveable(weeklyBudget) {
+        mutableStateOf(weeklyBudget.takeIf { it > 0 }?.toString().orEmpty())
+    }
+    var monthlyInput by rememberSaveable(monthlyBudget) {
+        mutableStateOf(monthlyBudget.takeIf { it > 0 }?.toString().orEmpty())
+    }
+    val weeklyValue = weeklyInput.toIntOrNull() ?: if (weeklyInput.isBlank()) 0 else null
+    val monthlyValue = monthlyInput.toIntOrNull() ?: if (monthlyInput.isBlank()) 0 else null
+    val isValid = weeklyValue != null &&
+        monthlyValue != null &&
+        weeklyValue in 0..99_999_999 &&
+        monthlyValue in 0..999_999_999
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = ExpenseBackground,
+        contentColor = ExpenseText,
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Configurar presupuesto",
+                    color = ExpenseText,
+                    fontSize = 22.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Define límites para que el resumen de Gastos tenga contexto real.",
+                    color = ExpenseMuted,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BudgetInputField(
+                    label = "Semanal",
+                    value = weeklyInput,
+                    onValueChange = { weeklyInput = it.filter(Char::isDigit).take(9) },
+                    modifier = Modifier.weight(1f)
+                )
+                BudgetInputField(
+                    label = "Mensual",
+                    value = monthlyInput,
+                    onValueChange = { monthlyInput = it.filter(Char::isDigit).take(9) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = "Puedes dejar un campo vacío para no usar presupuesto en ese periodo.",
+                color = ExpenseMuted,
+                fontSize = 12.sp,
+                lineHeight = 17.sp
+            )
+            Button(
+                onClick = {
+                    onSave(
+                        (weeklyValue ?: 0).toString(),
+                        (monthlyValue ?: 0).toString()
+                    )
+                },
+                enabled = isValid,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ExpenseCoral,
+                    contentColor = Color(0xFF15131D),
+                    disabledContainerColor = ExpenseTrack,
+                    disabledContentColor = ExpenseMuted
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+            ) {
+                Text("Guardar presupuesto", fontWeight = FontWeight.SemiBold)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun BudgetInputField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.height(72.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = ExpenseCardHigh,
+        border = BorderStroke(1.dp, ExpenseDivider),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = label,
+                color = ExpenseMuted,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "$",
+                    color = ExpenseMuted,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        color = ExpenseText,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    cursorBrush = SolidColor(ExpensePurple),
+                    modifier = Modifier.weight(1f),
+                    decorationBox = { innerTextField ->
+                        if (value.isBlank()) {
+                            Text("0", color = ExpenseMuted.copy(alpha = 0.65f), fontSize = 17.sp)
+                        }
+                        innerTextField()
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ExpenseListItem(
     expense: Expense,
@@ -890,7 +1156,7 @@ private fun ExpenseListItem(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(scaledDp(24f, scale)),
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -919,7 +1185,7 @@ private fun ExpenseListItem(
                 Text(
                     text = expense.category.label(),
                     color = ExpenseText,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = scaledSp(16f, scale),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -934,7 +1200,7 @@ private fun ExpenseListItem(
             Text(
                 text = CurrencyFormatter.formatCop(expense.amount),
                 color = ExpenseCoral,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 fontSize = scaledSp(17f, scale),
                 maxLines = 1
             )
@@ -996,6 +1262,35 @@ private fun trendText(total: Int, previousTotal: Int): String {
     return "$sign$percent% vs anterior"
 }
 
+private fun previousTotalForPeriod(
+    expenses: List<Expense>,
+    period: ExpensePeriodFilter
+): Int {
+    val today = ExpenseDateUtils.today()
+    return when (period) {
+        ExpensePeriodFilter.WEEK -> {
+            val currentStart = ExpenseDateUtils.startOfWeek(today)
+            val previousStart = currentStart.minusDays(7)
+            expenses
+                .filter { expense ->
+                    val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
+                    !date.isBefore(previousStart) && date.isBefore(currentStart)
+                }
+                .sumOf { it.amount }
+        }
+        ExpensePeriodFilter.MONTH -> {
+            val previousMonth = today.minusMonths(1)
+            expenses
+                .filter { expense ->
+                    val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
+                    date.month == previousMonth.month && date.year == previousMonth.year
+                }
+                .sumOf { it.amount }
+        }
+        ExpensePeriodFilter.ALL -> 0
+    }
+}
+
 private fun recordCountLabel(count: Int): String =
     if (count == 1) "1 registro" else "$count registros"
 
@@ -1052,6 +1347,7 @@ private fun ExpensesReferencePreview(widthDp: Int) {
                 onAddExpenseClick = {},
                 onEditExpenseClick = {},
                 onDeleteExpenseClick = {},
+                onBudgetClick = {},
                 scale = scale,
                 bottomPadding = scaledDp(150f, scale)
             )
@@ -1080,6 +1376,7 @@ private fun ExpensesContent(
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
     onDeleteExpenseClick: (String) -> Unit,
+    onBudgetClick: () -> Unit,
     scale: Float,
     bottomPadding: Dp
 ) {
@@ -1096,13 +1393,15 @@ private fun ExpensesContent(
         item { ExpensesHeader(scale = scale) }
         item {
             ExpensesHeroCard(
-                periodLabel = selectedPeriod.heroLabel,
+                selectedPeriod = selectedPeriod,
+                onPeriodSelected = onPeriodSelected,
                 amount = periodTotal,
                 recordCount = recordCount,
                 trendText = trendText(periodTotal, previousTotal),
                 budget = budget,
                 budgetProgress = budgetProgress,
                 chartValues = chartValues,
+                onBudgetClick = onBudgetClick,
                 scale = scale
             )
         }
@@ -1124,7 +1423,7 @@ private fun ExpensesContent(
                     text = "Últimos gastos",
                     color = ExpenseText,
                     fontSize = scaledSp(20f, scale),
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Bold
                 )
             }
             items(expenses, key = { it.id }) { expense ->
@@ -1161,8 +1460,8 @@ private fun ExpensesPreviewBottomNav(
             .navigationBarsPadding()
             .height(scaledDp(96f, scale)),
         shape = RoundedCornerShape(topStart = scaledDp(28f, scale), topEnd = scaledDp(28f, scale)),
-        color = Color(0xFF151320),
-        border = BorderStroke(scaledDp(1f, scale), Color.White.copy(alpha = 0.06f)),
+        color = ExpenseCard,
+        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -1207,7 +1506,7 @@ private fun PreviewBottomNavItem(
             color = color,
             fontSize = scaledSp(12f, scale),
             lineHeight = scaledSp(14f, scale),
-            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             softWrap = false,
             modifier = Modifier.padding(top = scaledDp(5f, scale))

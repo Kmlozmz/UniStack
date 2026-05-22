@@ -135,7 +135,7 @@ fun UniConfirmDeleteDialog(
                 Text(dismissText)
             }
         },
-        containerColor = UniStackColors.Card
+        containerColor = UniStackColors.Background
     )
 }
 

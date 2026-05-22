@@ -105,15 +105,6 @@ fun ProfileScreen(
     var reminderLeadInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.reminderLeadHours?.toString() ?: "24")
     }
-    var weeklyBudgetInput by rememberSaveable(currentProfile?.userId) {
-        mutableStateOf(currentProfile?.weeklyBudget?.toString() ?: "0")
-    }
-    var monthlyBudgetInput by rememberSaveable(currentProfile?.userId) {
-        mutableStateOf(currentProfile?.monthlyBudget?.toString() ?: "0")
-    }
-    var alertThresholdInput by rememberSaveable(currentProfile?.userId) {
-        mutableStateOf(currentProfile?.expenseAlertThresholdPercent?.toString() ?: "80")
-    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var localBackupInput by rememberSaveable { mutableStateOf("") }
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
@@ -132,9 +123,6 @@ fun ProfileScreen(
         passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
         targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, scale)
         reminderLeadInput = current.reminderLeadHours.toString()
-        weeklyBudgetInput = current.weeklyBudget.toString()
-        monthlyBudgetInput = current.monthlyBudget.toString()
-        alertThresholdInput = current.expenseAlertThresholdPercent.toString()
     }
 
     LazyColumn(
@@ -293,30 +281,8 @@ fun ProfileScreen(
                 )
             }
             item {
-                BudgetSettingsCard(
-                    weeklyBudgetInput = weeklyBudgetInput,
-                    monthlyBudgetInput = monthlyBudgetInput,
-                    alertThresholdInput = alertThresholdInput,
+                ExpenseCategoriesSettingsCard(
                     enabledExpenseCategories = current.enabledExpenseCategories,
-                    onWeeklyBudgetChange = {
-                        weeklyBudgetInput = it.filter(Char::isDigit).take(9)
-                        feedback = null
-                    },
-                    onMonthlyBudgetChange = {
-                        monthlyBudgetInput = it.filter(Char::isDigit).take(9)
-                        feedback = null
-                    },
-                    onAlertThresholdChange = {
-                        alertThresholdInput = it.filter(Char::isDigit).take(3)
-                        feedback = null
-                    },
-                    onSaveClick = {
-                        feedback = if (viewModel.updateBudgetSettings(weeklyBudgetInput, monthlyBudgetInput, alertThresholdInput)) {
-                            "Presupuesto actualizado."
-                        } else {
-                            "Revisa presupuesto y alerta."
-                        }
-                    },
                     onToggleCategory = { category ->
                         feedback = if (viewModel.toggleExpenseCategory(category)) {
                             "Categorías actualizadas."
@@ -431,7 +397,7 @@ fun ProfileScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = UniStackColors.Background
         )
     }
 
@@ -455,65 +421,23 @@ fun ProfileScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = UniStackColors.Background
         )
     }
 }
 
 @Composable
-private fun BudgetSettingsCard(
-    weeklyBudgetInput: String,
-    monthlyBudgetInput: String,
-    alertThresholdInput: String,
+private fun ExpenseCategoriesSettingsCard(
     enabledExpenseCategories: Set<ExpenseCategory>,
-    onWeeklyBudgetChange: (String) -> Unit,
-    onMonthlyBudgetChange: (String) -> Unit,
-    onAlertThresholdChange: (String) -> Unit,
-    onSaveClick: () -> Unit,
     onToggleCategory: (ExpenseCategory) -> Unit
 ) {
-    val weekly = weeklyBudgetInput.toIntOrNull()
-    val monthly = monthlyBudgetInput.toIntOrNull()
-    val threshold = alertThresholdInput.toIntOrNull()
-    val isValid = weekly != null && monthly != null && threshold != null &&
-        weekly in 0..99_999_999 && monthly in 0..999_999_999 && threshold in 1..100
-    SettingsCard(title = "Presupuesto") {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedTextField(
-                value = weeklyBudgetInput,
-                onValueChange = onWeeklyBudgetChange,
-                label = { Text("Semanal") },
-                singleLine = true,
-                shape = AppShapes.MediumCard,
-                modifier = Modifier.weight(1f)
-            )
-            OutlinedTextField(
-                value = monthlyBudgetInput,
-                onValueChange = onMonthlyBudgetChange,
-                label = { Text("Mensual") },
-                singleLine = true,
-                shape = AppShapes.MediumCard,
-                modifier = Modifier.weight(1f)
-            )
-        }
-        OutlinedTextField(
-            value = alertThresholdInput,
-            onValueChange = onAlertThresholdChange,
-            label = { Text("Alerta al %") },
-            singleLine = true,
-            shape = AppShapes.MediumCard,
-            modifier = Modifier.fillMaxWidth()
+    SettingsCard(title = "Categorías de gastos") {
+        Text(
+            "Elige qué categorías aparecen disponibles al registrar gastos.",
+            color = UniStackColors.TextSecondary,
+            fontSize = 13.sp,
+            lineHeight = 18.sp
         )
-        Button(
-            onClick = onSaveClick,
-            enabled = isValid,
-            shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Guardar presupuesto")
-        }
-        Text("Categorías visibles", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
         ExpenseCategory.entries.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { category ->

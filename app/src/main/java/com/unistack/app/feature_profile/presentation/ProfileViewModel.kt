@@ -115,28 +115,6 @@ class ProfileViewModel(
         return true
     }
 
-    fun updateBudgetSettings(
-        weeklyBudgetInput: String,
-        monthlyBudgetInput: String,
-        thresholdInput: String
-    ): Boolean {
-        val current = profile.value ?: return false
-        val weeklyBudget = weeklyBudgetInput.toIntOrNull() ?: return false
-        val monthlyBudget = monthlyBudgetInput.toIntOrNull() ?: return false
-        val threshold = thresholdInput.toIntOrNull() ?: return false
-        if (weeklyBudget !in 0..99_999_999) return false
-        if (monthlyBudget !in 0..999_999_999) return false
-        if (threshold !in 1..100) return false
-        save(
-            current.copy(
-                weeklyBudget = weeklyBudget,
-                monthlyBudget = monthlyBudget,
-                expenseAlertThresholdPercent = threshold
-            )
-        )
-        return true
-    }
-
     fun toggleExpenseCategory(category: ExpenseCategory): Boolean {
         val current = profile.value ?: return false
         val next = if (category in current.enabledExpenseCategories) {

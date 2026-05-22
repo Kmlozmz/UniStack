@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -61,6 +62,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
@@ -264,10 +266,10 @@ private fun AddTaskContent(
             )
         }
         if (taskMissing) {
-            Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+            Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
         }
         error?.let {
-            Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+            Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
         }
         CreateTaskButton(
             text = if (isEditing) "Guardar tarea" else "Crear tarea",
@@ -301,13 +303,13 @@ private fun TaskHeader(
                 text = title,
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = subtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Medium
             )
         }
     }
@@ -336,11 +338,10 @@ private fun SectionTitle(text: String) {
                 .background(MaterialTheme.colorScheme.primary, AppShapes.Pill)
         )
         Text(
-            text = text.uppercase(),
+            text = text,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 1.4.sp
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Medium
         )
     }
 }
@@ -423,7 +424,7 @@ private fun TaskNameRow(
             singleLine = true,
             textStyle = MaterialTheme.typography.titleMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Normal
             ),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { innerTextField ->
@@ -433,7 +434,7 @@ private fun TaskNameRow(
                             text = "Ej: Ensayo sobre Hume",
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Normal
                         )
                     }
                     innerTextField()
@@ -447,7 +448,7 @@ private fun TaskNameRow(
                 text = error ?: "Ingresa una actividad válida",
                 color = UniStackColors.Coral,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Normal
             )
         }
     }
@@ -473,7 +474,7 @@ private fun BasicInfoActionRow(
                 text = value.ifBlank { placeholder },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Medium
             )
             Spacer(modifier = Modifier.weight(1f))
             Icon(
@@ -522,7 +523,7 @@ private fun BasicInfoRowShell(
                     text = label,
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Medium
                 )
                 content()
             }
@@ -549,9 +550,10 @@ private fun MonthCalendarDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Fecha límite",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.ExtraBold
+                text = "Seleccionar fecha",
+                color = UniStackDatePickerColors.Text,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
             )
         },
         text = {
@@ -564,21 +566,30 @@ private fun MonthCalendarDialog(
                         onClick = { visibleMonth = visibleMonth.minusMonths(1) },
                         enabled = canGoBack
                     ) {
-                        Icon(Icons.Rounded.ChevronLeft, contentDescription = "Mes anterior")
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronLeft,
+                            contentDescription = "Mes anterior",
+                            tint = UniStackDatePickerColors.Muted
+                        )
                     }
                     Text(
                         text = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "CO"))
                             .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.ExtraBold
+                        color = UniStackDatePickerColors.Text,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
                     )
                     IconButton(
                         onClick = { visibleMonth = visibleMonth.plusMonths(1) },
                         enabled = canGoForward
                     ) {
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = "Mes siguiente")
+                        Icon(
+                            imageVector = Icons.Rounded.ChevronRight,
+                            contentDescription = "Mes siguiente",
+                            tint = UniStackDatePickerColors.Muted
+                        )
                     }
                 }
                 CalendarMonthGrid(
@@ -593,10 +604,15 @@ private fun MonthCalendarDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(
+                    text = "Cancelar",
+                    color = UniStackDatePickerColors.Accent,
+                    fontWeight = FontWeight.Medium
+                )
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = UniStackDatePickerColors.Surface,
+        shape = RoundedCornerShape(18.dp)
     )
 }
 
@@ -615,21 +631,21 @@ private fun CalendarMonthGrid(
     val weeks = cells.chunked(7)
     val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             dayLabels.forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
+                    color = UniStackDatePickerColors.Muted,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
         weeks.forEach { week ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 (0 until 7).forEach { index ->
                     val date = week.getOrNull(index)
                     val enabled = date != null && !date.isBefore(minDate) && !date.isAfter(maxDate)
@@ -637,29 +653,29 @@ private fun CalendarMonthGrid(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .heightIn(min = 38.dp)
+                            .heightIn(min = 34.dp)
                             .then(
                                 if (enabled) Modifier.bounceClick { onDateSelected(date!!) } else Modifier
                             )
                             .background(
                                 color = when {
-                                    selected -> MaterialTheme.colorScheme.primary
-                                    enabled -> MaterialTheme.colorScheme.surfaceVariant
+                                    selected -> UniStackDatePickerColors.Accent
+                                    enabled -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
-                                shape = AppShapes.Pill
+                                shape = RoundedCornerShape(10.dp)
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
                             color = when {
-                                selected -> MaterialTheme.colorScheme.onPrimary
-                                enabled -> MaterialTheme.colorScheme.onSurface
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                                selected -> Color.White
+                                enabled -> UniStackDatePickerColors.Text
+                                else -> UniStackDatePickerColors.Muted.copy(alpha = 0.35f)
                             },
-                            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                            fontSize = 12.sp
                         )
                     }
                 }
@@ -726,7 +742,7 @@ private fun SubjectDropdown(
                     Text(
                         "Crear nueva materia",
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.Medium
                     )
                 },
                 onClick = {
@@ -751,7 +767,7 @@ private fun DropdownOptionText(
             text = text,
             modifier = Modifier.weight(1f),
             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
         )
         if (selected) {
             Icon(
@@ -823,7 +839,7 @@ private fun TaskChoiceChip(
         Text(
             text = text,
             color = textColor,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.Medium,
             maxLines = 1
         )
     }
@@ -859,7 +875,7 @@ private fun PrioritySegmentedControl(
                 Text(
                     text = priority.label(),
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -896,7 +912,7 @@ private fun CreateTaskButton(
                 modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.size(10.dp))
-            Text(text, fontWeight = FontWeight.ExtraBold)
+            Text(text, fontWeight = FontWeight.Medium)
         }
     }
 }

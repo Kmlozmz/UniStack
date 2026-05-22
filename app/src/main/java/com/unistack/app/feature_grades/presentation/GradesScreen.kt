@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,60 +65,61 @@ fun GradesScreen(
     val generalAverage = averages.takeIf { it.isNotEmpty() }?.average()
     val evaluatedSubjects = subjects.count { it.grades.isNotEmpty() }
 
-    LazyColumn(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        item {
-            FeatureHeader(
-                title = "Materias",
-                subtitle = "Administra tus materias, notas y porcentajes."
-            )
-        }
-        item {
-            SubjectsStatsRow(
-                subjectCount = subjects.size,
-                generalAverage = generalAverage,
-                evaluatedSubjects = evaluatedSubjects,
-                gradingScale = scale
-            )
-        }
-        item {
-            Text(
-                text = "Tus materias",
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
-        if (subjects.isEmpty()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 22.dp, top = 24.dp, end = 22.dp, bottom = 118.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             item {
-                EmptyGradesCard()
-            }
-        } else {
-            items(subjects, key = { it.id }) { subject ->
-                SubjectListCard(
-                    subject = subject,
-                    average = viewModel.currentAverage(subject),
-                    evaluatedPercentage = viewModel.evaluatedPercentage(subject),
-                    gradingScale = scale,
-                    onClick = { onSubjectClick(subject.id) }
+                FeatureHeader(
+                    title = "Materias",
+                    subtitle = "Administra tus materias, notas y porcentajes."
                 )
             }
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                AddSubjectButton(
-                    onClick = onAddSubjectClick
+            item {
+                SubjectsStatsRow(
+                    subjectCount = subjects.size,
+                    generalAverage = generalAverage,
+                    evaluatedSubjects = evaluatedSubjects,
+                    gradingScale = scale
                 )
             }
+            item {
+                Text(
+                    text = "Tus materias",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            if (subjects.isEmpty()) {
+                item {
+                    EmptyGradesCard()
+                }
+            } else {
+                items(subjects, key = { it.id }) { subject ->
+                    SubjectListCard(
+                        subject = subject,
+                        average = viewModel.currentAverage(subject),
+                        evaluatedPercentage = viewModel.evaluatedPercentage(subject),
+                        gradingScale = scale,
+                        onClick = { onSubjectClick(subject.id) }
+                    )
+                }
+            }
         }
+
+        AddSubjectButton(
+            onClick = onAddSubjectClick,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 20.dp)
+        )
     }
 }
 
@@ -131,19 +133,19 @@ private fun SubjectsStatsRow(
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         SubjectStatCard(
             value = subjectCount.toString(),
-            label = if (subjectCount == 1) "materia" else "materias",
+            label = if (subjectCount == 1) "Materia" else "Materias",
             icon = Icons.Rounded.Book,
             modifier = Modifier.weight(1f)
         )
         SubjectStatCard(
             value = generalAverage?.let { GradingScaleUtils.formatGrade(it, gradingScale) } ?: "--",
-            label = "promedio",
+            label = "Promedio",
             icon = Icons.Rounded.Grade,
             modifier = Modifier.weight(1f)
         )
         SubjectStatCard(
             value = evaluatedSubjects.toString(),
-            label = if (evaluatedSubjects == 1) "evaluada" else "evaluadas",
+            label = if (evaluatedSubjects == 1) "Evaluada" else "Evaluadas",
             icon = Icons.Rounded.BarChart,
             modifier = Modifier.weight(1f)
         )
@@ -190,7 +192,7 @@ private fun SubjectStatCard(
                 Text(
                     value,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 19.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -199,7 +201,7 @@ private fun SubjectStatCard(
                     label,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     softWrap = false,
                     overflow = TextOverflow.Clip
@@ -242,7 +244,7 @@ private fun SubjectListCard(
             Box(
                 modifier = Modifier
                     .width(4.dp)
-                    .height(80.dp)
+                    .fillMaxHeight()
                     .background(subjectColor)
             )
             Box(
@@ -266,7 +268,7 @@ private fun SubjectListCard(
             ) {
                 Text(
                     subject.name,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     maxLines = 1,
@@ -277,6 +279,7 @@ private fun SubjectListCard(
                     else "Promedio ${GradingScaleUtils.formatGrade(average, gradingScale)} · ${String.format(Locale.US, "%.0f", evaluatedPercentage)}% evaluado",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -332,7 +335,7 @@ private fun SubjectProgressMetric(progressVisual: SubjectProgressVisual) {
     Text(
         text = progressVisual.text,
         color = progressVisual.color,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 13.sp,
         maxLines = 1,
         softWrap = false
@@ -351,7 +354,7 @@ private fun EmptyGradesCard() {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text("Aún no tienes materias.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text("Aún no tienes materias.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
             Text("Crea tu primera materia para empezar a calcular tu promedio.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -364,7 +367,7 @@ private fun FeatureHeader(title: String, subtitle: String) {
             text = title,
             color = MaterialTheme.colorScheme.onBackground,
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.Bold
         )
         Text(
             text = subtitle,
@@ -388,11 +391,9 @@ private fun AddSubjectButton(
             Icon(Icons.Rounded.Add, contentDescription = null)
         },
         text = {
-            Text("Agregar materia", fontWeight = FontWeight.ExtraBold)
+            Text("Agregar materia", fontWeight = FontWeight.SemiBold)
         },
-        modifier = modifier
-            .width(214.dp)
-            .height(56.dp)
+        modifier = modifier.height(56.dp)
     )
 }
 
