@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,12 +48,18 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -108,6 +116,9 @@ fun HomeScreen(
 ) {
     val summary = uiState.summary
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
+    var quickModuleKeys by rememberSaveable {
+        mutableStateOf(QuickModuleType.entries.map { it.key })
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -125,7 +136,7 @@ fun HomeScreen(
             contentPadding = PaddingValues(
                 start = sidePadding,
                 end = sidePadding,
-                top = if (isCompact) 6.dp else 8.dp,
+                top = if (isCompact) 16.dp else 18.dp,
                 bottom = 126.dp
             ),
             verticalArrangement = Arrangement.spacedBy(sectionSpacing)
@@ -161,12 +172,14 @@ fun HomeScreen(
                     overdueTasks = summary.overdueTasks,
                     weeklyExpenseTotal = summary.weeklyExpenseTotal,
                     notesCount = summary.openAcademicWorks,
-                    fourColumns = maxWidth >= 360.dp,
                     compact = isCompact,
                     onSubjectsClick = onSeeAllSubjectsClick,
                     onTasksClick = onSeeTasksClick,
                     onExpensesClick = onSeeExpensesClick,
-                    onNotesClick = onOpenTemplatesClick
+                    onNotesClick = onOpenTemplatesClick,
+                    enabledModules = summary.enabledModules,
+                    selectedModuleKeys = quickModuleKeys,
+                    onSelectedModuleKeysChange = { quickModuleKeys = it }
                 )
             }
             item {
@@ -586,14 +599,17 @@ private fun QuickModules(
     overdueTasks: Int,
     weeklyExpenseTotal: Int,
     notesCount: Int,
-    fourColumns: Boolean,
     compact: Boolean,
     onSubjectsClick: () -> Unit,
     onTasksClick: () -> Unit,
     onExpensesClick: () -> Unit,
     onNotesClick: () -> Unit,
+    enabledModules: Set<AppModule>,
+    selectedModuleKeys: List<String>,
+    onSelectedModuleKeysChange: (List<String>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showCustomizeDialog by rememberSaveable { mutableStateOf(false) }
     val subjectsSubtitle = when (subjectsCount) {
         0 -> "Crear primera"
         1 -> "1 activa"
@@ -606,31 +622,129 @@ private fun QuickModules(
     }
     val expensesSubtitle = if (weeklyExpenseTotal > 0) "$${weeklyExpenseTotal / 1000} semana" else "Sin gastos"
     val notesSubtitle = if (notesCount > 0) "$notesCount activo${if (notesCount == 1) "" else "s"}" else "Sin apuntes"
+    val availableTypes = remember(enabledModules) {
+        QuickModuleType.entries.filter { type -> type.appModule == null || type.appModule in enabledModules }
+    }
+    val visibleTypes = remember(availableTypes, selectedModuleKeys) {
+        availableTypes.filter { it.key in selectedModuleKeys }.ifEmpty { availableTypes.take(1) }
+    }
+    val cards = visibleTypes.map { type ->
+        when (type) {
+            QuickModuleType.SUBJECTS -> QuickModuleCardData("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick)
+            QuickModuleType.TASKS -> QuickModuleCardData("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick)
+            QuickModuleType.EXPENSES -> QuickModuleCardData("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick)
+            QuickModuleType.NOTES -> QuickModuleCardData("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick)
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Módulos rápidos", color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
-            Text("Personaliza tu día", color = HomePurple, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Personaliza tu día",
+                color = HomePurple,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.cleanClickable { showCustomizeDialog = true }
+            )
         }
-        if (fourColumns) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = true)
+        if (cards.size > 3) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                items(cards, key = { it.title }) { card ->
+                    QuickModuleCard(
+                        title = card.title,
+                        subtitle = card.subtitle,
+                        icon = card.icon,
+                        accent = card.accent,
+                        onClick = card.onClick,
+                        modifier = Modifier.width(if (compact) 112.dp else 124.dp),
+                        compact = true
+                    )
+                }
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = compact)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = compact)
+            Row(horizontalArrangement = Arrangement.spacedBy(if (cards.size == 1) 0.dp else 12.dp), modifier = Modifier.fillMaxWidth()) {
+                cards.forEach { card ->
+                    QuickModuleCard(
+                        title = card.title,
+                        subtitle = card.subtitle,
+                        icon = card.icon,
+                        accent = card.accent,
+                        onClick = card.onClick,
+                        modifier = Modifier.weight(1f),
+                        compact = compact
+                    )
+                }
             }
         }
     }
+
+    if (showCustomizeDialog) {
+        QuickModulesDialog(
+            availableTypes = availableTypes,
+            selectedKeys = selectedModuleKeys,
+            onDismiss = { showCustomizeDialog = false },
+            onToggle = { type ->
+                val selectedAvailable = availableTypes.filter { it.key in selectedModuleKeys }
+                val next = if (type.key in selectedModuleKeys) {
+                    if (selectedAvailable.size <= 1) selectedModuleKeys else selectedModuleKeys - type.key
+                } else {
+                    (selectedModuleKeys + type.key).distinct()
+                }
+                onSelectedModuleKeysChange(next)
+            }
+        )
+    }
+}
+
+@Composable
+private fun QuickModulesDialog(
+    availableTypes: List<QuickModuleType>,
+    selectedKeys: List<String>,
+    onDismiss: () -> Unit,
+    onToggle: (QuickModuleType) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Personaliza tu día", color = HomeText, fontWeight = FontWeight.SemiBold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Elige qué accesos quieres ver en módulos rápidos.",
+                    color = HomeMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+                availableTypes.forEach { type ->
+                    val checked = type.key in selectedKeys
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .cleanClickable { onToggle(type) }
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = checked, onCheckedChange = { onToggle(type) })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(type.title, color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text(type.description, color = HomeMuted, fontSize = 11.sp, lineHeight = 14.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Listo", color = HomePurple, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        containerColor = HomeCard,
+        titleContentColor = HomeText,
+        textContentColor = HomeMuted
+    )
 }
 
 @Composable
@@ -697,6 +811,26 @@ private fun QuickModuleCard(
             }
         }
     }
+}
+
+private data class QuickModuleCardData(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val accent: Color,
+    val onClick: () -> Unit
+)
+
+private enum class QuickModuleType(
+    val key: String,
+    val title: String,
+    val description: String,
+    val appModule: AppModule?
+) {
+    SUBJECTS("subjects", "Materias", "Promedios, notas y metas.", AppModule.GRADES),
+    TASKS("tasks", "Tareas", "Pendientes y entregas cercanas.", AppModule.TASKS),
+    EXPENSES("expenses", "Gastos", "Resumen de tu semana.", AppModule.EXPENSES),
+    NOTES("notes", "Notas", "Trabajos y apuntes académicos.", AppModule.ACADEMIC_TEMPLATES)
 }
 
 @Composable
