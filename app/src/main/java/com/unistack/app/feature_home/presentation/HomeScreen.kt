@@ -48,8 +48,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -296,6 +299,7 @@ private fun PriorityHero(
     val isDarkTheme = UniStackColors.IsDarkTheme
     val heroStar = HomeHeroStar
     val heroStarSoft = HomeHeroStarSoft
+    val heroAssetShadow = HomeHeroAssetShadow
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -371,9 +375,9 @@ private fun PriorityHero(
                     brush = Brush.horizontalGradient(
                         colors = if (isDarkTheme) {
                             listOf(
-                                HomeShadow.copy(alpha = 0.22f),
+                                HomeShadow.copy(alpha = 0.30f),
                                 Color.Transparent,
-                                HomeShadow.copy(alpha = 0.24f)
+                                HomeShadow.copy(alpha = 0.18f)
                             )
                         } else {
                             listOf(
@@ -384,29 +388,45 @@ private fun PriorityHero(
                         }
                     )
                 )
-                drawLine(
-                    color = heroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
-                    start = Offset(size.width * 0.55f, size.height * 0.34f),
-                    end = Offset(size.width * 0.55f, size.height * 0.40f),
-                    strokeWidth = 1.2.dp.toPx()
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            HomeShadow.copy(alpha = if (isDarkTheme) 0.08f else 0.02f),
+                            Color.Transparent,
+                            HomeShadow.copy(alpha = if (isDarkTheme) 0.22f else 0.04f)
+                        )
+                    )
                 )
-                drawLine(
-                    color = heroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
-                    start = Offset(size.width * 0.535f, size.height * 0.37f),
-                    end = Offset(size.width * 0.565f, size.height * 0.37f),
-                    strokeWidth = 1.2.dp.toPx()
+                drawOval(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            heroAssetShadow.copy(alpha = if (isDarkTheme) 0.46f else 0.22f),
+                            HomeHeroVioletDepth.copy(alpha = if (isDarkTheme) 0.16f else 0.06f),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.80f, size.height * 0.77f),
+                        radius = size.width * 0.24f
+                    ),
+                    topLeft = Offset(size.width * 0.64f, size.height * 0.68f),
+                    size = Size(size.width * 0.32f, size.height * 0.18f)
                 )
-                drawLine(
-                    color = heroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
-                    start = Offset(size.width * 0.88f, size.height * 0.23f),
-                    end = Offset(size.width * 0.88f, size.height * 0.31f),
-                    strokeWidth = 1.2.dp.toPx()
+                drawSoftSparkle(
+                    center = Offset(size.width * 0.55f, size.height * 0.37f),
+                    radius = size.minDimension * 0.022f,
+                    color = heroStar,
+                    alpha = if (isDarkTheme) 0.54f else 0.40f
                 )
-                drawLine(
-                    color = heroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
-                    start = Offset(size.width * 0.86f, size.height * 0.27f),
-                    end = Offset(size.width * 0.90f, size.height * 0.27f),
-                    strokeWidth = 1.2.dp.toPx()
+                drawSoftSparkle(
+                    center = Offset(size.width * 0.88f, size.height * 0.27f),
+                    radius = size.minDimension * 0.030f,
+                    color = heroStarSoft,
+                    alpha = if (isDarkTheme) 0.48f else 0.34f
+                )
+                drawSoftSparkle(
+                    center = Offset(size.width * 0.68f, size.height * 0.24f),
+                    radius = size.minDimension * 0.014f,
+                    color = heroStar,
+                    alpha = if (isDarkTheme) 0.38f else 0.26f
                 )
             }
 
@@ -422,7 +442,7 @@ private fun PriorityHero(
                     verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Rounded.Star, contentDescription = null, tint = HomeHeroStar, modifier = Modifier.size(13.dp))
+                        PremiumSparkle(tint = HomeHeroStar, modifier = Modifier.size(13.dp))
                         Text(
                             text = "PRIORIDAD DE HOY",
                             color = HomeHeroLabel,
@@ -436,7 +456,7 @@ private fun PriorityHero(
                         text = title,
                         color = HomeHeroTitle,
                         fontSize = if (compact) 20.sp else 22.sp,
-                        lineHeight = if (compact) 25.sp else 27.sp,
+                        lineHeight = if (compact) 26.sp else 28.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.sp,
                         maxLines = 2,
@@ -761,6 +781,80 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier = composed {
     )
 }
 
+@Composable
+private fun PremiumSparkle(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        drawSoftSparkle(
+            center = Offset(size.width * 0.5f, size.height * 0.5f),
+            radius = size.minDimension * 0.42f,
+            color = tint,
+            alpha = 0.92f
+        )
+    }
+}
+
+private fun DrawScope.drawSoftSparkle(
+    center: Offset,
+    radius: Float,
+    color: Color,
+    alpha: Float
+) {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                color.copy(alpha = alpha * 0.22f),
+                Color.Transparent
+            ),
+            center = center,
+            radius = radius * 2.25f
+        ),
+        radius = radius * 2.25f,
+        center = center
+    )
+
+    val sparkle = Path().apply {
+        moveTo(center.x, center.y - radius)
+        cubicTo(
+            center.x + radius * 0.14f,
+            center.y - radius * 0.28f,
+            center.x + radius * 0.28f,
+            center.y - radius * 0.14f,
+            center.x + radius,
+            center.y
+        )
+        cubicTo(
+            center.x + radius * 0.28f,
+            center.y + radius * 0.14f,
+            center.x + radius * 0.14f,
+            center.y + radius * 0.28f,
+            center.x,
+            center.y + radius
+        )
+        cubicTo(
+            center.x - radius * 0.14f,
+            center.y + radius * 0.28f,
+            center.x - radius * 0.28f,
+            center.y + radius * 0.14f,
+            center.x - radius,
+            center.y
+        )
+        cubicTo(
+            center.x - radius * 0.28f,
+            center.y - radius * 0.14f,
+            center.x - radius * 0.14f,
+            center.y - radius * 0.28f,
+            center.x,
+            center.y - radius
+        )
+        close()
+    }
+    drawPath(sparkle, color.copy(alpha = alpha))
+    drawCircle(color = Color.White.copy(alpha = alpha * 0.18f), radius = radius * 0.16f, center = center)
+}
+
 private val HomeBackgroundBrush: Brush
     @Composable get() = if (UniStackColors.IsDarkTheme) {
         Brush.verticalGradient(listOf(HomeBgTop, HomeBgMid, HomeBgBottom))
@@ -831,10 +925,12 @@ private val HomeHeroStarSoft: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFC4B5FD) else Color(0xFF9B6CFF)
 private val HomeHeroStroke: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Color(0xFFA78BFA).copy(alpha = 0.18f)
+        Color(0xFFA78BFA).copy(alpha = 0.13f)
     } else {
-        Color(0xFFBDA8FF).copy(alpha = 0.72f)
+        Color(0xFFBDA8FF).copy(alpha = 0.54f)
     }
+private val HomeHeroAssetShadow: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF090018) else Color(0xFF7655D8)
 private val HomeHeroButtonStart = Color(0xFF581DD6)
 private val HomeHeroButtonEnd = Color(0xFF8A5FFF)
 private val HomeAccentPurple = Color(0xFF8F35FF)
