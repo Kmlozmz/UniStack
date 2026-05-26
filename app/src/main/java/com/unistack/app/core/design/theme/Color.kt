@@ -32,28 +32,28 @@ object UniStackColors {
     )
 
     private val darkPalette = UniStackColorPalette(
-        primary = Color(0xFF7658E8),
-        primaryDark = Color(0xFFE9DDFF),
-        primaryLight = Color(0xFF2E2550),
-        blue = Color(0xFF5D96EA),
-        blueLight = Color(0xFF172B45),
-        teal = Color(0xFF45C8C0),
-        tealLight = Color(0xFF123634),
+        primary = Color(0xFF8F35FF),
+        primaryDark = Color(0xFFF1E7FF),
+        primaryLight = Color(0xFF24105C),
+        blue = Color(0xFF8F35FF),
+        blueLight = Color(0xFF1D1048),
+        teal = Color(0xFF00E0B8),
+        tealLight = Color(0xFF063D35),
         green = Color(0xFF74C981),
         greenLight = Color(0xFF193420),
-        coral = Color(0xFFF07A6F),
-        coralLight = Color(0xFF3E211F),
-        yellow = Color(0xFFE0B642),
-        yellowLight = Color(0xFF382B0C),
-        background = Color(0xFF080B13),
-        card = Color(0xFF10131B),
-        surfaceVariant = Color(0xFF121620),
-        textPrimary = Color(0xFFF7F3FF),
-        textSecondary = Color(0xFFD0C7DC),
-        softOutline = Color(0xFF4A435A),
-        gradientEnd = Color(0xFF080B13),
-        bottomBar = Color(0xFF080B13),
-        bottomBarSelected = Color(0xFF312755)
+        coral = Color(0xFFFF3348),
+        coralLight = Color(0xFF421522),
+        yellow = Color(0xFFFFB800),
+        yellowLight = Color(0xFF4A3308),
+        background = Color(0xFF01040B),
+        card = Color(0xFF080D17),
+        surfaceVariant = Color(0xFF0B111D),
+        textPrimary = Color(0xFFF8F4FF),
+        textSecondary = Color(0xFFD3D0E0),
+        softOutline = Color(0xFF1A2230),
+        gradientEnd = Color(0xFF000309),
+        bottomBar = Color(0xFF050913),
+        bottomBarSelected = Color(0xFF24105C)
     )
 
     private var appliedDarkTheme = false

@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -518,19 +521,31 @@ private fun UniStackBottomBarContent(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val barColor = UniStackColors.BottomBar
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
-    val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+    val barColor = if (UniStackColors.IsDarkTheme) {
+        androidx.compose.ui.graphics.Color(0xFF050913)
+    } else {
+        UniStackColors.BottomBar
+    }
+    val inactiveColor = if (UniStackColors.IsDarkTheme) {
+        androidx.compose.ui.graphics.Color(0xFFA7ADBE)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
+    }
+    val borderColor = if (UniStackColors.IsDarkTheme) {
+        androidx.compose.ui.graphics.Color(0xFF1A2230)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+    }
     val density = LocalDensity.current
     val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(82.dp + navigationBarBottom),
+            .height(78.dp + navigationBarBottom),
         shape = RoundedCornerShape(
-            topStart = 28.dp,
-            topEnd = 28.dp,
+            topStart = 24.dp,
+            topEnd = 24.dp,
             bottomStart = 0.dp,
             bottomEnd = 0.dp
         ),
@@ -547,9 +562,9 @@ private fun UniStackBottomBarContent(
                 .fillMaxSize()
                 .padding(
                     start = 12.dp,
-                    top = 8.dp,
+                    top = 7.dp,
                     end = 12.dp,
-                    bottom = 8.dp + navigationBarBottom
+                    bottom = 7.dp + navigationBarBottom
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -605,10 +620,24 @@ private fun UniStackBottomBarItem(
                 indication = null,
                 onClick = onClick
             )
-            .padding(top = 7.dp, bottom = 3.dp),
+            .padding(top = 5.dp, bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Box(
+            modifier = Modifier
+                .height(30.dp)
+                .width(42.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f)
+                    } else {
+                        androidx.compose.ui.graphics.Color.Transparent
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
         Icon(
             imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
             contentDescription = item.label,
@@ -620,6 +649,7 @@ private fun UniStackBottomBarItem(
                     scaleY = iconScale
                 }
         )
+        }
         Text(
             text = item.label,
             color = contentColor,
@@ -628,12 +658,12 @@ private fun UniStackBottomBarItem(
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             softWrap = false,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 3.dp)
         )
         Box(
             modifier = Modifier
-                .padding(top = 5.dp)
-                .size(width = 18.dp, height = 3.dp)
+                .padding(top = 4.dp)
+                .size(width = 16.dp, height = 3.dp)
                 .graphicsLayer { alpha = indicatorAlpha },
             contentAlignment = Alignment.Center
         ) {
