@@ -1,5 +1,11 @@
 package com.unistack.app.feature_home.presentation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -42,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -300,6 +307,61 @@ private fun PriorityHero(
     val heroStar = HomeHeroStar
     val heroStarSoft = HomeHeroStarSoft
     val heroAssetShadow = HomeHeroAssetShadow
+    val sparkleMotion = rememberInfiniteTransition(label = "heroSparkleMotion")
+    val sparkleOneFloat by sparkleMotion.animateFloat(
+        initialValue = 2f,
+        targetValue = -3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleOneFloat"
+    )
+    val sparkleTwoFloat by sparkleMotion.animateFloat(
+        initialValue = -1f,
+        targetValue = 4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleTwoFloat"
+    )
+    val sparkleThreeFloat by sparkleMotion.animateFloat(
+        initialValue = 1f,
+        targetValue = -2.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleThreeFloat"
+    )
+    val sparkleOneAlpha by sparkleMotion.animateFloat(
+        initialValue = 0.78f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleOneAlpha"
+    )
+    val sparkleTwoAlpha by sparkleMotion.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.72f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 6100, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleTwoAlpha"
+    )
+    val sparkleThreeAlpha by sparkleMotion.animateFloat(
+        initialValue = 0.70f,
+        targetValue = 0.94f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heroSparkleThreeAlpha"
+    )
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -411,22 +473,22 @@ private fun PriorityHero(
                     size = Size(size.width * 0.32f, size.height * 0.18f)
                 )
                 drawSoftSparkle(
-                    center = Offset(size.width * 0.55f, size.height * 0.37f),
+                    center = Offset(size.width * 0.55f, size.height * 0.37f + sparkleOneFloat.dp.toPx()),
                     radius = size.minDimension * 0.022f,
                     color = heroStar,
-                    alpha = if (isDarkTheme) 0.54f else 0.40f
+                    alpha = (if (isDarkTheme) 0.54f else 0.40f) * sparkleOneAlpha
                 )
                 drawSoftSparkle(
-                    center = Offset(size.width * 0.88f, size.height * 0.27f),
+                    center = Offset(size.width * 0.88f, size.height * 0.27f + sparkleTwoFloat.dp.toPx()),
                     radius = size.minDimension * 0.030f,
                     color = heroStarSoft,
-                    alpha = if (isDarkTheme) 0.48f else 0.34f
+                    alpha = (if (isDarkTheme) 0.48f else 0.34f) * sparkleTwoAlpha
                 )
                 drawSoftSparkle(
-                    center = Offset(size.width * 0.68f, size.height * 0.24f),
+                    center = Offset(size.width * 0.68f, size.height * 0.24f + sparkleThreeFloat.dp.toPx()),
                     radius = size.minDimension * 0.014f,
                     color = heroStar,
-                    alpha = if (isDarkTheme) 0.38f else 0.26f
+                    alpha = (if (isDarkTheme) 0.38f else 0.26f) * sparkleThreeAlpha
                 )
             }
 
