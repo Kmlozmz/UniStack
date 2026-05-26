@@ -136,7 +136,7 @@ fun HomeScreen(
             contentPadding = PaddingValues(
                 start = sidePadding,
                 end = sidePadding,
-                top = if (isCompact) 16.dp else 18.dp,
+                top = if (isCompact) 6.dp else 8.dp,
                 bottom = 126.dp
             ),
             verticalArrangement = Arrangement.spacedBy(sectionSpacing)
