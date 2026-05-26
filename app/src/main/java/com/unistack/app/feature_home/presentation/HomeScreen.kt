@@ -294,6 +294,8 @@ private fun PriorityHero(
     val heroHeight = if (compact) 174.dp else 190.dp
     val heroPadding = if (compact) 16.dp else 18.dp
     val isDarkTheme = UniStackColors.IsDarkTheme
+    val heroStar = HomeHeroStar
+    val heroStarSoft = HomeHeroStarSoft
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -311,65 +313,97 @@ private fun PriorityHero(
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(
-                            HomeHeroLightViolet.copy(alpha = if (isDarkTheme) 0.24f else 0.18f),
-                            HomeHeroVioletWash.copy(alpha = if (isDarkTheme) 0.20f else 0.15f),
-                            HomeHeroVioletDepth.copy(alpha = if (isDarkTheme) 0.08f else 0.06f),
-                            Color.Transparent
-                        ),
+                        colors = if (isDarkTheme) {
+                            listOf(
+                                HomeHeroLightViolet.copy(alpha = 0.24f),
+                                HomeHeroVioletWash.copy(alpha = 0.20f),
+                                HomeHeroVioletDepth.copy(alpha = 0.08f),
+                                Color.Transparent
+                            )
+                        } else {
+                            listOf(
+                                HomeHeroLightModeGlow.copy(alpha = 0.70f),
+                                HomeHeroLightModeAccent.copy(alpha = 0.34f),
+                                Color.Transparent
+                            )
+                        },
                         center = Offset(size.width * 0.79f, size.height * 0.52f),
-                        radius = size.width * if (isDarkTheme) 0.42f else 0.38f
+                        radius = size.width * if (isDarkTheme) 0.42f else 0.52f
                     )
                 )
                 drawRect(
                     brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            HomeHeroTransition.copy(alpha = if (isDarkTheme) 0.10f else 0.08f),
-                            HomeHeroVioletDepth.copy(alpha = if (isDarkTheme) 0.18f else 0.14f)
-                        ),
+                        colors = if (isDarkTheme) {
+                            listOf(
+                                Color.Transparent,
+                                HomeHeroTransition.copy(alpha = 0.10f),
+                                HomeHeroVioletDepth.copy(alpha = 0.18f)
+                            )
+                        } else {
+                            listOf(
+                                Color.Transparent,
+                                HomeHeroLightModeAccent.copy(alpha = 0.24f),
+                                HomeHeroLightModeDepth.copy(alpha = 0.18f)
+                            )
+                        },
                         start = Offset(size.width * 0.36f, size.height * 0.16f),
                         end = Offset(size.width * 1.04f, size.height * 0.88f)
                     )
                 )
                 drawRect(
                     brush = Brush.verticalGradient(
-                        colors = listOf(
-                            HomeHeroLight.copy(alpha = 0.020f),
-                            Color.Transparent,
-                            HomeShadow.copy(alpha = if (isDarkTheme) 0.24f else 0.16f)
-                        )
+                        colors = if (isDarkTheme) {
+                            listOf(
+                                HomeHeroLight.copy(alpha = 0.020f),
+                                Color.Transparent,
+                                HomeShadow.copy(alpha = 0.24f)
+                            )
+                        } else {
+                            listOf(
+                                Color.White.copy(alpha = 0.64f),
+                                Color.Transparent,
+                                HomeHeroLightModeDepth.copy(alpha = 0.12f)
+                            )
+                        }
                     )
                 )
                 drawRect(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            HomeShadow.copy(alpha = if (isDarkTheme) 0.22f else 0.14f),
-                            Color.Transparent,
-                            HomeShadow.copy(alpha = if (isDarkTheme) 0.24f else 0.18f)
-                        )
+                        colors = if (isDarkTheme) {
+                            listOf(
+                                HomeShadow.copy(alpha = 0.22f),
+                                Color.Transparent,
+                                HomeShadow.copy(alpha = 0.24f)
+                            )
+                        } else {
+                            listOf(
+                                HomeHeroLightModeDepth.copy(alpha = 0.08f),
+                                Color.Transparent,
+                                HomeHeroLightModeAccent.copy(alpha = 0.12f)
+                            )
+                        }
                     )
                 )
                 drawLine(
-                    color = HomeHeroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
+                    color = heroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
                     start = Offset(size.width * 0.55f, size.height * 0.34f),
                     end = Offset(size.width * 0.55f, size.height * 0.40f),
                     strokeWidth = 1.2.dp.toPx()
                 )
                 drawLine(
-                    color = HomeHeroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
+                    color = heroStar.copy(alpha = if (isDarkTheme) 0.52f else 0.40f),
                     start = Offset(size.width * 0.535f, size.height * 0.37f),
                     end = Offset(size.width * 0.565f, size.height * 0.37f),
                     strokeWidth = 1.2.dp.toPx()
                 )
                 drawLine(
-                    color = HomeHeroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
+                    color = heroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
                     start = Offset(size.width * 0.88f, size.height * 0.23f),
                     end = Offset(size.width * 0.88f, size.height * 0.31f),
                     strokeWidth = 1.2.dp.toPx()
                 )
                 drawLine(
-                    color = HomeHeroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
+                    color = heroStarSoft.copy(alpha = if (isDarkTheme) 0.42f else 0.34f),
                     start = Offset(size.width * 0.86f, size.height * 0.27f),
                     end = Offset(size.width * 0.90f, size.height * 0.27f),
                     strokeWidth = 1.2.dp.toPx()
@@ -785,16 +819,21 @@ private val HomeHeroTransition = Color(0xFF1A0A48)
 private val HomeHeroVioletDepth = Color(0xFF2A0E72)
 private val HomeHeroVioletWash = Color(0xFF6D28FF)
 private val HomeHeroLightViolet = Color(0xFF8A5FFF)
-private val HomeHeroTitle = Color(0xFFF4F3FF)
-private val HomeHeroSecondary = Color(0xFFB8BDD0)
-private val HomeHeroLabel = Color(0xFFA78BFA)
-private val HomeHeroStar = Color(0xFFA78BFA)
-private val HomeHeroStarSoft = Color(0xFFC4B5FD)
+private val HomeHeroTitle: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFF4F3FF) else Color(0xFF1C1530)
+private val HomeHeroSecondary: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFB8BDD0) else Color(0xFF5F5B73)
+private val HomeHeroLabel: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA78BFA) else Color(0xFF7C3AED)
+private val HomeHeroStar: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA78BFA) else Color(0xFF7C3AED)
+private val HomeHeroStarSoft: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFC4B5FD) else Color(0xFF9B6CFF)
 private val HomeHeroStroke: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
         Color(0xFFA78BFA).copy(alpha = 0.18f)
     } else {
-        Color(0xFF5F35D8).copy(alpha = 0.28f)
+        Color(0xFFBDA8FF).copy(alpha = 0.72f)
     }
 private val HomeHeroButtonStart = Color(0xFF581DD6)
 private val HomeHeroButtonEnd = Color(0xFF8A5FFF)
@@ -810,10 +849,13 @@ private val HomeTextMuted = Color(0xFFA7ADBE)
 private val HomeStroke = Color(0xFF1A2230)
 private val HomeHeroLight = Color(0xFFFFFFFF)
 private val HomeShadow = Color(0xFF000000)
-private val HomeHeroLightModeStart = Color(0xFF100729)
-private val HomeHeroLightModeMid = Color(0xFF16073A)
-private val HomeHeroLightModeTransition = Color(0xFF211052)
-private val HomeHeroLightModeEnd = Color(0xFF0C0623)
+private val HomeHeroLightModeStart = Color(0xFFFFFEFF)
+private val HomeHeroLightModeMid = Color(0xFFF6F0FF)
+private val HomeHeroLightModeTransition = Color(0xFFEDE3FF)
+private val HomeHeroLightModeEnd = Color(0xFFF8F4FF)
+private val HomeHeroLightModeGlow = Color(0xFFD9C7FF)
+private val HomeHeroLightModeAccent = Color(0xFFB892FF)
+private val HomeHeroLightModeDepth = Color(0xFF8E6AE8)
 private val HomeCompanionHeart = Color(0xFFC08CFF)
 
 @Preview(name = "Home Android modern", widthDp = 412, heightDp = 892, showBackground = true)
