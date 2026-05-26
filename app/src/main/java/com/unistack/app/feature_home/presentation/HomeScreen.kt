@@ -2,6 +2,7 @@ package com.unistack.app.feature_home.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,22 +49,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -304,7 +301,7 @@ private fun PriorityHero(
             .height(heroHeight),
         shape = RoundedCornerShape(19.dp),
         color = Color.Transparent,
-        border = BorderStroke(1.dp, HomePurple.copy(alpha = 0.42f)),
+        border = BorderStroke(1.dp, HomePurple.copy(alpha = 0.36f)),
         shadowElevation = 0.dp
     ) {
         Box(
@@ -314,25 +311,34 @@ private fun PriorityHero(
                 .padding(heroPadding)
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    color = HomeHeroGlow.copy(alpha = 0.58f),
-                    radius = size.minDimension * 0.48f,
-                    center = Offset(size.width * 0.74f, size.height * 0.58f)
+                drawRect(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            HomeHeroVioletWash.copy(alpha = 0.32f),
+                            HomeHeroVioletDepth.copy(alpha = 0.12f)
+                        ),
+                        start = Offset(size.width * 0.40f, size.height * 0.18f),
+                        end = Offset(size.width, size.height * 0.82f)
+                    )
                 )
-                drawCircle(
-                    color = HomeHeroGlow.copy(alpha = 0.28f),
-                    radius = size.minDimension * 0.72f,
-                    center = Offset(size.width * 0.78f, size.height * 0.54f)
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            HomeHeroLight.copy(alpha = 0.035f),
+                            Color.Transparent,
+                            HomeShadow.copy(alpha = 0.18f)
+                        )
+                    )
                 )
-                drawCircle(
-                    color = HomeHeroGlow.copy(alpha = 0.12f),
-                    radius = size.minDimension * 0.98f,
-                    center = Offset(size.width * 0.84f, size.height * 0.42f)
-                )
-                drawCircle(
-                    color = HomeHeroLight.copy(alpha = 0.05f),
-                    radius = size.minDimension * 0.25f,
-                    center = Offset(size.width * 0.68f, size.height * 0.24f)
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            HomeShadow.copy(alpha = 0.12f),
+                            Color.Transparent,
+                            HomeShadow.copy(alpha = 0.16f)
+                        )
+                    )
                 )
             }
 
@@ -382,90 +388,18 @@ private fun PriorityHero(
                 }
             }
 
-            NotebookIllustration(
+            Image(
+                painter = painterResource(R.drawable.hero_notebook_pen),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(if (compact) 116.dp else 132.dp)
-                    .aspectRatio(0.86f)
-                    .graphicsLayer {
-                        rotationZ = -5f
-                        translationX = 6.dp.toPx()
-                    }
+                    .width(if (compact) 144.dp else 160.dp)
+                    .height(if (compact) 154.dp else 176.dp)
+                    .offset(x = if (compact) 20.dp else 24.dp)
             )
         }
     }
-}
-
-@Composable
-private fun NotebookIllustration(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val shadow = Path().apply {
-            moveTo(size.width * 0.22f, size.height * 0.83f)
-            quadraticBezierTo(size.width * 0.58f, size.height * 0.96f, size.width * 0.96f, size.height * 0.80f)
-            quadraticBezierTo(size.width * 0.62f, size.height * 0.72f, size.width * 0.22f, size.height * 0.83f)
-        }
-        drawPath(shadow, HomeShadow.copy(alpha = 0.25f))
-        drawNotebook()
-        drawPen()
-    }
-}
-
-private fun DrawScope.drawNotebook() {
-    drawRoundRect(
-        brush = Brush.linearGradient(listOf(HomeNotebookTop, HomeNotebookBottom)),
-        topLeft = Offset(size.width * 0.18f, size.height * 0.12f),
-        size = Size(size.width * 0.58f, size.height * 0.62f),
-        cornerRadius = CornerRadius(18.dp.toPx(), 18.dp.toPx())
-    )
-    drawRoundRect(
-        color = HomeShadow.copy(alpha = 0.18f),
-        topLeft = Offset(size.width * 0.68f, size.height * 0.16f),
-        size = Size(size.width * 0.11f, size.height * 0.58f),
-        cornerRadius = CornerRadius(12.dp.toPx(), 12.dp.toPx())
-    )
-    repeat(4) { index ->
-        val y = size.height * (0.22f + index * 0.12f)
-        drawRoundRect(
-            color = HomeNotebookBinding,
-            topLeft = Offset(size.width * 0.12f, y),
-            size = Size(size.width * 0.16f, size.height * 0.035f),
-            cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
-        )
-    }
-    drawRoundRect(
-        color = HomeHeroLight.copy(alpha = 0.20f),
-        topLeft = Offset(size.width * 0.44f, size.height * 0.30f),
-        size = Size(size.width * 0.25f, size.height * 0.14f),
-        cornerRadius = CornerRadius(7.dp.toPx(), 7.dp.toPx())
-    )
-    drawRoundRect(
-        color = HomeHeroLight.copy(alpha = 0.16f),
-        topLeft = Offset(size.width * 0.48f, size.height * 0.36f),
-        size = Size(size.width * 0.13f, size.height * 0.014f),
-        cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-    )
-}
-
-private fun DrawScope.drawPen() {
-    drawRoundRect(
-        brush = Brush.linearGradient(listOf(HomePenTop, HomePenBottom)),
-        topLeft = Offset(size.width * 0.67f, size.height * 0.45f),
-        size = Size(size.width * 0.16f, size.height * 0.36f),
-        cornerRadius = CornerRadius(9.dp.toPx(), 9.dp.toPx())
-    )
-    drawRoundRect(
-        color = HomeHeroLight.copy(alpha = 0.28f),
-        topLeft = Offset(size.width * 0.68f, size.height * 0.49f),
-        size = Size(size.width * 0.13f, size.height * 0.025f),
-        cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx())
-    )
-    val tip = Path().apply {
-        moveTo(size.width * 0.69f, size.height * 0.79f)
-        lineTo(size.width * 0.78f, size.height * 0.90f)
-        lineTo(size.width * 0.84f, size.height * 0.76f)
-        close()
-    }
-    drawPath(tip, HomePenTip)
 }
 
 @Composable
@@ -791,7 +725,8 @@ private val HomeCardDark = Color(0xFF080D17)
 private val HomeHeroStart = Color(0xFF070718)
 private val HomeHeroMid = Color(0xFF170A39)
 private val HomeHeroEnd = Color(0xFF2E0B74)
-private val HomeHeroGlow = Color(0xFF751CFF)
+private val HomeHeroVioletWash = Color(0xFF7E28FF)
+private val HomeHeroVioletDepth = Color(0xFF3C127D)
 private val HomeAccentPurple = Color(0xFF8F35FF)
 private val HomeAvatarPurpleTop = Color(0xFF9A42FF)
 private val HomeAvatarPurpleBottom = Color(0xFF6E22FF)
@@ -804,12 +739,6 @@ private val HomeTextMuted = Color(0xFFA7ADBE)
 private val HomeStroke = Color(0xFF1A2230)
 private val HomeHeroLight = Color(0xFFFFFFFF)
 private val HomeShadow = Color(0xFF000000)
-private val HomeNotebookTop = Color(0xFFB15CFF)
-private val HomeNotebookBottom = Color(0xFF6225F6)
-private val HomeNotebookBinding = Color(0xFF2B186B)
-private val HomePenTop = Color(0xFFBC6CFF)
-private val HomePenBottom = Color(0xFF5525D8)
-private val HomePenTip = Color(0xFFD7C6FF)
 private val HomeCompanionHeart = Color(0xFFC08CFF)
 
 @Preview(name = "Home Android modern", widthDp = 412, heightDp = 892, showBackground = true)
