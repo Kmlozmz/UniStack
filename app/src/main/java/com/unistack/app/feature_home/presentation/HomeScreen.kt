@@ -308,24 +308,34 @@ private fun PriorityHero(
             modifier = Modifier
                 .fillMaxSize()
                 .background(HeroBrush)
-                .padding(heroPadding)
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            HomeHeroVioletWash.copy(alpha = 0.36f),
+                            HomeHeroVioletDepth.copy(alpha = 0.18f),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.72f, size.height * 0.52f),
+                        radius = size.width * 0.64f
+                    )
+                )
                 drawRect(
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            HomeHeroVioletWash.copy(alpha = 0.32f),
-                            HomeHeroVioletDepth.copy(alpha = 0.12f)
+                            HomeHeroVioletWash.copy(alpha = 0.10f),
+                            HomeHeroVioletDepth.copy(alpha = 0.22f)
                         ),
-                        start = Offset(size.width * 0.40f, size.height * 0.18f),
-                        end = Offset(size.width, size.height * 0.82f)
+                        start = Offset(size.width * 0.28f, size.height * 0.12f),
+                        end = Offset(size.width * 1.08f, size.height * 0.92f)
                     )
                 )
                 drawRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            HomeHeroLight.copy(alpha = 0.035f),
+                            HomeHeroLight.copy(alpha = 0.028f),
                             Color.Transparent,
                             HomeShadow.copy(alpha = 0.18f)
                         )
@@ -342,62 +352,68 @@ private fun PriorityHero(
                 )
             }
 
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.56f)
-                    .align(Alignment.CenterStart),
-                verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
+                    .fillMaxSize()
+                    .padding(heroPadding)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Rounded.Star, contentDescription = null, tint = HomePurple, modifier = Modifier.size(13.dp))
-                    Text(
-                        text = "PRIORIDAD DE HOY",
-                        color = HomePurple,
-                        fontSize = 8.sp,
-                        lineHeight = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.sp
-                    )
-                }
-                Text(
-                    text = title,
-                    color = HomeText,
-                    fontSize = if (compact) 20.sp else 22.sp,
-                    lineHeight = if (compact) 25.sp else 27.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.sp,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "Tienes clase a las 10:00 AM.\nRevisa tus apuntes antes de entrar.",
-                    color = HomeSoftText,
-                    fontSize = if (compact) 10.sp else 11.sp,
-                    lineHeight = if (compact) 15.sp else 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
-                Button(
-                    onClick = onOpenClick,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = HomePurple),
-                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 0.dp),
-                    modifier = Modifier.height(if (compact) 32.dp else 34.dp)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.56f)
+                        .align(Alignment.CenterStart),
+                    verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
                 ) {
-                    Text("Abrir materia", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Rounded.Star, contentDescription = null, tint = HomePurple, modifier = Modifier.size(13.dp))
+                        Text(
+                            text = "PRIORIDAD DE HOY",
+                            color = HomePurple,
+                            fontSize = 8.sp,
+                            lineHeight = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.sp
+                        )
+                    }
+                    Text(
+                        text = title,
+                        color = HomeText,
+                        fontSize = if (compact) 20.sp else 22.sp,
+                        lineHeight = if (compact) 25.sp else 27.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.sp,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "Tienes clase a las 10:00 AM.\nRevisa tus apuntes antes de entrar.",
+                        color = HomeSoftText,
+                        fontSize = if (compact) 10.sp else 11.sp,
+                        lineHeight = if (compact) 15.sp else 16.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                    Button(
+                        onClick = onOpenClick,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = HomePurple),
+                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 0.dp),
+                        modifier = Modifier.height(if (compact) 32.dp else 34.dp)
+                    ) {
+                        Text("Abrir materia", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                    }
                 }
-            }
 
-            Image(
-                painter = painterResource(R.drawable.hero_notebook_pen),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .width(if (compact) 144.dp else 160.dp)
-                    .height(if (compact) 154.dp else 176.dp)
-                    .offset(x = if (compact) 20.dp else 24.dp)
-            )
+                Image(
+                    painter = painterResource(R.drawable.hero_notebook_pen),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .width(if (compact) 144.dp else 160.dp)
+                        .height(if (compact) 154.dp else 176.dp)
+                        .offset(x = if (compact) 20.dp else 24.dp)
+                )
+            }
         }
     }
 }
