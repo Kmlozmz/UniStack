@@ -38,8 +38,6 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -301,7 +299,7 @@ private fun PriorityHero(
             .height(heroHeight),
         shape = RoundedCornerShape(19.dp),
         color = Color.Transparent,
-        border = BorderStroke(1.dp, HomePurple.copy(alpha = 0.36f)),
+        border = BorderStroke(1.dp, HomeHeroStroke),
         shadowElevation = 0.dp
     ) {
         Box(
@@ -313,42 +311,67 @@ private fun PriorityHero(
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            HomeHeroVioletWash.copy(alpha = 0.36f),
-                            HomeHeroVioletDepth.copy(alpha = 0.18f),
+                            HomeHeroLightViolet.copy(alpha = 0.24f),
+                            HomeHeroVioletWash.copy(alpha = 0.20f),
+                            HomeHeroVioletDepth.copy(alpha = 0.08f),
                             Color.Transparent
                         ),
-                        center = Offset(size.width * 0.72f, size.height * 0.52f),
-                        radius = size.width * 0.64f
+                        center = Offset(size.width * 0.78f, size.height * 0.52f),
+                        radius = size.width * 0.42f
                     )
                 )
                 drawRect(
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            HomeHeroVioletWash.copy(alpha = 0.10f),
-                            HomeHeroVioletDepth.copy(alpha = 0.22f)
+                            HomeHeroTransition.copy(alpha = 0.10f),
+                            HomeHeroVioletDepth.copy(alpha = 0.18f)
                         ),
-                        start = Offset(size.width * 0.28f, size.height * 0.12f),
-                        end = Offset(size.width * 1.08f, size.height * 0.92f)
+                        start = Offset(size.width * 0.36f, size.height * 0.16f),
+                        end = Offset(size.width * 1.04f, size.height * 0.88f)
                     )
                 )
                 drawRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            HomeHeroLight.copy(alpha = 0.028f),
+                            HomeHeroLight.copy(alpha = 0.020f),
                             Color.Transparent,
-                            HomeShadow.copy(alpha = 0.18f)
+                            HomeShadow.copy(alpha = 0.24f)
                         )
                     )
                 )
                 drawRect(
                     brush = Brush.horizontalGradient(
                         colors = listOf(
-                            HomeShadow.copy(alpha = 0.12f),
+                            HomeShadow.copy(alpha = 0.22f),
                             Color.Transparent,
-                            HomeShadow.copy(alpha = 0.16f)
+                            HomeShadow.copy(alpha = 0.24f)
                         )
                     )
+                )
+                drawLine(
+                    color = HomeHeroStar.copy(alpha = 0.52f),
+                    start = Offset(size.width * 0.55f, size.height * 0.34f),
+                    end = Offset(size.width * 0.55f, size.height * 0.40f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+                drawLine(
+                    color = HomeHeroStar.copy(alpha = 0.52f),
+                    start = Offset(size.width * 0.535f, size.height * 0.37f),
+                    end = Offset(size.width * 0.565f, size.height * 0.37f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+                drawLine(
+                    color = HomeHeroStarSoft.copy(alpha = 0.42f),
+                    start = Offset(size.width * 0.88f, size.height * 0.23f),
+                    end = Offset(size.width * 0.88f, size.height * 0.31f),
+                    strokeWidth = 1.2.dp.toPx()
+                )
+                drawLine(
+                    color = HomeHeroStarSoft.copy(alpha = 0.42f),
+                    start = Offset(size.width * 0.86f, size.height * 0.27f),
+                    end = Offset(size.width * 0.90f, size.height * 0.27f),
+                    strokeWidth = 1.2.dp.toPx()
                 )
             }
 
@@ -364,42 +387,46 @@ private fun PriorityHero(
                     verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Rounded.Star, contentDescription = null, tint = HomePurple, modifier = Modifier.size(13.dp))
+                        Icon(Icons.Rounded.Star, contentDescription = null, tint = HomeHeroStar, modifier = Modifier.size(13.dp))
                         Text(
                             text = "PRIORIDAD DE HOY",
-                            color = HomePurple,
+                            color = HomeHeroLabel,
                             fontSize = 8.sp,
                             lineHeight = 11.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.sp
                         )
                     }
                     Text(
                         text = title,
-                        color = HomeText,
+                        color = HomeHeroTitle,
                         fontSize = if (compact) 20.sp else 22.sp,
                         lineHeight = if (compact) 25.sp else 27.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.sp,
-                        maxLines = 3,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "Tienes clase a las 10:00 AM.\nRevisa tus apuntes antes de entrar.",
-                        color = HomeSoftText,
+                        color = HomeHeroSecondary,
                         fontSize = if (compact) 10.sp else 11.sp,
                         lineHeight = if (compact) 15.sp else 16.sp,
                         fontWeight = FontWeight.Normal
                     )
-                    Button(
-                        onClick = onOpenClick,
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = HomePurple),
-                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 0.dp),
-                        modifier = Modifier.height(if (compact) 32.dp else 34.dp)
+                    Box(
+                        modifier = Modifier
+                            .height(if (compact) 32.dp else 34.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Brush.linearGradient(listOf(HomeHeroButtonStart, HomeHeroButtonEnd)))
+                            .cleanClickable(onOpenClick)
+                            .padding(horizontal = 13.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text("Abrir materia", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Abrir materia", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                        }
                     }
                 }
 
@@ -711,6 +738,7 @@ private val HeroBrush: Brush
         listOf(
             HomeHeroStart,
             HomeHeroMid,
+            HomeHeroTransition,
             HomeHeroEnd
         )
     )
@@ -738,11 +766,21 @@ private val HomeBgTop = Color(0xFF01040B)
 private val HomeBgMid = Color(0xFF01040B)
 private val HomeBgBottom = Color(0xFF000309)
 private val HomeCardDark = Color(0xFF080D17)
-private val HomeHeroStart = Color(0xFF070718)
-private val HomeHeroMid = Color(0xFF170A39)
-private val HomeHeroEnd = Color(0xFF2E0B74)
-private val HomeHeroVioletWash = Color(0xFF7E28FF)
-private val HomeHeroVioletDepth = Color(0xFF3C127D)
+private val HomeHeroStart = Color(0xFF09051A)
+private val HomeHeroMid = Color(0xFF0E0228)
+private val HomeHeroEnd = Color(0xFF06041C)
+private val HomeHeroTransition = Color(0xFF1A0A48)
+private val HomeHeroVioletDepth = Color(0xFF2A0E72)
+private val HomeHeroVioletWash = Color(0xFF6D28FF)
+private val HomeHeroLightViolet = Color(0xFF8A5FFF)
+private val HomeHeroTitle = Color(0xFFF4F3FF)
+private val HomeHeroSecondary = Color(0xFFB8BDD0)
+private val HomeHeroLabel = Color(0xFFA78BFA)
+private val HomeHeroStar = Color(0xFFA78BFA)
+private val HomeHeroStarSoft = Color(0xFFC4B5FD)
+private val HomeHeroStroke = Color(0xFFA78BFA).copy(alpha = 0.18f)
+private val HomeHeroButtonStart = Color(0xFF581DD6)
+private val HomeHeroButtonEnd = Color(0xFF8A5FFF)
 private val HomeAccentPurple = Color(0xFF8F35FF)
 private val HomeAvatarPurpleTop = Color(0xFF9A42FF)
 private val HomeAvatarPurpleBottom = Color(0xFF6E22FF)
