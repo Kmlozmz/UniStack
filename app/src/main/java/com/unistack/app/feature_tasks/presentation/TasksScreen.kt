@@ -159,7 +159,7 @@ fun TasksScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(clearFocusOnScroll),
-            contentPadding = PaddingValues(start = 20.dp, top = 24.dp, end = 20.dp, bottom = 118.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 58.dp, end = 20.dp, bottom = 118.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
@@ -647,6 +647,15 @@ private fun TaskCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (task.description.isNotBlank()) {
+                    Text(
+                        text = task.description,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha * 0.85f),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Text(
                     text = "$subjectName · ${taskDueLabel(task.dueDateMillis)}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
@@ -1307,6 +1316,11 @@ private fun TaskType.label(): String {
         TaskType.EXAM -> "Parcial"
         TaskType.ESSAY -> "Ensayo"
         TaskType.PRESENTATION -> "Exposición"
+        TaskType.RESEARCH -> "Investigación"
+        TaskType.TEST -> "Examen"
+        TaskType.PRACTICE -> "Práctica"
+        TaskType.PROJECT -> "Proyecto"
+        TaskType.READING -> "Lectura"
         TaskType.OTHER -> "Otro"
     }
 }

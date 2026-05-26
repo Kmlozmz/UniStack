@@ -3,6 +3,8 @@ package com.unistack.app.feature_tasks.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,10 +20,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -31,22 +36,25 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,6 +83,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
     onBackClick: () -> Unit,
@@ -91,6 +100,7 @@ fun AddTaskScreen(
     val isEditing = taskId != null
 
     var title by rememberSaveable(taskId) { mutableStateOf("") }
+    var description by rememberSaveable(taskId) { mutableStateOf("") }
     var dueDate by rememberSaveable(taskId) { mutableStateOf("") }
     var selectedSubjectId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var selectedType by rememberSaveable(taskId) { mutableStateOf(TaskType.WORKSHOP) }
@@ -111,6 +121,7 @@ fun AddTaskScreen(
         if (initialized) return@LaunchedEffect
         if (task != null) {
             title = task.title
+            description = task.description
             dueDate = TaskDateUtils.formatInput(TaskDateUtils.fromMillis(task.dueDateMillis))
             selectedSubjectId = task.subjectId
             selectedType = task.type
@@ -123,6 +134,7 @@ fun AddTaskScreen(
 
     AddTaskContent(
         title = title,
+        description = description,
         isEditing = isEditing,
         taskMissing = isEditing && task == null,
         titleIsValid = isTitleValid,
@@ -137,6 +149,10 @@ fun AddTaskScreen(
         onBackClick = onBackClick,
         onTitleChange = {
             title = it.take(40)
+            error = null
+        },
+        onDescriptionChange = {
+            description = it
             error = null
         },
         onDateClick = {
@@ -162,6 +178,7 @@ fun AddTaskScreen(
                 viewModel.updateTask(
                     taskId = editingTaskId,
                     title = title,
+                    description = description,
                     subjectId = selectedSubjectId,
                     type = selectedType,
                     dueDateInput = dueDate,
@@ -171,6 +188,7 @@ fun AddTaskScreen(
             } else {
                 viewModel.addTask(
                     title = title,
+                    description = description,
                     subjectId = selectedSubjectId,
                     type = selectedType,
                     dueDateInput = dueDate,
@@ -204,6 +222,7 @@ fun AddTaskScreen(
 @Composable
 private fun AddTaskContent(
     title: String,
+    description: String,
     isEditing: Boolean,
     taskMissing: Boolean,
     titleIsValid: Boolean,
@@ -217,6 +236,7 @@ private fun AddTaskContent(
     error: String?,
     onBackClick: () -> Unit,
     onTitleChange: (String) -> Unit,
+    onDescriptionChange: (String) -> Unit,
     onDateClick: () -> Unit,
     onTypeSelected: (TaskType) -> Unit,
     onSubjectSelected: (String?) -> Unit,
@@ -230,9 +250,10 @@ private fun AddTaskContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
+            .statusBarsPadding()
             .padding(horizontal = 22.dp)
             .padding(top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp)
+        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         TaskHeader(
             title = if (isEditing) "Editar tarea" else "Nueva tarea",
@@ -251,6 +272,12 @@ private fun AddTaskContent(
                 onDateClick = onDateClick,
                 onSubjectSelected = onSubjectSelected,
                 onCreateSubjectClick = onCreateSubjectClick
+            )
+        }
+        FormSection(title = "Descripción") {
+            TaskDescriptionField(
+                value = description,
+                onValueChange = onDescriptionChange
             )
         }
         FormSection(title = "Tipo de tarea") {
@@ -286,11 +313,11 @@ private fun TaskHeader(
     subtitle: String,
     onBackClick: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
-                .size(44.dp)
+                .size(40.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
                     shape = AppShapes.Pill
@@ -416,7 +443,7 @@ private fun TaskNameRow(
 ) {
     BasicInfoRowShell(
         icon = Icons.Rounded.Edit,
-        label = "Nombre de la tarea"
+        label = "Título"
     ) {
         BasicTextField(
             value = value,
@@ -684,6 +711,7 @@ private fun CalendarMonthGrid(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SubjectDropdown(
     subjects: List<Subject>,
@@ -691,76 +719,110 @@ private fun SubjectDropdown(
     onCreateSubjectClick: () -> Unit,
     onSubjectSelected: (String?) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+    var showSheet by rememberSaveable { mutableStateOf(false) }
     val selectedLabel = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }
 
-    Box(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        BasicInfoActionRow(
-            icon = Icons.AutoMirrored.Rounded.MenuBook,
-            label = "Materia",
-            value = selectedLabel.orEmpty(),
-            placeholder = "Seleccionar materia",
-            onClick = { expanded = true }
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface, AppShapes.SmallCard)
-        ) {
-            DropdownMenuItem(
-                text = {
-                    DropdownOptionText(
-                        text = "Sin materia asignada",
-                        selected = selectedSubjectId == null
-                    )
-                },
-                onClick = {
-                    onSubjectSelected(null)
-                    expanded = false
-                }
-            )
-            subjects.forEach { subject ->
-                DropdownMenuItem(
-                    text = {
-                        DropdownOptionText(
-                            text = subject.name,
-                            selected = selectedSubjectId == subject.id
+    BasicInfoActionRow(
+        icon = Icons.AutoMirrored.Rounded.MenuBook,
+        label = "Materia",
+        value = selectedLabel.orEmpty(),
+        placeholder = "Seleccionar materia",
+        onClick = { showSheet = true }
+    )
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            dragHandle = {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 10.dp)
+                        .size(width = 44.dp, height = 4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                            RoundedCornerShape(100.dp)
                         )
-                    },
-                    onClick = {
-                        onSubjectSelected(subject.id)
-                        expanded = false
-                    }
                 )
             }
-            DropdownMenuItem(
-                text = {
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
+                Text(
+                    text = "Seleccionar materia",
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                SubjectSheetOption(
+                    text = "Sin materia asignada",
+                    selected = selectedSubjectId == null,
+                    onClick = {
+                        onSubjectSelected(null)
+                        showSheet = false
+                    }
+                )
+                subjects.forEach { subject ->
+                    SubjectSheetOption(
+                        text = subject.name,
+                        selected = selectedSubjectId == subject.id,
+                        onClick = {
+                            onSubjectSelected(subject.id)
+                            showSheet = false
+                        }
+                    )
+                }
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            showSheet = false
+                            onCreateSubjectClick()
+                        }
+                        .padding(horizontal = 22.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         "Crear nueva materia",
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium
                     )
-                },
-                onClick = {
-                    expanded = false
-                    onCreateSubjectClick()
                 }
-            )
+            }
         }
     }
 }
 
 @Composable
-private fun DropdownOptionText(
+private fun SubjectSheetOption(
     text: String,
-    selected: Boolean
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -780,6 +842,48 @@ private fun DropdownOptionText(
     }
 }
 
+@Composable
+private fun TaskDescriptionField(
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    FormSectionCard {
+        Column {
+            BasicInfoRowShell(
+                icon = Icons.Rounded.Description,
+                label = "Descripción"
+            ) {
+                BasicTextField(
+                    value = value,
+                    onValueChange = onValueChange,
+                    singleLine = false,
+                    minLines = 2,
+                    maxLines = 8,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Box {
+                            if (value.isBlank()) {
+                                Text(
+                                    text = "Agrega una descripción detallada (opcional)",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Normal
+                                )
+                            }
+                            innerTextField()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TaskTypeSelector(
@@ -790,13 +894,7 @@ private fun TaskTypeSelector(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        listOf(
-            TaskType.WORKSHOP,
-            TaskType.EXAM,
-            TaskType.ESSAY,
-            TaskType.PRESENTATION,
-            TaskType.OTHER
-        ).forEach { type ->
+        TaskType.entries.forEach { type ->
             TaskChoiceChip(
                 text = type.label(),
                 selected = selected == type,
@@ -923,6 +1021,11 @@ private fun TaskType.label(): String {
         TaskType.EXAM -> "Parcial"
         TaskType.ESSAY -> "Ensayo"
         TaskType.PRESENTATION -> "Exposición"
+        TaskType.RESEARCH -> "Investigación"
+        TaskType.TEST -> "Examen"
+        TaskType.PRACTICE -> "Práctica"
+        TaskType.PROJECT -> "Proyecto"
+        TaskType.READING -> "Lectura"
         TaskType.OTHER -> "Otro"
     }
 }

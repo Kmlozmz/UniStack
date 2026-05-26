@@ -164,6 +164,7 @@ class HomeSummaryFactoryTest {
         return StudentTask(
             id = id,
             title = "Resolver taller",
+            description = "",
             subjectId = null,
             type = TaskType.WORKSHOP,
             dueDateMillis = dueDateMillis,

@@ -121,6 +121,7 @@ class RoomRepositoriesTest {
         val task = StudentTask(
             id = "task-1",
             title = "Entrega ensayo",
+            description = "",
             subjectId = null,
             type = TaskType.ESSAY,
             dueDateMillis = 1_800_000_000_000,

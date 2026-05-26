@@ -37,6 +37,10 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = systemBarStyle,
             navigationBarStyle = systemBarStyle
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isStatusBarContrastEnforced = false
+            window.isNavigationBarContrastEnforced = false
+        }
     }
 
     private fun isSystemInDarkMode(): Boolean {

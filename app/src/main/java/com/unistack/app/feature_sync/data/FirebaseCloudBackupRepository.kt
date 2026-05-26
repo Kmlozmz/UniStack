@@ -198,6 +198,7 @@ class FirebaseCloudBackupRepository(
     private fun taskMap(task: StudentTask): Map<String, Any?> = mapOf(
         "id" to task.id,
         "title" to task.title,
+        "description" to task.description,
         "subjectId" to task.subjectId,
         "type" to task.type.name,
         "dueDateMillis" to task.dueDateMillis,
@@ -266,6 +267,7 @@ class FirebaseCloudBackupRepository(
             StudentTask(
                 id = map.string("id") ?: return@mapNotNull null,
                 title = map.string("title") ?: return@mapNotNull null,
+                description = map.string("description") ?: "",
                 subjectId = map.string("subjectId"),
                 type = map.string("type")
                     ?.let { runCatching { TaskType.valueOf(it) }.getOrNull() }

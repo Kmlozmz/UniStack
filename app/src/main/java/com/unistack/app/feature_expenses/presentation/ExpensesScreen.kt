@@ -284,7 +284,7 @@ private fun ExpensesContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = scaledDp(24f, scale),
-                top = scaledDp(24f, scale),
+                top = scaledDp(58f, scale),
                 end = scaledDp(24f, scale),
                 bottom = bottomPadding
             ),
@@ -1517,7 +1517,7 @@ private fun ExpensesScreenReferencePreview360() {
 @Composable
 private fun ExpensesReferencePreview(widthDp: Int) {
     UniStackTheme(darkTheme = true) {
-        BoxWithConstraints(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(ExpenseBackground)

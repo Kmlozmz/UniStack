@@ -76,7 +76,7 @@ fun GradesScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 22.dp, top = 24.dp, end = 22.dp, bottom = 118.dp),
+            contentPadding = PaddingValues(start = 22.dp, top = 58.dp, end = 22.dp, bottom = 118.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {

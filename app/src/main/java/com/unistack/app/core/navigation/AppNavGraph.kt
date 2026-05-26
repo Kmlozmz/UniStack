@@ -49,7 +49,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.AppContainer
-import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
@@ -90,7 +89,6 @@ fun MainNavGraph(
     val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
-    val showHomeFab = routeBelongsTo(currentRoute, AppRoutes.Home)
     val showBottomBar = currentRoute in setOf(
         AppRoutes.Home,
         AppRoutes.Grades,
@@ -114,6 +112,7 @@ fun MainNavGraph(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = UniStackColors.Background,
+        contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             if (showBottomBar) {
                 UniStackBottomBar(
@@ -158,7 +157,10 @@ fun MainNavGraph(
                             navController.navigate(AppRoutes.Profile) {
                                 launchSingleTop = true
                             }
-                        }
+                        },
+                        onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                        onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
+                        onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) }
                     )
                 }
             composable(AppRoutes.Grades) {
@@ -316,21 +318,6 @@ fun MainNavGraph(
                     }
                 )
             }
-            }
-
-            if (showHomeFab) {
-                UniStackFabMenu(
-                    onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                    onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                    onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
-                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                    showAddGrade = AppModule.GRADES in enabledModules,
-                    showAddTask = AppModule.TASKS in enabledModules,
-                    showAddExpense = AppModule.EXPENSES in enabledModules,
-                    showAddSubject = AppModule.GRADES in enabledModules,
-                    expandedBottomPadding = 104.dp,
-                    expandedEndPadding = 20.dp
-                )
             }
         }
     }

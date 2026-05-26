@@ -147,9 +147,9 @@ class LocalJsonBackupRepository(
 
     override fun exportTasksCsv(): String {
         return buildCsv(
-            header = listOf("id", "title", "subjectId", "type", "dueDate", "difficulty", "estimatedMinutes", "completed"),
+            header = listOf("id", "title", "description", "subjectId", "type", "dueDate", "difficulty", "estimatedMinutes", "completed"),
             rows = tasksRepository.tasks.value.map { task ->
-                listOf(task.id, task.title, task.subjectId.orEmpty(), task.type.name, TaskDateUtils.fromMillis(task.dueDateMillis).toString(), task.difficulty.name, task.estimatedMinutes.toString(), task.completed.toString())
+                listOf(task.id, task.title, task.description, task.subjectId.orEmpty(), task.type.name, TaskDateUtils.fromMillis(task.dueDateMillis).toString(), task.difficulty.name, task.estimatedMinutes.toString(), task.completed.toString())
             }
         )
     }
@@ -217,6 +217,7 @@ class LocalJsonBackupRepository(
     private fun taskJson(task: StudentTask): JSONObject = JSONObject()
         .put("id", task.id)
         .put("title", task.title)
+        .put("description", task.description)
         .put("subjectId", task.subjectId)
         .put("type", task.type.name)
         .put("dueDateMillis", task.dueDateMillis)
@@ -273,6 +274,7 @@ class LocalJsonBackupRepository(
         StudentTask(
             id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             title = item.optString("title").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
+            description = item.optString("description", ""),
             subjectId = item.optNullableString("subjectId"),
             type = item.optString("type").toEnum(TaskType.WORKSHOP),
             dueDateMillis = item.optLong("dueDateMillis"),

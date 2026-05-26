@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -225,18 +226,20 @@ private fun AddExpenseContent(
             .fillMaxSize()
             .background(ExpenseFormBackground)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(17.dp)
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(top = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(40.dp)
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
                 tint = ExpenseFormText,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(28.dp)
             )
         }
 
@@ -276,7 +279,7 @@ private fun AddExpenseContent(
 
 @Composable
 private fun AddExpenseHeader(isEditing: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = if (isEditing) "Editar gasto" else "Registrar gasto",
             color = ExpenseFormText,

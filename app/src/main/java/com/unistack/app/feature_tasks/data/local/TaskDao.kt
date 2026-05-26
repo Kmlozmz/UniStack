@@ -24,6 +24,7 @@ interface TaskDao {
         """
         UPDATE tasks
         SET title = :title,
+            description = :description,
             subjectId = :subjectId,
             type = :type,
             dueDateMillis = :dueDateMillis,
@@ -37,6 +38,7 @@ interface TaskDao {
         taskId: String,
         userIds: List<String>,
         title: String,
+        description: String,
         subjectId: String?,
         type: String,
         dueDateMillis: Long,

@@ -31,6 +31,7 @@ class TasksViewModel(
 
     fun addTask(
         title: String,
+        description: String,
         subjectId: String?,
         type: TaskType,
         dueDateInput: String,
@@ -48,6 +49,7 @@ class TasksViewModel(
             StudentTask(
                 id = "task-${UUID.randomUUID()}",
                 title = TextValidators.normalizeText(title),
+                description = description.trim(),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
                 type = type,
                 dueDateMillis = parsed.dueDateMillis,
@@ -64,6 +66,7 @@ class TasksViewModel(
     fun updateTask(
         taskId: String,
         title: String,
+        description: String,
         subjectId: String?,
         type: TaskType,
         dueDateInput: String,
@@ -80,6 +83,7 @@ class TasksViewModel(
         tasksRepository.updateTask(
             existing.copy(
                 title = TextValidators.normalizeText(title),
+                description = description.trim(),
                 subjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } },
                 type = type,
                 dueDateMillis = parsed.dueDateMillis,

@@ -3,6 +3,7 @@ package com.unistack.app.feature_tasks.domain
 data class StudentTask(
     val id: String,
     val title: String,
+    val description: String,
     val subjectId: String?,
     val type: TaskType,
     val dueDateMillis: Long,
@@ -24,5 +25,10 @@ enum class TaskType {
     EXAM,
     ESSAY,
     PRESENTATION,
+    RESEARCH,
+    TEST,
+    PRACTICE,
+    PROJECT,
+    READING,
     OTHER
 }

@@ -86,6 +86,7 @@ internal object HomeSummaryFactory {
             id = subject.id,
             name = subject.name,
             average = GradeCalculator.calculateCurrentAverage(subject.grades),
+            targetAverage = subject.targetAverage,
             progress = evaluatedPercentage.toFloat(),
             type = subject.visualType
         )

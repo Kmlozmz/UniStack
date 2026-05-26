@@ -111,6 +111,7 @@ class LocalJsonBackupRepositoryTest {
     private fun testTask() = StudentTask(
         id = "task-1",
         title = "Entrega",
+        description = "",
         subjectId = "subject-1",
         type = TaskType.WORKSHOP,
         dueDateMillis = 1_800_000_000_000,

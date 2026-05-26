@@ -13,6 +13,7 @@ fun TaskEntity.toDomain(): StudentTask {
     return StudentTask(
         id = id,
         title = title,
+        description = description,
         subjectId = subjectId,
         type = parsedType,
         dueDateMillis = dueDateMillis,
@@ -29,6 +30,7 @@ fun StudentTask.toEntity(userId: String): TaskEntity {
         id = id,
         userId = userId,
         title = title,
+        description = description,
         subjectId = subjectId,
         type = type.name,
         dueDateMillis = dueDateMillis,

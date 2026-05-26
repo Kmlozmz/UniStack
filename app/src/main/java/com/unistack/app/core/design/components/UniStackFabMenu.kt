@@ -52,8 +52,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -82,16 +80,15 @@ fun UniStackFabMenu(
     showAddGrade: Boolean = true,
     showAddTask: Boolean = true,
     showAddExpense: Boolean = true,
-    showAddSubject: Boolean = true,
-    expandedBottomPadding: Dp = 104.dp,
+    showAddSubject: Boolean = false,
+    expandedBottomPadding: Dp = 22.dp,
     expandedEndPadding: Dp = 20.dp
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var renderMenu by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val haptics = LocalHapticFeedback.current
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (expanded) 0.16f else 0f,
+        targetValue = if (expanded) 0.18f else 0f,
         animationSpec = tween(durationMillis = 240, easing = LinearOutSlowInEasing),
         label = "fabMenuScrimAlpha"
     )
@@ -145,7 +142,6 @@ fun UniStackFabMenu(
     if (items.isEmpty()) return
 
     fun openMenu() {
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         scope.launch {
             renderMenu = true
             delay(32)
@@ -154,12 +150,10 @@ fun UniStackFabMenu(
     }
 
     fun closeMenu() {
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         expanded = false
     }
 
     fun selectItem(item: FabMenuItem) {
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         expanded = false
         item.onClick()
     }
@@ -189,7 +183,7 @@ fun UniStackFabMenu(
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = expandedEndPadding, bottom = expandedBottomPadding + 68.dp),
+                    .padding(end = expandedEndPadding, bottom = expandedBottomPadding + 72.dp),
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -199,9 +193,7 @@ fun UniStackFabMenu(
                         index = index,
                         totalItems = items.size,
                         expanded = expanded,
-                        onSelected = {
-                            selectItem(item)
-                        }
+                        onSelected = { selectItem(item) }
                     )
                 }
             }
@@ -220,7 +212,7 @@ fun UniStackFabMenu(
 }
 
 @Composable
-fun FabMenuOption(
+private fun FabMenuOption(
     item: FabMenuItem,
     index: Int,
     totalItems: Int,
@@ -259,33 +251,33 @@ fun FabMenuOption(
     ) {
         Surface(
             onClick = onSelected,
-            modifier = modifier
-                .semantics { contentDescription = item.contentDescription },
-            shape = RoundedCornerShape(28.dp),
+            modifier = modifier.semantics { contentDescription = item.contentDescription },
+            shape = RoundedCornerShape(18.dp),
             color = if (UniStackColors.IsDarkTheme) {
-                MaterialTheme.colorScheme.surfaceVariant
+                UniStackColors.Card
             } else {
                 MaterialTheme.colorScheme.surface
             },
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = androidx.compose.foundation.BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.44f))
         ) {
             Row(
-                modifier = Modifier.padding(start = 18.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
+                modifier = Modifier.padding(start = 16.dp, top = 9.dp, end = 9.dp, bottom = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = item.label,
                     color = UniStackColors.TextPrimary,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(item.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.20f else 0.13f)),
                     contentAlignment = Alignment.Center
@@ -294,7 +286,7 @@ fun FabMenuOption(
                         imageVector = item.icon,
                         contentDescription = null,
                         tint = item.color,
-                        modifier = Modifier.size(21.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -316,8 +308,7 @@ private fun FabMenuButton(
 
     FloatingActionButton(
         onClick = onClick,
-        modifier = modifier
-            .size(56.dp),
+        modifier = modifier.size(56.dp),
         shape = RoundedCornerShape(18.dp),
         containerColor = UniStackColors.Primary,
         contentColor = Color.White

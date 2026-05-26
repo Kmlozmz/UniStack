@@ -58,6 +58,7 @@ class RoomTasksRepository(
                 taskId = task.id,
                 userIds = userIds,
                 title = task.title,
+                description = task.description,
                 subjectId = task.subjectId,
                 type = task.type.name,
                 dueDateMillis = task.dueDateMillis,

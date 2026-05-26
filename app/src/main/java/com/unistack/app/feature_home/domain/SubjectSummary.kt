@@ -6,6 +6,7 @@ data class SubjectSummary(
     val id: String,
     val name: String,
     val average: Double?,
+    val targetAverage: Double,
     val progress: Float,
     val type: SubjectVisualType
 )

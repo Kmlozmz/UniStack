@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -121,19 +121,19 @@ fun AddSubjectScreen(
         }
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(padding)
-                .padding(horizontal = 22.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 22.dp)
+                .padding(top = 16.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SubjectFormHeader(
                 title = if (isEditing) "Editar materia" else "Agregar materia",
@@ -229,6 +229,10 @@ fun AddSubjectScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
@@ -237,11 +241,11 @@ private fun SubjectFormHeader(
     title: String,
     onBackClick: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
-                .size(44.dp)
+                .size(40.dp)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)
         ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
