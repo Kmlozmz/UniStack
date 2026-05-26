@@ -1,8 +1,9 @@
 package com.unistack.app.feature_home.presentation
 
 import com.unistack.app.feature_home.domain.ExpenseSummary
+import com.unistack.app.feature_home.domain.HomePriorityAction
+import com.unistack.app.feature_home.domain.HomePrioritySummary
 import com.unistack.app.feature_home.domain.HomeSummary
-import com.unistack.app.feature_home.domain.TaskSummary
 
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
@@ -15,18 +16,27 @@ data class HomeUiState(
             userName = "Estudiante",
             avatarPhotoUrl = null,
             dashboardMessage = "Configura tu semestre para ver prioridades reales.",
+            priority = HomePrioritySummary(
+                title = "Prepara tu semestre",
+                description = "Agrega materias y tareas para activar prioridades reales.",
+                action = HomePriorityAction.SUBJECTS
+            ),
             generalAverage = 0.0,
             subjectsCount = 0,
             tasksToday = 0,
             overdueTasks = 0,
+            pendingTasks = 0,
+            openAcademicWorks = 0,
             subjects = emptyList(),
             riskSubject = null,
             neededGrade = null,
             nextTask = null,
             nextAcademicWork = null,
+            todayItems = emptyList(),
             weeklyExpenses = null,
             weeklyExpenseTotal = 0,
             productivitySummary = "Sin tareas todavía.",
+            companionInsight = "Agrega tus materias para que UniStack te acompañe mejor.",
             gradingScale = GradingScale.ZERO_TO_FIVE,
             enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )

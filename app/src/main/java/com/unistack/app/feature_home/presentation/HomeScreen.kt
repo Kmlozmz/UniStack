@@ -3,6 +3,7 @@ package com.unistack.app.feature_home.presentation
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -12,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -32,12 +34,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.EventNote
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.NotificationsNone
@@ -60,6 +62,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -74,9 +77,14 @@ import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
+import com.unistack.app.feature_home.domain.ExpenseSummary
+import com.unistack.app.feature_home.domain.HomePriorityAction
+import com.unistack.app.feature_home.domain.HomePrioritySummary
 import com.unistack.app.feature_home.domain.HomeSummary
+import com.unistack.app.feature_home.domain.HomeTimelineKind
+import com.unistack.app.feature_home.domain.HomeTimelineState
+import com.unistack.app.feature_home.domain.HomeTimelineSummary
 import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_home.domain.SubjectRiskSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
@@ -100,8 +108,6 @@ fun HomeScreen(
 ) {
     val summary = uiState.summary
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
-    val prioritySubject = summary.riskSubject?.subjectName?.takeIf { it.isNotBlank() } ?: "Inglés"
-    val heroTitle = "$prioritySubject necesita atención"
 
     BoxWithConstraints(
         modifier = modifier
@@ -135,10 +141,16 @@ fun HomeScreen(
             }
             item {
                 PriorityHero(
-                    title = heroTitle,
+                    title = summary.priority.title,
+                    description = summary.priority.description,
                     compact = isCompact,
                     onOpenClick = {
-                        summary.riskSubject?.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
+                        when (summary.priority.action) {
+                            HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
+                            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+                            HomePriorityAction.TASKS -> onSeeTasksClick()
+                            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+                        }
                     }
                 )
             }
@@ -146,8 +158,9 @@ fun HomeScreen(
                 QuickModules(
                     subjectsCount = summary.subjectsCount,
                     tasksToday = summary.tasksToday,
+                    overdueTasks = summary.overdueTasks,
                     weeklyExpenseTotal = summary.weeklyExpenseTotal,
-                    notesCount = summary.nextAcademicWork?.let { 3 } ?: 0,
+                    notesCount = summary.openAcademicWorks,
                     fourColumns = maxWidth >= 360.dp,
                     compact = isCompact,
                     onSubjectsClick = onSeeAllSubjectsClick,
@@ -157,13 +170,14 @@ fun HomeScreen(
                 )
             }
             item {
-                TodayTimeline(onTasksClick = onSeeTasksClick, compact = isCompact)
+                TodayTimeline(items = summary.todayItems, onTasksClick = onSeeTasksClick, compact = isCompact)
             }
             item {
                 CompanionCard(
                     name = displayName,
+                    insight = summary.companionInsight,
                     priorities = summary.priorityCount(),
-                    pendingTasks = summary.overdueTasks,
+                    pendingTasks = summary.pendingTasks,
                     compact = isCompact,
                     onProfileClick = onProfileClick
                 )
@@ -297,6 +311,7 @@ private fun HomeGreeting(
 @Composable
 private fun PriorityHero(
     title: String,
+    description: String,
     compact: Boolean,
     onOpenClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -525,11 +540,13 @@ private fun PriorityHero(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Tienes clase a las 10:00 AM.\nRevisa tus apuntes antes de entrar.",
+                        text = description,
                         color = HomeHeroSecondary,
                         fontSize = if (compact) 10.sp else 11.sp,
                         lineHeight = if (compact) 15.sp else 16.sp,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Box(
                         modifier = Modifier
@@ -566,6 +583,7 @@ private fun PriorityHero(
 private fun QuickModules(
     subjectsCount: Int,
     tasksToday: Int,
+    overdueTasks: Int,
     weeklyExpenseTotal: Int,
     notesCount: Int,
     fourColumns: Boolean,
@@ -576,6 +594,19 @@ private fun QuickModules(
     onNotesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val subjectsSubtitle = when (subjectsCount) {
+        0 -> "Crear primera"
+        1 -> "1 activa"
+        else -> "$subjectsCount activas"
+    }
+    val tasksSubtitle = when {
+        overdueTasks > 0 -> "$overdueTasks vencida${if (overdueTasks == 1) "" else "s"}"
+        tasksToday > 0 -> "$tasksToday hoy"
+        else -> "Al día"
+    }
+    val expensesSubtitle = if (weeklyExpenseTotal > 0) "$${weeklyExpenseTotal / 1000} semana" else "Sin gastos"
+    val notesSubtitle = if (notesCount > 0) "$notesCount activo${if (notesCount == 1) "" else "s"}" else "Sin apuntes"
+
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Módulos rápidos", color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -584,19 +615,19 @@ private fun QuickModules(
         }
         if (fourColumns) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", "${subjectsCount.coerceAtLeast(1)} activa", Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Tareas", "$tasksToday hoy", Icons.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Gastos", "$${weeklyExpenseTotal / 1000} semana", Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Notas", "$notesCount apuntes", Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = true)
+                QuickModuleCard("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = true)
+                QuickModuleCard("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = true)
+                QuickModuleCard("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = true)
+                QuickModuleCard("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = true)
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", "${subjectsCount.coerceAtLeast(1)} activa", Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Tareas", "$tasksToday hoy", Icons.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = compact)
+                QuickModuleCard("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = compact)
+                QuickModuleCard("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = compact)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Gastos", "$${weeklyExpenseTotal / 1000} semana", Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Notas", "$notesCount apuntes", Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = compact)
+                QuickModuleCard("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = compact)
+                QuickModuleCard("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = compact)
             }
         }
     }
@@ -612,10 +643,25 @@ private fun QuickModuleCard(
     modifier: Modifier = Modifier,
     compact: Boolean
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "quickModulePressScale"
+    )
     Surface(
         modifier = modifier
             .height(if (compact) 76.dp else 92.dp)
-            .cleanClickable(onClick),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
         shape = RoundedCornerShape(14.dp),
         color = HomeCard,
         border = BorderStroke(1.dp, HomeBorder)
@@ -655,16 +701,11 @@ private fun QuickModuleCard(
 
 @Composable
 private fun TodayTimeline(
+    items: List<HomeTimelineSummary>,
     onTasksClick: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(
-        TimelineItem("10:00 AM", "Clase de Inglés", "Aula 302", Icons.Rounded.CalendarMonth, HomePurple, true),
-        TimelineItem("2:00 PM", "Entrega de proyecto", "Matemáticas", Icons.Rounded.EventNote, HomeTeal, false),
-        TimelineItem("8:00 AM", "Examen parcial", "Física", Icons.AutoMirrored.Rounded.Assignment, HomeYellow, false)
-    )
-
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Hoy", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -684,10 +725,40 @@ private fun TodayTimeline(
             border = BorderStroke(1.dp, HomeBorder)
         ) {
             Column(modifier = Modifier.padding(vertical = if (compact) 8.dp else 10.dp)) {
-                items.forEachIndexed { index, item ->
-                    TimelineRow(item = item, showLineTop = index > 0, showLineBottom = index < items.lastIndex, compact = compact)
+                if (items.isEmpty()) {
+                    TimelineEmptyRow(compact = compact)
+                } else {
+                    items.forEachIndexed { index, item ->
+                        TimelineRow(item = item.toTimelineItem(), showLineTop = index > 0, showLineBottom = index < items.lastIndex, compact = compact)
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TimelineEmptyRow(compact: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (compact) 76.dp else 86.dp)
+            .padding(horizontal = if (compact) 14.dp else 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(if (compact) 30.dp else 34.dp)
+                .clip(CircleShape)
+                .background(HomePurple.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = HomePurple, modifier = Modifier.size(if (compact) 16.dp else 18.dp))
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Día despejado", color = HomeText, fontSize = if (compact) 12.sp else 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("Sin vencimientos cercanos por ahora", color = HomeMuted, fontSize = 10.sp, lineHeight = 13.sp)
         }
     }
 }
@@ -762,19 +833,35 @@ private fun TimelineRow(
 @Composable
 private fun CompanionCard(
     name: String,
+    insight: String,
     priorities: Int,
     pendingTasks: Int,
     compact: Boolean,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.985f else 1f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "companionPressScale"
+    )
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Text("Tu acompañamiento", color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (compact) 96.dp else 108.dp)
-                .cleanClickable(onProfileClick),
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onProfileClick
+                ),
             shape = RoundedCornerShape(16.dp),
             color = HomeCard,
             border = BorderStroke(1.dp, HomeBorder)
@@ -796,10 +883,12 @@ private fun CompanionCard(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("Vas bien, $name.", color = HomeText, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Pequeño progreso cada día,\ngrandes resultados siempre.",
+                        insight,
                         color = HomeSoftText,
                         fontSize = 10.sp,
-                        lineHeight = 14.sp
+                        lineHeight = 14.sp,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.Start) {
@@ -827,6 +916,30 @@ private data class TimelineItem(
     val accent: Color,
     val active: Boolean
 )
+
+@Composable
+private fun HomeTimelineSummary.toTimelineItem(): TimelineItem {
+    return TimelineItem(
+        time = timeText,
+        title = title,
+        subtitle = subtitle,
+        icon = when (kind) {
+            HomeTimelineKind.CLASS -> Icons.Rounded.CalendarMonth
+            HomeTimelineKind.TASK -> Icons.AutoMirrored.Rounded.EventNote
+            HomeTimelineKind.WORK -> Icons.Rounded.Description
+            HomeTimelineKind.EXAM -> Icons.AutoMirrored.Rounded.Assignment
+            HomeTimelineKind.FOCUS -> Icons.Rounded.Star
+        },
+        accent = when (kind) {
+            HomeTimelineKind.CLASS -> HomePurple
+            HomeTimelineKind.TASK -> HomeTeal
+            HomeTimelineKind.WORK -> HomeYellow
+            HomeTimelineKind.EXAM -> HomeCoral
+            HomeTimelineKind.FOCUS -> HomePurple
+        },
+        active = state == HomeTimelineState.CURRENT
+    )
+}
 
 private fun HomeSummary.priorityCount(): Int {
     var count = 0
@@ -1040,10 +1153,18 @@ private val previewHomeSummary = HomeSummary(
     userName = "Pineda",
     avatarPhotoUrl = null,
     dashboardMessage = "Inglés necesita atención.",
+    priority = HomePrioritySummary(
+        title = "Inglés necesita atención",
+        description = "Necesitas reforzar apuntes antes de la siguiente clase.",
+        action = HomePriorityAction.SUBJECT,
+        subjectId = "english"
+    ),
     generalAverage = 3.8,
     subjectsCount = 1,
     tasksToday = 0,
     overdueTasks = 0,
+    pendingTasks = 0,
+    openAcademicWorks = 1,
     subjects = listOf(
         SubjectSummary(
             id = "english",
@@ -1069,6 +1190,11 @@ private val previewHomeSummary = HomeSummary(
         dueText = "hoy",
         progress = 0.4f
     ),
+    todayItems = listOf(
+        HomeTimelineSummary("Hoy", "Clase de Inglés", "Revisa apuntes antes de entrar", HomeTimelineKind.CLASS, HomeTimelineState.CURRENT),
+        HomeTimelineSummary("Hoy", "Entrega de proyecto", "Matemáticas · 40% listo", HomeTimelineKind.WORK, HomeTimelineState.PENDING),
+        HomeTimelineSummary("Mañana", "Examen parcial", "Física · 1 h", HomeTimelineKind.EXAM, HomeTimelineState.PENDING)
+    ),
     weeklyExpenses = ExpenseSummary(
         transport = 0,
         food = 0,
@@ -1077,6 +1203,7 @@ private val previewHomeSummary = HomeSummary(
     ),
     weeklyExpenseTotal = 0,
     productivitySummary = "Vas bien, Pineda.",
+    companionInsight = "Hoy conviene enfocarte en Inglés antes de abrir más frentes.",
     gradingScale = GradingScale.ZERO_TO_FIVE,
     enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES, AppModule.ACADEMIC_TEMPLATES)
 )
