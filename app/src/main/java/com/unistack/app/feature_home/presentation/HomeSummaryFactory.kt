@@ -31,6 +31,7 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 internal object HomeSummaryFactory {
@@ -205,7 +206,9 @@ internal object HomeSummaryFactory {
         if (!hasSubjects) {
             return HomePrioritySummary(
                 title = "Prepara tu semestre",
-                description = "Agrega tus materias para que UniStack ordene tus prioridades reales.",
+                shortDescription = "Agrega tus materias para activar prioridades reales.",
+                fullDescription = "Todavía no tienes materias registradas. Cuando agregues tus cursos, UniStack podrá ordenar tareas, notas y alertas según tu semestre real.",
+                suggestion = "${heroActionPrefix()}: crear tu primera materia para empezar con una agenda útil.",
                 action = HomePriorityAction.SUBJECTS
             )
         }
@@ -213,7 +216,9 @@ internal object HomeSummaryFactory {
         if (overdueTasks > 0 && nextTask != null) {
             return HomePrioritySummary(
                 title = "Tareas vencidas necesitan atención",
-                description = "Tienes $overdueTasks pendiente${if (overdueTasks == 1) "" else "s"}. Empieza por ${nextTask.title}.",
+                shortDescription = "Cierra una pendiente vencida antes de abrir más frentes.",
+                fullDescription = "Tienes $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"}. La primera que conviene resolver es ${nextTask.title}.",
+                suggestion = "${heroActionPrefix()}: reserva ${nextTask.estimatedTimeText} para avanzar sin acumular más presión.",
                 action = HomePriorityAction.TASKS
             )
         }
@@ -221,7 +226,9 @@ internal object HomeSummaryFactory {
         if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) {
             return HomePrioritySummary(
                 title = "${riskSubject.subjectName} necesita atención",
-                description = riskSubject.detail,
+                shortDescription = "Repasa esta materia antes de abrir más frentes.",
+                fullDescription = "${riskSubject.subjectName} necesita atención académica. ${riskSubject.detail}",
+                suggestion = "${heroActionPrefix()}: repasar ${riskSubject.subjectName} 15 minutos y revisar qué evaluación pesa más.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = riskSubject.subjectId
             )
@@ -239,7 +246,9 @@ internal object HomeSummaryFactory {
             }
             return HomePrioritySummary(
                 title = "${urgentItem.title} merece atención",
-                description = "${urgentItem.timeText}. ${urgentItem.subtitle}",
+                shortDescription = "Enfócate en lo próximo y mantén el día liviano.",
+                fullDescription = "${urgentItem.title} aparece como lo más relevante ahora. ${urgentItem.timeText}. ${urgentItem.subtitle}",
+                suggestion = "${heroActionPrefix()}: atender esto primero y evitar abrir nuevas pendientes.",
                 action = action,
                 subjectId = riskSubject?.subjectId
             )
@@ -248,7 +257,9 @@ internal object HomeSummaryFactory {
         if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) {
             return HomePrioritySummary(
                 title = "${riskSubject.subjectName} está cerca de la meta",
-                description = riskSubject.detail,
+                shortDescription = "Vigila esta materia con un repaso corto hoy.",
+                fullDescription = "${riskSubject.subjectName} está cerca de tu meta. ${riskSubject.detail}",
+                suggestion = "${heroActionPrefix()}: dedicar 15 minutos a revisar apuntes o porcentajes pendientes.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = riskSubject.subjectId
             )
@@ -257,7 +268,9 @@ internal object HomeSummaryFactory {
         if (nextAcademicWork != null) {
             return HomePrioritySummary(
                 title = "${nextAcademicWork.title} es lo siguiente",
-                description = "${nextAcademicWork.dueText}. Avanza un poco antes de que se acumule.",
+                shortDescription = "Avanza un poco antes de que se acumule.",
+                fullDescription = "${nextAcademicWork.title} es el próximo trabajo académico en tu lista. Vence ${nextAcademicWork.dueText} y conviene moverlo aunque sea con un avance pequeño.",
+                suggestion = "${heroActionPrefix()}: avanzar 15 minutos y marcar un paso claro del trabajo.",
                 action = HomePriorityAction.TEMPLATES,
                 subjectId = nextAcademicWork.subjectId
             )
@@ -266,16 +279,28 @@ internal object HomeSummaryFactory {
         if (nextTask != null) {
             return HomePrioritySummary(
                 title = "${nextTask.title} es lo siguiente",
-                description = "${nextTask.dueText}. Reserva ${nextTask.estimatedTimeText} para cerrarla con calma.",
+                shortDescription = "Reserva un bloque corto para cerrarla con calma.",
+                fullDescription = "${nextTask.title} es tu próxima tarea clara. Vence ${nextTask.dueText} y tiene un tiempo estimado de ${nextTask.estimatedTimeText}.",
+                suggestion = "${heroActionPrefix()}: apartar ese bloque antes de sumar nuevas tareas.",
                 action = HomePriorityAction.TASKS
             )
         }
 
         return HomePrioritySummary(
             title = "Día despejado",
-            description = "No hay urgencias fuertes ahora. Buen momento para repasar o capturar notas.",
+            shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
+            fullDescription = "No tienes vencimientos cercanos por ahora. Es un buen momento para repasar, avanzar en tus materias o dejar listas tus próximas actividades.",
+            suggestion = "${heroActionPrefix()}: dedica 15 minutos a repasar hoy para mantener el ritmo.",
             action = HomePriorityAction.TASKS
         )
+    }
+
+    private fun heroActionPrefix(): String {
+        return when (LocalTime.now().hour) {
+            in 5..11 -> "Arranca con"
+            in 18..23 -> "Deja listo"
+            else -> "Siguiente paso"
+        }
     }
 
     private fun todayTimelineItems(

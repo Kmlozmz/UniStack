@@ -30,7 +30,9 @@ data class HomeSummary(
 
 data class HomePrioritySummary(
     val title: String,
-    val description: String,
+    val shortDescription: String,
+    val fullDescription: String,
+    val suggestion: String,
     val action: HomePriorityAction,
     val subjectId: String? = null
 )

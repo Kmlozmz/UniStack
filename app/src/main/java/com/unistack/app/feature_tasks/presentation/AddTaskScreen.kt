@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +22,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -31,12 +35,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -63,6 +69,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -720,7 +727,16 @@ private fun SubjectDropdown(
     onSubjectSelected: (String?) -> Unit
 ) {
     var showSheet by rememberSaveable { mutableStateOf(false) }
+    var subjectQuery by rememberSaveable { mutableStateOf("") }
     val selectedLabel = selectedSubjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }
+    val filteredSubjects = remember(subjects, subjectQuery) {
+        val query = subjectQuery.trim()
+        if (query.isBlank()) {
+            subjects
+        } else {
+            subjects.filter { subject -> subject.name.contains(query, ignoreCase = true) }
+        }
+    }
 
     BasicInfoActionRow(
         icon = Icons.AutoMirrored.Rounded.MenuBook,
@@ -732,16 +748,22 @@ private fun SubjectDropdown(
 
     if (showSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showSheet = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            onDismissRequest = {
+                showSheet = false
+                subjectQuery = ""
+            },
+            containerColor = SubjectSheetSurface,
+            contentColor = Color.White,
+            scrimColor = Color.Black.copy(alpha = 0.62f),
+            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+            windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
             dragHandle = {
                 Box(
                     modifier = Modifier
-                        .padding(top = 10.dp)
-                        .size(width = 44.dp, height = 4.dp)
+                        .padding(top = 12.dp, bottom = 4.dp)
+                        .size(width = 42.dp, height = 4.dp)
                         .background(
-                            MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                            Color.White.copy(alpha = 0.20f),
                             RoundedCornerShape(100.dp)
                         )
                 )
@@ -750,57 +772,81 @@ private fun SubjectDropdown(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .navigationBarsPadding()
+                    .padding(start = 22.dp, end = 22.dp, bottom = 24.dp)
             ) {
                 Text(
                     text = "Seleccionar materia",
-                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    color = SubjectSheetText,
+                    fontSize = 23.sp,
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.sp
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                SubjectSheetOption(
-                    text = "Sin materia asignada",
-                    selected = selectedSubjectId == null,
-                    onClick = {
-                        onSubjectSelected(null)
-                        showSheet = false
-                    }
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Elige la materia que corresponda a esta tarea.",
+                    color = SubjectSheetMuted,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.Normal
                 )
-                subjects.forEach { subject ->
-                    SubjectSheetOption(
-                        text = subject.name,
-                        selected = selectedSubjectId == subject.id,
-                        onClick = {
-                            onSubjectSelected(subject.id)
-                            showSheet = false
-                        }
-                    )
-                }
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                Spacer(modifier = Modifier.height(18.dp))
+                SubjectSearchField(
+                    value = subjectQuery,
+                    onValueChange = { subjectQuery = it }
                 )
-                Row(
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 52.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
+                        .heightIn(max = 430.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 2.dp)
+                ) {
+                    item(key = "none") {
+                        SubjectSheetOption(
+                            title = "Sin materia asignada",
+                            subtitle = "Tarea general",
+                            selected = selectedSubjectId == null,
+                            onClick = {
+                                onSubjectSelected(null)
+                                subjectQuery = ""
+                                showSheet = false
+                            }
+                        )
+                    }
+                    items(filteredSubjects, key = { it.id }) { subject ->
+                        SubjectSheetOption(
+                            title = subject.name,
+                            subtitle = "Materia disponible",
+                            selected = selectedSubjectId == subject.id,
+                            onClick = {
+                                onSubjectSelected(subject.id)
+                                subjectQuery = ""
+                                showSheet = false
+                            }
+                        )
+                    }
+                    if (filteredSubjects.isEmpty() && subjectQuery.isNotBlank()) {
+                        item(key = "empty") {
+                            Text(
+                                text = "No encontramos materias con ese nombre.",
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                                color = SubjectSheetMuted,
+                                fontSize = 13.sp,
+                                lineHeight = 18.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    item(key = "create") {
+                        CreateSubjectSheetAction {
+                            subjectQuery = ""
                             showSheet = false
                             onCreateSubjectClick()
                         }
-                        .padding(horizontal = 22.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "Crear nueva materia",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    }
                 }
             }
         }
@@ -808,37 +854,198 @@ private fun SubjectDropdown(
 }
 
 @Composable
-private fun SubjectSheetOption(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit
+private fun SubjectSearchField(
+    value: String,
+    onValueChange: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 52.dp)
+            .height(52.dp)
+            .background(SubjectSheetField, RoundedCornerShape(18.dp))
+            .border(
+                width = 0.5.dp,
+                color = Color.White.copy(alpha = 0.07f),
+                shape = RoundedCornerShape(18.dp)
+            )
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Search,
+            contentDescription = null,
+            tint = SubjectSheetMuted,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                color = SubjectSheetText,
+                fontWeight = FontWeight.Medium
+            ),
+            cursorBrush = SolidColor(SubjectSheetAccent),
+            decorationBox = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (value.isBlank()) {
+                        Text(
+                            text = "Buscar materia...",
+                            color = SubjectSheetMuted.copy(alpha = 0.78f),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun SubjectSheetOption(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 76.dp)
+            .background(
+                color = if (selected) SubjectSheetSelectedSurface else SubjectSheetItemSurface,
+                shape = shape
+            )
+            .border(
+                width = 0.8.dp,
+                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else Color.White.copy(alpha = 0.07f),
+                shape = shape
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick
             )
-            .padding(horizontal = 22.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f),
-            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
-        )
-        if (selected) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(
+                    color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(
-                imageVector = Icons.Rounded.Check,
+                imageVector = Icons.AutoMirrored.Rounded.MenuBook,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
+                tint = if (selected) SubjectSheetSelectedIcon else SubjectSheetAccentSoft,
+                modifier = Modifier.size(23.dp)
             )
         }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = title,
+                color = SubjectSheetText,
+                fontSize = 15.sp,
+                lineHeight = 19.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                color = SubjectSheetMuted,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(
+                    color = if (selected) SubjectSheetAccent.copy(alpha = 0.18f) else Color.Transparent,
+                    shape = RoundedCornerShape(999.dp)
+                )
+                .border(
+                    width = 1.dp,
+                    color = if (selected) SubjectSheetAccent else SubjectSheetMuted.copy(alpha = 0.36f),
+                    shape = RoundedCornerShape(999.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = SubjectSheetSelectedIcon,
+                    modifier = Modifier.size(17.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateSubjectSheetAction(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(20.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 74.dp)
+            .background(SubjectSheetCreateSurface, shape)
+            .border(0.7.dp, Color.White.copy(alpha = 0.08f), shape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(SubjectSheetAccent, RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Text(
+            text = "Crear nueva materia",
+            modifier = Modifier.weight(1f),
+            color = SubjectSheetText,
+            fontSize = 15.sp,
+            lineHeight = 19.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = SubjectSheetMuted,
+            modifier = Modifier.size(23.dp)
+        )
     }
 }
 
@@ -1014,6 +1221,18 @@ private fun CreateTaskButton(
         }
     }
 }
+
+private val SubjectSheetSurface: Color
+    @Composable get() = UniStackColors.Background
+private val SubjectSheetField = Color(0xFF171A2C)
+private val SubjectSheetItemSurface = Color(0xFF111423)
+private val SubjectSheetSelectedSurface = Color(0xFF171239)
+private val SubjectSheetCreateSurface = Color(0xFF14182A)
+private val SubjectSheetAccent = Color(0xFF581DD6)
+private val SubjectSheetAccentSoft = Color(0xFFA78BFA)
+private val SubjectSheetSelectedIcon = Color(0xFFC4B5FD)
+private val SubjectSheetText = Color(0xFFF4F3FF)
+private val SubjectSheetMuted = Color(0xFFB8BDD0)
 
 private fun TaskType.label(): String {
     return when (this) {

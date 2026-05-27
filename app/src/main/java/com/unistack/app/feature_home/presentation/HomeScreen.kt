@@ -11,6 +11,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -21,9 +22,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,14 +46,19 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,7 +77,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -119,6 +129,16 @@ fun HomeScreen(
     var quickModuleKeys by rememberSaveable {
         mutableStateOf(QuickModuleType.entries.map { it.key })
     }
+    var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
+    val priorityActionLabel = summary.priority.action.actionLabel()
+    val openPriorityAction = {
+        when (summary.priority.action) {
+            HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
+            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+            HomePriorityAction.TASKS -> onSeeTasksClick()
+            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -153,16 +173,10 @@ fun HomeScreen(
             item {
                 PriorityHero(
                     title = summary.priority.title,
-                    description = summary.priority.description,
+                    description = summary.priority.shortDescription,
                     compact = isCompact,
-                    onOpenClick = {
-                        when (summary.priority.action) {
-                            HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
-                            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
-                            HomePriorityAction.TASKS -> onSeeTasksClick()
-                            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
-                        }
-                    }
+                    onOpenClick = openPriorityAction,
+                    onDetailsClick = { showPriorityDetails = true }
                 )
             }
             item {
@@ -209,6 +223,18 @@ fun HomeScreen(
             expandedEndPadding = 24.dp,
             expandedBottomPadding = 12.dp
         )
+
+        if (showPriorityDetails) {
+            PriorityContextSheet(
+                priority = summary.priority,
+                actionLabel = priorityActionLabel,
+                onActionClick = {
+                    showPriorityDetails = false
+                    openPriorityAction()
+                },
+                onDismiss = { showPriorityDetails = false }
+            )
+        }
     }
 }
 
@@ -327,6 +353,7 @@ private fun PriorityHero(
     description: String,
     compact: Boolean,
     onOpenClick: () -> Unit,
+    onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val heroHeight = if (compact) 174.dp else 190.dp
@@ -393,7 +420,8 @@ private fun PriorityHero(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(heroHeight),
+            .height(heroHeight)
+            .cleanClickable(onDetailsClick),
         shape = RoundedCornerShape(19.dp),
         color = Color.Transparent,
         border = BorderStroke(1.dp, HomeHeroStroke),
@@ -559,7 +587,8 @@ private fun PriorityHero(
                         lineHeight = if (compact) 15.sp else 16.sp,
                         fontWeight = FontWeight.Normal,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.cleanClickable(onDetailsClick)
                     )
                     Box(
                         modifier = Modifier
@@ -589,6 +618,208 @@ private fun PriorityHero(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PriorityContextSheet(
+    priority: HomePrioritySummary,
+    actionLabel: String,
+    onActionClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val bodyParagraphs = priority.sheetBodyParagraphs()
+    val suggestionText = priority.sheetSuggestionText()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = HomePrioritySheetSurface,
+        contentColor = HomePrioritySheetText,
+        scrimColor = Color.Black.copy(alpha = 0.64f),
+        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .size(width = 42.dp, height = 4.dp)
+                    .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(100.dp))
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(start = 30.dp, end = 30.dp, bottom = 42.dp),
+            verticalArrangement = Arrangement.spacedBy(17.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                PrioritySunBadge()
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        text = priority.title,
+                        color = HomePrioritySheetText,
+                        fontSize = 25.sp,
+                        lineHeight = 29.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "✦ Tu prioridad de hoy",
+                        color = HomePrioritySheetAccentSoft,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                bodyParagraphs.forEach { paragraph ->
+                    Text(
+                        text = paragraph,
+                        color = HomePrioritySheetBody,
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(HomePrioritySheetSuggestion, RoundedCornerShape(18.dp))
+                    .border(
+                        width = 0.7.dp,
+                        color = Color.White.copy(alpha = 0.07f),
+                        shape = RoundedCornerShape(18.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                PriorityBulbBadge()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Sugerencia",
+                        color = HomePrioritySheetAccentSoft,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = suggestionText,
+                        color = HomePrioritySheetBody,
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(13.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HomePrioritySheetSecondaryButton,
+                        contentColor = HomePrioritySheetText
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                ) {
+                    Text("Cerrar", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Button(
+                    onClick = onActionClick,
+                    shape = RoundedCornerShape(13.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HomePurple,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                ) {
+                    Text(actionLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrioritySunBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .background(HomePrioritySheetIconCircle, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(32.dp)) {
+            val center = this.center
+            val rayStart = size.minDimension * 0.35f
+            val rayEnd = size.minDimension * 0.48f
+            drawCircle(
+                color = HomePrioritySheetSun,
+                radius = size.minDimension * 0.20f,
+                center = center
+            )
+            repeat(8) { index ->
+                val angle = Math.toRadians((index * 45).toDouble())
+                val start = Offset(
+                    x = center.x + kotlin.math.cos(angle).toFloat() * rayStart,
+                    y = center.y + kotlin.math.sin(angle).toFloat() * rayStart
+                )
+                val end = Offset(
+                    x = center.x + kotlin.math.cos(angle).toFloat() * rayEnd,
+                    y = center.y + kotlin.math.sin(angle).toFloat() * rayEnd
+                )
+                drawLine(
+                    color = HomePrioritySheetSun,
+                    start = start,
+                    end = end,
+                    strokeWidth = 2.2.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriorityBulbBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(42.dp)
+            .background(HomePrioritySheetIconCircle, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Lightbulb,
+            contentDescription = null,
+            tint = HomePrioritySheetAccentSoft,
+            modifier = Modifier.size(24.dp)
+        )
     }
 }
 
@@ -1262,6 +1493,56 @@ private val HomeHeroLightModeGlow = Color(0xFFD9C7FF)
 private val HomeHeroLightModeAccent = Color(0xFFB892FF)
 private val HomeHeroLightModeDepth = Color(0xFF8E6AE8)
 private val HomeCompanionHeart = Color(0xFFC08CFF)
+private val HomePrioritySheetSurface: Color
+    @Composable get() = UniStackColors.Background
+private val HomePrioritySheetSuggestion = Color(0xFF15182B)
+private val HomePrioritySheetText = Color(0xFFF4F3FF)
+private val HomePrioritySheetBody = Color(0xFFCDD2E3)
+private val HomePrioritySheetMuted = Color(0xFF9EA6BA)
+private val HomePrioritySheetSecondaryButton = Color(0xFF202232)
+private val HomePrioritySheetIconCircle = Color(0xFF201044)
+private val HomePrioritySheetSun = Color(0xFFFFD21F)
+private val HomePrioritySheetAccentSoft = Color(0xFFA855F7)
+
+private fun HomePriorityAction.actionLabel(): String {
+    return when (this) {
+        HomePriorityAction.SUBJECT -> "Abrir materia"
+        HomePriorityAction.SUBJECTS -> "Ver materias"
+        HomePriorityAction.TASKS -> "Ver mis tareas"
+        HomePriorityAction.TEMPLATES -> "Ver trabajos"
+    }
+}
+
+private fun HomePrioritySummary.sheetBodyParagraphs(): List<String> {
+    if (title == "Día despejado") {
+        return listOf(
+            "No tienes vencimientos cercanos por ahora.",
+            "Es un buen momento para repasar, avanzar en tus materias y dejar listas tus próximas actividades."
+        )
+    }
+
+    val sentences = fullDescription
+        .split(". ")
+        .mapIndexed { index, part ->
+            val trimmed = part.trim()
+            if (trimmed.endsWith(".") || index == fullDescription.split(". ").lastIndex) trimmed else "$trimmed."
+        }
+        .filter { it.isNotBlank() }
+
+    return when {
+        sentences.size >= 2 -> listOf(sentences.first(), sentences.drop(1).joinToString(" "))
+        sentences.size == 1 -> listOf(sentences.first())
+        else -> listOf(shortDescription)
+    }
+}
+
+private fun HomePrioritySummary.sheetSuggestionText(): String {
+    if (title == "Día despejado") {
+        return "Dedica al menos 15 minutos a repasar hoy para mantener el ritmo."
+    }
+    return suggestion.substringAfter(": ", suggestion)
+        .replaceFirstChar { char -> char.uppercase() }
+}
 
 @Preview(name = "Home Android modern", widthDp = 412, heightDp = 892, showBackground = true)
 @Composable
@@ -1289,7 +1570,9 @@ private val previewHomeSummary = HomeSummary(
     dashboardMessage = "Inglés necesita atención.",
     priority = HomePrioritySummary(
         title = "Inglés necesita atención",
-        description = "Necesitas reforzar apuntes antes de la siguiente clase.",
+        shortDescription = "Repasa esta materia antes de abrir más frentes.",
+        fullDescription = "Inglés necesita atención académica. Revisa tus apuntes antes de entrar y prioriza lo que más peso tenga en la materia.",
+        suggestion = "Siguiente paso: repasar Inglés 15 minutos y dejar lista una nota corta.",
         action = HomePriorityAction.SUBJECT,
         subjectId = "english"
     ),
