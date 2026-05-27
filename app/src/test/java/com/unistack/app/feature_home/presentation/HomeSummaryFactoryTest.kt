@@ -11,6 +11,7 @@ import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
+import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AuthProvider
@@ -71,8 +72,30 @@ class HomeSummaryFactoryTest {
 
         assertEquals(1, summary.overdueTasks)
         assertTrue(summary.dashboardMessage.contains("vencida"))
+        assertEquals(HomePriorityAction.TASKS, summary.priority.action)
+        assertTrue(summary.priority.title.contains("vencida"))
         assertEquals("Matemáticas", summary.riskSubject?.subjectName)
         assertEquals("Promedio bajo la nota mínima: 2.5.", summary.riskSubject?.detail)
+    }
+
+    @Test
+    fun createSurfacesExpensePriorityWhenWeeklyBudgetThresholdIsReached() {
+        val summary = HomeSummaryFactory.create(
+            content = HomeContent(
+                subjects = listOf(subject(id = "history", name = "Historia")),
+                tasks = emptyList(),
+                expenses = listOf(expense(amount = 8_000)),
+                works = emptyList()
+            ),
+            profile = profile().copy(
+                weeklyBudget = 10_000,
+                expenseAlertThresholdPercent = 70
+            ),
+            user = appUser()
+        )
+
+        assertEquals(HomePriorityAction.EXPENSES, summary.priority.action)
+        assertEquals("Gastos cerca del límite", summary.priority.title)
     }
 
     @Test

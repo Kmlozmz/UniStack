@@ -67,12 +67,13 @@ internal object HomeSummaryFactory {
             subjectNameById = subjects.associate { it.id to it.name }
         )
         val priority = prioritySummary(
-            hasSubjects = subjects.isNotEmpty(),
-            overdueTasks = overdueTasks,
+            subjects = subjects,
+            pendingTasks = pendingTasks,
+            works = works,
             riskSubject = riskSubject,
-            nextTask = nextTask,
-            nextAcademicWork = nextAcademicWork,
-            todayItems = todayItems
+            weeklyExpenseTotal = weeklyExpenseTotal,
+            profile = profile,
+            enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         )
 
         return HomeSummary(
@@ -196,14 +197,15 @@ internal object HomeSummaryFactory {
     }
 
     private fun prioritySummary(
-        hasSubjects: Boolean,
-        overdueTasks: Int,
+        subjects: List<Subject>,
+        pendingTasks: List<StudentTask>,
+        works: List<AcademicWork>,
         riskSubject: SubjectRiskSummary?,
-        nextTask: TaskSummary?,
-        nextAcademicWork: AcademicWorkSummary?,
-        todayItems: List<HomeTimelineSummary>
+        weeklyExpenseTotal: Int,
+        profile: UserProfile?,
+        enabledModules: Set<AppModule>
     ): HomePrioritySummary {
-        if (!hasSubjects) {
+        if (subjects.isEmpty()) {
             return HomePrioritySummary(
                 title = "Prepara tu semestre",
                 shortDescription = "Agrega tus materias para activar prioridades reales.",
@@ -213,86 +215,223 @@ internal object HomeSummaryFactory {
             )
         }
 
-        if (overdueTasks > 0 && nextTask != null) {
-            return HomePrioritySummary(
-                title = "Tareas vencidas necesitan atención",
-                shortDescription = "Cierra una pendiente vencida antes de abrir más frentes.",
-                fullDescription = "Tienes $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"}. La primera que conviene resolver es ${nextTask.title}.",
-                suggestion = "${heroActionPrefix()}: reserva ${nextTask.estimatedTimeText} para avanzar sin acumular más presión.",
-                action = HomePriorityAction.TASKS
-            )
+        val candidates = buildList {
+            bestTaskCandidate(pendingTasks)?.let(::add)
+            bestAcademicWorkCandidate(works)?.let(::add)
+            subjectRiskCandidate(riskSubject)?.let(::add)
+            expenseCandidate(
+                weeklyExpenseTotal = weeklyExpenseTotal,
+                profile = profile,
+                enabledModules = enabledModules
+            )?.let(::add)
         }
 
-        if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) {
-            return HomePrioritySummary(
-                title = "${riskSubject.subjectName} necesita atención",
-                shortDescription = "Repasa esta materia antes de abrir más frentes.",
-                fullDescription = "${riskSubject.subjectName} necesita atención académica. ${riskSubject.detail}",
-                suggestion = "${heroActionPrefix()}: repasar ${riskSubject.subjectName} 15 minutos y revisar qué evaluación pesa más.",
-                action = HomePriorityAction.SUBJECT,
-                subjectId = riskSubject.subjectId
+        return candidates.maxByOrNull { it.score }?.summary
+            ?: calmPrioritySummary(
+                subjects = subjects,
+                pendingTasks = pendingTasks,
+                works = works,
+                weeklyExpenseTotal = weeklyExpenseTotal,
+                enabledModules = enabledModules
             )
-        }
+    }
 
-        val urgentItem = todayItems.firstOrNull { it.state == HomeTimelineState.CURRENT }
-            ?: todayItems.firstOrNull()
-        if (urgentItem != null) {
-            val action = when (urgentItem.kind) {
-                HomeTimelineKind.WORK -> HomePriorityAction.TEMPLATES
-                HomeTimelineKind.TASK,
-                HomeTimelineKind.EXAM -> HomePriorityAction.TASKS
-                HomeTimelineKind.CLASS,
-                HomeTimelineKind.FOCUS -> riskSubject?.subjectId?.let { HomePriorityAction.SUBJECT } ?: HomePriorityAction.SUBJECTS
+    private fun bestTaskCandidate(tasks: List<StudentTask>): PriorityCandidate? {
+        val today = TaskDateUtils.today()
+        return tasks.mapNotNull { task ->
+            val days = ChronoUnit.DAYS.between(today, TaskDateUtils.fromMillis(task.dueDateMillis))
+            val baseScore = when {
+                days < 0 -> 940
+                days == 0L -> 900
+                days == 1L -> 760
+                days in 2..3 -> 650
+                else -> return@mapNotNull null
             }
-            return HomePrioritySummary(
-                title = "${urgentItem.title} merece atención",
-                shortDescription = "Enfócate en lo próximo y mantén el día liviano.",
-                fullDescription = "${urgentItem.title} aparece como lo más relevante ahora. ${urgentItem.timeText}. ${urgentItem.subtitle}",
-                suggestion = "${heroActionPrefix()}: atender esto primero y evitar abrir nuevas pendientes.",
-                action = action,
-                subjectId = riskSubject?.subjectId
+            val typeBoost = when (task.type) {
+                TaskType.EXAM,
+                TaskType.TEST -> 45
+                TaskType.PROJECT -> 30
+                TaskType.ESSAY,
+                TaskType.PRESENTATION,
+                TaskType.RESEARCH -> 20
+                else -> 0
+            }
+            val difficultyBoost = when (task.difficulty) {
+                TaskDifficulty.HARD -> 25
+                TaskDifficulty.MEDIUM -> 12
+                TaskDifficulty.EASY -> 0
+            }
+            PriorityCandidate(
+                score = baseScore + typeBoost + difficultyBoost,
+                summary = task.prioritySummary(days)
             )
-        }
+        }.maxByOrNull { it.score }
+    }
 
-        if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) {
-            return HomePrioritySummary(
-                title = "${riskSubject.subjectName} está cerca de la meta",
-                shortDescription = "Vigila esta materia con un repaso corto hoy.",
-                fullDescription = "${riskSubject.subjectName} está cerca de tu meta. ${riskSubject.detail}",
-                suggestion = "${heroActionPrefix()}: dedicar 15 minutos a revisar apuntes o porcentajes pendientes.",
-                action = HomePriorityAction.SUBJECT,
-                subjectId = riskSubject.subjectId
-            )
+    private fun StudentTask.prioritySummary(days: Long): HomePrioritySummary {
+        val dueText = TaskDateUtils.dueText(dueDateMillis)
+        val timeText = TaskDateUtils.estimatedTimeText(estimatedMinutes)
+        val isExamLike = type == TaskType.EXAM || type == TaskType.TEST
+        val titleText = when {
+            days < 0 -> "$title está vencida"
+            days == 0L && isExamLike -> "$title es hoy"
+            days == 0L -> "$title vence hoy"
+            days == 1L -> "$title es mañana"
+            else -> "$title es lo siguiente"
         }
-
-        if (nextAcademicWork != null) {
-            return HomePrioritySummary(
-                title = "${nextAcademicWork.title} es lo siguiente",
-                shortDescription = "Avanza un poco antes de que se acumule.",
-                fullDescription = "${nextAcademicWork.title} es el próximo trabajo académico en tu lista. Vence ${nextAcademicWork.dueText} y conviene moverlo aunque sea con un avance pequeño.",
-                suggestion = "${heroActionPrefix()}: avanzar 15 minutos y marcar un paso claro del trabajo.",
-                action = HomePriorityAction.TEMPLATES,
-                subjectId = nextAcademicWork.subjectId
-            )
-        }
-
-        if (nextTask != null) {
-            return HomePrioritySummary(
-                title = "${nextTask.title} es lo siguiente",
-                shortDescription = "Reserva un bloque corto para cerrarla con calma.",
-                fullDescription = "${nextTask.title} es tu próxima tarea clara. Vence ${nextTask.dueText} y tiene un tiempo estimado de ${nextTask.estimatedTimeText}.",
-                suggestion = "${heroActionPrefix()}: apartar ese bloque antes de sumar nuevas tareas.",
-                action = HomePriorityAction.TASKS
-            )
-        }
-
+        val actionVerb = if (isExamLike) "repasar" else "avanzar"
         return HomePrioritySummary(
-            title = "Día despejado",
-            shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
-            fullDescription = "No tienes vencimientos cercanos por ahora. Es un buen momento para repasar, avanzar en tus materias o dejar listas tus próximas actividades.",
-            suggestion = "${heroActionPrefix()}: dedica 15 minutos a repasar hoy para mantener el ritmo.",
+            title = titleText,
+            shortDescription = when {
+                days < 0 -> "Cierra esta pendiente antes de abrir más frentes."
+                days == 0L -> "Atiéndela hoy para mantener el día bajo control."
+                else -> "Reserva un bloque corto antes de que se acerque."
+            },
+            fullDescription = when {
+                days < 0 -> "La elegí porque ya está vencida. $title aparece como la tarea que más conviene resolver primero."
+                days == 0L -> "La elegí porque vence hoy. $title necesita atención para que el resto del día no se acumule."
+                else -> "La elegí porque vence $dueText y tiene una prioridad suficiente para prepararla con calma."
+            },
+            suggestion = "${heroActionPrefix()}: $actionVerb $timeText y dejar un avance claro.",
             action = HomePriorityAction.TASKS
         )
+    }
+
+    private fun bestAcademicWorkCandidate(works: List<AcademicWork>): PriorityCandidate? {
+        val today = TaskDateUtils.today()
+        return works
+            .filterNot { it.status == AcademicWorkStatus.SUBMITTED }
+            .mapNotNull { work ->
+                val dueMillis = work.dueDateMillis ?: return@mapNotNull null
+                val days = ChronoUnit.DAYS.between(today, TaskDateUtils.fromMillis(dueMillis))
+                val baseScore = when {
+                    days < 0 -> 900
+                    days == 0L -> 840
+                    days == 1L -> 740
+                    days in 2..5 -> 610
+                    else -> return@mapNotNull null
+                }
+                val priorityBoost = when (work.priority) {
+                    AcademicWorkPriority.HIGH -> 35
+                    AcademicWorkPriority.MEDIUM -> 18
+                    AcademicWorkPriority.LOW -> 0
+                }
+                PriorityCandidate(
+                    score = baseScore + priorityBoost,
+                    summary = work.prioritySummary(days)
+                )
+            }
+            .maxByOrNull { it.score }
+    }
+
+    private fun AcademicWork.prioritySummary(days: Long): HomePrioritySummary {
+        val dueText = dueDateMillis?.let(TaskDateUtils::dueText) ?: "sin fecha"
+        return HomePrioritySummary(
+            title = when {
+                days < 0 -> "$title está vencido"
+                days == 0L -> "$title vence hoy"
+                days == 1L -> "$title es mañana"
+                else -> "$title es lo siguiente"
+            },
+            shortDescription = when {
+                days <= 0 -> "Dale prioridad antes de sumar nuevas tareas."
+                else -> "Avanza un poco antes de que se acumule."
+            },
+            fullDescription = "La elegí porque este trabajo vence $dueText y todavía no está marcado como entregado. Un avance pequeño hoy reduce presión después.",
+            suggestion = "${heroActionPrefix()}: avanzar 15 minutos y marcar un paso concreto.",
+            action = HomePriorityAction.TEMPLATES,
+            subjectId = subjectId
+        )
+    }
+
+    private fun subjectRiskCandidate(riskSubject: SubjectRiskSummary?): PriorityCandidate? {
+        val risk = riskSubject ?: return null
+        if (risk.severity == SubjectRiskSeverity.STABLE) return null
+        val critical = risk.severity == SubjectRiskSeverity.CRITICAL
+        return PriorityCandidate(
+            score = if (critical) 870 else 680,
+            summary = HomePrioritySummary(
+                title = if (critical) "${risk.subjectName} necesita atención" else "${risk.subjectName} está cerca de la meta",
+                shortDescription = if (critical) {
+                    "Repasa esta materia antes de abrir más frentes."
+                } else {
+                    "Vigila esta materia con un repaso corto hoy."
+                },
+                fullDescription = "La elegí porque ${risk.subjectName} requiere seguimiento académico. ${risk.detail}",
+                suggestion = "${heroActionPrefix()}: repasar ${risk.subjectName} 15 minutos y revisar qué evaluación pesa más.",
+                action = HomePriorityAction.SUBJECT,
+                subjectId = risk.subjectId
+            )
+        )
+    }
+
+    private fun expenseCandidate(
+        weeklyExpenseTotal: Int,
+        profile: UserProfile?,
+        enabledModules: Set<AppModule>
+    ): PriorityCandidate? {
+        if (AppModule.EXPENSES !in enabledModules || weeklyExpenseTotal <= 0) return null
+
+        val weeklyBudget = profile?.weeklyBudget ?: 0
+        if (weeklyBudget <= 0) return null
+
+        val threshold = (profile?.expenseAlertThresholdPercent ?: 80).coerceIn(1, 100)
+        val usagePercent = (weeklyExpenseTotal * 100) / weeklyBudget
+        if (usagePercent < threshold) return null
+
+        val overBudget = weeklyExpenseTotal > weeklyBudget
+        return PriorityCandidate(
+            score = if (overBudget) 820 else 570,
+            summary = HomePrioritySummary(
+                title = if (overBudget) "Gastos sobre el límite" else "Gastos cerca del límite",
+                shortDescription = "Revisa tu semana antes de registrar más gastos.",
+                fullDescription = "La elegí porque ya usaste $usagePercent% de tu presupuesto semanal. Revisarlo ahora te ayuda a ajustar el resto de la semana.",
+                suggestion = "${heroActionPrefix()}: mirar tus categorías y decidir si conviene pausar algún gasto.",
+                action = HomePriorityAction.EXPENSES
+            )
+        )
+    }
+
+    private fun calmPrioritySummary(
+        subjects: List<Subject>,
+        pendingTasks: List<StudentTask>,
+        works: List<AcademicWork>,
+        weeklyExpenseTotal: Int,
+        enabledModules: Set<AppModule>
+    ): HomePrioritySummary {
+        val index = TaskDateUtils.today().dayOfYear % 4
+        val canUseExpenses = AppModule.EXPENSES in enabledModules && weeklyExpenseTotal > 0
+        val hasOpenWorks = works.any { it.status != AcademicWorkStatus.SUBMITTED }
+        return when {
+            canUseExpenses && index == 1 -> HomePrioritySummary(
+                title = "Gastos bajo control",
+                shortDescription = "Buen momento para revisar si tu semana sigue en ritmo.",
+                fullDescription = "No hay urgencias académicas fuertes ahora. Como ya registraste gastos esta semana, puedes hacer una revisión rápida sin convertirlo en preocupación.",
+                suggestion = "${heroActionPrefix()}: revisar tus gastos 2 minutos y seguir con el día.",
+                action = HomePriorityAction.EXPENSES
+            )
+            hasOpenWorks && index == 2 -> HomePrioritySummary(
+                title = "Espacio para avanzar",
+                shortDescription = "Aprovecha un bloque corto para mover un trabajo.",
+                fullDescription = "No tienes una urgencia clara ahora. Este es un buen momento para avanzar un trabajo abierto antes de que se acerque la fecha.",
+                suggestion = "${heroActionPrefix()}: escoger un trabajo y avanzar 15 minutos.",
+                action = HomePriorityAction.TEMPLATES
+            )
+            pendingTasks.isNotEmpty() && index == 3 -> HomePrioritySummary(
+                title = "Buen ritmo",
+                shortDescription = "Ordena una tarea pequeña y deja el día más liviano.",
+                fullDescription = "No hay vencimientos cercanos fuertes. Aun así, tienes tareas pendientes que puedes organizar para evitar presión después.",
+                suggestion = "${heroActionPrefix()}: elegir una tarea simple y dejarla encaminada.",
+                action = HomePriorityAction.TASKS
+            )
+            else -> HomePrioritySummary(
+                title = "Día despejado",
+                shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
+                fullDescription = "No tienes vencimientos cercanos por ahora. Es un buen momento para repasar, avanzar en tus materias o dejar listas tus próximas actividades.",
+                suggestion = "${heroActionPrefix()}: dedica 15 minutos a repasar hoy para mantener el ritmo.",
+                action = if (subjects.isNotEmpty()) HomePriorityAction.SUBJECTS else HomePriorityAction.TASKS
+            )
+        }
     }
 
     private fun heroActionPrefix(): String {
@@ -302,6 +441,11 @@ internal object HomeSummaryFactory {
             else -> "Siguiente paso"
         }
     }
+
+    private data class PriorityCandidate(
+        val score: Int,
+        val summary: HomePrioritySummary
+    )
 
     private fun todayTimelineItems(
         tasks: List<StudentTask>,

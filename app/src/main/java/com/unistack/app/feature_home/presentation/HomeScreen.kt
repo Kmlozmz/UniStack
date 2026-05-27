@@ -136,6 +136,7 @@ fun HomeScreen(
             HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
             HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
             HomePriorityAction.TASKS -> onSeeTasksClick()
+            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
             HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
         }
     }
@@ -1509,6 +1510,7 @@ private fun HomePriorityAction.actionLabel(): String {
         HomePriorityAction.SUBJECT -> "Abrir materia"
         HomePriorityAction.SUBJECTS -> "Ver materias"
         HomePriorityAction.TASKS -> "Ver mis tareas"
+        HomePriorityAction.EXPENSES -> "Ver gastos"
         HomePriorityAction.TEMPLATES -> "Ver trabajos"
     }
 }

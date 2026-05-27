@@ -41,6 +41,7 @@ enum class HomePriorityAction {
     SUBJECT,
     SUBJECTS,
     TASKS,
+    EXPENSES,
     TEMPLATES
 }
 
