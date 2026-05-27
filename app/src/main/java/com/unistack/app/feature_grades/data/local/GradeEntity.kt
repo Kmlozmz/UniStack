@@ -15,7 +15,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("subjectId")]
+    indices = [Index("subjectId"), Index("periodId")]
 )
 data class GradeEntity(
     @PrimaryKey val id: String,
@@ -23,5 +23,7 @@ data class GradeEntity(
     val name: String,
     val value: Double,
     val percentage: Double,
+    val type: String = "WORKSHOP",
+    val periodId: String = "period-1",
     val createdAt: Long
 )

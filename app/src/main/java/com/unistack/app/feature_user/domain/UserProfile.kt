@@ -30,6 +30,7 @@ data class UserProfile(
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
     val gradeScenarios: List<SavedGradeScenario> = emptyList(),
+    val academicPeriodScheme: AcademicPeriodScheme = AcademicPeriodScheme.default(),
     val setupCompleted: Boolean,
     val createdAt: Long,
     val updatedAt: Long
@@ -44,6 +45,50 @@ data class SavedGradeScenario(
     val neededGrade: Double?,
     val createdAt: Long
 )
+
+data class AcademicPeriodScheme(
+    val label: AcademicPeriodLabel = AcademicPeriodLabel.PERIOD,
+    val periods: List<AcademicPeriod> = defaultPeriods()
+) {
+    val totalWeight: Double
+        get() = periods.sumOf { it.weight }
+
+    val isValid: Boolean
+        get() = periods.isNotEmpty() &&
+            periods.all { it.weight > 0.0 } &&
+            kotlin.math.abs(totalWeight - 1.0) <= 0.0001
+
+    fun periodName(periodId: String?): String {
+        return periods.firstOrNull { it.id == periodId }?.name
+            ?: periods.firstOrNull()?.name
+            ?: label.singular
+    }
+
+    companion object {
+        fun default(): AcademicPeriodScheme = AcademicPeriodScheme(
+            label = AcademicPeriodLabel.PERIOD,
+            periods = defaultPeriods()
+        )
+
+        fun defaultPeriods(): List<AcademicPeriod> = listOf(
+            AcademicPeriod(id = "period-1", name = "Periodo 1", weight = 0.30, order = 1),
+            AcademicPeriod(id = "period-2", name = "Periodo 2", weight = 0.40, order = 2),
+            AcademicPeriod(id = "period-3", name = "Periodo 3", weight = 0.30, order = 3)
+        )
+    }
+}
+
+data class AcademicPeriod(
+    val id: String,
+    val name: String,
+    val weight: Double,
+    val order: Int
+)
+
+enum class AcademicPeriodLabel(val singular: String, val plural: String) {
+    PERIOD("Periodo", "Periodos"),
+    CORTE("Corte", "Cortes")
+}
 
 enum class EducationLevel {
     PRIMARY,

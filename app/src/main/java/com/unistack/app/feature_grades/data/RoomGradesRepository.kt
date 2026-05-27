@@ -105,7 +105,9 @@ class RoomGradesRepository(
                 gradeId = grade.id,
                 name = grade.name,
                 value = grade.value,
-                percentage = grade.percentage
+                percentage = grade.percentage,
+                type = grade.type.name,
+                periodId = grade.periodId
             )
         }
     }

@@ -7,6 +7,9 @@ import androidx.lifecycle.ViewModel
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
@@ -42,6 +45,10 @@ class SetupViewModel(
     var targetAverageText by mutableStateOf("4.0")
         private set
     var enabledModules by mutableStateOf(AppModule.entries.toSet())
+        private set
+    var academicPeriodLabel by mutableStateOf(AcademicPeriodLabel.PERIOD)
+        private set
+    var academicPeriodWeights by mutableStateOf(listOf("30", "40", "30"))
         private set
 
     val nameValidation: ValidationResult
@@ -84,6 +91,9 @@ class SetupViewModel(
                 target in 0.0..max &&
                 target >= passing
         }
+
+    val isAcademicPeriodsValid: Boolean
+        get() = buildAcademicPeriodSchemeOrNull() != null
 
     fun updatePreferredName(value: String) {
         preferredName = value.take(30)
@@ -165,6 +175,26 @@ class SetupViewModel(
         }
     }
 
+    fun updateAcademicPeriodLabel(label: AcademicPeriodLabel) {
+        academicPeriodLabel = label
+    }
+
+    fun updateAcademicPeriodCount(count: Int) {
+        val safeCount = count.coerceIn(1, 6)
+        academicPeriodWeights = when (safeCount) {
+            2 -> listOf("50", "50")
+            3 -> listOf("30", "40", "30")
+            4 -> listOf("25", "25", "25", "25")
+            else -> List(safeCount) { index -> if (index == safeCount - 1) "100" else "" }
+        }
+    }
+
+    fun updateAcademicPeriodWeight(index: Int, value: String) {
+        academicPeriodWeights = academicPeriodWeights.mapIndexed { currentIndex, currentValue ->
+            if (currentIndex == index) value.filter { it.isDigit() || it == '.' }.take(5) else currentValue
+        }
+    }
+
     fun finishSetup() {
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
@@ -180,6 +210,7 @@ class SetupViewModel(
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
+            academicPeriodScheme = buildAcademicPeriodSchemeOrNull() ?: AcademicPeriodScheme.default(),
             visualPreference = VisualPreference.SYSTEM,
             setupCompleted = true,
             createdAt = now,
@@ -199,6 +230,24 @@ class SetupViewModel(
             }
         }
         return TextValidators.normalizeText(academicInfo).takeIf { it.isNotEmpty() }
+    }
+
+    private fun buildAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
+        val weights = academicPeriodWeights.map { it.toDoubleOrNull()?.div(100.0) ?: return null }
+        if (weights.any { it <= 0.0 }) return null
+        if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return null
+        return AcademicPeriodScheme(
+            label = academicPeriodLabel,
+            periods = weights.mapIndexed { index, weight ->
+                val order = index + 1
+                AcademicPeriod(
+                    id = "period-$order",
+                    name = "${academicPeriodLabel.singular} $order",
+                    weight = weight,
+                    order = order
+                )
+            }
+        )
     }
 
     private fun EducationLevel.isSchoolLevel(): Boolean = this == EducationLevel.PRIMARY || this == EducationLevel.SECONDARY

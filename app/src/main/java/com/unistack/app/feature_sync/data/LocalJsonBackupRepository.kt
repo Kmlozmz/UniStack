@@ -10,6 +10,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -213,6 +214,8 @@ class LocalJsonBackupRepository(
         .put("name", grade.name)
         .put("value", grade.value)
         .put("percentage", grade.percentage)
+        .put("type", grade.type.name)
+        .put("periodId", grade.periodId)
 
     private fun taskJson(task: StudentTask): JSONObject = JSONObject()
         .put("id", task.id)
@@ -266,7 +269,9 @@ class LocalJsonBackupRepository(
             id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             name = item.optString("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             value = item.optDouble("value"),
-            percentage = item.optDouble("percentage")
+            percentage = item.optDouble("percentage"),
+            type = item.optString("type").toEnum(GradeType.WORKSHOP),
+            periodId = item.optString("periodId", "period-1").ifBlank { "period-1" }
         )
     }
 

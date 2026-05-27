@@ -1,6 +1,7 @@
 package com.unistack.app.feature_grades.data.local
 
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 
@@ -30,11 +31,15 @@ fun Subject.toEntity(userId: String): SubjectEntity {
 }
 
 fun GradeEntity.toDomain(): GradeItem {
+    val gradeType = runCatching { GradeType.valueOf(type) }
+        .getOrDefault(GradeType.WORKSHOP)
     return GradeItem(
         id = id,
         name = name,
         value = value,
-        percentage = percentage
+        percentage = percentage,
+        type = gradeType,
+        periodId = periodId.ifBlank { "period-1" }
     )
 }
 
@@ -45,6 +50,8 @@ fun GradeItem.toEntity(subjectId: String): GradeEntity {
         name = name,
         value = value,
         percentage = percentage,
+        type = type.name,
+        periodId = periodId,
         createdAt = System.currentTimeMillis()
     )
 }

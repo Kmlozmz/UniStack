@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +17,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,8 +40,10 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_user.domain.GradingScale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AddGradeScreen(
     subjectId: String,
@@ -54,6 +60,8 @@ fun AddGradeScreen(
     var name by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
     var percentage by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(GradeType.WORKSHOP) }
+    var selectedPeriodId by remember { mutableStateOf("period-1") }
     var initialized by remember(subjectId, gradeId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -61,11 +69,14 @@ fun AddGradeScreen(
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(scale)
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
+    val periodScheme = profile?.academicPeriodScheme ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
+    val selectedPeriod = periodScheme.periods.firstOrNull { it.id == selectedPeriodId } ?: periodScheme.periods.first()
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
     val currentPercentage = subject?.grades
         ?.filterNot { it.id == gradeId }
+        ?.filter { it.periodId == selectedPeriod.id }
         ?.sumOf { it.percentage } ?: 0.0
     val totalPercentage = currentPercentage + (percentageValue ?: 0.0) / 100.0
 
@@ -86,6 +97,8 @@ fun AddGradeScreen(
             name = grade.name
             value = GradingScaleUtils.formatGrade(grade.value, scale)
             percentage = String.format(java.util.Locale.US, "%.0f", grade.percentage * 100)
+            selectedType = grade.type
+            selectedPeriodId = grade.periodId
             initialized = true
         } else if (!isEditing) {
             initialized = true
@@ -150,6 +163,38 @@ fun AddGradeScreen(
                     shape = AppShapes.MediumCard,
                     isError = value.isNotBlank() && !isGradeValid
                 )
+                Text(
+                    "Tipo de nota",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GradeType.entries.forEach { type ->
+                        FilterChip(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            label = { Text(type.label()) }
+                        )
+                    }
+                }
+                Text(
+                    periodScheme.label.singular,
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    periodScheme.periods.forEach { period ->
+                        FilterChip(
+                            selected = selectedPeriod.id == period.id,
+                            onClick = { selectedPeriodId = period.id },
+                            label = { Text(period.name) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = percentage,
                     onValueChange = {
@@ -163,7 +208,7 @@ fun AddGradeScreen(
                     isError = percentage.isNotBlank() && !isPercentageValid,
                     supportingText = {
                         if (percentage.isNotBlank() && !isPercentageValid) {
-                            Text("El porcentaje debe ser mayor que 0 y no superar 100% acumulado.")
+                            Text("El porcentaje debe ser mayor que 0 y no superar 100% dentro de ${selectedPeriod.name}.")
                         }
                     }
                 )
@@ -181,20 +226,24 @@ fun AddGradeScreen(
                         gradeId = editingGradeId,
                         name = TextValidators.normalizeText(name),
                         value = gradeValue ?: 0.0,
-                        percentageInput = percentageValue ?: 0.0
+                        percentageInput = percentageValue ?: 0.0,
+                        type = selectedType,
+                        periodId = selectedPeriod.id
                     )
                 } else {
                     viewModel.addGrade(
                         subjectId = subjectId,
                         name = TextValidators.normalizeText(name),
                         value = gradeValue ?: 0.0,
-                        percentageInput = percentageValue ?: 0.0
+                        percentageInput = percentageValue ?: 0.0,
+                        type = selectedType,
+                        periodId = selectedPeriod.id
                     )
                 }
                 if (saved) {
                     onBackClick()
                 } else {
-                    error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el porcentaje acumulado no supere 100%."
+                    error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el porcentaje acumulado no supere 100% en ${selectedPeriod.name}."
                 }
             },
             enabled = isValid,
@@ -203,5 +252,18 @@ fun AddGradeScreen(
         ) {
             Text(if (isEditing) "Guardar cambios" else "Guardar nota")
         }
+    }
+}
+
+private fun GradeType.label(): String {
+    return when (this) {
+        GradeType.WORKSHOP -> "Taller"
+        GradeType.PRESENTATION -> "Exposición"
+        GradeType.QUIZ -> "Quiz"
+        GradeType.EXAM -> "Parcial"
+        GradeType.PROJECT -> "Proyecto"
+        GradeType.RESEARCH -> "Investigación"
+        GradeType.PRACTICE -> "Práctica"
+        GradeType.OTHER -> "Otra"
     }
 }

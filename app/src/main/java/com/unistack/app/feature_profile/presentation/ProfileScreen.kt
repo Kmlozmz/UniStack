@@ -66,6 +66,7 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
@@ -104,6 +105,12 @@ fun ProfileScreen(
     var reminderLeadInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.reminderLeadHours?.toString() ?: "24")
     }
+    var academicPeriodLabel by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.academicPeriodScheme?.label ?: AcademicPeriodLabel.PERIOD)
+    }
+    var academicPeriodWeights by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.academicPeriodScheme?.periods?.map { percentInput(it.weight) } ?: listOf("30", "40", "30"))
+    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var localBackupInput by rememberSaveable { mutableStateOf("") }
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
@@ -122,6 +129,8 @@ fun ProfileScreen(
         passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
         targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, scale)
         reminderLeadInput = current.reminderLeadHours.toString()
+        academicPeriodLabel = current.academicPeriodScheme.label
+        academicPeriodWeights = current.academicPeriodScheme.periods.map { percentInput(it.weight) }
     }
 
     LazyColumn(
@@ -199,6 +208,38 @@ fun ProfileScreen(
                             "Configuración académica actualizada."
                         } else {
                             "Revisa que las notas estén dentro de la escala."
+                        }
+                    }
+                )
+            }
+            item {
+                AcademicPeriodsSettingsCard(
+                    label = academicPeriodLabel,
+                    weights = academicPeriodWeights,
+                    onLabelSelected = {
+                        academicPeriodLabel = it
+                        feedback = null
+                    },
+                    onCountSelected = { count ->
+                        academicPeriodWeights = when (count) {
+                            2 -> listOf("50", "50")
+                            3 -> listOf("30", "40", "30")
+                            4 -> listOf("25", "25", "25", "25")
+                            else -> academicPeriodWeights
+                        }
+                        feedback = null
+                    },
+                    onWeightChange = { index, value ->
+                        academicPeriodWeights = academicPeriodWeights.mapIndexed { currentIndex, currentValue ->
+                            if (currentIndex == index) value.filter { char -> char.isDigit() || char == '.' }.take(5) else currentValue
+                        }
+                        feedback = null
+                    },
+                    onSaveClick = {
+                        feedback = if (viewModel.updateAcademicPeriodSettings(academicPeriodLabel, academicPeriodWeights)) {
+                            "Periodos académicos actualizados."
+                        } else {
+                            "Revisa que los pesos sumen 100%."
                         }
                     }
                 )
@@ -809,6 +850,75 @@ private fun GradingSettingsCard(
 }
 
 @Composable
+private fun AcademicPeriodsSettingsCard(
+    label: AcademicPeriodLabel,
+    weights: List<String>,
+    onLabelSelected: (AcademicPeriodLabel) -> Unit,
+    onCountSelected: (Int) -> Unit,
+    onWeightChange: (Int, String) -> Unit,
+    onSaveClick: () -> Unit
+) {
+    val total = weights.sumOf { it.toDoubleOrNull() ?: 0.0 }
+    val isValid = weights.isNotEmpty() &&
+        weights.all { (it.toDoubleOrNull() ?: 0.0) > 0.0 } &&
+        kotlin.math.abs(total - 100.0) <= 0.01
+
+    SettingsCard(title = "${label.plural} del semestre") {
+        Text(
+            "Esta estructura se usa en todas las materias nuevas y existentes.",
+            color = UniStackColors.TextSecondary,
+            fontSize = 12.sp,
+            lineHeight = 16.sp
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AcademicPeriodLabel.entries.forEach { option ->
+                SelectionPill(
+                    text = option.singular,
+                    selected = label == option,
+                    onClick = { onLabelSelected(option) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(2, 3, 4).forEach { count ->
+                SelectionPill(
+                    text = count.toString(),
+                    selected = weights.size == count,
+                    onClick = { onCountSelected(count) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        weights.forEachIndexed { index, value ->
+            OutlinedTextField(
+                value = value,
+                onValueChange = { onWeightChange(index, it) },
+                label = { Text("${label.singular} ${index + 1} (%)") },
+                singleLine = true,
+                shape = AppShapes.MediumCard,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        Text(
+            "Total: ${String.format(java.util.Locale.US, "%.0f", total)}%",
+            color = if (isValid) UniStackColors.Green else UniStackColors.Coral,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Button(
+            onClick = onSaveClick,
+            enabled = isValid,
+            shape = AppShapes.Pill,
+            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Guardar ${label.plural.lowercase()}")
+        }
+    }
+}
+
+@Composable
 private fun ModulesSettingsCard(
     enabledModules: Set<AppModule>,
     onToggleModule: (AppModule) -> Unit
@@ -1066,6 +1176,15 @@ private fun defaultGradeInput(value: Double): String {
         value.toInt().toString()
     } else {
         String.format(java.util.Locale.US, "%.1f", value)
+    }
+}
+
+private fun percentInput(weight: Double): String {
+    val percent = weight * 100.0
+    return if (percent % 1.0 == 0.0) {
+        percent.toInt().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.1f", percent)
     }
 }
 

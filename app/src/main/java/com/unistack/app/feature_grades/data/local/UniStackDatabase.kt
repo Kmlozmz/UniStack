@@ -15,7 +15,7 @@ import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
     entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -119,6 +119,14 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE grades ADD COLUMN type TEXT NOT NULL DEFAULT 'WORKSHOP'")
+                db.execSQL("ALTER TABLE grades ADD COLUMN periodId TEXT NOT NULL DEFAULT 'period-1'")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_grades_periodId ON grades(periodId)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -132,6 +140,6 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
     }
 }

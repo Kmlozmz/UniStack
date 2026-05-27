@@ -6,6 +6,7 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -74,11 +75,18 @@ class GradesViewModel(
         return true
     }
 
-    fun addGrade(subjectId: String, name: String, value: Double, percentageInput: Double): Boolean {
+    fun addGrade(
+        subjectId: String,
+        name: String,
+        value: Double,
+        percentageInput: Double,
+        type: GradeType = GradeType.WORKSHOP,
+        periodId: String = "period-1"
+    ): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
         if (!TextValidators.validateActivityName(name).isValid) return false
         val percentage = percentageInput / 100.0
-        val total = subject.grades.sumOf { it.percentage } + percentage
+        val total = subject.grades.filter { it.periodId == periodId }.sumOf { it.percentage } + percentage
         
         // Get scale to validate grade value
         val maxGrade = getMaxGrade()
@@ -90,7 +98,9 @@ class GradesViewModel(
                 id = "grade-${UUID.randomUUID()}",
                 name = TextValidators.normalizeText(name),
                 value = value,
-                percentage = percentage
+                percentage = percentage,
+                type = type,
+                periodId = periodId
             )
         )
         return true
@@ -101,7 +111,9 @@ class GradesViewModel(
         gradeId: String,
         name: String,
         value: Double,
-        percentageInput: Double
+        percentageInput: Double,
+        type: GradeType = GradeType.WORKSHOP,
+        periodId: String = "period-1"
     ): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
         val existingGrade = subject.grades.firstOrNull { it.id == gradeId } ?: return false
@@ -110,6 +122,7 @@ class GradesViewModel(
         val percentage = percentageInput / 100.0
         val total = subject.grades
             .filterNot { it.id == gradeId }
+            .filter { it.periodId == periodId }
             .sumOf { it.percentage } + percentage
         val maxGrade = getMaxGrade()
         if (value !in 0.0..maxGrade || percentage <= 0.0 || total > 1.00001) return false
@@ -119,7 +132,9 @@ class GradesViewModel(
             grade = existingGrade.copy(
                 name = TextValidators.normalizeText(name),
                 value = value,
-                percentage = percentage
+                percentage = percentage,
+                type = type,
+                periodId = periodId
             )
         )
         return true

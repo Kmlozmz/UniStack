@@ -22,7 +22,9 @@ interface GradeDao {
         UPDATE grades
         SET name = :name,
             value = :value,
-            percentage = :percentage
+            percentage = :percentage,
+            type = :type,
+            periodId = :periodId
         WHERE id = :gradeId AND subjectId = :subjectId
         """
     )
@@ -31,7 +33,9 @@ interface GradeDao {
         gradeId: String,
         name: String,
         value: Double,
-        percentage: Double
+        percentage: Double,
+        type: String,
+        periodId: String
     )
 
     @Query("DELETE FROM grades WHERE id = :gradeId")

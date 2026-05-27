@@ -7,6 +7,9 @@ import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_profile.domain.FeatureGate
+import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
@@ -74,6 +77,30 @@ class ProfileViewModel(
                 targetAverage = targetAverage
             )
         )
+        return true
+    }
+
+    fun updateAcademicPeriodSettings(
+        label: AcademicPeriodLabel,
+        weightInputs: List<String>
+    ): Boolean {
+        val current = profile.value ?: return false
+        val weights = weightInputs.map { it.toDoubleOrNull()?.div(100.0) ?: return false }
+        if (weights.isEmpty() || weights.any { it <= 0.0 }) return false
+        if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return false
+        val scheme = AcademicPeriodScheme(
+            label = label,
+            periods = weights.mapIndexed { index, weight ->
+                val order = index + 1
+                AcademicPeriod(
+                    id = "period-$order",
+                    name = "${label.singular} $order",
+                    weight = weight,
+                    order = order
+                )
+            }
+        )
+        save(current.copy(academicPeriodScheme = scheme))
         return true
     }
 

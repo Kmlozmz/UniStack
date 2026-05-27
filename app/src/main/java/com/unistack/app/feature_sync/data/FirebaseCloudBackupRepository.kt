@@ -8,6 +8,7 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -192,7 +193,9 @@ class FirebaseCloudBackupRepository(
         "id" to grade.id,
         "name" to grade.name,
         "value" to grade.value,
-        "percentage" to grade.percentage
+        "percentage" to grade.percentage,
+        "type" to grade.type.name,
+        "periodId" to grade.periodId
     )
 
     private fun taskMap(task: StudentTask): Map<String, Any?> = mapOf(
@@ -254,7 +257,11 @@ class FirebaseCloudBackupRepository(
                 id = map.string("id") ?: return@mapNotNull null,
                 name = map.string("name") ?: return@mapNotNull null,
                 value = map.double("value") ?: return@mapNotNull null,
-                percentage = map.double("percentage") ?: return@mapNotNull null
+                percentage = map.double("percentage") ?: return@mapNotNull null,
+                type = map.string("type")
+                    ?.let { runCatching { GradeType.valueOf(it) }.getOrNull() }
+                    ?: GradeType.WORKSHOP,
+                periodId = map.string("periodId") ?: "period-1"
             )
         }
     }

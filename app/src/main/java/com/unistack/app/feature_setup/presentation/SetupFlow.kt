@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
@@ -74,6 +75,7 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
@@ -86,6 +88,7 @@ private object SetupRoutes {
     const val Education = "setup_education"
     const val Academic = "setup_academic"
     const val Scale = "setup_scale"
+    const val Periods = "setup_periods"
     const val Modules = "setup_modules"
     const val Finish = "setup_finish"
 }
@@ -193,6 +196,18 @@ fun SetupFlow(
                 onEditCustomGradeRange = viewModel::editCustomGradeRange,
                 onPassingGradeChange = viewModel::updatePassingGrade,
                 onTargetAverageChange = viewModel::updateTargetAverage,
+                onBackClick = { navController.navigateUp() },
+                onContinueClick = { navController.navigate(SetupRoutes.Periods) }
+            )
+        }
+        composable(SetupRoutes.Periods) {
+            SetupAcademicPeriodsScreen(
+                label = viewModel.academicPeriodLabel,
+                weights = viewModel.academicPeriodWeights,
+                isValid = viewModel.isAcademicPeriodsValid,
+                onLabelSelected = viewModel::updateAcademicPeriodLabel,
+                onCountSelected = viewModel::updateAcademicPeriodCount,
+                onWeightChange = viewModel::updateAcademicPeriodWeight,
                 onBackClick = { navController.navigateUp() },
                 onContinueClick = { navController.navigate(SetupRoutes.Modules) }
             )
@@ -510,6 +525,85 @@ fun SetupGradingScaleScreen(
         if (!isValid && !waitingForCustomRange) {
             Text("Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.", color = UniStackColors.Coral, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
+        PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
+    }
+}
+
+@Composable
+fun SetupAcademicPeriodsScreen(
+    label: AcademicPeriodLabel,
+    weights: List<String>,
+    isValid: Boolean,
+    onLabelSelected: (AcademicPeriodLabel) -> Unit,
+    onCountSelected: (Int) -> Unit,
+    onWeightChange: (Int, String) -> Unit,
+    onBackClick: () -> Unit,
+    onContinueClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val total = weights.sumOf { it.toDoubleOrNull() ?: 0.0 }
+    BackHandler(onBack = onBackClick)
+    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
+        SetupStepTitle("Configura tus ${label.plural.lowercase()}")
+        Text(
+            "Esto aplica a todas tus materias. Luego podrás cambiarlo desde Perfil.",
+            color = UniStackColors.TextSecondary,
+            fontSize = 13.sp,
+            lineHeight = 17.sp
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            AcademicPeriodLabel.entries.forEach { option ->
+                UniCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .selectable(
+                            selected = label == option,
+                            role = Role.RadioButton,
+                            onClick = { onLabelSelected(option) }
+                        ),
+                    color = if (label == option) UniStackColors.PrimaryLight else UniStackColors.Card,
+                    shape = AppShapes.Pill,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 11.dp)
+                ) {
+                    Text(
+                        option.singular,
+                        color = if (label == option) UniStackColors.Primary else UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+        Text("Cantidad", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            listOf(2, 3, 4).forEach { count ->
+                ScaleChip(
+                    label = count.toString(),
+                    selected = weights.size == count,
+                    onClick = { onCountSelected(count) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            weights.forEachIndexed { index, value ->
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { onWeightChange(index, it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("${label.singular} ${index + 1} (%)") },
+                    shape = AppShapes.MediumCard
+                )
+            }
+        }
+        Text(
+            "Total: ${String.format(java.util.Locale.US, "%.0f", total)}%",
+            color = if (isValid) UniStackColors.Green else UniStackColors.Coral,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
         PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
     }
 }

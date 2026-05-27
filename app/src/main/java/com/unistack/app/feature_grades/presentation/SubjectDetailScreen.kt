@@ -61,6 +61,7 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_templates.domain.AcademicWork
@@ -110,10 +111,12 @@ fun SubjectDetailScreen(
         return
     }
 
-    val average = viewModel.currentAverage(subject)
-    val evaluated = viewModel.evaluatedPercentage(subject)
-    val evaluatedPercentage = subject.grades.sumOf { it.percentage }.coerceIn(0.0, 1.0)
-    val remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
+    val periodScheme = profile?.academicPeriodScheme ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
+    val average = GradeCalculator.calculateFinalAverageByPeriods(subject.grades, periodScheme)
+        ?: viewModel.currentAverage(subject)
+    val evaluated = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periodScheme.periods)
+    val evaluatedPercentage = (evaluated / 100.0).coerceIn(0.0, 1.0)
+    val remainingPercentage = (1.0 - evaluatedPercentage).coerceAtLeast(0.0)
     val subjectWorks = academicWorks.filter { it.subjectId == subject.id }
     val weightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades)
 
@@ -253,33 +256,45 @@ fun SubjectDetailScreen(
                 EmptyNotesCard()
             }
         } else {
-            items(subject.grades, key = { it.id }) { grade ->
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-                    shape = SubjectDetailCardShape,
-                    tonalElevation = 0.dp,
-                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-                    borderWidth = 0.5.dp
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(grade.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                "${String.format(Locale.US, "%.0f", grade.percentage * 100)}% del curso",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.Bold, fontSize = 22.sp)
-                        IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
-                        }
-                        IconButton(onClick = { gradeIdPendingDelete = grade.id }) {
-                            Icon(
-                                Icons.Rounded.Delete,
-                                contentDescription = "Eliminar nota",
-                                tint = UniStackColors.Coral
-                            )
+            periodScheme.periods.forEach { period ->
+                val periodGrades = subject.grades.filter { it.periodId == period.id }
+                item(key = "period-${period.id}") {
+                    PeriodHeaderCard(
+                        name = period.name,
+                        weight = period.weight,
+                        average = GradeCalculator.calculatePeriodAverage(periodGrades),
+                        evaluated = GradeCalculator.calculateEvaluatedPercentage(periodGrades),
+                        scale = scale
+                    )
+                }
+                items(periodGrades, key = { it.id }) { grade ->
+                    UniCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+                        shape = SubjectDetailCardShape,
+                        tonalElevation = 0.dp,
+                        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                        borderWidth = 0.5.dp
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(grade.name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "${grade.type.label()} · ${String.format(Locale.US, "%.0f", grade.percentage * 100)}% del ${periodScheme.label.singular.lowercase()}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                            IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
+                                Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
+                            }
+                            IconButton(onClick = { gradeIdPendingDelete = grade.id }) {
+                                Icon(
+                                    Icons.Rounded.Delete,
+                                    contentDescription = "Eliminar nota",
+                                    tint = UniStackColors.Coral
+                                )
+                            }
                         }
                     }
                 }
@@ -677,6 +692,54 @@ private fun AcademicWorkStatus.label(): String {
 
 private fun gradeCountLabel(count: Int): String =
     if (count == 1) "1 registrada" else "$count registradas"
+
+@Composable
+private fun PeriodHeaderCard(
+    name: String,
+    weight: Double,
+    average: Double?,
+    evaluated: Double,
+    scale: GradingScale
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+        shape = SubjectDetailCardShape,
+        tonalElevation = 0.dp,
+        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
+        borderWidth = 0.5.dp
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                Text(
+                    "${String.format(Locale.US, "%.0f", weight * 100)}% del semestre · ${String.format(Locale.US, "%.0f", evaluated)}% evaluado",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+            }
+            Text(
+                average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                color = UniStackColors.Primary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
+    }
+}
+
+private fun GradeType.label(): String {
+    return when (this) {
+        GradeType.WORKSHOP -> "Taller"
+        GradeType.PRESENTATION -> "Exposición"
+        GradeType.QUIZ -> "Quiz"
+        GradeType.EXAM -> "Parcial"
+        GradeType.PROJECT -> "Proyecto"
+        GradeType.RESEARCH -> "Investigación"
+        GradeType.PRACTICE -> "Práctica"
+        GradeType.OTHER -> "Otra"
+    }
+}
 
 @Composable
 private fun SubjectDetailMetric(
