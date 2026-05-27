@@ -80,14 +80,13 @@ fun AddSubjectScreen(
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
-    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
-    val userPlan = FeatureGate.planFor(billingState.isPro)
+    val userPlan = FeatureGate.planFor(isPro = false)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
 
     var name by remember { mutableStateOf("") }
@@ -151,7 +150,7 @@ fun AddSubjectScreen(
                     Text("Materia no encontrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (!isEditing) {
+            if (!isEditing && FeatureGate.PRO_FEATURES_ENABLED) {
                 PlanBanner(
                     plan = userPlan,
                     currentSubjectCount = subjects.size,

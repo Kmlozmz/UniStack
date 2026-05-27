@@ -84,9 +84,7 @@ fun ProfileScreen(
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
-    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
-    val plan = FeatureGate.planFor(billingState.isPro)
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val currentProfile = profile
@@ -117,8 +115,10 @@ fun ProfileScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshBilling()
+    LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
+        if (FeatureGate.PRO_FEATURES_ENABLED) {
+            viewModel.refreshBilling()
+        }
     }
 
     LaunchedEffect(profile?.updatedAt, profile?.userId) {
@@ -329,11 +329,14 @@ fun ProfileScreen(
                     }
                 )
             }
-            item {
-                PlanStatusCard(
-                    plan = plan,
-                    onOpenProClick = onOpenProClick
-                )
+            if (FeatureGate.PRO_FEATURES_ENABLED) {
+                item {
+                    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
+                    PlanStatusCard(
+                        plan = FeatureGate.planFor(billingState.isPro),
+                        onOpenProClick = onOpenProClick
+                    )
+                }
             }
             item {
                 DataManagementCard(

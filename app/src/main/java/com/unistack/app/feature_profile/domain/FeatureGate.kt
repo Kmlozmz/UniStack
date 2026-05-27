@@ -1,6 +1,8 @@
 package com.unistack.app.feature_profile.domain
 
 object FeatureGate {
+    const val PRO_FEATURES_ENABLED = false
+
     val freePlan = UserPlan(
         isPro = false,
         maxSubjects = 5
@@ -12,6 +14,7 @@ object FeatureGate {
     )
 
     fun planFor(isPro: Boolean): UserPlan {
+        if (!PRO_FEATURES_ENABLED) return proPreviewPlan
         return if (isPro) proPreviewPlan else freePlan
     }
 
@@ -23,10 +26,12 @@ object FeatureGate {
     )
 
     fun canCreateSubject(plan: UserPlan, currentSubjectCount: Int): Boolean {
+        if (!PRO_FEATURES_ENABLED) return true
         return plan.isPro || currentSubjectCount < plan.maxSubjects
     }
 
     fun remainingSubjects(plan: UserPlan, currentSubjectCount: Int): Int? {
+        if (!PRO_FEATURES_ENABLED) return null
         if (!plan.hasSubjectLimit) return null
         return (plan.maxSubjects - currentSubjectCount).coerceAtLeast(0)
     }
