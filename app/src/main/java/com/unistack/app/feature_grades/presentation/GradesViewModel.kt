@@ -33,7 +33,12 @@ class GradesViewModel(
 
     fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
 
-    fun addSubject(name: String, targetAverage: Double, visualType: SubjectVisualType): Subject? {
+    fun addSubject(
+        name: String,
+        targetAverage: Double,
+        visualType: SubjectVisualType,
+        customColor: Int? = null
+    ): Subject? {
         if (!FeatureGate.canCreateSubject(currentPlan(), subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
@@ -42,7 +47,8 @@ class GradesViewModel(
             name = TextValidators.normalizeText(name),
             targetAverage = targetAverage,
             grades = emptyList(),
-            visualType = visualType
+            visualType = visualType,
+            customColor = customColor
         )
         repository.addSubject(subject)
         return subject
@@ -52,7 +58,8 @@ class GradesViewModel(
         subjectId: String,
         name: String,
         targetAverage: Double,
-        visualType: SubjectVisualType
+        visualType: SubjectVisualType,
+        customColor: Int? = null
     ): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
         if (!TextValidators.validateSubjectName(name).isValid) return false
@@ -62,7 +69,8 @@ class GradesViewModel(
             subject.copy(
                 name = TextValidators.normalizeText(name),
                 targetAverage = targetAverage,
-                visualType = visualType
+                visualType = visualType,
+                customColor = customColor
             )
         )
         return true

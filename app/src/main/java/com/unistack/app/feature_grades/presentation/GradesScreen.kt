@@ -228,7 +228,7 @@ private fun SubjectListCard(
         average = average,
         gradingScale = gradingScale
     )
-    val subjectColor = subjectAccent(subject.visualType)
+    val subjectColor = subjectAccent(subject)
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -440,6 +440,10 @@ fun subjectAccent(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.CYAN -> Color(0xFF00A6D6)
     SubjectVisualType.LIME -> Color(0xFF7CB342)
     SubjectVisualType.SLATE -> Color(0xFF607D8B)
+}
+
+fun subjectAccent(subject: Subject): Color {
+    return subject.customColor?.let { Color(it) } ?: subjectAccent(subject.visualType)
 }
 
 fun subjectBackground(type: SubjectVisualType): Color = when (type) {

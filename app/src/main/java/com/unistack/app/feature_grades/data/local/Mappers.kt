@@ -13,7 +13,8 @@ fun SubjectEntity.toDomain(grades: List<GradeItem>): Subject {
         name = name,
         targetAverage = targetAverage,
         grades = grades,
-        visualType = type
+        visualType = type,
+        customColor = customColor
     )
 }
 
@@ -25,6 +26,7 @@ fun Subject.toEntity(userId: String): SubjectEntity {
         name = name,
         targetAverage = targetAverage,
         visualType = visualType.name,
+        customColor = customColor,
         createdAt = now,
         updatedAt = now
     )

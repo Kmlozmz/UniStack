@@ -703,7 +703,7 @@ private fun PriorityContextSheet(
                     .background(HomePrioritySheetSuggestion, RoundedCornerShape(18.dp))
                     .border(
                         width = 0.7.dp,
-                        color = Color.White.copy(alpha = 0.07f),
+                        color = HomePrioritySheetCardBorder,
                         shape = RoundedCornerShape(18.dp)
                     )
                     .padding(horizontal = 16.dp, vertical = 15.dp),
@@ -1495,15 +1495,24 @@ private val HomeHeroLightModeAccent = Color(0xFFB892FF)
 private val HomeHeroLightModeDepth = Color(0xFF8E6AE8)
 private val HomeCompanionHeart = Color(0xFFC08CFF)
 private val HomePrioritySheetSurface: Color
-    @Composable get() = UniStackColors.Background
-private val HomePrioritySheetSuggestion = Color(0xFF15182B)
-private val HomePrioritySheetText = Color(0xFFF4F3FF)
-private val HomePrioritySheetBody = Color(0xFFCDD2E3)
-private val HomePrioritySheetMuted = Color(0xFF9EA6BA)
-private val HomePrioritySheetSecondaryButton = Color(0xFF202232)
-private val HomePrioritySheetIconCircle = Color(0xFF201044)
+    @Composable get() = if (UniStackColors.IsDarkTheme) UniStackColors.Background else Color(0xFFFBFAFF)
+private val HomePrioritySheetSuggestion: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF15182B) else Color(0xFFF2ECFF)
+private val HomePrioritySheetText: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFF4F3FF) else Color(0xFF171427)
+private val HomePrioritySheetBody: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFCDD2E3) else Color(0xFF555267)
+private val HomePrioritySheetMuted: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF9EA6BA) else Color(0xFF747186)
+private val HomePrioritySheetSecondaryButton: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF202232) else Color(0xFFECEAF4)
+private val HomePrioritySheetIconCircle: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF201044) else Color(0xFFEDE4FF)
+private val HomePrioritySheetCardBorder: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color.White.copy(alpha = 0.07f) else Color(0xFF7C3AED).copy(alpha = 0.14f)
 private val HomePrioritySheetSun = Color(0xFFFFD21F)
-private val HomePrioritySheetAccentSoft = Color(0xFFA855F7)
+private val HomePrioritySheetAccentSoft: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA855F7) else Color(0xFF8B35E8)
 
 private fun HomePriorityAction.actionLabel(): String {
     return when (this) {

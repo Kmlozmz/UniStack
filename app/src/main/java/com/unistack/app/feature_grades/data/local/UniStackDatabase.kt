@@ -15,7 +15,7 @@ import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
     entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -127,6 +127,12 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE subjects ADD COLUMN customColor INTEGER")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -140,6 +146,6 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
     }
 }

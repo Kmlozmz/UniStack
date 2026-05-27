@@ -186,6 +186,7 @@ class FirebaseCloudBackupRepository(
         "name" to subject.name,
         "targetAverage" to subject.targetAverage,
         "visualType" to subject.visualType.name,
+        "customColor" to subject.customColor,
         "grades" to subject.grades.map(::gradeMap)
     )
 
@@ -246,8 +247,16 @@ class FirebaseCloudBackupRepository(
             val visualType = map.string("visualType")
                 ?.let { runCatching { SubjectVisualType.valueOf(it) }.getOrNull() }
                 ?: SubjectVisualType.TEAL
+            val customColor = (map["customColor"] as? Number)?.toInt()
             val grades = parseGrades(map["grades"])
-            Subject(id = id, name = name, targetAverage = targetAverage, visualType = visualType, grades = grades)
+            Subject(
+                id = id,
+                name = name,
+                targetAverage = targetAverage,
+                visualType = visualType,
+                customColor = customColor,
+                grades = grades
+            )
         }
     }
 

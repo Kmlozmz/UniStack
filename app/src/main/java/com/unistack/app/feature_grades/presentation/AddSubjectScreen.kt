@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -47,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
@@ -65,6 +70,7 @@ import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private val SubjectFormCardShape = RoundedCornerShape(10.dp)
 
@@ -92,6 +98,7 @@ fun AddSubjectScreen(
     var name by remember { mutableStateOf("") }
     var targetAverage by remember { mutableStateOf("") }
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
+    var customColor by remember { mutableStateOf<Int?>(subjectAccent(SubjectVisualType.TEAL).toArgb()) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -113,9 +120,11 @@ fun AddSubjectScreen(
             name = subject.name
             targetAverage = GradingScaleUtils.formatGrade(subject.targetAverage, scale)
             visualType = subject.visualType
+            customColor = subject.customColor ?: subjectAccent(subject.visualType).toArgb()
             initialized = true
         } else if (!isEditing) {
             targetAverage = GradingScaleUtils.formatGrade(defaultAverage, scale)
+            customColor = subjectAccent(visualType).toArgb()
             initialized = true
         }
     }
@@ -174,13 +183,17 @@ fun AddSubjectScreen(
                 }
             )
             SubjectColorPicker(
-                selected = visualType,
-                onSelected = { visualType = it }
+                selectedColor = customColor ?: subjectAccent(visualType).toArgb(),
+                onSelected = { color ->
+                    customColor = color
+                    visualType = closestVisualType(Color(color))
+                }
             )
             SubjectPreviewCard(
                 name = name,
                 targetAverage = targetAverage.ifBlank { GradingScaleUtils.formatGrade(defaultAverage, scale) },
-                visualType = visualType
+                visualType = visualType,
+                customColor = customColor
             )
             error?.let {
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
@@ -200,14 +213,16 @@ fun AddSubjectScreen(
                             subjectId = editingSubjectId,
                             name = TextValidators.normalizeText(name),
                             targetAverage = targetValue ?: defaultAverage,
-                            visualType = visualType
+                            visualType = visualType,
+                            customColor = customColor
                         )
                         if (saved) editingSubjectId else null
                     } else {
                         viewModel.addSubject(
                             name = TextValidators.normalizeText(name),
                             targetAverage = targetValue ?: defaultAverage,
-                            visualType = visualType
+                            visualType = visualType,
+                            customColor = customColor
                         )?.id
                     }
 
@@ -379,26 +394,126 @@ private fun SubjectBasicInfoCard(
 
 @Composable
 private fun SubjectColorPicker(
-    selected: SubjectVisualType,
-    onSelected: (SubjectVisualType) -> Unit
+    selectedColor: Int,
+    onSelected: (Int) -> Unit
 ) {
+    val selected = Color(selectedColor)
+    val selectedRgb = selected.toArgb()
+    val red = ((selectedRgb shr 16) and 0xFF)
+    val green = ((selectedRgb shr 8) and 0xFF)
+    val blue = (selectedRgb and 0xFF)
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Color", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
-        SubjectVisualType.entries.chunked(6).forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                row.forEach { type ->
-                    ColorSwatch(
-                        color = subjectAccent(type),
-                        label = type.accessibilityLabel(),
-                        selected = selected == type,
-                        onClick = { onSelected(type) }
-                    )
-                }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(SubjectColorPalette, key = { it.toArgb() }) { color ->
+                ColorSwatch(
+                    color = color,
+                    label = color.accessibilityLabel(),
+                    selected = color.toArgb() == selectedColor,
+                    onClick = { onSelected(color.toArgb()) }
+                )
             }
         }
+        UniCard(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
+            shape = SubjectFormCardShape,
+            tonalElevation = 0.dp,
+            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+            borderWidth = 0.5.dp,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(selected)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+                                shape = CircleShape
+                            )
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = "Color personalizado",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = selected.accessibilityLabel().uppercase(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                ColorChannelSlider(
+                    label = "Rojo",
+                    value = red,
+                    activeColor = Color(0xFFFF4D5E),
+                    onValueChange = { onSelected(rgbColor(it, green, blue)) }
+                )
+                ColorChannelSlider(
+                    label = "Verde",
+                    value = green,
+                    activeColor = Color(0xFF14D8A6),
+                    onValueChange = { onSelected(rgbColor(red, it, blue)) }
+                )
+                ColorChannelSlider(
+                    label = "Azul",
+                    value = blue,
+                    activeColor = Color(0xFF5EA8FF),
+                    onValueChange = { onSelected(rgbColor(red, green, it)) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorChannelSlider(
+    label: String,
+    value: Int,
+    activeColor: Color,
+    onValueChange: (Int) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = value.toString(),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.roundToInt().coerceIn(0, 255)) },
+            valueRange = 0f..255f,
+            colors = SliderDefaults.colors(
+                thumbColor = activeColor,
+                activeTrackColor = activeColor,
+                inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+            )
+        )
     }
 }
 
@@ -406,9 +521,10 @@ private fun SubjectColorPicker(
 private fun SubjectPreviewCard(
     name: String,
     targetAverage: String,
-    visualType: SubjectVisualType
+    visualType: SubjectVisualType,
+    customColor: Int?
 ) {
-    val accent = subjectAccent(visualType)
+    val accent = customColor?.let { Color(it) } ?: subjectAccent(visualType)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Vista previa", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
         UniCard(
@@ -488,12 +604,18 @@ private fun SaveSubjectButton(
 }
 
 @Composable
-private fun ColorSwatch(color: Color, label: String, selected: Boolean, onClick: () -> Unit) {
+private fun ColorSwatch(
+    color: Color,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(46.dp)
             .clip(CircleShape)
-            .background(color.copy(alpha = if (selected) 1f else 0.55f))
+            .background(color.copy(alpha = if (selected) 1f else 0.82f))
             .border(
                 width = if (selected) 2.dp else 0.dp,
                 color = if (selected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f) else Color.Transparent,
@@ -514,6 +636,49 @@ private fun ColorSwatch(color: Color, label: String, selected: Boolean, onClick:
         if (selected) {
             Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White)
         }
+    }
+}
+
+private val SubjectColorPalette = listOf(
+    Color(0xFF10B8AC),
+    Color(0xFF58A6FF),
+    Color(0xFFFF6B7A),
+    Color(0xFF8B5CF6),
+    Color(0xFF22C55E),
+    Color(0xFFF5C542),
+    Color(0xFFE84A8A),
+    Color(0xFF6366F1),
+    Color(0xFFFF9F43),
+    Color(0xFF06B6D4),
+    Color(0xFF84CC16),
+    Color(0xFF94A3B8),
+    Color(0xFFFF4D4D),
+    Color(0xFFFF7A1A),
+    Color(0xFF00D084),
+    Color(0xFF14B8A6),
+    Color(0xFF2DD4BF),
+    Color(0xFF38BDF8),
+    Color(0xFF3B82F6),
+    Color(0xFF7C3AED),
+    Color(0xFFA855F7),
+    Color(0xFFD946EF),
+    Color(0xFFF472B6),
+    Color(0xFF64748B)
+)
+
+private fun Color.accessibilityLabel(): String = "#${toArgb().toUInt().toString(16).takeLast(6)}"
+
+private fun rgbColor(red: Int, green: Int, blue: Int): Int {
+    return Color(red, green, blue).toArgb()
+}
+
+private fun closestVisualType(color: Color): SubjectVisualType {
+    return SubjectVisualType.entries.minBy { type ->
+        val candidate = subjectAccent(type)
+        val dr = candidate.red - color.red
+        val dg = candidate.green - color.green
+        val db = candidate.blue - color.blue
+        dr * dr + dg * dg + db * db
     }
 }
 

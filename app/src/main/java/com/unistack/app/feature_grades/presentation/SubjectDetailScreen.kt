@@ -284,7 +284,7 @@ fun SubjectDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject.visualType), fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                            Text(GradingScaleUtils.formatGrade(grade.value, scale), color = subjectAccent(subject), fontWeight = FontWeight.Bold, fontSize = 22.sp)
                             IconButton(onClick = { onEditGradeClick(subject.id, grade.id) }) {
                                 Icon(Icons.Rounded.Edit, contentDescription = "Editar nota")
                             }
@@ -379,7 +379,7 @@ private fun SubjectSummaryCard(
     remainingPercentage: Double,
     scale: GradingScale
 ) {
-    val accent = subjectAccent(subject.visualType)
+    val accent = subjectAccent(subject)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),

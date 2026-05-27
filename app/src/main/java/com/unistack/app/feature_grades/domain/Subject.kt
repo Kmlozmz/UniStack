@@ -5,5 +5,6 @@ data class Subject(
     val name: String,
     val targetAverage: Double,
     val grades: List<GradeItem>,
-    val visualType: SubjectVisualType = SubjectVisualType.TEAL
+    val visualType: SubjectVisualType = SubjectVisualType.TEAL,
+    val customColor: Int? = null
 )

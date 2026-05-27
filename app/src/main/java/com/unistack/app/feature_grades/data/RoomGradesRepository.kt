@@ -78,6 +78,7 @@ class RoomGradesRepository(
                 name = subject.name,
                 targetAverage = subject.targetAverage,
                 visualType = subject.visualType.name,
+                customColor = subject.customColor,
                 updatedAt = System.currentTimeMillis()
             )
         }

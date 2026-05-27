@@ -10,6 +10,7 @@ data class SubjectEntity(
     val name: String,
     val targetAverage: Double,
     val visualType: String,
+    val customColor: Int? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

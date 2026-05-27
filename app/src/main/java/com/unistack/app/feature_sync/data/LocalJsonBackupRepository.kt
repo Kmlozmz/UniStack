@@ -207,6 +207,7 @@ class LocalJsonBackupRepository(
         .put("name", subject.name)
         .put("targetAverage", subject.targetAverage)
         .put("visualType", subject.visualType.name)
+        .put("customColor", subject.customColor)
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
     private fun gradeJson(grade: GradeItem): JSONObject = JSONObject()
@@ -260,6 +261,7 @@ class LocalJsonBackupRepository(
             name = item.optString("name").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
             targetAverage = item.optDouble("targetAverage"),
             visualType = item.optString("visualType").toEnum(SubjectVisualType.TEAL),
+            customColor = if (item.isNull("customColor")) null else item.optInt("customColor"),
             grades = parseGrades(item.optJSONArray("grades"))
         )
     }

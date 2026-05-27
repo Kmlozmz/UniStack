@@ -27,6 +27,7 @@ interface SubjectDao {
         SET name = :name,
             targetAverage = :targetAverage,
             visualType = :visualType,
+            customColor = :customColor,
             updatedAt = :updatedAt
         WHERE id = :subjectId AND userId IN (:userIds)
         """
@@ -37,6 +38,7 @@ interface SubjectDao {
         name: String,
         targetAverage: Double,
         visualType: String,
+        customColor: Int?,
         updatedAt: Long
     )
 
