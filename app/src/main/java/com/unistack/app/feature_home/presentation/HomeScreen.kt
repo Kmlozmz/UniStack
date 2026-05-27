@@ -3,6 +3,7 @@ package com.unistack.app.feature_home.presentation
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -10,8 +11,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,37 +22,52 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.EventNote
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -59,7 +77,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -74,9 +95,14 @@ import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
+import com.unistack.app.feature_home.domain.ExpenseSummary
+import com.unistack.app.feature_home.domain.HomePriorityAction
+import com.unistack.app.feature_home.domain.HomePrioritySummary
 import com.unistack.app.feature_home.domain.HomeSummary
+import com.unistack.app.feature_home.domain.HomeTimelineKind
+import com.unistack.app.feature_home.domain.HomeTimelineState
+import com.unistack.app.feature_home.domain.HomeTimelineSummary
 import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_home.domain.SubjectRiskSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
@@ -100,8 +126,19 @@ fun HomeScreen(
 ) {
     val summary = uiState.summary
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
-    val prioritySubject = summary.riskSubject?.subjectName?.takeIf { it.isNotBlank() } ?: "Inglés"
-    val heroTitle = "$prioritySubject necesita atención"
+    var quickModuleKeys by rememberSaveable {
+        mutableStateOf(QuickModuleType.entries.map { it.key })
+    }
+    var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
+    val priorityActionLabel = summary.priority.action.actionLabel()
+    val openPriorityAction = {
+        when (summary.priority.action) {
+            HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
+            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+            HomePriorityAction.TASKS -> onSeeTasksClick()
+            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -135,35 +172,39 @@ fun HomeScreen(
             }
             item {
                 PriorityHero(
-                    title = heroTitle,
+                    title = summary.priority.title,
+                    description = summary.priority.shortDescription,
                     compact = isCompact,
-                    onOpenClick = {
-                        summary.riskSubject?.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
-                    }
+                    onOpenClick = openPriorityAction,
+                    onDetailsClick = { showPriorityDetails = true }
                 )
             }
             item {
                 QuickModules(
                     subjectsCount = summary.subjectsCount,
                     tasksToday = summary.tasksToday,
+                    overdueTasks = summary.overdueTasks,
                     weeklyExpenseTotal = summary.weeklyExpenseTotal,
-                    notesCount = summary.nextAcademicWork?.let { 3 } ?: 0,
-                    fourColumns = maxWidth >= 360.dp,
+                    notesCount = summary.openAcademicWorks,
                     compact = isCompact,
                     onSubjectsClick = onSeeAllSubjectsClick,
                     onTasksClick = onSeeTasksClick,
                     onExpensesClick = onSeeExpensesClick,
-                    onNotesClick = onOpenTemplatesClick
+                    onNotesClick = onOpenTemplatesClick,
+                    enabledModules = summary.enabledModules,
+                    selectedModuleKeys = quickModuleKeys,
+                    onSelectedModuleKeysChange = { quickModuleKeys = it }
                 )
             }
             item {
-                TodayTimeline(onTasksClick = onSeeTasksClick, compact = isCompact)
+                TodayTimeline(items = summary.todayItems, onTasksClick = onSeeTasksClick, compact = isCompact)
             }
             item {
                 CompanionCard(
                     name = displayName,
+                    insight = summary.companionInsight,
                     priorities = summary.priorityCount(),
-                    pendingTasks = summary.overdueTasks,
+                    pendingTasks = summary.pendingTasks,
                     compact = isCompact,
                     onProfileClick = onProfileClick
                 )
@@ -182,6 +223,18 @@ fun HomeScreen(
             expandedEndPadding = 24.dp,
             expandedBottomPadding = 12.dp
         )
+
+        if (showPriorityDetails) {
+            PriorityContextSheet(
+                priority = summary.priority,
+                actionLabel = priorityActionLabel,
+                onActionClick = {
+                    showPriorityDetails = false
+                    openPriorityAction()
+                },
+                onDismiss = { showPriorityDetails = false }
+            )
+        }
     }
 }
 
@@ -297,8 +350,10 @@ private fun HomeGreeting(
 @Composable
 private fun PriorityHero(
     title: String,
+    description: String,
     compact: Boolean,
     onOpenClick: () -> Unit,
+    onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val heroHeight = if (compact) 174.dp else 190.dp
@@ -365,7 +420,8 @@ private fun PriorityHero(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(heroHeight),
+            .height(heroHeight)
+            .cleanClickable(onDetailsClick),
         shape = RoundedCornerShape(19.dp),
         color = Color.Transparent,
         border = BorderStroke(1.dp, HomeHeroStroke),
@@ -525,11 +581,14 @@ private fun PriorityHero(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Tienes clase a las 10:00 AM.\nRevisa tus apuntes antes de entrar.",
+                        text = description,
                         color = HomeHeroSecondary,
                         fontSize = if (compact) 10.sp else 11.sp,
                         lineHeight = if (compact) 15.sp else 16.sp,
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.cleanClickable(onDetailsClick)
                     )
                     Box(
                         modifier = Modifier
@@ -562,44 +621,361 @@ private fun PriorityHero(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PriorityContextSheet(
+    priority: HomePrioritySummary,
+    actionLabel: String,
+    onActionClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val bodyParagraphs = priority.sheetBodyParagraphs()
+    val suggestionText = priority.sheetSuggestionText()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = HomePrioritySheetSurface,
+        contentColor = HomePrioritySheetText,
+        scrimColor = Color.Black.copy(alpha = 0.64f),
+        shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 4.dp)
+                    .size(width = 42.dp, height = 4.dp)
+                    .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(100.dp))
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(start = 30.dp, end = 30.dp, bottom = 42.dp),
+            verticalArrangement = Arrangement.spacedBy(17.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                PrioritySunBadge()
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(
+                        text = priority.title,
+                        color = HomePrioritySheetText,
+                        fontSize = 25.sp,
+                        lineHeight = 29.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "✦ Tu prioridad de hoy",
+                        color = HomePrioritySheetAccentSoft,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                bodyParagraphs.forEach { paragraph ->
+                    Text(
+                        text = paragraph,
+                        color = HomePrioritySheetBody,
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(HomePrioritySheetSuggestion, RoundedCornerShape(18.dp))
+                    .border(
+                        width = 0.7.dp,
+                        color = Color.White.copy(alpha = 0.07f),
+                        shape = RoundedCornerShape(18.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                PriorityBulbBadge()
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Sugerencia",
+                        color = HomePrioritySheetAccentSoft,
+                        fontSize = 14.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = suggestionText,
+                        color = HomePrioritySheetBody,
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onDismiss,
+                    shape = RoundedCornerShape(13.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HomePrioritySheetSecondaryButton,
+                        contentColor = HomePrioritySheetText
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                ) {
+                    Text("Cerrar", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Button(
+                    onClick = onActionClick,
+                    shape = RoundedCornerShape(13.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HomePurple,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                ) {
+                    Text(actionLabel, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrioritySunBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .background(HomePrioritySheetIconCircle, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(32.dp)) {
+            val center = this.center
+            val rayStart = size.minDimension * 0.35f
+            val rayEnd = size.minDimension * 0.48f
+            drawCircle(
+                color = HomePrioritySheetSun,
+                radius = size.minDimension * 0.20f,
+                center = center
+            )
+            repeat(8) { index ->
+                val angle = Math.toRadians((index * 45).toDouble())
+                val start = Offset(
+                    x = center.x + kotlin.math.cos(angle).toFloat() * rayStart,
+                    y = center.y + kotlin.math.sin(angle).toFloat() * rayStart
+                )
+                val end = Offset(
+                    x = center.x + kotlin.math.cos(angle).toFloat() * rayEnd,
+                    y = center.y + kotlin.math.sin(angle).toFloat() * rayEnd
+                )
+                drawLine(
+                    color = HomePrioritySheetSun,
+                    start = start,
+                    end = end,
+                    strokeWidth = 2.2.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriorityBulbBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(42.dp)
+            .background(HomePrioritySheetIconCircle, CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.Lightbulb,
+            contentDescription = null,
+            tint = HomePrioritySheetAccentSoft,
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
 @Composable
 private fun QuickModules(
     subjectsCount: Int,
     tasksToday: Int,
+    overdueTasks: Int,
     weeklyExpenseTotal: Int,
     notesCount: Int,
-    fourColumns: Boolean,
     compact: Boolean,
     onSubjectsClick: () -> Unit,
     onTasksClick: () -> Unit,
     onExpensesClick: () -> Unit,
     onNotesClick: () -> Unit,
+    enabledModules: Set<AppModule>,
+    selectedModuleKeys: List<String>,
+    onSelectedModuleKeysChange: (List<String>) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showCustomizeDialog by rememberSaveable { mutableStateOf(false) }
+    val subjectsSubtitle = when (subjectsCount) {
+        0 -> "Crear primera"
+        1 -> "1 activa"
+        else -> "$subjectsCount activas"
+    }
+    val tasksSubtitle = when {
+        overdueTasks > 0 -> "$overdueTasks vencida${if (overdueTasks == 1) "" else "s"}"
+        tasksToday > 0 -> "$tasksToday hoy"
+        else -> "Al día"
+    }
+    val expensesSubtitle = if (weeklyExpenseTotal > 0) "$${weeklyExpenseTotal / 1000} semana" else "Sin gastos"
+    val notesSubtitle = if (notesCount > 0) "$notesCount activo${if (notesCount == 1) "" else "s"}" else "Sin apuntes"
+    val availableTypes = remember(enabledModules) {
+        QuickModuleType.entries.filter { type -> type.appModule == null || type.appModule in enabledModules }
+    }
+    val visibleTypes = remember(availableTypes, selectedModuleKeys) {
+        availableTypes.filter { it.key in selectedModuleKeys }.ifEmpty { availableTypes.take(1) }
+    }
+    val cards = visibleTypes.map { type ->
+        when (type) {
+            QuickModuleType.SUBJECTS -> QuickModuleCardData("Materias", subjectsSubtitle, Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick)
+            QuickModuleType.TASKS -> QuickModuleCardData("Tareas", tasksSubtitle, Icons.AutoMirrored.Rounded.EventNote, HomeTeal, onTasksClick)
+            QuickModuleType.EXPENSES -> QuickModuleCardData("Gastos", expensesSubtitle, Icons.Rounded.Wallet, HomeCoral, onExpensesClick)
+            QuickModuleType.NOTES -> QuickModuleCardData("Notas", notesSubtitle, Icons.Rounded.Description, HomeYellow, onNotesClick)
+        }
+    }
+
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Módulos rápidos", color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
-            Text("Personaliza tu día", color = HomePurple, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Personaliza tu día",
+                color = HomePurple,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.cleanClickable { showCustomizeDialog = true }
+            )
         }
-        if (fourColumns) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", "${subjectsCount.coerceAtLeast(1)} activa", Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Tareas", "$tasksToday hoy", Icons.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Gastos", "$${weeklyExpenseTotal / 1000} semana", Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = true)
-                QuickModuleCard("Notas", "$notesCount apuntes", Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = true)
+        if (cards.size > 3) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                items(cards, key = { it.title }) { card ->
+                    QuickModuleCard(
+                        title = card.title,
+                        subtitle = card.subtitle,
+                        icon = card.icon,
+                        accent = card.accent,
+                        onClick = card.onClick,
+                        modifier = Modifier.width(if (compact) 112.dp else 124.dp),
+                        compact = true
+                    )
+                }
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Materias", "${subjectsCount.coerceAtLeast(1)} activa", Icons.AutoMirrored.Rounded.MenuBook, HomePurple, onSubjectsClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Tareas", "$tasksToday hoy", Icons.Rounded.EventNote, HomeTeal, onTasksClick, Modifier.weight(1f), compact = compact)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                QuickModuleCard("Gastos", "$${weeklyExpenseTotal / 1000} semana", Icons.Rounded.Wallet, HomeCoral, onExpensesClick, Modifier.weight(1f), compact = compact)
-                QuickModuleCard("Notas", "$notesCount apuntes", Icons.Rounded.Description, HomeYellow, onNotesClick, Modifier.weight(1f), compact = compact)
+            Row(horizontalArrangement = Arrangement.spacedBy(if (cards.size == 1) 0.dp else 12.dp), modifier = Modifier.fillMaxWidth()) {
+                cards.forEach { card ->
+                    QuickModuleCard(
+                        title = card.title,
+                        subtitle = card.subtitle,
+                        icon = card.icon,
+                        accent = card.accent,
+                        onClick = card.onClick,
+                        modifier = Modifier.weight(1f),
+                        compact = compact
+                    )
+                }
             }
         }
     }
+
+    if (showCustomizeDialog) {
+        QuickModulesDialog(
+            availableTypes = availableTypes,
+            selectedKeys = selectedModuleKeys,
+            onDismiss = { showCustomizeDialog = false },
+            onToggle = { type ->
+                val selectedAvailable = availableTypes.filter { it.key in selectedModuleKeys }
+                val next = if (type.key in selectedModuleKeys) {
+                    if (selectedAvailable.size <= 1) selectedModuleKeys else selectedModuleKeys - type.key
+                } else {
+                    (selectedModuleKeys + type.key).distinct()
+                }
+                onSelectedModuleKeysChange(next)
+            }
+        )
+    }
+}
+
+@Composable
+private fun QuickModulesDialog(
+    availableTypes: List<QuickModuleType>,
+    selectedKeys: List<String>,
+    onDismiss: () -> Unit,
+    onToggle: (QuickModuleType) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Personaliza tu día", color = HomeText, fontWeight = FontWeight.SemiBold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Elige qué accesos quieres ver en módulos rápidos.",
+                    color = HomeMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+                availableTypes.forEach { type ->
+                    val checked = type.key in selectedKeys
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .cleanClickable { onToggle(type) }
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(checked = checked, onCheckedChange = { onToggle(type) })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(type.title, color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            Text(type.description, color = HomeMuted, fontSize = 11.sp, lineHeight = 14.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Listo", color = HomePurple, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        containerColor = HomeCard,
+        titleContentColor = HomeText,
+        textContentColor = HomeMuted
+    )
 }
 
 @Composable
@@ -612,10 +988,25 @@ private fun QuickModuleCard(
     modifier: Modifier = Modifier,
     compact: Boolean
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "quickModulePressScale"
+    )
     Surface(
         modifier = modifier
             .height(if (compact) 76.dp else 92.dp)
-            .cleanClickable(onClick),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
         shape = RoundedCornerShape(14.dp),
         color = HomeCard,
         border = BorderStroke(1.dp, HomeBorder)
@@ -653,18 +1044,33 @@ private fun QuickModuleCard(
     }
 }
 
+private data class QuickModuleCardData(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val accent: Color,
+    val onClick: () -> Unit
+)
+
+private enum class QuickModuleType(
+    val key: String,
+    val title: String,
+    val description: String,
+    val appModule: AppModule?
+) {
+    SUBJECTS("subjects", "Materias", "Promedios, notas y metas.", AppModule.GRADES),
+    TASKS("tasks", "Tareas", "Pendientes y entregas cercanas.", AppModule.TASKS),
+    EXPENSES("expenses", "Gastos", "Resumen de tu semana.", AppModule.EXPENSES),
+    NOTES("notes", "Notas", "Trabajos y apuntes académicos.", AppModule.ACADEMIC_TEMPLATES)
+}
+
 @Composable
 private fun TodayTimeline(
+    items: List<HomeTimelineSummary>,
     onTasksClick: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(
-        TimelineItem("10:00 AM", "Clase de Inglés", "Aula 302", Icons.Rounded.CalendarMonth, HomePurple, true),
-        TimelineItem("2:00 PM", "Entrega de proyecto", "Matemáticas", Icons.Rounded.EventNote, HomeTeal, false),
-        TimelineItem("8:00 AM", "Examen parcial", "Física", Icons.AutoMirrored.Rounded.Assignment, HomeYellow, false)
-    )
-
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Hoy", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
@@ -684,10 +1090,40 @@ private fun TodayTimeline(
             border = BorderStroke(1.dp, HomeBorder)
         ) {
             Column(modifier = Modifier.padding(vertical = if (compact) 8.dp else 10.dp)) {
-                items.forEachIndexed { index, item ->
-                    TimelineRow(item = item, showLineTop = index > 0, showLineBottom = index < items.lastIndex, compact = compact)
+                if (items.isEmpty()) {
+                    TimelineEmptyRow(compact = compact)
+                } else {
+                    items.forEachIndexed { index, item ->
+                        TimelineRow(item = item.toTimelineItem(), showLineTop = index > 0, showLineBottom = index < items.lastIndex, compact = compact)
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TimelineEmptyRow(compact: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (compact) 76.dp else 86.dp)
+            .padding(horizontal = if (compact) 14.dp else 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(if (compact) 30.dp else 34.dp)
+                .clip(CircleShape)
+                .background(HomePurple.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = HomePurple, modifier = Modifier.size(if (compact) 16.dp else 18.dp))
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Día despejado", color = HomeText, fontSize = if (compact) 12.sp else 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("Sin vencimientos cercanos por ahora", color = HomeMuted, fontSize = 10.sp, lineHeight = 13.sp)
         }
     }
 }
@@ -762,19 +1198,35 @@ private fun TimelineRow(
 @Composable
 private fun CompanionCard(
     name: String,
+    insight: String,
     priorities: Int,
     pendingTasks: Int,
     compact: Boolean,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.985f else 1f,
+        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
+        label = "companionPressScale"
+    )
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Text("Tu acompañamiento", color = HomeText, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(if (compact) 96.dp else 108.dp)
-                .cleanClickable(onProfileClick),
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onProfileClick
+                ),
             shape = RoundedCornerShape(16.dp),
             color = HomeCard,
             border = BorderStroke(1.dp, HomeBorder)
@@ -796,10 +1248,12 @@ private fun CompanionCard(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("Vas bien, $name.", color = HomeText, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Pequeño progreso cada día,\ngrandes resultados siempre.",
+                        insight,
                         color = HomeSoftText,
                         fontSize = 10.sp,
-                        lineHeight = 14.sp
+                        lineHeight = 14.sp,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.Start) {
@@ -827,6 +1281,30 @@ private data class TimelineItem(
     val accent: Color,
     val active: Boolean
 )
+
+@Composable
+private fun HomeTimelineSummary.toTimelineItem(): TimelineItem {
+    return TimelineItem(
+        time = timeText,
+        title = title,
+        subtitle = subtitle,
+        icon = when (kind) {
+            HomeTimelineKind.CLASS -> Icons.Rounded.CalendarMonth
+            HomeTimelineKind.TASK -> Icons.AutoMirrored.Rounded.EventNote
+            HomeTimelineKind.WORK -> Icons.Rounded.Description
+            HomeTimelineKind.EXAM -> Icons.AutoMirrored.Rounded.Assignment
+            HomeTimelineKind.FOCUS -> Icons.Rounded.Star
+        },
+        accent = when (kind) {
+            HomeTimelineKind.CLASS -> HomePurple
+            HomeTimelineKind.TASK -> HomeTeal
+            HomeTimelineKind.WORK -> HomeYellow
+            HomeTimelineKind.EXAM -> HomeCoral
+            HomeTimelineKind.FOCUS -> HomePurple
+        },
+        active = state == HomeTimelineState.CURRENT
+    )
+}
 
 private fun HomeSummary.priorityCount(): Int {
     var count = 0
@@ -1015,6 +1493,56 @@ private val HomeHeroLightModeGlow = Color(0xFFD9C7FF)
 private val HomeHeroLightModeAccent = Color(0xFFB892FF)
 private val HomeHeroLightModeDepth = Color(0xFF8E6AE8)
 private val HomeCompanionHeart = Color(0xFFC08CFF)
+private val HomePrioritySheetSurface: Color
+    @Composable get() = UniStackColors.Background
+private val HomePrioritySheetSuggestion = Color(0xFF15182B)
+private val HomePrioritySheetText = Color(0xFFF4F3FF)
+private val HomePrioritySheetBody = Color(0xFFCDD2E3)
+private val HomePrioritySheetMuted = Color(0xFF9EA6BA)
+private val HomePrioritySheetSecondaryButton = Color(0xFF202232)
+private val HomePrioritySheetIconCircle = Color(0xFF201044)
+private val HomePrioritySheetSun = Color(0xFFFFD21F)
+private val HomePrioritySheetAccentSoft = Color(0xFFA855F7)
+
+private fun HomePriorityAction.actionLabel(): String {
+    return when (this) {
+        HomePriorityAction.SUBJECT -> "Abrir materia"
+        HomePriorityAction.SUBJECTS -> "Ver materias"
+        HomePriorityAction.TASKS -> "Ver mis tareas"
+        HomePriorityAction.TEMPLATES -> "Ver trabajos"
+    }
+}
+
+private fun HomePrioritySummary.sheetBodyParagraphs(): List<String> {
+    if (title == "Día despejado") {
+        return listOf(
+            "No tienes vencimientos cercanos por ahora.",
+            "Es un buen momento para repasar, avanzar en tus materias y dejar listas tus próximas actividades."
+        )
+    }
+
+    val sentences = fullDescription
+        .split(". ")
+        .mapIndexed { index, part ->
+            val trimmed = part.trim()
+            if (trimmed.endsWith(".") || index == fullDescription.split(". ").lastIndex) trimmed else "$trimmed."
+        }
+        .filter { it.isNotBlank() }
+
+    return when {
+        sentences.size >= 2 -> listOf(sentences.first(), sentences.drop(1).joinToString(" "))
+        sentences.size == 1 -> listOf(sentences.first())
+        else -> listOf(shortDescription)
+    }
+}
+
+private fun HomePrioritySummary.sheetSuggestionText(): String {
+    if (title == "Día despejado") {
+        return "Dedica al menos 15 minutos a repasar hoy para mantener el ritmo."
+    }
+    return suggestion.substringAfter(": ", suggestion)
+        .replaceFirstChar { char -> char.uppercase() }
+}
 
 @Preview(name = "Home Android modern", widthDp = 412, heightDp = 892, showBackground = true)
 @Composable
@@ -1040,10 +1568,20 @@ private val previewHomeSummary = HomeSummary(
     userName = "Pineda",
     avatarPhotoUrl = null,
     dashboardMessage = "Inglés necesita atención.",
+    priority = HomePrioritySummary(
+        title = "Inglés necesita atención",
+        shortDescription = "Repasa esta materia antes de abrir más frentes.",
+        fullDescription = "Inglés necesita atención académica. Revisa tus apuntes antes de entrar y prioriza lo que más peso tenga en la materia.",
+        suggestion = "Siguiente paso: repasar Inglés 15 minutos y dejar lista una nota corta.",
+        action = HomePriorityAction.SUBJECT,
+        subjectId = "english"
+    ),
     generalAverage = 3.8,
     subjectsCount = 1,
     tasksToday = 0,
     overdueTasks = 0,
+    pendingTasks = 0,
+    openAcademicWorks = 1,
     subjects = listOf(
         SubjectSummary(
             id = "english",
@@ -1069,6 +1607,11 @@ private val previewHomeSummary = HomeSummary(
         dueText = "hoy",
         progress = 0.4f
     ),
+    todayItems = listOf(
+        HomeTimelineSummary("Hoy", "Clase de Inglés", "Revisa apuntes antes de entrar", HomeTimelineKind.CLASS, HomeTimelineState.CURRENT),
+        HomeTimelineSummary("Hoy", "Entrega de proyecto", "Matemáticas · 40% listo", HomeTimelineKind.WORK, HomeTimelineState.PENDING),
+        HomeTimelineSummary("Mañana", "Examen parcial", "Física · 1 h", HomeTimelineKind.EXAM, HomeTimelineState.PENDING)
+    ),
     weeklyExpenses = ExpenseSummary(
         transport = 0,
         food = 0,
@@ -1077,6 +1620,7 @@ private val previewHomeSummary = HomeSummary(
     ),
     weeklyExpenseTotal = 0,
     productivitySummary = "Vas bien, Pineda.",
+    companionInsight = "Hoy conviene enfocarte en Inglés antes de abrir más frentes.",
     gradingScale = GradingScale.ZERO_TO_FIVE,
     enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES, AppModule.ACADEMIC_TEMPLATES)
 )

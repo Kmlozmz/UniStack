@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -96,7 +97,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
 
 private val ExpenseBackground: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF080B13) else Color(0xFFFCFBFF)
+    @Composable get() = UniStackColors.Background
 private val ExpenseCard: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF10131B) else Color.White
 private val ExpenseCardHigh: Color
@@ -902,7 +903,8 @@ private fun ExpenseCategorySheet(
         onDismissRequest = onDismiss,
         containerColor = ExpenseBackground,
         contentColor = ExpenseText,
-        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1209,7 +1211,8 @@ private fun ExpenseBudgetSheet(
         onDismissRequest = onDismiss,
         containerColor = ExpenseBackground,
         contentColor = ExpenseText,
-        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+        shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
     ) {
         Column(
             modifier = Modifier
