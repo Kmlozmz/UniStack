@@ -1,6 +1,7 @@
 package com.unistack.app.core.utils
 
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -29,6 +30,25 @@ class GradeCalculatorTest {
 
         assertEquals(3.7, GradeCalculator.calculateCurrentAverage(grades)!!, 0.0)
         assertEquals(75.0, GradeCalculator.calculateEvaluatedPercentage(grades), 0.0)
+    }
+
+    @Test
+    fun `period projection uses internal grade weights and period weights`() {
+        val periods = listOf(
+            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Taller", value = 5.0, percentage = 0.20, periodId = "period-1"),
+            GradeItem(id = "2", name = "Exposición", value = 4.0, percentage = 0.20, periodId = "period-1"),
+            GradeItem(id = "3", name = "Parcial", value = 4.5, percentage = 0.60, periodId = "period-1")
+        )
+
+        assertEquals(4.5, GradeCalculator.calculatePeriodAverage(grades)!!, 0.0)
+        assertEquals(1.35, GradeCalculator.calculateWeightedPointsByPeriods(grades, periods), 0.0)
+        assertEquals(30.0, GradeCalculator.calculateEvaluatedSemesterPercentage(grades, periods), 0.0)
+        assertEquals(4.5, GradeCalculator.calculateProjectedAverageByPeriods(grades, periods)!!, 0.0)
     }
 
     @Test

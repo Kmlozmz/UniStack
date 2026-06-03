@@ -160,15 +160,30 @@ class GradesViewModel(
         return subjects.value.firstOrNull { it.id == subjectId }
     }
 
-    fun currentAverage(subject: Subject): Double? = GradeCalculator.calculateCurrentAverage(subject.grades)
+    fun currentAverage(subject: Subject): Double? {
+        val periods = userProfile.value?.academicPeriodScheme?.periods
+        return periods?.let { GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, it) }
+            ?: GradeCalculator.calculateCurrentAverage(subject.grades)
+    }
 
-    fun evaluatedPercentage(subject: Subject): Double = GradeCalculator.calculateEvaluatedPercentage(subject.grades)
+    fun evaluatedPercentage(subject: Subject): Double {
+        val periods = userProfile.value?.academicPeriodScheme?.periods
+        return periods?.let { GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, it) }
+            ?: GradeCalculator.calculateEvaluatedPercentage(subject.grades)
+    }
 
     fun neededGrade(subject: Subject): Double? {
         if (subject.grades.isEmpty()) return null
+        val periods = userProfile.value?.academicPeriodScheme?.periods
+        val currentWeightedPoints = periods?.let {
+            GradeCalculator.calculateWeightedPointsByPeriods(subject.grades, it)
+        } ?: GradeCalculator.calculateWeightedPoints(subject.grades)
+        val remainingPercentage = periods?.let {
+            (1.0 - GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, it) / 100.0).coerceAtLeast(0.0)
+        } ?: (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
         return GradeCalculator.calculateNeededGrade(
-            currentWeightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades),
-            remainingPercentage = (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0),
+            currentWeightedPoints = currentWeightedPoints,
+            remainingPercentage = remainingPercentage,
             targetAverage = subject.targetAverage,
             maxGrade = getMaxGrade()
         )

@@ -26,6 +26,7 @@ object AppRoutes {
     const val AddSubjectFromTask = "add_subject_from_task"
     const val EditSubject = "edit_subject"
     const val SubjectDetail = "subject_detail"
+    const val SubjectPeriodDetail = "subject_period_detail"
     const val AddGrade = "add_grade"
     const val EditGrade = "edit_grade"
     const val AddTask = "add_task"
@@ -34,7 +35,9 @@ object AppRoutes {
     const val EditExpense = "edit_expense"
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
-    fun addGrade(subjectId: String) = "$AddGrade/$subjectId"
+    fun subjectPeriodDetail(subjectId: String, periodId: String) = "$SubjectPeriodDetail/$subjectId/$periodId"
+    fun addGrade(subjectId: String, periodId: String? = null) =
+        if (periodId == null) "$AddGrade/$subjectId" else "$AddGrade/$subjectId/$periodId"
     fun editSubject(subjectId: String) = "$EditSubject/$subjectId"
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
     fun editTask(taskId: String) = "$EditTask/$taskId"

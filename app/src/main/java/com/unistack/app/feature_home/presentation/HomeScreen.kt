@@ -1398,7 +1398,7 @@ private fun DrawScope.drawSoftSparkle(
 
 private val HomeBackgroundBrush: Brush
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Brush.verticalGradient(listOf(HomeBgTop, HomeBgMid, HomeBgBottom))
+        androidx.compose.ui.graphics.SolidColor(UniStackColors.Background)
     } else {
         Brush.linearGradient(listOf(Color(0xFFF8F6FF), Color(0xFFFFFFFF)))
     }

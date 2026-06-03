@@ -59,6 +59,7 @@ import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AddSubjectScreen
 import com.unistack.app.feature_grades.presentation.GradesScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
+import com.unistack.app.feature_grades.presentation.SubjectPeriodDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_profile.presentation.ProfileScreen
@@ -235,7 +236,8 @@ fun MainNavGraph(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.Grades, enabledModules)
                     },
-                    onAddGradeClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id), enabledModules) },
+                    onAddGradeClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, periodId), enabledModules) },
+                    onPeriodClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.subjectPeriodDetail(id, periodId), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
                     onSubjectDeleted = {
@@ -248,6 +250,19 @@ fun MainNavGraph(
                             }
                         }
                     }
+                )
+            }
+            composable("${AppRoutes.SubjectPeriodDetail}/{subjectId}/{periodId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                SubjectPeriodDetailScreen(
+                    subjectId = subjectId,
+                    periodId = periodId,
+                    onBackClick = {
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    },
+                    onAddGradeClick = { id, selectedPeriodId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, selectedPeriodId), enabledModules) },
+                    onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) }
                 )
             }
             composable("${AppRoutes.EditSubject}/{subjectId}") { backStackEntry ->
@@ -270,6 +285,17 @@ fun MainNavGraph(
                     subjectId = subjectId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    }
+                )
+            }
+            composable("${AppRoutes.AddGrade}/{subjectId}/{periodId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                AddGradeScreen(
+                    subjectId = subjectId,
+                    initialPeriodId = periodId,
+                    onBackClick = {
+                        navController.navigateBackOr(AppRoutes.subjectPeriodDetail(subjectId, periodId), enabledModules)
                     }
                 )
             }
@@ -354,6 +380,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Tasks
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Grades
+        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Grades
@@ -376,6 +403,7 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditGrade) -> AppModule.GRADES

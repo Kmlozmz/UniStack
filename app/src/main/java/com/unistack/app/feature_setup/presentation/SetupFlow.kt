@@ -1,12 +1,17 @@
 package com.unistack.app.feature_setup.presentation
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,56 +19,75 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.BusinessCenter
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
@@ -71,6 +95,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
@@ -90,6 +115,7 @@ private object SetupRoutes {
     const val Scale = "setup_scale"
     const val Periods = "setup_periods"
     const val Modules = "setup_modules"
+    const val Summary = "setup_summary"
     const val Finish = "setup_finish"
 }
 
@@ -217,11 +243,31 @@ fun SetupFlow(
                 selectedModules = viewModel.enabledModules,
                 onToggleModule = viewModel::toggleModule,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Finish) }
+                onContinueClick = { navController.navigate(SetupRoutes.Summary) }
+            )
+        }
+        composable(SetupRoutes.Summary) {
+            SetupSummaryScreen(
+                name = viewModel.preferredName,
+                educationLevel = viewModel.educationLevel,
+                studyArea = viewModel.studyArea,
+                selectedProgram = viewModel.selectedProgram,
+                customProgram = viewModel.customProgram,
+                academicInfo = viewModel.academicInfo,
+                gradingScale = viewModel.gradingScale,
+                customGradeMax = viewModel.customGradeMax,
+                passingGrade = viewModel.passingGradeText,
+                targetAverage = viewModel.targetAverageText,
+                periodLabel = viewModel.academicPeriodLabel,
+                periodWeights = viewModel.academicPeriodWeights,
+                enabledModules = viewModel.enabledModules,
+                onBackClick = { navController.navigateUp() },
+                onConfirmClick = { navController.navigate(SetupRoutes.Finish) }
             )
         }
         composable(SetupRoutes.Finish) {
             SetupFinishScreen(
+                name = viewModel.preferredName,
                 createSubjectEnabled = AppModule.GRADES in viewModel.enabledModules,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
@@ -239,15 +285,49 @@ fun SetupFlow(
 
 @Composable
 fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) {
-    SetupScaffold(modifier = modifier) {
-        SetupHeroIcon()
-        Text("Bienvenido a UniStack", style = MaterialTheme.typography.headlineLarge, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        Text(
-            "Organiza tus notas, tareas, gastos y entregas académicas desde un solo lugar.",
-            color = UniStackColors.TextSecondary,
-            style = MaterialTheme.typography.bodyLarge
-        )
-        PrimarySetupButton(text = "Empezar", onClick = onStartClick)
+    SetupScaffold(
+        modifier = modifier,
+        welcome = true,
+        actions = {
+            PrimarySetupButton(text = "Empezar", onClick = onStartClick, trailing = true)
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SetupHeroIcon(size = 42.dp)
+                Text(
+                    "UniStack",
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                "Configura UniStack según tu semestre",
+                style = MaterialTheme.typography.headlineMedium,
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 34.sp
+            )
+            Text(
+                "Notas, tareas, gastos y trabajos en un solo lugar.",
+                color = UniStackColors.TextSecondary,
+                style = MaterialTheme.typography.bodyLarge,
+                lineHeight = 23.sp
+            )
+            Image(
+                painter = painterResource(R.drawable.onboarding_hero),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1.08f)
+                    .padding(top = 8.dp)
+            )
+        }
     }
 }
 
@@ -261,24 +341,38 @@ fun SetupNameScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupStepTitle("¿Cómo quieres que te llamemos?")
-        OutlinedTextField(
-            value = name,
-            onValueChange = onNameChange,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("Nombre preferido") },
-            placeholder = { Text("Escribe tu nombre o apodo") },
-            supportingText = {
-                if (name.isNotBlank() && !nameValidation.isValid) {
-                    Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
-                }
-            },
-            shape = AppShapes.MediumCard,
-            isError = name.isNotBlank() && !nameValidation.isValid
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 2,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(text = "Continuar", enabled = nameValidation.isValid, onClick = onContinueClick, trailing = true)
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.Person,
+            title = "¿Cómo te llamas?",
+            subtitle = "Usaremos este nombre para personalizar tu panel."
         )
-        PrimarySetupButton(text = "Continuar", enabled = nameValidation.isValid, onClick = onContinueClick)
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = onNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Nombre") },
+                placeholder = { Text("Ej. Juan") },
+                supportingText = {
+                    if (name.isNotBlank() && !nameValidation.isValid) {
+                        Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
+                    }
+                },
+                shape = AppShapes.MediumCard,
+                isError = name.isNotBlank() && !nameValidation.isValid
+            )
+        }
     }
 }
 
@@ -291,19 +385,29 @@ fun SetupEducationLevelScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupStepTitle("¿Dónde estudias actualmente?")
-        OptionList(
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 3,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(text = "Continuar", onClick = onContinueClick, trailing = true)
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.School,
+            title = "¿Cuál es tu nivel\nde estudio?",
+            subtitle = "Esto nos ayuda a adaptar UniStack\na tu etapa académica."
+        )
+        OptionGrid(
             options = listOf(
-                EducationLevel.PRIMARY to "Primaria",
-                EducationLevel.SECONDARY to "Secundaria",
-                EducationLevel.UNIVERSITY to "Universidad",
-                EducationLevel.OTHER to "Otro"
+                SetupCardOption(EducationLevel.PRIMARY, "Primaria", Icons.AutoMirrored.Rounded.MenuBook),
+                SetupCardOption(EducationLevel.SECONDARY, "Secundaria", Icons.AutoMirrored.Rounded.Assignment),
+                SetupCardOption(EducationLevel.UNIVERSITY, "Universidad", Icons.Rounded.School),
+                SetupCardOption(EducationLevel.OTHER, "Otro", Icons.Rounded.GridView)
             ),
             selected = selected,
             onSelected = onSelected
         )
-        PrimarySetupButton(text = "Continuar", onClick = onContinueClick)
     }
 }
 
@@ -327,120 +431,81 @@ fun SetupAcademicInfoScreen(
 ) {
     var areaExpanded by remember { mutableStateOf(false) }
     var programExpanded by remember { mutableStateOf(false) }
-    var schoolExpanded by remember { mutableStateOf(false) }
-    var customSchoolGradeSelected by rememberSaveable(educationLevel) { mutableStateOf(false) }
 
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        if (educationLevel == EducationLevel.UNIVERSITY) {
-            SetupStepTitle("Tu carrera o programa")
-            
-            UniStackDropdown(
-                label = "Área de estudio",
-                options = StudyArea.entries.map { it to labelFor(it) },
-                selected = studyArea,
-                onSelected = onStudyAreaSelected,
-                expanded = areaExpanded,
-                onExpandedChange = { areaExpanded = it }
-            )
-            
-            if (studyArea != null) {
-                val area = studyArea
-                Spacer(modifier = Modifier.height(12.dp))
-                UniStackDropdown(
-                    label = "Programa o carrera",
-                    options = programsFor(area).map { it to it },
-                    selected = selectedProgram,
-                    onSelected = onProgramSelected,
-                    expanded = programExpanded,
-                    onExpandedChange = { programExpanded = it }
-                )
-                
-                if (area == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = customProgram,
-                        onValueChange = onCustomProgramChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text("Nombre del programa") },
-                        placeholder = { Text("Ej: Ingeniería Biomédica") },
-                        shape = AppShapes.MediumCard,
-                        isError = customProgram.isNotBlank() && customProgramValidation?.isValid == false,
-                        supportingText = {
-                            if (customProgram.isNotBlank() && customProgramValidation?.isValid == false) {
-                                Text(customProgramValidation.errorMessage ?: "Ingresa un programa válido")
-                            }
-                        }
-                    )
-                }
-            }
-        } else if (educationLevel == EducationLevel.PRIMARY || educationLevel == EducationLevel.SECONDARY) {
-            SetupStepTitle("¿En qué grado estás?")
-            
-            val standardGrades = if (educationLevel == EducationLevel.PRIMARY) {
-                listOf("1°", "2°", "3°", "4°", "5°")
-            } else {
-                listOf("6°", "7°", "8°", "9°", "10°", "11°")
-            }
-            val schoolOptions = standardGrades + OTHER_OPTION
-            val isCustomSchoolGrade = customSchoolGradeSelected || (value.isNotBlank() && value !in standardGrades)
-            val selectedSchool = when {
-                isCustomSchoolGrade -> OTHER_OPTION
-                value in standardGrades -> value
-                else -> null
-            }
-            
-            UniStackDropdown(
-                label = "Grado escolar",
-                options = schoolOptions.map { it to it },
-                selected = selectedSchool,
-                onSelected = {
-                    customSchoolGradeSelected = it == OTHER_OPTION
-                    if (it == OTHER_OPTION) onValueChange("") else onValueChange(it)
-                },
-                expanded = schoolExpanded,
-                onExpandedChange = { schoolExpanded = it }
-            )
-            
-            if (isCustomSchoolGrade) {
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text("Escribe tu grado") },
-                    placeholder = { Text("Bachillerato, aceleración...") },
-                    shape = AppShapes.MediumCard,
-                    isError = value.isNotBlank() && !isValid
-                )
-            }
-        } else {
-            SetupStepTitle("Cuéntanos qué estudias")
-            OutlinedTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                label = { Text("Información académica") },
-                placeholder = { Text("Opcional") },
-                shape = AppShapes.MediumCard,
-                isError = value.isNotBlank() && !isValid
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 4,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(
+                text = "Continuar",
+                enabled = isValid || educationLevel != EducationLevel.UNIVERSITY,
+                onClick = onContinueClick,
+                trailing = true
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = onSkipClick, modifier = Modifier.weight(1f)) {
-                Text("Omitir", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.BusinessCenter,
+            title = "¿Cuál es tu carrera\no programa?",
+            subtitle = "Primero elige tu área de estudio\ny luego tu carrera."
+        )
+        SetupDropdownField(
+            label = "Área de estudio",
+            value = studyArea?.let(::labelFor).orEmpty(),
+            options = StudyArea.entries.map(::labelFor),
+            enabled = true,
+            expanded = areaExpanded,
+            onExpandedChange = { expanded ->
+                areaExpanded = expanded
+                if (expanded) programExpanded = false
+            },
+            onOptionSelected = { selectedLabel ->
+                StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
             }
-            Button(
-                onClick = onContinueClick,
-                enabled = isValid || educationLevel == EducationLevel.OTHER,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Continuar", fontWeight = FontWeight.ExtraBold)
-            }
+        )
+
+        val area = studyArea
+        SetupDropdownField(
+            label = "Programa o carrera",
+            value = selectedProgram.orEmpty(),
+            options = area?.let(::programsFor).orEmpty(),
+            enabled = area != null,
+            expanded = programExpanded,
+            onExpandedChange = { expanded ->
+                programExpanded = expanded
+                if (expanded) areaExpanded = false
+            },
+            onOptionSelected = onProgramSelected
+        )
+
+        if (area == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
+            OutlinedTextField(
+                value = customProgram,
+                onValueChange = onCustomProgramChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("Nombre del programa") },
+                placeholder = { Text("Ej: Ingeniería Biomédica") },
+                shape = AppShapes.MediumCard,
+                isError = customProgram.isNotBlank() && customProgramValidation?.isValid == false,
+                supportingText = {
+                    if (customProgram.isNotBlank() && customProgramValidation?.isValid == false) {
+                        Text(customProgramValidation.errorMessage ?: "Ingresa un programa válido")
+                    }
+                }
+            )
+        }
+
+        TextButton(
+            onClick = {
+                onStudyAreaSelected(StudyArea.OTHER)
+                onProgramSelected(OTHER_OPTION)
+            },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("No encuentro mi carrera", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -464,15 +529,45 @@ fun SetupGradingScaleScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupStepTitle("¿Qué escala de notas usas?")
-        FlowOptions(
+    val selectedChoice = when {
+        selectedScale == GradingScale.ZERO_TO_FIVE -> SetupScaleChoice.FIVE
+        customGradeMax.toInt() == 100 && customGradeRangeConfirmed -> SetupScaleChoice.HUNDRED
+        else -> SetupScaleChoice.CUSTOM
+    }
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 5,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick, trailing = true)
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.BarChart,
+            title = "¿Cómo es la escala de tus notas?",
+            subtitle = "Esto nos permite calcular tus promedios y metas de forma precisa."
+        )
+        ScaleChoiceRow(
             options = listOf(
-                GradingScale.ZERO_TO_FIVE to "0.0 a 5.0",
-                GradingScale.CUSTOM to "Personalizada"
+                SetupScaleChoice.FIVE to "0.0 a 5.0",
+                SetupScaleChoice.HUNDRED to "0 a 100",
+                SetupScaleChoice.CUSTOM to "Personalizada"
             ),
-            selected = selectedScale,
-            onSelected = onScaleSelected
+            selected = selectedChoice,
+            onSelected = { choice ->
+                when (choice) {
+                    SetupScaleChoice.FIVE -> onScaleSelected(GradingScale.ZERO_TO_FIVE)
+                    SetupScaleChoice.HUNDRED -> {
+                        onScaleSelected(GradingScale.CUSTOM)
+                        onCustomGradeMaxChange(100.0)
+                        onConfirmCustomGradeRange()
+                    }
+                    SetupScaleChoice.CUSTOM -> {
+                        onScaleSelected(GradingScale.CUSTOM)
+                        onEditCustomGradeRange()
+                    }
+                }
+            }
         )
         if (selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed) {
             CustomGradeRangeSelector(
@@ -509,7 +604,7 @@ fun SetupGradingScaleScreen(
                 onValueChange = onPassingGradeChange,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("Nota mínima para aprobar ($gradeRangeLabel)") },
+                label = { Text("Nota mínima para aprobar") },
                 shape = AppShapes.MediumCard
             )
             OutlinedTextField(
@@ -517,7 +612,7 @@ fun SetupGradingScaleScreen(
                 onValueChange = onTargetAverageChange,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("Promedio objetivo ($gradeRangeLabel)") },
+                label = { Text("Promedio objetivo") },
                 shape = AppShapes.MediumCard
             )
         }
@@ -525,7 +620,6 @@ fun SetupGradingScaleScreen(
         if (!isValid && !waitingForCustomRange) {
             Text("Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.", color = UniStackColors.Coral, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         }
-        PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
     }
 }
 
@@ -543,13 +637,18 @@ fun SetupAcademicPeriodsScreen(
 ) {
     val total = weights.sumOf { it.toDoubleOrNull() ?: 0.0 }
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupStepTitle("Configura tus ${label.plural.lowercase()}")
-        Text(
-            "Esto aplica a todas tus materias. Luego podrás cambiarlo desde Perfil.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 13.sp,
-            lineHeight = 17.sp
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 6,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick, trailing = true)
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.CalendarMonth,
+            title = "¿Cómo se evalúa tu semestre?",
+            subtitle = "Elige si usas periodos o cortes, cantidad y porcentajes."
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             AcademicPeriodLabel.entries.forEach { option ->
@@ -559,6 +658,8 @@ fun SetupAcademicPeriodsScreen(
                         .selectable(
                             selected = label == option,
                             role = Role.RadioButton,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            indication = null,
                             onClick = { onLabelSelected(option) }
                         ),
                     color = if (label == option) UniStackColors.PrimaryLight else UniStackColors.Card,
@@ -604,7 +705,14 @@ fun SetupAcademicPeriodsScreen(
             fontSize = 13.sp,
             fontWeight = FontWeight.ExtraBold
         )
-        PrimarySetupButton(text = "Continuar", enabled = isValid, onClick = onContinueClick)
+        if (!isValid) {
+            Text(
+                "Ajusta la distribución para que el total sea exactamente 100%.",
+                color = UniStackColors.TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+        }
     }
 }
 
@@ -697,8 +805,19 @@ fun SetupModulesScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupStepTitle("¿Qué quieres organizar primero?")
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 7,
+        modifier = modifier,
+        actions = {
+            PrimarySetupButton(text = "Continuar", onClick = onContinueClick, trailing = true)
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.Rounded.GridView,
+            title = "¿Qué quieres organizar con UniStack?",
+            subtitle = "Puedes activar o desactivar módulos más adelante desde Ajustes."
+        )
         ModuleOptionList(
             options = listOf(
                 ModuleOption(
@@ -729,12 +848,86 @@ fun SetupModulesScreen(
             selectedValues = selectedModules,
             onToggle = onToggleModule
         )
-        PrimarySetupButton(text = "Continuar", onClick = onContinueClick)
+    }
+}
+
+@Composable
+fun SetupSummaryScreen(
+    name: String,
+    educationLevel: EducationLevel,
+    studyArea: StudyArea?,
+    selectedProgram: String?,
+    customProgram: String,
+    academicInfo: String,
+    gradingScale: GradingScale,
+    customGradeMax: Double,
+    passingGrade: String,
+    targetAverage: String,
+    periodLabel: AcademicPeriodLabel,
+    periodWeights: List<String>,
+    enabledModules: Set<AppModule>,
+    onBackClick: () -> Unit,
+    onConfirmClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    BackHandler(onBack = onBackClick)
+    val program = resolvedProgram(educationLevel, selectedProgram, customProgram, academicInfo)
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 8,
+        modifier = modifier,
+        actions = {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                SecondarySetupButton(text = "Volver", onClick = onBackClick, modifier = Modifier.weight(0.8f))
+                PrimarySetupButton(
+                    text = "Confirmar",
+                    onClick = onConfirmClick,
+                    modifier = Modifier.weight(1.2f),
+                    trailing = true
+                )
+            }
+        }
+    ) {
+        SetupStepHeader(
+            icon = Icons.AutoMirrored.Rounded.Assignment,
+            title = "Resumen de tu configuración",
+            subtitle = "Revisa y confirma que todo esté correcto."
+        )
+        SummarySection(
+            title = "Información académica",
+            rows = listOf(
+                "Nombre" to name.ifBlank { "Usuario" },
+                "Nivel de estudio" to educationLevel.label(),
+                "Área de estudio" to (studyArea?.let(::labelFor) ?: "Sin definir"),
+                "Carrera" to program.ifBlank { "Sin definir" }
+            )
+        )
+        SummarySection(
+            title = "Escala de notas",
+            rows = listOf(
+                "Escala" to gradingScale.summaryLabel(customGradeMax),
+                "Nota mínima" to passingGrade,
+                "Promedio objetivo" to targetAverage
+            )
+        )
+        SummarySection(
+            title = "Evaluación",
+            rows = listOf(
+                "Sistema" to periodLabel.singular,
+                "Cantidad" to "${periodWeights.size} ${periodLabel.plural.lowercase()}",
+                "Distribución" to periodWeights.joinToString(" / ") { "${it.ifBlank { "0" }}%" }
+            )
+        )
+        SummarySection(
+            title = "Módulos activos",
+            rows = enabledModules.sortedBy { it.ordinal }.map { it.shortLabel() to "Activo" }
+        )
     }
 }
 
 @Composable
 fun SetupFinishScreen(
+    name: String,
     createSubjectEnabled: Boolean = true,
     onBackClick: () -> Unit,
     onCreateSubjectClick: () -> Unit,
@@ -742,60 +935,190 @@ fun SetupFinishScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    SetupScaffold(onBackClick = onBackClick, modifier = modifier) {
-        SetupHeroIcon()
-        Text("Todo listo", style = MaterialTheme.typography.headlineLarge, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        Text("Ahora puedes empezar a organizar tu semestre.", color = UniStackColors.TextSecondary)
-        if (createSubjectEnabled) {
-            PrimarySetupButton(text = "Crear mi primera materia", onClick = onCreateSubjectClick)
-            TextButton(onClick = onGoHomeClick) {
-                Text("Ir al inicio", color = UniStackColors.Primary, fontWeight = FontWeight.Bold)
+    SetupScaffold(
+        onBackClick = onBackClick,
+        step = 9,
+        modifier = modifier,
+        actions = {
+            if (createSubjectEnabled) {
+                PrimarySetupButton(text = "Crear mi primera materia", onClick = onCreateSubjectClick, trailing = true)
+                SecondarySetupButton(text = "Ir al inicio", onClick = onGoHomeClick)
+            } else {
+                PrimarySetupButton(text = "Ir al inicio", onClick = onGoHomeClick)
             }
-        } else {
-            PrimarySetupButton(text = "Ir al inicio", onClick = onGoHomeClick)
         }
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(96.dp)
+                .clip(CircleShape)
+                .background(Brush.linearGradient(listOf(UniStackColors.Primary, UniStackColors.PrimaryDark))),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(54.dp))
+        }
+        Text(
+            "¡Todo listo, ${name.ifBlank { "Usuario" }}!",
+            style = MaterialTheme.typography.headlineMedium,
+            color = UniStackColors.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            "UniStack quedó preparado para organizar tu semestre.",
+            color = UniStackColors.TextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 22.sp,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Image(
+            painter = painterResource(R.drawable.onboarding_hero),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(2.1f)
+        )
     }
 }
 
 @Composable
 private fun SetupScaffold(
     onBackClick: (() -> Unit)? = null,
+    step: Int? = null,
+    welcome: Boolean = false,
     modifier: Modifier = Modifier,
+    actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Box(
+    Scaffold(
         modifier = modifier
-            .fillMaxSize()
-            .background(UniStackColors.Background)
-            .padding(20.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (onBackClick != null) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 10.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = UniStackColors.TextPrimary
+            .fillMaxSize(),
+        containerColor = UniStackColors.Background,
+        topBar = {
+            if (onBackClick != null || step != null) {
+                SetupTopBar(
+                    onBackClick = onBackClick,
+                    step = step,
+                    modifier = Modifier
+                        .statusBarsPadding()
+                        .padding(horizontal = 22.dp, vertical = 8.dp)
+                )
+            }
+        },
+        bottomBar = {
+            if (actions != null) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(UniStackColors.Background)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 22.dp)
+                        .padding(top = 10.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = actions
                 )
             }
         }
-        UniCard(
+    ) { innerPadding ->
+        val scrollState = rememberScrollState()
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
-            brush = Brush.linearGradient(listOf(UniStackColors.Card, UniStackColors.SurfaceVariant)),
-            shape = AppShapes.LargeCard,
-            tonalElevation = 6.dp,
-            borderColor = UniStackColors.SoftOutline,
-            borderWidth = 1.4.dp,
-            contentPadding = PaddingValues(22.dp)
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 22.dp)
+                .then(if (actions == null) Modifier.navigationBarsPadding() else Modifier)
+                .verticalScroll(scrollState)
+                .padding(top = if (step == null) 16.dp else 10.dp, bottom = 18.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(18.dp), content = content)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (welcome) {
+                            Modifier
+                                .clip(AppShapes.LargeCard)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            UniStackColors.Card,
+                                            UniStackColors.SurfaceVariant,
+                                            UniStackColors.PrimaryLight.copy(alpha = 0.55f)
+                                        )
+                                    )
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = UniStackColors.SoftOutline,
+                                    shape = AppShapes.LargeCard
+                                )
+                                .padding(24.dp)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
+                content = content
+            )
+        }
+    }
+}
+
+@Composable
+private fun SetupTopBar(
+    onBackClick: (() -> Unit)?,
+    step: Int?,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (onBackClick != null) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = UniStackColors.TextPrimary
+                    )
+                }
+            }
+            if (step != null) {
+                Text(
+                    text = "Paso $step de 9",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
+        if (step != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 54.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                repeat(8) { index ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(3.dp)
+                            .clip(AppShapes.Pill)
+                            .background(
+                                if (index < (step - 1).coerceIn(1, 8)) {
+                                    UniStackColors.Primary
+                                } else {
+                                    UniStackColors.SoftOutline.copy(alpha = 0.65f)
+                                }
+                            )
+                    )
+                }
+            }
         }
     }
 }
@@ -807,24 +1130,68 @@ private data class ModuleOption(
     val icon: ImageVector
 )
 
+private data class SetupCardOption<T>(
+    val value: T,
+    val label: String,
+    val icon: ImageVector
+)
+
+private enum class SetupScaleChoice {
+    FIVE,
+    HUNDRED,
+    CUSTOM
+}
+
 @Composable
-private fun SetupHeroIcon() {
+private fun SetupHeroIcon(size: androidx.compose.ui.unit.Dp = 62.dp) {
     Box(
         modifier = Modifier
-            .size(62.dp)
+            .size(size)
             .clip(CircleShape)
             .background(Brush.linearGradient(listOf(UniStackColors.Primary, UniStackColors.Blue))),
         contentAlignment = Alignment.Center
     ) {
-        UniStackLogoMarkWhite(size = 34.dp)
+        UniStackLogoMarkWhite(size = size * 0.56f)
     }
 }
 
 @Composable
-private fun SetupStepTitle(text: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(Icons.Rounded.School, contentDescription = null, tint = UniStackColors.Primary)
-        Text(text, style = MaterialTheme.typography.headlineSmall, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+private fun SetupStepHeader(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(UniStackColors.PrimaryLight),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(26.dp))
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = UniStackColors.TextPrimary,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            lineHeight = 28.sp
+        )
+        if (subtitle != null) {
+            Text(
+                subtitle,
+                color = UniStackColors.TextSecondary,
+                textAlign = TextAlign.Center,
+                fontSize = 13.sp,
+                lineHeight = 19.sp
+            )
+        }
     }
 }
 
@@ -832,28 +1199,73 @@ private fun SetupStepTitle(text: String) {
 private fun PrimarySetupButton(
     text: String,
     onClick: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+    trailing: Boolean = false
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = AppShapes.Pill,
-        colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-        modifier = Modifier.fillMaxWidth()
+        shape = RoundedCornerShape(15.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = UniStackColors.Primary,
+            disabledContainerColor = UniStackColors.Primary.copy(alpha = 0.38f),
+            disabledContentColor = Color.White.copy(alpha = 0.72f)
+        ),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
     ) {
-        Text(text, fontWeight = FontWeight.ExtraBold)
+        Text(text, fontWeight = FontWeight.SemiBold, modifier = if (trailing) Modifier.weight(1f) else Modifier)
+        if (trailing) {
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
     }
 }
 
 @Composable
-private fun <T> OptionList(
-    options: List<Pair<T, String>>,
+private fun SecondarySetupButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(15.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = UniStackColors.SurfaceVariant,
+            contentColor = UniStackColors.TextPrimary
+        ),
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+    ) {
+        Text(text, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun <T> OptionGrid(
+    options: List<SetupCardOption<T>>,
     selected: T?,
     onSelected: (T) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        options.forEach { (value, label) ->
-            SelectableCard(label = label, selected = selected == value, onClick = { onSelected(value) })
+        options.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { option ->
+                    SelectableIconCard(
+                        label = option.label,
+                        icon = option.icon,
+                        selected = selected == option.value,
+                        onClick = { onSelected(option.value) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
         }
     }
 }
@@ -879,25 +1291,28 @@ private fun ModuleOptionList(
 private fun ModuleSelectableCard(
     option: ModuleOption,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .toggleable(
                 value = selected,
                 role = Role.Checkbox,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
                 onValueChange = { onClick() }
             )
             .semantics {
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = AppShapes.MediumCard,
-        tonalElevation = if (selected) 4.dp else 1.dp,
+        shape = AppShapes.SmallCard,
+        tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
-        borderWidth = if (selected) 1.6.dp else 1.2.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        borderWidth = if (selected) 1.2.dp else 1.dp,
+        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -937,7 +1352,8 @@ private fun ModuleSelectableCard(
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = UniStackColors.Primary
+                    tint = UniStackColors.Primary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -945,43 +1361,80 @@ private fun ModuleSelectableCard(
 }
 
 @Composable
-private fun SelectableCard(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun SelectableIconCard(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     UniCard(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
+            .height(96.dp)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
                 onClick = onClick
             )
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = AppShapes.MediumCard,
-        tonalElevation = 2.dp,
+        shape = AppShapes.SmallCard,
+        tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
-        borderWidth = if (selected) 1.5.dp else 1.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+        borderWidth = if (selected) 1.3.dp else 1.dp,
+        contentPadding = PaddingValues(11.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(label, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = UniStackColors.Primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    label,
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    lineHeight = 16.sp,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             if (selected) {
-                Icon(Icons.Rounded.Check, contentDescription = null, tint = UniStackColors.Primary)
+                Icon(
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = UniStackColors.Primary,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(18.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun FlowOptions(
-    options: List<Pair<GradingScale, String>>,
-    selected: GradingScale,
-    onSelected: (GradingScale) -> Unit
+private fun ScaleChoiceRow(
+    options: List<Pair<SetupScaleChoice, String>>,
+    selected: SetupScaleChoice,
+    onSelected: (SetupScaleChoice) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         options.forEach { (scale, label) ->
-            ScaleChip(
+            SetupChoiceChip(
                 label = label,
                 selected = selected == scale,
                 onClick = { onSelected(scale) },
@@ -992,65 +1445,280 @@ private fun FlowOptions(
 }
 
 @Composable
+private fun SetupChoiceChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    UniCard(
+        modifier = modifier
+            .height(46.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        shape = AppShapes.SmallCard,
+        tonalElevation = 0.dp,
+        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderWidth = if (selected) 1.2.dp else 1.dp,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummarySection(
+    title: String,
+    rows: List<Pair<String, String>>
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.SmallCard,
+        tonalElevation = 0.dp,
+        borderColor = UniStackColors.SoftOutline,
+        borderWidth = 1.dp,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Text(
+                text = title,
+                color = UniStackColors.TextPrimary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+            rows.forEach { (label, value) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = label,
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(0.85f)
+                    )
+                    Text(
+                        text = value,
+                        color = UniStackColors.TextPrimary,
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1.15f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun EducationLevel.label(): String = when (this) {
+    EducationLevel.PRIMARY -> "Primaria"
+    EducationLevel.SECONDARY -> "Secundaria"
+    EducationLevel.UNIVERSITY -> "Universidad"
+    EducationLevel.OTHER -> "Otro"
+}
+
+private fun resolvedProgram(
+    educationLevel: EducationLevel,
+    selectedProgram: String?,
+    customProgram: String,
+    academicInfo: String
+): String {
+    if (educationLevel == EducationLevel.PRIMARY || educationLevel == EducationLevel.SECONDARY) {
+        return academicInfo
+    }
+    return if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
+}
+
+private fun GradingScale.summaryLabel(customGradeMax: Double): String = when (this) {
+    GradingScale.ZERO_TO_FIVE -> "0.0 a 5.0"
+    GradingScale.CUSTOM -> "0 a ${customGradeMax.toInt()}"
+}
+
+private fun AppModule.shortLabel(): String = when (this) {
+    AppModule.GRADES -> "Notas"
+    AppModule.TASKS -> "Tareas"
+    AppModule.EXPENSES -> "Gastos"
+    AppModule.ACADEMIC_TEMPLATES -> "Trabajos"
+}
+
+@Composable
 private fun ScaleChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label, fontWeight = FontWeight.Bold) },
+    UniCard(
         modifier = modifier
-    )
+            .height(42.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        shape = AppShapes.SmallCard,
+        tonalElevation = 0.dp,
+        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderWidth = if (selected) 1.2.dp else 1.dp,
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                label,
+                color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp
+            )
+        }
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun <T> UniStackDropdown(
+private fun SetupDropdownField(
     label: String,
-    options: List<Pair<T, String>>,
-    selected: T?,
-    onSelected: (T) -> Unit,
+    value: String,
+    options: List<String>,
+    onOptionSelected: (String) -> Unit,
+    enabled: Boolean,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = onExpandedChange,
-        modifier = modifier.fillMaxWidth()
-    ) {
-        OutlinedTextField(
-            value = options.find { it.first == selected }?.second ?: "",
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
-                focusedBorderColor = UniStackColors.Primary,
-                focusedLabelColor = UniStackColors.Primary
-            ),
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
-            shape = AppShapes.MediumCard
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) },
-            modifier = Modifier.background(UniStackColors.Card)
+    val keyboard = LocalSoftwareKeyboardController.current
+    val density = LocalDensity.current
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "setup-dropdown-arrow")
+    var anchorWidth by remember { mutableStateOf(0) }
+
+    val colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+        unfocusedBorderColor = UniStackColors.SoftOutline,
+        focusedBorderColor = UniStackColors.Primary,
+        disabledBorderColor = UniStackColors.SoftOutline.copy(alpha = 0.5f),
+        disabledTextColor = UniStackColors.TextSecondary,
+        unfocusedTextColor = UniStackColors.TextPrimary,
+        focusedTextColor = UniStackColors.TextPrimary,
+        unfocusedContainerColor = UniStackColors.Card,
+        focusedContainerColor = UniStackColors.Card,
+        disabledContainerColor = UniStackColors.Card,
+    )
+
+    Box(modifier = modifier.fillMaxWidth().onGloballyPositioned { anchorWidth = it.size.width }) {
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent)
         ) {
-            options.forEach { (value, label) ->
+            androidx.compose.material3.OutlinedTextField(
+                value = value.ifBlank { "Seleccionar" },
+                onValueChange = {},
+                readOnly = true,
+                enabled = enabled,
+                label = { Text(label, fontWeight = FontWeight.SemiBold) },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = UniStackColors.TextSecondary,
+                        modifier = Modifier.rotate(rotation + 90f)
+                    )
+                },
+                shape = RoundedCornerShape(22.dp),
+                colors = colors
+            )
+            
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable(
+                        enabled = enabled,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        keyboard?.hide()
+                        onExpandedChange(!expanded)
+                    }
+            )
+        }
+
+        MaterialTheme(
+            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(22.dp)),
+            colorScheme = MaterialTheme.colorScheme.copy(surface = UniStackColors.Card)
+        ) {
+            androidx.compose.material3.DropdownMenu(
+                expanded = expanded && enabled,
+                onDismissRequest = { onExpandedChange(false) },
+                offset = androidx.compose.ui.unit.DpOffset(0.dp, 4.dp),
+                modifier = Modifier
+                    .then(
+                        if (anchorWidth > 0) {
+                            Modifier.width(with(density) { anchorWidth.toDp() })
+                        } else {
+                            Modifier.fillMaxWidth()
+                        }
+                    )
+                    .heightIn(max = 300.dp)
+            ) {
+            options.forEach { option ->
+                val isSelected = option == value
                 DropdownMenuItem(
-                    text = { Text(label, style = MaterialTheme.typography.bodyLarge) },
+                    text = {
+                        Text(
+                            option,
+                            color = if (isSelected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                            fontSize = 15.sp,
+                            lineHeight = 19.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    trailingIcon = {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = UniStackColors.Primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .background(
+                            if (isSelected) UniStackColors.PrimaryLight else Color.Transparent,
+                            RoundedCornerShape(14.dp)
+                        )
+                        .padding(horizontal = 4.dp),
                     onClick = {
                         onExpandedChange(false)
-                        onSelected(value)
+                        onOptionSelected(option)
                     }
                 )
             }
+        }
         }
     }
 }

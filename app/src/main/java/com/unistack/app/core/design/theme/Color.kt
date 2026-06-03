@@ -45,7 +45,7 @@ object UniStackColors {
         coralLight = Color(0xFF421522),
         yellow = Color(0xFFFFB800),
         yellowLight = Color(0xFF4A3308),
-        background = Color(0xFF01040B),
+        background = Color(0xFF070B14),
         card = Color(0xFF080D17),
         surfaceVariant = Color(0xFF0B111D),
         textPrimary = Color(0xFFF8F4FF),

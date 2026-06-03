@@ -29,6 +29,32 @@ object GradeCalculator {
 
     fun calculatePeriodAverage(grades: List<GradeItem>): Double? = calculateCurrentAverage(grades)
 
+    fun calculateWeightedPointsByPeriods(
+        grades: List<GradeItem>,
+        periods: List<AcademicPeriod>
+    ): Double {
+        return periods.sumOf { period ->
+            grades
+                .filter { it.periodId == period.id }
+                .sumOf { it.value * it.percentage * period.weight }
+        }
+    }
+
+    fun calculateProjectedAverageByPeriods(
+        grades: List<GradeItem>,
+        periods: List<AcademicPeriod>
+    ): Double? {
+        val evaluatedWeight = periods.sumOf { period ->
+            grades
+                .filter { it.periodId == period.id }
+                .sumOf { it.percentage }
+                .coerceIn(0.0, 1.0) * period.weight
+        }
+        if (evaluatedWeight <= 0.0) return null
+
+        return roundToOneDecimal(calculateWeightedPointsByPeriods(grades, periods) / evaluatedWeight)
+    }
+
     fun calculateFinalAverageByPeriods(
         grades: List<GradeItem>,
         scheme: AcademicPeriodScheme
