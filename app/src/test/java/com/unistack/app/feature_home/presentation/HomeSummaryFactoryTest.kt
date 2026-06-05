@@ -74,6 +74,8 @@ class HomeSummaryFactoryTest {
         assertTrue(summary.dashboardMessage.contains("vencida"))
         assertEquals(HomePriorityAction.TASKS, summary.priority.action)
         assertTrue(summary.priority.title.contains("vencida"))
+        assertEquals(HomePriorityAction.TASKS, summary.dailyFocusItems.first().action)
+        assertEquals("Ahora", summary.dailyFocusItems.first().slotLabel)
         assertEquals("Matemáticas", summary.riskSubject?.subjectName)
         assertEquals("Promedio bajo la nota mínima: 2.5.", summary.riskSubject?.detail)
     }

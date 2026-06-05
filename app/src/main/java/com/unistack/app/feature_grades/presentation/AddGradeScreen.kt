@@ -3,7 +3,6 @@ package com.unistack.app.feature_grades.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -41,7 +39,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,17 +54,12 @@ import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 
-// Colors for the premium dark mode
-private val BaseBackground = Color(0xFF070B14)
-private val CardBg = Color(0xFF101722)
-private val CardBorder = Color(0xFF1F293D).copy(alpha = 0.4f)
-private val PurplePrimary = Color(0xFF8B3DFF)
-private val PurpleSecondary = Color(0xFF9A4DFF)
-private val GreenPositive = Color(0xFF12C78A)
-private val OrangePending = Color(0xFFFF9F2E)
-private val TextAlmostWhite = Color(0xFFF1F5F9)
-private val TextSoftGray = Color(0xFF94A3B8)
-private val PurpleGradient = Brush.horizontalGradient(listOf(Color(0xFF8B3DFF), Color(0xFF9A4DFF)))
+private val FormCardShape = RoundedCornerShape(14.dp)
+private val FormFieldColor: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) UniStackColors.SurfaceVariant else UniStackColors.Card
+
+private val DisabledButtonColor: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF1A2230) else UniStackColors.SurfaceVariant
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -140,7 +132,7 @@ fun AddGradeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BaseBackground)
+            .background(UniStackColors.Background)
     ) {
         Column(
             modifier = Modifier
@@ -159,21 +151,20 @@ fun AddGradeScreen(
                 Icon(
                     Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = "Volver",
-                    tint = TextAlmostWhite
+                    tint = UniStackColors.TextPrimary
                 )
             }
 
             Text(
                 text = if (isEditing) "Editar nota" else "Nueva nota",
-                color = TextAlmostWhite,
+                color = UniStackColors.TextPrimary,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold
             )
 
-            // Green Subtitle
             Text(
                 text = "${periodDisplayName(selectedPeriod)} · ${formatPercent(selectedPeriod.weight * 100)}% de la materia",
-                color = GreenPositive,
+                color = UniStackColors.Green,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 2.dp)
@@ -183,7 +174,7 @@ fun AddGradeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Actividad",
-                    color = TextAlmostWhite,
+                    color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -193,25 +184,25 @@ fun AddGradeScreen(
                         name = it.take(50)
                         error = null
                     },
-                    placeholder = { Text("Ej. Taller, Exposición, Parcial...", color = TextSoftGray) },
+                    placeholder = { Text("Ej. Taller, Exposición, Parcial...", color = UniStackColors.TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = FormCardShape,
                     isError = !isNameValid,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF0F172A),
-                        unfocusedContainerColor = Color(0xFF0F172A),
-                        disabledContainerColor = Color(0xFF0F172A),
-                        focusedBorderColor = PurplePrimary,
-                        unfocusedBorderColor = CardBorder,
+                        focusedContainerColor = FormFieldColor,
+                        unfocusedContainerColor = FormFieldColor,
+                        disabledContainerColor = FormFieldColor,
+                        focusedBorderColor = UniStackColors.Primary,
+                        unfocusedBorderColor = UniStackColors.SoftOutline,
                         errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = TextAlmostWhite,
-                        unfocusedTextColor = TextAlmostWhite,
-                        errorTextColor = TextAlmostWhite,
-                        focusedLabelColor = PurplePrimary,
-                        unfocusedLabelColor = TextSoftGray,
-                        focusedPlaceholderColor = TextSoftGray,
-                        unfocusedPlaceholderColor = TextSoftGray
+                        focusedTextColor = UniStackColors.TextPrimary,
+                        unfocusedTextColor = UniStackColors.TextPrimary,
+                        errorTextColor = UniStackColors.TextPrimary,
+                        focusedLabelColor = UniStackColors.Primary,
+                        unfocusedLabelColor = UniStackColors.TextSecondary,
+                        focusedPlaceholderColor = UniStackColors.TextSecondary,
+                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
                     ),
                     supportingText = {
                         if (!isNameValid) {
@@ -225,7 +216,7 @@ fun AddGradeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Nota obtenida",
-                    color = TextAlmostWhite,
+                    color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -235,31 +226,31 @@ fun AddGradeScreen(
                         value = it
                         error = null
                     },
-                    placeholder = { Text("0.0", color = TextSoftGray) },
+                    placeholder = { Text("0.0", color = UniStackColors.TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = FormCardShape,
                     isError = value.isNotBlank() && !isGradeValid,
                     trailingIcon = {
                         Text(
                             text = "/ $maxGradeLabel",
-                            color = TextSoftGray,
+                            color = UniStackColors.TextSecondary,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(end = 12.dp)
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF0F172A),
-                        unfocusedContainerColor = Color(0xFF0F172A),
-                        disabledContainerColor = Color(0xFF0F172A),
-                        focusedBorderColor = PurplePrimary,
-                        unfocusedBorderColor = CardBorder,
+                        focusedContainerColor = FormFieldColor,
+                        unfocusedContainerColor = FormFieldColor,
+                        disabledContainerColor = FormFieldColor,
+                        focusedBorderColor = UniStackColors.Primary,
+                        unfocusedBorderColor = UniStackColors.SoftOutline,
                         errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = TextAlmostWhite,
-                        unfocusedTextColor = TextAlmostWhite,
-                        errorTextColor = TextAlmostWhite,
-                        focusedPlaceholderColor = TextSoftGray,
-                        unfocusedPlaceholderColor = TextSoftGray
+                        focusedTextColor = UniStackColors.TextPrimary,
+                        unfocusedTextColor = UniStackColors.TextPrimary,
+                        errorTextColor = UniStackColors.TextPrimary,
+                        focusedPlaceholderColor = UniStackColors.TextSecondary,
+                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
                     )
                 )
             }
@@ -268,7 +259,7 @@ fun AddGradeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Peso dentro del corte (%)",
-                    color = TextAlmostWhite,
+                    color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -278,15 +269,15 @@ fun AddGradeScreen(
                         percentage = it
                         error = null
                     },
-                    placeholder = { Text("0", color = TextSoftGray) },
+                    placeholder = { Text("0", color = UniStackColors.TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = FormCardShape,
                     isError = percentage.isNotBlank() && !isPercentageValid,
                     trailingIcon = {
                         Text(
                             text = "%",
-                            color = TextSoftGray,
+                            color = UniStackColors.TextSecondary,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(end = 12.dp)
                         )
@@ -294,21 +285,21 @@ fun AddGradeScreen(
                     supportingText = {
                         Text(
                             text = "La suma de pesos debe ser 100%.",
-                            color = if (percentage.isNotBlank() && !isPercentageValid) UniStackColors.Coral else TextSoftGray
+                            color = if (percentage.isNotBlank() && !isPercentageValid) UniStackColors.Coral else UniStackColors.TextSecondary
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color(0xFF0F172A),
-                        unfocusedContainerColor = Color(0xFF0F172A),
-                        disabledContainerColor = Color(0xFF0F172A),
-                        focusedBorderColor = PurplePrimary,
-                        unfocusedBorderColor = CardBorder,
+                        focusedContainerColor = FormFieldColor,
+                        unfocusedContainerColor = FormFieldColor,
+                        disabledContainerColor = FormFieldColor,
+                        focusedBorderColor = UniStackColors.Primary,
+                        unfocusedBorderColor = UniStackColors.SoftOutline,
                         errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = TextAlmostWhite,
-                        unfocusedTextColor = TextAlmostWhite,
-                        errorTextColor = TextAlmostWhite,
-                        focusedPlaceholderColor = TextSoftGray,
-                        unfocusedPlaceholderColor = TextSoftGray
+                        focusedTextColor = UniStackColors.TextPrimary,
+                        unfocusedTextColor = UniStackColors.TextPrimary,
+                        errorTextColor = UniStackColors.TextPrimary,
+                        focusedPlaceholderColor = UniStackColors.TextSecondary,
+                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
                     )
                 )
             }
@@ -317,11 +308,11 @@ fun AddGradeScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = "Tipo de actividad (opcional)",
-                    color = TextAlmostWhite,
+                    color = UniStackColors.TextPrimary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
-                
+
                 val chips = listOf(
                     "Taller" to GradeType.WORKSHOP,
                     "Exposición" to GradeType.PRESENTATION,
@@ -396,26 +387,21 @@ fun AddGradeScreen(
                 enabled = isValid,
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent,
-                    disabledContainerColor = Color(0xFF1E293B)
+                    containerColor = UniStackColors.Primary,
+                    contentColor = Color.White,
+                    disabledContainerColor = DisabledButtonColor,
+                    disabledContentColor = UniStackColors.TextSecondary
                 ),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .then(
-                        if (isValid) {
-                            Modifier.background(PurpleGradient, RoundedCornerShape(24.dp))
-                        } else {
-                            Modifier.background(Color(0xFF1E293B), RoundedCornerShape(24.dp))
-                        }
-                    )
             ) {
                 Text(
                     text = if (isEditing) "Guardar cambios" else "Guardar nota",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = if (isValid) Color.White else TextSoftGray
+                    color = if (isValid) Color.White else UniStackColors.TextSecondary
                 )
             }
         }
@@ -432,20 +418,20 @@ private fun ActivityChip(
         modifier = Modifier
             .bounceClick(onClick)
             .background(
-                color = if (isSelected) PurplePrimary else Color(0xFF0F172A),
-                shape = RoundedCornerShape(12.dp)
+                color = if (isSelected) UniStackColors.Primary else FormFieldColor,
+                shape = FormCardShape
             )
             .border(
                 width = 1.dp,
-                color = if (isSelected) PurplePrimary else CardBorder,
-                shape = RoundedCornerShape(12.dp)
+                color = if (isSelected) UniStackColors.Primary else UniStackColors.SoftOutline,
+                shape = FormCardShape
             )
             .padding(horizontal = 14.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            color = if (isSelected) Color.White else TextSoftGray,
+            color = if (isSelected) Color.White else UniStackColors.TextSecondary,
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )

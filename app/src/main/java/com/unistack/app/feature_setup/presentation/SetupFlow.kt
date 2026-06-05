@@ -1649,7 +1649,7 @@ private fun SetupDropdownField(
                 shape = RoundedCornerShape(22.dp),
                 colors = colors
             )
-            
+
             Box(
                 modifier = Modifier
                     .matchParentSize()

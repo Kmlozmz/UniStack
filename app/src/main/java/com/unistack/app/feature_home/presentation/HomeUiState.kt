@@ -23,6 +23,7 @@ data class HomeUiState(
                 suggestion = "Siguiente paso: crear tu primera materia.",
                 action = HomePriorityAction.SUBJECTS
             ),
+            dailyFocusItems = emptyList(),
             generalAverage = 0.0,
             subjectsCount = 0,
             tasksToday = 0,

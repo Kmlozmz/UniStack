@@ -1,5 +1,11 @@
 package com.unistack.app.feature_profile.presentation
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +62,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
@@ -114,6 +121,36 @@ fun ProfileScreen(
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
+    var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
+    var notificationPermissionGranted by remember {
+        mutableStateOf(context.hasNotificationPermission())
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        notificationPermissionGranted = granted || context.hasNotificationPermission()
+        val update = pendingReminderUpdate
+        pendingReminderUpdate = null
+        feedback = when {
+            notificationPermissionGranted && update?.invoke() == true -> "Recordatorios activados."
+            notificationPermissionGranted -> "Revisa las horas de anticipación."
+            else -> "Activa el permiso de notificaciones para recibir recordatorios."
+        }
+    }
+    val runReminderUpdate: (Boolean, () -> Boolean) -> Unit = { enablingReminder, update ->
+        val requiresPermission = enablingReminder && !context.hasNotificationPermission()
+        if (requiresPermission) {
+            pendingReminderUpdate = update
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            feedback = if (update()) {
+                notificationPermissionGranted = context.hasNotificationPermission()
+                "Recordatorios actualizados."
+            } else {
+                "Revisa las horas de anticipación."
+            }
+        }
+    }
 
     LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
         if (FeatureGate.PRO_FEATURES_ENABLED) {
@@ -262,43 +299,35 @@ fun ProfileScreen(
                     academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
                     overdueRemindersEnabled = current.overdueRemindersEnabled,
                     reminderLeadInput = reminderLeadInput,
+                    notificationPermissionGranted = notificationPermissionGranted,
                     onTaskToggle = {
-                        feedback = if (viewModel.updateReminderSettings(
+                        runReminderUpdate(!current.taskRemindersEnabled) {
+                            viewModel.updateReminderSettings(
                                 taskRemindersEnabled = !current.taskRemindersEnabled,
                                 academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
                                 overdueRemindersEnabled = current.overdueRemindersEnabled,
                                 reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
                             )
-                        ) {
-                            "Recordatorios actualizados."
-                        } else {
-                            "Revisa las horas de anticipación."
                         }
                     },
                     onAcademicWorkToggle = {
-                        feedback = if (viewModel.updateReminderSettings(
+                        runReminderUpdate(!current.academicWorkRemindersEnabled) {
+                            viewModel.updateReminderSettings(
                                 taskRemindersEnabled = current.taskRemindersEnabled,
                                 academicWorkRemindersEnabled = !current.academicWorkRemindersEnabled,
                                 overdueRemindersEnabled = current.overdueRemindersEnabled,
                                 reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
                             )
-                        ) {
-                            "Recordatorios actualizados."
-                        } else {
-                            "Revisa las horas de anticipación."
                         }
                     },
                     onOverdueToggle = {
-                        feedback = if (viewModel.updateReminderSettings(
+                        runReminderUpdate(!current.overdueRemindersEnabled) {
+                            viewModel.updateReminderSettings(
                                 taskRemindersEnabled = current.taskRemindersEnabled,
                                 academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
                                 overdueRemindersEnabled = !current.overdueRemindersEnabled,
                                 reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
                             )
-                        ) {
-                            "Recordatorios actualizados."
-                        } else {
-                            "Revisa las horas de anticipación."
                         }
                     },
                     onLeadChange = {
@@ -340,6 +369,7 @@ fun ProfileScreen(
             }
             item {
                 DataManagementCard(
+                    dataSummary = viewModel.localDataSummary(),
                     backupInput = localBackupInput,
                     backupPreview = localBackupPreview,
                     onBackupInputChange = {
@@ -459,6 +489,7 @@ fun ProfileScreen(
 
 @Composable
 private fun DataManagementCard(
+    dataSummary: String,
     backupInput: String,
     backupPreview: String?,
     onBackupInputChange: (String) -> Unit,
@@ -471,6 +502,8 @@ private fun DataManagementCard(
     onCopyExpensesCsvClick: () -> Unit
 ) {
     SettingsCard(title = "Datos y exportación") {
+        DataStatusStrip(summary = dataSummary)
+        Text("Exportaciones locales", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
         Button(
             onClick = onCopyBackupClick,
             shape = AppShapes.Pill,
@@ -506,15 +539,16 @@ private fun DataManagementCard(
             ) {
                 Text("Tareas CSV")
             }
+            Button(
+                onClick = onCopyExpensesCsvClick,
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Gastos CSV")
+            }
         }
-        Button(
-            onClick = onCopyExpensesCsvClick,
-            shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Gastos CSV")
-        }
+        Text("Restauración", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
         OutlinedTextField(
             value = backupInput,
             onValueChange = onBackupInputChange,
@@ -552,6 +586,22 @@ private fun DataManagementCard(
             ) {
                 Text("Restaurar")
             }
+        }
+    }
+}
+
+@Composable
+private fun DataStatusStrip(summary: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(AppShapes.MediumCard)
+            .background(UniStackColors.PrimaryLight)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text("Backup actual", color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+            Text(summary, color = UniStackColors.TextPrimary, fontSize = 12.sp, lineHeight = 16.sp)
         }
     }
 }
@@ -963,6 +1013,7 @@ private fun NotificationSettingsCard(
     academicWorkRemindersEnabled: Boolean,
     overdueRemindersEnabled: Boolean,
     reminderLeadInput: String,
+    notificationPermissionGranted: Boolean,
     onTaskToggle: () -> Unit,
     onAcademicWorkToggle: () -> Unit,
     onOverdueToggle: () -> Unit,
@@ -971,6 +1022,14 @@ private fun NotificationSettingsCard(
 ) {
     SettingsCard(title = "Recordatorios") {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (!notificationPermissionGranted) {
+                Text(
+                    "El permiso se pedirá al activar el primer recordatorio.",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
             ReminderToggleRow(
                 title = "Tareas",
                 description = "Avisos antes de tareas pendientes.",
@@ -1239,4 +1298,9 @@ private fun SyncStatus.label(): String {
         SyncStatus.SYNCED -> "Sincronizado"
         SyncStatus.SYNC_ERROR -> "Revisar"
     }
+}
+
+private fun Context.hasNotificationPermission(): Boolean {
+    return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 }

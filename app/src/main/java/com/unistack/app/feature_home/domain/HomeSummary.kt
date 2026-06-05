@@ -8,6 +8,7 @@ data class HomeSummary(
     val avatarPhotoUrl: String?,
     val dashboardMessage: String,
     val priority: HomePrioritySummary,
+    val dailyFocusItems: List<DailyFocusItem>,
     val generalAverage: Double?,
     val subjectsCount: Int,
     val tasksToday: Int,
@@ -44,6 +45,16 @@ enum class HomePriorityAction {
     EXPENSES,
     TEMPLATES
 }
+
+data class DailyFocusItem(
+    val slotLabel: String,
+    val title: String,
+    val detail: String,
+    val minutesText: String,
+    val actionLabel: String,
+    val action: HomePriorityAction,
+    val subjectId: String? = null
+)
 
 data class NeededGradeSummary(
     val subjectName: String,

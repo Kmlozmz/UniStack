@@ -8,6 +8,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
+import com.unistack.app.feature_home.domain.DailyPriorityEngine
 import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
@@ -55,6 +56,7 @@ internal object HomeSummaryFactory {
         val nextAcademicWork = works.nextAcademicWorkSummary()
         val openAcademicWorks = works.count { it.status != AcademicWorkStatus.SUBMITTED }
         val gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+        val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
         val riskSubject = subjectRiskSummary(
             subjects = subjects,
             profile = profile,
@@ -73,7 +75,16 @@ internal object HomeSummaryFactory {
             riskSubject = riskSubject,
             weeklyExpenseTotal = weeklyExpenseTotal,
             profile = profile,
-            enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
+            enabledModules = enabledModules
+        )
+        val dailyFocusItems = DailyPriorityEngine.dailyFocusPlan(
+            subjectsCount = subjects.size,
+            pendingTasks = pendingTasks,
+            works = works,
+            riskSubject = riskSubject,
+            weeklyExpenseTotal = weeklyExpenseTotal,
+            profile = profile,
+            enabledModules = enabledModules
         )
 
         return HomeSummary(
@@ -90,6 +101,7 @@ internal object HomeSummaryFactory {
                 weeklyExpenseTotal = weeklyExpenseTotal
             ),
             priority = priority,
+            dailyFocusItems = dailyFocusItems,
             generalAverage = generalAverage(subjects),
             subjectsCount = subjects.size,
             tasksToday = pendingTasks.count { TaskDateUtils.isToday(it.dueDateMillis) },
@@ -115,7 +127,7 @@ internal object HomeSummaryFactory {
                 todayItems = todayItems
             ),
             gradingScale = gradingScale,
-            enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
+            enabledModules = enabledModules
         )
     }
 
@@ -205,6 +217,16 @@ internal object HomeSummaryFactory {
         profile: UserProfile?,
         enabledModules: Set<AppModule>
     ): HomePrioritySummary {
+        DailyPriorityEngine.primaryPriority(
+            subjectsCount = subjects.size,
+            pendingTasks = pendingTasks,
+            works = works,
+            riskSubject = riskSubject,
+            weeklyExpenseTotal = weeklyExpenseTotal,
+            profile = profile,
+            enabledModules = enabledModules
+        )?.let { return it }
+
         if (subjects.isEmpty()) {
             return HomePrioritySummary(
                 title = "Prepara tu semestre",

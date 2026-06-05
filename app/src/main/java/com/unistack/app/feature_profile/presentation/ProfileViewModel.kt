@@ -219,6 +219,8 @@ class ProfileViewModel(
 
     fun exportExpensesCsv(): String = localBackupRepository.exportExpensesCsv()
 
+    fun localDataSummary(): String = previewLocalBackup(exportLocalBackup())
+
     fun previewLocalBackup(json: String): String {
         return localBackupRepository.previewBackupJson(json)
             .fold(

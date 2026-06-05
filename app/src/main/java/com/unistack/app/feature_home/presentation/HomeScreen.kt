@@ -41,6 +41,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.AlertDialog
@@ -94,8 +96,11 @@ import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
+import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
+import com.unistack.app.feature_home.domain.DailyFocusItem
 import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
@@ -140,6 +145,15 @@ fun HomeScreen(
             HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
         }
     }
+    val openFocusAction: (DailyFocusItem) -> Unit = { item ->
+        when (item.action) {
+            HomePriorityAction.SUBJECT -> item.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
+            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+            HomePriorityAction.TASKS -> onSeeTasksClick()
+            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
+            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier
@@ -169,15 +183,33 @@ fun HomeScreen(
                 )
             }
             item {
-                HomeGreeting(name = displayName, compact = isCompact)
+                HomeGreeting(name = displayName, message = summary.dashboardMessage, compact = isCompact)
             }
             item {
                 PriorityHero(
                     title = summary.priority.title,
                     description = summary.priority.shortDescription,
+                    actionLabel = priorityActionLabel,
                     compact = isCompact,
                     onOpenClick = openPriorityAction,
                     onDetailsClick = { showPriorityDetails = true }
+                )
+            }
+            item {
+                DailyFocusPlan(
+                    items = summary.dailyFocusItems,
+                    compact = isCompact,
+                    onItemClick = openFocusAction
+                )
+            }
+            item {
+                SemesterCompass(
+                    summary = summary,
+                    compact = isCompact,
+                    onSubjectsClick = onSeeAllSubjectsClick,
+                    onTasksClick = onSeeTasksClick,
+                    onExpensesClick = onSeeExpensesClick,
+                    onWorksClick = onOpenTemplatesClick
                 )
             }
             item {
@@ -321,6 +353,7 @@ private fun HeaderIcon(
 @Composable
 private fun HomeGreeting(
     name: String,
+    message: String,
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -329,7 +362,7 @@ private fun HomeGreeting(
         verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
     ) {
         Text(
-            text = "Hola, $name 👋",
+            text = "Hoy, $name",
             color = HomeText,
             fontSize = if (compact) 28.sp else 30.sp,
             lineHeight = if (compact) 32.sp else 35.sp,
@@ -339,7 +372,7 @@ private fun HomeGreeting(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = "¿Qué vamos a lograr hoy?",
+            text = message,
             color = HomeMuted,
             fontSize = if (compact) 14.sp else 15.sp,
             lineHeight = if (compact) 18.sp else 20.sp,
@@ -349,9 +382,154 @@ private fun HomeGreeting(
 }
 
 @Composable
+private fun SemesterCompass(
+    summary: HomeSummary,
+    compact: Boolean,
+    onSubjectsClick: () -> Unit,
+    onTasksClick: () -> Unit,
+    onExpensesClick: () -> Unit,
+    onWorksClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val averageText = summary.generalAverage
+        ?.let { GradingScaleUtils.formatGrade(it, summary.gradingScale) }
+        ?: "Sin notas"
+    val gradeSignal = when {
+        summary.neededGrade != null ->
+            "${summary.neededGrade.subjectName}: necesitas ${
+                GradingScaleUtils.formatGrade(summary.neededGrade.neededGrade, summary.gradingScale)
+            }"
+        summary.riskSubject != null -> summary.riskSubject.detail
+        summary.subjectsCount > 0 -> "Materias listas para seguimiento"
+        else -> "Crea materias para activar el semestre"
+    }
+    val workSignal = when {
+        summary.nextAcademicWork != null -> "${summary.nextAcademicWork.title} ${summary.nextAcademicWork.dueText}"
+        summary.pendingTasks > 0 -> "${summary.pendingTasks} pendiente${if (summary.pendingTasks == 1) "" else "s"} por ordenar"
+        else -> "Sin entregas urgentes"
+    }
+    val moneySignal = when {
+        summary.weeklyExpenseTotal > 0 -> CurrencyFormatter.formatCop(summary.weeklyExpenseTotal)
+        AppModule.EXPENSES in summary.enabledModules -> "Sin gastos"
+        else -> "Desactivado"
+    }
+    val cards = listOf(
+        CompassCardData(
+            label = "Semestre",
+            value = "${summary.subjectsCount} materia${if (summary.subjectsCount == 1) "" else "s"}",
+            detail = workSignal,
+            icon = Icons.Rounded.School,
+            accent = HomePurple,
+            onClick = onSubjectsClick
+        ),
+        CompassCardData(
+            label = "Notas",
+            value = averageText,
+            detail = gradeSignal,
+            icon = Icons.AutoMirrored.Rounded.TrendingUp,
+            accent = HomeTeal,
+            onClick = onSubjectsClick
+        ),
+        CompassCardData(
+            label = "Pendientes",
+            value = if (summary.overdueTasks > 0) {
+                "${summary.overdueTasks} vencida${if (summary.overdueTasks == 1) "" else "s"}"
+            } else {
+                "${summary.tasksToday} hoy"
+            },
+            detail = if (summary.openAcademicWorks > 0) {
+                "${summary.openAcademicWorks} trabajo${if (summary.openAcademicWorks == 1) "" else "s"} abierto${if (summary.openAcademicWorks == 1) "" else "s"}"
+            } else {
+                workSignal
+            },
+            icon = Icons.AutoMirrored.Rounded.EventNote,
+            accent = HomeYellow,
+            onClick = if (summary.openAcademicWorks > 0) onWorksClick else onTasksClick
+        ),
+        CompassCardData(
+            label = "Dinero",
+            value = moneySignal,
+            detail = if (summary.weeklyExpenseTotal > 0) "Esta semana" else "Pulso financiero estudiantil",
+            icon = Icons.Rounded.Wallet,
+            accent = HomeCoral,
+            onClick = onExpensesClick
+        )
+    )
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Brújula del semestre", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.weight(1f))
+            Text("4 señales", color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            items(cards, key = { it.label }) { card ->
+                CompassCard(card = card, compact = compact)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompassCard(
+    card: CompassCardData,
+    compact: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .width(if (compact) 188.dp else 204.dp)
+            .height(if (compact) 112.dp else 120.dp)
+            .cleanClickable(card.onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = HomeCard,
+        border = BorderStroke(1.dp, HomeBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(card.accent.copy(alpha = 0.17f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(card.icon, contentDescription = null, tint = card.accent, modifier = Modifier.size(17.dp))
+                }
+                Spacer(modifier = Modifier.width(9.dp))
+                Text(card.label, color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    card.value,
+                    color = HomeText,
+                    fontSize = if (compact) 14.sp else 15.sp,
+                    lineHeight = if (compact) 17.sp else 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    card.detail,
+                    color = HomeSoftText,
+                    fontSize = 10.sp,
+                    lineHeight = 13.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun PriorityHero(
     title: String,
     description: String,
+    actionLabel: String,
     compact: Boolean,
     onOpenClick: () -> Unit,
     onDetailsClick: () -> Unit,
@@ -601,7 +779,7 @@ private fun PriorityHero(
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Abrir materia", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(actionLabel, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                             Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
                         }
                     }
@@ -616,6 +794,97 @@ private fun PriorityHero(
                         .width(if (compact) 144.dp else 160.dp)
                         .height(if (compact) 154.dp else 176.dp)
                         .offset(x = if (compact) 20.dp else 24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailyFocusPlan(
+    items: List<DailyFocusItem>,
+    compact: Boolean,
+    onItemClick: (DailyFocusItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (items.isEmpty()) return
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Plan de hoy", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.weight(1f))
+            Text("${items.size} bloque${if (items.size == 1) "" else "s"}", color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            items(items, key = { "${it.slotLabel}-${it.title}" }) { item ->
+                DailyFocusCard(item = item, compact = compact, onClick = { onItemClick(item) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun DailyFocusCard(
+    item: DailyFocusItem,
+    compact: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = when (item.action) {
+        HomePriorityAction.SUBJECT,
+        HomePriorityAction.SUBJECTS -> HomePurple
+        HomePriorityAction.TASKS -> HomeTeal
+        HomePriorityAction.EXPENSES -> HomeCoral
+        HomePriorityAction.TEMPLATES -> HomeYellow
+    }
+
+    Surface(
+        modifier = modifier
+            .width(if (compact) 222.dp else 242.dp)
+            .height(if (compact) 128.dp else 138.dp)
+            .cleanClickable(onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = HomeCard,
+        border = BorderStroke(1.dp, HomeBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(item.action.focusIcon(), contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
+                }
+                Spacer(modifier = Modifier.width(9.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(item.slotLabel, color = HomeMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Text(item.minutesText, color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                }
+                Text(item.actionLabel, color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    item.title,
+                    color = HomeText,
+                    fontSize = if (compact) 14.sp else 15.sp,
+                    lineHeight = if (compact) 17.sp else 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    item.detail,
+                    color = HomeSoftText,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -1048,6 +1317,15 @@ private fun QuickModuleCard(
 private data class QuickModuleCardData(
     val title: String,
     val subtitle: String,
+    val icon: ImageVector,
+    val accent: Color,
+    val onClick: () -> Unit
+)
+
+private data class CompassCardData(
+    val label: String,
+    val value: String,
+    val detail: String,
     val icon: ImageVector,
     val accent: Color,
     val onClick: () -> Unit
@@ -1524,6 +1802,16 @@ private fun HomePriorityAction.actionLabel(): String {
     }
 }
 
+private fun HomePriorityAction.focusIcon(): ImageVector {
+    return when (this) {
+        HomePriorityAction.SUBJECT,
+        HomePriorityAction.SUBJECTS -> Icons.Rounded.School
+        HomePriorityAction.TASKS -> Icons.AutoMirrored.Rounded.EventNote
+        HomePriorityAction.EXPENSES -> Icons.Rounded.Wallet
+        HomePriorityAction.TEMPLATES -> Icons.Rounded.Description
+    }
+}
+
 private fun HomePrioritySummary.sheetBodyParagraphs(): List<String> {
     if (title == "Día despejado") {
         return listOf(
@@ -1586,6 +1874,25 @@ private val previewHomeSummary = HomeSummary(
         suggestion = "Siguiente paso: repasar Inglés 15 minutos y dejar lista una nota corta.",
         action = HomePriorityAction.SUBJECT,
         subjectId = "english"
+    ),
+    dailyFocusItems = listOf(
+        DailyFocusItem(
+            slotLabel = "Ahora",
+            title = "Inglés necesita atención",
+            detail = "Repasa esta materia antes de abrir más frentes.",
+            minutesText = "15 min",
+            actionLabel = "Abrir",
+            action = HomePriorityAction.SUBJECT,
+            subjectId = "english"
+        ),
+        DailyFocusItem(
+            slotLabel = "Luego",
+            title = "Entrega de proyecto",
+            detail = "Avanza un paso del checklist.",
+            minutesText = "20 min",
+            actionLabel = "Trabajos",
+            action = HomePriorityAction.TEMPLATES
+        )
     ),
     generalAverage = 3.8,
     subjectsCount = 1,

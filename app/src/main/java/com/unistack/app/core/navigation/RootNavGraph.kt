@@ -1,6 +1,7 @@
 package com.unistack.app.core.navigation
 
 import android.annotation.SuppressLint
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -16,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
@@ -27,6 +29,14 @@ import kotlinx.coroutines.flow.map
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun RootNavGraph(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val animationsDisabled = remember {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
     val setupCompleted by remember {
         AppContainer.userRepository.userProfile
             .map { it?.setupCompleted }
@@ -35,7 +45,7 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
         initialValue = AppContainer.userRepository.userProfile.value?.setupCompleted
     )
     var launchRoute by remember { mutableStateOf<String?>(null) }
-    var launchAnimationFinished by rememberSaveable { mutableStateOf(false) }
+    var launchAnimationFinished by rememberSaveable { mutableStateOf(animationsDisabled) }
     var repositoryDidLoad by remember { mutableStateOf(AppContainer.userRepository.didLoad) }
 
     LaunchedEffect(Unit) {

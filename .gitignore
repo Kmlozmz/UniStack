@@ -11,3 +11,4 @@ captures/
 *.jks
 .env
 .antigravitycli/
+.signing/
