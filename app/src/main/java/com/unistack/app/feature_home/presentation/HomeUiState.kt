@@ -24,7 +24,7 @@ data class HomeUiState(
                 action = HomePriorityAction.SUBJECTS
             ),
             dailyFocusItems = emptyList(),
-            generalAverage = 0.0,
+            generalAverage = null,
             subjectsCount = 0,
             tasksToday = 0,
             overdueTasks = 0,
