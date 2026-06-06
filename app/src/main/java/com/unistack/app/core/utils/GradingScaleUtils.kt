@@ -8,6 +8,7 @@ object GradingScaleUtils {
     fun maxGradeFor(scale: GradingScale): Double {
         return when (scale) {
             GradingScale.ZERO_TO_FIVE -> 5.0
+            GradingScale.ZERO_TO_HUNDRED -> 100.0
             GradingScale.CUSTOM -> 100.0
         }
     }
@@ -23,6 +24,7 @@ object GradingScaleUtils {
     fun formatGrade(value: Double?, scale: GradingScale): String {
         if (value == null) return "--"
         return when (scale) {
+            GradingScale.ZERO_TO_HUNDRED,
             GradingScale.CUSTOM -> String.format(Locale.US, "%.0f", value)
             GradingScale.ZERO_TO_FIVE -> String.format(Locale.US, "%.1f", value)
         }

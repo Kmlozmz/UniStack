@@ -102,7 +102,7 @@ private val ExpenseFormDisabled: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF242631) else Color(0xFFE8E2F0)
 private val ExpenseFormShape = RoundedCornerShape(18.dp)
 private val ExpenseFieldShape = RoundedCornerShape(14.dp)
-private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale("es", "CO"))
+private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
 
 @Composable
 fun AddExpenseScreen(
@@ -697,7 +697,7 @@ private fun ExpenseMonthCalendarDialog(
                         )
                     }
                     Text(
-                        text = visibleMonth.month.getDisplayName(JavaTextStyle.FULL, Locale("es", "CO"))
+                        text = visibleMonth.month.getDisplayName(JavaTextStyle.FULL, Locale.forLanguageTag("es-CO"))
                             .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,

@@ -1,6 +1,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import android.Manifest
+import android.content.ClipData
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -41,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,8 +51,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -58,7 +61,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,6 +84,7 @@ import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.VisualPreference
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
@@ -93,7 +96,13 @@ fun ProfileScreen(
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+    fun copyToClipboard(text: String) {
+        coroutineScope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", text)))
+        }
+    }
     val currentProfile = profile
     var nameInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.preferredName.orEmpty())
@@ -111,7 +120,7 @@ fun ProfileScreen(
         mutableStateOf(currentProfile?.reminderLeadHours?.toString() ?: "24")
     }
     var academicPeriodLabel by rememberSaveable(currentProfile?.userId) {
-        mutableStateOf(currentProfile?.academicPeriodScheme?.label ?: AcademicPeriodLabel.PERIOD)
+        mutableStateOf(currentProfile?.academicPeriodScheme?.label ?: AcademicPeriodLabel.CORTE)
     }
     var academicPeriodWeights by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.academicPeriodScheme?.periods?.map { percentInput(it.weight) } ?: listOf("30", "40", "30"))
@@ -377,7 +386,7 @@ fun ProfileScreen(
                         localBackupPreview = null
                     },
                     onCopyBackupClick = {
-                        clipboard.setText(AnnotatedString(viewModel.exportLocalBackup()))
+                        copyToClipboard(viewModel.exportLocalBackup())
                         feedback = "Backup JSON copiado."
                     },
                     onPreviewBackupClick = {
@@ -393,7 +402,7 @@ fun ProfileScreen(
                         }
                     },
                     onCopyAcademicReportClick = {
-                        clipboard.setText(AnnotatedString(viewModel.exportAcademicReport()))
+                        copyToClipboard(viewModel.exportAcademicReport())
                         feedback = "Reporte académico copiado."
                     },
                     onCreateAcademicPdfClick = {
@@ -404,11 +413,11 @@ fun ProfileScreen(
                         }
                     },
                     onCopyTasksCsvClick = {
-                        clipboard.setText(AnnotatedString(viewModel.exportTasksCsv()))
+                        copyToClipboard(viewModel.exportTasksCsv())
                         feedback = "CSV de tareas copiado."
                     },
                     onCopyExpensesCsvClick = {
-                        clipboard.setText(AnnotatedString(viewModel.exportExpensesCsv()))
+                        copyToClipboard(viewModel.exportExpensesCsv())
                         feedback = "CSV de gastos copiado."
                     }
                 )
@@ -855,6 +864,7 @@ private fun GradingSettingsCard(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf<GradingScale>(
                 GradingScale.ZERO_TO_FIVE,
+                GradingScale.ZERO_TO_HUNDRED,
                 GradingScale.CUSTOM
             ).forEach { scale ->
                 SelectionPill(
@@ -1253,6 +1263,7 @@ private fun percentInput(weight: Double): String {
 private fun GradingScale.label(): String {
     return when (this) {
         GradingScale.ZERO_TO_FIVE -> "0-5"
+        GradingScale.ZERO_TO_HUNDRED -> "0-100"
         GradingScale.CUSTOM -> "Personalizada"
     }
 }

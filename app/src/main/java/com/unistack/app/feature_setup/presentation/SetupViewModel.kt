@@ -1,6 +1,7 @@
 package com.unistack.app.feature_setup.presentation
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -36,7 +37,7 @@ class SetupViewModel(
         private set
     var gradingScale by mutableStateOf(GradingScale.ZERO_TO_FIVE)
         private set
-    var customGradeMax by mutableStateOf(100.0)
+    var customGradeMax by mutableDoubleStateOf(100.0)
         private set
     var customGradeRangeConfirmed by mutableStateOf(false)
         private set
@@ -46,9 +47,9 @@ class SetupViewModel(
         private set
     var enabledModules by mutableStateOf(AppModule.entries.toSet())
         private set
-    var academicPeriodLabel by mutableStateOf(AcademicPeriodLabel.PERIOD)
+    var academicPeriodLabel by mutableStateOf(AcademicPeriodLabel.CORTE)
         private set
-    var academicPeriodWeights by mutableStateOf(listOf("30", "40", "30"))
+    var academicPeriodWeights by mutableStateOf(emptyList<String>())
         private set
 
     val nameValidation: ValidationResult
@@ -180,13 +181,8 @@ class SetupViewModel(
     }
 
     fun updateAcademicPeriodCount(count: Int) {
-        val safeCount = count.coerceIn(1, 6)
-        academicPeriodWeights = when (safeCount) {
-            2 -> listOf("50", "50")
-            3 -> listOf("30", "40", "30")
-            4 -> listOf("25", "25", "25", "25")
-            else -> List(safeCount) { index -> if (index == safeCount - 1) "100" else "" }
-        }
+        val safeCount = count.coerceIn(0, 6)
+        academicPeriodWeights = suggestedAcademicWeights(safeCount)
     }
 
     fun updateAcademicPeriodWeight(index: Int, value: String) {
@@ -261,77 +257,43 @@ class SetupViewModel(
     }
 }
 
-const val OTHER_OPTION = "Otra"
+private fun suggestedAcademicWeights(count: Int): List<String> {
+    if (count <= 0) return emptyList()
+    if (count == 2) return listOf("50", "50")
+    if (count == 3) return listOf("30", "40", "30")
 
-fun labelFor(area: StudyArea): String = when (area) {
-    StudyArea.ENGINEERING_TECHNOLOGY -> "Ingeniería y tecnología"
-    StudyArea.ECONOMICS_BUSINESS -> "Ciencias económicas y administrativas"
-    StudyArea.LAW_POLITICS -> "Ciencias jurídicas"
-    StudyArea.HEALTH_SCIENCES -> "Ciencias de la salud"
-    StudyArea.EDUCATION -> "Educación"
-    StudyArea.ARTS_DESIGN -> "Artes y diseño"
-    StudyArea.SOCIAL_SCIENCES -> "Ciencias sociales"
-    StudyArea.BASIC_SCIENCES -> "Ciencias básicas"
-    StudyArea.OTHER -> "Otra"
-}
-
-fun programsFor(area: StudyArea): List<String> = when (area) {
-    StudyArea.ENGINEERING_TECHNOLOGY -> listOf(
-        "Ingeniería de Sistemas",
-        "Ingeniería Industrial",
-        "Ingeniería Civil",
-        "Ingeniería Mecánica",
-        "Ingeniería Electrónica",
-        "Ingeniería Ambiental",
-        "Ingeniería de Software",
-        OTHER_OPTION
-    )
-    StudyArea.ECONOMICS_BUSINESS -> listOf(
-        "Contaduría Pública",
-        "Administración de Empresas",
-        "Economía",
-        "Finanzas",
-        "Mercadeo",
-        "Negocios Internacionales",
-        OTHER_OPTION
-    )
-    StudyArea.LAW_POLITICS -> listOf("Derecho", "Ciencias Políticas", "Criminalística", OTHER_OPTION)
-    StudyArea.HEALTH_SCIENCES -> listOf("Medicina", "Enfermería", "Odontología", "Fisioterapia", "Nutrición", "Bacteriología", OTHER_OPTION)
-    StudyArea.EDUCATION -> listOf(
-        "Licenciatura en Educación Infantil",
-        "Licenciatura en Matemáticas",
-        "Licenciatura en Lenguas",
-        "Licenciatura en Ciencias Sociales",
-        "Licenciatura en Educación Física",
-        OTHER_OPTION
-    )
-    StudyArea.ARTS_DESIGN -> listOf("Diseño Gráfico", "Diseño Industrial", "Diseño de Modas", "Artes Visuales", "Música", OTHER_OPTION)
-    StudyArea.SOCIAL_SCIENCES -> listOf("Psicología", "Trabajo Social", "Comunicación Social", "Sociología", "Antropología", OTHER_OPTION)
-    StudyArea.BASIC_SCIENCES -> listOf("Matemáticas", "Física", "Química", "Biología", "Estadística", OTHER_OPTION)
-    StudyArea.OTHER -> listOf(OTHER_OPTION)
+    val base = 100 / count
+    val remainder = 100 % count
+    return List(count) { index ->
+        (base + if (index < remainder) 1 else 0).toString()
+    }
 }
 
 val GradingScale.maxNumericValue: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 5.0
+        GradingScale.ZERO_TO_HUNDRED -> 100.0
         GradingScale.CUSTOM -> 100.0
     }
 
 val GradingScale.defaultPassingGrade: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 3.0
+        GradingScale.ZERO_TO_HUNDRED -> 60.0
         GradingScale.CUSTOM -> 60.0
     }
 
 val GradingScale.defaultTargetAverage: Double
     get() = when (this) {
         GradingScale.ZERO_TO_FIVE -> 4.0
+        GradingScale.ZERO_TO_HUNDRED -> 80.0
         GradingScale.CUSTOM -> 80.0
     }
 
 private val GradingScale.defaultPassingGradeText: String
     get() = when (this) {
         GradingScale.CUSTOM -> defaultPassingGrade.toInt().toString()
+        GradingScale.ZERO_TO_HUNDRED -> defaultPassingGrade.toInt().toString()
         GradingScale.ZERO_TO_FIVE -> defaultPassingGrade.toString()
     }
 
@@ -354,5 +316,6 @@ private fun Double.roundGradeInput(): String {
 private val GradingScale.defaultTargetAverageText: String
     get() = when (this) {
         GradingScale.CUSTOM -> defaultTargetAverage.toInt().toString()
+        GradingScale.ZERO_TO_HUNDRED -> defaultTargetAverage.toInt().toString()
         GradingScale.ZERO_TO_FIVE -> defaultTargetAverage.toString()
     }

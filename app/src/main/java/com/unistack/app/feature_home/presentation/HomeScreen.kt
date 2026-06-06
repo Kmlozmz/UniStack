@@ -908,7 +908,7 @@ private fun PriorityContextSheet(
         contentColor = HomePrioritySheetText,
         scrimColor = Color.Black.copy(alpha = 0.64f),
         shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
             Box(
                 modifier = Modifier

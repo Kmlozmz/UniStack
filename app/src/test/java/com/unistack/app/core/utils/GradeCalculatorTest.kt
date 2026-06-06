@@ -11,6 +11,7 @@ class GradeCalculatorTest {
     @Test
     fun `format grade follows active numeric scale`() {
         assertEquals("4.3", GradingScaleUtils.formatGrade(4.25, GradingScale.ZERO_TO_FIVE))
+        assertEquals("89", GradingScaleUtils.formatGrade(88.6, GradingScale.ZERO_TO_HUNDRED))
         assertEquals("89", GradingScaleUtils.formatGrade(88.6, GradingScale.CUSTOM))
         assertEquals("--", GradingScaleUtils.formatGrade(null, GradingScale.ZERO_TO_FIVE))
     }
@@ -18,6 +19,7 @@ class GradeCalculatorTest {
     @Test
     fun `max grade matches supported numeric scales`() {
         assertEquals(5.0, GradingScaleUtils.maxGradeFor(GradingScale.ZERO_TO_FIVE), 0.0)
+        assertEquals(100.0, GradingScaleUtils.maxGradeFor(GradingScale.ZERO_TO_HUNDRED), 0.0)
         assertEquals(100.0, GradingScaleUtils.maxGradeFor(GradingScale.CUSTOM), 0.0)
     }
 

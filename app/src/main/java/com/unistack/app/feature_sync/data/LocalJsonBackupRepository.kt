@@ -25,7 +25,11 @@ import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import org.json.JSONArray
@@ -167,7 +171,11 @@ class LocalJsonBackupRepository(
     private fun profileJson(profile: UserProfile?): JSONObject {
         return JSONObject()
             .put("preferredName", profile?.preferredName)
+            .put("gradingScale", profile?.gradingScale?.name)
             .put("customGradeMax", profile?.customGradeMax ?: 100.0)
+            .put("passingGrade", profile?.passingGrade ?: 3.0)
+            .put("targetAverage", profile?.targetAverage ?: 4.0)
+            .put("academicPeriodScheme", profile?.academicPeriodScheme?.toJsonObject() ?: AcademicPeriodScheme.default().toJsonObject())
             .put("weeklyBudget", profile?.weeklyBudget ?: 0)
             .put("monthlyBudget", profile?.monthlyBudget ?: 0)
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
@@ -191,7 +199,12 @@ class LocalJsonBackupRepository(
         userRepository.saveUserProfile(
             current.copy(
                 preferredName = profileJson.optString("preferredName", current.preferredName).takeIf { it.isNotBlank() } ?: current.preferredName,
+                gradingScale = profileJson.optString("gradingScale").toGradingScaleOrNull() ?: current.gradingScale,
                 customGradeMax = profileJson.optDouble("customGradeMax", current.customGradeMax).coerceIn(1.0, 100.0),
+                passingGrade = profileJson.optDouble("passingGrade", current.passingGrade),
+                targetAverage = profileJson.optDouble("targetAverage", current.targetAverage),
+                academicPeriodScheme = profileJson.optJSONObject("academicPeriodScheme").toAcademicPeriodSchemeOrNull()
+                    ?: current.academicPeriodScheme,
                 weeklyBudget = profileJson.optInt("weeklyBudget", current.weeklyBudget),
                 monthlyBudget = profileJson.optInt("monthlyBudget", current.monthlyBudget),
                 expenseAlertThresholdPercent = profileJson.optInt("expenseAlertThresholdPercent", current.expenseAlertThresholdPercent),
@@ -200,6 +213,53 @@ class LocalJsonBackupRepository(
                 updatedAt = System.currentTimeMillis()
             )
         )
+    }
+
+    private fun AcademicPeriodScheme.toJsonObject(): JSONObject {
+        return JSONObject()
+            .put("label", label.name)
+            .put(
+                "periods",
+                JSONArray(
+                    periods.sortedBy { it.order }.map { period ->
+                        JSONObject()
+                            .put("id", period.id)
+                            .put("name", period.name)
+                            .put("weight", period.weight)
+                            .put("order", period.order)
+                    }
+                )
+            )
+    }
+
+    private fun JSONObject?.toAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
+        val root = this ?: return null
+        val label = runCatching {
+            AcademicPeriodLabel.valueOf(root.optString("label", AcademicPeriodLabel.CORTE.name))
+        }.getOrDefault(AcademicPeriodLabel.CORTE)
+        val periodsArray = root.optJSONArray("periods") ?: return null
+        val periods = periodsArray.objects()
+            .mapIndexedNotNull { index, item ->
+                val order = item.optInt("order", index + 1)
+                val weight = item.optDouble("weight", 0.0)
+                if (weight <= 0.0) return@mapIndexedNotNull null
+                AcademicPeriod(
+                    id = item.optString("id", "period-$order"),
+                    name = item.optString("name", "${label.singular} $order"),
+                    weight = weight,
+                    order = order
+                )
+            }
+            .sortedBy { it.order }
+        return AcademicPeriodScheme(label = label, periods = periods).takeIf { it.isValid }
+    }
+
+    private fun String.toGradingScaleOrNull(): GradingScale? {
+        return when (this) {
+            "ZERO_TO_ONE_HUNDRED" -> GradingScale.ZERO_TO_HUNDRED
+            "ZERO_TO_TEN", "LETTERS" -> GradingScale.CUSTOM
+            else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
+        }
     }
 
     private fun subjectJson(subject: Subject): JSONObject = JSONObject()
@@ -342,6 +402,6 @@ class LocalJsonBackupRepository(
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 1
+        const val SCHEMA_VERSION = 2
     }
 }

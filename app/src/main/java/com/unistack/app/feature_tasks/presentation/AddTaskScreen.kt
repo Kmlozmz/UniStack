@@ -607,7 +607,7 @@ private fun MonthCalendarDialog(
                         )
                     }
                     Text(
-                        text = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale("es", "CO"))
+                        text = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es-CO"))
                             .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
@@ -682,14 +682,19 @@ private fun CalendarMonthGrid(
             Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 (0 until 7).forEach { index ->
                     val date = week.getOrNull(index)
-                    val enabled = date != null && !date.isBefore(minDate) && !date.isAfter(maxDate)
+                    val enabledDate = date?.takeUnless { it.isBefore(minDate) || it.isAfter(maxDate) }
+                    val enabled = enabledDate != null
                     val selected = date != null && date == selectedDate
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 34.dp)
                             .then(
-                                if (enabled) Modifier.bounceClick { onDateSelected(date!!) } else Modifier
+                                if (enabledDate != null) {
+                                    Modifier.bounceClick { onDateSelected(enabledDate) }
+                                } else {
+                                    Modifier
+                                }
                             )
                             .background(
                                 color = when {
@@ -756,7 +761,7 @@ private fun SubjectDropdown(
             contentColor = Color.White,
             scrimColor = Color.Black.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
-            windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+            contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
             dragHandle = {
                 Box(
                     modifier = Modifier

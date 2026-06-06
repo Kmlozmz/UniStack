@@ -90,46 +90,43 @@ object AppDependencyFactory {
 }
 
 object AppContainer {
-    lateinit var userRepository: UserRepository
-        private set
+    private var dependencies: AppDependencies? = null
 
-    lateinit var gradesRepository: GradesRepository
-        private set
+    private val installed: AppDependencies
+        get() = dependencies ?: error("AppContainer.init(context) must be called before accessing dependencies.")
 
-    lateinit var tasksRepository: TasksRepository
-        private set
+    val userRepository: UserRepository
+        get() = installed.userRepository
 
-    lateinit var expensesRepository: ExpensesRepository
-        private set
+    val gradesRepository: GradesRepository
+        get() = installed.gradesRepository
 
-    lateinit var academicWorksRepository: AcademicWorksRepository
-        private set
+    val tasksRepository: TasksRepository
+        get() = installed.tasksRepository
 
-    lateinit var accountAuthService: AccountAuthService
-        private set
+    val expensesRepository: ExpensesRepository
+        get() = installed.expensesRepository
 
-    lateinit var cloudBackupRepository: CloudBackupRepository
-        private set
+    val academicWorksRepository: AcademicWorksRepository
+        get() = installed.academicWorksRepository
 
-    lateinit var localBackupRepository: LocalBackupRepository
-        private set
+    val accountAuthService: AccountAuthService
+        get() = installed.accountAuthService
 
-    lateinit var billingRepository: BillingRepository
-        private set
+    val cloudBackupRepository: CloudBackupRepository
+        get() = installed.cloudBackupRepository
+
+    val localBackupRepository: LocalBackupRepository
+        get() = installed.localBackupRepository
+
+    val billingRepository: BillingRepository
+        get() = installed.billingRepository
 
     fun init(context: Context) {
         install(AppDependencyFactory.create(context))
     }
 
     fun install(dependencies: AppDependencies) {
-        userRepository = dependencies.userRepository
-        gradesRepository = dependencies.gradesRepository
-        tasksRepository = dependencies.tasksRepository
-        expensesRepository = dependencies.expensesRepository
-        academicWorksRepository = dependencies.academicWorksRepository
-        accountAuthService = dependencies.accountAuthService
-        cloudBackupRepository = dependencies.cloudBackupRepository
-        localBackupRepository = dependencies.localBackupRepository
-        billingRepository = dependencies.billingRepository
+        this.dependencies = dependencies
     }
 }

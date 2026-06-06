@@ -124,7 +124,7 @@ fun TasksScreen(
     }
 
     val filteredTasks = remember(tasks, subjects, selectedFilter, selectedSubjectId, selectedPriority, sortOrder, searchQuery) {
-        val query = searchQuery.trim().lowercase(Locale.getDefault())
+        val query = searchQuery.trim().lowercase(Locale.ROOT)
         tasks
             .filter { task -> selectedFilter.matches(task) }
             .filter { task -> selectedSubjectId == null || task.subjectId == selectedSubjectId }
@@ -135,7 +135,7 @@ fun TasksScreen(
                 } else {
                     val subjectName = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }.orEmpty()
                     listOf(task.title, subjectName, task.type.label())
-                        .any { it.lowercase(Locale.getDefault()).contains(query) }
+                        .any { it.lowercase(Locale.ROOT).contains(query) }
                 }
             }
             .sortFor(sortOrder, subjects)
@@ -835,7 +835,7 @@ private fun TasksFilterBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = UniStackColors.Background,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -1286,7 +1286,7 @@ private fun taskDueLabel(dueDateMillis: Long): String {
     }
 }
 
-private val shortDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale("es", "CO"))
+private val shortDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CO"))
 
 private fun TaskDifficulty.shortLabel(): String {
     return when (this) {

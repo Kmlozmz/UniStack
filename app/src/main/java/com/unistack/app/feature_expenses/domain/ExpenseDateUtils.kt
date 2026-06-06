@@ -11,7 +11,7 @@ import java.util.Locale
 
 object ExpenseDateUtils {
     private val inputFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-    private val displayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale("es", "CO"))
+    private val displayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CO"))
 
     fun today(): LocalDate = LocalDate.now()
 

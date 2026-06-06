@@ -1,4 +1,3 @@
-import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.util.Properties
 import java.time.LocalDateTime
@@ -9,7 +8,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
+    //noinspection NewerVersionAvailable
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
 }
 
 if (file("google-services.json").exists()) {
@@ -44,12 +44,12 @@ val roomVersion = "2.8.4"
 
 android {
     namespace = "com.unistack.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.unistack.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = generatedVersionCode
         versionName = generatedVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -111,48 +111,49 @@ ksp {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.05.01"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.05.01"))
 
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
-    implementation("androidx.navigation:navigation-compose:2.8.9")
+    //noinspection GradleDependency
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.room:room-testing:$roomVersion")
-    testImplementation("androidx.test:core:1.6.1")
-    testImplementation("androidx.test.ext:junit:1.2.1")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    testImplementation("org.robolectric:robolectric:4.13")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.test:rules:1.6.1")
+    testImplementation("androidx.test:core:1.7.0")
+    testImplementation("androidx.test.ext:junit:1.3.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.robolectric:robolectric:4.16.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.room:room-testing:$roomVersion")
 
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.14.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("androidx.credentials:credentials:1.6.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-    implementation("com.android.billingclient:billing-ktx:8.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
+    implementation("com.android.billingclient:billing-ktx:9.0.0")
 
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
@@ -184,137 +185,45 @@ fun findApkForVariant(variant: String): File {
         ?: throw GradleException("$variant APK not found under ${outputDir.absolutePath}")
 }
 
-fun gitExecutable(): String {
-    val configured = localProperty("gitExecutable")
-        .ifBlank { System.getenv("GIT_EXECUTABLE").orEmpty() }
-    if (configured.isNotBlank()) return configured
-
-    return listOf(
-        "C:/Program Files/Git/cmd/git.exe",
-        "C:/Program Files/Git/bin/git.exe",
-        "C:/Program Files (x86)/Git/cmd/git.exe"
-    ).firstOrNull { rootProject.file(it).exists() } ?: "git"
-}
-
-fun runGit(vararg args: String): String? {
-    return try {
-        val output = ByteArrayOutputStream()
-        val gitErrorOutput = ByteArrayOutputStream()
-        val result = providers.exec {
-            commandLine(listOf(gitExecutable()) + args)
-            workingDir(rootProject.rootDir)
-            standardOutput = output
-            errorOutput = gitErrorOutput
-            isIgnoreExitValue = true
-        }.result.get()
-        output.toString().trim().takeIf { result.exitValue == 0 && it.isNotBlank() }
-    } catch (_: Exception) {
-        null
-    }
-}
-
-fun gitChangedFiles(): List<String> {
-    return runGit("status", "--short", "--untracked-files=all")
-        ?.lineSequence()
-        ?.map { it.drop(3).trim().substringAfter(" -> ") }
-        ?.filter { it.isNotBlank() }
-        ?.toList()
-        .orEmpty()
-}
-
-fun recentProjectFiles(hours: Long = 72): List<String> {
-    val cutoff = System.currentTimeMillis() - hours * 60L * 60L * 1000L
-    val excludedDirectories = setOf(".git", ".gradle", ".toolchains", "build")
-    val rootPath = rootProject.rootDir.toPath()
-
-    return rootProject.rootDir
-        .walkTopDown()
-        .onEnter { it.name !in excludedDirectories }
-        .filter { it.isFile && it.lastModified() >= cutoff }
-        .map { rootPath.relativize(it.toPath()).toString().replace('\\', '/') }
-        .filterNot { it.endsWith(".apk") || it.endsWith(".class") || it.endsWith(".jar") }
-        .distinct()
-        .toList()
-}
-
 fun summarizeChangeFiles(files: List<String>): List<String> {
     val normalized = files.map { it.replace('\\', '/') }.distinct()
+    val hasSetupChanges = normalized.any { it.contains("feature_setup/") || it.contains("welcome_unistack_hero") }
 
     return buildList {
+        if (hasSetupChanges) {
+            add("Setup: pasos de modulos, resumen y cierre del onboarding redisenados.")
+        }
+        if (normalized.any { it.contains("core/design/theme/Type.kt") }) {
+            add("Diseno: pesos tipograficos normalizados para textos y labels.")
+        }
         if (normalized.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
-            add("Notas: rediseño de cortes/notas y ajustes académicos aplicados.")
+            add("Notas: rediseno de cortes/notas y ajustes academicos aplicados.")
         }
         if (normalized.any { it.contains("feature_home/") }) {
             add("Home: plan diario y motor de prioridades actualizado.")
         }
         if (normalized.any { it.contains("feature_profile/") }) {
-            add("Perfil: recordatorios contextuales y exportación de datos ajustados.")
+            add("Perfil: recordatorios contextuales y exportacion de datos ajustados.")
         }
-        if (normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
-            add("Build: versión automática y envío de APK por Telegram afinados.")
+        if (!hasSetupChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
+            add("Build: version automatica y envio de APK por Telegram afinados.")
         }
         if (normalized.any { it.contains("androidTest/") || it.contains("src/test/") }) {
             add("QA: pruebas conectadas/unitarias actualizadas.")
         }
         if (normalized.any { it == ".editorconfig" }) {
-            add("Texto: configuración UTF-8 fijada para evitar mojibake.")
+            add("Texto: configuracion UTF-8 fijada para evitar mojibake.")
         }
         if (normalized.any { it.endsWith(".md") }) {
-            add("Limpieza: documentación obsoleta retirada o actualizada.")
+            add("Limpieza: documentacion obsoleta retirada o actualizada.")
         }
-        if (normalized.any { it.contains("core/navigation/") || it.contains("feature_setup/") }) {
-            add("Navegación/setup: flujo principal ajustado.")
+        if (normalized.any { it.contains("core/navigation/") }) {
+            add("Navegacion/setup: flujo principal ajustado.")
         }
         if (normalized.isNotEmpty() && isEmpty()) {
             add("Cambios locales: archivos del proyecto actualizados.")
         }
     }
-}
-
-fun gitChangelogLines(): List<String> {
-    val reliableLocalSummaries = summarizeChangeFiles(gitChangedFiles())
-    if (reliableLocalSummaries.isNotEmpty()) return reliableLocalSummaries
-
-    val reliableRecentSummaries = summarizeChangeFiles(recentProjectFiles())
-    if (reliableRecentSummaries.isNotEmpty()) return reliableRecentSummaries
-
-    val files = gitChangedFiles()
-    val localSummaries = buildList {
-        if (files.any { it.contains("feature_home/") }) {
-            add("Home: plan diario y motor de prioridades actualizado.")
-        }
-        if (files.any { it.contains("feature_profile/") }) {
-            add("Perfil: recordatorios contextuales y datos/exportación ajustados.")
-        }
-        if (files.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") }) {
-            add("Build: versión automática y envío de APK por Telegram afinados.")
-        }
-        if (files.any { it.contains("androidTest/") || it.contains("src/test/") }) {
-            add("QA: pruebas conectadas/unitarias actualizadas.")
-        }
-        if (files.any { it == ".editorconfig" }) {
-            add("Texto: configuración UTF-8 fijada para evitar mojibake.")
-        }
-        if (files.any { it.endsWith(".md") }) {
-            add("Limpieza: documentación obsoleta retirada o actualizada.")
-        }
-        if (files.any { it.contains("core/navigation/") || it.contains("feature_setup/") }) {
-            add("Navegación/setup: flujo principal ajustado.")
-        }
-        if (files.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
-            add("Notas: cálculo y pantallas académicas ajustadas.")
-        }
-    }
-
-    if (localSummaries.isNotEmpty()) return localSummaries
-
-    return runGit("log", "-5", "--pretty=format:%h %s")
-        ?.lineSequence()
-        ?.map { "Commit: ${it.trim()}" }
-        ?.filter { it.isNotBlank() }
-        ?.toList()
-        ?.takeIf { it.isNotEmpty() }
-        ?: listOf("Build local generado; no fue posible leer cambios locales.")
 }
 
 fun projectSnapshotFiles(): List<File> {
@@ -418,12 +327,12 @@ fun telegramChangelogLinesForVariant(
 ): List<String> {
     val previousSnapshot = readTelegramSnapshot(variant)
     if (previousSnapshot.isEmpty()) {
-        return listOf("Build: historial de cambios por APK activado desde este envío.")
+        return listOf("Build: historial de cambios por APK activado desde este envio.")
     }
 
     val changedFiles = changedFilesSinceSnapshot(previousSnapshot, currentSnapshot)
     return summarizeChangeFiles(changedFiles)
-        .ifEmpty { listOf("Sin cambios de código desde el APK anterior.") }
+        .ifEmpty { listOf("Sin cambios de codigo desde el APK anterior.") }
 }
 
 fun String.htmlEscape(): String {
@@ -480,7 +389,7 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
         val sizeText = String.format(Locale.US, "%.2f", sizeMb)
         val caption = """
             <b>Nuevo APK de ${rootProject.name.htmlEscape()}</b>
-            <blockquote>$variantTitle · ${apkPath.name.htmlEscape()} · $sizeText MB
+            <blockquote>$variantTitle - ${apkPath.name.htmlEscape()} - $sizeText MB
             v${generatedVersionName.htmlEscape()} ($generatedVersionCode)
             $timestamp</blockquote>
             <b>Cambios</b>
@@ -495,6 +404,11 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
                 "--show-error",
                 "--fail-with-body",
                 "--http1.1",
+                "--retry",
+                "4",
+                "--retry-delay",
+                "8",
+                "--retry-all-errors",
                 "--connect-timeout",
                 "20",
                 "--max-time",

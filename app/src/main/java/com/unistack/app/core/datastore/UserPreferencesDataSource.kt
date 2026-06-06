@@ -316,8 +316,8 @@ class UserPreferencesDataSource(private val context: Context) {
         return runCatching {
             val root = JSONObject(json)
             val label = runCatching {
-                AcademicPeriodLabel.valueOf(root.optString("label", AcademicPeriodLabel.PERIOD.name))
-            }.getOrDefault(AcademicPeriodLabel.PERIOD)
+                AcademicPeriodLabel.valueOf(root.optString("label", AcademicPeriodLabel.CORTE.name))
+            }.getOrDefault(AcademicPeriodLabel.CORTE)
             val array = root.optJSONArray("periods") ?: JSONArray()
             val periods = buildList {
                 for (index in 0 until array.length()) {
@@ -369,7 +369,8 @@ class UserPreferencesDataSource(private val context: Context) {
 
     private fun String.toGradingScaleOrNull(): GradingScale? {
         return when (this) {
-            "ZERO_TO_TEN", "ZERO_TO_ONE_HUNDRED", "LETTERS" -> GradingScale.CUSTOM
+            "ZERO_TO_ONE_HUNDRED" -> GradingScale.ZERO_TO_HUNDRED
+            "ZERO_TO_TEN", "LETTERS" -> GradingScale.CUSTOM
             else -> runCatching { GradingScale.valueOf(this) }.getOrNull()
         }
     }

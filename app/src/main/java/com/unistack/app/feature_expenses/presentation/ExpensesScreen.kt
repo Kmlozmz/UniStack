@@ -904,7 +904,7 @@ private fun ExpenseCategorySheet(
         containerColor = ExpenseBackground,
         contentColor = ExpenseText,
         shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
+        contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) }
     ) {
         Column(
             modifier = Modifier
@@ -1212,7 +1212,7 @@ private fun ExpenseBudgetSheet(
         containerColor = ExpenseBackground,
         contentColor = ExpenseText,
         shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
+        contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) }
     ) {
         Column(
             modifier = Modifier

@@ -38,8 +38,8 @@ fun SubjectCard(
     icon: ImageVector,
     accentColor: Color,
     backgroundColor: Color,
-    gradingScale: GradingScale = GradingScale.ZERO_TO_FIVE,
     modifier: Modifier = Modifier,
+    gradingScale: GradingScale = GradingScale.ZERO_TO_FIVE,
     onClick: () -> Unit = {}
 ) {
     UniCard(

@@ -82,6 +82,48 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationFourToFiveAddsTaskTypeColumn() {
+        val database = createDatabaseWithSchema(version = 4)
+
+        UniStackDatabase.MIGRATION_4_5.migrate(database)
+
+        assertTrue(database.hasColumn("tasks", "type"))
+        database.close()
+    }
+
+    @Test
+    fun migrationFiveToSixAddsTaskDescriptionColumn() {
+        val database = createDatabaseWithSchema(version = 5)
+
+        UniStackDatabase.MIGRATION_5_6.migrate(database)
+
+        assertTrue(database.hasColumn("tasks", "description"))
+        database.close()
+    }
+
+    @Test
+    fun migrationSixToSevenAddsGradeTypeAndPeriodFields() {
+        val database = createDatabaseWithSchema(version = 6)
+
+        UniStackDatabase.MIGRATION_6_7.migrate(database)
+
+        assertTrue(database.hasColumn("grades", "type"))
+        assertTrue(database.hasColumn("grades", "periodId"))
+        assertTrue(database.hasIndex("index_grades_periodId"))
+        database.close()
+    }
+
+    @Test
+    fun migrationSevenToEightAddsSubjectCustomColorColumn() {
+        val database = createDatabaseWithSchema(version = 7)
+
+        UniStackDatabase.MIGRATION_7_8.migrate(database)
+
+        assertTrue(database.hasColumn("subjects", "customColor"))
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -105,6 +147,22 @@ class RoomMigrationTest {
                 .build()
         )
         return helper.writableDatabase
+    }
+
+    private fun createDatabaseWithSchema(version: Int): SupportSQLiteDatabase {
+        return createDatabase(version = version) { db ->
+            createVersionOneSchema(db)
+            applyMigrationsThrough(db, version)
+        }
+    }
+
+    private fun applyMigrationsThrough(db: SupportSQLiteDatabase, targetVersion: Int) {
+        if (targetVersion >= 2) UniStackDatabase.MIGRATION_1_2.migrate(db)
+        if (targetVersion >= 3) UniStackDatabase.MIGRATION_2_3.migrate(db)
+        if (targetVersion >= 4) UniStackDatabase.MIGRATION_3_4.migrate(db)
+        if (targetVersion >= 5) UniStackDatabase.MIGRATION_4_5.migrate(db)
+        if (targetVersion >= 6) UniStackDatabase.MIGRATION_5_6.migrate(db)
+        if (targetVersion >= 7) UniStackDatabase.MIGRATION_6_7.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {
@@ -148,6 +206,14 @@ class RoomMigrationTest {
     private fun SupportSQLiteDatabase.hasIndex(name: String): Boolean {
         return query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?", arrayOf(name)).use {
             it.moveToFirst()
+        }
+    }
+
+    private fun SupportSQLiteDatabase.hasColumn(table: String, column: String): Boolean {
+        return query("PRAGMA table_info($table)").use { cursor ->
+            val nameIndex = cursor.getColumnIndex("name")
+            generateSequence { if (cursor.moveToNext()) cursor.getString(nameIndex) else null }
+                .any { it == column }
         }
     }
 }

@@ -47,7 +47,7 @@ data class SavedGradeScenario(
 )
 
 data class AcademicPeriodScheme(
-    val label: AcademicPeriodLabel = AcademicPeriodLabel.PERIOD,
+    val label: AcademicPeriodLabel = AcademicPeriodLabel.CORTE,
     val periods: List<AcademicPeriod> = defaultPeriods()
 ) {
     val totalWeight: Double
@@ -66,14 +66,14 @@ data class AcademicPeriodScheme(
 
     companion object {
         fun default(): AcademicPeriodScheme = AcademicPeriodScheme(
-            label = AcademicPeriodLabel.PERIOD,
+            label = AcademicPeriodLabel.CORTE,
             periods = defaultPeriods()
         )
 
         fun defaultPeriods(): List<AcademicPeriod> = listOf(
-            AcademicPeriod(id = "period-1", name = "Periodo 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Periodo 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Periodo 3", weight = 0.30, order = 3)
+            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
     }
 }
@@ -99,6 +99,7 @@ enum class EducationLevel {
 
 enum class GradingScale {
     ZERO_TO_FIVE,
+    ZERO_TO_HUNDRED,
     CUSTOM
 }
 

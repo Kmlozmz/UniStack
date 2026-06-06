@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
@@ -34,9 +35,13 @@ class FirebaseGoogleAuthService : AccountAuthService {
         val request = GetCredentialRequest.Builder()
             .addCredentialOption(googleIdOption)
             .build()
-        val credential = CredentialManager.create(context)
-            .getCredential(context = context, request = request)
-            .credential
+        val credential = try {
+            CredentialManager.create(context)
+                .getCredential(context = context, request = request)
+                .credential
+        } catch (exception: NoCredentialException) {
+            throw IllegalStateException("No hay credenciales de Google disponibles para iniciar sesión.", exception)
+        }
 
         val googleCredential = when {
             credential is CustomCredential &&

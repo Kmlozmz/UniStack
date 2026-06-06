@@ -1,5 +1,6 @@
 package com.unistack.app.feature_templates.presentation
 
+import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -47,9 +49,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,7 @@ import com.unistack.app.feature_templates.domain.ChecklistItem
 import com.unistack.app.feature_templates.domain.EssayTemplate
 import com.unistack.app.feature_templates.domain.buildApaReferenceDraft
 import com.unistack.app.feature_templates.domain.exportText
+import kotlinx.coroutines.launch
 
 @Composable
 fun AcademicTemplatesScreen(
@@ -87,7 +90,13 @@ fun AcademicTemplatesScreen(
     val works by viewModel.works.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val templates = AcademicTemplateLibrary.essayTemplates
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
+    fun copyToClipboard(text: String) {
+        coroutineScope.launch {
+            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", text)))
+        }
+    }
 
     var selectedTemplateId by rememberSaveable { mutableStateOf(templates.first().id) }
     var selectedWorkId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -278,7 +287,7 @@ fun AcademicTemplatesScreen(
                         title = "Exportar trabajo",
                         body = "Copia estructura, checklist y notas persistidas para llevarlas a tu editor.",
                         onCopyClick = {
-                            clipboard.setText(AnnotatedString(selectedWork.exportText(subjects)))
+                            copyToClipboard(selectedWork.exportText(subjects))
                             feedback = "Trabajo copiado al portapapeles."
                         }
                     )
@@ -292,7 +301,7 @@ fun AcademicTemplatesScreen(
                         title = "Copiar plantilla",
                         body = "Copia la plantilla base y úsala como borrador rápido.",
                         onCopyClick = {
-                            clipboard.setText(AnnotatedString(selectedTemplate.exportText(emptyList())))
+                            copyToClipboard(selectedTemplate.exportText(emptyList()))
                             feedback = "Plantilla copiada al portapapeles."
                         }
                     )
@@ -313,7 +322,7 @@ fun AcademicTemplatesScreen(
                 ApaReferenceGeneratorCard(
                     referenceDraft = apaDraft,
                     onCopyClick = {
-                        clipboard.setText(AnnotatedString(apaDraft))
+                        copyToClipboard(apaDraft)
                         feedback = "Referencias APA copiadas."
                     }
                 )

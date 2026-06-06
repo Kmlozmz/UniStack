@@ -1,6 +1,5 @@
 package com.unistack.app.core.navigation
 
-import android.annotation.SuppressLint
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -26,7 +25,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun RootNavGraph(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -41,9 +39,7 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
         AppContainer.userRepository.userProfile
             .map { it?.setupCompleted }
             .distinctUntilChanged()
-    }.collectAsStateWithLifecycle(
-        initialValue = AppContainer.userRepository.userProfile.value?.setupCompleted
-    )
+    }.collectAsStateWithLifecycle(initialValue = null)
     var launchRoute by remember { mutableStateOf<String?>(null) }
     var launchAnimationFinished by rememberSaveable { mutableStateOf(animationsDisabled) }
     var repositoryDidLoad by remember { mutableStateOf(AppContainer.userRepository.didLoad) }

@@ -21,9 +21,9 @@ import com.unistack.app.core.design.theme.UniStackColors
 @Composable
 fun SectionHeader(
     title: String,
+    modifier: Modifier = Modifier,
     actionText: String? = null,
-    onActionClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onActionClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),

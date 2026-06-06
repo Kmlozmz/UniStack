@@ -33,7 +33,6 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = systemBarStyle
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            window.isStatusBarContrastEnforced = false
             window.isNavigationBarContrastEnforced = false
         }
     }
