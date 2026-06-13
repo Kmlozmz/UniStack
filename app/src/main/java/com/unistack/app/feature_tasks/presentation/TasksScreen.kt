@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Schedule
@@ -51,6 +52,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -128,6 +130,7 @@ fun TasksScreen(
     var searchQuery by remember { mutableStateOf("") }
     var completionPrompt by remember { mutableStateOf<TaskCompletionPrompt?>(null) }
     var historySuggestionSubjectId by remember { mutableStateOf<String?>(null) }
+    var pendingGradesExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -170,9 +173,9 @@ fun TasksScreen(
     }
     val today = TaskDateUtils.today()
     val activeTasks = filteredTasks.filterNot { it.completed }
-    val awaitingGradeTasks = filteredTasks.filter {
+    val awaitingGradeTasks = tasks.filter {
         it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
-    }
+    }.sortedByDescending { it.completedAt ?: it.updatedAt }
     val completedTasks = filteredTasks.filter {
         it.completed && it.gradingStatus != TaskGradingStatus.AWAITING_GRADE
     }
@@ -223,10 +226,22 @@ fun TasksScreen(
             if (pendingGradeCount > 0) {
                 item {
                     PendingGradesBanner(
-                        count = pendingGradeCount,
-                        onClick = {
+                        tasks = awaitingGradeTasks,
+                        subjects = subjects,
+                        expanded = pendingGradesExpanded,
+                        onToggle = {
                             clearSearchFocus()
-                            selectedFilter = TaskListFilter.AWAITING_GRADE
+                            pendingGradesExpanded = !pendingGradesExpanded
+                        },
+                        onRegisterGradeClick = { task -> completionPrompt = TaskCompletionPrompt(task) },
+                        onNoGradeClick = { task -> viewModel.markTaskAsNotGraded(task.id) },
+                        onEditClick = { task ->
+                            clearSearchFocus()
+                            onEditTaskClick(task.id)
+                        },
+                        onDeleteClick = { task ->
+                            clearSearchFocus()
+                            taskIdPendingDelete = task.id
                         }
                     )
                 }
@@ -343,31 +358,6 @@ fun TasksScreen(
                                 onCheckedChange = { checked ->
                                     onTaskChecked(task, checked)
                                 },
-                                onRegisterGradeClick = {
-                                    completionPrompt = TaskCompletionPrompt(task)
-                                },
-                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
-                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
-                                onEditClick = {
-                                    clearSearchFocus()
-                                    onEditTaskClick(task.id)
-                                },
-                                onDeleteClick = {
-                                    clearSearchFocus()
-                                    taskIdPendingDelete = task.id
-                                }
-                            )
-                        }
-                    }
-                    if (awaitingGradeTasks.isNotEmpty()) {
-                        item { SectionTitle("Esperando nota", awaitingGradeTasks.size) }
-                        items(awaitingGradeTasks, key = { it.id }) { task ->
-                            TaskCard(
-                                task = task,
-                                subjects = subjects,
-                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
-                                onCardClick = clearSearchFocus,
-                                onCheckedChange = { checked -> onTaskChecked(task, checked) },
                                 onRegisterGradeClick = {
                                     completionPrompt = TaskCompletionPrompt(task)
                                 },
@@ -987,52 +977,166 @@ private fun SectionTitle(text: String, count: Int) {
 
 @Composable
 private fun PendingGradesBanner(
-    count: Int,
-    onClick: () -> Unit
+    tasks: List<StudentTask>,
+    subjects: List<Subject>,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onRegisterGradeClick: (StudentTask) -> Unit,
+    onNoGradeClick: (StudentTask) -> Unit,
+    onEditClick: (StudentTask) -> Unit,
+    onDeleteClick: (StudentTask) -> Unit
 ) {
+    val count = tasks.size
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .cleanClickable(onClick),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
     ) {
-        Row(
+        Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            Row(
+                modifier = Modifier.cleanClickable(onToggle),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Grade,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (count == 1) "1 resultado pendiente" else "$count resultados pendientes",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (!expanded) {
+                        Text(
+                            text = "Toca para registrar o descartar resultados",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+                Text(
+                    text = if (expanded) "Ocultar" else "Revisar",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
                 Icon(
-                    imageVector = Icons.Rounded.Grade,
-                    contentDescription = null,
+                    imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Ocultar resultados pendientes" else "Ver resultados pendientes",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
+            if (expanded) {
+                tasks.forEachIndexed { index, task ->
+                    if (index > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 46.dp, top = 6.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        )
+                    }
+                    PendingGradeTaskRow(
+                        task = task,
+                        subjectName = task.subjectId
+                            ?.let { id -> subjects.firstOrNull { it.id == id }?.name }
+                            ?: "Sin materia",
+                        onRegisterGradeClick = { onRegisterGradeClick(task) },
+                        onNoGradeClick = { onNoGradeClick(task) },
+                        onEditClick = { onEditClick(task) },
+                        onDeleteClick = { onDeleteClick(task) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PendingGradeTaskRow(
+    task: StudentTask,
+    subjectName: String,
+    onRegisterGradeClick: () -> Unit,
+    onNoGradeClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    var menuExpanded by remember(task.id) { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 9.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = if (count == 1) "1 resultado pendiente" else "$count resultados pendientes",
-                modifier = Modifier.weight(1f),
+                text = task.title,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "Revisar",
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
+                text = "$subjectName · ${TaskDateUtils.dueText(task.dueDateMillis)}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = "Ver tareas pendientes de nota",
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
+        }
+        TextButton(onClick = onRegisterGradeClick) {
+            Text("Registrar", fontWeight = FontWeight.Bold)
+        }
+        Box {
+            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Editar tarea") },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onEditClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("No tuvo nota") },
+                    leadingIcon = { Icon(Icons.Rounded.CheckCircle, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onNoGradeClick()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Eliminar") },
+                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                    onClick = {
+                        menuExpanded = false
+                        onDeleteClick()
+                    }
+                )
+            }
         }
     }
 }
@@ -1823,7 +1927,6 @@ private fun TaskListFilter.icon(): ImageVector {
     return when (this) {
         TaskListFilter.ALL -> Icons.Rounded.Check
         TaskListFilter.PENDING -> Icons.Rounded.Schedule
-        TaskListFilter.AWAITING_GRADE -> Icons.Rounded.Grade
         TaskListFilter.COMPLETED -> Icons.Rounded.CheckCircle
         TaskListFilter.OVERDUE -> Icons.Rounded.CalendarMonth
     }
@@ -1946,7 +2049,6 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
 private val visibleStatusFilters = listOf(
     TaskListFilter.ALL,
     TaskListFilter.PENDING,
-    TaskListFilter.AWAITING_GRADE,
     TaskListFilter.COMPLETED,
     TaskListFilter.OVERDUE
 )
@@ -1954,7 +2056,6 @@ private val visibleStatusFilters = listOf(
 private enum class TaskListFilter(val label: String) {
     ALL("Todas"),
     PENDING("Pendientes"),
-    AWAITING_GRADE("Pendientes de nota"),
     OVERDUE("Vencidas"),
     COMPLETED("Completadas");
 
@@ -1962,7 +2063,6 @@ private enum class TaskListFilter(val label: String) {
         return when (this) {
             ALL -> true
             PENDING -> !task.completed
-            AWAITING_GRADE -> task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
             OVERDUE -> !task.completed && TaskDateUtils.fromMillis(task.dueDateMillis).isBefore(TaskDateUtils.today())
             COMPLETED -> task.completed
         }

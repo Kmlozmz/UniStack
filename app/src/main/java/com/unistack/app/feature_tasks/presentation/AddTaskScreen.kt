@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,18 +38,28 @@ import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Grade
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TaskAlt
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -82,6 +91,7 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
@@ -100,6 +110,7 @@ import java.util.Locale
 fun AddTaskScreen(
     onBackClick: () -> Unit,
     onCreateSubjectClick: () -> Unit,
+    onEditLinkedGrade: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = viewModel(),
     taskId: String? = null
@@ -108,6 +119,7 @@ fun AddTaskScreen(
 
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val task = taskId?.let { id -> tasks.firstOrNull { it.id == id } }
     val isEditing = taskId != null
 
@@ -124,6 +136,8 @@ fun AddTaskScreen(
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
+    var showUnlinkConfirmation by rememberSaveable { mutableStateOf(false) }
     val estimatedMinutes = "60"
 
     val titleValidation = TextValidators.validateActivityName(title)
@@ -136,6 +150,18 @@ fun AddTaskScreen(
         (dueTime.isBlank() || parsedDueTime != null) &&
         gradingChoice != null &&
         (gradingChoice != TaskGradingChoice.YES || selectedSubjectId != null)
+    val linkedSubject = task?.linkedGradeId?.let { gradeId ->
+        subjects.firstOrNull { subject -> subject.grades.any { it.id == gradeId } }
+    }
+    val linkedGrade = task?.linkedGradeId?.let { gradeId ->
+        linkedSubject?.grades?.firstOrNull { it.id == gradeId }
+    }
+    val linkedGradeChanged = task != null && linkedGrade != null && (
+        title.trim() != task.title ||
+            selectedSubjectId != task.subjectId ||
+            selectedPeriodId != task.periodId ||
+            selectedType != task.type
+        )
 
     LaunchedEffect(task?.id, taskId) {
         if (initialized) return@LaunchedEffect
@@ -178,9 +204,55 @@ fun AddTaskScreen(
         selectedType = selectedType,
         selectedPriority = difficulty,
         gradingChoice = gradingChoice,
+        linkedGradeValue = linkedGrade?.let {
+            GradingScaleUtils.formatGrade(
+                it.value,
+                profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
+            )
+        },
+        linkedGradePeriod = linkedGrade?.let { grade ->
+            linkedSubject?.periodScheme?.periodName(grade.periodId)
+        },
+        linkedGradeWeight = linkedGrade?.let { grade ->
+            if (grade.weightStatus == com.unistack.app.feature_grades.domain.GradeWeightStatus.UNKNOWN) {
+                "Porcentaje pendiente"
+            } else {
+                "${(grade.percentage * 100).toInt()}% del corte"
+            }
+        },
+        linkedGradeChanged = linkedGradeChanged,
         isSaveEnabled = isValid,
         error = error,
         onBackClick = onBackClick,
+        onDeleteClick = if (isEditing && task != null) {
+            { showDeleteConfirmation = true }
+        } else {
+            null
+        },
+        onDuplicateClick = if (isEditing && task != null) {
+            {
+                if (viewModel.duplicateTask(task.id)) onBackClick()
+            }
+        } else {
+            null
+        },
+        onCompleteClick = if (isEditing && task != null && !task.completed) {
+            {
+                if (viewModel.completeTaskFromEditor(task.id)) onBackClick()
+            }
+        } else {
+            null
+        },
+        onEditLinkedGrade = if (linkedSubject != null && linkedGrade != null) {
+            { onEditLinkedGrade(linkedSubject.id, linkedGrade.id) }
+        } else {
+            null
+        },
+        onUnlinkLinkedGrade = if (linkedGrade != null) {
+            { showUnlinkConfirmation = true }
+        } else {
+            null
+        },
         onTitleChange = {
             title = it.take(40)
             error = null
@@ -286,6 +358,51 @@ fun AddTaskScreen(
             onDismiss = { showTimePicker = false }
         )
     }
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Eliminar tarea") },
+            text = { Text("Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        task?.let { viewModel.deleteTask(it.id) }
+                        onBackClick()
+                    }
+                ) {
+                    Text("Eliminar", color = UniStackColors.Coral)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+    if (showUnlinkConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showUnlinkConfirmation = false },
+            title = { Text("Desvincular nota") },
+            text = { Text("La nota seguirá guardada en la materia, pero dejará de estar asociada a esta tarea.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnlinkConfirmation = false
+                        task?.let { viewModel.unlinkTaskGrade(it.id) }
+                    }
+                ) {
+                    Text("Desvincular")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnlinkConfirmation = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -304,9 +421,18 @@ private fun AddTaskContent(
     selectedType: TaskType,
     selectedPriority: TaskDifficulty,
     gradingChoice: TaskGradingChoice?,
+    linkedGradeValue: String?,
+    linkedGradePeriod: String?,
+    linkedGradeWeight: String?,
+    linkedGradeChanged: Boolean,
     isSaveEnabled: Boolean,
     error: String?,
     onBackClick: () -> Unit,
+    onDeleteClick: (() -> Unit)?,
+    onDuplicateClick: (() -> Unit)?,
+    onCompleteClick: (() -> Unit)?,
+    onEditLinkedGrade: (() -> Unit)?,
+    onUnlinkLinkedGrade: (() -> Unit)?,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onDateClick: () -> Unit,
@@ -320,76 +446,146 @@ private fun AddTaskContent(
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    var descriptionExpanded by rememberSaveable { mutableStateOf(description.isNotBlank()) }
+    val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
+    val headerContext = listOfNotNull(
+        selectedSubject?.name,
+        linkedGradeValue?.let { "Nota $it" }
+    ).joinToString(" · ").ifBlank { "Organiza los detalles de la actividad" }
+
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
             .statusBarsPadding()
-            .padding(horizontal = 22.dp)
-            .padding(top = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        TaskHeader(
-            title = if (isEditing) "Editar tarea" else "Nueva tarea",
-            subtitle = "Agrega los detalles principales de tu actividad.",
-            onBackClick = onBackClick
-        )
-        FormSection(title = "Información básica") {
-            BasicInfoCard(
-                title = title,
-                titleIsValid = titleIsValid,
-                titleError = titleError,
-                dueDateLabel = dueDateLabel,
-                dueTimeLabel = dueTimeLabel,
-                subjects = subjects,
-                selectedSubjectId = selectedSubjectId,
-                selectedPeriodId = selectedPeriodId,
-                onTitleChange = onTitleChange,
-                onDateClick = onDateClick,
-                onTimeClick = onTimeClick,
-                onSubjectSelected = onSubjectSelected,
-                onPeriodSelected = onPeriodSelected,
-                onCreateSubjectClick = onCreateSubjectClick
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 10.dp, bottom = 116.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TaskHeader(
+                title = if (isEditing) "Editar tarea" else "Nueva tarea",
+                subtitle = headerContext,
+                onBackClick = onBackClick,
+                onDeleteClick = onDeleteClick,
+                onDuplicateClick = onDuplicateClick,
+                onCompleteClick = onCompleteClick
+            )
+            FormSection(title = "Detalles principales") {
+                BasicInfoCard(
+                    title = title,
+                    titleIsValid = titleIsValid,
+                    titleError = titleError,
+                    dueDateLabel = dueDateLabel,
+                    dueTimeLabel = dueTimeLabel,
+                    subjects = subjects,
+                    selectedSubjectId = selectedSubjectId,
+                    selectedPeriodId = selectedPeriodId,
+                    onTitleChange = onTitleChange,
+                    onDateClick = onDateClick,
+                    onTimeClick = onTimeClick,
+                    onSubjectSelected = onSubjectSelected,
+                    onPeriodSelected = onPeriodSelected,
+                    onCreateSubjectClick = onCreateSubjectClick
+                )
+            }
+            FormSection(title = "Clasificación") {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    TaskTypeSelector(selected = selectedType, onSelected = onTypeSelected)
+                    PrioritySegmentedControl(selected = selectedPriority, onSelected = onPrioritySelected)
+                }
+            }
+            FormSection(title = "Calificación") {
+                if (linkedGradeValue != null) {
+                    LinkedGradeCard(
+                        value = linkedGradeValue,
+                        period = linkedGradePeriod,
+                        weight = linkedGradeWeight,
+                        changed = linkedGradeChanged,
+                        onEditClick = onEditLinkedGrade,
+                        onUnlinkClick = onUnlinkLinkedGrade
+                    )
+                } else {
+                    GradingIntentSelector(
+                        selected = gradingChoice,
+                        hasSubject = selectedSubjectId != null,
+                        onSelected = onGradingChoiceSelected
+                    )
+                }
+            }
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = AppShapes.MediumCard,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bounceClick { descriptionExpanded = !descriptionExpanded }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Description,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = if (description.isBlank()) "Añadir descripción" else "Descripción",
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Icon(
+                            if (descriptionExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                            contentDescription = null
+                        )
+                    }
+                    if (descriptionExpanded) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                        Box(modifier = Modifier.padding(14.dp)) {
+                            TaskDescriptionField(
+                                value = description,
+                                onValueChange = onDescriptionChange
+                            )
+                        }
+                    }
+                }
+            }
+            if (taskMissing) {
+                Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
+            }
+            error?.let {
+                Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
+            }
+        }
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+            tonalElevation = 0.dp,
+            shadowElevation = 8.dp
+        ) {
+            CreateTaskButton(
+                text = if (isEditing) "Guardar cambios" else "Crear tarea",
+                enabled = isSaveEnabled,
+                onClick = onSaveClick,
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .fillMaxWidth()
             )
         }
-        FormSection(title = "Descripción") {
-            TaskDescriptionField(
-                value = description,
-                onValueChange = onDescriptionChange
-            )
-        }
-        FormSection(title = "Tipo de tarea") {
-            TaskTypeSelector(
-                selected = selectedType,
-                onSelected = onTypeSelected
-            )
-        }
-        FormSection(title = "Prioridad") {
-            PrioritySegmentedControl(
-                selected = selectedPriority,
-                onSelected = onPrioritySelected
-            )
-        }
-        FormSection(title = "Calificación") {
-            GradingIntentSelector(
-                selected = gradingChoice,
-                hasSubject = selectedSubjectId != null,
-                onSelected = onGradingChoiceSelected
-            )
-        }
-        if (taskMissing) {
-            Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
-        }
-        error?.let {
-            Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
-        }
-        CreateTaskButton(
-            text = if (isEditing) "Guardar tarea" else "Crear tarea",
-            enabled = isSaveEnabled,
-            onClick = onSaveClick,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -397,19 +593,65 @@ private fun AddTaskContent(
 private fun TaskHeader(
     title: String,
     subtitle: String,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onDeleteClick: (() -> Unit)?,
+    onDuplicateClick: (() -> Unit)?,
+    onCompleteClick: (() -> Unit)?
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                    shape = AppShapes.Pill
-                )
-        ) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+    var menuExpanded by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
+                        shape = AppShapes.Pill
+                    )
+            ) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            if (onDeleteClick != null || onDuplicateClick != null || onCompleteClick != null) {
+                Box {
+                    IconButton(onClick = { menuExpanded = true }) {
+                        Icon(Icons.Rounded.MoreVert, contentDescription = "Más acciones")
+                    }
+                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        onCompleteClick?.let { action ->
+                            DropdownMenuItem(
+                                text = { Text("Marcar completada") },
+                                leadingIcon = { Icon(Icons.Rounded.CheckCircle, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    action()
+                                }
+                            )
+                        }
+                        onDuplicateClick?.let { action ->
+                            DropdownMenuItem(
+                                text = { Text("Duplicar") },
+                                leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    action()
+                                }
+                            )
+                        }
+                        onDeleteClick?.let { action ->
+                            DropdownMenuItem(
+                                text = { Text("Eliminar") },
+                                leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    action()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -422,7 +664,7 @@ private fun TaskHeader(
                 text = subtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Normal
             )
         }
     }
@@ -463,7 +705,7 @@ private fun SectionTitle(text: String) {
 private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
+        color = MaterialTheme.colorScheme.surface,
         shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
@@ -499,21 +741,27 @@ private fun BasicInfoCard(
             error = titleError
         )
         FormDivider()
-        BasicInfoActionRow(
-            icon = Icons.Rounded.CalendarMonth,
-            label = "Fecha límite",
-            value = dueDateLabel,
-            placeholder = "Seleccionar fecha",
-            onClick = onDateClick
-        )
-        FormDivider()
-        BasicInfoActionRow(
-            icon = Icons.Rounded.AccessTime,
-            label = "Hora límite",
-            value = dueTimeLabel,
-            placeholder = "Seleccionar hora",
-            onClick = onTimeClick
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            CompactInfoAction(
+                modifier = Modifier.weight(1.35f),
+                icon = Icons.Rounded.CalendarMonth,
+                label = "Fecha",
+                value = dueDateLabel.ifBlank { "Seleccionar" },
+                onClick = onDateClick
+            )
+            CompactInfoAction(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Rounded.AccessTime,
+                label = "Hora",
+                value = dueTimeLabel,
+                onClick = onTimeClick
+            )
+        }
         FormDivider()
         SubjectDropdown(
             subjects = subjects,
@@ -529,6 +777,51 @@ private fun BasicInfoCard(
                 selectedPeriodId = selectedPeriodId ?: selectedSubject.activePeriodId,
                 onPeriodSelected = onPeriodSelected
             )
+        }
+    }
+}
+
+@Composable
+private fun CompactInfoAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.bounceClick(onClick),
+        shape = AppShapes.SmallCard,
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Normal
+                )
+                Text(
+                    text = value,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -818,6 +1111,100 @@ private fun TimePickerSheet(
 }
 
 @Composable
+private fun LinkedGradeCard(
+    value: String,
+    period: String?,
+    weight: String?,
+    changed: Boolean,
+    onEditClick: (() -> Unit)?,
+    onUnlinkClick: (() -> Unit)?
+) {
+    FormSectionCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.SmallCard),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Rounded.Grade,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "Nota vinculada",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = listOfNotNull(period, weight).joinToString(" · "),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+            Text(
+                text = value,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        if (changed) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+                shape = AppShapes.SmallCard,
+                color = UniStackColors.Yellow.copy(alpha = 0.10f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(11.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Icon(
+                        Icons.Rounded.WarningAmber,
+                        contentDescription = null,
+                        tint = UniStackColors.Yellow,
+                        modifier = Modifier.size(19.dp)
+                    )
+                    Text(
+                        text = "Al guardar, estos cambios también actualizarán la nota vinculada.",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+        }
+        if (onEditClick != null || onUnlinkClick != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                onEditClick?.let { action ->
+                    TextButton(onClick = action) {
+                        Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Editar nota")
+                    }
+                }
+                onUnlinkClick?.let { action ->
+                    TextButton(onClick = action) {
+                        Text("Desvincular")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun GradingIntentSelector(
     selected: TaskGradingChoice?,
     hasSubject: Boolean,
@@ -883,9 +1270,9 @@ private fun GradingIntentSelector(
 }
 
 private enum class TaskGradingChoice(val label: String) {
-    YES("Sí"),
-    NO("No"),
-    UNSURE("No sé")
+    YES("Calificable"),
+    NO("Sin nota"),
+    UNSURE("Aún no sé")
 }
 
 private fun TaskGradingChoice?.toInitialGradingStatus(): TaskGradingStatus {
@@ -1367,99 +1754,101 @@ private fun TaskDescriptionField(
     value: String,
     onValueChange: (String) -> Unit
 ) {
-    FormSectionCard {
-        Column {
-            BasicInfoRowShell(
-                icon = Icons.Rounded.Description,
-                label = "Descripción"
-            ) {
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = false,
-                    minLines = 2,
-                    maxLines = 8,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = false,
+        minLines = 3,
+        maxLines = 8,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Normal
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        decorationBox = { innerTextField ->
+            Box {
+                if (value.isBlank()) {
+                    Text(
+                        text = "Añade contexto, instrucciones o enlaces (opcional)",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Normal
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    decorationBox = { innerTextField ->
-                        Box {
-                            if (value.isBlank()) {
-                                Text(
-                                    text = "Agrega una descripción detallada (opcional)",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Normal
-                                )
-                            }
-                            innerTextField()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    )
+                }
+                innerTextField()
             }
-        }
-    }
+        },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TaskTypeSelector(
     selected: TaskType,
     onSelected: (TaskType) -> Unit
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        TaskType.entries.forEach { type ->
-            TaskChoiceChip(
-                text = type.label(),
-                selected = selected == type,
-                onClick = { onSelected(type) }
-            )
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .bounceClick { expanded = true },
+            shape = AppShapes.MediumCard,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Rounded.TaskAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "Tipo de tarea",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Normal
+                    )
+                    Text(
+                        text = selected.label(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
+            }
         }
-    }
-}
-
-@Composable
-private fun TaskChoiceChip(
-    text: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val background = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
-    val border = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
-    val textColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-
-    Row(
-        modifier = modifier
-            .height(46.dp)
-            .background(background, AppShapes.Pill)
-            .border(1.dp, border, AppShapes.Pill)
-            .bounceClick(onClick)
-            .padding(horizontal = if (selected) 18.dp else 22.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        if (selected) {
-            Icon(
-                imageVector = Icons.Rounded.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(17.dp)
-            )
-            Spacer(modifier = Modifier.size(8.dp))
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.88f)
+        ) {
+            TaskType.entries.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(type.label()) },
+                    trailingIcon = {
+                        if (selected == type) {
+                            Icon(Icons.Rounded.Check, contentDescription = null)
+                        }
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelected(type)
+                    }
+                )
+            }
         }
-        Text(
-            text = text,
-            color = textColor,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1
-        )
     }
 }
 

@@ -43,11 +43,14 @@ class GradesViewModel(
         name: String,
         targetAverage: Double,
         visualType: SubjectVisualType,
-        customColor: Int? = null
+        customColor: Int? = null,
+        activePeriodId: String? = null
     ): Subject? {
         if (!FeatureGate.canCreateSubject(currentPlan(), subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
+        val periodScheme = userProfile.value?.academicPeriodScheme
+            ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
         val subject = Subject(
             id = "subject-${UUID.randomUUID()}",
             name = TextValidators.normalizeText(name),
@@ -55,8 +58,10 @@ class GradesViewModel(
             grades = emptyList(),
             visualType = visualType,
             customColor = customColor,
-            periodScheme = userProfile.value?.academicPeriodScheme
-                ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
+            periodScheme = periodScheme,
+            activePeriodId = activePeriodId
+                ?.takeIf { id -> periodScheme.periods.any { it.id == id } }
+                ?: periodScheme.periods.first().id
         )
         repository.addSubject(subject)
         return subject
@@ -67,7 +72,8 @@ class GradesViewModel(
         name: String,
         targetAverage: Double,
         visualType: SubjectVisualType,
-        customColor: Int? = null
+        customColor: Int? = null,
+        activePeriodId: String? = null
     ): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
         if (!TextValidators.validateSubjectName(name).isValid) return false
@@ -78,7 +84,10 @@ class GradesViewModel(
                 name = TextValidators.normalizeText(name),
                 targetAverage = targetAverage,
                 visualType = visualType,
-                customColor = customColor
+                customColor = customColor,
+                activePeriodId = activePeriodId
+                    ?.takeIf { id -> subject.periodScheme.periods.any { it.id == id } }
+                    ?: subject.activePeriodId
             )
         )
         return true

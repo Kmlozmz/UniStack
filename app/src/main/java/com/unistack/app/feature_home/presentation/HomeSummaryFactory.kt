@@ -6,6 +6,8 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
+import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
 import com.unistack.app.feature_home.domain.DailyPriorityEngine
@@ -25,6 +27,7 @@ import com.unistack.app.feature_home.domain.TaskSummary
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
@@ -67,13 +70,17 @@ internal object HomeSummaryFactory {
             subjects = subjects,
             gradingScale = gradingScale
         )
+        val academicDataPriority = academicDataPriority(
+            subjects = subjects,
+            tasks = tasks
+        )
         val todayItems = todayTimelineItems(
             tasks = pendingTasks,
             works = works,
             riskSubject = riskSubject,
             subjectNameById = subjects.associate { it.id to it.name }
         )
-        val priority = prioritySummary(
+        val priority = academicDataPriority ?: prioritySummary(
             subjects = subjects,
             pendingTasks = pendingTasks,
             works = works,
@@ -92,10 +99,13 @@ internal object HomeSummaryFactory {
             profile = profile,
             enabledModules = enabledModules
         )
-        val dailyFocusItems = if (generatedFocusItems.isGenericCalmPlan() && academicFocus != null) {
-            academicFocus.toDailyFocusItems()
-        } else {
-            generatedFocusItems
+        val dailyFocusItems = when {
+            academicDataPriority != null -> listOf(academicDataPriority.toDailyFocusItem()) +
+                generatedFocusItems
+                    .filterNot { it.action == academicDataPriority.action && it.subjectId == academicDataPriority.subjectId }
+                    .take(2)
+            generatedFocusItems.isGenericCalmPlan() && academicFocus != null -> academicFocus.toDailyFocusItems()
+            else -> generatedFocusItems
         }
 
         return HomeSummary(
@@ -259,6 +269,103 @@ internal object HomeSummaryFactory {
             weeklyExpenseTotal = weeklyExpenseTotal,
             enabledModules = enabledModules,
             academicFocus = academicFocus
+        )
+    }
+
+    private fun academicDataPriority(
+        subjects: List<Subject>,
+        tasks: List<StudentTask>
+    ): HomePrioritySummary? {
+        val waitingResults = tasks.filter {
+            it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
+        }
+        if (waitingResults.isNotEmpty()) {
+            val next = waitingResults.maxByOrNull { it.completedAt ?: it.updatedAt }
+            return HomePrioritySummary(
+                title = if (waitingResults.size == 1) {
+                    "${next?.title.orEmpty()} espera su nota"
+                } else {
+                    "${waitingResults.size} resultados esperan registro"
+                },
+                shortDescription = "Registra la calificación o indica que la actividad no tuvo nota.",
+                fullDescription = "Estas tareas ya están terminadas, pero aún no sabemos su resultado. Resolverlas mantiene tus promedios, metas y proyecciones al día.",
+                suggestion = "${heroActionPrefix()}: revisar los resultados pendientes y cerrar el ciclo de cada tarea.",
+                action = HomePriorityAction.TASKS,
+                subjectId = next?.subjectId
+            )
+        }
+
+        val incompleteHistory = subjects.firstOrNull { subject ->
+            val activeOrder = subject.periodScheme.periods
+                .firstOrNull { it.id == subject.activePeriodId }
+                ?.order
+                ?: 1
+            activeOrder > 1 &&
+                subject.historyPromptStatus != com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus.COMPLETED &&
+                subject.historyPromptStatus != com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus.DISMISSED &&
+                subject.periodScheme.periods
+                    .filter { it.order < activeOrder }
+                    .any { period ->
+                        period.id !in subject.unknownPeriodIds &&
+                            subject.grades.none { it.periodId == period.id }
+                    }
+        }
+        if (incompleteHistory != null) {
+            return HomePrioritySummary(
+                title = "Completa el historial de ${incompleteHistory.name}",
+                shortDescription = "Faltan datos de cortes anteriores para calcular una proyección fiable.",
+                fullDescription = "Puedes registrar actividades individuales, la nota final del corte o marcar que no recuerdas el resultado. La app seguirá funcionando aunque lo dejes para después.",
+                suggestion = "${heroActionPrefix()}: completar un corte anterior o marcarlo como desconocido.",
+                action = HomePriorityAction.SUBJECT,
+                subjectId = incompleteHistory.id
+            )
+        }
+
+        val subjectWithUnknownWeights = subjects.firstOrNull { subject ->
+            subject.grades.any {
+                it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.UNKNOWN
+            }
+        }
+        if (subjectWithUnknownWeights != null) {
+            val count = subjectWithUnknownWeights.grades.count {
+                it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.UNKNOWN
+            }
+            return HomePrioritySummary(
+                title = "Ajusta ${subjectWithUnknownWeights.name}",
+                shortDescription = if (count == 1) {
+                    "Hay una nota sin porcentaje; la proyección todavía es provisional."
+                } else {
+                    "Hay $count notas sin porcentaje; la proyección todavía es provisional."
+                },
+                fullDescription = "Las notas sin peso se conservan, pero no pueden participar con precisión en la proyección. Añade sus porcentajes cuando los conozcas.",
+                suggestion = "${heroActionPrefix()}: revisar los porcentajes pendientes de ${subjectWithUnknownWeights.name}.",
+                action = HomePriorityAction.SUBJECT,
+                subjectId = subjectWithUnknownWeights.id
+            )
+        }
+
+        return null
+    }
+
+    private fun HomePrioritySummary.toDailyFocusItem(): DailyFocusItem {
+        return DailyFocusItem(
+            slotLabel = "Ahora",
+            title = title,
+            detail = shortDescription,
+            minutesText = when (action) {
+                HomePriorityAction.TASKS -> "3 min"
+                HomePriorityAction.SUBJECT -> "5 min"
+                else -> "5 min"
+            },
+            actionLabel = when (action) {
+                HomePriorityAction.SUBJECT -> "Abrir"
+                HomePriorityAction.SUBJECTS -> "Materias"
+                HomePriorityAction.TASKS -> "Revisar"
+                HomePriorityAction.EXPENSES -> "Gastos"
+                HomePriorityAction.TEMPLATES -> "Trabajos"
+            },
+            action = action,
+            subjectId = subjectId
         )
     }
 

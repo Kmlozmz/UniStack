@@ -2,6 +2,7 @@ package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -26,6 +28,9 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
@@ -51,7 +57,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
@@ -66,13 +78,13 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
-private val SubjectFormCardShape = RoundedCornerShape(10.dp)
+private val SubjectFormCardShape = RoundedCornerShape(8.dp)
 
 @Composable
 fun AddSubjectScreen(
@@ -92,6 +104,7 @@ fun AddSubjectScreen(
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
+    val defaultPeriodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
     val userPlan = FeatureGate.planFor(isPro = false)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
 
@@ -99,6 +112,7 @@ fun AddSubjectScreen(
     var targetAverage by remember { mutableStateOf("") }
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
     var customColor by remember { mutableStateOf<Int?>(subjectAccent(SubjectVisualType.TEAL).toArgb()) }
+    var activePeriodId by remember { mutableStateOf(defaultPeriodScheme.periods.firstOrNull()?.id.orEmpty()) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -121,10 +135,12 @@ fun AddSubjectScreen(
             targetAverage = GradingScaleUtils.formatGrade(subject.targetAverage, scale)
             visualType = subject.visualType
             customColor = subject.customColor ?: subjectAccent(subject.visualType).toArgb()
+            activePeriodId = subject.activePeriodId
             initialized = true
         } else if (!isEditing) {
             targetAverage = GradingScaleUtils.formatGrade(defaultAverage, scale)
             customColor = subjectAccent(visualType).toArgb()
+            activePeriodId = defaultPeriodScheme.periods.firstOrNull()?.id.orEmpty()
             initialized = true
         }
     }
@@ -139,12 +155,14 @@ fun AddSubjectScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .statusBarsPadding()
-                .padding(horizontal = 22.dp)
-                .padding(top = 16.dp, bottom = 24.dp),
+                .padding(horizontal = 20.dp)
+                .padding(top = 10.dp, bottom = 112.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             SubjectFormHeader(
                 title = if (isEditing) "Editar materia" else "Agregar materia",
+                subjectName = name,
+                accent = customColor?.let(::Color) ?: subjectAccent(visualType),
                 onBackClick = onBackClick
             )
             if (isEditing && subject == null) {
@@ -180,7 +198,10 @@ fun AddSubjectScreen(
                 onTargetChange = {
                     targetAverage = it
                     error = null
-                }
+                },
+                periodScheme = defaultPeriodScheme,
+                activePeriodId = activePeriodId,
+                onActivePeriodSelected = { activePeriodId = it }
             )
             SubjectColorPicker(
                 selectedColor = customColor ?: subjectAccent(visualType).toArgb(),
@@ -189,15 +210,18 @@ fun AddSubjectScreen(
                     visualType = closestVisualType(Color(color))
                 }
             )
-            SubjectPreviewCard(
-                name = name,
-                targetAverage = targetAverage.ifBlank { GradingScaleUtils.formatGrade(defaultAverage, scale) },
-                visualType = visualType,
-                customColor = customColor
-            )
             error?.let {
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
             }
+        }
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+            shadowElevation = 8.dp
+        ) {
             SaveSubjectButton(
                 text = if (isEditing) "Guardar cambios" else "Guardar materia",
                 enabled = isValid,
@@ -214,7 +238,8 @@ fun AddSubjectScreen(
                             name = TextValidators.normalizeText(name),
                             targetAverage = targetValue ?: defaultAverage,
                             visualType = visualType,
-                            customColor = customColor
+                            customColor = customColor,
+                            activePeriodId = activePeriodId
                         )
                         if (saved) editingSubjectId else null
                     } else {
@@ -222,7 +247,8 @@ fun AddSubjectScreen(
                             name = TextValidators.normalizeText(name),
                             targetAverage = targetValue ?: defaultAverage,
                             visualType = visualType,
-                            customColor = customColor
+                            customColor = customColor,
+                            activePeriodId = activePeriodId
                         )?.id
                     }
 
@@ -240,12 +266,17 @@ fun AddSubjectScreen(
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .fillMaxWidth()
             )
         }
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 84.dp)
         )
     }
 }
@@ -253,9 +284,11 @@ fun AddSubjectScreen(
 @Composable
 private fun SubjectFormHeader(
     title: String,
+    subjectName: String,
+    accent: Color,
     onBackClick: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
@@ -264,12 +297,31 @@ private fun SubjectFormHeader(
         ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(accent.copy(alpha = 0.14f), AppShapes.SmallCard),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Rounded.School, contentDescription = null, tint = accent)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = subjectName.ifBlank { "Configura tu materia" },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1
+                )
+            }
+        }
     }
 }
 
@@ -351,7 +403,10 @@ private fun SubjectBasicInfoCard(
     targetAverage: String,
     targetLabel: String,
     targetHasError: Boolean,
-    onTargetChange: (String) -> Unit
+    onTargetChange: (String) -> Unit,
+    periodScheme: AcademicPeriodScheme,
+    activePeriodId: String,
+    onActivePeriodSelected: (String) -> Unit
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
@@ -388,6 +443,47 @@ private fun SubjectBasicInfoCard(
                 modifier = Modifier.fillMaxWidth(),
                 isError = targetHasError
             )
+            if (periodScheme.periods.size > 1) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Corte actual",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(periodScheme.periods.sortedBy { it.order }, key = { it.id }) { period ->
+                            val selected = activePeriodId == period.id
+                            Surface(
+                                modifier = Modifier.clickable { onActivePeriodSelected(period.id) },
+                                shape = AppShapes.Pill,
+                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                                )
+                            ) {
+                                Text(
+                                    "Corte ${period.order}",
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                    if (activePeriodId != periodScheme.periods.firstOrNull()?.id) {
+                        Text(
+                            "Las nuevas notas y tareas usarán este corte por defecto.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -398,13 +494,18 @@ private fun SubjectColorPicker(
     onSelected: (Int) -> Unit
 ) {
     val selected = Color(selectedColor)
-    val selectedRgb = selected.toArgb()
-    val red = ((selectedRgb shr 16) and 0xFF)
-    val green = ((selectedRgb shr 8) and 0xFF)
-    val blue = (selectedRgb and 0xFF)
+    val hsv = remember(selectedColor) {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(selectedColor, it) }
+    }
+    var customExpanded by remember { mutableStateOf(SubjectColorPalette.none { it.toArgb() == selectedColor }) }
+    var hexInput by remember { mutableStateOf(selected.toHexString()) }
+
+    LaunchedEffect(selectedColor) {
+        hexInput = selected.toHexString()
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Color", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
+        Text("Apariencia", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(SubjectColorPalette, key = { it.toArgb() }) { color ->
                 ColorSwatch(
@@ -415,168 +516,163 @@ private fun SubjectColorPicker(
                 )
             }
         }
-        UniCard(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-            shape = SubjectFormCardShape,
-            tonalElevation = 0.dp,
-            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-            borderWidth = 0.5.dp,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(selected)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
-                                shape = CircleShape
-                            )
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text(
-                            text = "Color personalizado",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = selected.accessibilityLabel().uppercase(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                ColorChannelSlider(
-                    label = "Rojo",
-                    value = red,
-                    activeColor = Color(0xFFFF4D5E),
-                    onValueChange = { onSelected(rgbColor(it, green, blue)) }
-                )
-                ColorChannelSlider(
-                    label = "Verde",
-                    value = green,
-                    activeColor = Color(0xFF14D8A6),
-                    onValueChange = { onSelected(rgbColor(red, it, blue)) }
-                )
-                ColorChannelSlider(
-                    label = "Azul",
-                    value = blue,
-                    activeColor = Color(0xFF5EA8FF),
-                    onValueChange = { onSelected(rgbColor(red, green, it)) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColorChannelSlider(
-    label: String,
-    value: Int,
-    activeColor: Color,
-    onValueChange: (Int) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { customExpanded = !customExpanded },
+            shape = AppShapes.MediumCard,
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
             )
-            Text(
-                text = value.toString(),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        Slider(
-            value = value.toFloat(),
-            onValueChange = { onValueChange(it.roundToInt().coerceIn(0, 255)) },
-            valueRange = 0f..255f,
-            colors = SliderDefaults.colors(
-                thumbColor = activeColor,
-                activeTrackColor = activeColor,
-                inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
-            )
-        )
-    }
-}
-
-@Composable
-private fun SubjectPreviewCard(
-    name: String,
-    targetAverage: String,
-    visualType: SubjectVisualType,
-    customColor: Int?
-) {
-    val accent = customColor?.let { Color(it) } ?: subjectAccent(visualType)
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Vista previa", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
-        UniCard(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
-            shape = SubjectFormCardShape,
-            tonalElevation = 0.dp,
-            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-            borderWidth = 0.5.dp,
-            contentPadding = PaddingValues(0.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .width(4.dp)
-                        .height(74.dp)
-                        .background(accent)
-                )
-                Box(
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .size(44.dp)
-                        .background(accent.copy(alpha = 0.14f), AppShapes.SmallCard),
+                        .size(38.dp)
+                        .background(selected.copy(alpha = 0.16f), AppShapes.SmallCard),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.School, contentDescription = null, tint = accent)
+                    Icon(Icons.Rounded.ColorLens, contentDescription = null, tint = selected)
                 }
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp, vertical = 14.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = name.ifBlank { "Nombre de la materia" },
+                        "Crear color personalizado",
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "Meta objetivo: $targetAverage",
+                        selected.toHexString(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal
                     )
                 }
                 Icon(
-                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 14.dp)
+                    if (customExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null
                 )
             }
         }
+        if (customExpanded) {
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shape = SubjectFormCardShape,
+                tonalElevation = 0.dp,
+                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+                borderWidth = 0.5.dp,
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    SaturationValuePicker(
+                        hue = hsv[0],
+                        saturation = hsv[1],
+                        value = hsv[2],
+                        onSelected = { saturation, value ->
+                            onSelected(android.graphics.Color.HSVToColor(floatArrayOf(hsv[0], saturation, value)))
+                        }
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            "Tono",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Slider(
+                            value = hsv[0],
+                            onValueChange = { hue ->
+                                onSelected(android.graphics.Color.HSVToColor(floatArrayOf(hue, hsv[1], hsv[2])))
+                            },
+                            valueRange = 0f..360f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = selected,
+                                activeTrackColor = selected,
+                                inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                            )
+                        )
+                    }
+                    OutlinedTextField(
+                        value = hexInput,
+                        onValueChange = { input ->
+                            val normalized = input.uppercase().filter { it == '#' || it in '0'..'9' || it in 'A'..'F' }.take(7)
+                            hexInput = normalized
+                            normalized.toColorIntOrNull()?.let(onSelected)
+                        },
+                        label = { Text("Hexadecimal") },
+                        placeholder = { Text("#6750F5") },
+                        singleLine = true,
+                        shape = AppShapes.SmallCard,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun SaturationValuePicker(
+    hue: Float,
+    saturation: Float,
+    value: Float,
+    onSelected: (Float, Float) -> Unit
+) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .pointerInput(hue) {
+                fun update(offset: Offset) {
+                    onSelected(
+                        (offset.x / size.width).coerceIn(0f, 1f),
+                        (1f - offset.y / size.height).coerceIn(0f, 1f)
+                    )
+                }
+
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    update(down.position)
+                    down.consume()
+
+                    do {
+                        val event = awaitPointerEvent()
+                        event.changes.forEach { change ->
+                            if (change.pressed) {
+                                update(change.position)
+                            }
+                            change.consume()
+                        }
+                    } while (event.changes.any { it.pressed })
+                }
+            }
+    ) {
+        drawRect(
+            Brush.horizontalGradient(
+                listOf(Color.White, Color.hsv(hue, 1f, 1f))
+            )
+        )
+        drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color.Black)))
+        val center = Offset(saturation * size.width, (1f - value) * size.height)
+        drawCircle(Color.White, radius = 7.dp.toPx(), center = center, style = Stroke(2.dp.toPx()))
+        drawCircle(Color.Black.copy(alpha = 0.45f), radius = 9.dp.toPx(), center = center, style = Stroke(1.dp.toPx()))
+    }
+}
+
+private fun Color.toHexString(): String = "#%06X".format(toArgb() and 0xFFFFFF)
+
+private fun String.toColorIntOrNull(): Int? {
+    val raw = removePrefix("#")
+    if (raw.length != 6) return null
+    val rgb = raw.toLongOrNull(16) ?: return null
+    return (0xFF000000L or rgb).toInt()
 }
 
 @Composable
@@ -667,10 +763,6 @@ private val SubjectColorPalette = listOf(
 )
 
 private fun Color.accessibilityLabel(): String = "#${toArgb().toUInt().toString(16).takeLast(6)}"
-
-private fun rgbColor(red: Int, green: Int, blue: Int): Int {
-    return Color(red, green, blue).toArgb()
-}
 
 private fun closestVisualType(color: Color): SubjectVisualType {
     return SubjectVisualType.entries.minBy { type ->

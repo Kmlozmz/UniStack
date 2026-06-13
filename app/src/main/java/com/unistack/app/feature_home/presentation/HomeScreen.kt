@@ -1419,6 +1419,9 @@ private fun currentHomeGreeting(): String {
 private fun String.heroLabel(): String {
     val normalized = lowercase()
     return when {
+        "espera su nota" in normalized || "resultados esperan" in normalized -> "RESULTADO PENDIENTE"
+        "historial" in normalized -> "DATOS POR COMPLETAR"
+        "ajusta" in normalized -> "PROYECCIÓN"
         "venc" in normalized || "necesita" in normalized || "sobre el límite" in normalized -> "ALERTA"
         "cerca" in normalized || "atención" in normalized || "limite" in normalized -> "ENFOQUE"
         "gasto" in normalized -> "FINANZAS"

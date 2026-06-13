@@ -224,13 +224,13 @@ fun summarizeChangeFiles(files: List<String>): List<String> {
         if (normalized.any { it.contains("feature_grades/presentation/GradesScreen") }) {
             add("Materias: lista con progreso, estado y siguiente accion por materia.")
         } else if (normalized.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
-            add("Notas: rediseno de cortes/notas y ajustes academicos aplicados.")
+            add("Materias: detalle de cortes y editor de apariencia/corte actual redisenados.")
         }
         if (normalized.any { it.contains("feature_home/") }) {
-            add("Home: prioridad y agenda ajustadas a datos academicos reales.")
+            add("Home: hero inteligente actualizado con resultados, historial y porcentajes pendientes.")
         }
         if (normalized.any { it.contains("feature_tasks/") }) {
-            add("Tareas: bandeja reorganizada por vencidas, hoy, proximas y completadas.")
+            add("Tareas: resultados pendientes agrupados y editor compacto con nota vinculada.")
         }
         if (normalized.any { it.contains("feature_profile/") }) {
             add("Perfil: centro de control con resumen de modulos, recordatorios y escala.")
@@ -238,7 +238,8 @@ fun summarizeChangeFiles(files: List<String>): List<String> {
         if (normalized.any { it.contains("core/notifications/") }) {
             add("Recordatorios: avisos limitados a lo mas proximo y canal afinado.")
         }
-        if (!hasSetupChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
+        val hasProductChanges = normalized.any { it.startsWith("app/src/") }
+        if (!hasSetupChanges && !hasProductChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
             add("Build/release: changelog Telegram y validacion release afinados.")
         }
         if (normalized.any { it.contains("androidTest/") || it.contains("src/test/") }) {

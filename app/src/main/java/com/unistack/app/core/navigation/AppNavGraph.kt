@@ -405,6 +405,12 @@ fun MainNavGraph(
                 AddTaskScreen(
                     taskId = taskId,
                     onCreateSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubjectFromTask, enabledModules) },
+                    onEditLinkedGrade = { subjectId, gradeId ->
+                        navController.navigateIfModuleEnabled(
+                            AppRoutes.editGrade(subjectId, gradeId),
+                            enabledModules
+                        )
+                    },
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.Tasks, enabledModules)
                     }

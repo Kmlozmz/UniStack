@@ -188,9 +188,59 @@ class TasksViewModel(
     }
 
     fun deleteTask(taskId: String): Boolean {
-        val exists = tasks.value.any { it.id == taskId }
-        if (!exists) return false
+        val task = taskById(taskId) ?: return false
+        task.linkedGradeId?.let { gradeId ->
+            subjects.value.firstOrNull { subject -> subject.grades.any { it.id == gradeId } }
+                ?.let { subject ->
+                    val grade = subject.grades.first { it.id == gradeId }
+                    gradesRepository.updateGrade(subject.id, grade.copy(taskId = null))
+                }
+        }
         tasksRepository.deleteTask(taskId)
+        return true
+    }
+
+    fun duplicateTask(taskId: String): Boolean {
+        val source = taskById(taskId) ?: return false
+        val now = System.currentTimeMillis()
+        tasksRepository.addTask(
+            source.copy(
+                id = "task-${UUID.randomUUID()}",
+                title = "${source.title} (copia)",
+                completed = false,
+                completedAt = null,
+                gradingStatus = if (source.gradingStatus == TaskGradingStatus.NOT_GRADED) {
+                    TaskGradingStatus.NOT_GRADED
+                } else {
+                    TaskGradingStatus.UNDECIDED
+                },
+                linkedGradeId = null,
+                createdAt = now,
+                updatedAt = now
+            )
+        )
+        return true
+    }
+
+    fun completeTaskFromEditor(taskId: String): Boolean {
+        val task = taskById(taskId) ?: return false
+        val now = System.currentTimeMillis()
+        val nextStatus = if (
+            task.subjectId != null &&
+            task.gradingStatus == TaskGradingStatus.UNDECIDED
+        ) {
+            TaskGradingStatus.AWAITING_GRADE
+        } else {
+            task.gradingStatus
+        }
+        tasksRepository.updateTask(
+            task.copy(
+                completed = true,
+                completedAt = task.completedAt ?: now,
+                gradingStatus = nextStatus,
+                updatedAt = now
+            )
+        )
         return true
     }
 
