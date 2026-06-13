@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,6 +86,7 @@ import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
+import com.unistack.app.core.notifications.NotificationHistoryStore
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -102,6 +104,8 @@ import com.unistack.app.feature_home.domain.SubjectRiskSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
@@ -116,9 +120,14 @@ fun HomeScreen(
     onAddGradeClick: () -> Unit,
     onAddTaskClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNotificationsClick: () -> Unit = {}
 ) {
     val summary = uiState.summary
+    val context = LocalContext.current
+    val notifications by remember(context) {
+        NotificationHistoryStore.observe(context)
+    }.collectAsStateWithLifecycle()
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
     var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
     val priorityActionLabel = summary.priority.action.actionLabel()
@@ -131,16 +140,6 @@ fun HomeScreen(
             HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
         }
     }
-    val openFocusAction: (DailyFocusItem) -> Unit = { item ->
-        when (item.action) {
-            HomePriorityAction.SUBJECT -> item.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
-            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
-            HomePriorityAction.TASKS -> onSeeTasksClick()
-            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
-            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
-        }
-    }
-
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
@@ -165,11 +164,13 @@ fun HomeScreen(
             item {
                 HomeHeader(
                     photoUrl = summary.avatarPhotoUrl,
+                    unreadNotificationCount = notifications.count { !it.read },
+                    onNotificationsClick = onNotificationsClick,
                     onProfileClick = onProfileClick
                 )
             }
             item {
-                HomeGreeting(name = displayName, message = summary.dashboardMessage, compact = isCompact)
+                HomeGreeting(name = displayName, compact = isCompact)
             }
             item {
                 PriorityHero(
@@ -185,8 +186,7 @@ fun HomeScreen(
                 TodayAgenda(
                     summary = summary,
                     compact = isCompact,
-                    onTasksClick = onSeeTasksClick,
-                    onFocusClick = openFocusAction
+                    onTasksClick = onSeeTasksClick
                 )
             }
             item {
@@ -231,6 +231,8 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(
     photoUrl: String?,
+    unreadNotificationCount: Int,
+    onNotificationsClick: () -> Unit,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -258,14 +260,29 @@ private fun HomeHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(contentAlignment = Alignment.TopEnd) {
-                HeaderIcon(icon = Icons.Rounded.NotificationsNone, contentDescription = "Notificaciones")
-                Box(
-                    modifier = Modifier
-                        .offset(x = (-7).dp, y = 5.dp)
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(HomePurple)
+                HeaderIcon(
+                    icon = Icons.Rounded.NotificationsNone,
+                    contentDescription = "Notificaciones",
+                    onClick = onNotificationsClick
                 )
+                if (unreadNotificationCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = (-5).dp, y = 4.dp)
+                            .size(if (unreadNotificationCount > 9) 17.dp else 14.dp)
+                            .clip(CircleShape)
+                            .background(HomePurple),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = unreadNotificationCount.coerceAtMost(9).toString(),
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            lineHeight = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(
@@ -295,9 +312,11 @@ private fun HomeHeader(
 private fun HeaderIcon(
     icon: ImageVector,
     contentDescription: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
-    Box(modifier = modifier.size(38.dp), contentAlignment = Alignment.Center) {
+    val clickModifier = if (onClick != null) modifier.cleanClickable(onClick) else modifier
+    Box(modifier = clickModifier.size(38.dp), contentAlignment = Alignment.Center) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
@@ -310,16 +329,16 @@ private fun HeaderIcon(
 @Composable
 private fun HomeGreeting(
     name: String,
-    message: String,
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val greeting = remember { currentHomeGreeting() }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
     ) {
         Text(
-            text = "Hoy, $name",
+            text = "$greeting, $name! \uD83D\uDC4B",
             color = HomeText,
             fontSize = if (compact) 28.sp else 30.sp,
             lineHeight = if (compact) 32.sp else 35.sp,
@@ -329,7 +348,7 @@ private fun HomeGreeting(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = message,
+            text = "¿Qué vamos a lograr hoy?",
             color = HomeMuted,
             fontSize = if (compact) 14.sp else 15.sp,
             lineHeight = if (compact) 18.sp else 20.sp,
@@ -343,22 +362,19 @@ private fun TodayAgenda(
     summary: HomeSummary,
     compact: Boolean,
     onTasksClick: () -> Unit,
-    onFocusClick: (DailyFocusItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val timelineItems = summary.todayItems.take(3)
     if (summary.subjectsCount == 0 && timelineItems.isEmpty()) return
 
-    val suggestedItems = if (timelineItems.isEmpty()) summary.dailyFocusItems.take(2) else emptyList()
     val countText = when {
-        timelineItems.isNotEmpty() -> "${timelineItems.size} accion${if (timelineItems.size == 1) "" else "es"}"
-        suggestedItems.isNotEmpty() -> "Sugerido"
-        else -> "En calma"
+        timelineItems.isNotEmpty() -> "${timelineItems.size} acción${if (timelineItems.size == 1) "" else "es"}"
+        else -> "Sin pendientes"
     }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Hoy", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Agenda", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
             Text(countText, color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
@@ -374,12 +390,6 @@ private fun TodayAgenda(
                         timelineItems.forEachIndexed { index, item ->
                             AgendaTimelineRow(item = item.toTimelineItem(), compact = compact, onClick = onTasksClick)
                             if (index < timelineItems.lastIndex) AgendaDivider()
-                        }
-                    }
-                    suggestedItems.isNotEmpty() -> {
-                        suggestedItems.forEachIndexed { index, item ->
-                            AgendaFocusRow(item = item, compact = compact, onClick = { onFocusClick(item) })
-                            if (index < suggestedItems.lastIndex) AgendaDivider()
                         }
                     }
                     else -> TimelineEmptyRow(compact = compact)
@@ -535,9 +545,9 @@ private fun SemesterSnapshot(
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Resumen del semestre", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Tu tablero", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
-            Text("Datos reales", color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text("Actualizado", color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -652,6 +662,7 @@ private fun PriorityHero(
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val heroLabel = title.heroLabel()
     val heroHeight = if (compact) 174.dp else 190.dp
     val heroPadding = if (compact) 16.dp else 18.dp
     val isDarkTheme = UniStackColors.IsDarkTheme
@@ -858,7 +869,7 @@ private fun PriorityHero(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PremiumSparkle(tint = HomeHeroStar, modifier = Modifier.size(13.dp))
                         Text(
-                            text = "PRIORIDAD DE HOY",
+                            text = heroLabel,
                             color = HomeHeroLabel,
                             fontSize = 8.sp,
                             lineHeight = 11.sp,
@@ -888,6 +899,7 @@ private fun PriorityHero(
                     )
                     Box(
                         modifier = Modifier
+                            .width(if (compact) 128.dp else 138.dp)
                             .height(if (compact) 32.dp else 34.dp)
                             .clip(RoundedCornerShape(18.dp))
                             .background(Brush.linearGradient(listOf(HomeHeroButtonStart, HomeHeroButtonEnd)))
@@ -896,7 +908,15 @@ private fun PriorityHero(
                         contentAlignment = Alignment.Center
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(actionLabel, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Text(
+                                actionLabel,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
                             Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
                         }
                     }
@@ -1385,6 +1405,25 @@ private fun HomePriorityAction.actionLabel(): String {
         HomePriorityAction.TASKS -> "Ver mis tareas"
         HomePriorityAction.EXPENSES -> "Ver gastos"
         HomePriorityAction.TEMPLATES -> "Ver trabajos"
+    }
+}
+
+private fun currentHomeGreeting(): String {
+    return when (LocalTime.now().hour) {
+        in 5..11 -> "Buenos días"
+        in 12..18 -> "Buenas tardes"
+        else -> "Buenas noches"
+    }
+}
+
+private fun String.heroLabel(): String {
+    val normalized = lowercase()
+    return when {
+        "venc" in normalized || "necesita" in normalized || "sobre el límite" in normalized -> "ALERTA"
+        "cerca" in normalized || "atención" in normalized || "limite" in normalized -> "ENFOQUE"
+        "gasto" in normalized -> "FINANZAS"
+        "primera" in normalized || "materia" in normalized || "nota" in normalized || "semestre" in normalized -> "PRÓXIMO PASO"
+        else -> "PULSO DE HOY"
     }
 }
 

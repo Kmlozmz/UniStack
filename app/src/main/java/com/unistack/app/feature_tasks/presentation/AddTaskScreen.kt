@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
@@ -56,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TimePicker
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +65,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -83,9 +86,11 @@ import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
@@ -109,20 +114,28 @@ fun AddTaskScreen(
     var title by rememberSaveable(taskId) { mutableStateOf("") }
     var description by rememberSaveable(taskId) { mutableStateOf("") }
     var dueDate by rememberSaveable(taskId) { mutableStateOf("") }
+    var dueTime by rememberSaveable(taskId) { mutableStateOf("") }
     var selectedSubjectId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
+    var selectedPeriodId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var selectedType by rememberSaveable(taskId) { mutableStateOf(TaskType.WORKSHOP) }
     var difficulty by rememberSaveable(taskId) { mutableStateOf(TaskDifficulty.MEDIUM) }
+    var gradingChoice by rememberSaveable(taskId) { mutableStateOf<TaskGradingChoice?>(null) }
     var initialized by rememberSaveable(taskId) { mutableStateOf(false) }
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
     val estimatedMinutes = "60"
 
     val titleValidation = TextValidators.validateActivityName(title)
     val isTitleValid = title.isBlank() || titleValidation.isValid
     val parsedDueDate = TaskDateUtils.parseInput(dueDate)
+    val parsedDueTime = dueTime.takeIf { it.isNotBlank() }?.let(TaskDateUtils::parseTimeInput)
     val isValid = (!isEditing || task != null) &&
         titleValidation.isValid &&
-        parsedDueDate != null
+        parsedDueDate != null &&
+        (dueTime.isBlank() || parsedDueTime != null) &&
+        gradingChoice != null &&
+        (gradingChoice != TaskGradingChoice.YES || selectedSubjectId != null)
 
     LaunchedEffect(task?.id, taskId) {
         if (initialized) return@LaunchedEffect
@@ -130,9 +143,20 @@ fun AddTaskScreen(
             title = task.title
             description = task.description
             dueDate = TaskDateUtils.formatInput(TaskDateUtils.fromMillis(task.dueDateMillis))
+            dueTime = TaskDateUtils.timeFromMillis(task.dueDateMillis)
+                .takeUnless { it == LocalTime.MIDNIGHT }
+                ?.let(TaskDateUtils::formatTimeInput)
+                .orEmpty()
             selectedSubjectId = task.subjectId
+            selectedPeriodId = task.periodId
             selectedType = task.type
             difficulty = task.difficulty
+            gradingChoice = when (task.gradingStatus) {
+                TaskGradingStatus.NOT_GRADED -> TaskGradingChoice.NO
+                TaskGradingStatus.UNDECIDED -> TaskGradingChoice.UNSURE
+                TaskGradingStatus.AWAITING_GRADE,
+                TaskGradingStatus.GRADED -> TaskGradingChoice.YES
+            }
             initialized = true
         } else if (!isEditing) {
             initialized = true
@@ -146,11 +170,14 @@ fun AddTaskScreen(
         taskMissing = isEditing && task == null,
         titleIsValid = isTitleValid,
         titleError = titleValidation.errorMessage,
-        dueDateLabel = parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it)) }.orEmpty(),
+        dueDateLabel = parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it, parsedDueTime)) }.orEmpty(),
+        dueTimeLabel = dueTime.ifBlank { "Sin hora" },
         subjects = subjects,
         selectedSubjectId = selectedSubjectId,
+        selectedPeriodId = selectedPeriodId,
         selectedType = selectedType,
         selectedPriority = difficulty,
+        gradingChoice = gradingChoice,
         isSaveEnabled = isValid,
         error = error,
         onBackClick = onBackClick,
@@ -166,17 +193,30 @@ fun AddTaskScreen(
             showDatePicker = true
             error = null
         },
+        onTimeClick = {
+            showTimePicker = true
+            error = null
+        },
         onTypeSelected = {
             selectedType = it
             error = null
         },
         onSubjectSelected = {
             selectedSubjectId = it
+            selectedPeriodId = subjects.firstOrNull { subject -> subject.id == it }?.activePeriodId
+            error = null
+        },
+        onPeriodSelected = {
+            selectedPeriodId = it
             error = null
         },
         onCreateSubjectClick = onCreateSubjectClick,
         onPrioritySelected = {
             difficulty = it
+            error = null
+        },
+        onGradingChoiceSelected = {
+            gradingChoice = it
             error = null
         },
         onSaveClick = {
@@ -189,8 +229,11 @@ fun AddTaskScreen(
                     subjectId = selectedSubjectId,
                     type = selectedType,
                     dueDateInput = dueDate,
+                    dueTimeInput = dueTime,
                     estimatedMinutesInput = estimatedMinutes,
-                    difficulty = difficulty
+                    difficulty = difficulty,
+                    periodId = selectedPeriodId,
+                    gradingStatus = gradingChoice.toInitialGradingStatus()
                 )
             } else {
                 viewModel.addTask(
@@ -199,15 +242,18 @@ fun AddTaskScreen(
                     subjectId = selectedSubjectId,
                     type = selectedType,
                     dueDateInput = dueDate,
+                    dueTimeInput = dueTime,
                     estimatedMinutesInput = estimatedMinutes,
-                    difficulty = difficulty
+                    difficulty = difficulty,
+                    periodId = selectedPeriodId,
+                    gradingStatus = gradingChoice.toInitialGradingStatus()
                 )
             }
 
             if (saved) {
                 onBackClick()
             } else {
-                error = "Revisa la actividad y la fecha antes de guardar."
+                error = "Revisa la actividad, fecha y hora antes de guardar."
             }
         },
         modifier = modifier
@@ -224,6 +270,22 @@ fun AddTaskScreen(
             onDismiss = { showDatePicker = false }
         )
     }
+    if (showTimePicker) {
+        TimePickerSheet(
+            selectedTime = parsedDueTime,
+            onTimeSelected = { selectedTime ->
+                dueTime = TaskDateUtils.formatTimeInput(selectedTime)
+                error = null
+                showTimePicker = false
+            },
+            onClearTime = {
+                dueTime = ""
+                error = null
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false }
+        )
+    }
 }
 
 @Composable
@@ -235,20 +297,26 @@ private fun AddTaskContent(
     titleIsValid: Boolean,
     titleError: String?,
     dueDateLabel: String,
+    dueTimeLabel: String,
     subjects: List<Subject>,
     selectedSubjectId: String?,
+    selectedPeriodId: String?,
     selectedType: TaskType,
     selectedPriority: TaskDifficulty,
+    gradingChoice: TaskGradingChoice?,
     isSaveEnabled: Boolean,
     error: String?,
     onBackClick: () -> Unit,
     onTitleChange: (String) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
     onTypeSelected: (TaskType) -> Unit,
     onSubjectSelected: (String?) -> Unit,
+    onPeriodSelected: (String) -> Unit,
     onCreateSubjectClick: () -> Unit,
     onPrioritySelected: (TaskDifficulty) -> Unit,
+    onGradingChoiceSelected: (TaskGradingChoice) -> Unit,
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -273,11 +341,15 @@ private fun AddTaskContent(
                 titleIsValid = titleIsValid,
                 titleError = titleError,
                 dueDateLabel = dueDateLabel,
+                dueTimeLabel = dueTimeLabel,
                 subjects = subjects,
                 selectedSubjectId = selectedSubjectId,
+                selectedPeriodId = selectedPeriodId,
                 onTitleChange = onTitleChange,
                 onDateClick = onDateClick,
+                onTimeClick = onTimeClick,
                 onSubjectSelected = onSubjectSelected,
+                onPeriodSelected = onPeriodSelected,
                 onCreateSubjectClick = onCreateSubjectClick
             )
         }
@@ -297,6 +369,13 @@ private fun AddTaskContent(
             PrioritySegmentedControl(
                 selected = selectedPriority,
                 onSelected = onPrioritySelected
+            )
+        }
+        FormSection(title = "Calificación") {
+            GradingIntentSelector(
+                selected = gradingChoice,
+                hasSubject = selectedSubjectId != null,
+                onSelected = onGradingChoiceSelected
             )
         }
         if (taskMissing) {
@@ -401,11 +480,15 @@ private fun BasicInfoCard(
     titleIsValid: Boolean,
     titleError: String?,
     dueDateLabel: String,
+    dueTimeLabel: String,
     subjects: List<Subject>,
     selectedSubjectId: String?,
+    selectedPeriodId: String?,
     onTitleChange: (String) -> Unit,
     onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
     onSubjectSelected: (String?) -> Unit,
+    onPeriodSelected: (String) -> Unit,
     onCreateSubjectClick: () -> Unit
 ) {
     FormSectionCard {
@@ -424,12 +507,29 @@ private fun BasicInfoCard(
             onClick = onDateClick
         )
         FormDivider()
+        BasicInfoActionRow(
+            icon = Icons.Rounded.AccessTime,
+            label = "Hora límite",
+            value = dueTimeLabel,
+            placeholder = "Seleccionar hora",
+            onClick = onTimeClick
+        )
+        FormDivider()
         SubjectDropdown(
             subjects = subjects,
             selectedSubjectId = selectedSubjectId,
             onCreateSubjectClick = onCreateSubjectClick,
             onSubjectSelected = onSubjectSelected
         )
+        val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
+        if (selectedSubject != null) {
+            FormDivider()
+            PeriodDropdown(
+                subject = selectedSubject,
+                selectedPeriodId = selectedPeriodId ?: selectedSubject.activePeriodId,
+                onPeriodSelected = onPeriodSelected
+            )
+        }
     }
 }
 
@@ -650,6 +750,153 @@ private fun MonthCalendarDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun TimePickerSheet(
+    selectedTime: LocalTime?,
+    onTimeSelected: (LocalTime) -> Unit,
+    onClearTime: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val initial = selectedTime ?: LocalTime.now().withSecond(0).withNano(0)
+    val pickerState = rememberTimePickerState(
+        initialHour = initial.hour,
+        initialMinute = initial.minute,
+        is24Hour = true
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "Hora límite",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Usaremos esta hora para calcular recordatorios más oportunos.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                TimePicker(state = pickerState)
+            }
+            Button(
+                onClick = {
+                    onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute))
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = AppShapes.MediumCard
+            ) {
+                Text("Usar esta hora")
+            }
+            TextButton(
+                onClick = onClearTime,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Dejar sin hora")
+            }
+        }
+    }
+}
+
+@Composable
+private fun GradingIntentSelector(
+    selected: TaskGradingChoice?,
+    hasSubject: Boolean,
+    onSelected: (TaskGradingChoice) -> Unit
+) {
+    FormSectionCard {
+        Text(
+            "¿Esta tarea tendrá nota?",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            "Así sabremos si debemos pedirte el resultado al completarla.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TaskGradingChoice.entries.forEach { choice ->
+                val isSelected = selected == choice
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .bounceClick { onSelected(choice) },
+                    shape = AppShapes.MediumCard,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
+                    border = BorderStroke(
+                        1.dp,
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
+                    )
+                ) {
+                    Text(
+                        text = choice.label,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
+                        textAlign = TextAlign.Center,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
+        if (selected == TaskGradingChoice.YES && !hasSubject) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                "Selecciona una materia para poder registrar la nota.",
+                color = UniStackColors.Coral,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+private enum class TaskGradingChoice(val label: String) {
+    YES("Sí"),
+    NO("No"),
+    UNSURE("No sé")
+}
+
+private fun TaskGradingChoice?.toInitialGradingStatus(): TaskGradingStatus {
+    return when (this) {
+        TaskGradingChoice.NO -> TaskGradingStatus.NOT_GRADED
+        TaskGradingChoice.YES,
+        TaskGradingChoice.UNSURE,
+        null -> TaskGradingStatus.UNDECIDED
+    }
+}
+
 @Composable
 private fun CalendarMonthGrid(
     month: YearMonth,
@@ -852,6 +1099,67 @@ private fun SubjectDropdown(
                             onCreateSubjectClick()
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PeriodDropdown(
+    subject: Subject,
+    selectedPeriodId: String,
+    onPeriodSelected: (String) -> Unit
+) {
+    var showSheet by rememberSaveable(subject.id) { mutableStateOf(false) }
+    val selected = subject.periodScheme.periods.firstOrNull { it.id == selectedPeriodId }
+        ?: subject.periodScheme.periods.firstOrNull()
+
+    BasicInfoActionRow(
+        icon = Icons.Rounded.CalendarMonth,
+        label = "Corte",
+        value = selected?.name.orEmpty(),
+        placeholder = "Seleccionar corte",
+        onClick = { showSheet = true }
+    )
+
+    if (showSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false },
+            containerColor = SubjectSheetSurface,
+            contentColor = Color.White,
+            scrimColor = Color.Black.copy(alpha = 0.62f),
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 22.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    "Seleccionar corte",
+                    color = SubjectSheetText,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "Las notas obtenidas por esta tarea se registrarán aquí por defecto.",
+                    color = SubjectSheetMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                subject.periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                    SubjectSheetOption(
+                        title = period.name,
+                        subtitle = "${(period.weight * 100).toInt()}% de la materia",
+                        selected = period.id == selected?.id,
+                        onClick = {
+                            onPeriodSelected(period.id)
+                            showSheet = false
+                        }
+                    )
                 }
             }
         }

@@ -24,7 +24,11 @@ interface GradeDao {
             value = :value,
             percentage = :percentage,
             type = :type,
-            periodId = :periodId
+            periodId = :periodId,
+            source = :source,
+            weightStatus = :weightStatus,
+            taskId = :taskId,
+            recordedAt = :recordedAt
         WHERE id = :gradeId AND subjectId = :subjectId
         """
     )
@@ -35,7 +39,11 @@ interface GradeDao {
         value: Double,
         percentage: Double,
         type: String,
-        periodId: String
+        periodId: String,
+        source: String,
+        weightStatus: String,
+        taskId: String?,
+        recordedAt: Long
     )
 
     @Query("DELETE FROM grades WHERE id = :gradeId")

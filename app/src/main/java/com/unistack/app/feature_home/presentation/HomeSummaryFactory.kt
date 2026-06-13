@@ -9,6 +9,7 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_home.domain.AcademicWorkSummary
 import com.unistack.app.feature_home.domain.DailyPriorityEngine
+import com.unistack.app.feature_home.domain.DailyFocusItem
 import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
@@ -62,6 +63,10 @@ internal object HomeSummaryFactory {
             profile = profile,
             gradingScale = gradingScale
         )
+        val academicFocus = academicFocusSummary(
+            subjects = subjects,
+            gradingScale = gradingScale
+        )
         val todayItems = todayTimelineItems(
             tasks = pendingTasks,
             works = works,
@@ -75,9 +80,10 @@ internal object HomeSummaryFactory {
             riskSubject = riskSubject,
             weeklyExpenseTotal = weeklyExpenseTotal,
             profile = profile,
-            enabledModules = enabledModules
+            enabledModules = enabledModules,
+            academicFocus = academicFocus
         )
-        val dailyFocusItems = DailyPriorityEngine.dailyFocusPlan(
+        val generatedFocusItems = DailyPriorityEngine.dailyFocusPlan(
             subjectsCount = subjects.size,
             pendingTasks = pendingTasks,
             works = works,
@@ -86,6 +92,11 @@ internal object HomeSummaryFactory {
             profile = profile,
             enabledModules = enabledModules
         )
+        val dailyFocusItems = if (generatedFocusItems.isGenericCalmPlan() && academicFocus != null) {
+            academicFocus.toDailyFocusItems()
+        } else {
+            generatedFocusItems
+        }
 
         return HomeSummary(
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
@@ -132,11 +143,13 @@ internal object HomeSummaryFactory {
     }
 
     private fun subjectSummary(subject: Subject): SubjectSummary {
-        val evaluatedPercentage = subject.grades.sumOf { it.percentage }.coerceIn(0.0, 1.0)
+        val periods = subject.periodScheme.periods
+        val evaluatedPercentage =
+            GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods) / 100.0
         return SubjectSummary(
             id = subject.id,
             name = subject.name,
-            average = GradeCalculator.calculateCurrentAverage(subject.grades),
+            average = GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periods),
             targetAverage = subject.targetAverage,
             progress = evaluatedPercentage.toFloat(),
             type = subject.visualType
@@ -148,7 +161,10 @@ internal object HomeSummaryFactory {
         if (subjectsWithGrades.isEmpty()) return null
 
         val validGrades = subjectsWithGrades.mapNotNull { subject ->
-            GradeCalculator.calculateCurrentAverage(subject.grades)?.let { average ->
+            GradeCalculator.calculateProjectedAverageByPeriods(
+                subject.grades,
+                subject.periodScheme.periods
+            )?.let { average ->
                 GradeItem(
                     id = subject.id,
                     name = subject.name,
@@ -162,17 +178,15 @@ internal object HomeSummaryFactory {
 
     private fun neededGradeSummary(subjects: List<Subject>, profile: UserProfile?): NeededGradeSummary? {
         val focusSubject = subjects.firstOrNull { it.grades.isNotEmpty() } ?: return null
-        val currentWeightedPoints = GradeCalculator.calculateWeightedPoints(focusSubject.grades)
-        val remainingPercentage = remainingPercentage(focusSubject)
         val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
-        val needed = GradeCalculator.calculateNeededGrade(
-            currentWeightedPoints = currentWeightedPoints,
-            remainingPercentage = remainingPercentage,
+        val calculation = GradeCalculator.calculateSubject(
+            grades = focusSubject.grades,
+            periods = focusSubject.periodScheme.periods,
             targetAverage = focusSubject.targetAverage,
             maxGrade = maxGrade
         )
 
-        return needed
+        return calculation.neededForTarget
             ?.takeIf { it > 0.0 && it <= maxGrade }
             ?.let {
                 NeededGradeSummary(
@@ -215,7 +229,8 @@ internal object HomeSummaryFactory {
         riskSubject: SubjectRiskSummary?,
         weeklyExpenseTotal: Int,
         profile: UserProfile?,
-        enabledModules: Set<AppModule>
+        enabledModules: Set<AppModule>,
+        academicFocus: AcademicFocusSummary?
     ): HomePrioritySummary {
         DailyPriorityEngine.primaryPriority(
             subjectsCount = subjects.size,
@@ -242,7 +257,8 @@ internal object HomeSummaryFactory {
             pendingTasks = pendingTasks,
             works = works,
             weeklyExpenseTotal = weeklyExpenseTotal,
-            enabledModules = enabledModules
+            enabledModules = enabledModules,
+            academicFocus = academicFocus
         )
     }
 
@@ -251,7 +267,8 @@ internal object HomeSummaryFactory {
         pendingTasks: List<StudentTask>,
         works: List<AcademicWork>,
         weeklyExpenseTotal: Int,
-        enabledModules: Set<AppModule>
+        enabledModules: Set<AppModule>,
+        academicFocus: AcademicFocusSummary?
     ): HomePrioritySummary {
         val index = TaskDateUtils.today().dayOfYear % 4
         val canUseExpenses = AppModule.EXPENSES in enabledModules && weeklyExpenseTotal > 0
@@ -278,6 +295,7 @@ internal object HomeSummaryFactory {
                 suggestion = "${heroActionPrefix()}: elegir una tarea simple y dejarla encaminada.",
                 action = HomePriorityAction.TASKS
             )
+            academicFocus != null -> academicFocus.toPrioritySummary()
             else -> HomePrioritySummary(
                 title = "Día despejado",
                 shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
@@ -287,6 +305,77 @@ internal object HomeSummaryFactory {
             )
         }
     }
+
+    private fun academicFocusSummary(
+        subjects: List<Subject>,
+        gradingScale: GradingScale
+    ): AcademicFocusSummary? {
+        if (subjects.isEmpty()) return null
+        return subjects
+            .map { subject ->
+                val periods = subject.periodScheme.periods
+                val average = GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periods)
+                val evaluated = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods)
+                AcademicFocusSummary(
+                    subjectId = subject.id,
+                    subjectName = subject.name,
+                    average = average,
+                    targetAverage = subject.targetAverage,
+                    evaluatedPercentage = evaluated.coerceIn(0.0, 100.0),
+                    gradingScale = gradingScale
+                )
+            }
+            .maxWithOrNull(
+                compareBy<AcademicFocusSummary> { it.average != null }
+                    .thenBy { it.remainingPercentage }
+                    .thenByDescending { it.average ?: 0.0 }
+            )
+    }
+
+    private fun List<DailyFocusItem>.isGenericCalmPlan(): Boolean {
+        return any { it.title == "Repaso breve" || it.title == "Ordenar pendientes" }
+    }
+
+    private fun AcademicFocusSummary.toPrioritySummary(): HomePrioritySummary {
+        val averageText = average?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
+        return HomePrioritySummary(
+            title = if (averageText != null) "$subjectName va en $averageText" else "$subjectName espera su primera nota",
+            shortDescription = if (averageText != null) {
+                "${evaluatedPercentage.roundPercent()}% evaluado. Falta registrar ${remainingPercentage.roundPercent()}%."
+            } else {
+                "Agrega una nota para activar proyección y seguimiento real."
+            },
+            fullDescription = if (averageText != null) {
+                "$subjectName tiene promedio $averageText con ${evaluatedPercentage.roundPercent()}% evaluado. La meta es ${GradingScaleUtils.formatGrade(targetAverage, gradingScale)}."
+            } else {
+                "$subjectName ya está creada, pero aún no tiene notas. La siguiente acción útil es registrar la primera evaluación."
+            },
+            suggestion = "${heroActionPrefix()}: ${if (averageText != null) "agrega la próxima nota o revisa el porcentaje restante" else "agrega la primera nota de $subjectName"}.",
+            action = HomePriorityAction.SUBJECT,
+            subjectId = subjectId
+        )
+    }
+
+    private fun AcademicFocusSummary.toDailyFocusItems(): List<DailyFocusItem> {
+        val hasGrade = average != null
+        return listOf(
+            DailyFocusItem(
+                slotLabel = "Ahora",
+                title = if (hasGrade) "Actualizar $subjectName" else "Agregar primera nota",
+                detail = if (hasGrade) {
+                    "Registra la próxima nota o revisa el ${remainingPercentage.roundPercent()}% restante."
+                } else {
+                    "Convierte esta materia en un tablero con promedio real."
+                },
+                minutesText = if (hasGrade) "5 min" else "3 min",
+                actionLabel = "Abrir",
+                action = HomePriorityAction.SUBJECT,
+                subjectId = subjectId
+            )
+        )
+    }
+
+    private fun Double.roundPercent(): String = "%.0f".format(this)
 
     private fun heroActionPrefix(): String {
         return when (LocalTime.now().hour) {
@@ -387,14 +476,15 @@ internal object HomeSummaryFactory {
         val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(gradingScale)
         val passingGrade = profile?.passingGrade ?: maxGrade * 0.6
         val candidates = subjects.mapNotNull { subject ->
-            val average = GradeCalculator.calculateCurrentAverage(subject.grades) ?: return@mapNotNull null
-            val remainingPercentage = remainingPercentage(subject)
-            val needed = GradeCalculator.calculateNeededGrade(
-                currentWeightedPoints = GradeCalculator.calculateWeightedPoints(subject.grades),
-                remainingPercentage = remainingPercentage,
+            val calculation = GradeCalculator.calculateSubject(
+                grades = subject.grades,
+                periods = subject.periodScheme.periods,
                 targetAverage = subject.targetAverage,
                 maxGrade = maxGrade
             )
+            val average = calculation.projectedAverage ?: return@mapNotNull null
+            val remainingPercentage = calculation.remainingSemesterFraction
+            val needed = calculation.neededForTarget
             val severity = riskSeverity(
                 average = average,
                 passingGrade = passingGrade,
@@ -471,10 +561,6 @@ internal object HomeSummaryFactory {
         }
     }
 
-    private fun remainingPercentage(subject: Subject): Double {
-        return (1.0 - subject.grades.sumOf { it.percentage }).coerceAtLeast(0.0)
-    }
-
     private fun dashboardMessage(
         hasSubjects: Boolean,
         overdueTasks: Int,
@@ -531,11 +617,12 @@ internal object HomeSummaryFactory {
 
     private fun StudentTask.timelineTimeText(): String {
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(dueDateMillis))
+        val time = dueDateMillis.timelineTimeSuffix()
         return when {
-            days < 0 -> "Vencida"
-            days == 0L -> "Hoy"
-            days == 1L -> "Mañana"
-            else -> "En $days días"
+            days < 0 -> "Vencida$time"
+            days == 0L -> "Hoy$time"
+            days == 1L -> "Mañana$time"
+            else -> "En $days días$time"
         }
     }
 
@@ -553,12 +640,18 @@ internal object HomeSummaryFactory {
     private fun AcademicWork.timelineTimeText(): String {
         val due = dueDateMillis ?: return "Sin fecha"
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(due))
+        val time = due.timelineTimeSuffix()
         return when {
-            days < 0 -> "Vencido"
-            days == 0L -> "Hoy"
-            days == 1L -> "Mañana"
-            else -> "En $days días"
+            days < 0 -> "Vencido$time"
+            days == 0L -> "Hoy$time"
+            days == 1L -> "Mañana$time"
+            else -> "En $days días$time"
         }
+    }
+
+    private fun Long.timelineTimeSuffix(): String {
+        val time = TaskDateUtils.timeFromMillis(this)
+        return if (time == LocalTime.MIDNIGHT) "" else " ${TaskDateUtils.formatTimeInput(time)}"
     }
 
     private fun TaskType.label(): String {
@@ -598,5 +691,16 @@ internal object HomeSummaryFactory {
             AcademicWorkPriority.MEDIUM -> 2
             AcademicWorkPriority.HIGH -> 3
         }
+    }
+
+    private data class AcademicFocusSummary(
+        val subjectId: String,
+        val subjectName: String,
+        val average: Double?,
+        val targetAverage: Double,
+        val evaluatedPercentage: Double,
+        val gradingScale: GradingScale
+    ) {
+        val remainingPercentage: Double = (100.0 - evaluatedPercentage).coerceIn(0.0, 100.0)
     }
 }

@@ -8,6 +8,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,10 +60,13 @@ import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AddSubjectScreen
 import com.unistack.app.feature_grades.presentation.GradesScreen
+import com.unistack.app.feature_grades.presentation.PriorHistoryScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_grades.presentation.SubjectPeriodDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
+import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
+import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
 import com.unistack.app.feature_profile.presentation.ProfileScreen
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
@@ -157,6 +162,11 @@ fun MainNavGraph(
                         onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
                         onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
                         onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
+                        onNotificationsClick = {
+                            navController.navigate(AppRoutes.Notifications) {
+                                launchSingleTop = true
+                            }
+                        },
                         onProfileClick = {
                             navController.navigate(AppRoutes.Profile) {
                                 launchSingleTop = true
@@ -167,6 +177,40 @@ fun MainNavGraph(
                         onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) }
                     )
                 }
+            composable(AppRoutes.Notifications) {
+                NotificationHistoryScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Home)
+                        }
+                    },
+                    onNotificationClick = { notificationId ->
+                        navController.navigate(AppRoutes.notificationDetail(notificationId))
+                    },
+                    onSettingsClick = {
+                        navController.navigate(AppRoutes.Profile) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
+            composable("${AppRoutes.NotificationDetail}/{notificationId}") { backStackEntry ->
+                val notificationId = backStackEntry.arguments
+                    ?.getString("notificationId")
+                    ?.toIntOrNull()
+                    ?: -1
+                NotificationDetailScreen(
+                    notificationId = notificationId,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Notifications)
+                        }
+                    },
+                    onOpenRelated = { route ->
+                        navController.navigateIfModuleEnabled(route, enabledModules)
+                    }
+                )
+            }
             composable(AppRoutes.Grades) {
                 GradesScreen(
                     onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
@@ -176,7 +220,10 @@ fun MainNavGraph(
             composable(AppRoutes.Tasks) {
                 TasksScreen(
                     onNewTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                    onEditTaskClick = { taskId -> navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules) }
+                    onEditTaskClick = { taskId -> navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules) },
+                    onCompleteHistoryClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.priorHistory(subjectId), enabledModules)
+                    }
                 )
             }
             composable(AppRoutes.Profile) {
@@ -240,6 +287,9 @@ fun MainNavGraph(
                     onPeriodClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.subjectPeriodDetail(id, periodId), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
+                    onCompleteHistoryClick = { id ->
+                        navController.navigateIfModuleEnabled(AppRoutes.priorHistory(id), enabledModules)
+                    },
                     onSubjectDeleted = {
                         if (!navController.popBackStack(AppRoutes.Grades, inclusive = false)) {
                             navController.navigate(AppRoutes.Grades) {
@@ -249,6 +299,21 @@ fun MainNavGraph(
                                 launchSingleTop = true
                             }
                         }
+                    }
+                )
+            }
+            composable("${AppRoutes.PriorHistory}/{subjectId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                PriorHistoryScreen(
+                    subjectId = subjectId,
+                    onBackClick = {
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    },
+                    onAddActivitiesClick = { id, periodId ->
+                        navController.navigateIfModuleEnabled(
+                            AppRoutes.addGradeFromHistory(id, periodId),
+                            enabledModules
+                        )
                     }
                 )
             }
@@ -285,6 +350,11 @@ fun MainNavGraph(
                     subjectId = subjectId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    },
+                    onCompleteHistoryClick = { id ->
+                        navController.navigate(AppRoutes.priorHistory(id)) {
+                            popUpTo(AppRoutes.AddGrade) { inclusive = true }
+                        }
                     }
                 )
             }
@@ -296,6 +366,20 @@ fun MainNavGraph(
                     initialPeriodId = periodId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectPeriodDetail(subjectId, periodId), enabledModules)
+                    },
+                    onCompleteHistoryClick = { id ->
+                        navController.navigate(AppRoutes.priorHistory(id))
+                    }
+                )
+            }
+            composable("${AppRoutes.AddGradeFromHistory}/{subjectId}/{periodId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                AddGradeScreen(
+                    subjectId = subjectId,
+                    initialPeriodId = periodId,
+                    onBackClick = {
+                        navController.navigateBackOr(AppRoutes.priorHistory(subjectId), enabledModules)
                     }
                 )
             }
@@ -376,6 +460,8 @@ private fun ModuleAccessGuard(
 internal fun bottomRouteFor(route: String?): String? {
     return when {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Notifications) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.NotificationDetail) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Tasks
@@ -439,6 +525,9 @@ private fun mainSlideIn(fromRight: Boolean) =
         animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
     ) + fadeIn(
         animationSpec = tween(110, delayMillis = 25, easing = FastOutSlowInEasing)
+    ) + scaleIn(
+        initialScale = 0.985f,
+        animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
     )
 
 private fun mainSlideOut(toLeft: Boolean) =
@@ -446,6 +535,9 @@ private fun mainSlideOut(toLeft: Boolean) =
         targetOffsetX = { width -> if (toLeft) -width / 4 else width / 4 },
         animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
     ) + fadeOut(
+        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+    ) + scaleOut(
+        targetScale = 0.992f,
         animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
     )
 

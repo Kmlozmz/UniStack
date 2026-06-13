@@ -6,8 +6,22 @@ data class GradeItem(
     val value: Double,
     val percentage: Double,
     val type: GradeType = GradeType.WORKSHOP,
-    val periodId: String = "period-1"
+    val periodId: String = "period-1",
+    val source: GradeSource = GradeSource.ACTIVITY,
+    val weightStatus: GradeWeightStatus = GradeWeightStatus.KNOWN,
+    val taskId: String? = null,
+    val recordedAt: Long = 0L
 )
+
+enum class GradeSource {
+    ACTIVITY,
+    PERIOD_FINAL
+}
+
+enum class GradeWeightStatus {
+    KNOWN,
+    UNKNOWN
+}
 
 enum class GradeType {
     WORKSHOP,

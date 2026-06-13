@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -34,7 +36,9 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
@@ -42,6 +46,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,14 +56,20 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +82,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -81,11 +94,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_user.domain.GradingScale
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -95,10 +113,12 @@ fun TasksScreen(
     onNewTaskClick: () -> Unit,
     onEditTaskClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onCompleteHistoryClick: (String) -> Unit = {},
     viewModel: TasksViewModel = viewModel()
 ) {
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     var taskIdPendingDelete by remember { mutableStateOf<String?>(null) }
     var selectedFilter by remember { mutableStateOf(TaskListFilter.ALL) }
     var selectedSubjectId by remember { mutableStateOf<String?>(null) }
@@ -106,8 +126,16 @@ fun TasksScreen(
     var sortOrder by remember { mutableStateOf(TaskSortOrder.DUE_DATE) }
     var showFiltersSheet by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var completionPrompt by remember { mutableStateOf<TaskCompletionPrompt?>(null) }
+    var historySuggestionSubjectId by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val clearSearchFocus = { focusManager.clearFocus() }
+    val onTaskChecked: (StudentTask, Boolean) -> Unit = { task, checked ->
+        clearSearchFocus()
+        completionPrompt = viewModel.setTaskCompleted(task.id, checked)
+    }
     val clearFocusOnScroll = remember {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
@@ -141,13 +169,26 @@ fun TasksScreen(
             .sortFor(sortOrder, subjects)
     }
     val today = TaskDateUtils.today()
-    val todayTasks = filteredTasks.filter { TaskDateUtils.fromMillis(it.dueDateMillis) == today }
-    val overdueTasks = filteredTasks.filter {
-        !it.completed && TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today)
+    val activeTasks = filteredTasks.filterNot { it.completed }
+    val awaitingGradeTasks = filteredTasks.filter {
+        it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
     }
-    val upcomingTasks = filteredTasks.filter {
+    val completedTasks = filteredTasks.filter {
+        it.completed && it.gradingStatus != TaskGradingStatus.AWAITING_GRADE
+    }
+    val pendingGradeCount = tasks.count {
+        it.completed && it.gradingStatus == TaskGradingStatus.AWAITING_GRADE
+    }
+    val todayTasks = activeTasks.filter { TaskDateUtils.fromMillis(it.dueDateMillis) == today }
+    val overdueTasks = activeTasks.filter {
+        TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today)
+    }
+    val upcomingTasks = activeTasks.filter {
         val dueDate = TaskDateUtils.fromMillis(it.dueDateMillis)
-        dueDate.isAfter(today) || (it.completed && dueDate.isBefore(today))
+        dueDate.isAfter(today) && !dueDate.isAfter(today.plusDays(7))
+    }
+    val laterTasks = activeTasks.filter {
+        TaskDateUtils.fromMillis(it.dueDateMillis).isAfter(today.plusDays(7))
     }
     val selectedSubjectName = subjects.firstOrNull { it.id == selectedSubjectId }?.name
 
@@ -179,6 +220,17 @@ fun TasksScreen(
                     onUserInteraction = clearSearchFocus
                 )
             }
+            if (pendingGradeCount > 0) {
+                item {
+                    PendingGradesBanner(
+                        count = pendingGradeCount,
+                        onClick = {
+                            clearSearchFocus()
+                            selectedFilter = TaskListFilter.AWAITING_GRADE
+                        }
+                    )
+                }
+            }
             item {
                 TaskFilterSummaryChip(
                     selectedStatus = selectedFilter,
@@ -199,17 +251,49 @@ fun TasksScreen(
                     FilteredEmptyState(onOpenFilters = { showFiltersSheet = true })
                 }
                 else -> {
+                    if (overdueTasks.isNotEmpty()) {
+                        item { SectionTitle("Vencidas", overdueTasks.size) }
+                        items(overdueTasks, key = { it.id }) { task ->
+                            TaskCard(
+                                task = task,
+                                subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
+                                onCardClick = clearSearchFocus,
+                                onCheckedChange = { checked ->
+                                    onTaskChecked(task, checked)
+                                },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
+                                onEditClick = {
+                                    clearSearchFocus()
+                                    onEditTaskClick(task.id)
+                                },
+                                onDeleteClick = {
+                                    clearSearchFocus()
+                                    taskIdPendingDelete = task.id
+                                }
+                            )
+                        }
+                    }
                     if (todayTasks.isNotEmpty()) {
-                        item { SectionTitle("Hoy") }
+                        item { SectionTitle("Hoy", todayTasks.size) }
                         items(todayTasks, key = { it.id }) { task ->
                             TaskCard(
                                 task = task,
                                 subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
                                 onCardClick = clearSearchFocus,
                                 onCheckedChange = { checked ->
-                                    clearSearchFocus()
-                                    viewModel.setTaskCompleted(task.id, checked)
+                                    onTaskChecked(task, checked)
                                 },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
                                 onEditClick = {
                                     clearSearchFocus()
                                     onEditTaskClick(task.id)
@@ -222,16 +306,21 @@ fun TasksScreen(
                         }
                     }
                     if (upcomingTasks.isNotEmpty()) {
-                        item { SectionTitle("Próximamente") }
+                        item { SectionTitle("Próximas", upcomingTasks.size) }
                         items(upcomingTasks, key = { it.id }) { task ->
                             TaskCard(
                                 task = task,
                                 subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
                                 onCardClick = clearSearchFocus,
                                 onCheckedChange = { checked ->
-                                    clearSearchFocus()
-                                    viewModel.setTaskCompleted(task.id, checked)
+                                    onTaskChecked(task, checked)
                                 },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
                                 onEditClick = {
                                     clearSearchFocus()
                                     onEditTaskClick(task.id)
@@ -243,17 +332,74 @@ fun TasksScreen(
                             )
                         }
                     }
-                    if (overdueTasks.isNotEmpty()) {
-                        item { SectionTitle("Vencidas") }
-                        items(overdueTasks, key = { it.id }) { task ->
+                    if (laterTasks.isNotEmpty()) {
+                        item { SectionTitle("Más adelante", laterTasks.size) }
+                        items(laterTasks, key = { it.id }) { task ->
                             TaskCard(
                                 task = task,
                                 subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
                                 onCardClick = clearSearchFocus,
                                 onCheckedChange = { checked ->
-                                    clearSearchFocus()
-                                    viewModel.setTaskCompleted(task.id, checked)
+                                    onTaskChecked(task, checked)
                                 },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
+                                onEditClick = {
+                                    clearSearchFocus()
+                                    onEditTaskClick(task.id)
+                                },
+                                onDeleteClick = {
+                                    clearSearchFocus()
+                                    taskIdPendingDelete = task.id
+                                }
+                            )
+                        }
+                    }
+                    if (awaitingGradeTasks.isNotEmpty()) {
+                        item { SectionTitle("Esperando nota", awaitingGradeTasks.size) }
+                        items(awaitingGradeTasks, key = { it.id }) { task ->
+                            TaskCard(
+                                task = task,
+                                subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
+                                onCardClick = clearSearchFocus,
+                                onCheckedChange = { checked -> onTaskChecked(task, checked) },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
+                                onEditClick = {
+                                    clearSearchFocus()
+                                    onEditTaskClick(task.id)
+                                },
+                                onDeleteClick = {
+                                    clearSearchFocus()
+                                    taskIdPendingDelete = task.id
+                                }
+                            )
+                        }
+                    }
+                    if (completedTasks.isNotEmpty()) {
+                        item { SectionTitle("Completadas", completedTasks.size) }
+                        items(completedTasks, key = { it.id }) { task ->
+                            TaskCard(
+                                task = task,
+                                subjects = subjects,
+                                gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
+                                onCardClick = clearSearchFocus,
+                                onCheckedChange = { checked ->
+                                    onTaskChecked(task, checked)
+                                },
+                                onRegisterGradeClick = {
+                                    completionPrompt = TaskCompletionPrompt(task)
+                                },
+                                onNoGradeClick = { viewModel.markTaskAsNotGraded(task.id) },
+                                onUnlinkGradeClick = { viewModel.unlinkTaskGrade(task.id) },
                                 onEditClick = {
                                     clearSearchFocus()
                                     onEditTaskClick(task.id)
@@ -278,6 +424,12 @@ fun TasksScreen(
                 .align(Alignment.BottomEnd)
                 .padding(end = 20.dp, bottom = 20.dp)
         )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 20.dp, vertical = 92.dp)
+        )
     }
 
     if (showFiltersSheet) {
@@ -301,6 +453,88 @@ fun TasksScreen(
         )
     }
 
+    completionPrompt?.let { prompt ->
+        val subject = subjects.firstOrNull { it.id == prompt.task.subjectId }
+        if (subject == null) {
+            completionPrompt = null
+        } else {
+            TaskGradeResultSheet(
+                task = prompt.task,
+                subject = subject,
+                onDismiss = {
+                    viewModel.markTaskAwaitingGrade(prompt.task.id)
+                    completionPrompt = null
+                },
+                onNoGrade = {
+                    viewModel.markTaskAsNotGraded(prompt.task.id)
+                    completionPrompt = null
+                },
+                onSaveGrade = { value, percentage, periodId ->
+                    val outcome = viewModel.saveTaskGrade(
+                        taskId = prompt.task.id,
+                        value = value,
+                        percentageInput = percentage,
+                        periodId = periodId
+                    )
+                    if (outcome.saved) {
+                        completionPrompt = null
+                        val gradeId = outcome.gradeId
+                        if (gradeId != null) {
+                            coroutineScope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    message = "Nota registrada y tarea completada.",
+                                    actionLabel = "Deshacer",
+                                    duration = SnackbarDuration.Short
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.undoTaskGrade(prompt.task.id, gradeId)
+                                }
+                            }
+                        }
+                        if (outcome.suggestPriorHistory) {
+                            historySuggestionSubjectId = outcome.subjectId
+                        }
+                    }
+                    outcome.saved
+                }
+            )
+        }
+    }
+
+    historySuggestionSubjectId?.let { subjectId ->
+        val subject = subjects.firstOrNull { it.id == subjectId }
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                historySuggestionSubjectId = null
+            },
+            title = { Text("Tu historial puede mejorar la proyección") },
+            text = {
+                Text(
+                    "Registraste la primera nota de ${subject?.name ?: "esta materia"} en un corte avanzado. " +
+                        "Puedes agregar ahora las notas de los cortes anteriores o hacerlo más tarde."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                        historySuggestionSubjectId = null
+                        onCompleteHistoryClick(subjectId)
+                    }
+                ) { Text("Completar historial") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                        historySuggestionSubjectId = null
+                    }
+                ) { Text("Más tarde") }
+            }
+        )
+    }
+
     taskIdPendingDelete?.let { taskId ->
         UniConfirmDeleteDialog(
             title = "¿Eliminar tarea?",
@@ -311,6 +545,147 @@ fun TasksScreen(
             },
             onDismiss = { taskIdPendingDelete = null }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TaskGradeResultSheet(
+    task: StudentTask,
+    subject: Subject,
+    onDismiss: () -> Unit,
+    onNoGrade: () -> Unit,
+    onSaveGrade: (Double, Double?, String) -> Boolean
+) {
+    var enteringGrade by remember(task.id) { mutableStateOf(false) }
+    var valueInput by remember(task.id) { mutableStateOf("") }
+    var percentageInput by remember(task.id) { mutableStateOf("") }
+    var weightUnknown by remember(task.id) { mutableStateOf(false) }
+    var selectedPeriodId by remember(task.id, subject.activePeriodId) {
+        mutableStateOf(task.periodId ?: subject.activePeriodId)
+    }
+    var error by remember(task.id) { mutableStateOf<String?>(null) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 20.dp)
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = if (enteringGrade) "Registrar resultado" else "Tarea completada",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (enteringGrade) {
+                    "${task.title} · ${subject.name}"
+                } else {
+                    "¿Recibiste una nota por “${task.title}”?"
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (!enteringGrade) {
+                Button(
+                    onClick = { enteringGrade = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Sí, registrar nota") }
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                    Text("Todavía no la recibo")
+                }
+                TextButton(onClick = onNoGrade, modifier = Modifier.fillMaxWidth()) {
+                    Text("Esta tarea no recibe nota")
+                }
+            } else {
+                Text("Corte", fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    subject.periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                        Surface(
+                            onClick = { selectedPeriodId = period.id },
+                            color = if (selectedPeriodId == period.id) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                period.name,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = valueInput,
+                    onValueChange = {
+                        valueInput = it
+                        error = null
+                    },
+                    label = { Text("Nota obtenida") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("No conozco el porcentaje", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "La nota se guardará sin alterar la proyección.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = weightUnknown,
+                        onCheckedChange = {
+                            weightUnknown = it
+                            error = null
+                        }
+                    )
+                }
+                if (!weightUnknown) {
+                    OutlinedTextField(
+                        value = percentageInput,
+                        onValueChange = {
+                            percentageInput = it.filter { char -> char.isDigit() || char == '.' }
+                            error = null
+                        },
+                        label = { Text("Peso dentro del corte") },
+                        suffix = { Text("%") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error)
+                }
+                Button(
+                    onClick = {
+                        val value = valueInput.toDoubleOrNull()
+                        val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
+                        if (value == null || (!weightUnknown && percentage == null)) {
+                            error = "Revisa la nota y el porcentaje."
+                        } else if (!onSaveGrade(value, percentage, selectedPeriodId)) {
+                            error = "No fue posible guardar. Revisa el rango y el peso acumulado."
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Guardar nota") }
+            }
+        }
     }
 }
 
@@ -377,12 +752,13 @@ private fun TaskStatsRow(
     onUserInteraction: () -> Unit
 ) {
     val today = TaskDateUtils.today()
-    val todayTasks = tasks.filter { TaskDateUtils.isToday(it.dueDateMillis, today) }
-    val weekTasks = tasks.filter { task ->
+    val activeTasks = tasks.filterNot { it.completed }
+    val todayTasks = activeTasks.filter { TaskDateUtils.isToday(it.dueDateMillis, today) }
+    val weekTasks = activeTasks.filter { task ->
         val dueDate = TaskDateUtils.fromMillis(task.dueDateMillis)
         !dueDate.isBefore(today) && !dueDate.isAfter(today.plusDays(6))
     }
-    val overdueTasks = tasks.filterNot { it.completed }
+    val overdueTasks = activeTasks
         .filter { TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
     var selectedStat by remember { mutableStateOf<TaskStatDetail?>(null) }
 
@@ -588,46 +964,140 @@ private fun TaskFilterSummaryChip(
 }
 
 @Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onBackground,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.ExtraBold
-    )
+private fun SectionTitle(text: String, count: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "$count",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun PendingGradesBanner(
+    count: Int,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .cleanClickable(onClick),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Grade,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            Text(
+                text = if (count == 1) "1 resultado pendiente" else "$count resultados pendientes",
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Revisar",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = "Ver tareas pendientes de nota",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
 }
 
 @Composable
 private fun TaskCard(
     task: StudentTask,
     subjects: List<Subject>,
+    gradingScale: GradingScale,
     onCardClick: () -> Unit,
     onCheckedChange: (Boolean) -> Unit,
+    onRegisterGradeClick: () -> Unit,
+    onNoGradeClick: () -> Unit,
+    onUnlinkGradeClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    val subjectName = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: "Sin materia"
+    val subject = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
+    val subjectName = subject?.name ?: "Sin materia"
+    val linkedGrade = task.linkedGradeId?.let { gradeId ->
+        subject?.grades?.firstOrNull { it.id == gradeId }
+    }
+    val gradeSummary = linkedGrade?.let { grade ->
+        val periodName = subject?.periodScheme?.periodName(grade.periodId) ?: "Corte"
+        "${GradingScaleUtils.formatGrade(grade.value, gradingScale)} · $periodName"
+    }
+    val awaitingGrade = task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
     val titleDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None
-    val contentAlpha = if (task.completed) 0.62f else 1f
+    val contentAlpha = if (task.completed && !awaitingGrade) 0.78f else 1f
     val priorityColor = task.difficulty.color()
+    var menuExpanded by remember(task.id) { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .cleanClickable(onCardClick),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+        color = if (awaitingGrade) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        border = BorderStroke(
+            0.8.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = if (awaitingGrade) 0.24f else 0.16f)
+        ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.Top
         ) {
+            if (awaitingGrade) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(4.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
             Checkbox(
                 checked = task.completed,
                 onCheckedChange = onCheckedChange,
+                modifier = Modifier.padding(start = if (awaitingGrade) 6.dp else 10.dp, top = 12.dp),
                 colors = CheckboxDefaults.colors(
                     checkedColor = MaterialTheme.colorScheme.primary,
                     uncheckedColor = MaterialTheme.colorScheme.outline
@@ -635,10 +1105,24 @@ private fun TaskCard(
             )
             Column(
                 modifier = Modifier
-                    .padding(start = 6.dp)
+                    .padding(start = 4.dp, top = 15.dp, bottom = 15.dp)
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                if (awaitingGrade) {
+                    Surface(
+                        shape = RoundedCornerShape(7.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "ENTREGADA · ESPERANDO NOTA",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 Text(
                     text = task.title,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
@@ -661,7 +1145,7 @@ private fun TaskCard(
                     text = "$subjectName · ${taskDueLabel(task.dueDateMillis)}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Row(
@@ -687,20 +1171,107 @@ private fun TaskCard(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+                when (task.gradingStatus) {
+                    TaskGradingStatus.AWAITING_GRADE -> {
+                        if (awaitingGrade) {
+                            Button(
+                                onClick = onRegisterGradeClick,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(40.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Grade,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Registrar nota",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                    TaskGradingStatus.GRADED -> {
+                        Text(
+                            text = gradeSummary?.let { "Nota $it" } ?: "Nota registrada",
+                            color = UniStackColors.Green,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    else -> Unit
+                }
             }
-            IconButton(onClick = onEditClick) {
-                Icon(
-                    imageVector = Icons.Rounded.Edit,
-                    contentDescription = "Editar tarea",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(onClick = onDeleteClick) {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = "Eliminar tarea",
-                    tint = UniStackColors.Coral
-                )
+            Box(modifier = Modifier.padding(top = 8.dp, end = 6.dp)) {
+                IconButton(onClick = { menuExpanded = true }) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = "Más opciones de ${task.title}",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Editar") },
+                        leadingIcon = {
+                            Icon(Icons.Rounded.Edit, contentDescription = null)
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onEditClick()
+                        }
+                    )
+                    if (task.gradingStatus == TaskGradingStatus.AWAITING_GRADE) {
+                        DropdownMenuItem(
+                            text = { Text("No tuvo nota") },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.CheckCircle, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onNoGradeClick()
+                            }
+                        )
+                    }
+                    if (task.gradingStatus == TaskGradingStatus.GRADED) {
+                        DropdownMenuItem(
+                            text = { Text("Desvincular nota") },
+                            leadingIcon = {
+                                Icon(Icons.Rounded.Grade, contentDescription = null)
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onUnlinkGradeClick()
+                            }
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("Eliminar", color = UniStackColors.Coral) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Rounded.Delete,
+                                contentDescription = null,
+                                tint = UniStackColors.Coral
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onDeleteClick()
+                        }
+                    )
+                }
             }
         }
     }
@@ -1252,6 +1823,7 @@ private fun TaskListFilter.icon(): ImageVector {
     return when (this) {
         TaskListFilter.ALL -> Icons.Rounded.Check
         TaskListFilter.PENDING -> Icons.Rounded.Schedule
+        TaskListFilter.AWAITING_GRADE -> Icons.Rounded.Grade
         TaskListFilter.COMPLETED -> Icons.Rounded.CheckCircle
         TaskListFilter.OVERDUE -> Icons.Rounded.CalendarMonth
     }
@@ -1374,6 +1946,7 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
 private val visibleStatusFilters = listOf(
     TaskListFilter.ALL,
     TaskListFilter.PENDING,
+    TaskListFilter.AWAITING_GRADE,
     TaskListFilter.COMPLETED,
     TaskListFilter.OVERDUE
 )
@@ -1381,6 +1954,7 @@ private val visibleStatusFilters = listOf(
 private enum class TaskListFilter(val label: String) {
     ALL("Todas"),
     PENDING("Pendientes"),
+    AWAITING_GRADE("Pendientes de nota"),
     OVERDUE("Vencidas"),
     COMPLETED("Completadas");
 
@@ -1388,6 +1962,7 @@ private enum class TaskListFilter(val label: String) {
         return when (this) {
             ALL -> true
             PENDING -> !task.completed
+            AWAITING_GRADE -> task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
             OVERDUE -> !task.completed && TaskDateUtils.fromMillis(task.dueDateMillis).isBefore(TaskDateUtils.today())
             COMPLETED -> task.completed
         }

@@ -11,6 +11,7 @@ class UniStackApplication : Application() {
         ReminderCoordinator.start(
             context = this,
             userRepository = AppContainer.userRepository,
+            gradesRepository = AppContainer.gradesRepository,
             tasksRepository = AppContainer.tasksRepository,
             academicWorksRepository = AppContainer.academicWorksRepository
         )

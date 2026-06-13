@@ -8,14 +8,18 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeType
+import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.CloudBackupState
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
@@ -23,6 +27,9 @@ import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -47,7 +54,7 @@ class FirebaseCloudBackupRepository(
 
         val now = System.currentTimeMillis()
         val payload = mapOf(
-            "schemaVersion" to 1,
+            "schemaVersion" to 2,
             "updatedAt" to now,
             "profile" to profileMap(),
             "subjects" to gradesRepository.subjects.value.map(::subjectMap),
@@ -162,7 +169,12 @@ class FirebaseCloudBackupRepository(
             "taskRemindersEnabled" to profile.taskRemindersEnabled,
             "academicWorkRemindersEnabled" to profile.academicWorkRemindersEnabled,
             "overdueRemindersEnabled" to profile.overdueRemindersEnabled,
+            "gradeInsightRemindersEnabled" to profile.gradeInsightRemindersEnabled,
+            "pendingGradeRemindersEnabled" to profile.pendingGradeRemindersEnabled,
             "reminderLeadHours" to profile.reminderLeadHours,
+            "quietHoursEnabled" to profile.quietHoursEnabled,
+            "quietHoursStartHour" to profile.quietHoursStartHour,
+            "quietHoursEndHour" to profile.quietHoursEndHour,
             "weeklyBudget" to profile.weeklyBudget,
             "monthlyBudget" to profile.monthlyBudget,
             "expenseAlertThresholdPercent" to profile.expenseAlertThresholdPercent,
@@ -187,6 +199,10 @@ class FirebaseCloudBackupRepository(
         "targetAverage" to subject.targetAverage,
         "visualType" to subject.visualType.name,
         "customColor" to subject.customColor,
+        "periodScheme" to periodSchemeMap(subject.periodScheme),
+        "activePeriodId" to subject.activePeriodId,
+        "historyPromptStatus" to subject.historyPromptStatus.name,
+        "unknownPeriodIds" to subject.unknownPeriodIds.toList(),
         "grades" to subject.grades.map(::gradeMap)
     )
 
@@ -196,7 +212,11 @@ class FirebaseCloudBackupRepository(
         "value" to grade.value,
         "percentage" to grade.percentage,
         "type" to grade.type.name,
-        "periodId" to grade.periodId
+        "periodId" to grade.periodId,
+        "source" to grade.source.name,
+        "weightStatus" to grade.weightStatus.name,
+        "taskId" to grade.taskId,
+        "recordedAt" to grade.recordedAt
     )
 
     private fun taskMap(task: StudentTask): Map<String, Any?> = mapOf(
@@ -209,6 +229,10 @@ class FirebaseCloudBackupRepository(
         "difficulty" to task.difficulty.name,
         "estimatedMinutes" to task.estimatedMinutes,
         "completed" to task.completed,
+        "periodId" to task.periodId,
+        "gradingStatus" to task.gradingStatus.name,
+        "linkedGradeId" to task.linkedGradeId,
+        "completedAt" to task.completedAt,
         "createdAt" to task.createdAt,
         "updatedAt" to task.updatedAt
     )
@@ -255,7 +279,16 @@ class FirebaseCloudBackupRepository(
                 targetAverage = targetAverage,
                 visualType = visualType,
                 customColor = customColor,
-                grades = grades
+                grades = grades,
+                periodScheme = parsePeriodScheme(map["periodScheme"]),
+                activePeriodId = map.string("activePeriodId") ?: "period-1",
+                historyPromptStatus = map.string("historyPromptStatus")
+                    ?.let { runCatching { PriorHistoryPromptStatus.valueOf(it) }.getOrNull() }
+                    ?: PriorHistoryPromptStatus.NOT_SHOWN,
+                unknownPeriodIds = (map["unknownPeriodIds"] as? List<*>)
+                    ?.mapNotNull { it as? String }
+                    ?.toSet()
+                    .orEmpty()
             )
         }
     }
@@ -270,7 +303,15 @@ class FirebaseCloudBackupRepository(
                 type = map.string("type")
                     ?.let { runCatching { GradeType.valueOf(it) }.getOrNull() }
                     ?: GradeType.WORKSHOP,
-                periodId = map.string("periodId") ?: "period-1"
+                periodId = map.string("periodId") ?: "period-1",
+                source = map.string("source")
+                    ?.let { runCatching { GradeSource.valueOf(it) }.getOrNull() }
+                    ?: GradeSource.ACTIVITY,
+                weightStatus = map.string("weightStatus")
+                    ?.let { runCatching { GradeWeightStatus.valueOf(it) }.getOrNull() }
+                    ?: GradeWeightStatus.KNOWN,
+                taskId = map.string("taskId"),
+                recordedAt = map.long("recordedAt") ?: System.currentTimeMillis()
             )
         }
     }
@@ -293,7 +334,13 @@ class FirebaseCloudBackupRepository(
                 estimatedMinutes = map.int("estimatedMinutes") ?: return@mapNotNull null,
                 completed = map.boolean("completed") ?: false,
                 createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
-                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
+                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis(),
+                periodId = map.string("periodId"),
+                gradingStatus = map.string("gradingStatus")
+                    ?.let { runCatching { TaskGradingStatus.valueOf(it) }.getOrNull() }
+                    ?: TaskGradingStatus.UNDECIDED,
+                linkedGradeId = map.string("linkedGradeId"),
+                completedAt = map.long("completedAt")
             )
         }
     }
@@ -351,6 +398,37 @@ class FirebaseCloudBackupRepository(
                 item as? Map<String, Any?>
             }
             .orEmpty()
+    }
+
+    private fun periodSchemeMap(scheme: AcademicPeriodScheme): Map<String, Any?> = mapOf(
+        "label" to scheme.label.name,
+        "periods" to scheme.periods.map { period ->
+            mapOf(
+                "id" to period.id,
+                "name" to period.name,
+                "weight" to period.weight,
+                "order" to period.order
+            )
+        }
+    )
+
+    private fun parsePeriodScheme(value: Any?): AcademicPeriodScheme {
+        @Suppress("UNCHECKED_CAST")
+        val root = value as? Map<String, Any?> ?: return AcademicPeriodScheme.default()
+        val label = root.string("label")
+            ?.let { runCatching { AcademicPeriodLabel.valueOf(it) }.getOrNull() }
+            ?: AcademicPeriodLabel.CORTE
+        val periods = asMapList(root["periods"]).mapIndexedNotNull { index, item ->
+            val weight = item.double("weight") ?: return@mapIndexedNotNull null
+            AcademicPeriod(
+                id = item.string("id") ?: "period-${index + 1}",
+                name = item.string("name") ?: "${label.singular} ${index + 1}",
+                weight = weight,
+                order = item.int("order") ?: index + 1
+            )
+        }
+        return AcademicPeriodScheme(label, periods).takeIf { it.isValid }
+            ?: AcademicPeriodScheme.default()
     }
 
     private fun Map<String, Any?>.string(key: String): String? = this[key] as? String

@@ -28,6 +28,10 @@ interface SubjectDao {
             targetAverage = :targetAverage,
             visualType = :visualType,
             customColor = :customColor,
+            periodSchemeJson = :periodSchemeJson,
+            activePeriodId = :activePeriodId,
+            historyPromptStatus = :historyPromptStatus,
+            unknownPeriodIdsJson = :unknownPeriodIdsJson,
             updatedAt = :updatedAt
         WHERE id = :subjectId AND userId IN (:userIds)
         """
@@ -39,6 +43,10 @@ interface SubjectDao {
         targetAverage: Double,
         visualType: String,
         customColor: Int?,
+        periodSchemeJson: String,
+        activePeriodId: String,
+        historyPromptStatus: String,
+        unknownPeriodIdsJson: String,
         updatedAt: Long
     )
 

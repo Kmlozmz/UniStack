@@ -9,7 +9,9 @@ import androidx.room.PrimaryKey
     indices = [
         Index("userId"),
         Index("subjectId"),
-        Index("dueDateMillis")
+        Index("dueDateMillis"),
+        Index("periodId"),
+        Index("gradingStatus")
     ]
 )
 data class TaskEntity(
@@ -23,6 +25,10 @@ data class TaskEntity(
     val difficulty: String,
     val estimatedMinutes: Int,
     val completed: Boolean,
+    val periodId: String? = null,
+    val gradingStatus: String = "UNDECIDED",
+    val linkedGradeId: String? = null,
+    val completedAt: Long? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

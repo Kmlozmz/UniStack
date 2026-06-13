@@ -10,8 +10,11 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeType
+import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
@@ -19,6 +22,7 @@ import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
@@ -108,7 +112,10 @@ class LocalJsonBackupRepository(
             appendLine("Estudiante: ${profile?.preferredName?.takeIf { it.isNotBlank() } ?: "Estudiante"}")
             appendLine()
             gradesRepository.subjects.value.forEach { subject ->
-                val average = GradeCalculator.calculateCurrentAverage(subject.grades)
+                val average = GradeCalculator.calculateProjectedAverageByPeriods(
+                    subject.grades,
+                    subject.periodScheme.periods
+                )
                 appendLine("${subject.name} · Promedio ${GradingScaleUtils.formatGrade(average, scale ?: profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)}")
                 subject.grades.forEach { grade ->
                     appendLine("- ${grade.name}: ${grade.value} · ${(grade.percentage * 100).toInt()}%")
@@ -176,6 +183,15 @@ class LocalJsonBackupRepository(
             .put("passingGrade", profile?.passingGrade ?: 3.0)
             .put("targetAverage", profile?.targetAverage ?: 4.0)
             .put("academicPeriodScheme", profile?.academicPeriodScheme?.toJsonObject() ?: AcademicPeriodScheme.default().toJsonObject())
+            .put("taskRemindersEnabled", profile?.taskRemindersEnabled ?: true)
+            .put("academicWorkRemindersEnabled", profile?.academicWorkRemindersEnabled ?: true)
+            .put("overdueRemindersEnabled", profile?.overdueRemindersEnabled ?: true)
+            .put("gradeInsightRemindersEnabled", profile?.gradeInsightRemindersEnabled ?: true)
+            .put("pendingGradeRemindersEnabled", profile?.pendingGradeRemindersEnabled ?: true)
+            .put("reminderLeadHours", profile?.reminderLeadHours ?: 24)
+            .put("quietHoursEnabled", profile?.quietHoursEnabled ?: false)
+            .put("quietHoursStartHour", profile?.quietHoursStartHour)
+            .put("quietHoursEndHour", profile?.quietHoursEndHour)
             .put("weeklyBudget", profile?.weeklyBudget ?: 0)
             .put("monthlyBudget", profile?.monthlyBudget ?: 0)
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
@@ -205,6 +221,35 @@ class LocalJsonBackupRepository(
                 targetAverage = profileJson.optDouble("targetAverage", current.targetAverage),
                 academicPeriodScheme = profileJson.optJSONObject("academicPeriodScheme").toAcademicPeriodSchemeOrNull()
                     ?: current.academicPeriodScheme,
+                taskRemindersEnabled = profileJson.optBoolean("taskRemindersEnabled", current.taskRemindersEnabled),
+                academicWorkRemindersEnabled = profileJson.optBoolean(
+                    "academicWorkRemindersEnabled",
+                    current.academicWorkRemindersEnabled
+                ),
+                overdueRemindersEnabled = profileJson.optBoolean(
+                    "overdueRemindersEnabled",
+                    current.overdueRemindersEnabled
+                ),
+                gradeInsightRemindersEnabled = profileJson.optBoolean(
+                    "gradeInsightRemindersEnabled",
+                    current.gradeInsightRemindersEnabled
+                ),
+                pendingGradeRemindersEnabled = profileJson.optBoolean(
+                    "pendingGradeRemindersEnabled",
+                    current.pendingGradeRemindersEnabled
+                ),
+                reminderLeadHours = profileJson.optInt("reminderLeadHours", current.reminderLeadHours),
+                quietHoursEnabled = profileJson.optBoolean("quietHoursEnabled", current.quietHoursEnabled),
+                quietHoursStartHour = if (profileJson.has("quietHoursStartHour")) {
+                    profileJson.optIntOrNull("quietHoursStartHour")
+                } else {
+                    current.quietHoursStartHour
+                },
+                quietHoursEndHour = if (profileJson.has("quietHoursEndHour")) {
+                    profileJson.optIntOrNull("quietHoursEndHour")
+                } else {
+                    current.quietHoursEndHour
+                },
                 weeklyBudget = profileJson.optInt("weeklyBudget", current.weeklyBudget),
                 monthlyBudget = profileJson.optInt("monthlyBudget", current.monthlyBudget),
                 expenseAlertThresholdPercent = profileJson.optInt("expenseAlertThresholdPercent", current.expenseAlertThresholdPercent),
@@ -268,6 +313,10 @@ class LocalJsonBackupRepository(
         .put("targetAverage", subject.targetAverage)
         .put("visualType", subject.visualType.name)
         .put("customColor", subject.customColor)
+        .put("periodScheme", subject.periodScheme.toJsonObject())
+        .put("activePeriodId", subject.activePeriodId)
+        .put("historyPromptStatus", subject.historyPromptStatus.name)
+        .put("unknownPeriodIds", JSONArray(subject.unknownPeriodIds.toList()))
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
     private fun gradeJson(grade: GradeItem): JSONObject = JSONObject()
@@ -277,6 +326,10 @@ class LocalJsonBackupRepository(
         .put("percentage", grade.percentage)
         .put("type", grade.type.name)
         .put("periodId", grade.periodId)
+        .put("source", grade.source.name)
+        .put("weightStatus", grade.weightStatus.name)
+        .put("taskId", grade.taskId)
+        .put("recordedAt", grade.recordedAt)
 
     private fun taskJson(task: StudentTask): JSONObject = JSONObject()
         .put("id", task.id)
@@ -288,6 +341,10 @@ class LocalJsonBackupRepository(
         .put("difficulty", task.difficulty.name)
         .put("estimatedMinutes", task.estimatedMinutes)
         .put("completed", task.completed)
+        .put("periodId", task.periodId)
+        .put("gradingStatus", task.gradingStatus.name)
+        .put("linkedGradeId", task.linkedGradeId)
+        .put("completedAt", task.completedAt)
         .put("createdAt", task.createdAt)
         .put("updatedAt", task.updatedAt)
 
@@ -322,7 +379,13 @@ class LocalJsonBackupRepository(
             targetAverage = item.optDouble("targetAverage"),
             visualType = item.optString("visualType").toEnum(SubjectVisualType.TEAL),
             customColor = if (item.isNull("customColor")) null else item.optInt("customColor"),
-            grades = parseGrades(item.optJSONArray("grades"))
+            grades = parseGrades(item.optJSONArray("grades")),
+            periodScheme = item.optJSONObject("periodScheme").toAcademicPeriodSchemeOrNull()
+                ?: AcademicPeriodScheme.default(),
+            activePeriodId = item.optString("activePeriodId", "period-1"),
+            historyPromptStatus = item.optString("historyPromptStatus")
+                .toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
+            unknownPeriodIds = item.optJSONArray("unknownPeriodIds").strings().toSet()
         )
     }
 
@@ -333,7 +396,11 @@ class LocalJsonBackupRepository(
             value = item.optDouble("value"),
             percentage = item.optDouble("percentage"),
             type = item.optString("type").toEnum(GradeType.WORKSHOP),
-            periodId = item.optString("periodId", "period-1").ifBlank { "period-1" }
+            periodId = item.optString("periodId", "period-1").ifBlank { "period-1" },
+            source = item.optString("source").toEnum(GradeSource.ACTIVITY),
+            weightStatus = item.optString("weightStatus").toEnum(GradeWeightStatus.KNOWN),
+            taskId = item.optNullableString("taskId"),
+            recordedAt = item.optLong("recordedAt", System.currentTimeMillis())
         )
     }
 
@@ -349,7 +416,11 @@ class LocalJsonBackupRepository(
             estimatedMinutes = item.optInt("estimatedMinutes"),
             completed = item.optBoolean("completed"),
             createdAt = item.optLong("createdAt", System.currentTimeMillis()),
-            updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
+            updatedAt = item.optLong("updatedAt", System.currentTimeMillis()),
+            periodId = item.optNullableString("periodId"),
+            gradingStatus = item.optString("gradingStatus").toEnum(TaskGradingStatus.UNDECIDED),
+            linkedGradeId = item.optNullableString("linkedGradeId"),
+            completedAt = if (item.isNull("completedAt")) null else item.optLong("completedAt")
         )
     }
 
@@ -399,9 +470,10 @@ class LocalJsonBackupRepository(
 
     private inline fun <reified T : Enum<T>> String.toEnum(default: T): T = runCatching { enumValueOf<T>(this) }.getOrDefault(default)
     private fun JSONObject.optNullableString(key: String): String? = if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
+    private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 2
+        const val SCHEMA_VERSION = 4
     }
 }

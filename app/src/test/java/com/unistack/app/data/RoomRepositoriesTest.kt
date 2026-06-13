@@ -18,6 +18,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_tasks.data.RoomTasksRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_user.data.InMemoryUserRepository
 import com.unistack.app.feature_user.domain.AppModule
@@ -135,15 +136,29 @@ class RoomRepositoriesTest {
         repository.addTask(task)
         assertEquals("Entrega ensayo", repository.tasks.awaitValue { it.size == 1 }.single().title)
 
-        repository.updateTask(task.copy(title = "Entrega final", difficulty = TaskDifficulty.HARD, estimatedMinutes = 120))
+        repository.updateTask(
+            task.copy(
+                title = "Entrega final",
+                difficulty = TaskDifficulty.HARD,
+                estimatedMinutes = 120,
+                completed = true,
+                completedAt = 20,
+                gradingStatus = TaskGradingStatus.GRADED,
+                linkedGradeId = "grade-1"
+            )
+        )
         val updated = repository.tasks.awaitValue { tasks ->
             tasks.singleOrNull()?.title == "Entrega final" &&
-                tasks.single().difficulty == TaskDifficulty.HARD
+                tasks.single().difficulty == TaskDifficulty.HARD &&
+                tasks.single().completed
         }.single()
         assertEquals(120, updated.estimatedMinutes)
+        assertEquals(TaskGradingStatus.GRADED, updated.gradingStatus)
+        assertEquals("grade-1", updated.linkedGradeId)
+        assertEquals(20L, updated.completedAt)
 
-        repository.setTaskCompleted(task.id, completed = true)
-        assertTrue(repository.tasks.awaitValue { it.singleOrNull()?.completed == true }.single().completed)
+        repository.setTaskCompleted(task.id, completed = false)
+        assertTrue(repository.tasks.awaitValue { it.singleOrNull()?.completed == false }.single().completed.not())
 
         repository.deleteTask(task.id)
         repository.tasks.awaitValue { it.isEmpty() }

@@ -2,6 +2,7 @@ package com.unistack.app.feature_tasks.data.local
 
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 
 fun TaskEntity.toDomain(): StudentTask {
@@ -21,7 +22,12 @@ fun TaskEntity.toDomain(): StudentTask {
         estimatedMinutes = estimatedMinutes,
         completed = completed,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        periodId = periodId,
+        gradingStatus = runCatching { TaskGradingStatus.valueOf(gradingStatus) }
+            .getOrDefault(TaskGradingStatus.UNDECIDED),
+        linkedGradeId = linkedGradeId,
+        completedAt = completedAt
     )
 }
 
@@ -37,6 +43,10 @@ fun StudentTask.toEntity(userId: String): TaskEntity {
         difficulty = difficulty.name,
         estimatedMinutes = estimatedMinutes,
         completed = completed,
+        periodId = periodId,
+        gradingStatus = gradingStatus.name,
+        linkedGradeId = linkedGradeId,
+        completedAt = completedAt,
         createdAt = createdAt,
         updatedAt = updatedAt
     )

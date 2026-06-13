@@ -64,6 +64,11 @@ class RoomTasksRepository(
                 dueDateMillis = task.dueDateMillis,
                 difficulty = task.difficulty.name,
                 estimatedMinutes = task.estimatedMinutes,
+                completed = task.completed,
+                periodId = task.periodId,
+                gradingStatus = task.gradingStatus.name,
+                linkedGradeId = task.linkedGradeId,
+                completedAt = task.completedAt,
                 updatedAt = System.currentTimeMillis()
             )
         }
@@ -81,6 +86,7 @@ class RoomTasksRepository(
                 taskId = taskId,
                 userIds = userIds,
                 completed = completed,
+                completedAt = if (completed) System.currentTimeMillis() else null,
                 updatedAt = System.currentTimeMillis()
             )
         }

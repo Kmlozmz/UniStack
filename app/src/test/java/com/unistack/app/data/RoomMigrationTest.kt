@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.unistack.app.feature_grades.data.local.UniStackDatabase
 import java.io.File
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -124,6 +125,42 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationEightToNineAddsAcademicHistoryAndTaskGradeFields() {
+        val database = createDatabaseWithSchema(version = 8)
+        database.execSQL(
+            """
+            INSERT INTO subjects (
+                id, userId, name, targetAverage, visualType, createdAt, updatedAt, customColor
+            ) VALUES ('subject-1', 'local', 'Fisica', 4.0, 'BLUE', 10, 10, NULL)
+            """.trimIndent()
+        )
+        database.execSQL(
+            """
+            INSERT INTO grades (
+                id, subjectId, name, value, percentage, createdAt, type, periodId
+            ) VALUES ('grade-1', 'subject-1', 'Parcial', 4.5, 0.5, 1234, 'EXAM', 'period-1')
+            """.trimIndent()
+        )
+
+        UniStackDatabase.MIGRATION_8_9.migrate(database)
+
+        listOf("periodSchemeJson", "activePeriodId", "historyPromptStatus", "unknownPeriodIdsJson")
+            .forEach { assertTrue(database.hasColumn("subjects", it)) }
+        listOf("source", "weightStatus", "taskId", "recordedAt")
+            .forEach { assertTrue(database.hasColumn("grades", it)) }
+        listOf("periodId", "gradingStatus", "linkedGradeId", "completedAt")
+            .forEach { assertTrue(database.hasColumn("tasks", it)) }
+        assertTrue(database.hasIndex("index_grades_taskId"))
+        assertTrue(database.hasIndex("index_tasks_periodId"))
+        assertTrue(database.hasIndex("index_tasks_gradingStatus"))
+        database.query("SELECT recordedAt FROM grades WHERE id = 'grade-1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1234L, cursor.getLong(0))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -163,6 +200,8 @@ class RoomMigrationTest {
         if (targetVersion >= 5) UniStackDatabase.MIGRATION_4_5.migrate(db)
         if (targetVersion >= 6) UniStackDatabase.MIGRATION_5_6.migrate(db)
         if (targetVersion >= 7) UniStackDatabase.MIGRATION_6_7.migrate(db)
+        if (targetVersion >= 8) UniStackDatabase.MIGRATION_7_8.migrate(db)
+        if (targetVersion >= 9) UniStackDatabase.MIGRATION_8_9.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

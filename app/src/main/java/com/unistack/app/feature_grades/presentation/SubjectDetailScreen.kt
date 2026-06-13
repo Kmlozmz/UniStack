@@ -3,6 +3,7 @@ package com.unistack.app.feature_grades.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -78,6 +81,9 @@ import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
+import com.unistack.app.feature_grades.domain.GradeWeightStatus
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.AcademicPeriod
@@ -97,6 +103,7 @@ fun SubjectDetailScreen(
     onPeriodClick: (String, String) -> Unit,
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
+    onCompleteHistoryClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel()
@@ -107,7 +114,7 @@ fun SubjectDetailScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
-    val periodScheme = profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
+    val periodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
     val passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
@@ -117,6 +124,18 @@ fun SubjectDetailScreen(
         MissingSubjectState(onBackClick = onBackClick, modifier = modifier)
         return
     }
+
+    val activePeriodOrder = periodScheme.periods
+        .firstOrNull { it.id == subject.activePeriodId }
+        ?.order
+        ?: 1
+    val hasIncompletePriorHistory = activePeriodOrder > 1 &&
+        periodScheme.periods
+            .filter { it.order < activePeriodOrder }
+            .any { period ->
+                subject.grades.none { it.periodId == period.id } &&
+                    period.id !in subject.unknownPeriodIds
+            }
 
     val periodSummaries = remember(subject, periodScheme) {
         periodScheme.periods.map { period ->
@@ -241,6 +260,48 @@ fun SubjectDetailScreen(
                     scale = scale
                 )
             }
+            if (hasIncompletePriorHistory &&
+                subject.historyPromptStatus != PriorHistoryPromptStatus.DISMISSED
+            ) {
+                item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bounceClick { onCompleteHistoryClick(subject.id) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.68f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Lightbulb,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Completa cortes anteriores",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    "Mejora la precisión de tu meta sin tener que recordar cada actividad.",
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f),
+                                    fontSize = 13.sp
+                                )
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
@@ -261,6 +322,44 @@ fun SubjectDetailScreen(
                             tint = UniStackColors.TextSecondary,
                             modifier = Modifier.size(14.dp)
                         )
+                    }
+                }
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Corte actual",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                            val selected = subject.activePeriodId == period.id
+                            Surface(
+                                modifier = Modifier.bounceClick {
+                                    viewModel.setActivePeriod(subject.id, period.id)
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            ) {
+                                Text(
+                                    periodDisplayName(period),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                                    color = if (selected) Color.White else UniStackColors.TextSecondary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -379,7 +478,7 @@ fun SubjectPeriodDetailScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
-    val periodScheme = profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
+    val periodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
     val period = periodScheme.periods.firstOrNull { it.id == periodId }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
 
@@ -1272,7 +1371,7 @@ private fun GradeRowItem(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                "${formatPercent(grade.percentage * 100)}% del corte",
+                grade.contextLabel(),
                 color = UniStackColors.TextSecondary,
                 fontSize = 12.sp
             )
@@ -1360,7 +1459,7 @@ private fun GradeRowCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "${formatPercent(grade.percentage * 100)}% del corte",
+                    grade.contextLabel(),
                     color = UniStackColors.TextSecondary,
                     fontSize = 13.sp
                 )
@@ -1403,6 +1502,14 @@ private fun GradeRowCard(
                 }
             }
         }
+    }
+}
+
+private fun GradeItem.contextLabel(): String {
+    return when {
+        source == GradeSource.PERIOD_FINAL -> "Nota oficial del corte"
+        weightStatus == GradeWeightStatus.UNKNOWN -> "Peso pendiente por definir"
+        else -> "${formatPercent(percentage * 100)}% del corte"
     }
 }
 
@@ -1650,17 +1757,17 @@ private fun PeriodStatus.icon(): ImageVector {
 }
 
 private fun AcademicPeriod.toSummary(grades: List<GradeItem>): PeriodSummary {
-    val evaluated = round(grades.sumOf { it.percentage } * 100.0 * 10.0) / 10.0
+    val calculation = GradeCalculator.calculatePeriod(grades)
+    val evaluated = round(calculation.evaluatedFraction * 100.0 * 10.0) / 10.0
     val status = when {
         evaluated <= 0.001 -> PeriodStatus.PENDING
         evaluated >= 99.9 -> PeriodStatus.COMPLETED
         else -> PeriodStatus.IN_PROGRESS
     }
-    val cortePromedio = GradeCalculator.calculatePeriodAverage(grades)
     return PeriodSummary(
         period = this,
         grades = grades,
-        average = cortePromedio,
+        average = calculation.average,
         evaluated = evaluated,
         status = status
     )

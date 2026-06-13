@@ -30,7 +30,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +53,10 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
+import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeType
+import com.unistack.app.feature_grades.domain.GradeWeightStatus
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 
@@ -69,7 +75,8 @@ fun AddGradeScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = viewModel(),
     gradeId: String? = null,
-    initialPeriodId: String? = null
+    initialPeriodId: String? = null,
+    onCompleteHistoryClick: (String) -> Unit = {}
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -80,32 +87,49 @@ fun AddGradeScreen(
     var value by remember { mutableStateOf("") }
     var percentage by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(GradeType.WORKSHOP) }
-    var selectedPeriodId by remember { mutableStateOf(initialPeriodId ?: "period-1") }
+    var selectedPeriodId by remember { mutableStateOf(initialPeriodId.orEmpty()) }
+    var selectedSource by remember { mutableStateOf(GradeSource.ACTIVITY) }
+    var weightUnknown by remember { mutableStateOf(false) }
     var initialized by remember(subjectId, gradeId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showHistorySuggestion by remember { mutableStateOf(false) }
 
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(scale)
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
-    val periodScheme = profile?.academicPeriodScheme ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
+    val periodScheme = subject?.periodScheme
+        ?: profile?.academicPeriodScheme
+        ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
     val lockedPeriod = initialPeriodId?.let { id -> periodScheme.periods.firstOrNull { it.id == id } }
     val selectedPeriod = periodScheme.periods.firstOrNull { it.id == selectedPeriodId }
         ?: lockedPeriod
+        ?: periodScheme.periods.firstOrNull { it.id == subject?.activePeriodId }
         ?: periodScheme.periods.first()
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
     val currentPercentage = subject?.grades
         ?.filterNot { it.id == gradeId }
-        ?.filter { it.periodId == selectedPeriod.id }
+        ?.filter {
+            it.periodId == selectedPeriod.id &&
+                it.source == GradeSource.ACTIVITY &&
+                it.weightStatus == GradeWeightStatus.KNOWN
+        }
         ?.sumOf { it.percentage } ?: 0.0
-    val totalPercentage = currentPercentage + (percentageValue ?: 0.0) / 100.0
+    val totalPercentage = currentPercentage +
+        if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
+            (percentageValue ?: 0.0) / 100.0
+        } else {
+            0.0
+        }
 
     val nameValidation = TextValidators.validateActivityName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
     val isGradeValid = gradeValue != null && gradeValue in 0.0..maxGrade
-    val isPercentageValid = percentageValue != null && percentageValue > 0.0 && totalPercentage <= 1.00001
+    val isPercentageValid = selectedSource == GradeSource.PERIOD_FINAL ||
+        weightUnknown ||
+        (percentageValue != null && percentageValue > 0.0 && totalPercentage <= 1.00001)
 
     val isValid = subject != null &&
         (!isEditing || grade != null) &&
@@ -122,9 +146,11 @@ fun AddGradeScreen(
             percentage = String.format(java.util.Locale.US, "%.0f", grade.percentage * 100)
             selectedType = grade.type
             selectedPeriodId = grade.periodId
+            selectedSource = grade.source
+            weightUnknown = grade.weightStatus == GradeWeightStatus.UNKNOWN
             initialized = true
         } else if (!isEditing) {
-            lockedPeriod?.let { selectedPeriodId = it.id }
+            selectedPeriodId = lockedPeriod?.id ?: subject?.activePeriodId ?: periodScheme.periods.first().id
             initialized = true
         }
     }
@@ -169,6 +195,65 @@ fun AddGradeScreen(
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 2.dp)
             )
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "¿Qué quieres registrar?",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActivityChip(
+                        label = "Actividad",
+                        isSelected = selectedSource == GradeSource.ACTIVITY,
+                        onClick = {
+                            selectedSource = GradeSource.ACTIVITY
+                            error = null
+                        }
+                    )
+                    ActivityChip(
+                        label = "Nota final del corte",
+                        isSelected = selectedSource == GradeSource.PERIOD_FINAL,
+                        onClick = {
+                            selectedSource = GradeSource.PERIOD_FINAL
+                            weightUnknown = false
+                            percentage = "100"
+                            name = "Resultado final ${periodDisplayName(selectedPeriod)}"
+                            error = null
+                        }
+                    )
+                }
+                if (!isEditing && lockedPeriod == null) {
+                    Text(
+                        text = "Corte",
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                            ActivityChip(
+                                label = periodDisplayName(period),
+                                isSelected = selectedPeriod.id == period.id,
+                                onClick = {
+                                    selectedPeriodId = period.id
+                                    if (selectedSource == GradeSource.PERIOD_FINAL) {
+                                        name = "Resultado final ${periodDisplayName(period)}"
+                                    }
+                                    error = null
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             // Activity Input
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -255,8 +340,36 @@ fun AddGradeScreen(
                 )
             }
 
-            // Weight Input
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (selectedSource == GradeSource.ACTIVITY) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "No conozco el porcentaje",
+                            color = UniStackColors.TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Se guardará sin alterar la proyección hasta completar el peso.",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Switch(
+                        checked = weightUnknown,
+                        onCheckedChange = {
+                            weightUnknown = it
+                            error = null
+                        }
+                    )
+                }
+            }
+
+            if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Peso dentro del corte (%)",
                     color = UniStackColors.TextPrimary,
@@ -303,9 +416,11 @@ fun AddGradeScreen(
                     )
                 )
             }
+            }
 
             // Activity type chips
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (selectedSource == GradeSource.ACTIVITY) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = "Tipo de actividad (opcional)",
                     color = UniStackColors.TextPrimary,
@@ -342,6 +457,7 @@ fun AddGradeScreen(
                     }
                 }
             }
+            }
 
             error?.let {
                 Text(
@@ -358,6 +474,7 @@ fun AddGradeScreen(
             Button(
                 onClick = {
                     val editingGradeId = gradeId
+                    var shouldShowHistory = false
                     val saved = if (editingGradeId != null) {
                         viewModel.updateGrade(
                             subjectId = subjectId,
@@ -366,20 +483,40 @@ fun AddGradeScreen(
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
                             type = selectedType,
-                            periodId = selectedPeriod.id
+                            periodId = selectedPeriod.id,
+                            source = selectedSource,
+                            weightStatus = if (weightUnknown) {
+                                GradeWeightStatus.UNKNOWN
+                            } else {
+                                GradeWeightStatus.KNOWN
+                            }
                         )
                     } else {
-                        viewModel.addGrade(
+                        val outcome = viewModel.saveGrade(
                             subjectId = subjectId,
                             name = TextValidators.normalizeText(name),
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
                             type = selectedType,
-                            periodId = selectedPeriod.id
+                            periodId = selectedPeriod.id,
+                            source = selectedSource,
+                            weightStatus = if (weightUnknown) {
+                                GradeWeightStatus.UNKNOWN
+                            } else {
+                                GradeWeightStatus.KNOWN
+                            }
                         )
+                        if (outcome.saved && outcome.suggestPriorHistory) {
+                            shouldShowHistory = true
+                        }
+                        outcome.saved
                     }
                     if (saved) {
-                        onBackClick()
+                        if (shouldShowHistory) {
+                            showHistorySuggestion = true
+                        } else {
+                            onBackClick()
+                        }
                     } else {
                         error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el porcentaje acumulado no supere 100% en ${periodDisplayName(selectedPeriod)}."
                     }
@@ -405,6 +542,40 @@ fun AddGradeScreen(
                 )
             }
         }
+    }
+
+    if (showHistorySuggestion) {
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                showHistorySuggestion = false
+                onBackClick()
+            },
+            title = { Text("Completa tu historial cuando puedas") },
+            text = {
+                Text(
+                    "La nota ya quedó guardada. Agregar los cortes anteriores hará más precisas tus metas y proyecciones."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                        showHistorySuggestion = false
+                        onCompleteHistoryClick(subjectId)
+                    }
+                ) { Text("Completar historial") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
+                        showHistorySuggestion = false
+                        onBackClick()
+                    }
+                ) { Text("Más tarde") }
+            }
+        )
     }
 }
 

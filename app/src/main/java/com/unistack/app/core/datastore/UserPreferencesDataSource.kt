@@ -58,7 +58,12 @@ class UserPreferencesDataSource(private val context: Context) {
         val TASK_REMINDERS_ENABLED = booleanPreferencesKey("task_reminders_enabled")
         val ACADEMIC_WORK_REMINDERS_ENABLED = booleanPreferencesKey("academic_work_reminders_enabled")
         val OVERDUE_REMINDERS_ENABLED = booleanPreferencesKey("overdue_reminders_enabled")
+        val GRADE_INSIGHT_REMINDERS_ENABLED = booleanPreferencesKey("grade_insight_reminders_enabled")
+        val PENDING_GRADE_REMINDERS_ENABLED = booleanPreferencesKey("pending_grade_reminders_enabled")
         val REMINDER_LEAD_HOURS = intPreferencesKey("reminder_lead_hours")
+        val QUIET_HOURS_ENABLED = booleanPreferencesKey("quiet_hours_enabled")
+        val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
+        val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val WEEKLY_BUDGET = intPreferencesKey("weekly_budget")
         val MONTHLY_BUDGET = intPreferencesKey("monthly_budget")
         val EXPENSE_ALERT_THRESHOLD_PERCENT = intPreferencesKey("expense_alert_threshold_percent")
@@ -118,7 +123,12 @@ class UserPreferencesDataSource(private val context: Context) {
             taskRemindersEnabled = prefs[Keys.TASK_REMINDERS_ENABLED] ?: true,
             academicWorkRemindersEnabled = prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] ?: true,
             overdueRemindersEnabled = prefs[Keys.OVERDUE_REMINDERS_ENABLED] ?: true,
+            gradeInsightRemindersEnabled = prefs[Keys.GRADE_INSIGHT_REMINDERS_ENABLED] ?: true,
+            pendingGradeRemindersEnabled = prefs[Keys.PENDING_GRADE_REMINDERS_ENABLED] ?: true,
             reminderLeadHours = prefs[Keys.REMINDER_LEAD_HOURS] ?: 24,
+            quietHoursEnabled = prefs[Keys.QUIET_HOURS_ENABLED] ?: false,
+            quietHoursStartHour = prefs[Keys.QUIET_HOURS_START]?.takeIf { it in 0..23 },
+            quietHoursEndHour = prefs[Keys.QUIET_HOURS_END]?.takeIf { it in 0..23 },
             weeklyBudget = prefs[Keys.WEEKLY_BUDGET] ?: 0,
             monthlyBudget = prefs[Keys.MONTHLY_BUDGET] ?: 0,
             expenseAlertThresholdPercent = prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] ?: 80,
@@ -173,7 +183,20 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.TASK_REMINDERS_ENABLED] = profile.taskRemindersEnabled
             prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] = profile.academicWorkRemindersEnabled
             prefs[Keys.OVERDUE_REMINDERS_ENABLED] = profile.overdueRemindersEnabled
+            prefs[Keys.GRADE_INSIGHT_REMINDERS_ENABLED] = profile.gradeInsightRemindersEnabled
+            prefs[Keys.PENDING_GRADE_REMINDERS_ENABLED] = profile.pendingGradeRemindersEnabled
             prefs[Keys.REMINDER_LEAD_HOURS] = profile.reminderLeadHours
+            prefs[Keys.QUIET_HOURS_ENABLED] = profile.quietHoursEnabled
+            if (profile.quietHoursStartHour != null) {
+                prefs[Keys.QUIET_HOURS_START] = profile.quietHoursStartHour
+            } else {
+                prefs.remove(Keys.QUIET_HOURS_START)
+            }
+            if (profile.quietHoursEndHour != null) {
+                prefs[Keys.QUIET_HOURS_END] = profile.quietHoursEndHour
+            } else {
+                prefs.remove(Keys.QUIET_HOURS_END)
+            }
             prefs[Keys.WEEKLY_BUDGET] = profile.weeklyBudget
             prefs[Keys.MONTHLY_BUDGET] = profile.monthlyBudget
             prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] = profile.expenseAlertThresholdPercent

@@ -15,7 +15,7 @@ import com.unistack.app.feature_tasks.data.local.TaskEntity
 
 @Database(
     entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -133,6 +133,29 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE subjects ADD COLUMN periodSchemeJson TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE subjects ADD COLUMN activePeriodId TEXT NOT NULL DEFAULT 'period-1'")
+                db.execSQL("ALTER TABLE subjects ADD COLUMN historyPromptStatus TEXT NOT NULL DEFAULT 'NOT_SHOWN'")
+                db.execSQL("ALTER TABLE subjects ADD COLUMN unknownPeriodIdsJson TEXT NOT NULL DEFAULT '[]'")
+
+                db.execSQL("ALTER TABLE grades ADD COLUMN source TEXT NOT NULL DEFAULT 'ACTIVITY'")
+                db.execSQL("ALTER TABLE grades ADD COLUMN weightStatus TEXT NOT NULL DEFAULT 'KNOWN'")
+                db.execSQL("ALTER TABLE grades ADD COLUMN taskId TEXT")
+                db.execSQL("ALTER TABLE grades ADD COLUMN recordedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE grades SET recordedAt = createdAt WHERE recordedAt = 0")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_grades_taskId ON grades(taskId)")
+
+                db.execSQL("ALTER TABLE tasks ADD COLUMN periodId TEXT")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN gradingStatus TEXT NOT NULL DEFAULT 'UNDECIDED'")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN linkedGradeId TEXT")
+                db.execSQL("ALTER TABLE tasks ADD COLUMN completedAt INTEGER")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_periodId ON tasks(periodId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_tasks_gradingStatus ON tasks(gradingStatus)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -146,6 +169,15 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+        val ALL_MIGRATIONS = arrayOf(
+            MIGRATION_1_2,
+            MIGRATION_2_3,
+            MIGRATION_3_4,
+            MIGRATION_4_5,
+            MIGRATION_5_6,
+            MIGRATION_6_7,
+            MIGRATION_7_8,
+            MIGRATION_8_9
+        )
     }
 }

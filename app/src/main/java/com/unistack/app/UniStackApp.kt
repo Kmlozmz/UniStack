@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.map
 @Composable
 fun UniStackApp(
     modifier: Modifier = Modifier,
+    launchRoute: String? = null,
+    onLaunchRouteConsumed: () -> Unit = {},
     onDarkThemeChanged: (Boolean) -> Unit = {}
 ) {
     val visualPreference by remember {
@@ -38,6 +40,10 @@ fun UniStackApp(
     }
 
     UniStackTheme(darkTheme = darkTheme) {
-        RootNavGraph(modifier = modifier)
+        RootNavGraph(
+            modifier = modifier,
+            launchRoute = launchRoute,
+            onLaunchRouteConsumed = onLaunchRouteConsumed
+        )
     }
 }

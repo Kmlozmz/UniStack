@@ -16,6 +16,8 @@ import com.unistack.app.feature_user.domain.AppModule
 
 object AppRoutes {
     const val Home = "home"
+    const val Notifications = "notifications"
+    const val NotificationDetail = "notification_detail"
     const val Grades = "grades"
     const val Tasks = "tasks"
     const val Profile = "profile"
@@ -27,7 +29,9 @@ object AppRoutes {
     const val EditSubject = "edit_subject"
     const val SubjectDetail = "subject_detail"
     const val SubjectPeriodDetail = "subject_period_detail"
+    const val PriorHistory = "prior_history"
     const val AddGrade = "add_grade"
+    const val AddGradeFromHistory = "add_grade_from_history"
     const val EditGrade = "edit_grade"
     const val AddTask = "add_task"
     const val EditTask = "edit_task"
@@ -36,12 +40,16 @@ object AppRoutes {
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
     fun subjectPeriodDetail(subjectId: String, periodId: String) = "$SubjectPeriodDetail/$subjectId/$periodId"
+    fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
     fun addGrade(subjectId: String, periodId: String? = null) =
         if (periodId == null) "$AddGrade/$subjectId" else "$AddGrade/$subjectId/$periodId"
+    fun addGradeFromHistory(subjectId: String, periodId: String) =
+        "$AddGradeFromHistory/$subjectId/$periodId"
     fun editSubject(subjectId: String) = "$EditSubject/$subjectId"
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
     fun editTask(taskId: String) = "$EditTask/$taskId"
     fun editExpense(expenseId: String) = "$EditExpense/$expenseId"
+    fun notificationDetail(notificationId: Int) = "$NotificationDetail/$notificationId"
 }
 
 data class BottomNavItem(

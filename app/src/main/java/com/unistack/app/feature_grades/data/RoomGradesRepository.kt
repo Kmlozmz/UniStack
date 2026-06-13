@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 
 class RoomGradesRepository(
     private val subjectDao: SubjectDao,
@@ -79,6 +80,10 @@ class RoomGradesRepository(
                 targetAverage = subject.targetAverage,
                 visualType = subject.visualType.name,
                 customColor = subject.customColor,
+                periodSchemeJson = subject.toEntity(userId).periodSchemeJson,
+                activePeriodId = subject.activePeriodId,
+                historyPromptStatus = subject.historyPromptStatus.name,
+                unknownPeriodIdsJson = JSONArray(subject.unknownPeriodIds.toList()).toString(),
                 updatedAt = System.currentTimeMillis()
             )
         }
@@ -108,7 +113,11 @@ class RoomGradesRepository(
                 value = grade.value,
                 percentage = grade.percentage,
                 type = grade.type.name,
-                periodId = grade.periodId
+                periodId = grade.periodId,
+                source = grade.source.name,
+                weightStatus = grade.weightStatus.name,
+                taskId = grade.taskId,
+                recordedAt = grade.recordedAt
             )
         }
     }

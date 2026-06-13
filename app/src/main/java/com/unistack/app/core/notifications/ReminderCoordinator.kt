@@ -1,6 +1,7 @@
 package com.unistack.app.core.notifications
 
 import android.content.Context
+import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
@@ -17,6 +18,7 @@ object ReminderCoordinator {
     fun start(
         context: Context,
         userRepository: UserRepository,
+        gradesRepository: GradesRepository,
         tasksRepository: TasksRepository,
         academicWorksRepository: AcademicWorksRepository
     ) {
@@ -25,10 +27,11 @@ object ReminderCoordinator {
         job = CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             combine(
                 userRepository.userProfile,
+                gradesRepository.subjects,
                 tasksRepository.tasks,
                 academicWorksRepository.works
-            ) { profile, tasks, works ->
-                scheduler.schedule(profile, tasks, works)
+            ) { profile, subjects, tasks, works ->
+                scheduler.schedule(profile, tasks, works, subjects)
             }.collect {}
         }
     }

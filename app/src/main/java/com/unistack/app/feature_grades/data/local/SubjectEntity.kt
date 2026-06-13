@@ -11,6 +11,10 @@ data class SubjectEntity(
     val targetAverage: Double,
     val visualType: String,
     val customColor: Int? = null,
+    val periodSchemeJson: String = "",
+    val activePeriodId: String = "period-1",
+    val historyPromptStatus: String = "NOT_SHOWN",
+    val unknownPeriodIdsJson: String = "[]",
     val createdAt: Long,
     val updatedAt: Long
 )

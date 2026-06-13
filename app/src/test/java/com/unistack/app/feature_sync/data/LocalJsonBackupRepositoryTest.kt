@@ -5,10 +5,13 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.GradeItem
+import com.unistack.app.feature_grades.domain.GradeSource
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
@@ -43,10 +46,25 @@ class LocalJsonBackupRepositoryTest {
                     name = "Fisica",
                     targetAverage = 4.0,
                     visualType = SubjectVisualType.BLUE,
-                    grades = emptyList()
+                    grades = emptyList(),
+                    activePeriodId = "period-2",
+                    historyPromptStatus = PriorHistoryPromptStatus.SNOOZED,
+                    unknownPeriodIds = setOf("period-3")
                 )
             )
-            repository.addGrade("subject-1", GradeItem(id = "grade-1", name = "Parcial", value = 4.5, percentage = 0.5))
+            repository.addGrade(
+                "subject-1",
+                GradeItem(
+                    id = "grade-1",
+                    name = "Resultado Corte 1",
+                    value = 4.5,
+                    percentage = 1.0,
+                    periodId = "period-1",
+                    source = GradeSource.PERIOD_FINAL,
+                    taskId = "task-1",
+                    recordedAt = 1234
+                )
+            )
         }
         val tasksRepository = FakeTasksRepository()
         val expensesRepository = FakeExpensesRepository()
@@ -72,7 +90,17 @@ class LocalJsonBackupRepositoryTest {
         assertTrue(json.contains("\"schemaVersion\""))
         assertEquals(1, gradesRepository.subjects.value.size)
         assertEquals(1, gradesRepository.subjects.value.single().grades.size)
+        assertEquals("period-2", gradesRepository.subjects.value.single().activePeriodId)
+        assertEquals(PriorHistoryPromptStatus.SNOOZED, gradesRepository.subjects.value.single().historyPromptStatus)
+        assertEquals(setOf("period-3"), gradesRepository.subjects.value.single().unknownPeriodIds)
+        assertEquals(GradeSource.PERIOD_FINAL, gradesRepository.subjects.value.single().grades.single().source)
+        assertEquals("task-1", gradesRepository.subjects.value.single().grades.single().taskId)
         assertEquals(1, tasksRepository.tasks.value.size)
+        assertEquals(TaskGradingStatus.GRADED, tasksRepository.tasks.value.single().gradingStatus)
+        assertEquals("grade-1", tasksRepository.tasks.value.single().linkedGradeId)
+        assertTrue(userRepository.userProfile.value?.quietHoursEnabled == true)
+        assertEquals(22, userRepository.userProfile.value?.quietHoursStartHour)
+        assertEquals(7, userRepository.userProfile.value?.quietHoursEndHour)
         assertEquals(1, expensesRepository.expenses.value.size)
         assertEquals(1, worksRepository.works.value.size)
     }
@@ -102,6 +130,9 @@ class LocalJsonBackupRepositoryTest {
             passingGrade = 3.0,
             targetAverage = 4.0,
             enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES, AppModule.ACADEMIC_TEMPLATES),
+            quietHoursEnabled = true,
+            quietHoursStartHour = 22,
+            quietHoursEndHour = 7,
             setupCompleted = true,
             createdAt = 10,
             updatedAt = 10
@@ -117,9 +148,13 @@ class LocalJsonBackupRepositoryTest {
         dueDateMillis = 1_800_000_000_000,
         difficulty = TaskDifficulty.MEDIUM,
         estimatedMinutes = 60,
-        completed = false,
+        completed = true,
         createdAt = 10,
-        updatedAt = 10
+        updatedAt = 10,
+        periodId = "period-1",
+        gradingStatus = TaskGradingStatus.GRADED,
+        linkedGradeId = "grade-1",
+        completedAt = 11
     )
 
     private fun testExpense() = Expense(

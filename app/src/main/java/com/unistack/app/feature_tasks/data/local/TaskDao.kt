@@ -30,6 +30,11 @@ interface TaskDao {
             dueDateMillis = :dueDateMillis,
             difficulty = :difficulty,
             estimatedMinutes = :estimatedMinutes,
+            completed = :completed,
+            periodId = :periodId,
+            gradingStatus = :gradingStatus,
+            linkedGradeId = :linkedGradeId,
+            completedAt = :completedAt,
             updatedAt = :updatedAt
         WHERE id = :taskId AND userId IN (:userIds)
         """
@@ -44,6 +49,11 @@ interface TaskDao {
         dueDateMillis: Long,
         difficulty: String,
         estimatedMinutes: Int,
+        completed: Boolean,
+        periodId: String?,
+        gradingStatus: String,
+        linkedGradeId: String?,
+        completedAt: Long?,
         updatedAt: Long
     )
 
@@ -51,6 +61,7 @@ interface TaskDao {
         """
         UPDATE tasks
         SET completed = :completed,
+            completedAt = :completedAt,
             updatedAt = :updatedAt
         WHERE id = :taskId AND userId IN (:userIds)
         """
@@ -59,6 +70,7 @@ interface TaskDao {
         taskId: String,
         userIds: List<String>,
         completed: Boolean,
+        completedAt: Long?,
         updatedAt: Long
     )
 

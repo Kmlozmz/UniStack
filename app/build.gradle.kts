@@ -26,6 +26,31 @@ val localProperties = Properties().apply {
 fun localProperty(name: String): String =
     localProperties.getProperty(name).orEmpty()
 
+fun releaseProperty(localName: String, envName: String): String =
+    localProperty(localName).ifBlank { providers.environmentVariable(envName).orNull.orEmpty() }
+
+fun releaseStoreFileValue(): String =
+    releaseProperty("releaseStoreFile", "RELEASE_STORE_FILE").ifBlank { ".signing/unistack-release.jks" }
+
+fun releaseStorePasswordValue(): String =
+    releaseProperty("releaseStorePassword", "RELEASE_STORE_PASSWORD").ifBlank { "unistack-dev-release" }
+
+fun releaseKeyAliasValue(): String =
+    releaseProperty("releaseKeyAlias", "RELEASE_KEY_ALIAS").ifBlank { "unistack" }
+
+fun releaseKeyPasswordValue(): String =
+    releaseProperty("releaseKeyPassword", "RELEASE_KEY_PASSWORD").ifBlank { "unistack-dev-release" }
+
+fun hasConfiguredReleaseSigning(): Boolean {
+    val storeFile = rootProject.file(releaseStoreFileValue())
+    return listOf(
+        releaseStoreFileValue(),
+        releaseStorePasswordValue(),
+        releaseKeyAliasValue(),
+        releaseKeyPasswordValue()
+    ).all { it.isNotBlank() } && storeFile.exists()
+}
+
 val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHH"))
 val generatedVersionCode = providers.gradleProperty("versionCode")
     .orElse(providers.environmentVariable("VERSION_CODE"))
@@ -64,10 +89,10 @@ android {
 
     signingConfigs {
         create("localRelease") {
-            storeFile = rootProject.file(localProperty("releaseStoreFile").ifBlank { ".signing/unistack-release.jks" })
-            storePassword = localProperty("releaseStorePassword").ifBlank { "unistack-dev-release" }
-            keyAlias = localProperty("releaseKeyAlias").ifBlank { "unistack" }
-            keyPassword = localProperty("releaseKeyPassword").ifBlank { "unistack-dev-release" }
+            storeFile = rootProject.file(releaseStoreFileValue())
+            storePassword = releaseStorePasswordValue()
+            keyAlias = releaseKeyAliasValue()
+            keyPassword = releaseKeyPasswordValue()
         }
     }
 
@@ -147,7 +172,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:34.14.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("androidx.credentials:credentials:1.6.0")
@@ -196,17 +221,25 @@ fun summarizeChangeFiles(files: List<String>): List<String> {
         if (normalized.any { it.contains("core/design/theme/Type.kt") }) {
             add("Diseno: pesos tipograficos normalizados para textos y labels.")
         }
-        if (normalized.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
+        if (normalized.any { it.contains("feature_grades/presentation/GradesScreen") }) {
+            add("Materias: lista con progreso, estado y siguiente accion por materia.")
+        } else if (normalized.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
             add("Notas: rediseno de cortes/notas y ajustes academicos aplicados.")
         }
         if (normalized.any { it.contains("feature_home/") }) {
-            add("Home: plan diario y motor de prioridades actualizado.")
+            add("Home: prioridad y agenda ajustadas a datos academicos reales.")
+        }
+        if (normalized.any { it.contains("feature_tasks/") }) {
+            add("Tareas: bandeja reorganizada por vencidas, hoy, proximas y completadas.")
         }
         if (normalized.any { it.contains("feature_profile/") }) {
-            add("Perfil: recordatorios contextuales y exportacion de datos ajustados.")
+            add("Perfil: centro de control con resumen de modulos, recordatorios y escala.")
+        }
+        if (normalized.any { it.contains("core/notifications/") }) {
+            add("Recordatorios: avisos limitados a lo mas proximo y canal afinado.")
         }
         if (!hasSetupChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
-            add("Build: version automatica y envio de APK por Telegram afinados.")
+            add("Build/release: changelog Telegram y validacion release afinados.")
         }
         if (normalized.any { it.contains("androidTest/") || it.contains("src/test/") }) {
             add("QA: pruebas conectadas/unitarias actualizadas.")
@@ -435,28 +468,47 @@ val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
     .map { it.toBoolean() }
     .orElse(false)
-val sendReleaseApk = providers.gradleProperty("sendReleaseApk")
-    .orElse(providers.environmentVariable("SEND_RELEASE_TELEGRAM_APK"))
-    .map { it.toBoolean() }
-    .orElse(false)
+
+val validateReleaseReady = tasks.register("validateReleaseReady") {
+    group = "verification"
+    description = "Validates signing settings before creating a release APK for distribution."
+
+    doLast {
+        if (!hasConfiguredReleaseSigning()) {
+            throw GradleException(
+                "Release APK requires releaseStoreFile, releaseStorePassword, releaseKeyAlias and releaseKeyPassword " +
+                    "in local.properties, or RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS and RELEASE_KEY_PASSWORD."
+            )
+        }
+        val store = rootProject.file(releaseStoreFileValue())
+        if (!store.exists()) {
+            throw GradleException("Release keystore not found: ${store.absolutePath}")
+        }
+    }
+}
+
+sendReleaseApkToTelegram.configure {
+    dependsOn(validateReleaseReady)
+}
 
 val assembleReleaseAndSendToTelegram = tasks.register("assembleReleaseAndSendToTelegram") {
     group = "distribution"
     description = "Builds the release APK and sends it to Telegram on explicit request."
+    dependsOn(validateReleaseReady)
     dependsOn("assembleRelease")
     finalizedBy(sendReleaseApkToTelegram)
 }
 
 afterEvaluate {
+    tasks.findByName("assembleRelease")?.mustRunAfter(validateReleaseReady)
+
     if (!skipTelegramApk.get()) {
         tasks.named("assembleDebug") {
             finalizedBy(sendDebugApkToTelegram)
         }
 
-        if (sendReleaseApk.get()) {
-            tasks.named("assembleRelease") {
-                finalizedBy(sendReleaseApkToTelegram)
-            }
+        tasks.named("assembleRelease") {
+            finalizedBy(sendReleaseApkToTelegram)
         }
     }
 }

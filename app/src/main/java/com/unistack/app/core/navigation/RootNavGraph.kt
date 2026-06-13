@@ -26,7 +26,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 @Composable
-fun RootNavGraph(modifier: Modifier = Modifier) {
+fun RootNavGraph(
+    modifier: Modifier = Modifier,
+    launchRoute: String? = null,
+    onLaunchRouteConsumed: () -> Unit = {}
+) {
     val context = LocalContext.current
     val animationsDisabled = remember {
         Settings.Global.getFloat(
@@ -40,7 +44,7 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
             .map { it?.setupCompleted }
             .distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = null)
-    var launchRoute by remember { mutableStateOf<String?>(null) }
+    var setupLaunchRoute by remember { mutableStateOf<String?>(null) }
     var launchAnimationFinished by rememberSaveable { mutableStateOf(animationsDisabled) }
     var repositoryDidLoad by remember { mutableStateOf(AppContainer.userRepository.didLoad) }
 
@@ -62,13 +66,19 @@ fun RootNavGraph(modifier: Modifier = Modifier) {
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier.fillMaxSize(),
                     initialRoute = AppRoutes.Home,
-                    launchRoute = launchRoute,
-                    onLaunchRouteConsumed = { launchRoute = null }
+                    launchRoute = launchRoute ?: setupLaunchRoute,
+                    onLaunchRouteConsumed = {
+                        if (launchRoute != null) {
+                            onLaunchRouteConsumed()
+                        } else {
+                            setupLaunchRoute = null
+                        }
+                    }
                 )
                 else -> SetupFlow(
                     modifier = Modifier.fillMaxSize(),
                     onSetupFinished = { createFirstSubject ->
-                        launchRoute = if (createFirstSubject) AppRoutes.AddSubject else null
+                        setupLaunchRoute = if (createFirstSubject) AppRoutes.AddSubject else null
                     }
                 )
             }

@@ -141,6 +141,39 @@ class ProfileViewModel(
         return true
     }
 
+    fun updateAcademicReminderSettings(
+        gradeInsightRemindersEnabled: Boolean,
+        pendingGradeRemindersEnabled: Boolean
+    ): Boolean {
+        val current = profile.value ?: return false
+        save(
+            current.copy(
+                gradeInsightRemindersEnabled = gradeInsightRemindersEnabled,
+                pendingGradeRemindersEnabled = pendingGradeRemindersEnabled
+            )
+        )
+        return true
+    }
+
+    fun updateQuietHours(
+        enabled: Boolean,
+        startHour: Int?,
+        endHour: Int?
+    ): Boolean {
+        val current = profile.value ?: return false
+        if (startHour != null && startHour !in 0..23) return false
+        if (endHour != null && endHour !in 0..23) return false
+        if (enabled && (startHour == null || endHour == null || startHour == endHour)) return false
+        save(
+            current.copy(
+                quietHoursEnabled = enabled,
+                quietHoursStartHour = startHour,
+                quietHoursEndHour = endHour
+            )
+        )
+        return true
+    }
+
     fun restartOnboarding(): Boolean {
         val current = profile.value ?: return false
         save(current.copy(setupCompleted = false))

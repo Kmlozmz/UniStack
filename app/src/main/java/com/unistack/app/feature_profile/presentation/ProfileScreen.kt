@@ -14,18 +14,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -37,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -50,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +74,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
@@ -119,6 +131,12 @@ fun ProfileScreen(
     var reminderLeadInput by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.reminderLeadHours?.toString() ?: "24")
     }
+    var quietHoursStartInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.quietHoursStartHour?.toString().orEmpty())
+    }
+    var quietHoursEndInput by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf(currentProfile?.quietHoursEndHour?.toString().orEmpty())
+    }
     var academicPeriodLabel by rememberSaveable(currentProfile?.userId) {
         mutableStateOf(currentProfile?.academicPeriodScheme?.label ?: AcademicPeriodLabel.CORTE)
     }
@@ -130,6 +148,9 @@ fun ProfileScreen(
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
+    var expandedSection by rememberSaveable(currentProfile?.userId) {
+        mutableStateOf<ProfileSettingsSection?>(null)
+    }
     var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
     var notificationPermissionGranted by remember {
         mutableStateOf(context.hasNotificationPermission())
@@ -160,6 +181,18 @@ fun ProfileScreen(
             }
         }
     }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationPermissionGranted = context.hasNotificationPermission()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
         if (FeatureGate.PRO_FEATURES_ENABLED) {
@@ -175,6 +208,8 @@ fun ProfileScreen(
         passingGradeInput = GradingScaleUtils.formatGrade(current.passingGrade, scale)
         targetAverageInput = GradingScaleUtils.formatGrade(current.targetAverage, scale)
         reminderLeadInput = current.reminderLeadHours.toString()
+        quietHoursStartInput = current.quietHoursStartHour?.toString().orEmpty()
+        quietHoursEndInput = current.quietHoursEndHour?.toString().orEmpty()
         academicPeriodLabel = current.academicPeriodScheme.label
         academicPeriodWeights = current.academicPeriodScheme.periods.map { percentInput(it.weight) }
     }
@@ -203,169 +238,302 @@ fun ProfileScreen(
             }
         } else {
             val current = loadedProfile
+            val activeReminders = listOf(
+                current.taskRemindersEnabled,
+                current.academicWorkRemindersEnabled,
+                current.overdueRemindersEnabled,
+                current.gradeInsightRemindersEnabled,
+                current.pendingGradeRemindersEnabled
+            ).count { it }
+            fun toggleSection(section: ProfileSettingsSection) {
+                expandedSection = if (expandedSection == section) null else section
+            }
+
             item { ProfileHeaderCard(profile = current) }
+            item { ProfileSettingsOverview(profile = current, currentUser = currentUser) }
+
             item {
-                AccountSyncCard(
-                    currentUser = currentUser,
-                    isBusy = actionState.isAccountBusy,
-                    onGoogleClick = { viewModel.connectGoogle(context) },
-                    onUnlinkClick = { showUnlinkDialog = true }
+                SettingsNavigationCard(
+                    title = "Cuenta y nombre",
+                    subtitle = if (currentUser.isLinked) {
+                        currentUser.email ?: "Cuenta vinculada"
+                    } else {
+                        "Perfil local y nombre visible"
+                    },
+                    icon = Icons.Rounded.Person,
+                    expanded = expandedSection == ProfileSettingsSection.ACCOUNT,
+                    onClick = { toggleSection(ProfileSettingsSection.ACCOUNT) }
                 )
             }
-            item {
-                NameSettingsCard(
-                    nameInput = nameInput,
-                    onNameChange = {
-                        nameInput = it.take(30)
-                        feedback = null
-                    },
-                    onSaveClick = {
-                        feedback = if (viewModel.updatePreferredName(nameInput)) {
-                            "Nombre actualizado."
-                        } else {
-                            "Revisa el nombre antes de guardar."
+            if (expandedSection == ProfileSettingsSection.ACCOUNT) {
+                item {
+                    AccountSyncCard(
+                        currentUser = currentUser,
+                        isBusy = actionState.isAccountBusy,
+                        onGoogleClick = { viewModel.connectGoogle(context) },
+                        onUnlinkClick = { showUnlinkDialog = true }
+                    )
+                }
+                item {
+                    NameSettingsCard(
+                        nameInput = nameInput,
+                        onNameChange = {
+                            nameInput = it.take(30)
+                            feedback = null
+                        },
+                        onSaveClick = {
+                            feedback = if (viewModel.updatePreferredName(nameInput)) {
+                                "Nombre actualizado."
+                            } else {
+                                "Revisa el nombre antes de guardar."
+                            }
                         }
-                    }
+                    )
+                }
+            }
+
+            item {
+                SettingsNavigationCard(
+                    title = "Académico",
+                    subtitle = "${current.gradingScale.label()} · Meta ${GradingScaleUtils.formatGrade(current.targetAverage, current.gradingScale)} · ${current.academicPeriodScheme.periods.size} ${current.academicPeriodScheme.label.plural.lowercase()}",
+                    icon = Icons.Rounded.School,
+                    expanded = expandedSection == ProfileSettingsSection.ACADEMIC,
+                    onClick = { toggleSection(ProfileSettingsSection.ACADEMIC) }
                 )
             }
-            item {
-                GradingSettingsCard(
-                    selectedScale = selectedScale,
-                    customGradeMax = current.customGradeMax,
-                    passingGradeInput = passingGradeInput,
-                    targetAverageInput = targetAverageInput,
-                    onScaleSelected = { scale ->
-                        selectedScale = scale
-                        val maxGrade = if (scale == GradingScale.CUSTOM) current.customGradeMax else GradingScaleUtils.maxGradeFor(scale)
-                        passingGradeInput = defaultGradeInput(maxGrade * 0.6)
-                        targetAverageInput = defaultGradeInput(maxGrade * 0.8)
-                        feedback = null
-                    },
-                    onPassingGradeChange = {
-                        passingGradeInput = it.take(6)
-                        feedback = null
-                    },
-                    onTargetAverageChange = {
-                        targetAverageInput = it.take(6)
-                        feedback = null
-                    },
-                    onSaveClick = {
-                        feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
-                            "Configuración académica actualizada."
-                        } else {
-                            "Revisa que las notas estén dentro de la escala."
+            if (expandedSection == ProfileSettingsSection.ACADEMIC) {
+                item {
+                    GradingSettingsCard(
+                        selectedScale = selectedScale,
+                        customGradeMax = current.customGradeMax,
+                        passingGradeInput = passingGradeInput,
+                        targetAverageInput = targetAverageInput,
+                        onScaleSelected = { scale ->
+                            selectedScale = scale
+                            val maxGrade = if (scale == GradingScale.CUSTOM) current.customGradeMax else GradingScaleUtils.maxGradeFor(scale)
+                            passingGradeInput = defaultGradeInput(maxGrade * 0.6)
+                            targetAverageInput = defaultGradeInput(maxGrade * 0.8)
+                            feedback = null
+                        },
+                        onPassingGradeChange = {
+                            passingGradeInput = it.take(6)
+                            feedback = null
+                        },
+                        onTargetAverageChange = {
+                            targetAverageInput = it.take(6)
+                            feedback = null
+                        },
+                        onSaveClick = {
+                            feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
+                                "Configuración académica actualizada."
+                            } else {
+                                "Revisa que las notas estén dentro de la escala."
+                            }
                         }
-                    }
+                    )
+                }
+                item {
+                    AcademicPeriodsSettingsCard(
+                        label = academicPeriodLabel,
+                        weights = academicPeriodWeights,
+                        onLabelSelected = {
+                            academicPeriodLabel = it
+                            feedback = null
+                        },
+                        onCountSelected = { count ->
+                            academicPeriodWeights = when (count) {
+                                2 -> listOf("50", "50")
+                                3 -> listOf("30", "40", "30")
+                                4 -> listOf("25", "25", "25", "25")
+                                else -> academicPeriodWeights
+                            }
+                            feedback = null
+                        },
+                        onWeightChange = { index, value ->
+                            academicPeriodWeights = academicPeriodWeights.mapIndexed { currentIndex, currentValue ->
+                                if (currentIndex == index) value.filter { char -> char.isDigit() || char == '.' }.take(5) else currentValue
+                            }
+                            feedback = null
+                        },
+                        onSaveClick = {
+                            feedback = if (viewModel.updateAcademicPeriodSettings(academicPeriodLabel, academicPeriodWeights)) {
+                                "Periodos académicos actualizados."
+                            } else {
+                                "Revisa que los pesos sumen 100%."
+                            }
+                        }
+                    )
+                }
+            }
+
+            item {
+                SettingsNavigationCard(
+                    title = "Módulos",
+                    subtitle = current.enabledModules.joinToString(" · ") { it.label() },
+                    icon = Icons.Rounded.Settings,
+                    expanded = expandedSection == ProfileSettingsSection.MODULES,
+                    onClick = { toggleSection(ProfileSettingsSection.MODULES) }
                 )
             }
+            if (expandedSection == ProfileSettingsSection.MODULES) {
+                item {
+                    ModulesSettingsCard(
+                        enabledModules = current.enabledModules,
+                        onToggleModule = { module ->
+                            feedback = if (viewModel.toggleModule(module)) {
+                                "Módulos actualizados."
+                            } else {
+                                "Debe quedar al menos un módulo activo."
+                            }
+                        }
+                    )
+                }
+            }
+
             item {
-                AcademicPeriodsSettingsCard(
-                    label = academicPeriodLabel,
-                    weights = academicPeriodWeights,
-                    onLabelSelected = {
-                        academicPeriodLabel = it
-                        feedback = null
+                SettingsNavigationCard(
+                    title = "Recordatorios",
+                    subtitle = when {
+                        activeReminders == 0 -> "Sin avisos activos"
+                        current.quietHoursEnabled -> "$activeReminders activos · silencio ${current.quietHoursStartHour}:00-${current.quietHoursEndHour}:00"
+                        else -> "$activeReminders activos · ${current.reminderLeadHours} h antes"
                     },
-                    onCountSelected = { count ->
-                        academicPeriodWeights = when (count) {
-                            2 -> listOf("50", "50")
-                            3 -> listOf("30", "40", "30")
-                            4 -> listOf("25", "25", "25", "25")
-                            else -> academicPeriodWeights
-                        }
-                        feedback = null
-                    },
-                    onWeightChange = { index, value ->
-                        academicPeriodWeights = academicPeriodWeights.mapIndexed { currentIndex, currentValue ->
-                            if (currentIndex == index) value.filter { char -> char.isDigit() || char == '.' }.take(5) else currentValue
-                        }
-                        feedback = null
-                    },
-                    onSaveClick = {
-                        feedback = if (viewModel.updateAcademicPeriodSettings(academicPeriodLabel, academicPeriodWeights)) {
-                            "Periodos académicos actualizados."
-                        } else {
-                            "Revisa que los pesos sumen 100%."
-                        }
-                    }
+                    icon = Icons.Rounded.NotificationsNone,
+                    expanded = expandedSection == ProfileSettingsSection.REMINDERS,
+                    onClick = { toggleSection(ProfileSettingsSection.REMINDERS) }
                 )
             }
-            item {
-                ModulesSettingsCard(
-                    enabledModules = current.enabledModules,
-                    onToggleModule = { module ->
-                        feedback = if (viewModel.toggleModule(module)) {
-                            "Módulos actualizados."
-                        } else {
-                            "Debe quedar al menos un módulo activo."
+            if (expandedSection == ProfileSettingsSection.REMINDERS) {
+                item {
+                    NotificationSettingsCard(
+                        taskRemindersEnabled = current.taskRemindersEnabled,
+                        academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                        overdueRemindersEnabled = current.overdueRemindersEnabled,
+                        gradeInsightRemindersEnabled = current.gradeInsightRemindersEnabled,
+                        pendingGradeRemindersEnabled = current.pendingGradeRemindersEnabled,
+                        reminderLeadInput = reminderLeadInput,
+                        quietHoursEnabled = current.quietHoursEnabled,
+                        quietHoursStartInput = quietHoursStartInput,
+                        quietHoursEndInput = quietHoursEndInput,
+                        notificationPermissionGranted = notificationPermissionGranted,
+                        onTaskToggle = {
+                            runReminderUpdate(!current.taskRemindersEnabled) {
+                                viewModel.updateReminderSettings(
+                                    taskRemindersEnabled = !current.taskRemindersEnabled,
+                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                                )
+                            }
+                        },
+                        onAcademicWorkToggle = {
+                            runReminderUpdate(!current.academicWorkRemindersEnabled) {
+                                viewModel.updateReminderSettings(
+                                    taskRemindersEnabled = current.taskRemindersEnabled,
+                                    academicWorkRemindersEnabled = !current.academicWorkRemindersEnabled,
+                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                                )
+                            }
+                        },
+                        onOverdueToggle = {
+                            runReminderUpdate(!current.overdueRemindersEnabled) {
+                                viewModel.updateReminderSettings(
+                                    taskRemindersEnabled = current.taskRemindersEnabled,
+                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                    overdueRemindersEnabled = !current.overdueRemindersEnabled,
+                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
+                                )
+                            }
+                        },
+                        onGradeInsightsToggle = {
+                            runReminderUpdate(!current.gradeInsightRemindersEnabled) {
+                                viewModel.updateAcademicReminderSettings(
+                                    gradeInsightRemindersEnabled = !current.gradeInsightRemindersEnabled,
+                                    pendingGradeRemindersEnabled = current.pendingGradeRemindersEnabled
+                                )
+                            }
+                        },
+                        onPendingGradesToggle = {
+                            runReminderUpdate(!current.pendingGradeRemindersEnabled) {
+                                viewModel.updateAcademicReminderSettings(
+                                    gradeInsightRemindersEnabled = current.gradeInsightRemindersEnabled,
+                                    pendingGradeRemindersEnabled = !current.pendingGradeRemindersEnabled
+                                )
+                            }
+                        },
+                        onLeadChange = {
+                            reminderLeadInput = it.filter(Char::isDigit).take(3)
+                            feedback = null
+                        },
+                        onSaveLead = {
+                            feedback = if (viewModel.updateReminderSettings(
+                                    taskRemindersEnabled = current.taskRemindersEnabled,
+                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
+                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
+                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: -1
+                                )
+                            ) {
+                                "Recordatorios actualizados."
+                            } else {
+                                "Revisa las horas de anticipación."
+                            }
+                        },
+                        onQuietHoursToggle = {
+                            feedback = if (viewModel.updateQuietHours(
+                                    enabled = !current.quietHoursEnabled,
+                                    startHour = quietHoursStartInput.toIntOrNull(),
+                                    endHour = quietHoursEndInput.toIntOrNull()
+                                )
+                            ) {
+                                "Horario silencioso actualizado."
+                            } else {
+                                "Define dos horas distintas entre 0 y 23."
+                            }
+                        },
+                        onQuietHoursStartChange = {
+                            quietHoursStartInput = it.filter(Char::isDigit).take(2)
+                            feedback = null
+                        },
+                        onQuietHoursEndChange = {
+                            quietHoursEndInput = it.filter(Char::isDigit).take(2)
+                            feedback = null
+                        },
+                        onSaveQuietHours = {
+                            feedback = if (viewModel.updateQuietHours(
+                                    enabled = current.quietHoursEnabled,
+                                    startHour = quietHoursStartInput.toIntOrNull(),
+                                    endHour = quietHoursEndInput.toIntOrNull()
+                                )
+                            ) {
+                                "Horario silencioso guardado."
+                            } else {
+                                "Define dos horas distintas entre 0 y 23."
+                            }
                         }
-                    }
+                    )
+                }
+            }
+
+            item {
+                SettingsNavigationCard(
+                    title = "Apariencia",
+                    subtitle = current.visualPreference.label(),
+                    icon = Icons.Rounded.Palette,
+                    expanded = expandedSection == ProfileSettingsSection.APPEARANCE,
+                    onClick = { toggleSection(ProfileSettingsSection.APPEARANCE) }
                 )
             }
-            item {
-                NotificationSettingsCard(
-                    taskRemindersEnabled = current.taskRemindersEnabled,
-                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                    overdueRemindersEnabled = current.overdueRemindersEnabled,
-                    reminderLeadInput = reminderLeadInput,
-                    notificationPermissionGranted = notificationPermissionGranted,
-                    onTaskToggle = {
-                        runReminderUpdate(!current.taskRemindersEnabled) {
-                            viewModel.updateReminderSettings(
-                                taskRemindersEnabled = !current.taskRemindersEnabled,
-                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                            )
+            if (expandedSection == ProfileSettingsSection.APPEARANCE) {
+                item {
+                    VisualSettingsCard(
+                        selected = current.visualPreference,
+                        onSelected = { preference ->
+                            viewModel.updateVisualPreference(preference)
+                            feedback = "Preferencia visual actualizada."
                         }
-                    },
-                    onAcademicWorkToggle = {
-                        runReminderUpdate(!current.academicWorkRemindersEnabled) {
-                            viewModel.updateReminderSettings(
-                                taskRemindersEnabled = current.taskRemindersEnabled,
-                                academicWorkRemindersEnabled = !current.academicWorkRemindersEnabled,
-                                overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                            )
-                        }
-                    },
-                    onOverdueToggle = {
-                        runReminderUpdate(!current.overdueRemindersEnabled) {
-                            viewModel.updateReminderSettings(
-                                taskRemindersEnabled = current.taskRemindersEnabled,
-                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                overdueRemindersEnabled = !current.overdueRemindersEnabled,
-                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                            )
-                        }
-                    },
-                    onLeadChange = {
-                        reminderLeadInput = it.filter(Char::isDigit).take(3)
-                        feedback = null
-                    },
-                    onSaveLead = {
-                        feedback = if (viewModel.updateReminderSettings(
-                                taskRemindersEnabled = current.taskRemindersEnabled,
-                                academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                reminderLeadHours = reminderLeadInput.toIntOrNull() ?: -1
-                            )
-                        ) {
-                            "Recordatorios actualizados."
-                        } else {
-                            "Revisa las horas de anticipación."
-                        }
-                    }
-                )
-            }
-            item {
-                VisualSettingsCard(
-                    selected = current.visualPreference,
-                    onSelected = { preference ->
-                        viewModel.updateVisualPreference(preference)
-                        feedback = "Preferencia visual actualizada."
-                    }
-                )
+                    )
+                }
             }
             if (FeatureGate.PRO_FEATURES_ENABLED) {
                 item {
@@ -377,53 +545,76 @@ fun ProfileScreen(
                 }
             }
             item {
-                DataManagementCard(
-                    dataSummary = viewModel.localDataSummary(),
-                    backupInput = localBackupInput,
-                    backupPreview = localBackupPreview,
-                    onBackupInputChange = {
-                        localBackupInput = it
-                        localBackupPreview = null
-                    },
-                    onCopyBackupClick = {
-                        copyToClipboard(viewModel.exportLocalBackup())
-                        feedback = "Backup JSON copiado."
-                    },
-                    onPreviewBackupClick = {
-                        localBackupPreview = viewModel.previewLocalBackup(localBackupInput)
-                    },
-                    onRestoreBackupClick = {
-                        feedback = if (viewModel.restoreLocalBackup(localBackupInput)) {
-                            localBackupInput = ""
-                            localBackupPreview = null
-                            "Backup local restaurado."
-                        } else {
-                            "Revisa el JSON del backup."
-                        }
-                    },
-                    onCopyAcademicReportClick = {
-                        copyToClipboard(viewModel.exportAcademicReport())
-                        feedback = "Reporte académico copiado."
-                    },
-                    onCreateAcademicPdfClick = {
-                        feedback = if (viewModel.exportAcademicPdf(context)) {
-                            "PDF académico creado."
-                        } else {
-                            "No se pudo crear el PDF."
-                        }
-                    },
-                    onCopyTasksCsvClick = {
-                        copyToClipboard(viewModel.exportTasksCsv())
-                        feedback = "CSV de tareas copiado."
-                    },
-                    onCopyExpensesCsvClick = {
-                        copyToClipboard(viewModel.exportExpensesCsv())
-                        feedback = "CSV de gastos copiado."
-                    }
+                SettingsNavigationCard(
+                    title = "Datos y exportación",
+                    subtitle = "Backups, reportes y restauración local",
+                    icon = Icons.Rounded.Settings,
+                    expanded = expandedSection == ProfileSettingsSection.DATA,
+                    onClick = { toggleSection(ProfileSettingsSection.DATA) }
                 )
             }
+            if (expandedSection == ProfileSettingsSection.DATA) {
+                item {
+                    DataManagementCard(
+                        dataSummary = viewModel.localDataSummary(),
+                        backupInput = localBackupInput,
+                        backupPreview = localBackupPreview,
+                        onBackupInputChange = {
+                            localBackupInput = it
+                            localBackupPreview = null
+                        },
+                        onCopyBackupClick = {
+                            copyToClipboard(viewModel.exportLocalBackup())
+                            feedback = "Backup JSON copiado."
+                        },
+                        onPreviewBackupClick = {
+                            localBackupPreview = viewModel.previewLocalBackup(localBackupInput)
+                        },
+                        onRestoreBackupClick = {
+                            feedback = if (viewModel.restoreLocalBackup(localBackupInput)) {
+                                localBackupInput = ""
+                                localBackupPreview = null
+                                "Backup local restaurado."
+                            } else {
+                                "Revisa el JSON del backup."
+                            }
+                        },
+                        onCopyAcademicReportClick = {
+                            copyToClipboard(viewModel.exportAcademicReport())
+                            feedback = "Reporte académico copiado."
+                        },
+                        onCreateAcademicPdfClick = {
+                            feedback = if (viewModel.exportAcademicPdf(context)) {
+                                "PDF académico creado."
+                            } else {
+                                "No se pudo crear el PDF."
+                            }
+                        },
+                        onCopyTasksCsvClick = {
+                            copyToClipboard(viewModel.exportTasksCsv())
+                            feedback = "CSV de tareas copiado."
+                        },
+                        onCopyExpensesCsvClick = {
+                            copyToClipboard(viewModel.exportExpensesCsv())
+                            feedback = "CSV de gastos copiado."
+                        }
+                    )
+                }
+            }
+
             item {
-                ResetOnboardingCard(onRestartClick = { showRestartDialog = true })
+                SettingsNavigationCard(
+                    title = "Onboarding",
+                    subtitle = "Repetir configuración inicial sin borrar datos",
+                    icon = Icons.Rounded.RestartAlt,
+                    expanded = expandedSection == ProfileSettingsSection.ONBOARDING,
+                    onClick = { toggleSection(ProfileSettingsSection.ONBOARDING) }
+                )
+            }
+            if (expandedSection == ProfileSettingsSection.ONBOARDING) {
+                item {
+                    ResetOnboardingCard(onRestartClick = { showRestartDialog = true })
+                }
             }
             feedback?.let { message ->
                 item {
@@ -493,6 +684,111 @@ fun ProfileScreen(
             },
             containerColor = UniStackColors.Background
         )
+    }
+}
+
+private enum class ProfileSettingsSection {
+    ACCOUNT,
+    ACADEMIC,
+    MODULES,
+    REMINDERS,
+    APPEARANCE,
+    DATA,
+    ONBOARDING
+}
+
+@Composable
+private fun ProfileSettingsOverview(
+    profile: UserProfile,
+    currentUser: AppUser
+) {
+    val activeReminders = listOf(
+        profile.taskRemindersEnabled,
+        profile.academicWorkRemindersEnabled,
+        profile.overdueRemindersEnabled,
+        profile.gradeInsightRemindersEnabled,
+        profile.pendingGradeRemindersEnabled
+    ).count { it }
+    val accountText = if (currentUser.isLinked) "Google" else "Local"
+
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.LargeCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Configuración", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OverviewChip("Cuenta", accountText, modifier = Modifier.weight(1f))
+                OverviewChip("Escala", profile.gradingScale.label(), modifier = Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OverviewChip("Módulos", profile.enabledModules.size.toString(), modifier = Modifier.weight(1f))
+                OverviewChip("Avisos", activeReminders.toString(), modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun OverviewChip(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(AppShapes.MediumCard)
+            .background(UniStackColors.SurfaceVariant.copy(alpha = 0.58f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(value, color = UniStackColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun SettingsNavigationCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    UniCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .bounceClick(onClick),
+        color = UniStackColors.Card,
+        shape = AppShapes.LargeCard,
+        tonalElevation = if (expanded) 4.dp else 0.dp,
+        borderColor = if (expanded) UniStackColors.Primary.copy(alpha = 0.42f) else UniStackColors.SoftOutline.copy(alpha = 0.20f),
+        borderWidth = 0.8.dp,
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 13.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(AppShapes.MediumCard)
+                    .background(if (expanded) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 2)
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
+                contentDescription = if (expanded) "Cerrar sección" else "Abrir sección",
+                tint = UniStackColors.TextSecondary,
+                modifier = Modifier.size(24.dp)
+            )
+        }
     }
 }
 
@@ -1022,24 +1318,28 @@ private fun NotificationSettingsCard(
     taskRemindersEnabled: Boolean,
     academicWorkRemindersEnabled: Boolean,
     overdueRemindersEnabled: Boolean,
+    gradeInsightRemindersEnabled: Boolean,
+    pendingGradeRemindersEnabled: Boolean,
     reminderLeadInput: String,
+    quietHoursEnabled: Boolean,
+    quietHoursStartInput: String,
+    quietHoursEndInput: String,
     notificationPermissionGranted: Boolean,
     onTaskToggle: () -> Unit,
     onAcademicWorkToggle: () -> Unit,
     onOverdueToggle: () -> Unit,
+    onGradeInsightsToggle: () -> Unit,
+    onPendingGradesToggle: () -> Unit,
     onLeadChange: (String) -> Unit,
-    onSaveLead: () -> Unit
+    onSaveLead: () -> Unit,
+    onQuietHoursToggle: () -> Unit,
+    onQuietHoursStartChange: (String) -> Unit,
+    onQuietHoursEndChange: (String) -> Unit,
+    onSaveQuietHours: () -> Unit
 ) {
     SettingsCard(title = "Recordatorios") {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (!notificationPermissionGranted) {
-                Text(
-                    "El permiso se pedirá al activar el primer recordatorio.",
-                    color = UniStackColors.TextSecondary,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
-                )
-            }
+            NotificationPermissionStatus(notificationPermissionGranted)
             ReminderToggleRow(
                 title = "Tareas",
                 description = "Avisos antes de tareas pendientes.",
@@ -1057,6 +1357,18 @@ private fun NotificationSettingsCard(
                 description = "Avisos cuando una tarea o trabajo vence.",
                 checked = overdueRemindersEnabled,
                 onToggle = onOverdueToggle
+            )
+            ReminderToggleRow(
+                title = "Notas y cortes",
+                description = "Alertas sobre metas, proyecciones e historial incompleto.",
+                checked = gradeInsightRemindersEnabled,
+                onToggle = onGradeInsightsToggle
+            )
+            ReminderToggleRow(
+                title = "Resultados pendientes",
+                description = "Recuerda registrar la nota de tareas ya completadas.",
+                checked = pendingGradeRemindersEnabled,
+                onToggle = onPendingGradesToggle
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1079,6 +1391,77 @@ private fun NotificationSettingsCard(
                     Text("Guardar")
                 }
             }
+            ReminderToggleRow(
+                title = "Horario silencioso",
+                description = "Mueve los avisos fuera del intervalo que elijas.",
+                checked = quietHoursEnabled,
+                onToggle = onQuietHoursToggle
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = quietHoursStartInput,
+                    onValueChange = onQuietHoursStartChange,
+                    label = { Text("Desde") },
+                    supportingText = { Text("0-23") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    shape = AppShapes.MediumCard
+                )
+                OutlinedTextField(
+                    value = quietHoursEndInput,
+                    onValueChange = onQuietHoursEndChange,
+                    label = { Text("Hasta") },
+                    supportingText = { Text("0-23") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    shape = AppShapes.MediumCard
+                )
+            }
+            TextButton(
+                onClick = onSaveQuietHours,
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Guardar horario", fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationPermissionStatus(granted: Boolean) {
+    val statusColor = if (granted) UniStackColors.Green else UniStackColors.Coral
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(AppShapes.MediumCard)
+            .background(statusColor.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = if (granted) {
+                    "Permiso de notificaciones activo"
+                } else {
+                    "Permiso de notificaciones pendiente"
+                },
+                color = statusColor,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (granted) {
+                    "UniStack puede enviarte avisos inteligentes según tus tareas, trabajos y materias."
+                } else {
+                    "Actívalo para recibir recordatorios y alertas académicas basadas en tu información."
+                },
+                color = UniStackColors.TextSecondary,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
         }
     }
 }
