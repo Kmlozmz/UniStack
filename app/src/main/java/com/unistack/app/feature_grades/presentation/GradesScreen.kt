@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -52,8 +53,6 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
-
-private val SubjectCardShape = RoundedCornerShape(10.dp)
 
 @Composable
 fun GradesScreen(
@@ -143,83 +142,27 @@ private fun SubjectsStatsRow(
     gradingScale: GradingScale
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SubjectStatCard(
+        MetricCard(
             value = subjectCount.toString(),
             label = if (subjectCount == 1) "Materia" else "Materias",
             icon = Icons.Rounded.Book,
+            iconColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
-        SubjectStatCard(
+        MetricCard(
             value = generalAverage?.let { GradingScaleUtils.formatGrade(it, gradingScale) } ?: "--",
             label = "Promedio",
             icon = Icons.Rounded.Grade,
+            iconColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
-        SubjectStatCard(
+        MetricCard(
             value = evaluatedSubjects.toString(),
             label = if (evaluatedSubjects == 1) "Evaluada" else "Evaluadas",
             icon = Icons.Rounded.BarChart,
+            iconColor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f)
         )
-    }
-}
-
-@Composable
-private fun SubjectStatCard(
-    value: String,
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
-        shape = AppShapes.SmallCard,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
-        borderWidth = 0.5.dp,
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(25.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp)
-            ) {
-                Text(
-                    value,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 19.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    label,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = TextOverflow.Clip
-                )
-            }
-        }
     }
 }
 
@@ -243,10 +186,8 @@ private fun SubjectListCard(
             .height(112.dp)
             .bounceClick(onClick),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-        shape = SubjectCardShape,
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
-        borderWidth = 0.5.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
         Row(
@@ -450,8 +391,6 @@ private fun EmptyGradesCard() {
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
         shape = AppShapes.LargeCard,
         tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-        borderWidth = 0.5.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)

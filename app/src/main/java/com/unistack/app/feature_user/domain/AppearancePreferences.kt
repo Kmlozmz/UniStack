@@ -3,6 +3,7 @@ package com.unistack.app.feature_user.domain
 data class AppearancePreferences(
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEFAULT,
     val customBackgroundColor: Int? = null,
+    val customThemeBase: CustomThemeBase = CustomThemeBase.SYSTEM,
     val accentStyle: AccentStyle = AccentStyle.VIOLET,
     val customAccentColor: Int? = null,
     val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
@@ -73,6 +74,12 @@ enum class BackgroundStyle {
     COOL,
     VIOLET,
     CUSTOM
+}
+
+enum class CustomThemeBase {
+    SYSTEM,
+    LIGHT,
+    DARK
 }
 
 enum class AccentStyle {

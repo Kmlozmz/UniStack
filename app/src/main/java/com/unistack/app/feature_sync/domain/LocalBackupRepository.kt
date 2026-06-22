@@ -18,9 +18,10 @@ data class LocalBackupPreview(
     val grades: Int,
     val tasks: Int,
     val expenses: Int,
-    val academicWorks: Int
+    val academicWorks: Int,
+    val agendaEvents: Int = 0
 ) {
     fun summary(): String {
-        return "v$schemaVersion · $subjects materias · $grades notas · $tasks tareas · $expenses gastos · $academicWorks trabajos"
+        return "v$schemaVersion · $subjects materias · $grades notas · $tasks tareas · $expenses gastos · $academicWorks trabajos · $agendaEvents eventos"
     }
 }

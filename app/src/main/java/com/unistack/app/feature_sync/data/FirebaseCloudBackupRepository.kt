@@ -28,6 +28,9 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_schedule.domain.AgendaEvent
+import com.unistack.app.feature_schedule.domain.AgendaEventKind
+import com.unistack.app.feature_schedule.domain.AgendaRecurrence
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -61,7 +64,7 @@ class FirebaseCloudBackupRepository(
 
         val now = System.currentTimeMillis()
         val payload = mapOf(
-            "schemaVersion" to 4,
+            "schemaVersion" to 6,
             "updatedAt" to now,
             "profile" to profileMap(),
             "subjects" to gradesRepository.subjects.value.map(::subjectMap),
@@ -69,7 +72,8 @@ class FirebaseCloudBackupRepository(
             "expenses" to expensesRepository.expenses.value.map(::expenseMap),
             "academicWorks" to academicWorksRepository.works.value.map(::academicWorkMap),
             "classSessions" to scheduleRepository.sessions.value.map(::classSessionMap),
-            "classOccurrences" to scheduleRepository.occurrences.value.map(::classOccurrenceMap)
+            "classOccurrences" to scheduleRepository.occurrences.value.map(::classOccurrenceMap),
+            "agendaEvents" to scheduleRepository.agendaEvents.value.map(::agendaEventMap)
         )
 
         Firebase.firestore
@@ -125,6 +129,7 @@ class FirebaseCloudBackupRepository(
         parseAcademicWorks(data["academicWorks"]).forEach(academicWorksRepository::addWork)
         parseClassSessions(data["classSessions"]).forEach(scheduleRepository::saveSession)
         parseClassOccurrences(data["classOccurrences"]).forEach(scheduleRepository::saveOccurrence)
+        parseAgendaEvents(data["agendaEvents"]).forEach(scheduleRepository::saveAgendaEvent)
 
         val now = System.currentTimeMillis()
         _state.update {
@@ -180,6 +185,7 @@ class FirebaseCloudBackupRepository(
             "appearancePreferences" to mapOf(
                 "backgroundStyle" to profile.appearancePreferences.backgroundStyle.name,
                 "customBackgroundColor" to profile.appearancePreferences.customBackgroundColor,
+                "customThemeBase" to profile.appearancePreferences.customThemeBase.name,
                 "accentStyle" to profile.appearancePreferences.accentStyle.name,
                 "customAccentColor" to profile.appearancePreferences.customAccentColor,
                 "accentIntensity" to profile.appearancePreferences.accentIntensity.name,
@@ -336,6 +342,23 @@ class FirebaseCloudBackupRepository(
         "overrideEndMinute" to occurrence.overrideEndMinute,
         "overrideLocation" to occurrence.overrideLocation,
         "updatedAt" to occurrence.updatedAt
+    )
+
+    private fun agendaEventMap(event: AgendaEvent): Map<String, Any?> = mapOf(
+        "id" to event.id,
+        "title" to event.title,
+        "notes" to event.notes,
+        "kind" to event.kind.name,
+        "startMillis" to event.startMillis,
+        "endMillis" to event.endMillis,
+        "allDay" to event.allDay,
+        "location" to event.location,
+        "reminderMinutes" to event.reminderMinutes,
+        "recurrence" to event.recurrence.name,
+        "recurrenceEndEpochDay" to event.recurrenceEndEpochDay,
+        "colorArgb" to event.colorArgb,
+        "createdAt" to event.createdAt,
+        "updatedAt" to event.updatedAt
     )
 
     private fun parseSubjects(value: Any?): List<Subject> {
@@ -510,6 +533,29 @@ class FirebaseCloudBackupRepository(
                 overrideLocation = map.string("overrideLocation"),
                 updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
             ).takeIf { it.isValid }
+        }
+    }
+
+    private fun parseAgendaEvents(value: Any?): List<AgendaEvent> {
+        return asMapList(value).mapNotNull { map ->
+            AgendaEvent(
+                id = map.string("id") ?: return@mapNotNull null,
+                title = map.string("title").orEmpty(),
+                notes = map.string("notes").orEmpty(),
+                kind = map.string("kind")?.let { runCatching { AgendaEventKind.valueOf(it) }.getOrNull() }
+                    ?: AgendaEventKind.CUSTOM,
+                startMillis = map.long("startMillis") ?: return@mapNotNull null,
+                endMillis = map.long("endMillis"),
+                allDay = map.boolean("allDay") ?: false,
+                location = map.string("location").orEmpty(),
+                reminderMinutes = map.int("reminderMinutes") ?: 0,
+                recurrence = map.string("recurrence")?.let { runCatching { AgendaRecurrence.valueOf(it) }.getOrNull() }
+                    ?: AgendaRecurrence.NONE,
+                recurrenceEndEpochDay = map.long("recurrenceEndEpochDay"),
+                colorArgb = map.int("colorArgb"),
+                createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
+                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
+            ).takeIf(AgendaEvent::isValid)
         }
     }
 

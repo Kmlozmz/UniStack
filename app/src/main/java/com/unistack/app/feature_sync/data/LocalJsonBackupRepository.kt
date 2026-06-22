@@ -31,6 +31,9 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_schedule.domain.AgendaEvent
+import com.unistack.app.feature_schedule.domain.AgendaEventKind
+import com.unistack.app.feature_schedule.domain.AgendaRecurrence
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -84,6 +87,7 @@ class LocalJsonBackupRepository(
             .put("academicWorks", JSONArray(academicWorksRepository.works.value.map(::academicWorkJson)))
             .put("classSessions", JSONArray(scheduleRepository.sessions.value.map(::classSessionJson)))
             .put("classOccurrences", JSONArray(scheduleRepository.occurrences.value.map(::classOccurrenceJson)))
+            .put("agendaEvents", JSONArray(scheduleRepository.agendaEvents.value.map(::agendaEventJson)))
             .toString(2)
     }
 
@@ -100,7 +104,8 @@ class LocalJsonBackupRepository(
             grades = grades,
             tasks = root.optJSONArray("tasks")?.length() ?: 0,
             expenses = root.optJSONArray("expenses")?.length() ?: 0,
-            academicWorks = root.optJSONArray("academicWorks")?.length() ?: 0
+            academicWorks = root.optJSONArray("academicWorks")?.length() ?: 0,
+            agendaEvents = root.optJSONArray("agendaEvents")?.length() ?: 0
         )
     }
 
@@ -130,6 +135,7 @@ class LocalJsonBackupRepository(
         }
         parseClassSessions(root.optJSONArray("classSessions")).forEach(scheduleRepository::saveSession)
         parseClassOccurrences(root.optJSONArray("classOccurrences")).forEach(scheduleRepository::saveOccurrence)
+        parseAgendaEvents(root.optJSONArray("agendaEvents")).forEach(scheduleRepository::saveAgendaEvent)
         preview
     }
 
@@ -311,6 +317,7 @@ class LocalJsonBackupRepository(
     private fun appearanceJson(value: AppearancePreferences): JSONObject = JSONObject()
         .put("backgroundStyle", value.backgroundStyle.name)
         .put("customBackgroundColor", value.customBackgroundColor)
+        .put("customThemeBase", value.customThemeBase.name)
         .put("accentStyle", value.accentStyle.name)
         .put("customAccentColor", value.customAccentColor)
         .put("accentIntensity", value.accentIntensity.name)
@@ -367,6 +374,7 @@ class LocalJsonBackupRepository(
         return AppearancePreferences(
             backgroundStyle = json.optString("backgroundStyle").toEnum(current.backgroundStyle),
             customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
+            customThemeBase = json.optString("customThemeBase").toEnum(current.customThemeBase),
             accentStyle = json.optString("accentStyle").toEnum(current.accentStyle),
             customAccentColor = json.optIntOrNull("customAccentColor"),
             accentIntensity = json.optString("accentIntensity").toEnum(current.accentIntensity),
@@ -513,6 +521,22 @@ class LocalJsonBackupRepository(
         .put("overrideLocation", occurrence.overrideLocation)
         .put("updatedAt", occurrence.updatedAt)
 
+    private fun agendaEventJson(event: AgendaEvent): JSONObject = JSONObject()
+        .put("id", event.id)
+        .put("title", event.title)
+        .put("notes", event.notes)
+        .put("kind", event.kind.name)
+        .put("startMillis", event.startMillis)
+        .put("endMillis", event.endMillis)
+        .put("allDay", event.allDay)
+        .put("location", event.location)
+        .put("reminderMinutes", event.reminderMinutes)
+        .put("recurrence", event.recurrence.name)
+        .put("recurrenceEndEpochDay", event.recurrenceEndEpochDay)
+        .put("colorArgb", event.colorArgb)
+        .put("createdAt", event.createdAt)
+        .put("updatedAt", event.updatedAt)
+
     private fun expenseJson(expense: Expense): JSONObject = JSONObject()
         .put("id", expense.id)
         .put("category", expense.category.name)
@@ -624,6 +648,25 @@ class LocalJsonBackupRepository(
             ).takeIf { it.isValid }
         }
 
+    private fun parseAgendaEvents(array: JSONArray?): List<AgendaEvent> = array.objects().mapNotNull { item ->
+        AgendaEvent(
+            id = item.optString("id").takeIf(String::isNotBlank) ?: return@mapNotNull null,
+            title = item.optString("title"),
+            notes = item.optString("notes"),
+            kind = item.optString("kind").toEnum(AgendaEventKind.CUSTOM),
+            startMillis = item.optLong("startMillis"),
+            endMillis = if (item.isNull("endMillis")) null else item.optLong("endMillis"),
+            allDay = item.optBoolean("allDay"),
+            location = item.optString("location"),
+            reminderMinutes = item.optInt("reminderMinutes", 0),
+            recurrence = item.optString("recurrence").toEnum(AgendaRecurrence.NONE),
+            recurrenceEndEpochDay = if (item.isNull("recurrenceEndEpochDay")) null else item.optLong("recurrenceEndEpochDay"),
+            colorArgb = if (item.isNull("colorArgb")) null else item.optInt("colorArgb"),
+            createdAt = item.optLong("createdAt", System.currentTimeMillis()),
+            updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
+        ).takeIf(AgendaEvent::isValid)
+    }
+
     private fun parseExpenses(array: JSONArray?): List<Expense> = array.objects().mapNotNull { item ->
         Expense(
             id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
@@ -675,6 +718,6 @@ class LocalJsonBackupRepository(
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 8
+        const val SCHEMA_VERSION = 10
     }
 }

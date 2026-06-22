@@ -257,6 +257,8 @@ private class FakeScheduleRepository : ScheduleRepository {
     override val sessions: StateFlow<List<ClassSession>> = state
     private val occurrenceState = MutableStateFlow<List<com.unistack.app.feature_schedule.domain.ClassOccurrence>>(emptyList())
     override val occurrences: StateFlow<List<com.unistack.app.feature_schedule.domain.ClassOccurrence>> = occurrenceState
+    private val agendaState = MutableStateFlow<List<com.unistack.app.feature_schedule.domain.AgendaEvent>>(emptyList())
+    override val agendaEvents: StateFlow<List<com.unistack.app.feature_schedule.domain.AgendaEvent>> = agendaState
 
     override fun saveSession(session: ClassSession) {
         state.value = state.value.filterNot { it.id == session.id } + session
@@ -272,5 +274,13 @@ private class FakeScheduleRepository : ScheduleRepository {
 
     override fun deleteOccurrence(occurrenceId: String) {
         occurrenceState.value = occurrenceState.value.filterNot { it.id == occurrenceId }
+    }
+
+    override fun saveAgendaEvent(event: com.unistack.app.feature_schedule.domain.AgendaEvent) {
+        agendaState.value = agendaState.value.filterNot { it.id == event.id } + event
+    }
+
+    override fun deleteAgendaEvent(eventId: String) {
+        agendaState.value = agendaState.value.filterNot { it.id == eventId }
     }
 }

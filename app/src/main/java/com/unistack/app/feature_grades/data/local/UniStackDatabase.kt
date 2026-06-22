@@ -16,6 +16,8 @@ import com.unistack.app.feature_schedule.data.local.ClassSessionDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionEntity
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceEntity
+import com.unistack.app.feature_schedule.data.local.AgendaEventDao
+import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
 
 @Database(
     entities = [
@@ -25,9 +27,10 @@ import com.unistack.app.feature_schedule.data.local.ClassOccurrenceEntity
         ExpenseEntity::class,
         AcademicWorkEntity::class,
         ClassSessionEntity::class,
-        ClassOccurrenceEntity::class
+        ClassOccurrenceEntity::class,
+        AgendaEventEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -38,6 +41,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun academicWorkDao(): AcademicWorkDao
     abstract fun classSessionDao(): ClassSessionDao
     abstract fun classOccurrenceDao(): ClassOccurrenceDao
+    abstract fun agendaEventDao(): AgendaEventDao
 
     companion object {
         @Volatile
@@ -228,6 +232,36 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS agenda_events (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        notes TEXT NOT NULL,
+                        kind TEXT NOT NULL,
+                        startMillis INTEGER NOT NULL,
+                        endMillis INTEGER,
+                        allDay INTEGER NOT NULL,
+                        location TEXT NOT NULL,
+                        reminderMinutes INTEGER NOT NULL,
+                        recurrence TEXT NOT NULL,
+                        recurrenceEndEpochDay INTEGER,
+                        colorArgb INTEGER,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_agenda_events_userId ON agenda_events(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_agenda_events_startMillis ON agenda_events(startMillis)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_agenda_events_kind ON agenda_events(kind)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -252,7 +286,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_8_9,
             MIGRATION_9_10,
             MIGRATION_10_11,
-            MIGRATION_11_12
+            MIGRATION_11_12,
+            MIGRATION_12_13
         )
     }
 }

@@ -137,7 +137,6 @@ private enum class ScheduleView {
 
 @Composable
 fun CalendarScheduleScreen(
-    onAddTaskClick: () -> Unit,
     onTaskClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScheduleViewModel = viewModel()
@@ -150,6 +149,9 @@ fun CalendarScheduleScreen(
     var selectedSession by remember { mutableStateOf<ClassSession?>(null) }
     var historySubjectId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFullSchedule by rememberSaveable { mutableStateOf(false) }
+    var showAgendaMenu by rememberSaveable { mutableStateOf(false) }
+    var agendaCreateKind by remember { mutableStateOf<AgendaCreateKind?>(null) }
+    var editingAgendaEvent by remember { mutableStateOf<com.unistack.app.feature_schedule.domain.AgendaEvent?>(null) }
 
     val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
     val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }
@@ -165,14 +167,53 @@ fun CalendarScheduleScreen(
             selectedSession = session
         },
         onTaskClick = onTaskClick,
+        onAgendaEventClick = { event ->
+            editingAgendaEvent = event
+            agendaCreateKind = when (event.kind) {
+                com.unistack.app.feature_schedule.domain.AgendaEventKind.REMINDER -> AgendaCreateKind.REMINDER
+                com.unistack.app.feature_schedule.domain.AgendaEventKind.PERSONAL,
+                com.unistack.app.feature_schedule.domain.AgendaEventKind.MEETING -> AgendaCreateKind.PERSONAL
+                com.unistack.app.feature_schedule.domain.AgendaEventKind.CUSTOM -> AgendaCreateKind.CUSTOM
+            }
+        },
         onAddClass = {
             editingSession = null
             showEditor = true
         },
-        onAddEvent = onAddTaskClick,
+        onAddEvent = { showAgendaMenu = true },
         onOpenFullSchedule = { showFullSchedule = true },
         modifier = modifier
     )
+    if (showAgendaMenu) {
+        AgendaCreateMenuSheet(
+            onDismiss = { showAgendaMenu = false },
+            onSelect = { kind ->
+                showAgendaMenu = false
+                editingAgendaEvent = null
+                agendaCreateKind = kind
+            },
+            onAddClass = {
+                showAgendaMenu = false
+                editingSession = null
+                showEditor = true
+            }
+        )
+    }
+    agendaCreateKind?.let { kind ->
+        AgendaComposerSheet(
+            kind = kind,
+            initialDate = selectedDate,
+            subjects = state.subjects,
+            existingEvent = editingAgendaEvent,
+            onDismiss = {
+                agendaCreateKind = null
+                editingAgendaEvent = null
+            },
+            onSaveAcademic = viewModel::saveAcademicAgendaItem,
+            onSaveEvent = viewModel::saveAgendaEvent,
+            onDeleteEvent = viewModel::deleteAgendaEvent
+        )
+    }
     if (showFullSchedule) {
         FullScheduleDialog(
             selectedDate = selectedDate,

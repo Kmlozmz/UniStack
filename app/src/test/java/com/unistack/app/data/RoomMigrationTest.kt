@@ -161,6 +161,19 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationTwelveToThirteenCreatesAgendaEventsTableAndIndexes() {
+        val database = createDatabaseWithSchema(version = 12)
+
+        UniStackDatabase.MIGRATION_12_13.migrate(database)
+
+        assertTrue(database.hasTable("agenda_events"))
+        assertTrue(database.hasIndex("index_agenda_events_userId"))
+        assertTrue(database.hasIndex("index_agenda_events_startMillis"))
+        assertTrue(database.hasIndex("index_agenda_events_kind"))
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -202,6 +215,10 @@ class RoomMigrationTest {
         if (targetVersion >= 7) UniStackDatabase.MIGRATION_6_7.migrate(db)
         if (targetVersion >= 8) UniStackDatabase.MIGRATION_7_8.migrate(db)
         if (targetVersion >= 9) UniStackDatabase.MIGRATION_8_9.migrate(db)
+        if (targetVersion >= 10) UniStackDatabase.MIGRATION_9_10.migrate(db)
+        if (targetVersion >= 11) UniStackDatabase.MIGRATION_10_11.migrate(db)
+        if (targetVersion >= 12) UniStackDatabase.MIGRATION_11_12.migrate(db)
+        if (targetVersion >= 13) UniStackDatabase.MIGRATION_12_13.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

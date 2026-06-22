@@ -336,9 +336,6 @@ fun MainNavGraph(
             }
             composable(AppRoutes.Calendar) {
                 CalendarScheduleScreen(
-                    onAddTaskClick = {
-                        navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
-                    },
                     onTaskClick = { taskId ->
                         navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
                     }

@@ -65,6 +65,7 @@ object AppDependencyFactory {
         val scheduleRepository = RoomScheduleRepository(
             dao = database.classSessionDao(),
             occurrenceDao = database.classOccurrenceDao(),
+            agendaEventDao = database.agendaEventDao(),
             userRepository = userRepository
         )
         val cloudBackupRepository = FirebaseCloudBackupRepository(

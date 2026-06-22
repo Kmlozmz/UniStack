@@ -272,6 +272,7 @@ class UserPreferencesDataSource(private val context: Context) {
     private fun AppearancePreferences.toJsonString(): String = JSONObject()
         .put("backgroundStyle", backgroundStyle.name)
         .put("customBackgroundColor", customBackgroundColor)
+        .put("customThemeBase", customThemeBase.name)
         .put("accentStyle", accentStyle.name)
         .put("customAccentColor", customAccentColor)
         .put("accentIntensity", accentIntensity.name)
@@ -330,6 +331,7 @@ class UserPreferencesDataSource(private val context: Context) {
             AppearancePreferences(
                 backgroundStyle = json.enumOrDefault("backgroundStyle", defaults.backgroundStyle),
                 customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
+                customThemeBase = json.enumOrDefault("customThemeBase", defaults.customThemeBase),
                 accentStyle = json.enumOrDefault("accentStyle", defaults.accentStyle),
                 customAccentColor = json.optIntOrNull("customAccentColor"),
                 accentIntensity = json.enumOrDefault("accentIntensity", defaults.accentIntensity),

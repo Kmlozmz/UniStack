@@ -11,6 +11,7 @@ import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.navigation.RootNavGraph
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.VisualPreference
 
 @Composable
@@ -31,6 +32,11 @@ fun UniStackApp(
         VisualPreference.LIGHT -> false
         VisualPreference.DARK -> true
         VisualPreference.OLED -> true
+        VisualPreference.CUSTOM -> when (appearance.customThemeBase) {
+            CustomThemeBase.SYSTEM -> systemDark
+            CustomThemeBase.LIGHT -> false
+            CustomThemeBase.DARK -> true
+        }
     }
 
     SideEffect {

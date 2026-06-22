@@ -81,6 +81,7 @@ import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.CornerStyle
+import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
@@ -157,28 +158,47 @@ fun AppearanceSettingsScreen(
                 icon = Icons.Rounded.DarkMode,
                 title = "Tema y fondo"
             ) {
+                SectionLabel("Modo")
                 ChoiceGrid(
                     entries = VisualPreference.entries,
                     selected = current.visualPreference,
                     label = VisualPreference::label,
                     onSelected = viewModel::updateVisualPreference
                 )
-                SectionLabel("Fondo")
-                BackgroundChoices(
-                    selected = appearance.backgroundStyle,
-                    customColor = appearance.customBackgroundColor,
-                    onSelected = { style ->
-                        viewModel.updateAppearance { it.copy(backgroundStyle = style) }
-                    },
-                    onCustomColor = { color ->
-                        viewModel.updateAppearance {
-                            it.copy(
-                                backgroundStyle = BackgroundStyle.CUSTOM,
-                                customBackgroundColor = color
-                            )
+                if (current.visualPreference == VisualPreference.CUSTOM) {
+                    SectionLabel("Base del tema")
+                    ChoiceGrid(
+                        entries = CustomThemeBase.entries,
+                        selected = appearance.customThemeBase,
+                        label = CustomThemeBase::label,
+                        columns = 3,
+                        onSelected = { base ->
+                            viewModel.updateAppearance { it.copy(customThemeBase = base) }
                         }
-                    }
-                )
+                    )
+                    SectionLabel("Fondo")
+                    BackgroundChoices(
+                        selected = appearance.backgroundStyle,
+                        customColor = appearance.customBackgroundColor,
+                        onSelected = { style ->
+                            viewModel.updateAppearance { it.copy(backgroundStyle = style) }
+                        },
+                        onCustomColor = { color ->
+                            viewModel.updateAppearance {
+                                it.copy(
+                                    backgroundStyle = BackgroundStyle.CUSTOM,
+                                    customBackgroundColor = color
+                                )
+                            }
+                        }
+                    )
+                } else {
+                    Text(
+                        text = current.visualPreference.themeDescription(),
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
         item {
@@ -1065,6 +1085,21 @@ private fun VisualPreference.label() = when (this) {
     VisualPreference.LIGHT -> "Claro"
     VisualPreference.DARK -> "Oscuro"
     VisualPreference.OLED -> "OLED"
+    VisualPreference.CUSTOM -> "Personalizado"
+}
+
+private fun VisualPreference.themeDescription() = when (this) {
+    VisualPreference.SYSTEM -> "Sigue el tema del dispositivo y utiliza el fondo original."
+    VisualPreference.LIGHT -> "Usa la apariencia clara con el fondo original."
+    VisualPreference.DARK -> "Usa la apariencia oscura con el fondo original."
+    VisualPreference.OLED -> "Usa negro puro para aprovechar pantallas OLED."
+    VisualPreference.CUSTOM -> ""
+}
+
+private fun CustomThemeBase.label() = when (this) {
+    CustomThemeBase.SYSTEM -> "Sistema"
+    CustomThemeBase.LIGHT -> "Clara"
+    CustomThemeBase.DARK -> "Oscura"
 }
 
 private fun VisualPreset.label() = when (this) {

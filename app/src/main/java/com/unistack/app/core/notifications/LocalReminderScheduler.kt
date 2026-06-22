@@ -22,6 +22,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.AgendaEvent
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -57,7 +58,8 @@ class LocalReminderScheduler(private val context: Context) {
         works: List<AcademicWork>,
         subjects: List<Subject> = emptyList(),
         classSessions: List<ClassSession> = emptyList(),
-        classOccurrences: List<ClassOccurrence> = emptyList()
+        classOccurrences: List<ClassOccurrence> = emptyList(),
+        agendaEvents: List<AgendaEvent> = emptyList()
     ) {
         createChannel()
         cancelPrevious()
@@ -149,6 +151,7 @@ class LocalReminderScheduler(private val context: Context) {
         }
 
         scheduleClassReminders(currentProfile, subjects, classSessions, classOccurrences)
+        scheduleAgendaEventReminders(currentProfile, agendaEvents)
 
         if (currentProfile.taskRemindersEnabled ||
             currentProfile.academicWorkRemindersEnabled ||
@@ -226,6 +229,39 @@ class LocalReminderScheduler(private val context: Context) {
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     title = "¿Asististe a $subjectName?",
                     body = "Registra tu asistencia, modalidad o cualquier cambio de esta clase.",
+                    targetRoute = AppRoutes.Calendar
+                )
+            }
+    }
+
+    private fun scheduleAgendaEventReminders(profile: UserProfile, events: List<AgendaEvent>) {
+        val now = LocalDateTime.now()
+        events
+            .filter { it.isValid && it.reminderMinutes > 0 }
+            .mapNotNull { event ->
+                (0L..366L).asSequence()
+                    .map { now.toLocalDate().plusDays(it) }
+                    .filter(event::occursOn)
+                    .map { date ->
+                        val originalTime = Instant.ofEpochMilli(event.startMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalTime()
+                        date.atTime(originalTime)
+                    }
+                    .firstOrNull { it.isAfter(now) }
+                    ?.let { event to it.minusMinutes(event.reminderMinutes.toLong()) }
+            }
+            .filter { (_, trigger) -> trigger.isAfter(now) }
+            .sortedBy { it.second }
+            .take(MAX_REMINDERS_PER_KIND)
+            .forEach { (event, trigger) ->
+                scheduleReminder(
+                    profile = profile,
+                    requestCode = event.id.stableRequestCode("agenda-event"),
+                    triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    title = event.title,
+                    body = event.location.takeIf(String::isNotBlank)?.let { "Próximamente en $it." }
+                        ?: "Tienes un evento próximo en tu agenda.",
                     targetRoute = AppRoutes.Calendar
                 )
             }

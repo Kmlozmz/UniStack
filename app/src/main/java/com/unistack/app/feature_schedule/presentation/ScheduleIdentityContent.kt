@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -64,12 +65,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.AgendaEvent
+import com.unistack.app.feature_schedule.domain.AgendaEventKind
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_user.domain.SurfaceStyle
@@ -108,6 +114,7 @@ internal fun ScheduleIdentityContent(
     onDateSelected: (LocalDate) -> Unit,
     onSessionClick: (LocalDate, ClassSession) -> Unit,
     onTaskClick: (String) -> Unit,
+    onAgendaEventClick: (AgendaEvent) -> Unit,
     onAddClass: () -> Unit,
     onAddEvent: () -> Unit,
     onOpenFullSchedule: () -> Unit,
@@ -175,8 +182,8 @@ internal fun ScheduleIdentityContent(
                 item {
                     CalendarMetrics(
                         month = YearMonth.from(selectedDate),
-                        sessions = uiState.sessions,
                         tasks = uiState.tasks,
+                        agendaEvents = uiState.agendaEvents,
                         onEventsClick = { metricDetail = IdentityMetricDetail.EVENTS },
                         onDeliveriesClick = { metricDetail = IdentityMetricDetail.DELIVERIES },
                         onExamsClick = { metricDetail = IdentityMetricDetail.EXAMS }
@@ -188,6 +195,7 @@ internal fun ScheduleIdentityContent(
                         sessions = uiState.sessions,
                         tasks = uiState.tasks,
                         subjects = uiState.subjects,
+                        agendaEvents = uiState.agendaEvents,
                         onDateSelected = onDateSelected
                     )
                 }
@@ -197,13 +205,15 @@ internal fun ScheduleIdentityContent(
                         sessions = uiState.sessions,
                         tasks = uiState.tasks,
                         subjects = uiState.subjects,
+                        agendaEvents = uiState.agendaEvents,
                         use24Hour = uiState.accessibility.use24HourTime,
                         onSessionClick = onSessionClick,
-                        onTaskClick = onTaskClick
+                        onTaskClick = onTaskClick,
+                        onAgendaEventClick = onAgendaEventClick
                     )
                 }
                 item {
-                    IdentityPrimaryButton(label = "Agregar evento", onClick = onAddEvent)
+                    IdentityPrimaryButton(label = "Agregar a la agenda", onClick = onAddEvent)
                 }
             }
         }
@@ -222,6 +232,10 @@ internal fun ScheduleIdentityContent(
             onTaskClick = { taskId ->
                 metricDetail = null
                 onTaskClick(taskId)
+            },
+            onAgendaEventClick = { event ->
+                metricDetail = null
+                onAgendaEventClick(event)
             }
         )
     }
@@ -350,61 +364,15 @@ private fun IdentityModeSwitch(
     view: IdentityScheduleView,
     onViewChange: (IdentityScheduleView) -> Unit
 ) {
-    IdentitySurface(
-        modifier = Modifier.fillMaxWidth().height(LocalInterfaceSpacing.current.controlHeight),
-        shape = AppShapes.MediumCard,
-        color = UniStackColors.SurfaceVariant
-    ) {
-        Row(Modifier.fillMaxSize().padding(3.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            IdentityModeOption(
-                modifier = Modifier.weight(1f),
-                label = "Horario",
-                icon = Icons.AutoMirrored.Rounded.MenuBook,
-                selected = view == IdentityScheduleView.TIMETABLE,
-                onClick = { onViewChange(IdentityScheduleView.TIMETABLE) }
-            )
-            IdentityModeOption(
-                modifier = Modifier.weight(1f),
-                label = "Calendario",
-                icon = Icons.Rounded.CalendarMonth,
-                selected = view == IdentityScheduleView.CALENDAR,
-                onClick = { onViewChange(IdentityScheduleView.CALENDAR) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun IdentityModeOption(
-    modifier: Modifier,
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(AppShapes.SmallCard)
-            .background(if (selected) UniStackColors.Card else Color.Transparent)
-            .clickable(onClick = onClick),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (selected) IdentityAccent else UniStackColors.TextSecondary,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(Modifier.width(9.dp))
-        Text(
-            text = label,
-            color = if (selected) IdentityAccent else UniStackColors.TextSecondary,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
-        )
-    }
+    UniSegmentedControl(
+        selected = view,
+        options = listOf(
+            UniSegmentedOption(IdentityScheduleView.TIMETABLE, "Horario", Icons.AutoMirrored.Rounded.MenuBook),
+            UniSegmentedOption(IdentityScheduleView.CALENDAR, "Calendario", Icons.Rounded.CalendarMonth)
+        ),
+        onSelected = onViewChange,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable
@@ -422,23 +390,26 @@ private fun TimetableMetrics(
         { onSessionClick(upcoming.first, upcoming.second) }
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        IdentityMetricCard(
+        MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.AutoMirrored.Rounded.MenuBook,
+            iconColor = IdentityAccent,
             value = subjectCount.toString(),
             label = if (subjectCount == 1) "Materia" else "Materias",
             onClick = onSubjectsClick
         )
-        IdentityMetricCard(
+        MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Schedule,
+            iconColor = IdentityAccent,
             value = next?.second?.let { formatIdentityMinute(it.startMinute, use24Hour) } ?: "--",
             label = "Próxima",
             onClick = openUpcoming
         )
-        IdentityMetricCard(
+        MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Place,
+            iconColor = IdentityAccent,
             value = room,
             label = "Aula",
             onClick = openUpcoming
@@ -449,8 +420,8 @@ private fun TimetableMetrics(
 @Composable
 private fun CalendarMetrics(
     month: YearMonth,
-    sessions: List<ClassSession>,
     tasks: List<StudentTask>,
+    agendaEvents: List<AgendaEvent>,
     onEventsClick: () -> Unit,
     onDeliveriesClick: () -> Unit,
     onExamsClick: () -> Unit
@@ -458,86 +429,39 @@ private fun CalendarMetrics(
     val monthTasks = remember(month, tasks) {
         tasks.filter { !it.completed && YearMonth.from(it.dueLocalDate()) == month }
     }
-    val classEvents = remember(month, sessions) {
+    val eventCount = remember(month, agendaEvents) {
         (1..month.lengthOfMonth()).sumOf { day ->
             val date = month.atDay(day)
-            sessions.count { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+            agendaEvents.count { it.occursOn(date) }
         }
     }
     val exams = monthTasks.count { it.type == TaskType.EXAM || it.type == TaskType.TEST }
     val deliveries = monthTasks.size - exams
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        IdentityMetricCard(
-            Modifier.weight(1f),
-            Icons.Rounded.CalendarMonth,
-            classEvents.toString(),
-            "eventos",
-            onEventsClick
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.CalendarMonth,
+            iconColor = IdentityAccent,
+            value = eventCount.toString(),
+            label = "Eventos",
+            onClick = onEventsClick
         )
-        IdentityMetricCard(
-            Modifier.weight(1f),
-            Icons.AutoMirrored.Rounded.Assignment,
-            deliveries.toString(),
-            "entregas",
-            onDeliveriesClick
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.AutoMirrored.Rounded.Assignment,
+            iconColor = IdentityAccent,
+            value = deliveries.toString(),
+            label = "Entregas",
+            onClick = onDeliveriesClick
         )
-        IdentityMetricCard(
-            Modifier.weight(1f),
-            Icons.Rounded.School,
-            exams.toString(),
-            "exámenes",
-            onExamsClick
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.School,
+            iconColor = IdentityAccent,
+            value = exams.toString(),
+            label = "Exámenes",
+            onClick = onExamsClick
         )
-    }
-}
-
-@Composable
-private fun IdentityMetricCard(
-    modifier: Modifier,
-    icon: ImageVector,
-    value: String,
-    label: String,
-    onClick: (() -> Unit)? = null
-) {
-    IdentitySurface(
-        modifier = modifier.height(74.dp),
-        shape = AppShapes.MediumCard,
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 7.dp, vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(28.dp).clip(CircleShape).background(IdentityAccent.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(icon, contentDescription = null, tint = IdentityAccent, modifier = Modifier.size(17.dp))
-                }
-                Spacer(Modifier.width(7.dp))
-                Text(
-                    text = value,
-                    color = UniStackColors.TextPrimary,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(Modifier.height(3.dp))
-            Text(
-                text = label,
-                modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.TextSecondary,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
     }
 }
 
@@ -549,7 +473,8 @@ private fun IdentityMetricDetailsSheet(
     uiState: ScheduleUiState,
     onDismiss: () -> Unit,
     onSessionClick: (LocalDate, ClassSession) -> Unit,
-    onTaskClick: (String) -> Unit
+    onTaskClick: (String) -> Unit,
+    onAgendaEventClick: (AgendaEvent) -> Unit
 ) {
     val month = YearMonth.from(selectedDate)
     val groupedSubjects = remember(uiState.sessions) {
@@ -559,14 +484,11 @@ private fun IdentityMetricDetailsSheet(
                 uiState.subjects.firstOrNull { it.id == sessions.first().subjectId }?.name.orEmpty()
             }
     }
-    val classEvents = remember(month, uiState.sessions) {
+    val monthAgendaEvents = remember(month, uiState.agendaEvents) {
         buildList {
             (1..month.lengthOfMonth()).forEach { day ->
                 val date = month.atDay(day)
-                uiState.sessions
-                    .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
-                    .sortedBy(ClassSession::startMinute)
-                    .forEach { add(date to it) }
+                uiState.agendaEvents.filter { it.occursOn(date) }.forEach { add(date to it) }
             }
         }
     }
@@ -585,7 +507,7 @@ private fun IdentityMetricDetailsSheet(
     }
     val title = when (detail) {
         IdentityMetricDetail.SUBJECTS -> "Materias del horario"
-        IdentityMetricDetail.EVENTS -> "Clases de ${month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized()}"
+        IdentityMetricDetail.EVENTS -> "Eventos de ${month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized()}"
         IdentityMetricDetail.DELIVERIES -> "Entregas pendientes"
         IdentityMetricDetail.EXAMS -> "Exámenes pendientes"
     }
@@ -597,7 +519,7 @@ private fun IdentityMetricDetailsSheet(
     }
     val count = when (detail) {
         IdentityMetricDetail.SUBJECTS -> groupedSubjects.size
-        IdentityMetricDetail.EVENTS -> classEvents.size
+        IdentityMetricDetail.EVENTS -> monthAgendaEvents.size
         IdentityMetricDetail.DELIVERIES, IdentityMetricDetail.EXAMS -> pendingTasks.size
     }
 
@@ -672,16 +594,15 @@ private fun IdentityMetricDetailsSheet(
                         }
 
                         IdentityMetricDetail.EVENTS -> items(
-                            items = classEvents,
-                            key = { (date, session) -> "${date.toEpochDay()}-${session.id}" }
-                        ) { (date, session) ->
-                            val subject = uiState.subjects.firstOrNull { it.id == session.subjectId }
+                            items = monthAgendaEvents,
+                            key = { (date, event) -> "${date.toEpochDay()}-${event.id}" }
+                        ) { (date, event) ->
                             IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
                                 IdentityEventRow(
-                                    color = subject.identityColor(),
-                                    title = subject?.name ?: "Clase",
-                                    detail = "${date.format(DateTimeFormatter.ofPattern("EEE d", IdentityLocale)).identityCapitalized()}  \u2022  ${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  \u2022  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
-                                    onClick = { onSessionClick(date, session) }
+                                    color = event.identityColor(),
+                                    title = event.title,
+                                    detail = "${date.format(DateTimeFormatter.ofPattern("EEE d", IdentityLocale)).identityCapitalized()}  •  ${event.identityTimeText(uiState.accessibility.use24HourTime)}${event.location.takeIf(String::isNotBlank)?.let { "  •  $it" }.orEmpty()}",
+                                    onClick = { onAgendaEventClick(event) }
                                 )
                             }
                         }
@@ -781,7 +702,7 @@ private fun IdentityWeeklyTimeline(
                                     .offset(x = axisWidth + dayWidth * (day - 1) + 3.dp, y = y)
                                     .width(dayWidth - 6.dp)
                                     .height(cardHeight)
-                                    .clip(AppShapes.SmallCard)
+                                    .clip(RoundedCornerShape(8.dp))
                                     .background(subject.identityColor())
                                     .clickable { onSessionClick(date, session) }
                                     .padding(5.dp),
@@ -901,6 +822,7 @@ private fun IdentityMonthCalendar(
     sessions: List<ClassSession>,
     tasks: List<StudentTask>,
     subjects: List<Subject>,
+    agendaEvents: List<AgendaEvent>,
     onDateSelected: (LocalDate) -> Unit
 ) {
     val month = YearMonth.from(selectedDate)
@@ -950,13 +872,14 @@ private fun IdentityMonthCalendar(
                         val date = firstCell.plusDays((row * 7 + column).toLong())
                         val daySessions = sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
                         val dayTasks = tasks.filter { !it.completed && it.dueLocalDate() == date }
+                        val dayAgendaEvents = agendaEvents.filter { it.occursOn(date) }
                         IdentityMonthCell(
                             modifier = Modifier.weight(1f),
                             date = date,
                             inMonth = YearMonth.from(date) == month,
                             selected = date == selectedDate,
                             colors = daySessions.map { session -> subjects.firstOrNull { it.id == session.subjectId }.identityColor() } +
-                                dayTasks.map { IdentityAccent },
+                                dayTasks.map { IdentityAccent } + dayAgendaEvents.map(AgendaEvent::identityColor),
                             onClick = { onDateSelected(date) }
                         )
                     }
@@ -1018,14 +941,17 @@ private fun SelectedDayPanel(
     sessions: List<ClassSession>,
     tasks: List<StudentTask>,
     subjects: List<Subject>,
+    agendaEvents: List<AgendaEvent>,
     use24Hour: Boolean,
     onSessionClick: (LocalDate, ClassSession) -> Unit,
-    onTaskClick: (String) -> Unit
+    onTaskClick: (String) -> Unit,
+    onAgendaEventClick: (AgendaEvent) -> Unit
 ) {
     val daySessions = sessions
         .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
         .sortedBy(ClassSession::startMinute)
     val dayTasks = tasks.filter { !it.completed && it.dueLocalDate() == date }.sortedBy(StudentTask::dueDateMillis)
+    val dayAgendaEvents = agendaEvents.filter { it.occursOn(date) }.sortedBy(AgendaEvent::startMillis)
 
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
@@ -1038,14 +964,23 @@ private fun SelectedDayPanel(
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
-            if (daySessions.isEmpty() && dayTasks.isEmpty()) {
+            if (daySessions.isEmpty() && dayTasks.isEmpty() && dayAgendaEvents.isEmpty()) {
                 Text(
                     "No hay eventos para este día",
                     color = UniStackColors.TextSecondary,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            daySessions.take(2).forEach { session ->
+            dayAgendaEvents.take(2).forEach { event ->
+                IdentityEventRow(
+                    color = event.identityColor(),
+                    title = event.title,
+                    detail = "${event.identityTimeText(use24Hour)}${event.location.takeIf(String::isNotBlank)?.let { "  •  $it" }.orEmpty()}",
+                    onClick = { onAgendaEventClick(event) }
+                )
+            }
+            val remainingAfterEvents = (2 - dayAgendaEvents.size).coerceAtLeast(0)
+            daySessions.take(remainingAfterEvents).forEach { session ->
                 val subject = subjects.firstOrNull { it.id == session.subjectId }
                 IdentityEventRow(
                     color = subject.identityColor(),
@@ -1054,7 +989,8 @@ private fun SelectedDayPanel(
                     onClick = { onSessionClick(date, session) }
                 )
             }
-            dayTasks.take((2 - daySessions.size).coerceAtLeast(0)).forEach { task ->
+            val remainingAfterClasses = (remainingAfterEvents - daySessions.size).coerceAtLeast(0)
+            dayTasks.take(remainingAfterClasses).forEach { task ->
                 val subject = subjects.firstOrNull { it.id == task.subjectId }
                 IdentityEventRow(
                     color = subject.identityColor(),
@@ -1063,7 +999,7 @@ private fun SelectedDayPanel(
                     onClick = { onTaskClick(task.id) }
                 )
             }
-            val hidden = daySessions.size + dayTasks.size - 2
+            val hidden = dayAgendaEvents.size + daySessions.size + dayTasks.size - 2
             if (hidden > 0) {
                 Text(
                     "+$hidden eventos más",
@@ -1148,6 +1084,25 @@ private fun ClassSession.identityPlace(): IdentityPlace {
 }
 
 private fun Subject?.identityColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: IdentityAccent
+
+private fun AgendaEvent.identityColor(): Color = colorArgb?.let(::Color) ?: when (kind) {
+    AgendaEventKind.PERSONAL -> UniStackColors.Teal
+    AgendaEventKind.MEETING -> UniStackColors.Blue
+    AgendaEventKind.REMINDER -> UniStackColors.Yellow
+    AgendaEventKind.CUSTOM -> IdentityAccent
+}
+
+private fun AgendaEvent.identityTimeText(use24Hour: Boolean): String {
+    if (allDay) return "Todo el día"
+    val zone = ZoneId.systemDefault()
+    val start = Instant.ofEpochMilli(startMillis).atZone(zone).toLocalTime()
+    val startText = formatIdentityMinute(start.hour * 60 + start.minute, use24Hour)
+    val endText = endMillis?.let {
+        val end = Instant.ofEpochMilli(it).atZone(zone).toLocalTime()
+        formatIdentityMinute(end.hour * 60 + end.minute, use24Hour)
+    }
+    return if (endText == null) startText else "$startText - $endText"
+}
 
 private fun LocalDate.weekStartIdentity(): LocalDate = minusDays((dayOfWeek.value - 1).toLong())
 

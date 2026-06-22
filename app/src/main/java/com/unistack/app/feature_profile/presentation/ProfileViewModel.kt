@@ -13,6 +13,8 @@ import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
+import com.unistack.app.feature_user.domain.BackgroundStyle
+import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
@@ -123,7 +125,27 @@ class ProfileViewModel(
 
     fun updateVisualPreference(preference: VisualPreference): Boolean {
         val current = profile.value ?: return false
-        save(current.copy(visualPreference = preference))
+        val currentAppearance = current.appearancePreferences
+        val appearance = when (preference) {
+            VisualPreference.SYSTEM, VisualPreference.LIGHT, VisualPreference.DARK ->
+                currentAppearance.copy(
+                    backgroundStyle = BackgroundStyle.DEFAULT,
+                    visualPreset = VisualPreset.CUSTOM
+                )
+            VisualPreference.OLED -> currentAppearance.copy(
+                backgroundStyle = BackgroundStyle.PURE,
+                visualPreset = VisualPreset.CUSTOM
+            )
+            VisualPreference.CUSTOM -> currentAppearance.copy(
+                customThemeBase = when (current.visualPreference) {
+                    VisualPreference.LIGHT -> CustomThemeBase.LIGHT
+                    VisualPreference.DARK, VisualPreference.OLED -> CustomThemeBase.DARK
+                    VisualPreference.SYSTEM, VisualPreference.CUSTOM -> currentAppearance.customThemeBase
+                },
+                visualPreset = VisualPreset.CUSTOM
+            )
+        }
+        save(current.copy(visualPreference = preference, appearancePreferences = appearance))
         return true
     }
 
@@ -148,7 +170,9 @@ class ProfileViewModel(
         val visualPreference = when (preset) {
             VisualPreset.OLED -> VisualPreference.OLED
             VisualPreset.DEFAULT -> VisualPreference.SYSTEM
-            else -> current.visualPreference.takeUnless { it == VisualPreference.OLED } ?: VisualPreference.DARK
+            else -> current.visualPreference.takeUnless {
+                it == VisualPreference.OLED || it == VisualPreference.CUSTOM
+            } ?: VisualPreference.DARK
         }
         save(
             current.copy(

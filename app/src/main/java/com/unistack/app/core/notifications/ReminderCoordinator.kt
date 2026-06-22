@@ -29,8 +29,9 @@ object ReminderCoordinator {
         job = CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             val scheduleState = combine(
                 scheduleRepository.sessions,
-                scheduleRepository.occurrences
-            ) { sessions, occurrences -> sessions to occurrences }
+                scheduleRepository.occurrences,
+                scheduleRepository.agendaEvents
+            ) { sessions, occurrences, agendaEvents -> Triple(sessions, occurrences, agendaEvents) }
             combine(
                 userRepository.userProfile,
                 gradesRepository.subjects,
@@ -44,7 +45,8 @@ object ReminderCoordinator {
                     works = works,
                     subjects = subjects,
                     classSessions = schedule.first,
-                    classOccurrences = schedule.second
+                    classOccurrences = schedule.second,
+                    agendaEvents = schedule.third
                 )
             }.collect {}
         }

@@ -133,5 +133,6 @@ enum class VisualPreference {
     SYSTEM,
     LIGHT,
     DARK,
-    OLED
+    OLED,
+    CUSTOM
 }

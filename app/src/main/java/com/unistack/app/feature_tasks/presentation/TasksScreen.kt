@@ -96,6 +96,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
@@ -828,15 +830,14 @@ private fun TaskStatCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    UniCard(
         modifier = modifier
-            .height(104.dp)
-            .cleanClickable(onClick),
-        shape = RoundedCornerShape(14.dp),
+            .height(104.dp),
+        shape = AppShapes.SmallCard,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)),
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        onClick = onClick,
+        contentPadding = PaddingValues(0.dp)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -1177,22 +1178,17 @@ private fun TaskCard(
     val priorityColor = task.difficulty.color()
     var menuExpanded by remember(task.id) { mutableStateOf(false) }
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .cleanClickable(onCardClick),
-        shape = RoundedCornerShape(16.dp),
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = AppShapes.SmallCard,
         color = if (awaitingGrade) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
         } else {
             MaterialTheme.colorScheme.surface
         },
-        border = BorderStroke(
-            0.8.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = if (awaitingGrade) 0.24f else 0.16f)
-        ),
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        onClick = onCardClick,
+        contentPadding = PaddingValues(0.dp)
     ) {
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
@@ -1391,12 +1387,12 @@ private fun TaskCard(
 
 @Composable
 private fun TasksEmptyState() {
-    Surface(
+    UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = AppShapes.LargeCard,
         color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f),
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        contentPadding = PaddingValues(0.dp)
     ) {
         Column(
             modifier = Modifier.padding(22.dp),
@@ -1425,11 +1421,11 @@ private fun TasksEmptyState() {
 
 @Composable
 private fun FilteredEmptyState(onOpenFilters: () -> Unit) {
-    Surface(
+    UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = AppShapes.MediumCard,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f))
+        contentPadding = PaddingValues(0.dp)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
