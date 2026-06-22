@@ -1,0 +1,163 @@
+package com.unistack.app.feature_user.domain
+
+data class AppearancePreferences(
+    val backgroundStyle: BackgroundStyle = BackgroundStyle.DEFAULT,
+    val customBackgroundColor: Int? = null,
+    val accentStyle: AccentStyle = AccentStyle.VIOLET,
+    val customAccentColor: Int? = null,
+    val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
+    val surfaceStyle: SurfaceStyle = SurfaceStyle.OUTLINED,
+    val cornerStyle: CornerStyle = CornerStyle.BALANCED,
+    val interfaceDensity: InterfaceDensity = InterfaceDensity.BALANCED,
+    val motionPreference: MotionPreference = MotionPreference.FULL,
+    val textScale: TextScalePreference = TextScalePreference.STANDARD,
+    val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
+    val decimalPlaces: Int = 1,
+    val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
+    val navigationBarPresentation: NavigationBarPresentation = NavigationBarPresentation.INTEGRATED,
+    val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
+    val showHomeGreeting: Boolean = true,
+    val showHomeHero: Boolean = true,
+    val showHomeAgenda: Boolean = true,
+    val showHomeSnapshot: Boolean = true,
+    val homeSectionOrder: List<HomeSection> = HomeSection.entries,
+    val heroAutoRotate: Boolean = true,
+    val heroShowsGrades: Boolean = true,
+    val heroShowsTasks: Boolean = true,
+    val heroShowsExpenses: Boolean = true,
+    val initialTab: InitialTab = InitialTab.HOME,
+    val visualPreset: VisualPreset = VisualPreset.CUSTOM
+) {
+    fun normalized(): AppearancePreferences = copy(
+        decimalPlaces = decimalPlaces.coerceIn(0, 2),
+        homeSectionOrder = homeSectionOrder
+            .distinct()
+            .let { current -> current + HomeSection.entries.filterNot(current::contains) }
+    )
+
+    companion object {
+        fun defaults() = AppearancePreferences()
+
+        fun preset(preset: VisualPreset): AppearancePreferences = when (preset) {
+            VisualPreset.DEFAULT -> defaults().copy(visualPreset = VisualPreset.DEFAULT)
+            VisualPreset.MINIMAL -> defaults().copy(
+                surfaceStyle = SurfaceStyle.FLAT,
+                cornerStyle = CornerStyle.COMPACT,
+                interfaceDensity = InterfaceDensity.COMPACT,
+                bottomBarStyle = BottomBarStyle.ICONS_ONLY,
+                academicIndicatorStyle = AcademicIndicatorStyle.NUMBERS,
+                visualPreset = VisualPreset.MINIMAL
+            )
+            VisualPreset.OLED -> defaults().copy(
+                backgroundStyle = BackgroundStyle.PURE,
+                surfaceStyle = SurfaceStyle.OUTLINED,
+                accentIntensity = AccentIntensity.VIBRANT,
+                visualPreset = VisualPreset.OLED
+            )
+            VisualPreset.FOCUS -> defaults().copy(
+                accentStyle = AccentStyle.TEAL,
+                accentIntensity = AccentIntensity.SOFT,
+                interfaceDensity = InterfaceDensity.COMFORTABLE,
+                showHomeSnapshot = false,
+                heroShowsExpenses = false,
+                visualPreset = VisualPreset.FOCUS
+            )
+            VisualPreset.CUSTOM -> defaults()
+        }
+    }
+}
+
+enum class BackgroundStyle {
+    DEFAULT,
+    PURE,
+    COOL,
+    VIOLET,
+    CUSTOM
+}
+
+enum class AccentStyle {
+    VIOLET,
+    BLUE,
+    TEAL,
+    GREEN,
+    PINK,
+    CUSTOM
+}
+
+enum class AccentIntensity {
+    SOFT,
+    BALANCED,
+    VIBRANT
+}
+
+enum class SurfaceStyle {
+    FLAT,
+    OUTLINED,
+    ELEVATED,
+    TRANSLUCENT
+}
+
+enum class CornerStyle {
+    COMPACT,
+    BALANCED,
+    SOFT
+}
+
+enum class InterfaceDensity {
+    COMPACT,
+    BALANCED,
+    COMFORTABLE
+}
+
+enum class MotionPreference {
+    FULL,
+    REDUCED,
+    NONE
+}
+
+enum class TextScalePreference {
+    STANDARD,
+    LARGE
+}
+
+enum class TypographyStyle {
+    UNISTACK,
+    SYSTEM
+}
+
+enum class BottomBarStyle {
+    LABELED,
+    ICONS_ONLY
+}
+
+enum class NavigationBarPresentation {
+    INTEGRATED,
+    FLOATING
+}
+
+enum class AcademicIndicatorStyle {
+    RINGS,
+    BARS,
+    NUMBERS
+}
+
+enum class VisualPreset {
+    DEFAULT,
+    MINIMAL,
+    OLED,
+    FOCUS,
+    CUSTOM
+}
+
+enum class HomeSection {
+    HERO,
+    AGENDA,
+    SNAPSHOT
+}
+
+enum class InitialTab {
+    HOME,
+    GRADES,
+    TASKS,
+    EXPENSES
+}

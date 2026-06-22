@@ -13,7 +13,8 @@ class UniStackApplication : Application() {
             userRepository = AppContainer.userRepository,
             gradesRepository = AppContainer.gradesRepository,
             tasksRepository = AppContainer.tasksRepository,
-            academicWorksRepository = AppContainer.academicWorksRepository
+            academicWorksRepository = AppContainer.academicWorksRepository,
+            scheduleRepository = AppContainer.scheduleRepository
         )
     }
 }

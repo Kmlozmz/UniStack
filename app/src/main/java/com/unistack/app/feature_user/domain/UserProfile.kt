@@ -21,6 +21,8 @@ data class UserProfile(
     val targetAverage: Double,
     val enabledModules: Set<AppModule>,
     val visualPreference: VisualPreference = VisualPreference.SYSTEM,
+    val appearancePreferences: AppearancePreferences = AppearancePreferences(),
+    val accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences(),
     val taskRemindersEnabled: Boolean = true,
     val academicWorkRemindersEnabled: Boolean = true,
     val overdueRemindersEnabled: Boolean = true,
@@ -130,5 +132,6 @@ enum class AppModule {
 enum class VisualPreference {
     SYSTEM,
     LIGHT,
-    DARK
+    DARK,
+    OLED
 }

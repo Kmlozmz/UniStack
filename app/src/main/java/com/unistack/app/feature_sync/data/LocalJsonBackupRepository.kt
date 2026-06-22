@@ -25,6 +25,12 @@ import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassModality
+import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -32,10 +38,28 @@ import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.AccessibilityPreferences
+import com.unistack.app.feature_user.domain.AccentIntensity
+import com.unistack.app.feature_user.domain.AccentStyle
+import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.BackgroundStyle
+import com.unistack.app.feature_user.domain.BottomBarStyle
+import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InitialTab
+import com.unistack.app.feature_user.domain.InterfaceDensity
+import com.unistack.app.feature_user.domain.MotionPreference
+import com.unistack.app.feature_user.domain.NavigationBarPresentation
+import com.unistack.app.feature_user.domain.SurfaceStyle
+import com.unistack.app.feature_user.domain.TextScalePreference
+import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.VisualPreference
+import com.unistack.app.feature_user.domain.VisualPreset
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -45,7 +69,8 @@ class LocalJsonBackupRepository(
     private val gradesRepository: GradesRepository,
     private val tasksRepository: TasksRepository,
     private val expensesRepository: ExpensesRepository,
-    private val academicWorksRepository: AcademicWorksRepository
+    private val academicWorksRepository: AcademicWorksRepository,
+    private val scheduleRepository: ScheduleRepository
 ) : LocalBackupRepository {
 
     override fun exportBackupJson(): String {
@@ -57,6 +82,8 @@ class LocalJsonBackupRepository(
             .put("tasks", JSONArray(tasksRepository.tasks.value.map(::taskJson)))
             .put("expenses", JSONArray(expensesRepository.expenses.value.map(::expenseJson)))
             .put("academicWorks", JSONArray(academicWorksRepository.works.value.map(::academicWorkJson)))
+            .put("classSessions", JSONArray(scheduleRepository.sessions.value.map(::classSessionJson)))
+            .put("classOccurrences", JSONArray(scheduleRepository.occurrences.value.map(::classOccurrenceJson)))
             .toString(2)
     }
 
@@ -101,6 +128,8 @@ class LocalJsonBackupRepository(
         parseAcademicWorks(root.optJSONArray("academicWorks")).forEach { work ->
             if (academicWorksRepository.works.value.any { it.id == work.id }) academicWorksRepository.updateWork(work) else academicWorksRepository.addWork(work)
         }
+        parseClassSessions(root.optJSONArray("classSessions")).forEach(scheduleRepository::saveSession)
+        parseClassOccurrences(root.optJSONArray("classOccurrences")).forEach(scheduleRepository::saveOccurrence)
         preview
     }
 
@@ -182,6 +211,15 @@ class LocalJsonBackupRepository(
             .put("customGradeMax", profile?.customGradeMax ?: 100.0)
             .put("passingGrade", profile?.passingGrade ?: 3.0)
             .put("targetAverage", profile?.targetAverage ?: 4.0)
+            .put("visualPreference", profile?.visualPreference?.name ?: VisualPreference.SYSTEM.name)
+            .put(
+                "appearancePreferences",
+                appearanceJson(profile?.appearancePreferences ?: AppearancePreferences.defaults())
+            )
+            .put(
+                "accessibilityPreferences",
+                accessibilityJson(profile?.accessibilityPreferences ?: AccessibilityPreferences())
+            )
             .put("academicPeriodScheme", profile?.academicPeriodScheme?.toJsonObject() ?: AcademicPeriodScheme.default().toJsonObject())
             .put("taskRemindersEnabled", profile?.taskRemindersEnabled ?: true)
             .put("academicWorkRemindersEnabled", profile?.academicWorkRemindersEnabled ?: true)
@@ -219,6 +257,16 @@ class LocalJsonBackupRepository(
                 customGradeMax = profileJson.optDouble("customGradeMax", current.customGradeMax).coerceIn(1.0, 100.0),
                 passingGrade = profileJson.optDouble("passingGrade", current.passingGrade),
                 targetAverage = profileJson.optDouble("targetAverage", current.targetAverage),
+                visualPreference = profileJson.optString("visualPreference")
+                    .toEnum(current.visualPreference),
+                appearancePreferences = parseAppearance(
+                    profileJson.optJSONObject("appearancePreferences"),
+                    current.appearancePreferences
+                ),
+                accessibilityPreferences = parseAccessibility(
+                    profileJson.optJSONObject("accessibilityPreferences"),
+                    current.accessibilityPreferences
+                ),
                 academicPeriodScheme = profileJson.optJSONObject("academicPeriodScheme").toAcademicPeriodSchemeOrNull()
                     ?: current.academicPeriodScheme,
                 taskRemindersEnabled = profileJson.optBoolean("taskRemindersEnabled", current.taskRemindersEnabled),
@@ -258,6 +306,97 @@ class LocalJsonBackupRepository(
                 updatedAt = System.currentTimeMillis()
             )
         )
+    }
+
+    private fun appearanceJson(value: AppearancePreferences): JSONObject = JSONObject()
+        .put("backgroundStyle", value.backgroundStyle.name)
+        .put("customBackgroundColor", value.customBackgroundColor)
+        .put("accentStyle", value.accentStyle.name)
+        .put("customAccentColor", value.customAccentColor)
+        .put("accentIntensity", value.accentIntensity.name)
+        .put("surfaceStyle", value.surfaceStyle.name)
+        .put("cornerStyle", value.cornerStyle.name)
+        .put("interfaceDensity", value.interfaceDensity.name)
+        .put("motionPreference", value.motionPreference.name)
+        .put("textScale", value.textScale.name)
+        .put("typographyStyle", value.typographyStyle.name)
+        .put("decimalPlaces", value.decimalPlaces)
+        .put("bottomBarStyle", value.bottomBarStyle.name)
+        .put("navigationBarPresentation", value.navigationBarPresentation.name)
+        .put("academicIndicatorStyle", value.academicIndicatorStyle.name)
+        .put("showHomeGreeting", value.showHomeGreeting)
+        .put("showHomeHero", value.showHomeHero)
+        .put("showHomeAgenda", value.showHomeAgenda)
+        .put("showHomeSnapshot", value.showHomeSnapshot)
+        .put("homeSectionOrder", JSONArray(value.homeSectionOrder.map { it.name }))
+        .put("heroAutoRotate", value.heroAutoRotate)
+        .put("heroShowsGrades", value.heroShowsGrades)
+        .put("heroShowsTasks", value.heroShowsTasks)
+        .put("heroShowsExpenses", value.heroShowsExpenses)
+        .put("initialTab", value.initialTab.name)
+        .put("visualPreset", value.visualPreset.name)
+
+    private fun accessibilityJson(value: AccessibilityPreferences): JSONObject = JSONObject()
+        .put("appLanguage", value.appLanguage.name)
+        .put("highContrastEnabled", value.highContrastEnabled)
+        .put("use24HourTime", value.use24HourTime)
+        .put("textScale", value.textScale.name)
+        .put("motionPreference", value.motionPreference.name)
+        .put("heroAnimationEnabled", value.heroAnimationEnabled)
+
+    private fun parseAccessibility(
+        json: JSONObject?,
+        current: AccessibilityPreferences
+    ): AccessibilityPreferences {
+        if (json == null) return current
+        return AccessibilityPreferences(
+            appLanguage = json.optString("appLanguage").toEnum(current.appLanguage),
+            highContrastEnabled = json.optBoolean("highContrastEnabled", current.highContrastEnabled),
+            use24HourTime = json.optBoolean("use24HourTime", current.use24HourTime),
+            textScale = json.optString("textScale").toEnum(current.textScale),
+            motionPreference = json.optString("motionPreference").toEnum(current.motionPreference),
+            heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", current.heroAnimationEnabled)
+        )
+    }
+
+    private fun parseAppearance(
+        json: JSONObject?,
+        current: AppearancePreferences
+    ): AppearancePreferences {
+        if (json == null) return current
+        return AppearancePreferences(
+            backgroundStyle = json.optString("backgroundStyle").toEnum(current.backgroundStyle),
+            customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
+            accentStyle = json.optString("accentStyle").toEnum(current.accentStyle),
+            customAccentColor = json.optIntOrNull("customAccentColor"),
+            accentIntensity = json.optString("accentIntensity").toEnum(current.accentIntensity),
+            surfaceStyle = json.optString("surfaceStyle").toEnum(current.surfaceStyle),
+            cornerStyle = json.optString("cornerStyle").toEnum(current.cornerStyle),
+            interfaceDensity = json.optString("interfaceDensity").toEnum(current.interfaceDensity),
+            motionPreference = json.optString("motionPreference").toEnum(current.motionPreference),
+            textScale = json.optString("textScale").toEnum(current.textScale),
+            typographyStyle = json.optString("typographyStyle").toEnum(current.typographyStyle),
+            decimalPlaces = json.optInt("decimalPlaces", current.decimalPlaces),
+            bottomBarStyle = json.optString("bottomBarStyle").toEnum(current.bottomBarStyle),
+            navigationBarPresentation = json.optString("navigationBarPresentation")
+                .toEnum(current.navigationBarPresentation),
+            academicIndicatorStyle = json.optString("academicIndicatorStyle")
+                .toEnum(current.academicIndicatorStyle),
+            showHomeGreeting = json.optBoolean("showHomeGreeting", current.showHomeGreeting),
+            showHomeHero = json.optBoolean("showHomeHero", current.showHomeHero),
+            showHomeAgenda = json.optBoolean("showHomeAgenda", current.showHomeAgenda),
+            showHomeSnapshot = json.optBoolean("showHomeSnapshot", current.showHomeSnapshot),
+            homeSectionOrder = json.optJSONArray("homeSectionOrder")
+                .strings()
+                .mapNotNull { it.toEnumOrNull<HomeSection>() }
+                .ifEmpty { current.homeSectionOrder },
+            heroAutoRotate = json.optBoolean("heroAutoRotate", current.heroAutoRotate),
+            heroShowsGrades = json.optBoolean("heroShowsGrades", current.heroShowsGrades),
+            heroShowsTasks = json.optBoolean("heroShowsTasks", current.heroShowsTasks),
+            heroShowsExpenses = json.optBoolean("heroShowsExpenses", current.heroShowsExpenses),
+            initialTab = json.optString("initialTab").toEnum(current.initialTab),
+            visualPreset = json.optString("visualPreset").toEnum(current.visualPreset)
+        ).normalized()
     }
 
     private fun AcademicPeriodScheme.toJsonObject(): JSONObject {
@@ -348,6 +487,32 @@ class LocalJsonBackupRepository(
         .put("createdAt", task.createdAt)
         .put("updatedAt", task.updatedAt)
 
+    private fun classSessionJson(session: ClassSession): JSONObject = JSONObject()
+        .put("id", session.id)
+        .put("subjectId", session.subjectId)
+        .put("daysOfWeek", JSONArray(session.daysOfWeek.sorted()))
+        .put("startMinute", session.startMinute)
+        .put("endMinute", session.endMinute)
+        .put("location", session.location)
+        .put("reminderMinutes", session.reminderMinutes)
+        .put("repeatEveryWeeks", session.repeatEveryWeeks)
+        .put("recurrenceStartEpochDay", session.recurrenceStartEpochDay)
+        .put("createdAt", session.createdAt)
+        .put("updatedAt", session.updatedAt)
+
+    private fun classOccurrenceJson(occurrence: ClassOccurrence): JSONObject = JSONObject()
+        .put("id", occurrence.id)
+        .put("sessionId", occurrence.sessionId)
+        .put("dateEpochDay", occurrence.dateEpochDay)
+        .put("status", occurrence.status.name)
+        .put("modality", occurrence.modality.name)
+        .put("absenceReason", occurrence.absenceReason?.name)
+        .put("note", occurrence.note)
+        .put("overrideStartMinute", occurrence.overrideStartMinute)
+        .put("overrideEndMinute", occurrence.overrideEndMinute)
+        .put("overrideLocation", occurrence.overrideLocation)
+        .put("updatedAt", occurrence.updatedAt)
+
     private fun expenseJson(expense: Expense): JSONObject = JSONObject()
         .put("id", expense.id)
         .put("category", expense.category.name)
@@ -424,6 +589,41 @@ class LocalJsonBackupRepository(
         )
     }
 
+    private fun parseClassSessions(array: JSONArray?): List<ClassSession> = array.objects().mapNotNull { item ->
+        ClassSession(
+            id = item.optString("id").takeIf(String::isNotBlank) ?: return@mapNotNull null,
+            subjectId = item.optString("subjectId").takeIf(String::isNotBlank) ?: return@mapNotNull null,
+            daysOfWeek = item.optJSONArray("daysOfWeek")
+                ?.let { days -> (0 until days.length()).map { days.optInt(it) }.filter { it in 1..7 }.toSet() }
+                .orEmpty(),
+            startMinute = item.optInt("startMinute", -1),
+            endMinute = item.optInt("endMinute", -1),
+            location = item.optString("location"),
+            reminderMinutes = item.optInt("reminderMinutes", 15),
+            createdAt = item.optLong("createdAt", System.currentTimeMillis()),
+            updatedAt = item.optLong("updatedAt", System.currentTimeMillis()),
+            repeatEveryWeeks = item.optInt("repeatEveryWeeks", 1),
+            recurrenceStartEpochDay = item.optLong("recurrenceStartEpochDay", 0L)
+        ).takeIf { it.isValid }
+    }
+
+    private fun parseClassOccurrences(array: JSONArray?): List<ClassOccurrence> =
+        array.objects().mapNotNull { item ->
+            ClassOccurrence(
+                id = item.optString("id").takeIf(String::isNotBlank) ?: return@mapNotNull null,
+                sessionId = item.optString("sessionId").takeIf(String::isNotBlank) ?: return@mapNotNull null,
+                dateEpochDay = item.optLong("dateEpochDay"),
+                status = item.optString("status").toEnum(ClassAttendanceStatus.PENDING),
+                modality = item.optString("modality").toEnum(ClassModality.IN_PERSON),
+                absenceReason = item.optString("absenceReason").toEnumOrNull<ClassAbsenceReason>(),
+                note = item.optString("note"),
+                overrideStartMinute = item.optIntOrNull("overrideStartMinute"),
+                overrideEndMinute = item.optIntOrNull("overrideEndMinute"),
+                overrideLocation = item.optNullableString("overrideLocation"),
+                updatedAt = item.optLong("updatedAt", System.currentTimeMillis())
+            ).takeIf { it.isValid }
+        }
+
     private fun parseExpenses(array: JSONArray?): List<Expense> = array.objects().mapNotNull { item ->
         Expense(
             id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null,
@@ -469,11 +669,12 @@ class LocalJsonBackupRepository(
     }
 
     private inline fun <reified T : Enum<T>> String.toEnum(default: T): T = runCatching { enumValueOf<T>(this) }.getOrDefault(default)
+    private inline fun <reified T : Enum<T>> String.toEnumOrNull(): T? = runCatching { enumValueOf<T>(this) }.getOrNull()
     private fun JSONObject.optNullableString(key: String): String? = if (isNull(key)) null else optString(key).takeIf { it.isNotBlank() }
     private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 4
+        const val SCHEMA_VERSION = 8
     }
 }

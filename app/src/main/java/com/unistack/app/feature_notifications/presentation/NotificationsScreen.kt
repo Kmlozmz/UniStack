@@ -5,9 +5,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,10 +32,13 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DoneAll
+import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -46,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -76,8 +82,25 @@ import java.util.Locale
 
 private enum class NotificationFilter(val label: String) {
     ALL("Todas"),
+    ACTIONS("Acción"),
+    ACADEMIC("Académico"),
+    TASKS("Tareas"),
+    CLASSES("Clases"),
     UNREAD("No leídas"),
-    READ("Vistas")
+    READ("Vistas");
+
+    fun matches(item: NotificationHistoryItem): Boolean {
+        val category = item.category()
+        return when (this) {
+            ALL -> true
+            ACTIONS -> category.requiresAction
+            ACADEMIC -> category.kind == NotificationKind.ACADEMIC
+            TASKS -> category.kind == NotificationKind.TASK
+            CLASSES -> category.kind == NotificationKind.CLASS
+            UNREAD -> !item.read
+            READ -> item.read
+        }
+    }
 }
 
 private val NotificationSurface: Color
@@ -88,7 +111,7 @@ private val NotificationFilterSurface: Color
     @Composable get() = UniStackColors.SurfaceVariant
 private val NotificationBorder: Color
     @Composable get() = UniStackColors.SoftOutline
-private val NotificationPurple: Color
+private val NotificationPrimary: Color
     @Composable get() = UniStackColors.Primary
 private val NotificationAccentText: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFDDB7FF) else UniStackColors.PrimaryDark
@@ -100,9 +123,9 @@ private val NotificationMuted: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA8ADBC) else UniStackColors.TextSecondary
 private val NotificationHeroBrush: Brush
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Brush.linearGradient(listOf(Color(0xFF130A2C), Color(0xFF25104F)))
+        Brush.linearGradient(listOf(Color(0xFF160A2E), Color(0xFF09111F), Color(0xFF07131B)))
     } else {
-        Brush.linearGradient(listOf(Color(0xFFF7F2FF), Color(0xFFE9DDFF)))
+        Brush.linearGradient(listOf(Color(0xFFF9F6FF), Color(0xFFEFE7FF), Color(0xFFF7FBFF)))
     }
 
 @Composable
@@ -119,13 +142,7 @@ fun NotificationHistoryScreen(
     }.collectAsStateWithLifecycle()
     var selectedFilter by rememberSaveable { mutableStateOf(NotificationFilter.ALL) }
     val filtered = remember(notifications, selectedFilter) {
-        notifications.filter { item ->
-            when (selectedFilter) {
-                NotificationFilter.ALL -> true
-                NotificationFilter.UNREAD -> !item.read
-                NotificationFilter.READ -> item.read
-            }
-        }
+        notifications.filter(selectedFilter::matches)
     }
     val grouped = remember(filtered) {
         filtered
@@ -151,15 +168,19 @@ fun NotificationHistoryScreen(
             )
         }
         item {
+            NotificationInboxSummary(
+                unreadCount = notifications.count { !it.read },
+                actionCount = notifications.count { it.category().requiresAction }
+            )
+        }
+        item {
             NotificationFilterBar(
                 selected = selectedFilter,
                 onSelected = { selectedFilter = it }
             )
         }
         if (grouped.isEmpty()) {
-            item {
-                EmptyNotifications(filter = selectedFilter)
-            }
+            item { EmptyNotifications(filter = selectedFilter) }
         } else {
             grouped.forEach { (section, items) ->
                 item {
@@ -209,15 +230,15 @@ private fun NotificationHistoryHeader(
         Spacer(modifier = Modifier.width(5.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "Historial de notificaciones",
+                text = "Notificaciones",
                 color = NotificationText,
-                fontSize = 21.sp,
-                lineHeight = 25.sp,
+                fontSize = 28.sp,
+                lineHeight = 32.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = when (unreadCount) {
-                    0 -> "Consulta los avisos que recibió tu teléfono"
+                    0 -> "Historial de avisos recibidos"
                     1 -> "1 aviso sin revisar"
                     else -> "$unreadCount avisos sin revisar"
                 },
@@ -228,7 +249,7 @@ private fun NotificationHistoryHeader(
         }
         Box {
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(40.dp)) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones", tint = NotificationAccentText)
+                Icon(Icons.Rounded.MoreVert, contentDescription = "Mas opciones", tint = NotificationAccentText)
             }
             DropdownMenu(
                 expanded = menuExpanded,
@@ -246,7 +267,7 @@ private fun NotificationHistoryHeader(
                         Icon(
                             Icons.Rounded.DoneAll,
                             contentDescription = null,
-                            tint = if (canMarkAllRead) NotificationPurple else NotificationMuted.copy(alpha = 0.55f)
+                            tint = if (canMarkAllRead) NotificationPrimary else NotificationMuted.copy(alpha = 0.55f)
                         )
                     },
                     enabled = canMarkAllRead,
@@ -258,7 +279,7 @@ private fun NotificationHistoryHeader(
                 DropdownMenuItem(
                     text = { Text("Configurar recordatorios", color = NotificationText) },
                     leadingIcon = {
-                        Icon(Icons.Rounded.Settings, contentDescription = null, tint = NotificationPurple)
+                        Icon(Icons.Rounded.Settings, contentDescription = null, tint = NotificationPrimary)
                     },
                     onClick = {
                         menuExpanded = false
@@ -271,6 +292,77 @@ private fun NotificationHistoryHeader(
 }
 
 @Composable
+private fun NotificationInboxSummary(
+    unreadCount: Int,
+    actionCount: Int
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = NotificationCard,
+        border = BorderStroke(1.dp, NotificationBorder)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(NotificationPrimary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Rounded.NotificationsNone, contentDescription = null, tint = NotificationPrimary)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Historial de avisos", color = NotificationText, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    if (unreadCount == 0) "Todo está revisado" else "$unreadCount sin revisar",
+                    color = NotificationMuted,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
+            }
+            if (actionCount > 0) {
+                Surface(
+                    shape = AppShapes.Pill,
+                    color = UniStackColors.Coral.copy(alpha = 0.13f)
+                ) {
+                    Text(
+                        "$actionCount con acción",
+                        color = UniStackColors.Coral,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationSummaryStat(
+    label: String,
+    value: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = AppShapes.SmallCard,
+        color = NotificationCard.copy(alpha = if (UniStackColors.IsDarkTheme) 0.62f else 0.82f)
+    ) {
+        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(value.toString(), color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            Text(label, color = NotificationMuted, fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
+        }
+    }
+}
+
+@Composable
 private fun NotificationFilterBar(
     selected: NotificationFilter,
     onSelected: (NotificationFilter) -> Unit
@@ -278,30 +370,30 @@ private fun NotificationFilterBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.Pill)
-            .background(NotificationFilterSurface)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(NotificationFilterSurface.copy(alpha = 0.72f))
+            .horizontalScroll(rememberScrollState())
+            .padding(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        NotificationFilter.entries.forEach { filter ->
+        NotificationFilter.entries.filterNot { it == NotificationFilter.READ }.forEach { filter ->
             val isSelected = selected == filter
             Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { onSelected(filter) },
+                onClick = { onSelected(filter) },
                 shape = AppShapes.Pill,
-                color = if (isSelected) NotificationPurple else Color.Transparent,
+                color = if (isSelected) NotificationPrimary else Color.Transparent,
+                border = if (isSelected) null else BorderStroke(1.dp, NotificationBorder.copy(alpha = 0.45f)),
                 tonalElevation = 0.dp
             ) {
                 Text(
                     text = filter.label,
                     color = if (isSelected) Color.White else NotificationMuted,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp,
+                    fontSize = 11.sp,
+                    lineHeight = 14.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 9.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 )
             }
         }
@@ -313,80 +405,103 @@ private fun NotificationHistoryCard(
     item: NotificationHistoryItem,
     onClick: () -> Unit
 ) {
-    val visual = item.visual()
+    val category = item.category()
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         color = NotificationCard,
-        border = BorderStroke(1.dp, NotificationBorder)
+        border = BorderStroke(
+            1.dp,
+            if (category.requiresAction && !item.read) category.color.copy(alpha = 0.36f) else NotificationBorder
+        )
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (!item.read) {
+        Column(modifier = Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
                 Box(
                     modifier = Modifier
-                        .size(7.dp)
-                        .clip(CircleShape)
-                        .background(NotificationPurple)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(CircleShape)
-                    .background(visual.color.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = visual.icon,
-                    contentDescription = null,
-                    tint = visual.color,
-                    modifier = Modifier.size(21.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = item.title,
-                    color = NotificationText,
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = if (!item.read) FontWeight.Bold else FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = item.body,
-                    color = NotificationBody,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    NotificationStatusPill(item = item, compact = true)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = item.timeLabel(),
-                        color = NotificationMuted,
-                        fontSize = 10.sp,
-                        lineHeight = 13.sp
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(category.color.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = category.icon,
+                        contentDescription = null,
+                        tint = category.color,
+                        modifier = Modifier.size(23.dp)
                     )
                 }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        NotificationCategoryPill(category)
+                        Spacer(Modifier.width(7.dp))
+                        NotificationStatusPill(item = item, compact = true)
+                    }
+                    Text(
+                        text = item.title,
+                        color = NotificationText,
+                        fontSize = 15.sp,
+                        lineHeight = 19.sp,
+                        fontWeight = if (!item.read) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = item.body,
+                        color = NotificationBody,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = NotificationMuted,
+                    modifier = Modifier.size(18.dp)
+                )
             }
-            Icon(
-                imageVector = Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = NotificationMuted,
-                modifier = Modifier.size(18.dp)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (category.requiresAction) {
+                    Text(
+                        "Requiere accion",
+                        color = category.color,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(10.dp))
+                }
+                Icon(Icons.Rounded.AccessTime, contentDescription = null, tint = NotificationMuted, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = item.timeLabel(),
+                    color = NotificationMuted,
+                    fontSize = 11.sp,
+                    lineHeight = 13.sp
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun NotificationCategoryPill(category: NotificationCategory) {
+    Surface(
+        shape = AppShapes.Pill,
+        color = category.color.copy(alpha = 0.13f)
+    ) {
+        Text(
+            category.label,
+            color = category.color,
+            fontSize = 9.sp,
+            lineHeight = 11.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
     }
 }
 
@@ -422,21 +537,12 @@ fun NotificationDetailScreen(
         NotificationDetailHeader(onBackClick = onBackClick)
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 18.dp, top = 4.dp, end = 18.dp, bottom = 18.dp),
+            contentPadding = PaddingValues(start = 18.dp, top = 6.dp, end = 18.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item {
-                NotificationHero()
-            }
-            item {
-                NotificationDetailCopy(notification)
-            }
-            item {
-                NotificationScheduleSummary(notification)
-            }
-            item {
-                NotificationHintStrip(notification)
-            }
+            item { NotificationDetailHero(notification) }
+            item { NotificationMetaCard(notification) }
+            item { NotificationHintCard(notification) }
         }
         NotificationDetailActions(
             item = notification,
@@ -456,7 +562,7 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp)
+            .height(54.dp)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -466,140 +572,229 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
         Text(
             text = "Detalle del aviso",
             color = NotificationText,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontSize = 19.sp,
+            lineHeight = 23.sp,
+            fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(start = 4.dp)
         )
     }
 }
 
 @Composable
-private fun NotificationHero() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(164.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(NotificationHeroBrush),
-        contentAlignment = Alignment.Center
-    ) {
-        Image(
-            painter = painterResource(R.drawable.notification_bell_cutout),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(154.dp)
-        )
-    }
-}
-
-@Composable
-private fun NotificationDetailCopy(item: NotificationHistoryItem) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        NotificationStatusPill(item = item)
-        Text(
-            text = item.title,
-            color = NotificationText,
-            fontSize = 23.sp,
-            lineHeight = 28.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = item.body,
-            color = NotificationBody,
-            fontSize = 14.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Normal,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
-    }
-}
-
-@Composable
-private fun NotificationScheduleSummary(item: NotificationHistoryItem) {
-    val zoned = Instant.ofEpochMilli(item.timestampMillis).atZone(ZoneId.systemDefault())
-    val date = zoned.format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO")))
-    val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
+private fun NotificationDetailHero(item: NotificationHistoryItem) {
+    val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(12.dp),
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .background(NotificationHeroBrush)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(NotificationPurple.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Campaign,
-                    contentDescription = null,
-                    tint = NotificationAccentText,
-                    modifier = Modifier.size(20.dp)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(category.color.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(28.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                        NotificationCategoryPill(category)
+                        NotificationStatusPill(item = item, compact = true)
+                    }
+                    Text(
+                        text = if (item.read) "Aviso revisado" else "Aviso nuevo",
+                        color = NotificationMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(11.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Recibida",
-                    color = NotificationMuted,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp
-                )
-                Text(
-                    text = "$date · $time",
+                    text = item.title,
                     color = NotificationText,
+                    fontSize = 24.sp,
+                    lineHeight = 29.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = item.body,
+                    color = NotificationBody,
                     fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.SemiBold
+                    lineHeight = 21.sp,
+                    fontWeight = FontWeight.Normal
                 )
             }
-            Icon(Icons.Rounded.AccessTime, contentDescription = null, tint = NotificationMuted, modifier = Modifier.size(18.dp))
         }
     }
 }
 
 @Composable
-private fun NotificationHintStrip(item: NotificationHistoryItem) {
-    val hint = when {
-        "nota" in item.body.lowercase() -> "Registrar tus notas activa proyecciones y alertas personalizadas."
-        "tarea" in item.body.lowercase() -> "Asignar una hora permite que el recordatorio llegue en el momento adecuado."
-        "gasto" in item.body.lowercase() -> "Registrar gastos con frecuencia mejora el resumen semanal."
-        else -> "Mantener tus datos al día ayuda a UniStack a priorizar mejor."
+private fun NotificationDetailMessage(item: NotificationHistoryItem) {
+    val category = item.category()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = NotificationCard,
+        border = BorderStroke(1.dp, NotificationBorder)
+    ) {
+        Column(
+            modifier = Modifier.padding(17.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(category.color.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(22.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = item.title,
+                    color = NotificationText,
+                    fontSize = 22.sp,
+                    lineHeight = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = item.body,
+                color = NotificationBody,
+                fontSize = 14.sp,
+                lineHeight = 21.sp,
+                fontWeight = FontWeight.Normal
+            )
+        }
     }
+}
+
+@Composable
+private fun NotificationMetaCard(item: NotificationHistoryItem) {
+    val zoned = Instant.ofEpochMilli(item.timestampMillis).atZone(ZoneId.systemDefault())
+    val date = zoned.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("es-CO")))
+    val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = NotificationCard,
+        border = BorderStroke(1.dp, NotificationBorder)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 4.dp)) {
+            NotificationMetaRow(
+                icon = Icons.Rounded.Campaign,
+                label = "Recibida",
+                value = date
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(NotificationBorder)
+            )
+            NotificationMetaRow(
+                icon = Icons.Rounded.AccessTime,
+                label = "Hora",
+                value = time
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotificationMetaRow(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(NotificationPurple.copy(alpha = if (UniStackColors.IsDarkTheme) 0.10f else 0.07f))
-            .padding(13.dp),
+            .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            Icons.Rounded.Lightbulb,
-            contentDescription = null,
-            tint = NotificationAccentText,
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(modifier = Modifier.width(11.dp))
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(NotificationPrimary.copy(alpha = 0.14f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = NotificationAccentText, modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = hint,
-            color = NotificationBody,
+            text = label,
+            color = NotificationMuted,
             fontSize = 12.sp,
-            lineHeight = 17.sp,
-            fontWeight = FontWeight.Normal
+            lineHeight = 15.sp,
+            modifier = Modifier.weight(1f)
         )
+        Text(
+            text = value,
+            color = NotificationText,
+            fontSize = 14.sp,
+            lineHeight = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+@Composable
+private fun NotificationHintCard(item: NotificationHistoryItem) {
+    val category = item.category()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = category.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.12f else 0.09f),
+        border = BorderStroke(1.dp, category.color.copy(alpha = 0.18f))
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(category.color.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = category.color, modifier = Modifier.size(21.dp))
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = "Siguiente paso",
+                    color = category.color,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = category.hint,
+                    color = NotificationBody,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+        }
     }
 }
 
@@ -618,35 +813,53 @@ private fun NotificationDetailActions(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 18.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            TextButton(onClick = onDelete) {
-                Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = UniStackColors.Coral)
-                Spacer(modifier = Modifier.width(7.dp))
-                Text(
-                    text = "Eliminar",
-                    color = UniStackColors.Coral,
-                    fontWeight = FontWeight.Medium
-                )
+            Surface(
+                onClick = onDelete,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = AppShapes.Pill,
+                color = UniStackColors.Coral.copy(alpha = if (UniStackColors.IsDarkTheme) 0.14f else 0.12f)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = UniStackColors.Coral, modifier = Modifier.size(19.dp))
+                    Spacer(modifier = Modifier.width(7.dp))
+                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.SemiBold)
+                }
             }
-            Spacer(modifier = Modifier.weight(1f))
             if (onOpenRelated != null) {
-                TextButton(onClick = onOpenRelated) {
-                    Text(
-                        text = "Abrir contenido",
-                        color = NotificationAccentText,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Icon(
-                        Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = NotificationAccentText
-                    )
+                Surface(
+                    onClick = onOpenRelated,
+                    modifier = Modifier
+                        .weight(1.25f)
+                        .height(48.dp),
+                    shape = AppShapes.Pill,
+                    color = NotificationPrimary
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Abrir", color = Color.White, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(7.dp))
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
+                    }
                 }
             } else {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1.25f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = UniStackColors.Green, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(7.dp))
                     Text("Vista", color = NotificationMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -704,22 +917,26 @@ private fun EmptyNotifications(filter: NotificationFilter) {
             modifier = Modifier
                 .size(54.dp)
                 .clip(CircleShape)
-                .background(NotificationPurple.copy(alpha = 0.11f)),
+                .background(NotificationPrimary.copy(alpha = 0.11f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Rounded.NotificationsNone,
                 contentDescription = null,
-                tint = NotificationPurple,
+                tint = NotificationPrimary,
                 modifier = Modifier.size(28.dp)
             )
         }
         Text("Todo tranquilo", color = NotificationText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Text(
             text = when (filter) {
-                NotificationFilter.ALL -> "Las notificaciones que recibas quedarán guardadas aquí."
+                NotificationFilter.ALL -> "Las notificaciones que recibas quedaran guardadas aqui."
+                NotificationFilter.ACTIONS -> "No hay avisos que necesiten accion ahora."
+                NotificationFilter.ACADEMIC -> "Todavia no hay avisos academicos."
+                NotificationFilter.TASKS -> "No hay avisos de tareas o entregas."
+                NotificationFilter.CLASSES -> "No hay avisos de clases o asistencia."
                 NotificationFilter.UNREAD -> "No tienes avisos pendientes por revisar."
-                NotificationFilter.READ -> "Todavía no has revisado ningún aviso."
+                NotificationFilter.READ -> "Todavia no has revisado ningun aviso."
             },
             color = NotificationMuted,
             fontSize = 12.sp,
@@ -742,7 +959,7 @@ private fun EmptyNotificationDetail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Este aviso ya no está disponible.", color = NotificationText, fontWeight = FontWeight.SemiBold)
+        Text("Este aviso ya no esta disponible.", color = NotificationText, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(10.dp))
         TextButton(onClick = onBackClick) {
             Text("Volver")
@@ -756,10 +973,73 @@ private data class NotificationVisual(
     val icon: ImageVector
 )
 
+private enum class NotificationKind {
+    ACADEMIC,
+    TASK,
+    CLASS,
+    SUMMARY,
+    SYSTEM
+}
+
+private data class NotificationCategory(
+    val label: String,
+    val kind: NotificationKind,
+    val color: Color,
+    val icon: ImageVector,
+    val hint: String,
+    val requiresAction: Boolean
+)
+
 private fun NotificationHistoryItem.visual(): NotificationVisual {
     return when {
         read -> NotificationVisual("Vista", Color(0xFF3FAE67), Icons.Rounded.CheckCircle)
         else -> NotificationVisual("Nueva", Color(0xFF317FE8), Icons.Rounded.Campaign)
+    }
+}
+
+private fun NotificationHistoryItem.category(): NotificationCategory {
+    val text = "$title $body".lowercase(Locale.ROOT)
+    return when {
+        "resumen" in text || "dia despejado" in text || "día despejado" in text -> NotificationCategory(
+            label = "Resumen",
+            kind = NotificationKind.SUMMARY,
+            color = Color(0xFF4BA3FF),
+            icon = Icons.Rounded.Event,
+            hint = "Revisa tu agenda y decide el siguiente movimiento del dia.",
+            requiresAction = false
+        )
+        "clase" in text || "asististe" in text -> NotificationCategory(
+            label = "Clase",
+            kind = NotificationKind.CLASS,
+            color = Color(0xFF22B8A8),
+            icon = Icons.Rounded.School,
+            hint = "Registra asistencia, modalidad o cambios para mantener tu horario al dia.",
+            requiresAction = "asististe" in text || "asistencia" in text
+        )
+        "tarea" in text || "trabajo" in text || "entrega" in text -> NotificationCategory(
+            label = "Entrega",
+            kind = NotificationKind.TASK,
+            color = Color(0xFFFFB020),
+            icon = Icons.Rounded.TaskAlt,
+            hint = "Abre la actividad para actualizar estado, hora limite o nota obtenida.",
+            requiresAction = true
+        )
+        "nota" in text || "promedio" in text || "corte" in text || "materia" in text -> NotificationCategory(
+            label = "Academico",
+            kind = NotificationKind.ACADEMIC,
+            color = Color(0xFF8B5CF6),
+            icon = Icons.Rounded.School,
+            hint = "Completa notas, pesos o cortes anteriores para mejorar la proyeccion.",
+            requiresAction = true
+        )
+        else -> NotificationCategory(
+            label = "Aviso",
+            kind = NotificationKind.SYSTEM,
+            color = Color(0xFF8B5CF6),
+            icon = Icons.Rounded.NotificationsNone,
+            hint = "Mantener tus datos al dia ayuda a UniStack a priorizar mejor.",
+            requiresAction = false
+        )
     }
 }
 

@@ -17,6 +17,9 @@ import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import kotlinx.coroutines.flow.StateFlow
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
@@ -25,12 +28,14 @@ import java.util.UUID
 class GradesViewModel(
     private val repository: GradesRepository = AppContainer.gradesRepository,
     private val userRepository: UserRepository = AppContainer.userRepository,
-    private val tasksRepository: TasksRepository = AppContainer.tasksRepository
+    private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
+    private val scheduleRepository: ScheduleRepository = AppContainer.scheduleRepository
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
     val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
     val billingState = AppContainer.billingRepository.state
     val academicWorks: StateFlow<List<AcademicWork>> = AppContainer.academicWorksRepository.works
+    val classSessions: StateFlow<List<ClassSession>> = scheduleRepository.sessions
 
     private fun getMaxGrade(): Double {
         val profile = userProfile.value ?: return 5.0
@@ -93,6 +98,35 @@ class GradesViewModel(
         return true
     }
 
+    fun saveSubjectSchedule(subjectId: String, draft: SubjectScheduleDraft): Boolean {
+        if (subjectId.isBlank() || !draft.isValid) return false
+        val existing = classSessions.value.filter { it.subjectId == subjectId }
+        if (!draft.enabled) {
+            existing.forEach { scheduleRepository.deleteSession(it.id) }
+            return true
+        }
+
+        val now = System.currentTimeMillis()
+        val primary = existing.firstOrNull()
+        scheduleRepository.saveSession(
+            ClassSession(
+                id = primary?.id ?: "class-${UUID.randomUUID()}",
+                subjectId = subjectId,
+                daysOfWeek = draft.daysOfWeek,
+                startMinute = draft.startMinute,
+                endMinute = draft.endMinute,
+                location = draft.location,
+                reminderMinutes = draft.reminderMinutes,
+                createdAt = primary?.createdAt ?: now,
+                updatedAt = now,
+                repeatEveryWeeks = draft.repeatEveryWeeks,
+                recurrenceStartEpochDay = draft.recurrenceStartEpochDay
+            )
+        )
+        existing.drop(1).forEach { scheduleRepository.deleteSession(it.id) }
+        return true
+    }
+
     fun deleteSubject(subjectId: String): Boolean {
         val exists = subjects.value.any { it.id == subjectId }
         if (!exists) return false
@@ -113,6 +147,9 @@ class GradesViewModel(
                     )
                 )
             }
+        classSessions.value
+            .filter { it.subjectId == subjectId }
+            .forEach { scheduleRepository.deleteSession(it.id) }
         repository.deleteSubject(subjectId)
         return true
     }

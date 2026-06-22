@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,20 +26,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.NotificationsNone
-import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -58,7 +56,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalContext
@@ -95,18 +92,32 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
-import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.launch
+
+enum class ProfileScreenMode {
+    PROFILE,
+    ACADEMIC,
+    MODULES,
+    NOTIFICATIONS,
+    DATA
+}
 
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = viewModel(),
-    onOpenProClick: () -> Unit = {}
+    onOpenProClick: () -> Unit = {},
+    onOpenSettingsClick: () -> Unit = {},
+    mode: ProfileScreenMode = ProfileScreenMode.PROFILE,
+    onBackClick: () -> Unit = {}
 ) {
+    if (mode != ProfileScreenMode.PROFILE) {
+        BackHandler(onBack = onBackClick)
+    }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
+    val cloudBackupState by viewModel.cloudBackupState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val coroutineScope = rememberCoroutineScope()
@@ -148,9 +159,6 @@ fun ProfileScreen(
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
-    var expandedSection by rememberSaveable(currentProfile?.userId) {
-        mutableStateOf<ProfileSettingsSection?>(null)
-    }
     var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
     var notificationPermissionGranted by remember {
         mutableStateOf(context.hasNotificationPermission())
@@ -222,7 +230,49 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Text("Perfil", color = UniStackColors.TextPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (mode != ProfileScreenMode.PROFILE) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = UniStackColors.TextPrimary
+                        )
+                    }
+                }
+                Text(
+                    when (mode) {
+                        ProfileScreenMode.PROFILE -> "Perfil"
+                        ProfileScreenMode.ACADEMIC -> "Configuración académica"
+                        ProfileScreenMode.MODULES -> "Módulos"
+                        ProfileScreenMode.NOTIFICATIONS -> "Notificaciones"
+                        ProfileScreenMode.DATA -> "Datos y respaldos"
+                    },
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
+                )
+                if (mode == ProfileScreenMode.PROFILE) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(UniStackColors.SurfaceVariant)
+                            .bounceClick(onOpenSettingsClick),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Rounded.Settings,
+                            contentDescription = "Abrir configuración",
+                            tint = UniStackColors.Primary
+                        )
+                    }
+                }
+            }
         }
 
         val loadedProfile = currentProfile
@@ -238,34 +288,8 @@ fun ProfileScreen(
             }
         } else {
             val current = loadedProfile
-            val activeReminders = listOf(
-                current.taskRemindersEnabled,
-                current.academicWorkRemindersEnabled,
-                current.overdueRemindersEnabled,
-                current.gradeInsightRemindersEnabled,
-                current.pendingGradeRemindersEnabled
-            ).count { it }
-            fun toggleSection(section: ProfileSettingsSection) {
-                expandedSection = if (expandedSection == section) null else section
-            }
-
-            item { ProfileHeaderCard(profile = current) }
-            item { ProfileSettingsOverview(profile = current, currentUser = currentUser) }
-
-            item {
-                SettingsNavigationCard(
-                    title = "Cuenta y nombre",
-                    subtitle = if (currentUser.isLinked) {
-                        currentUser.email ?: "Cuenta vinculada"
-                    } else {
-                        "Perfil local y nombre visible"
-                    },
-                    icon = Icons.Rounded.Person,
-                    expanded = expandedSection == ProfileSettingsSection.ACCOUNT,
-                    onClick = { toggleSection(ProfileSettingsSection.ACCOUNT) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.ACCOUNT) {
+            if (mode == ProfileScreenMode.PROFILE) {
+                item { ProfileHeaderCard(profile = current) }
                 item {
                     AccountSyncCard(
                         currentUser = currentUser,
@@ -290,18 +314,18 @@ fun ProfileScreen(
                         }
                     )
                 }
+                if (FeatureGate.PRO_FEATURES_ENABLED) {
+                    item {
+                        val billingState by viewModel.billingState.collectAsStateWithLifecycle()
+                        PlanStatusCard(
+                            plan = FeatureGate.planFor(billingState.isPro),
+                            onOpenProClick = onOpenProClick
+                        )
+                    }
+                }
             }
 
-            item {
-                SettingsNavigationCard(
-                    title = "Académico",
-                    subtitle = "${current.gradingScale.label()} · Meta ${GradingScaleUtils.formatGrade(current.targetAverage, current.gradingScale)} · ${current.academicPeriodScheme.periods.size} ${current.academicPeriodScheme.label.plural.lowercase()}",
-                    icon = Icons.Rounded.School,
-                    expanded = expandedSection == ProfileSettingsSection.ACADEMIC,
-                    onClick = { toggleSection(ProfileSettingsSection.ACADEMIC) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.ACADEMIC) {
+            if (mode == ProfileScreenMode.ACADEMIC) {
                 item {
                     GradingSettingsCard(
                         selectedScale = selectedScale,
@@ -366,16 +390,7 @@ fun ProfileScreen(
                 }
             }
 
-            item {
-                SettingsNavigationCard(
-                    title = "Módulos",
-                    subtitle = current.enabledModules.joinToString(" · ") { it.label() },
-                    icon = Icons.Rounded.Settings,
-                    expanded = expandedSection == ProfileSettingsSection.MODULES,
-                    onClick = { toggleSection(ProfileSettingsSection.MODULES) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.MODULES) {
+            if (mode == ProfileScreenMode.MODULES) {
                 item {
                     ModulesSettingsCard(
                         enabledModules = current.enabledModules,
@@ -390,20 +405,7 @@ fun ProfileScreen(
                 }
             }
 
-            item {
-                SettingsNavigationCard(
-                    title = "Recordatorios",
-                    subtitle = when {
-                        activeReminders == 0 -> "Sin avisos activos"
-                        current.quietHoursEnabled -> "$activeReminders activos · silencio ${current.quietHoursStartHour}:00-${current.quietHoursEndHour}:00"
-                        else -> "$activeReminders activos · ${current.reminderLeadHours} h antes"
-                    },
-                    icon = Icons.Rounded.NotificationsNone,
-                    expanded = expandedSection == ProfileSettingsSection.REMINDERS,
-                    onClick = { toggleSection(ProfileSettingsSection.REMINDERS) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.REMINDERS) {
+            if (mode == ProfileScreenMode.NOTIFICATIONS) {
                 item {
                     NotificationSettingsCard(
                         taskRemindersEnabled = current.taskRemindersEnabled,
@@ -515,47 +517,14 @@ fun ProfileScreen(
                 }
             }
 
-            item {
-                SettingsNavigationCard(
-                    title = "Apariencia",
-                    subtitle = current.visualPreference.label(),
-                    icon = Icons.Rounded.Palette,
-                    expanded = expandedSection == ProfileSettingsSection.APPEARANCE,
-                    onClick = { toggleSection(ProfileSettingsSection.APPEARANCE) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.APPEARANCE) {
-                item {
-                    VisualSettingsCard(
-                        selected = current.visualPreference,
-                        onSelected = { preference ->
-                            viewModel.updateVisualPreference(preference)
-                            feedback = "Preferencia visual actualizada."
-                        }
-                    )
-                }
-            }
-            if (FeatureGate.PRO_FEATURES_ENABLED) {
-                item {
-                    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
-                    PlanStatusCard(
-                        plan = FeatureGate.planFor(billingState.isPro),
-                        onOpenProClick = onOpenProClick
-                    )
-                }
-            }
-            item {
-                SettingsNavigationCard(
-                    title = "Datos y exportación",
-                    subtitle = "Backups, reportes y restauración local",
-                    icon = Icons.Rounded.Settings,
-                    expanded = expandedSection == ProfileSettingsSection.DATA,
-                    onClick = { toggleSection(ProfileSettingsSection.DATA) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.DATA) {
+            if (mode == ProfileScreenMode.DATA) {
                 item {
                     DataManagementCard(
+                        cloudEnabled = currentUser.isLinked,
+                        cloudStatus = cloudBackupState.message ?: cloudBackupState.errorMessage,
+                        cloudBusy = cloudBackupState.inProgress,
+                        onCloudBackupClick = viewModel::backupToCloud,
+                        onCloudRestoreClick = viewModel::restoreFromCloud,
                         dataSummary = viewModel.localDataSummary(),
                         backupInput = localBackupInput,
                         backupPreview = localBackupPreview,
@@ -600,18 +569,6 @@ fun ProfileScreen(
                         }
                     )
                 }
-            }
-
-            item {
-                SettingsNavigationCard(
-                    title = "Onboarding",
-                    subtitle = "Repetir configuración inicial sin borrar datos",
-                    icon = Icons.Rounded.RestartAlt,
-                    expanded = expandedSection == ProfileSettingsSection.ONBOARDING,
-                    onClick = { toggleSection(ProfileSettingsSection.ONBOARDING) }
-                )
-            }
-            if (expandedSection == ProfileSettingsSection.ONBOARDING) {
                 item {
                     ResetOnboardingCard(onRestartClick = { showRestartDialog = true })
                 }
@@ -687,113 +644,13 @@ fun ProfileScreen(
     }
 }
 
-private enum class ProfileSettingsSection {
-    ACCOUNT,
-    ACADEMIC,
-    MODULES,
-    REMINDERS,
-    APPEARANCE,
-    DATA,
-    ONBOARDING
-}
-
-@Composable
-private fun ProfileSettingsOverview(
-    profile: UserProfile,
-    currentUser: AppUser
-) {
-    val activeReminders = listOf(
-        profile.taskRemindersEnabled,
-        profile.academicWorkRemindersEnabled,
-        profile.overdueRemindersEnabled,
-        profile.gradeInsightRemindersEnabled,
-        profile.pendingGradeRemindersEnabled
-    ).count { it }
-    val accountText = if (currentUser.isLinked) "Google" else "Local"
-
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.LargeCard
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Configuración", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                OverviewChip("Cuenta", accountText, modifier = Modifier.weight(1f))
-                OverviewChip("Escala", profile.gradingScale.label(), modifier = Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                OverviewChip("Módulos", profile.enabledModules.size.toString(), modifier = Modifier.weight(1f))
-                OverviewChip("Avisos", activeReminders.toString(), modifier = Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun OverviewChip(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .clip(AppShapes.MediumCard)
-            .background(UniStackColors.SurfaceVariant.copy(alpha = 0.58f))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-        Text(value, color = UniStackColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-    }
-}
-
-@Composable
-private fun SettingsNavigationCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    expanded: Boolean,
-    onClick: () -> Unit
-) {
-    UniCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .bounceClick(onClick),
-        color = UniStackColors.Card,
-        shape = AppShapes.LargeCard,
-        tonalElevation = if (expanded) 4.dp else 0.dp,
-        borderColor = if (expanded) UniStackColors.Primary.copy(alpha = 0.42f) else UniStackColors.SoftOutline.copy(alpha = 0.20f),
-        borderWidth = 0.8.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 13.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(AppShapes.MediumCard)
-                    .background(if (expanded) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(22.dp))
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
-                Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp, maxLines = 2)
-            }
-            Icon(
-                imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                contentDescription = if (expanded) "Cerrar sección" else "Abrir sección",
-                tint = UniStackColors.TextSecondary,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
 @Composable
 private fun DataManagementCard(
+    cloudEnabled: Boolean,
+    cloudStatus: String?,
+    cloudBusy: Boolean,
+    onCloudBackupClick: () -> Unit,
+    onCloudRestoreClick: () -> Unit,
     dataSummary: String,
     backupInput: String,
     backupPreview: String?,
@@ -807,6 +664,38 @@ private fun DataManagementCard(
     onCopyExpensesCsvClick: () -> Unit
 ) {
     SettingsCard(title = "Datos y exportación") {
+        Text("Sincronización con Google", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        Text(
+            if (cloudEnabled) {
+                cloudStatus ?: "Cuenta lista para respaldar o recuperar tus datos."
+            } else {
+                "Conecta una cuenta de Google desde Perfil para activar la nube."
+            },
+            color = UniStackColors.TextSecondary,
+            fontSize = 12.sp
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onCloudBackupClick,
+                enabled = cloudEnabled && !cloudBusy,
+                modifier = Modifier.weight(1f),
+                shape = AppShapes.Pill
+            ) {
+                Text(if (cloudBusy) "Procesando..." else "Respaldar")
+            }
+            Button(
+                onClick = onCloudRestoreClick,
+                enabled = cloudEnabled && !cloudBusy,
+                modifier = Modifier.weight(1f),
+                shape = AppShapes.Pill,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = UniStackColors.SurfaceVariant,
+                    contentColor = UniStackColors.TextPrimary
+                )
+            ) {
+                Text("Recuperar")
+            }
+        }
         DataStatusStrip(summary = dataSummary)
         Text("Exportaciones locales", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
         Button(
@@ -1495,30 +1384,6 @@ private fun ReminderToggleRow(
 }
 
 @Composable
-private fun VisualSettingsCard(
-    selected: VisualPreference,
-    onSelected: (VisualPreference) -> Unit
-) {
-    SettingsCard(title = "Preferencia visual") {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            VisualPreference.entries.forEach { preference: VisualPreference ->
-                SelectionPill(
-                    text = preference.label(),
-                    selected = selected == preference,
-                    onClick = { onSelected(preference) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-        Text(
-            "La preferencia se guarda en tu perfil local.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 12.sp
-        )
-    }
-}
-
-@Composable
 private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
@@ -1666,14 +1531,6 @@ private fun AppModule.description(): String {
         AppModule.TASKS -> "Entregas y pendientes."
         AppModule.EXPENSES -> "Registro y resumen de gastos."
         AppModule.ACADEMIC_TEMPLATES -> "Checklist, ensayos y formato APA."
-    }
-}
-
-private fun VisualPreference.label(): String {
-    return when (this) {
-        VisualPreference.SYSTEM -> "Sistema"
-        VisualPreference.LIGHT -> "Claro"
-        VisualPreference.DARK -> "Oscuro"
     }
 }
 

@@ -1,4 +1,4 @@
-package com.unistack.app.feature_home.domain
+﻿package com.unistack.app.feature_home.domain
 
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.AppModule
@@ -43,7 +43,8 @@ enum class HomePriorityAction {
     SUBJECTS,
     TASKS,
     EXPENSES,
-    TEMPLATES
+    TEMPLATES,
+    SCHEDULE
 }
 
 data class DailyFocusItem(

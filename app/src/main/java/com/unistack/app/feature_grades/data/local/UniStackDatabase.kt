@@ -12,10 +12,22 @@ import com.unistack.app.feature_templates.data.local.AcademicWorkDao
 import com.unistack.app.feature_templates.data.local.AcademicWorkEntity
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_tasks.data.local.TaskEntity
+import com.unistack.app.feature_schedule.data.local.ClassSessionDao
+import com.unistack.app.feature_schedule.data.local.ClassSessionEntity
+import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
+import com.unistack.app.feature_schedule.data.local.ClassOccurrenceEntity
 
 @Database(
-    entities = [SubjectEntity::class, GradeEntity::class, TaskEntity::class, ExpenseEntity::class, AcademicWorkEntity::class],
-    version = 9,
+    entities = [
+        SubjectEntity::class,
+        GradeEntity::class,
+        TaskEntity::class,
+        ExpenseEntity::class,
+        AcademicWorkEntity::class,
+        ClassSessionEntity::class,
+        ClassOccurrenceEntity::class
+    ],
+    version = 12,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -24,6 +36,8 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun academicWorkDao(): AcademicWorkDao
+    abstract fun classSessionDao(): ClassSessionDao
+    abstract fun classOccurrenceDao(): ClassOccurrenceDao
 
     companion object {
         @Volatile
@@ -156,6 +170,64 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS class_sessions (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        subjectId TEXT NOT NULL,
+                        daysOfWeekCsv TEXT NOT NULL,
+                        startMinute INTEGER NOT NULL,
+                        endMinute INTEGER NOT NULL,
+                        location TEXT NOT NULL,
+                        reminderMinutes INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_class_sessions_userId ON class_sessions(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_class_sessions_subjectId ON class_sessions(subjectId)")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS class_occurrences (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        sessionId TEXT NOT NULL,
+                        dateEpochDay INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        modality TEXT NOT NULL,
+                        absenceReason TEXT,
+                        note TEXT NOT NULL,
+                        overrideStartMinute INTEGER,
+                        overrideEndMinute INTEGER,
+                        overrideLocation TEXT,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_class_occurrences_userId ON class_occurrences(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_class_occurrences_sessionId ON class_occurrences(sessionId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_class_occurrences_dateEpochDay ON class_occurrences(dateEpochDay)")
+            }
+        }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE class_sessions ADD COLUMN repeatEveryWeeks INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE class_sessions ADD COLUMN recurrenceStartEpochDay INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -177,7 +249,10 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_5_6,
             MIGRATION_6_7,
             MIGRATION_7_8,
-            MIGRATION_8_9
+            MIGRATION_8_9,
+            MIGRATION_9_10,
+            MIGRATION_10_11,
+            MIGRATION_11_12
         )
     }
 }

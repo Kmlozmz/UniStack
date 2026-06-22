@@ -13,9 +13,13 @@ val UniStackShapes = Shapes(
 )
 
 object AppShapes {
-    val LargeCard = RoundedCornerShape(28.dp)
-    val MediumCard = RoundedCornerShape(24.dp)
-    val SmallCard = RoundedCornerShape(18.dp)
+    val LargeCard
+        get() = RoundedCornerShape(AppearanceRuntime.cornerStyle.cardRadius() + 8.dp)
+    val MediumCard
+        get() = RoundedCornerShape(AppearanceRuntime.cornerStyle.cardRadius() + 4.dp)
+    val SmallCard
+        get() = RoundedCornerShape(AppearanceRuntime.cornerStyle.cardRadius())
     val Pill = RoundedCornerShape(50)
-    val BottomBar = RoundedCornerShape(32.dp)
+    val BottomBar
+        get() = RoundedCornerShape(AppearanceRuntime.cornerStyle.cardRadius() + 10.dp)
 }

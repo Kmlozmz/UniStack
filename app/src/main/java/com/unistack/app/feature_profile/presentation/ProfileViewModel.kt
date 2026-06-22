@@ -11,9 +11,12 @@ import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
+import com.unistack.app.feature_user.domain.VisualPreset
 import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +38,8 @@ class ProfileViewModel(
     private val accountAuthService = AppContainer.accountAuthService
     private val billingRepository = AppContainer.billingRepository
     private val localBackupRepository = AppContainer.localBackupRepository
+    private val cloudBackupRepository = AppContainer.cloudBackupRepository
+    val cloudBackupState = cloudBackupRepository.state
 
     private val _actionState = MutableStateFlow(ProfileActionState())
     val actionState: StateFlow<ProfileActionState> = _actionState
@@ -119,6 +124,49 @@ class ProfileViewModel(
     fun updateVisualPreference(preference: VisualPreference): Boolean {
         val current = profile.value ?: return false
         save(current.copy(visualPreference = preference))
+        return true
+    }
+
+    fun updateAppearance(transform: (AppearancePreferences) -> AppearancePreferences): Boolean {
+        val current = profile.value ?: return false
+        val updated = transform(current.appearancePreferences)
+            .normalized()
+            .copy(visualPreset = VisualPreset.CUSTOM)
+        save(current.copy(appearancePreferences = updated))
+        return true
+    }
+
+    fun updateAccessibility(transform: (AccessibilityPreferences) -> AccessibilityPreferences): Boolean {
+        val current = profile.value ?: return false
+        save(current.copy(accessibilityPreferences = transform(current.accessibilityPreferences)))
+        return true
+    }
+
+    fun applyVisualPreset(preset: VisualPreset): Boolean {
+        val current = profile.value ?: return false
+        val appearance = AppearancePreferences.preset(preset)
+        val visualPreference = when (preset) {
+            VisualPreset.OLED -> VisualPreference.OLED
+            VisualPreset.DEFAULT -> VisualPreference.SYSTEM
+            else -> current.visualPreference.takeUnless { it == VisualPreference.OLED } ?: VisualPreference.DARK
+        }
+        save(
+            current.copy(
+                visualPreference = visualPreference,
+                appearancePreferences = appearance
+            )
+        )
+        return true
+    }
+
+    fun resetAppearance(): Boolean {
+        val current = profile.value ?: return false
+        save(
+            current.copy(
+                visualPreference = VisualPreference.SYSTEM,
+                appearancePreferences = AppearancePreferences.defaults()
+            )
+        )
         return true
     }
 
@@ -230,6 +278,18 @@ class ProfileViewModel(
                     )
                 }
             }
+        }
+    }
+
+    fun backupToCloud() {
+        viewModelScope.launch {
+            cloudBackupRepository.backupNow()
+        }
+    }
+
+    fun restoreFromCloud() {
+        viewModelScope.launch {
+            cloudBackupRepository.restoreLatest()
         }
     }
 

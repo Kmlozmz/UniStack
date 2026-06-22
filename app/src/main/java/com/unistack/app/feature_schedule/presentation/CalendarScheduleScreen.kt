@@ -1,0 +1,1655 @@
+package com.unistack.app.feature_schedule.presentation
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Alarm
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material.icons.rounded.ZoomIn
+import androidx.compose.material.icons.rounded.ZoomOut
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassModality
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_tasks.domain.StudentTask
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
+import kotlin.math.roundToInt
+
+private val ScheduleGreen: Color
+    get() = UniStackColors.Primary
+private val ScheduleBlue = Color(0xFF2E7DD7)
+private val SchedulePurple = Color(0xFF7A55C7)
+private val ScheduleOrange = Color(0xFFF07D19)
+private val SchedulePink = Color(0xFFE8548B)
+private val ScheduleShape
+    get() = AppShapes.SmallCard
+
+private enum class CalendarMode(val label: String) {
+    MONTH("Mes"),
+    AGENDA("Agenda"),
+    LIST("Lista")
+}
+
+private enum class ScheduleView {
+    TIMETABLE,
+    CALENDAR,
+    DAY
+}
+
+@Composable
+fun CalendarScheduleScreen(
+    onAddTaskClick: () -> Unit,
+    onTaskClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ScheduleViewModel = viewModel()
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var identityView by rememberSaveable { mutableStateOf(IdentityScheduleView.TIMETABLE) }
+    var selectedEpochDay by rememberSaveable { mutableStateOf(LocalDate.now().toEpochDay()) }
+    var editingSession by remember { mutableStateOf<ClassSession?>(null) }
+    var showEditor by rememberSaveable { mutableStateOf(false) }
+    var selectedSession by remember { mutableStateOf<ClassSession?>(null) }
+    var historySubjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showFullSchedule by rememberSaveable { mutableStateOf(false) }
+
+    val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
+    val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }
+
+    ScheduleIdentityContent(
+        view = identityView,
+        selectedDate = selectedDate,
+        uiState = state,
+        onViewChange = { identityView = it },
+        onDateSelected = { selectedEpochDay = it.toEpochDay() },
+        onSessionClick = { date, session ->
+            selectedEpochDay = date.toEpochDay()
+            selectedSession = session
+        },
+        onTaskClick = onTaskClick,
+        onAddClass = {
+            editingSession = null
+            showEditor = true
+        },
+        onAddEvent = onAddTaskClick,
+        onOpenFullSchedule = { showFullSchedule = true },
+        modifier = modifier
+    )
+    if (showFullSchedule) {
+        FullScheduleDialog(
+            selectedDate = selectedDate,
+            sessions = state.sessions,
+            subjects = state.subjects,
+            use24Hour = state.accessibility.use24HourTime,
+            onDismiss = { showFullSchedule = false },
+            onWeekChange = { selectedEpochDay = it.toEpochDay() },
+            onSessionClick = { date, session ->
+                selectedEpochDay = date.toEpochDay()
+                showFullSchedule = false
+                selectedSession = session
+            }
+        )
+    }
+    if (showEditor) {
+        ClassEditorDialog(
+            existing = editingSession,
+            subjects = state.subjects,
+            onDismiss = { showEditor = false },
+            anchorDate = selectedDate,
+            onSave = { name, professor, color, days, start, end, room, reminder, repeatEveryWeeks ->
+                val saved = viewModel.saveClassDraft(
+                    existing = editingSession,
+                    subjectName = name,
+                    professor = professor,
+                    colorArgb = color,
+                    days = days,
+                    startMinute = start,
+                    endMinute = end,
+                    room = room,
+                    reminderMinutes = reminder,
+                    repeatEveryWeeks = repeatEveryWeeks,
+                    recurrenceStartEpochDay = editingSession?.recurrenceStartEpochDay
+                        ?.takeIf { it > 0L }
+                        ?: selectedEpochDay
+                )
+                if (saved) showEditor = false
+                saved
+            }
+        )
+    }
+
+    selectedSession?.let { session ->
+        ClassDetailsSheet(
+            session = session,
+            subject = state.subjects.firstOrNull { it.id == session.subjectId },
+            date = selectedDate,
+            occurrence = dayOccurrences.firstOrNull { it.sessionId == session.id },
+            use24Hour = state.accessibility.use24HourTime,
+            onDismiss = { selectedSession = null },
+            onEdit = {
+                selectedSession = null
+                editingSession = session
+                showEditor = true
+            },
+            onHistory = {
+                historySubjectId = session.subjectId
+                selectedSession = null
+            },
+            onDelete = {
+                viewModel.delete(session.id)
+                selectedSession = null
+            },
+            onStatus = { status ->
+                viewModel.saveOccurrence(
+                    sessionId = session.id,
+                    dateEpochDay = selectedEpochDay,
+                    status = status,
+                    modality = ClassModality.IN_PERSON,
+                    absenceReason = null,
+                    note = ""
+                )
+                selectedSession = null
+            }
+        )
+    }
+
+    historySubjectId?.let { subjectId ->
+        val subject = state.subjects.firstOrNull { it.id == subjectId }
+        if (subject != null) {
+            SubjectHistoryDialog(
+                subject = subject,
+                sessions = state.sessions.filter { it.subjectId == subjectId },
+                occurrences = state.occurrences,
+                onDismiss = { historySubjectId = null },
+                onMarkAttendance = { date, session ->
+                    historySubjectId = null
+                    selectedEpochDay = date.toEpochDay()
+                    selectedSession = session
+                }
+            )
+        }
+    }
+
+}
+
+@Composable
+private fun ScheduleHeader(
+    title: String,
+    showBack: Boolean,
+    onBack: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onMenuClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(44.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (showBack) {
+            IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
+            }
+            Spacer(Modifier.width(4.dp))
+        }
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            color = UniStackColors.TextPrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.sp
+        )
+        IconButton(onClick = onCalendarClick) {
+            Icon(Icons.Rounded.CalendarMonth, contentDescription = "Abrir calendario", tint = UniStackColors.TextPrimary)
+        }
+        IconButton(onClick = onMenuClick) {
+            Icon(Icons.Rounded.MoreVert, contentDescription = "M\u00e1s opciones", tint = UniStackColors.TextPrimary)
+        }
+    }
+}
+
+@Composable
+private fun WeekPicker(
+    selectedDate: LocalDate,
+    onSelect: (LocalDate) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    val weekStart = selectedDate.weekStart()
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPrevious, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Semana anterior")
+            }
+            Text(
+                "${weekStart.dayOfMonth} - ${weekStart.plusDays(6).dayOfMonth} de ${weekStart.format(DateTimeFormatter.ofPattern("MMMM", SpanishLocale))}",
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp
+            )
+            IconButton(onClick = onNext, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Semana siguiente")
+            }
+        }
+        Surface(
+            shape = ScheduleShape,
+            color = UniStackColors.SurfaceVariant,
+            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+        ) {
+            Row(Modifier.fillMaxWidth().padding(4.dp)) {
+                (0L..6L).forEach { offset ->
+                    val date = weekStart.plusDays(offset)
+                    val selected = date == selectedDate
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(ScheduleShape)
+                            .background(if (selected) ScheduleGreen else Color.Transparent)
+                            .clickable { onSelect(date) }
+                            .padding(vertical = 5.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(dayLetter(date.dayOfWeek), fontSize = 10.sp, color = if (selected) Color.White else UniStackColors.TextSecondary)
+                        Text(date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else UniStackColors.TextPrimary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimetableRangeControls(
+    visibleHours: Int,
+    onVisibleHoursChange: (Int) -> Unit,
+    onOpenList: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(36.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        IconButton(
+            onClick = { onVisibleHoursChange((visibleHours + 2).coerceAtMost(14)) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(Icons.Rounded.ZoomOut, contentDescription = "Mostrar m\u00e1s horas", tint = ScheduleGreen, modifier = Modifier.size(19.dp))
+        }
+        Slider(
+            value = visibleHours.toFloat(),
+            onValueChange = { onVisibleHoursChange(it.roundToInt().coerceIn(4, 14)) },
+            modifier = Modifier.weight(1f),
+            valueRange = 4f..14f,
+            steps = 4,
+            colors = SliderDefaults.colors(
+                thumbColor = ScheduleGreen,
+                activeTrackColor = ScheduleGreen,
+                inactiveTrackColor = UniStackColors.SoftOutline,
+                activeTickColor = Color.White.copy(alpha = 0.72f),
+                inactiveTickColor = ScheduleGreen.copy(alpha = 0.55f)
+            )
+        )
+        IconButton(
+            onClick = { onVisibleHoursChange((visibleHours - 2).coerceAtLeast(4)) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(Icons.Rounded.ZoomIn, contentDescription = "Acercar horario", tint = ScheduleGreen, modifier = Modifier.size(19.dp))
+        }
+        IconButton(onClick = onOpenList, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.AutoMirrored.Rounded.ViewList, contentDescription = "Abrir lista del mes", tint = ScheduleGreen, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun WeeklyTimeline(
+    weekDate: LocalDate,
+    sessions: List<ClassSession>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    visibleHours: Int,
+    onSessionClick: (LocalDate, ClassSession) -> Unit
+) {
+    val weekStart = weekDate.weekStart()
+    val scheduledThisWeek = sessions.filter { session ->
+        (1..5).any { day ->
+            val date = weekStart.plusDays((day - 1).toLong())
+            session.occursOn(date.toEpochDay(), day)
+        }
+    }
+    val earliestHour = scheduledThisWeek.minOfOrNull { it.startMinute / 60 }
+    val startHour = when {
+        earliestHour == null -> 6
+        earliestHour <= 6 -> 6
+        else -> earliestHour - 1
+    }.coerceIn(0, 24 - visibleHours)
+    val endHour = (startHour + visibleHours).coerceAtMost(24)
+    val hourHeight = 42.dp
+    val axisWidth = 40.dp
+    val today = LocalDate.now()
+    val now = LocalTime.now()
+    val nowMinute = now.hour * 60 + now.minute
+
+    Column {
+        Row(modifier = Modifier.padding(start = axisWidth)) {
+            (1..5).forEach { day ->
+                Text(
+                    text = dayLetter(DayOfWeek.of(day)),
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(hourHeight * (endHour - startHour))
+        ) {
+            val dayWidth = (maxWidth - axisWidth) / 5
+            Column {
+                (startHour until endHour).forEach { hour ->
+                    Row(modifier = Modifier.height(hourHeight), verticalAlignment = Alignment.Top) {
+                        Text(
+                            formatMinute(hour * 60, use24Hour),
+                            modifier = Modifier.width(axisWidth).offset(y = (-7).dp),
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 11.sp
+                        )
+                        HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.55f))
+                    }
+                }
+            }
+            (0..5).forEach { line ->
+                Box(
+                    Modifier
+                        .offset(x = axisWidth + dayWidth * line)
+                        .width(1.dp)
+                        .fillMaxHeight()
+                        .background(UniStackColors.SoftOutline.copy(alpha = 0.42f))
+                )
+            }
+            if (
+                today in weekStart..weekStart.plusDays(4) &&
+                nowMinute in (startHour * 60) until (endHour * 60)
+            ) {
+                val currentY = hourHeight * ((nowMinute - startHour * 60) / 60f)
+                Text(
+                    formatMinute(nowMinute, use24Hour),
+                    modifier = Modifier.offset(y = currentY - 8.dp).width(axisWidth),
+                    color = UniStackColors.Coral,
+                    fontSize = 9.sp
+                )
+                Box(
+                    Modifier
+                        .offset(x = axisWidth, y = currentY)
+                        .width(maxWidth - axisWidth)
+                        .height(1.dp)
+                        .background(UniStackColors.Coral)
+                )
+                Box(
+                    Modifier
+                        .offset(x = axisWidth - 3.dp, y = currentY - 3.dp)
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(UniStackColors.Coral)
+                )
+            }
+            sessions.forEach { session ->
+                (1..5).filter { day ->
+                    val date = weekStart.plusDays((day - 1).toLong())
+                    session.occursOn(date.toEpochDay(), day)
+                }.forEach { day ->
+                    val visibleStart = session.startMinute.coerceAtLeast(startHour * 60)
+                    val visibleEnd = session.endMinute.coerceAtMost(endHour * 60)
+                    if (visibleEnd > visibleStart) {
+                        val subject = subjects.firstOrNull { it.id == session.subjectId }
+                        val color = subject.scheduleColor()
+                        val y = hourHeight * ((visibleStart - startHour * 60) / 60f)
+                        val blockHeight = (hourHeight * ((visibleEnd - visibleStart) / 60f)).coerceAtLeast(40.dp)
+                        Column(
+                            modifier = Modifier
+                                .offset(x = axisWidth + dayWidth * (day - 1) + 2.dp, y = y)
+                                .width(dayWidth - 4.dp)
+                                .height(blockHeight)
+                                .clip(ScheduleShape)
+                                .background(color.copy(alpha = 0.76f))
+                                .clickable { onSessionClick(weekStart.plusDays((day - 1).toLong()), session) }
+                                .padding(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "${formatMinute(session.startMinute, use24Hour)}\n${formatMinute(session.endMinute, use24Hour)}",
+                                color = Color.White,
+                                fontSize = 7.sp,
+                                lineHeight = 8.sp
+                            )
+                            Text(
+                                subject?.name ?: "Clase",
+                                color = Color.White,
+                                fontSize = 7.sp,
+                                lineHeight = 8.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                session.place.room.ifBlank { "Sin aula" },
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 7.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeekSummary(
+    selectedDate: LocalDate,
+    sessions: List<ClassSession>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    onSessionClick: (LocalDate, ClassSession) -> Unit
+) {
+    val weekStart = selectedDate.weekStart()
+    val entries = (0L..6L).flatMap { offset ->
+        val date = weekStart.plusDays(offset)
+        sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+            .map { date to it }
+    }.sortedWith(compareBy<Pair<LocalDate, ClassSession>> { it.first }.thenBy { it.second.startMinute })
+    val upcoming = entries.filter { !it.first.isBefore(selectedDate) }.take(2)
+        .ifEmpty { entries.takeLast(2) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Esta semana", color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+        if (upcoming.isEmpty()) {
+            CalendarEmptyState("No hay clases programadas esta semana")
+        }
+        upcoming.forEach { (date, session) ->
+            val subject = subjects.firstOrNull { it.id == session.subjectId }
+            val color = subject.scheduleColor()
+            Surface(
+                onClick = { onSessionClick(date, session) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = ScheduleShape,
+                color = UniStackColors.SurfaceVariant,
+                border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+            ) {
+                Row(Modifier.height(70.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(3.dp).fillMaxHeight().background(color))
+                    Box(Modifier.padding(start = 12.dp).size(8.dp).clip(CircleShape).background(color))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            date.format(DateTimeFormatter.ofPattern("EEE, d 'de' MMMM", SpanishLocale)).capitalized(),
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 10.sp
+                        )
+                        Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}  \u2022  ${session.place.room.ifBlank { "Sin aula" }}",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 10.sp
+                        )
+                    }
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir clase", tint = UniStackColors.TextSecondary, modifier = Modifier.padding(horizontal = 10.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarToolbar(
+    selectedDate: LocalDate,
+    mode: CalendarMode,
+    onMode: (CalendarMode) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onPrevious, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Mes anterior")
+            }
+            Text(
+                selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", SpanishLocale)).capitalized(),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
+            IconButton(onClick = onNext, modifier = Modifier.size(34.dp)) {
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Mes siguiente")
+            }
+        }
+        Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
+            Row(Modifier.fillMaxWidth()) {
+                CalendarMode.entries.forEach { option ->
+                    Text(
+                        option.label,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(ScheduleShape)
+                            .background(if (mode == option) ScheduleGreen.copy(alpha = 0.16f) else Color.Transparent)
+                            .clickable { onMode(option) }
+                            .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center,
+                        color = if (mode == option) ScheduleGreen else UniStackColors.TextSecondary,
+                        fontWeight = if (mode == option) FontWeight.Bold else FontWeight.Normal,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthGrid(
+    selectedDate: LocalDate,
+    sessions: List<ClassSession>,
+    tasks: List<StudentTask>,
+    subjects: List<Subject>,
+    expanded: Boolean,
+    onSelect: (LocalDate) -> Unit
+) {
+    val month = YearMonth.from(selectedDate)
+    val firstCell = month.atDay(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    val leadingDays = month.atDay(1).dayOfWeek.value - DayOfWeek.MONDAY.value
+    val cellCount = ((leadingDays + month.lengthOfMonth() + 6) / 7) * 7
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(Modifier.fillMaxWidth()) {
+            listOf("LUN", "MAR", "MI\u00c9", "JUE", "VIE", "S\u00c1B", "DOM").forEach { label ->
+                Text(label, Modifier.weight(1f), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 10.sp)
+            }
+        }
+        Surface(
+            shape = ScheduleShape,
+            color = UniStackColors.SurfaceVariant.copy(alpha = 0.7f),
+            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+        ) {
+            Column {
+                repeat(cellCount / 7) { row ->
+                    Row(Modifier.fillMaxWidth()) {
+                        repeat(7) { column ->
+                            val date = firstCell.plusDays((row * 7 + column).toLong())
+                            val dateSessions = sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                            val dateTasks = tasks.filter { !it.completed && it.dueDateMillis.asLocalDate() == date }
+                            MonthCell(
+                                modifier = Modifier.weight(1f),
+                                date = date,
+                                inMonth = YearMonth.from(date) == month,
+                                selected = date == selectedDate,
+                                sessions = dateSessions,
+                                tasks = dateTasks,
+                                subjects = subjects,
+                                expanded = expanded,
+                                onClick = { onSelect(date) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (expanded) MonthLegend(sessions, subjects)
+    }
+}
+
+@Composable
+private fun MonthCell(
+    modifier: Modifier,
+    date: LocalDate,
+    inMonth: Boolean,
+    selected: Boolean,
+    sessions: List<ClassSession>,
+    tasks: List<StudentTask>,
+    subjects: List<Subject>,
+    expanded: Boolean,
+    onClick: () -> Unit
+) {
+    val height = if (expanded) 70.dp else 54.dp
+    Column(
+        modifier = modifier
+            .height(height)
+            .border(0.5.dp, UniStackColors.SoftOutline.copy(alpha = 0.45f))
+            .padding(3.dp)
+            .then(
+                if (selected) Modifier
+                    .clip(ScheduleShape)
+                    .background(ScheduleGreen.copy(alpha = if (expanded) 0.12f else 0.92f))
+                    .border(1.dp, ScheduleGreen, ScheduleShape)
+                else Modifier
+            )
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            date.dayOfMonth.toString(),
+            color = when {
+                selected && !expanded -> Color.White
+                !inMonth -> UniStackColors.TextSecondary.copy(alpha = 0.45f)
+                else -> UniStackColors.TextPrimary
+            },
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+        )
+        if (expanded) {
+            sessions.take(3).forEach { session ->
+                val subject = subjects.firstOrNull { it.id == session.subjectId }
+                Text(
+                    subject?.name?.shortName() ?: "Clase",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(subject.scheduleColor())
+                        .padding(horizontal = 2.dp, vertical = 1.dp),
+                    color = Color.White,
+                    fontSize = 7.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.padding(top = 7.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                sessions.take(3).forEach { session ->
+                    val subject = subjects.firstOrNull { it.id == session.subjectId }
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(subject.scheduleColor()))
+                }
+                if (tasks.isNotEmpty()) Box(Modifier.size(6.dp).clip(CircleShape).background(ScheduleOrange))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthLegend(sessions: List<ClassSession>, subjects: List<Subject>) {
+    val used = subjects.filter { subject -> sessions.any { it.subjectId == subject.id } }.take(4)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        used.forEach { subject ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(subject.scheduleColor()))
+                Spacer(Modifier.width(6.dp))
+                Text(subject.name, color = UniStackColors.TextSecondary, fontSize = 10.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayAgenda(
+    date: LocalDate,
+    sessions: List<ClassSession>,
+    tasks: List<StudentTask>,
+    occurrences: List<ClassOccurrence>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    rich: Boolean,
+    onSessionClick: (ClassSession) -> Unit,
+    onTaskClick: (String) -> Unit,
+    onOpenDay: () -> Unit,
+    onAddClass: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenDay),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(date.longTitle(), Modifier.weight(1f), color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = UniStackColors.TextSecondary)
+        }
+        if (sessions.isEmpty() && tasks.isEmpty()) {
+            Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
+                Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleGreen, modifier = Modifier.size(30.dp))
+                    Text("No hay clases para este d\u00eda", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = onAddClass) { Text("A\u00f1adir clase", color = ScheduleGreen) }
+                }
+            }
+        } else {
+
+            sessions.forEach { session ->
+                val subject = subjects.firstOrNull { it.id == session.subjectId }
+                val occurrence = occurrences.firstOrNull { it.sessionId == session.id }
+                AgendaClassCard(session, subject, occurrence, use24Hour, rich) { onSessionClick(session) }
+            }
+            tasks.forEach { task -> AgendaTaskCard(task, subjects.firstOrNull { it.id == task.subjectId }, onTaskClick) }
+        }
+    }
+}
+
+@Composable
+private fun AgendaClassCard(
+    session: ClassSession,
+    subject: Subject?,
+    occurrence: ClassOccurrence?,
+    use24Hour: Boolean,
+    rich: Boolean,
+    onClick: () -> Unit
+) {
+    val color = subject.scheduleColor()
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = ScheduleShape,
+        color = UniStackColors.SurfaceVariant,
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+    ) {
+        Row(modifier = Modifier.height(if (rich) 88.dp else 76.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(4.dp).fillMaxHeight().background(color))
+            if (rich) {
+                Box(
+                    Modifier.padding(start = 14.dp).size(48.dp).clip(ScheduleShape).background(color.copy(alpha = 0.86f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = Color.White)
+                }
+            }
+            Column(Modifier.padding(start = 14.dp).width(64.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(formatMinute(session.startMinute, use24Hour), color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(formatMinute(session.endMinute, use24Hour), color = UniStackColors.TextSecondary, fontSize = 13.sp)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            if (occurrence != null && occurrence.status != ClassAttendanceStatus.PENDING) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(occurrence.status.color()))
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.padding(horizontal = 10.dp))
+        }
+    }
+}
+
+@Composable
+private fun AgendaTaskCard(task: StudentTask, subject: Subject?, onClick: (String) -> Unit) {
+    Surface(
+        onClick = { onClick(task.id) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = ScheduleShape,
+        color = UniStackColors.SurfaceVariant,
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+    ) {
+        Row(Modifier.height(70.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(4.dp).fillMaxHeight().background(ScheduleOrange))
+            Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleOrange, modifier = Modifier.padding(horizontal = 14.dp))
+            Column(Modifier.weight(1f)) {
+                Text(task.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subject?.name ?: "Tarea", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+            }
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.padding(end = 10.dp))
+        }
+    }
+}
+
+@Composable
+private fun CalendarAgendaView(
+    month: YearMonth,
+    sessions: List<ClassSession>,
+    occurrences: List<ClassOccurrence>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    onDateClick: (LocalDate) -> Unit,
+    onSessionClick: (LocalDate, ClassSession) -> Unit
+) {
+    val dates = monthScheduleDates(month, sessions)
+    Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+        if (dates.isEmpty()) {
+            CalendarEmptyState("No hay clases programadas este mes")
+        }
+        dates.forEach { (date, dateSessions) ->
+            Row(
+                modifier = Modifier.fillMaxWidth().clickable { onDateClick(date) },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (date == LocalDate.now()) "Hoy  \u00b7  ${date.longTitle()}" else date.longTitle(),
+                    modifier = Modifier.weight(1f),
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = UniStackColors.TextSecondary, modifier = Modifier.size(18.dp))
+            }
+            dateSessions.forEach { session ->
+                val subject = subjects.firstOrNull { it.id == session.subjectId }
+                val occurrence = occurrences.firstOrNull { it.sessionId == session.id && it.dateEpochDay == date.toEpochDay() }
+                AgendaClassCard(session, subject, occurrence, use24Hour, rich = false) {
+                    onSessionClick(date, session)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarListView(
+    month: YearMonth,
+    sessions: List<ClassSession>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    onSessionClick: (LocalDate, ClassSession) -> Unit
+) {
+    val dates = monthScheduleDates(month, sessions)
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text(
+            month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", SpanishLocale)).capitalized(),
+            color = UniStackColors.TextPrimary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp
+        )
+        if (dates.isEmpty()) {
+            CalendarEmptyState("No hay clases programadas este mes")
+        }
+        dates.forEach { (date, dateSessions) ->
+            dateSessions.forEach { session ->
+                val subject = subjects.firstOrNull { it.id == session.subjectId }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(ScheduleShape)
+                        .clickable { onSessionClick(date, session) }
+                        .padding(vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        date.format(DateTimeFormatter.ofPattern("dd MMM (EEE)", SpanishLocale)),
+                        modifier = Modifier.width(92.dp),
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 10.sp
+                    )
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(subject.scheduleColor()))
+                    Spacer(Modifier.width(9.dp))
+                    Text(formatMinute(session.startMinute, use24Hour), modifier = Modifier.width(48.dp), color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(subject?.name ?: "Clase", modifier = Modifier.weight(1f), color = UniStackColors.TextPrimary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.45f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayScheduleView(
+    date: LocalDate,
+    sessions: List<ClassSession>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    onSessionClick: (ClassSession) -> Unit,
+    onAddClass: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(date.longTitle(), color = UniStackColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+        if (sessions.isEmpty()) {
+            CalendarEmptyState("No hay clases para este d\u00eda")
+        }
+        sessions.forEach { session ->
+            val subject = subjects.firstOrNull { it.id == session.subjectId }
+            val color = subject.scheduleColor()
+            Surface(
+                onClick = { onSessionClick(session) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = ScheduleShape,
+                color = color.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, color.copy(alpha = 0.35f))
+            ) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.width(58.dp)) {
+                        Text(formatMinute(session.startMinute, use24Hour), color = UniStackColors.TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(formatMinute(session.endMinute, use24Hour), color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                    }
+                    Box(Modifier.width(3.dp).height(42.dp).background(color))
+                    Spacer(Modifier.width(11.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                    }
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary)
+                }
+            }
+        }
+        if (sessions.isEmpty()) {
+            TextButton(onClick = onAddClass, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Icon(Icons.Rounded.Add, contentDescription = null)
+                Spacer(Modifier.width(5.dp))
+                Text("A\u00f1adir clase", color = ScheduleGreen)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarEmptyState(message: String) {
+    Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
+        Text(message, Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ClassEditorDialog(
+    existing: ClassSession?,
+    subjects: List<Subject>,
+    anchorDate: LocalDate,
+    onDismiss: () -> Unit,
+    onSave: (String, String, Int, Set<Int>, Int, Int, String, Int, Int) -> Boolean
+) {
+    val existingSubject = subjects.firstOrNull { it.id == existing?.subjectId }
+    val place = existing?.place ?: SessionPlace("", "")
+    var name by remember(existing) { mutableStateOf(existingSubject?.name.orEmpty()) }
+    var professor by remember(existing) { mutableStateOf(place.professor) }
+    var color by remember(existing) { mutableStateOf(existingSubject.scheduleColor()) }
+    var days by remember(existing) { mutableStateOf(existing?.daysOfWeek ?: setOf(1, 3, 5)) }
+    var startMinute by remember(existing) { mutableStateOf(existing?.startMinute ?: 390) }
+    var endMinute by remember(existing) { mutableStateOf(existing?.endMinute ?: 570) }
+    var room by remember(existing) { mutableStateOf(place.room) }
+    var reminder by remember(existing) { mutableStateOf(existing?.reminderMinutes ?: 15) }
+    var repeatEveryWeeks by remember(existing) { mutableStateOf(existing?.repeatEveryWeeks ?: 1) }
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+    var reminderExpanded by remember { mutableStateOf(false) }
+    var recurrenceExpanded by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val swatches = listOf(ScheduleGreen, ScheduleBlue, SchedulePurple, ScheduleOrange, SchedulePink)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Surface(Modifier.fillMaxSize(), color = UniStackColors.Background) {
+            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                Row(
+                    Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.TextPrimary)
+                    }
+                    Text(
+                        if (existing == null) "Nueva materia" else "Editar materia",
+                        Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    TextButton(onClick = {
+                        error = when {
+                            name.trim().length < 2 -> "Escribe el nombre de la materia."
+                            days.isEmpty() -> "Selecciona al menos un d\u00eda."
+                            endMinute <= startMinute -> "La hora final debe ser posterior a la inicial."
+                            !onSave(name, professor, color.toArgb(), days, startMinute, endMinute, room, reminder, repeatEveryWeeks) -> "No se pudo guardar la materia."
+                            else -> null
+                        }
+                    }) {
+                        Text("Guardar", color = ScheduleGreen, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    FormTextField("Nombre de la materia", name, { name = it.take(80) }, "Fundamentos de Costos")
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FormTextField("Profesor", professor, { professor = it.take(60) }, "Prof. P\u00e9rez", Modifier.weight(1f))
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = ScheduleShape,
+                            color = UniStackColors.SurfaceVariant,
+                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+                        ) {
+                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("Color", color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    swatches.forEach { swatch ->
+                                        Box(
+                                            Modifier.size(25.dp).clip(CircleShape).background(swatch).clickable { color = swatch },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (color == swatch) Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    FormSurface("D\u00edas") {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                            (1..7).forEach { day ->
+                                val selected = day in days
+                                Box(
+                                    Modifier.weight(1f).height(36.dp).clip(ScheduleShape)
+                                        .background(if (selected) ScheduleGreen else UniStackColors.Background)
+                                        .border(1.dp, if (selected) ScheduleGreen else UniStackColors.SoftOutline, ScheduleShape)
+                                        .clickable { days = if (selected) days - day else days + day },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(dayLetter(DayOfWeek.of(day)), color = if (selected) Color.White else UniStackColors.TextSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        TimeField("Hora inicio", startMinute, Modifier.weight(1f)) { showStartPicker = true }
+                        TimeField("Hora fin", endMinute, Modifier.weight(1f)) { showEndPicker = true }
+                    }
+                    FormTextField("Aula", room, { room = it.take(60) }, "Aula 301")
+                    Box {
+                        Surface(
+                            onClick = { recurrenceExpanded = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = ScheduleShape,
+                            color = UniStackColors.SurfaceVariant,
+                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+                        ) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Repetici\u00f3n", color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                                    Text(
+                                        if (repeatEveryWeeks == 1) "Cada semana" else "Cada $repeatEveryWeeks semanas",
+                                        color = UniStackColors.TextPrimary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    if (repeatEveryWeeks > 1) {
+                                        Text("Desde ${anchorDate.shortDate()}", color = UniStackColors.TextSecondary, fontSize = 9.sp)
+                                    }
+                                }
+                                Icon(Icons.Rounded.ExpandMore, contentDescription = null, tint = UniStackColors.TextSecondary)
+                            }
+                        }
+                        DropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
+                            listOf(1, 2, 3, 4).forEach { weeks ->
+                                DropdownMenuItem(
+                                    text = { Text(if (weeks == 1) "Cada semana" else "Cada $weeks semanas") },
+                                    onClick = {
+                                        repeatEveryWeeks = weeks
+                                        recurrenceExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    Box {
+                        Surface(
+                            onClick = { reminderExpanded = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = ScheduleShape,
+                            color = UniStackColors.SurfaceVariant,
+                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+                        ) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Recordatorio", color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                                    Text(if (reminder == 0) "Sin recordatorio" else "$reminder minutos antes", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Medium)
+                                }
+                                Icon(Icons.Rounded.Alarm, contentDescription = null, tint = UniStackColors.TextSecondary)
+                            }
+                        }
+                        DropdownMenu(expanded = reminderExpanded, onDismissRequest = { reminderExpanded = false }) {
+                            listOf(0, 5, 10, 15, 30, 60).forEach { minutes ->
+                                DropdownMenuItem(
+                                    text = { Text(if (minutes == 0) "Sin recordatorio" else "$minutes minutos antes") },
+                                    onClick = { reminder = minutes; reminderExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                    error?.let { Text(it, color = UniStackColors.Coral, fontSize = 12.sp) }
+                    Spacer(Modifier.height(16.dp))
+                }
+            }
+        }
+    }
+
+    if (showStartPicker) {
+        TimePickerAlert("Hora de inicio", startMinute, { showStartPicker = false }) {
+            startMinute = it
+            showStartPicker = false
+        }
+    }
+    if (showEndPicker) {
+        TimePickerAlert("Hora de fin", endMinute, { showEndPicker = false }) {
+            endMinute = it
+            showEndPicker = false
+        }
+    }
+}
+
+@Composable
+private fun FormTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier.fillMaxWidth()
+) {
+    Surface(
+        modifier = modifier.height(64.dp),
+        shape = ScheduleShape,
+        color = UniStackColors.SurfaceVariant,
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.6f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(label, color = UniStackColors.TextSecondary, fontSize = 9.sp, lineHeight = 10.sp)
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 14.sp,
+                    lineHeight = 17.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                cursorBrush = SolidColor(ScheduleGreen),
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (value.isBlank()) {
+                            Text(placeholder, color = UniStackColors.TextSecondary.copy(alpha = 0.62f), fontSize = 14.sp)
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FormSurface(label: String, content: @Composable () -> Unit) {
+    Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+            content()
+        }
+    }
+}
+
+@Composable
+private fun TimeField(label: String, minute: Int, modifier: Modifier, onClick: () -> Unit) {
+    Surface(onClick = onClick, modifier = modifier, shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                Text(formatMinute(minute, true), color = UniStackColors.TextPrimary, fontWeight = FontWeight.Medium)
+            }
+            Icon(Icons.Rounded.Schedule, contentDescription = null, tint = UniStackColors.TextSecondary)
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TimePickerAlert(title: String, minute: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
+    val state = rememberTimePickerState(initialHour = minute / 60, initialMinute = minute % 60, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { TimePicker(state) },
+        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar", color = ScheduleGreen) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+@Composable
+private fun SubjectHistoryDialog(
+    subject: Subject,
+    sessions: List<ClassSession>,
+    occurrences: List<ClassOccurrence>,
+    onDismiss: () -> Unit,
+    onMarkAttendance: (LocalDate, ClassSession) -> Unit
+) {
+    val entries = remember(sessions, occurrences) {
+        buildSubjectHistory(sessions, occurrences, LocalDate.now())
+    }
+    val attended = entries.count { it.status == ClassAttendanceStatus.ATTENDED }
+    val absent = entries.count { it.status == ClassAttendanceStatus.ABSENT }
+    val decided = attended + absent
+    val rate = if (decided == 0) 0 else (attended.toFloat() / decided * 100).roundToInt()
+    val pending = entries
+        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(LocalDate.now()) }
+        .maxByOrNull(HistoryEntry::date)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
+    ) {
+        Surface(Modifier.fillMaxSize(), color = UniStackColors.Background) {
+            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleGreen)
+                ) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(4.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    }
+                    Box(
+                        modifier = Modifier.align(Alignment.BottomCenter).offset(y = 22.dp).size(50.dp)
+                            .clip(CircleShape).background(UniStackColors.Background)
+                            .border(1.dp, ScheduleGreen.copy(alpha = 0.35f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = ScheduleGreen)
+                    }
+                }
+                Spacer(Modifier.height(30.dp))
+                Text(
+                    subject.name,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    textAlign = TextAlign.Center,
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 18.sp,
+                    lineHeight = 21.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Spacer(Modifier.height(14.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = ScheduleShape,
+                    color = UniStackColors.SurfaceVariant,
+                    border = BorderStroke(1.dp, UniStackColors.SoftOutline)
+                ) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Asistencia general", color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                            Text("$rate%", color = UniStackColors.TextPrimary, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("$attended asistencias  \u2022  $absent faltas", color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                        }
+                        Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                progress = { rate / 100f },
+                                modifier = Modifier.fillMaxSize(),
+                                color = ScheduleGreen,
+                                trackColor = UniStackColors.SoftOutline,
+                                strokeWidth = 4.dp
+                            )
+                            Text("$rate%", color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                Text(
+                    "Historial",
+                    modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 7.dp),
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
+                    shape = ScheduleShape,
+                    color = UniStackColors.SurfaceVariant,
+                    border = BorderStroke(1.dp, UniStackColors.SoftOutline)
+                ) {
+                    LazyColumn(contentPadding = PaddingValues(vertical = 5.dp)) {
+                        if (entries.isEmpty()) {
+                            item {
+                                Text("A\u00fan no hay clases en el historial", Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary)
+                            }
+                        }
+                        items(entries, key = { "${it.session.id}:${it.date.toEpochDay()}" }) { entry ->
+                            HistoryRow(entry)
+                        }
+                    }
+                }
+                Button(
+                    onClick = { pending?.let { onMarkAttendance(it.date, it.session) } },
+                    enabled = pending != null,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    shape = ScheduleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = ScheduleGreen),
+                    contentPadding = PaddingValues(vertical = 12.dp)
+                ) {
+                    Text("Marcar asistencia", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryRow(entry: HistoryEntry) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Rounded.Event, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            entry.date.format(DateTimeFormatter.ofPattern("d MMM (EEE)", SpanishLocale)),
+            modifier = Modifier.weight(1f),
+            color = UniStackColors.TextPrimary,
+            fontSize = 11.sp
+        )
+        Box(Modifier.size(7.dp).clip(CircleShape).background(entry.status.color()))
+        Spacer(Modifier.width(7.dp))
+        Text(entry.status.label(), color = entry.status.color(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ClassDetailsSheet(
+    session: ClassSession,
+    subject: Subject?,
+    date: LocalDate,
+    occurrence: ClassOccurrence?,
+    use24Hour: Boolean,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onHistory: () -> Unit,
+    onDelete: () -> Unit,
+    onStatus: (ClassAttendanceStatus) -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(ScheduleShape).background(subject.scheduleColor()), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = Color.White)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
+                    Text("${date.longTitle()}  \u2022  ${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                }
+            }
+            Text("Registrar asistencia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(ClassAttendanceStatus.ATTENDED, ClassAttendanceStatus.ABSENT, ClassAttendanceStatus.CANCELLED).forEach { status ->
+                    val selected = occurrence?.status == status
+                    Surface(
+                        onClick = { onStatus(status) },
+                        modifier = Modifier.weight(1f),
+                        shape = ScheduleShape,
+                        color = if (selected) status.color().copy(alpha = 0.18f) else UniStackColors.SurfaceVariant,
+                        border = BorderStroke(1.dp, if (selected) status.color() else UniStackColors.SoftOutline)
+                    ) {
+                        Text(status.label(), Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center, color = if (selected) status.color() else UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+            HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.6f))
+            DetailActionRow(Icons.Rounded.CalendarMonth, "Ver historial", UniStackColors.TextPrimary, onHistory)
+            DetailActionRow(Icons.Rounded.Edit, "Editar clase", UniStackColors.TextPrimary, onEdit)
+            DetailActionRow(Icons.Rounded.DeleteOutline, "Eliminar clase", UniStackColors.Coral, onDelete)
+        }
+    }
+}
+
+@Composable
+private fun DetailActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(ScheduleShape).clickable(onClick = onClick).padding(vertical = 9.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(19.dp))
+        Spacer(Modifier.width(11.dp))
+        Text(label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun OptionsSheet(
+    onDismiss: () -> Unit,
+    onToday: () -> Unit,
+    onTimetable: () -> Unit,
+    onCalendarMode: (CalendarMode) -> Unit,
+    onAddClass: () -> Unit,
+    onAddTask: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OptionRow(Icons.Rounded.CalendarMonth, "Ir a hoy", onToday)
+            OptionRow(Icons.Rounded.Schedule, "Horario semanal", onTimetable)
+            OptionRow(Icons.Rounded.CalendarMonth, "Calendario mensual") { onCalendarMode(CalendarMode.MONTH) }
+            OptionRow(Icons.Rounded.Event, "Vista agenda") { onCalendarMode(CalendarMode.AGENDA) }
+            OptionRow(Icons.Rounded.ExpandMore, "Lista del mes") { onCalendarMode(CalendarMode.LIST) }
+            OptionRow(Icons.AutoMirrored.Rounded.MenuBook, "A\u00f1adir clase", onAddClass)
+            OptionRow(Icons.Rounded.Event, "A\u00f1adir tarea", onAddTask)
+        }
+    }
+}
+
+@Composable
+private fun OptionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clip(ScheduleShape).clickable(onClick = onClick).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = ScheduleGreen)
+        Spacer(Modifier.width(12.dp))
+        Text(label, color = UniStackColors.TextPrimary, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+private data class SessionPlace(val room: String, val professor: String)
+
+private data class HistoryEntry(
+    val date: LocalDate,
+    val session: ClassSession,
+    val status: ClassAttendanceStatus
+)
+
+private val ClassSession.place: SessionPlace
+    get() {
+        val parts = location.split('\u2022', limit = 2).map(String::trim)
+        return SessionPlace(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" })
+    }
+
+private val SpanishLocale: Locale = Locale.forLanguageTag("es")
+
+private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: ScheduleGreen
+
+private fun LocalDate.weekStart(): LocalDate = minusDays((dayOfWeek.value - 1).toLong())
+
+private fun Long.asLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
+
+private fun LocalDate.weekdayName(): String = format(DateTimeFormatter.ofPattern("EEEE", SpanishLocale)).capitalized()
+
+private fun LocalDate.longTitle(): String = format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", SpanishLocale)).capitalized()
+
+private fun LocalDate.shortDate(): String = format(DateTimeFormatter.ofPattern("d MMM yyyy", SpanishLocale))
+
+private fun String.capitalized(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(SpanishLocale) else it.toString() }
+
+private fun String.shortName(): String = split(' ').filter(String::isNotBlank).take(2).joinToString(" ") { word ->
+    if (word.length <= 5) word else word.take(5) + "."
+}
+
+private fun dayLetter(day: DayOfWeek): String = listOf("L", "M", "X", "J", "V", "S", "D")[day.value - 1]
+
+private fun formatMinute(value: Int, use24Hour: Boolean): String {
+    val hour = value / 60
+    val minute = value % 60
+    if (use24Hour) return "%02d:%02d".format(hour, minute)
+    val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
+}
+
+private fun findNextSession(fromDate: LocalDate, sessions: List<ClassSession>): Pair<LocalDate, ClassSession>? {
+    if (sessions.isEmpty()) return null
+    return (0L..13L).asSequence().mapNotNull { offset ->
+        val date = fromDate.plusDays(offset)
+        sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+            .minByOrNull(ClassSession::startMinute)
+            ?.let { date to it }
+    }.firstOrNull()
+}
+
+private fun monthScheduleDates(
+    month: YearMonth,
+    sessions: List<ClassSession>
+): List<Pair<LocalDate, List<ClassSession>>> = (1..month.lengthOfMonth()).mapNotNull { day ->
+    val date = month.atDay(day)
+    val dateSessions = sessions
+        .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+        .sortedBy(ClassSession::startMinute)
+    if (dateSessions.isNotEmpty()) date to dateSessions else null
+}
+
+private fun buildSubjectHistory(
+    sessions: List<ClassSession>,
+    occurrences: List<ClassOccurrence>,
+    today: LocalDate
+): List<HistoryEntry> {
+    val occurrenceByKey = occurrences.associateBy { it.sessionId to it.dateEpochDay }
+    val allEntries = (-120L..30L).flatMap { offset ->
+        val date = today.plusDays(offset)
+        sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }.map { session ->
+            HistoryEntry(
+                date = date,
+                session = session,
+                status = occurrenceByKey[session.id to date.toEpochDay()]?.status ?: ClassAttendanceStatus.PENDING
+            )
+        }
+    }
+    val future = allEntries.filter { it.date.isAfter(today) }
+        .sortedBy(HistoryEntry::date)
+        .take(2)
+    val recent = allEntries.filter { !it.date.isAfter(today) }
+        .sortedWith(compareByDescending<HistoryEntry> { it.date }.thenByDescending { it.session.startMinute })
+        .take(22)
+    return (future + recent).sortedWith(
+        compareByDescending<HistoryEntry> { it.date }.thenByDescending { it.session.startMinute }
+    )
+}
+
+private fun ClassAttendanceStatus.label(): String = when (this) {
+    ClassAttendanceStatus.PENDING -> "Pendiente"
+    ClassAttendanceStatus.ATTENDED -> "Asist\u00ed"
+    ClassAttendanceStatus.ABSENT -> "Falta"
+    ClassAttendanceStatus.CANCELLED -> "Cancelada"
+    ClassAttendanceStatus.RESCHEDULED -> "Reprogramada"
+}
+
+private fun ClassAttendanceStatus.color(): Color = when (this) {
+    ClassAttendanceStatus.PENDING -> UniStackColors.TextSecondary
+    ClassAttendanceStatus.ATTENDED -> ScheduleGreen
+    ClassAttendanceStatus.ABSENT -> UniStackColors.Coral
+    ClassAttendanceStatus.CANCELLED -> ScheduleOrange
+    ClassAttendanceStatus.RESCHEDULED -> ScheduleBlue
+}

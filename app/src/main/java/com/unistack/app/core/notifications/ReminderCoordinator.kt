@@ -4,6 +4,7 @@ import android.content.Context
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,18 +21,31 @@ object ReminderCoordinator {
         userRepository: UserRepository,
         gradesRepository: GradesRepository,
         tasksRepository: TasksRepository,
-        academicWorksRepository: AcademicWorksRepository
+        academicWorksRepository: AcademicWorksRepository,
+        scheduleRepository: ScheduleRepository
     ) {
         if (job != null) return
         val scheduler = LocalReminderScheduler(context.applicationContext)
         job = CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            val scheduleState = combine(
+                scheduleRepository.sessions,
+                scheduleRepository.occurrences
+            ) { sessions, occurrences -> sessions to occurrences }
             combine(
                 userRepository.userProfile,
                 gradesRepository.subjects,
                 tasksRepository.tasks,
-                academicWorksRepository.works
-            ) { profile, subjects, tasks, works ->
-                scheduler.schedule(profile, tasks, works, subjects)
+                academicWorksRepository.works,
+                scheduleState
+            ) { profile, subjects, tasks, works, schedule ->
+                scheduler.schedule(
+                    profile = profile,
+                    tasks = tasks,
+                    works = works,
+                    subjects = subjects,
+                    classSessions = schedule.first,
+                    classOccurrences = schedule.second
+                )
             }.collect {}
         }
     }

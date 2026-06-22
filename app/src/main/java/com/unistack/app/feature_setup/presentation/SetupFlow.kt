@@ -1406,13 +1406,7 @@ private fun AcademicProgramHelpCard(
     modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
+        modifier = modifier.fillMaxWidth(),
         brush = Brush.linearGradient(
             if (selected) {
                 listOf(
@@ -1430,6 +1424,7 @@ private fun AcademicProgramHelpCard(
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
+        onClick = onClick,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Row(
@@ -2393,11 +2388,7 @@ private fun PeriodCountDropdown(
         UniCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(44.dp)
-                .clickable(
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                    indication = null
-                ) { onExpandedChange(!expanded) },
+                .height(44.dp),
             brush = Brush.linearGradient(
                 listOf(
                     UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.64f else 0.82f),
@@ -2408,6 +2399,7 @@ private fun PeriodCountDropdown(
             tonalElevation = 0.dp,
             borderColor = if (expanded) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.92f),
             borderWidth = if (expanded) 1.4.dp else 1.dp,
+            onClick = { onExpandedChange(!expanded) },
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
         ) {
             Row(
@@ -4857,15 +4849,7 @@ private fun SetupDropdownField(
             UniCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(72.dp)
-                    .clickable(
-                        enabled = enabled,
-                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                        indication = null
-                    ) {
-                        keyboard?.hide()
-                        onExpandedChange(!expanded)
-                    },
+                    .height(72.dp),
                 brush = Brush.linearGradient(
                     listOf(
                         UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
@@ -4880,6 +4864,11 @@ private fun SetupDropdownField(
                     else -> UniStackColors.SoftOutline.copy(alpha = 0.48f)
                 },
                 borderWidth = if (expanded) 1.4.dp else 1.dp,
+                enabled = enabled,
+                onClick = {
+                    keyboard?.hide()
+                    onExpandedChange(!expanded)
+                },
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
             ) {
                 Row(

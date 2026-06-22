@@ -13,19 +13,37 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
+import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.AccessibilityPreferences
+import com.unistack.app.feature_user.domain.AppLanguage
+import com.unistack.app.feature_user.domain.AccentIntensity
+import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.AuthProvider
+import com.unistack.app.feature_user.domain.BackgroundStyle
+import com.unistack.app.feature_user.domain.BottomBarStyle
+import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.InterfaceDensity
+import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.LinkedAccount
+import com.unistack.app.feature_user.domain.MotionPreference
+import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import com.unistack.app.feature_user.domain.SavedGradeScenario
 import com.unistack.app.feature_user.domain.StudyArea
+import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.SyncStatus
+import com.unistack.app.feature_user.domain.TextScalePreference
+import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserIds
+import com.unistack.app.feature_user.domain.VisualPreset
 import com.unistack.app.feature_user.domain.VisualPreference
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -55,6 +73,8 @@ class UserPreferencesDataSource(private val context: Context) {
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
         val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
+        val APPEARANCE_PREFERENCES_JSON = stringPreferencesKey("appearance_preferences_json")
+        val ACCESSIBILITY_PREFERENCES_JSON = stringPreferencesKey("accessibility_preferences_json")
         val TASK_REMINDERS_ENABLED = booleanPreferencesKey("task_reminders_enabled")
         val ACADEMIC_WORK_REMINDERS_ENABLED = booleanPreferencesKey("academic_work_reminders_enabled")
         val OVERDUE_REMINDERS_ENABLED = booleanPreferencesKey("overdue_reminders_enabled")
@@ -120,6 +140,8 @@ class UserPreferencesDataSource(private val context: Context) {
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
             visualPreference = visualPreference,
+            appearancePreferences = parseAppearancePreferences(prefs[Keys.APPEARANCE_PREFERENCES_JSON]),
+            accessibilityPreferences = parseAccessibilityPreferences(prefs[Keys.ACCESSIBILITY_PREFERENCES_JSON]),
             taskRemindersEnabled = prefs[Keys.TASK_REMINDERS_ENABLED] ?: true,
             academicWorkRemindersEnabled = prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] ?: true,
             overdueRemindersEnabled = prefs[Keys.OVERDUE_REMINDERS_ENABLED] ?: true,
@@ -180,6 +202,8 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
             prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
+            prefs[Keys.APPEARANCE_PREFERENCES_JSON] = profile.appearancePreferences.normalized().toJsonString()
+            prefs[Keys.ACCESSIBILITY_PREFERENCES_JSON] = profile.accessibilityPreferences.toJsonString()
             prefs[Keys.TASK_REMINDERS_ENABLED] = profile.taskRemindersEnabled
             prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] = profile.academicWorkRemindersEnabled
             prefs[Keys.OVERDUE_REMINDERS_ENABLED] = profile.overdueRemindersEnabled
@@ -243,6 +267,118 @@ class UserPreferencesDataSource(private val context: Context) {
                 prefs.remove(Keys.GRADE_LEVEL)
             }
         }
+    }
+
+    private fun AppearancePreferences.toJsonString(): String = JSONObject()
+        .put("backgroundStyle", backgroundStyle.name)
+        .put("customBackgroundColor", customBackgroundColor)
+        .put("accentStyle", accentStyle.name)
+        .put("customAccentColor", customAccentColor)
+        .put("accentIntensity", accentIntensity.name)
+        .put("surfaceStyle", surfaceStyle.name)
+        .put("cornerStyle", cornerStyle.name)
+        .put("interfaceDensity", interfaceDensity.name)
+        .put("motionPreference", motionPreference.name)
+        .put("textScale", textScale.name)
+        .put("typographyStyle", typographyStyle.name)
+        .put("decimalPlaces", decimalPlaces)
+        .put("bottomBarStyle", bottomBarStyle.name)
+        .put("navigationBarPresentation", navigationBarPresentation.name)
+        .put("academicIndicatorStyle", academicIndicatorStyle.name)
+        .put("showHomeGreeting", showHomeGreeting)
+        .put("showHomeHero", showHomeHero)
+        .put("showHomeAgenda", showHomeAgenda)
+        .put("showHomeSnapshot", showHomeSnapshot)
+        .put("homeSectionOrder", JSONArray(homeSectionOrder.map { it.name }))
+        .put("heroAutoRotate", heroAutoRotate)
+        .put("heroShowsGrades", heroShowsGrades)
+        .put("heroShowsTasks", heroShowsTasks)
+        .put("heroShowsExpenses", heroShowsExpenses)
+        .put("initialTab", initialTab.name)
+        .put("visualPreset", visualPreset.name)
+        .toString()
+
+    private fun AccessibilityPreferences.toJsonString(): String = JSONObject()
+        .put("appLanguage", appLanguage.name)
+        .put("highContrastEnabled", highContrastEnabled)
+        .put("use24HourTime", use24HourTime)
+        .put("textScale", textScale.name)
+        .put("motionPreference", motionPreference.name)
+        .put("heroAnimationEnabled", heroAnimationEnabled)
+        .toString()
+
+    private fun parseAccessibilityPreferences(raw: String?): AccessibilityPreferences {
+        if (raw.isNullOrBlank()) return AccessibilityPreferences()
+        return runCatching {
+            val json = JSONObject(raw)
+            AccessibilityPreferences(
+                appLanguage = json.enumOrDefault("appLanguage", AppLanguage.SYSTEM),
+                highContrastEnabled = json.optBoolean("highContrastEnabled", false),
+                use24HourTime = json.optBoolean("use24HourTime", true),
+                textScale = json.enumOrDefault("textScale", TextScalePreference.STANDARD),
+                motionPreference = json.enumOrDefault("motionPreference", MotionPreference.FULL),
+                heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", true)
+            )
+        }.getOrDefault(AccessibilityPreferences())
+    }
+
+    private fun parseAppearancePreferences(raw: String?): AppearancePreferences {
+        if (raw.isNullOrBlank()) return AppearancePreferences.defaults()
+        return runCatching {
+            val json = JSONObject(raw)
+            val defaults = AppearancePreferences.defaults()
+            AppearancePreferences(
+                backgroundStyle = json.enumOrDefault("backgroundStyle", defaults.backgroundStyle),
+                customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
+                accentStyle = json.enumOrDefault("accentStyle", defaults.accentStyle),
+                customAccentColor = json.optIntOrNull("customAccentColor"),
+                accentIntensity = json.enumOrDefault("accentIntensity", defaults.accentIntensity),
+                surfaceStyle = json.enumOrDefault("surfaceStyle", defaults.surfaceStyle),
+                cornerStyle = json.enumOrDefault("cornerStyle", defaults.cornerStyle),
+                interfaceDensity = json.enumOrDefault("interfaceDensity", defaults.interfaceDensity),
+                motionPreference = json.enumOrDefault("motionPreference", defaults.motionPreference),
+                textScale = json.enumOrDefault("textScale", defaults.textScale),
+                typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
+                decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
+                bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
+                navigationBarPresentation = json.enumOrDefault(
+                    "navigationBarPresentation",
+                    defaults.navigationBarPresentation
+                ),
+                academicIndicatorStyle = json.enumOrDefault(
+                    "academicIndicatorStyle",
+                    defaults.academicIndicatorStyle
+                ),
+                showHomeGreeting = json.optBoolean("showHomeGreeting", defaults.showHomeGreeting),
+                showHomeHero = json.optBoolean("showHomeHero", defaults.showHomeHero),
+                showHomeAgenda = json.optBoolean("showHomeAgenda", defaults.showHomeAgenda),
+                showHomeSnapshot = json.optBoolean("showHomeSnapshot", defaults.showHomeSnapshot),
+                homeSectionOrder = json.optJSONArray("homeSectionOrder")
+                    ?.let { array ->
+                        (0 until array.length()).mapNotNull { index ->
+                            runCatching { HomeSection.valueOf(array.optString(index)) }.getOrNull()
+                        }
+                    }
+                    ?.ifEmpty { defaults.homeSectionOrder }
+                    ?: defaults.homeSectionOrder,
+                heroAutoRotate = json.optBoolean("heroAutoRotate", defaults.heroAutoRotate),
+                heroShowsGrades = json.optBoolean("heroShowsGrades", defaults.heroShowsGrades),
+                heroShowsTasks = json.optBoolean("heroShowsTasks", defaults.heroShowsTasks),
+                heroShowsExpenses = json.optBoolean("heroShowsExpenses", defaults.heroShowsExpenses),
+                initialTab = json.enumOrDefault("initialTab", defaults.initialTab),
+                visualPreset = json.enumOrDefault("visualPreset", defaults.visualPreset)
+            ).normalized()
+        }.getOrDefault(AppearancePreferences.defaults())
+    }
+
+    private inline fun <reified T : Enum<T>> JSONObject.enumOrDefault(key: String, default: T): T {
+        val raw = optString(key)
+        return enumValues<T>().firstOrNull { it.name == raw } ?: default
+    }
+
+    private fun JSONObject.optIntOrNull(key: String): Int? {
+        if (!has(key) || isNull(key)) return null
+        return optLong(key).toInt()
     }
 
     suspend fun updatePreferredName(name: String) {

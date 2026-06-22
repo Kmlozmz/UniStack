@@ -24,6 +24,7 @@ import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_home.domain.SubjectRiskSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_home.domain.TaskSummary
+import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
@@ -36,6 +37,7 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
@@ -49,6 +51,7 @@ internal object HomeSummaryFactory {
         val tasks = content.tasks
         val expenses = content.expenses
         val works = content.works
+        val classSessions = content.classSessions
         val pendingTasks = tasks.filterNot { it.completed }
         val completedTasks = tasks.count { it.completed }
         val overdueTasks = pendingTasks.count {
@@ -61,18 +64,27 @@ internal object HomeSummaryFactory {
         val openAcademicWorks = works.count { it.status != AcademicWorkStatus.SUBMITTED }
         val gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
         val enabledModules = profile?.enabledModules ?: setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES)
+        val appearance = profile?.appearancePreferences
+        val heroSubjects = if (appearance?.heroShowsGrades != false) subjects else emptyList()
+        val heroTasks = if (appearance?.heroShowsTasks != false) pendingTasks else emptyList()
+        val heroWorks = if (appearance?.heroShowsTasks != false) works else emptyList()
+        val heroExpenseTotal = if (appearance?.heroShowsExpenses != false) weeklyExpenseTotal else 0
         val riskSubject = subjectRiskSummary(
-            subjects = subjects,
+            subjects = heroSubjects,
             profile = profile,
             gradingScale = gradingScale
         )
         val academicFocus = academicFocusSummary(
-            subjects = subjects,
+            subjects = heroSubjects,
             gradingScale = gradingScale
         )
         val academicDataPriority = academicDataPriority(
-            subjects = subjects,
-            tasks = tasks
+            subjects = heroSubjects,
+            tasks = heroTasks
+        )
+        val schedulePriority = schedulePrioritySummary(
+            sessions = classSessions,
+            subjects = subjects
         )
         val todayItems = todayTimelineItems(
             tasks = pendingTasks,
@@ -80,12 +92,12 @@ internal object HomeSummaryFactory {
             riskSubject = riskSubject,
             subjectNameById = subjects.associate { it.id to it.name }
         )
-        val priority = academicDataPriority ?: prioritySummary(
-            subjects = subjects,
-            pendingTasks = pendingTasks,
-            works = works,
+        val priority = academicDataPriority ?: schedulePriority ?: prioritySummary(
+            subjects = heroSubjects,
+            pendingTasks = heroTasks,
+            works = heroWorks,
             riskSubject = riskSubject,
-            weeklyExpenseTotal = weeklyExpenseTotal,
+            weeklyExpenseTotal = heroExpenseTotal,
             profile = profile,
             enabledModules = enabledModules,
             academicFocus = academicFocus
@@ -347,6 +359,40 @@ internal object HomeSummaryFactory {
         return null
     }
 
+    private fun schedulePrioritySummary(
+        sessions: List<ClassSession>,
+        subjects: List<Subject>
+    ): HomePrioritySummary? {
+        if (sessions.isEmpty()) return null
+        val today = LocalDate.now()
+        val nowMinute = LocalTime.now().hour * 60 + LocalTime.now().minute
+        val next = (0..7)
+            .flatMap { offset ->
+                val date = today.plusDays(offset.toLong())
+                sessions
+                    .filter { date.dayOfWeek.value in it.daysOfWeek }
+                    .filter { offset > 0 || it.startMinute >= nowMinute }
+                    .map { date to it }
+            }
+            .sortedWith(compareBy<Pair<LocalDate, ClassSession>> { it.first }.thenBy { it.second.startMinute })
+            .firstOrNull() ?: return null
+        val (date, session) = next
+        val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu proxima clase"
+        val dayText = if (date == today) "hoy" else date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("es"))
+        val timeText = formatClassMinute(session.startMinute)
+        return HomePrioritySummary(
+            title = "$subjectName a las $timeText",
+            shortDescription = "Tienes clase $dayText. Revisa aula, asistencia y recordatorio.",
+            fullDescription = "Tu horario ya esta conectado con UniStack. Desde Agenda puedes registrar asistencia, modalidad, cambios puntuales y mantener tus recordatorios alineados con la clase.",
+            suggestion = "${heroActionPrefix()}: abrir el horario y preparar la siguiente clase.",
+            action = HomePriorityAction.SCHEDULE,
+            subjectId = session.subjectId
+        )
+    }
+
+    private fun formatClassMinute(minute: Int): String = TaskDateUtils.formatTimeInput(
+        LocalTime.of((minute / 60).coerceIn(0, 23), (minute % 60).coerceIn(0, 59))
+    )
     private fun HomePrioritySummary.toDailyFocusItem(): DailyFocusItem {
         return DailyFocusItem(
             slotLabel = "Ahora",
@@ -363,6 +409,7 @@ internal object HomeSummaryFactory {
                 HomePriorityAction.TASKS -> "Revisar"
                 HomePriorityAction.EXPENSES -> "Gastos"
                 HomePriorityAction.TEMPLATES -> "Trabajos"
+                HomePriorityAction.SCHEDULE -> "Horario"
             },
             action = action,
             subjectId = subjectId

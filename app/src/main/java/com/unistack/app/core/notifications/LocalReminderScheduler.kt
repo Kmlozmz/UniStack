@@ -19,6 +19,9 @@ import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -28,6 +31,7 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.UserProfile
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 private const val CHANNEL_ID = "unistack_reminders"
@@ -51,7 +55,9 @@ class LocalReminderScheduler(private val context: Context) {
         profile: UserProfile?,
         tasks: List<StudentTask>,
         works: List<AcademicWork>,
-        subjects: List<Subject> = emptyList()
+        subjects: List<Subject> = emptyList(),
+        classSessions: List<ClassSession> = emptyList(),
+        classOccurrences: List<ClassOccurrence> = emptyList()
     ) {
         createChannel()
         cancelPrevious()
@@ -142,6 +148,8 @@ class LocalReminderScheduler(private val context: Context) {
             scheduleSubjectInsights(currentProfile, subjects)
         }
 
+        scheduleClassReminders(currentProfile, subjects, classSessions, classOccurrences)
+
         if (currentProfile.taskRemindersEnabled ||
             currentProfile.academicWorkRemindersEnabled ||
             currentProfile.overdueRemindersEnabled ||
@@ -152,13 +160,84 @@ class LocalReminderScheduler(private val context: Context) {
                 profile = currentProfile,
                 requestCode = DAILY_DIGEST_REQUEST_CODE,
                 triggerAtMillis = nextTriggerAt(hour = 7, minute = 30, daysFromNow = 1),
-                title = "Pulso de UniStack",
+                title = "Resumen del dia",
                 body = smartDigestBody(currentProfile, tasks, works, subjects),
                 targetRoute = AppRoutes.Home
             )
         }
 
         persistScheduledRequestCodes()
+    }
+
+    private fun scheduleClassReminders(
+        profile: UserProfile,
+        subjects: List<Subject>,
+        sessions: List<ClassSession>,
+        occurrences: List<ClassOccurrence>
+    ) {
+        sessions
+            .filter { it.reminderMinutes > 0 && it.isValid }
+            .mapNotNull { session ->
+                nextClassOccurrence(session)?.let { trigger ->
+                    session to trigger.minusMinutes(session.reminderMinutes.toLong())
+                }
+            }
+            .filter { (_, trigger) -> trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() > System.currentTimeMillis() }
+            .sortedBy { (_, trigger) -> trigger }
+            .take(MAX_REMINDERS_PER_KIND)
+            .forEach { (session, trigger) ->
+                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu clase"
+                val locationSuffix = session.location.takeIf(String::isNotBlank)?.let { " en $it" }.orEmpty()
+                scheduleReminder(
+                    profile = profile,
+                    requestCode = session.id.stableRequestCode("class-reminder"),
+                    triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    title = "$subjectName empieza pronto",
+                    body = "Tu clase comienza en ${session.reminderMinutes} min$locationSuffix.",
+                    targetRoute = AppRoutes.Calendar
+                )
+            }
+
+        sessions
+            .filter(ClassSession::isValid)
+            .mapNotNull { session ->
+                nextClassOccurrence(session)?.let { start ->
+                    val epochDay = start.toLocalDate().toEpochDay()
+                    val occurrence = occurrences.firstOrNull {
+                        it.sessionId == session.id && it.dateEpochDay == epochDay
+                    }
+                    if (occurrence?.status != null && occurrence.status != ClassAttendanceStatus.PENDING) {
+                        null
+                    } else {
+                        Triple(session, start, epochDay)
+                    }
+                }
+            }
+            .sortedBy { it.second }
+            .take(MAX_REMINDERS_PER_KIND)
+            .forEach { (session, start, epochDay) ->
+                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "tu clase"
+                val trigger = start.toLocalDate()
+                    .atStartOfDay()
+                    .plusMinutes(session.endMinute.toLong() + 10L)
+                scheduleReminder(
+                    profile = profile,
+                    requestCode = "${session.id}:$epochDay".stableRequestCode("class-attendance"),
+                    triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    title = "¿Asististe a $subjectName?",
+                    body = "Registra tu asistencia, modalidad o cualquier cambio de esta clase.",
+                    targetRoute = AppRoutes.Calendar
+                )
+            }
+    }
+
+    private fun nextClassOccurrence(session: ClassSession): LocalDateTime? {
+        val now = LocalDateTime.now()
+        return (0L..84L).asSequence()
+            .map { now.toLocalDate().plusDays(it) }
+            .filter { session.occursOn(it.toEpochDay(), it.dayOfWeek.value) }
+            .map { it.atTime(session.startMinute / 60, session.startMinute % 60) }
+            .firstOrNull { it.isAfter(now) }
     }
 
     fun cancelScheduled(requestCode: Int) {
@@ -178,7 +257,7 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = hint.subject.id.stableRequestCode("subject-insight"),
                     triggerAtMillis = nextTriggerAt(hour = 18, minute = index * 10, daysFromNow = 1),
-                    title = "Pulso de ${hint.subject.name}",
+                    title = hint.notificationTitle(),
                     body = hint.message,
                     targetRoute = AppRoutes.subjectDetail(hint.subject.id)
                 )
@@ -406,7 +485,20 @@ class LocalReminderScheduler(private val context: Context) {
         val subject: Subject,
         val severity: Int,
         val message: String
-    )
+    ) {
+        fun notificationTitle(): String {
+            val normalized = message.lowercase()
+            return when {
+                "sin porcentaje" in normalized -> "Faltan porcentajes en ${subject.name}"
+                "corte anterior" in normalized || "cortes anteriores" in normalized -> "Completa cortes de ${subject.name}"
+                "no tienes notas" in normalized -> "Empieza ${subject.name}"
+                severity >= 4 -> "${subject.name} necesita atencion"
+                "meta" in normalized && "dif" in normalized -> "Meta dificil en ${subject.name}"
+                "meta" in normalized -> "${subject.name} bajo tu meta"
+                else -> "Revisa ${subject.name}"
+            }
+        }
+    }
 
     companion object {
         fun showNotification(context: Context, intent: Intent) {

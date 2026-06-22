@@ -233,10 +233,20 @@ fun summarizeChangeFiles(files: List<String>): List<String> {
             add("Tareas: resultados pendientes agrupados y editor compacto con nota vinculada.")
         }
         if (normalized.any { it.contains("feature_profile/") }) {
-            add("Perfil: centro de control con resumen de modulos, recordatorios y escala.")
+            add("Configuracion: Perfil simplificado y ajustes separados por categoria.")
+            add("Apariencia: tema, fondos, colores, densidad, Home y navegacion personalizables.")
+        }
+        if (normalized.any { it.contains("feature_schedule/") }) {
+            add("Agenda: calendario y horario semanal conectados con materias y tareas.")
+        }
+        if (normalized.any { it.contains("AccessibilityPreferences") || it.contains("AccessibilitySettings") }) {
+            add("Accesibilidad: idioma, contraste, texto, formato horario y movimiento centralizados.")
+        }
+        if (normalized.any { it.contains("feature_sync/") || it.contains("FirebaseGoogleAuthService") }) {
+            add("Cuenta: Google y respaldos local/nube preparados para datos academicos y horario.")
         }
         if (normalized.any { it.contains("core/notifications/") }) {
-            add("Recordatorios: avisos limitados a lo mas proximo y canal afinado.")
+            add("Recordatorios: clases, tareas y seguimiento academico integrados al historial real.")
         }
         val hasProductChanges = normalized.any { it.startsWith("app/src/") }
         if (!hasSetupChanges && !hasProductChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {

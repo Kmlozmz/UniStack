@@ -4,6 +4,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import com.unistack.app.feature_user.domain.AccentIntensity
+import com.unistack.app.feature_user.domain.AccentStyle
+import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.BackgroundStyle
+import com.unistack.app.feature_user.domain.SurfaceStyle
 
 object UniStackColors {
     private val lightPalette = UniStackColorPalette(
@@ -56,7 +61,7 @@ object UniStackColors {
         bottomBarSelected = Color(0xFF24105C)
     )
 
-    private var appliedDarkTheme = false
+    private var appliedSignature: Int? = null
 
     var IsDarkTheme by mutableStateOf(false)
         private set
@@ -105,34 +110,114 @@ object UniStackColors {
     var BottomBarSelected by mutableStateOf(lightPalette.bottomBarSelected)
         private set
 
-    internal fun applyTheme(darkTheme: Boolean) {
-        if (appliedDarkTheme == darkTheme) return
+    internal fun applyTheme(
+        darkTheme: Boolean,
+        oledTheme: Boolean,
+        appearance: AppearancePreferences,
+        highContrast: Boolean = false
+    ) {
+        val normalized = appearance.normalized()
+        val signature = 31 * (31 * (31 * darkTheme.hashCode() + oledTheme.hashCode()) + normalized.hashCode()) +
+            highContrast.hashCode()
+        if (appliedSignature == signature) return
 
-        val palette = if (darkTheme) darkPalette else lightPalette
-        appliedDarkTheme = darkTheme
+        val base = if (darkTheme) darkPalette else lightPalette
+        val background = resolveBackground(base, darkTheme, oledTheme, normalized)
+        val primary = resolveAccent(base, background, darkTheme, normalized)
+        val card = resolveCard(background, darkTheme, normalized.surfaceStyle)
+        val surfaceVariant = mix(card, if (darkTheme) Color.White else Color.Black, if (darkTheme) 0.045f else 0.035f)
+        val primaryLight = mix(primary, background, if (darkTheme) 0.72f else 0.84f)
+
+        appliedSignature = signature
         IsDarkTheme = darkTheme
-        Primary = palette.primary
-        PrimaryDark = palette.primaryDark
-        PrimaryLight = palette.primaryLight
-        Blue = palette.blue
-        BlueLight = palette.blueLight
-        Teal = palette.teal
-        TealLight = palette.tealLight
-        Green = palette.green
-        GreenLight = palette.greenLight
-        Coral = palette.coral
-        CoralLight = palette.coralLight
-        Yellow = palette.yellow
-        YellowLight = palette.yellowLight
-        Background = palette.background
-        Card = palette.card
-        SurfaceVariant = palette.surfaceVariant
-        TextPrimary = palette.textPrimary
-        TextSecondary = palette.textSecondary
-        SoftOutline = palette.softOutline
-        GradientEnd = palette.gradientEnd
-        BottomBar = palette.bottomBar
-        BottomBarSelected = palette.bottomBarSelected
+        Primary = primary
+        PrimaryDark = if (darkTheme) mix(primary, Color.White, 0.72f) else mix(primary, Color.Black, 0.45f)
+        PrimaryLight = primaryLight
+        Blue = base.blue
+        BlueLight = base.blueLight
+        Teal = base.teal
+        TealLight = base.tealLight
+        Green = base.green
+        GreenLight = base.greenLight
+        Coral = base.coral
+        CoralLight = base.coralLight
+        Yellow = base.yellow
+        YellowLight = base.yellowLight
+        Background = background
+        Card = card
+        SurfaceVariant = surfaceVariant
+        TextPrimary = if (darkTheme) Color(0xFFF8F4FF) else Color(0xFF171427)
+        TextSecondary = when {
+            highContrast && darkTheme -> Color(0xFFECE9F4)
+            highContrast -> Color(0xFF393442)
+            darkTheme -> Color(0xFFD3D0E0)
+            else -> Color(0xFF5F5B6B)
+        }
+        SoftOutline = mix(
+            card,
+            TextPrimary,
+            if (highContrast) 0.28f else if (darkTheme) 0.12f else 0.14f
+        )
+        GradientEnd = mix(background, if (darkTheme) Color.Black else Color.White, 0.24f)
+        BottomBar = resolveCard(background, darkTheme, SurfaceStyle.ELEVATED)
+        BottomBarSelected = primaryLight
+    }
+
+    private fun resolveBackground(
+        base: UniStackColorPalette,
+        darkTheme: Boolean,
+        oledTheme: Boolean,
+        appearance: AppearancePreferences
+    ): Color {
+        if (oledTheme) return Color.Black
+        return when (appearance.backgroundStyle) {
+            BackgroundStyle.DEFAULT -> base.background
+            BackgroundStyle.PURE -> if (darkTheme) Color.Black else Color.White
+            BackgroundStyle.COOL -> if (darkTheme) Color(0xFF050A13) else Color(0xFFF5F7FC)
+            BackgroundStyle.VIOLET -> if (darkTheme) Color(0xFF0D0818) else Color(0xFFFAF7FF)
+            BackgroundStyle.CUSTOM -> appearance.customBackgroundColor?.let(::Color) ?: base.background
+        }
+    }
+
+    private fun resolveAccent(
+        base: UniStackColorPalette,
+        background: Color,
+        darkTheme: Boolean,
+        appearance: AppearancePreferences
+    ): Color {
+        val selected = when (appearance.accentStyle) {
+            AccentStyle.VIOLET -> if (darkTheme) Color(0xFF9A4DFF) else Color(0xFF6750F5)
+            AccentStyle.BLUE -> if (darkTheme) Color(0xFF65A7FF) else Color(0xFF1E7BEA)
+            AccentStyle.TEAL -> if (darkTheme) Color(0xFF21D6BF) else Color(0xFF008F87)
+            AccentStyle.GREEN -> if (darkTheme) Color(0xFF74D88B) else Color(0xFF2F9E50)
+            AccentStyle.PINK -> if (darkTheme) Color(0xFFFF6CB4) else Color(0xFFD83D87)
+            AccentStyle.CUSTOM -> appearance.customAccentColor?.let(::Color) ?: base.primary
+        }
+        return when (appearance.accentIntensity) {
+            AccentIntensity.SOFT -> mix(selected, background, 0.22f)
+            AccentIntensity.BALANCED -> selected
+            AccentIntensity.VIBRANT -> mix(selected, if (darkTheme) Color.White else Color.Black, 0.08f)
+        }
+    }
+
+    private fun resolveCard(background: Color, darkTheme: Boolean, style: SurfaceStyle): Color {
+        val contrast = if (darkTheme) Color.White else Color.Black
+        return when (style) {
+            SurfaceStyle.FLAT -> background
+            SurfaceStyle.OUTLINED -> mix(background, contrast, if (darkTheme) 0.025f else 0.018f)
+            SurfaceStyle.ELEVATED -> mix(background, contrast, if (darkTheme) 0.065f else 0.035f)
+            SurfaceStyle.TRANSLUCENT -> mix(background, contrast, if (darkTheme) 0.045f else 0.025f)
+        }
+    }
+
+    private fun mix(first: Color, second: Color, amount: Float): Color {
+        val ratio = amount.coerceIn(0f, 1f)
+        return Color(
+            red = first.red + (second.red - first.red) * ratio,
+            green = first.green + (second.green - first.green) * ratio,
+            blue = first.blue + (second.blue - first.blue) * ratio,
+            alpha = 1f
+        )
     }
 }
 

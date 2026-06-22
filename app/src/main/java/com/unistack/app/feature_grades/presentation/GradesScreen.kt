@@ -60,7 +60,8 @@ fun GradesScreen(
     onAddSubjectClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = viewModel(),
+    embedded: Boolean = false
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -76,14 +77,21 @@ fun GradesScreen(
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 22.dp, top = 58.dp, end = 22.dp, bottom = 118.dp),
+            contentPadding = PaddingValues(
+                start = 22.dp,
+                top = if (embedded) 10.dp else 58.dp,
+                end = 22.dp,
+                bottom = 118.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item {
-                FeatureHeader(
-                    title = "Materias",
-                    subtitle = "Administra tus materias, notas y porcentajes."
-                )
+            if (!embedded) {
+                item {
+                    FeatureHeader(
+                        title = "Materias",
+                        subtitle = "Administra tus materias, notas y porcentajes."
+                    )
+                }
             }
             item {
                 SubjectsStatsRow(

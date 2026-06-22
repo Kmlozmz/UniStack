@@ -9,6 +9,8 @@ import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -69,16 +71,19 @@ class LocalJsonBackupRepositoryTest {
         val tasksRepository = FakeTasksRepository()
         val expensesRepository = FakeExpensesRepository()
         val worksRepository = FakeAcademicWorksRepository()
+        val scheduleRepository = FakeScheduleRepository()
         tasksRepository.addTask(testTask())
         expensesRepository.addExpense(testExpense())
         worksRepository.addWork(testWork())
+        scheduleRepository.saveSession(testSession())
 
         val repository = LocalJsonBackupRepository(
             userRepository = userRepository,
             gradesRepository = gradesRepository,
             tasksRepository = tasksRepository,
             expensesRepository = expensesRepository,
-            academicWorksRepository = worksRepository
+            academicWorksRepository = worksRepository,
+            scheduleRepository = scheduleRepository
         )
 
         val json = repository.exportBackupJson()
@@ -103,6 +108,7 @@ class LocalJsonBackupRepositoryTest {
         assertEquals(7, userRepository.userProfile.value?.quietHoursEndHour)
         assertEquals(1, expensesRepository.expenses.value.size)
         assertEquals(1, worksRepository.works.value.size)
+        assertEquals(1, scheduleRepository.sessions.value.size)
     }
 
     @Test
@@ -112,7 +118,8 @@ class LocalJsonBackupRepositoryTest {
             gradesRepository = InMemoryGradesRepository(),
             tasksRepository = FakeTasksRepository(),
             expensesRepository = FakeExpensesRepository(),
-            academicWorksRepository = FakeAcademicWorksRepository()
+            academicWorksRepository = FakeAcademicWorksRepository(),
+            scheduleRepository = FakeScheduleRepository()
         )
 
         assertTrue(repository.previewBackupJson("{bad json").isFailure)
@@ -182,6 +189,18 @@ class LocalJsonBackupRepositoryTest {
         createdAt = 10,
         updatedAt = 10
     )
+
+    private fun testSession() = ClassSession(
+        id = "session-1",
+        subjectId = "subject-1",
+        daysOfWeek = setOf(1, 3),
+        startMinute = 480,
+        endMinute = 570,
+        location = "Aula 204",
+        reminderMinutes = 15,
+        createdAt = 10,
+        updatedAt = 10
+    )
 }
 
 private class FakeTasksRepository : TasksRepository {
@@ -230,5 +249,28 @@ private class FakeAcademicWorksRepository : AcademicWorksRepository {
     override fun setChecklistItem(workId: String, checklistItemId: String, completed: Boolean) = Unit
     override fun setStatus(workId: String, status: AcademicWorkStatus) {
         state.value = state.value.map { if (it.id == workId) it.copy(status = status) else it }
+    }
+}
+
+private class FakeScheduleRepository : ScheduleRepository {
+    private val state = MutableStateFlow<List<ClassSession>>(emptyList())
+    override val sessions: StateFlow<List<ClassSession>> = state
+    private val occurrenceState = MutableStateFlow<List<com.unistack.app.feature_schedule.domain.ClassOccurrence>>(emptyList())
+    override val occurrences: StateFlow<List<com.unistack.app.feature_schedule.domain.ClassOccurrence>> = occurrenceState
+
+    override fun saveSession(session: ClassSession) {
+        state.value = state.value.filterNot { it.id == session.id } + session
+    }
+
+    override fun deleteSession(sessionId: String) {
+        state.value = state.value.filterNot { it.id == sessionId }
+    }
+
+    override fun saveOccurrence(occurrence: com.unistack.app.feature_schedule.domain.ClassOccurrence) {
+        occurrenceState.value = occurrenceState.value.filterNot { it.id == occurrence.id } + occurrence
+    }
+
+    override fun deleteOccurrence(occurrenceId: String) {
+        occurrenceState.value = occurrenceState.value.filterNot { it.id == occurrenceId }
     }
 }

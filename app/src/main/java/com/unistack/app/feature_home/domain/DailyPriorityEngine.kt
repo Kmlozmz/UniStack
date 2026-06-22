@@ -298,6 +298,7 @@ object DailyPriorityEngine {
             HomePriorityAction.TASKS -> "Tareas"
             HomePriorityAction.EXPENSES -> "Gastos"
             HomePriorityAction.TEMPLATES -> "Trabajos"
+            HomePriorityAction.SCHEDULE -> "Horario"
         }
     }
 

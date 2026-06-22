@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,8 +30,6 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ColorLens
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +43,8 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -78,13 +79,16 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-private val SubjectFormCardShape = RoundedCornerShape(8.dp)
+private val SubjectFormCardShape
+    get() = AppShapes.MediumCard
 
 @Composable
 fun AddSubjectScreen(
@@ -97,6 +101,7 @@ fun AddSubjectScreen(
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
@@ -104,6 +109,7 @@ fun AddSubjectScreen(
     val defaultAverage = profile?.targetAverage ?: 4.0
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
+    val subjectSchedule = subjectId?.let { id -> classSessions.firstOrNull { it.subjectId == id } }
     val defaultPeriodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
     val userPlan = FeatureGate.planFor(isPro = false)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
@@ -113,10 +119,13 @@ fun AddSubjectScreen(
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
     var customColor by remember { mutableStateOf<Int?>(subjectAccent(SubjectVisualType.TEAL).toArgb()) }
     var activePeriodId by remember { mutableStateOf(defaultPeriodScheme.periods.firstOrNull()?.id.orEmpty()) }
+    var scheduleDraft by remember(subjectId) { mutableStateOf(defaultSubjectScheduleDraft()) }
+    var scheduleInitialized by remember(subjectId) { mutableStateOf(false) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val formScrollState = rememberScrollState()
     val targetValue = targetAverage.toDoubleOrNull()
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
@@ -125,7 +134,8 @@ fun AddSubjectScreen(
         !freeLimitReached &&
         nameValidation.isValid &&
         targetValue != null &&
-        targetValue in 0.0..maxGrade
+        targetValue in 0.0..maxGrade &&
+        scheduleDraft.isValid
 
     LaunchedEffect(subject?.id, defaultAverage, scale, subjectId) {
         if (initialized) return@LaunchedEffect
@@ -145,6 +155,23 @@ fun AddSubjectScreen(
         }
     }
 
+    LaunchedEffect(subject?.id, subjectSchedule?.id, subjectId) {
+        when {
+            subjectSchedule != null -> {
+                scheduleDraft = subjectSchedule.toSubjectScheduleDraft()
+                scheduleInitialized = true
+            }
+            !scheduleInitialized && isEditing && subject != null -> {
+                scheduleDraft = defaultSubjectScheduleDraft().copy(enabled = false)
+                scheduleInitialized = true
+            }
+            !scheduleInitialized && !isEditing -> {
+                scheduleDraft = defaultSubjectScheduleDraft()
+                scheduleInitialized = true
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -153,7 +180,7 @@ fun AddSubjectScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(formScrollState)
                 .statusBarsPadding()
                 .padding(horizontal = 20.dp)
                 .padding(top = 10.dp, bottom = 112.dp),
@@ -210,6 +237,13 @@ fun AddSubjectScreen(
                     visualType = closestVisualType(Color(color))
                 }
             )
+            SubjectScheduleSection(
+                draft = scheduleDraft,
+                onDraftChange = {
+                    scheduleDraft = it
+                    error = null
+                }
+            )
             error?.let {
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
             }
@@ -252,17 +286,34 @@ fun AddSubjectScreen(
                         )?.id
                     }
 
-                    if (savedSubjectId == null) {
-                        error = "Revisa el nombre y la meta antes de guardar."
-                    } else {
-                        scope.launch {
-                            launch {
-                                snackbarHostState.showSnackbar(
-                                    if (isEditing) "Materia actualizada correctamente" else "Materia creada correctamente"
-                                )
+                    val scheduleSaved = savedSubjectId?.let { id ->
+                        viewModel.saveSubjectSchedule(
+                            subjectId = id,
+                            draft = scheduleDraft.copy(
+                                recurrenceStartEpochDay = scheduleDraft.recurrenceStartEpochDay
+                                    .takeIf { it > 0L }
+                                    ?: LocalDate.now().toEpochDay()
+                            )
+                        )
+                    } ?: false
+
+                    when {
+                        savedSubjectId == null -> {
+                            error = "Revisa el nombre y la meta antes de guardar."
+                        }
+                        !scheduleSaved -> {
+                            error = "La materia se guardó, pero revisa la configuración del horario."
+                        }
+                        else -> {
+                            scope.launch {
+                                launch {
+                                    snackbarHostState.showSnackbar(
+                                        if (isEditing) "Materia y horario actualizados" else "Materia y horario creados"
+                                    )
+                                }
+                                delay(650)
+                                onSubjectSaved(savedSubjectId)
                             }
-                            delay(650)
-                            onSubjectSaved(savedSubjectId)
                         }
                     }
                 },
@@ -455,7 +506,7 @@ private fun SubjectBasicInfoCard(
                         items(periodScheme.periods.sortedBy { it.order }, key = { it.id }) { period ->
                             val selected = activePeriodId == period.id
                             Surface(
-                                modifier = Modifier.clickable { onActivePeriodSelected(period.id) },
+                                onClick = { onActivePeriodSelected(period.id) },
                                 shape = AppShapes.Pill,
                                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
                                 border = androidx.compose.foundation.BorderStroke(
@@ -494,15 +545,7 @@ private fun SubjectColorPicker(
     onSelected: (Int) -> Unit
 ) {
     val selected = Color(selectedColor)
-    val hsv = remember(selectedColor) {
-        FloatArray(3).also { android.graphics.Color.colorToHSV(selectedColor, it) }
-    }
-    var customExpanded by remember { mutableStateOf(SubjectColorPalette.none { it.toArgb() == selectedColor }) }
-    var hexInput by remember { mutableStateOf(selected.toHexString()) }
-
-    LaunchedEffect(selectedColor) {
-        hexInput = selected.toHexString()
-    }
+    var showEditor by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Apariencia", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
@@ -517,9 +560,8 @@ private fun SubjectColorPicker(
             }
         }
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { customExpanded = !customExpanded },
+            onClick = { showEditor = true },
+            modifier = Modifier.fillMaxWidth(),
             shape = AppShapes.MediumCard,
             color = MaterialTheme.colorScheme.surface,
             border = androidx.compose.foundation.BorderStroke(
@@ -542,7 +584,7 @@ private fun SubjectColorPicker(
                 }
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "Crear color personalizado",
+                        "Color personalizado",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -553,64 +595,164 @@ private fun SubjectColorPicker(
                         fontWeight = FontWeight.Normal
                     )
                 }
-                Icon(
-                    if (customExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null
-                )
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir editor de color")
             }
         }
-        if (customExpanded) {
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surface,
-                shape = SubjectFormCardShape,
-                tonalElevation = 0.dp,
-                borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-                borderWidth = 0.5.dp,
-                contentPadding = PaddingValues(16.dp)
+    }
+
+    if (showEditor) {
+        CustomSubjectColorDialog(
+            initialColor = selectedColor,
+            onDismiss = { showEditor = false },
+            onApply = {
+                onSelected(it)
+                showEditor = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun CustomSubjectColorDialog(
+    initialColor: Int,
+    onDismiss: () -> Unit,
+    onApply: (Int) -> Unit
+) {
+    var workingColor by remember(initialColor) { mutableStateOf(initialColor) }
+    val selected = Color(workingColor)
+    val hsv = remember(workingColor) {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(workingColor, it) }
+    }
+    var hexInput by remember(initialColor) { mutableStateOf(selected.toHexString()) }
+
+    LaunchedEffect(workingColor) {
+        hexInput = selected.toHexString()
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    SaturationValuePicker(
-                        hue = hsv[0],
-                        saturation = hsv[1],
-                        value = hsv[2],
-                        onSelected = { saturation, value ->
-                            onSelected(android.graphics.Color.HSVToColor(floatArrayOf(hsv[0], saturation, value)))
-                        }
-                    )
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Cancelar")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Tono",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
+                            "Color personalizado",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold
                         )
-                        Slider(
-                            value = hsv[0],
-                            onValueChange = { hue ->
-                                onSelected(android.graphics.Color.HSVToColor(floatArrayOf(hue, hsv[1], hsv[2])))
-                            },
-                            valueRange = 0f..360f,
-                            colors = SliderDefaults.colors(
-                                thumbColor = selected,
-                                activeTrackColor = selected,
-                                inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
-                            )
+                        Text(
+                            "Arrastra el selector para ajustar el tono con precisión.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    OutlinedTextField(
-                        value = hexInput,
-                        onValueChange = { input ->
-                            val normalized = input.uppercase().filter { it == '#' || it in '0'..'9' || it in 'A'..'F' }.take(7)
-                            hexInput = normalized
-                            normalized.toColorIntOrNull()?.let(onSelected)
-                        },
-                        label = { Text("Hexadecimal") },
-                        placeholder = { Text("#6750F5") },
-                        singleLine = true,
-                        shape = AppShapes.SmallCard,
-                        modifier = Modifier.fillMaxWidth()
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(72.dp),
+                    shape = AppShapes.MediumCard,
+                    color = selected
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 18.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            selected.toHexString(),
+                            color = if (hsv[2] > 0.55f) Color.Black else Color.White,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+
+                SaturationValuePicker(
+                    hue = hsv[0],
+                    saturation = hsv[1],
+                    value = hsv[2],
+                    onSelected = { saturation, value ->
+                        workingColor = android.graphics.Color.HSVToColor(
+                            floatArrayOf(hsv[0], saturation, value)
+                        )
+                    }
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Tono",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    Slider(
+                        value = hsv[0],
+                        onValueChange = { hue ->
+                            workingColor = android.graphics.Color.HSVToColor(
+                                floatArrayOf(hue, hsv[1], hsv[2])
+                            )
+                        },
+                        valueRange = 0f..360f,
+                        colors = SliderDefaults.colors(
+                            thumbColor = selected,
+                            activeTrackColor = selected,
+                            inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                        )
+                    )
+                }
+
+                OutlinedTextField(
+                    value = hexInput,
+                    onValueChange = { input ->
+                        val normalized = input.uppercase()
+                            .filter { it == '#' || it in '0'..'9' || it in 'A'..'F' }
+                            .take(7)
+                        hexInput = normalized
+                        normalized.toColorIntOrNull()?.let { workingColor = it }
+                    },
+                    label = { Text("Hexadecimal") },
+                    placeholder = { Text("#6750F5") },
+                    singleLine = true,
+                    shape = AppShapes.SmallCard,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick = { onApply(workingColor) },
+                        colors = ButtonDefaults.buttonColors(containerColor = selected),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            "Aplicar",
+                            color = if (hsv[2] > 0.55f) Color.Black else Color.White
+                        )
+                    }
                 }
             }
         }
@@ -707,6 +849,7 @@ private fun ColorSwatch(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
     Box(
         modifier = modifier
             .size(46.dp)

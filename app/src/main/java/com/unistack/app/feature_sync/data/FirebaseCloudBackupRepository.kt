@@ -22,6 +22,12 @@ import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassModality
+import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
@@ -41,7 +47,8 @@ class FirebaseCloudBackupRepository(
     private val gradesRepository: GradesRepository,
     private val tasksRepository: TasksRepository,
     private val expensesRepository: ExpensesRepository,
-    private val academicWorksRepository: AcademicWorksRepository
+    private val academicWorksRepository: AcademicWorksRepository,
+    private val scheduleRepository: ScheduleRepository
 ) : CloudBackupRepository {
 
     private val _state = MutableStateFlow(CloudBackupState())
@@ -54,13 +61,15 @@ class FirebaseCloudBackupRepository(
 
         val now = System.currentTimeMillis()
         val payload = mapOf(
-            "schemaVersion" to 2,
+            "schemaVersion" to 4,
             "updatedAt" to now,
             "profile" to profileMap(),
             "subjects" to gradesRepository.subjects.value.map(::subjectMap),
             "tasks" to tasksRepository.tasks.value.map(::taskMap),
             "expenses" to expensesRepository.expenses.value.map(::expenseMap),
-            "academicWorks" to academicWorksRepository.works.value.map(::academicWorkMap)
+            "academicWorks" to academicWorksRepository.works.value.map(::academicWorkMap),
+            "classSessions" to scheduleRepository.sessions.value.map(::classSessionMap),
+            "classOccurrences" to scheduleRepository.occurrences.value.map(::classOccurrenceMap)
         )
 
         Firebase.firestore
@@ -114,6 +123,8 @@ class FirebaseCloudBackupRepository(
         parseTasks(data["tasks"]).forEach(tasksRepository::addTask)
         parseExpenses(data["expenses"]).forEach(expensesRepository::addExpense)
         parseAcademicWorks(data["academicWorks"]).forEach(academicWorksRepository::addWork)
+        parseClassSessions(data["classSessions"]).forEach(scheduleRepository::saveSession)
+        parseClassOccurrences(data["classOccurrences"]).forEach(scheduleRepository::saveOccurrence)
 
         val now = System.currentTimeMillis()
         _state.update {
@@ -166,6 +177,42 @@ class FirebaseCloudBackupRepository(
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },
             "visualPreference" to profile.visualPreference.name,
+            "appearancePreferences" to mapOf(
+                "backgroundStyle" to profile.appearancePreferences.backgroundStyle.name,
+                "customBackgroundColor" to profile.appearancePreferences.customBackgroundColor,
+                "accentStyle" to profile.appearancePreferences.accentStyle.name,
+                "customAccentColor" to profile.appearancePreferences.customAccentColor,
+                "accentIntensity" to profile.appearancePreferences.accentIntensity.name,
+                "surfaceStyle" to profile.appearancePreferences.surfaceStyle.name,
+                "cornerStyle" to profile.appearancePreferences.cornerStyle.name,
+                "interfaceDensity" to profile.appearancePreferences.interfaceDensity.name,
+                "motionPreference" to profile.appearancePreferences.motionPreference.name,
+                "textScale" to profile.appearancePreferences.textScale.name,
+                "typographyStyle" to profile.appearancePreferences.typographyStyle.name,
+                "decimalPlaces" to profile.appearancePreferences.decimalPlaces,
+                "bottomBarStyle" to profile.appearancePreferences.bottomBarStyle.name,
+                "navigationBarPresentation" to profile.appearancePreferences.navigationBarPresentation.name,
+                "academicIndicatorStyle" to profile.appearancePreferences.academicIndicatorStyle.name,
+                "showHomeGreeting" to profile.appearancePreferences.showHomeGreeting,
+                "showHomeHero" to profile.appearancePreferences.showHomeHero,
+                "showHomeAgenda" to profile.appearancePreferences.showHomeAgenda,
+                "showHomeSnapshot" to profile.appearancePreferences.showHomeSnapshot,
+                "homeSectionOrder" to profile.appearancePreferences.homeSectionOrder.map { it.name },
+                "heroAutoRotate" to profile.appearancePreferences.heroAutoRotate,
+                "heroShowsGrades" to profile.appearancePreferences.heroShowsGrades,
+                "heroShowsTasks" to profile.appearancePreferences.heroShowsTasks,
+                "heroShowsExpenses" to profile.appearancePreferences.heroShowsExpenses,
+                "initialTab" to profile.appearancePreferences.initialTab.name,
+                "visualPreset" to profile.appearancePreferences.visualPreset.name
+            ),
+            "accessibilityPreferences" to mapOf(
+                "appLanguage" to profile.accessibilityPreferences.appLanguage.name,
+                "highContrastEnabled" to profile.accessibilityPreferences.highContrastEnabled,
+                "use24HourTime" to profile.accessibilityPreferences.use24HourTime,
+                "textScale" to profile.accessibilityPreferences.textScale.name,
+                "motionPreference" to profile.accessibilityPreferences.motionPreference.name,
+                "heroAnimationEnabled" to profile.accessibilityPreferences.heroAnimationEnabled
+            ),
             "taskRemindersEnabled" to profile.taskRemindersEnabled,
             "academicWorkRemindersEnabled" to profile.academicWorkRemindersEnabled,
             "overdueRemindersEnabled" to profile.overdueRemindersEnabled,
@@ -261,6 +308,34 @@ class FirebaseCloudBackupRepository(
         "notes" to work.notes,
         "createdAt" to work.createdAt,
         "updatedAt" to work.updatedAt
+    )
+
+    private fun classSessionMap(session: ClassSession): Map<String, Any?> = mapOf(
+        "id" to session.id,
+        "subjectId" to session.subjectId,
+        "daysOfWeek" to session.daysOfWeek.toList(),
+        "startMinute" to session.startMinute,
+        "endMinute" to session.endMinute,
+        "location" to session.location,
+        "reminderMinutes" to session.reminderMinutes,
+        "repeatEveryWeeks" to session.repeatEveryWeeks,
+        "recurrenceStartEpochDay" to session.recurrenceStartEpochDay,
+        "createdAt" to session.createdAt,
+        "updatedAt" to session.updatedAt
+    )
+
+    private fun classOccurrenceMap(occurrence: ClassOccurrence): Map<String, Any?> = mapOf(
+        "id" to occurrence.id,
+        "sessionId" to occurrence.sessionId,
+        "dateEpochDay" to occurrence.dateEpochDay,
+        "status" to occurrence.status.name,
+        "modality" to occurrence.modality.name,
+        "absenceReason" to occurrence.absenceReason?.name,
+        "note" to occurrence.note,
+        "overrideStartMinute" to occurrence.overrideStartMinute,
+        "overrideEndMinute" to occurrence.overrideEndMinute,
+        "overrideLocation" to occurrence.overrideLocation,
+        "updatedAt" to occurrence.updatedAt
     )
 
     private fun parseSubjects(value: Any?): List<Subject> {
@@ -388,6 +463,53 @@ class FirebaseCloudBackupRepository(
                 createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
                 updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
             )
+        }
+    }
+
+    private fun parseClassSessions(value: Any?): List<ClassSession> {
+        return asMapList(value).mapNotNull { map ->
+            ClassSession(
+                id = map.string("id") ?: return@mapNotNull null,
+                subjectId = map.string("subjectId") ?: return@mapNotNull null,
+                daysOfWeek = (map["daysOfWeek"] as? List<*>)
+                    ?.mapNotNull { (it as? Number)?.toInt() }
+                    ?.filter { it in 1..7 }
+                    ?.toSet()
+                    .orEmpty(),
+                startMinute = map.int("startMinute") ?: return@mapNotNull null,
+                endMinute = map.int("endMinute") ?: return@mapNotNull null,
+                location = map.string("location").orEmpty(),
+                reminderMinutes = map.int("reminderMinutes") ?: 15,
+                createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
+                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis(),
+                repeatEveryWeeks = map.int("repeatEveryWeeks") ?: 1,
+                recurrenceStartEpochDay = map.long("recurrenceStartEpochDay") ?: 0L
+            ).takeIf { it.isValid }
+        }
+    }
+
+    private fun parseClassOccurrences(value: Any?): List<ClassOccurrence> {
+        return asMapList(value).mapNotNull { map ->
+            val sessionId = map.string("sessionId") ?: return@mapNotNull null
+            val dateEpochDay = map.long("dateEpochDay") ?: return@mapNotNull null
+            ClassOccurrence(
+                id = map.string("id") ?: ClassOccurrence.idFor(sessionId, dateEpochDay),
+                sessionId = sessionId,
+                dateEpochDay = dateEpochDay,
+                status = map.string("status")
+                    ?.let { runCatching { ClassAttendanceStatus.valueOf(it) }.getOrNull() }
+                    ?: ClassAttendanceStatus.PENDING,
+                modality = map.string("modality")
+                    ?.let { runCatching { ClassModality.valueOf(it) }.getOrNull() }
+                    ?: ClassModality.IN_PERSON,
+                absenceReason = map.string("absenceReason")
+                    ?.let { runCatching { ClassAbsenceReason.valueOf(it) }.getOrNull() },
+                note = map.string("note").orEmpty(),
+                overrideStartMinute = map.int("overrideStartMinute"),
+                overrideEndMinute = map.int("overrideEndMinute"),
+                overrideLocation = map.string("overrideLocation"),
+                updatedAt = map.long("updatedAt") ?: System.currentTimeMillis()
+            ).takeIf { it.isValid }
         }
     }
 

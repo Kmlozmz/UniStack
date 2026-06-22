@@ -116,7 +116,8 @@ fun TasksScreen(
     onEditTaskClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onCompleteHistoryClick: (String) -> Unit = {},
-    viewModel: TasksViewModel = viewModel()
+    viewModel: TasksViewModel = viewModel(),
+    embedded: Boolean = false
 ) {
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -204,11 +205,18 @@ fun TasksScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(clearFocusOnScroll),
-            contentPadding = PaddingValues(start = 20.dp, top = 58.dp, end = 20.dp, bottom = 118.dp),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                top = if (embedded) 10.dp else 58.dp,
+                end = 20.dp,
+                bottom = 118.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                TasksHeader()
+            if (!embedded) {
+                item {
+                    TasksHeader()
+                }
             }
             item {
                 TaskSearchBar(

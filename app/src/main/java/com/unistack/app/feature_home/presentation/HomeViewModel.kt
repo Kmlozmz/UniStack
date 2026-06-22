@@ -1,4 +1,4 @@
-package com.unistack.app.feature_home.presentation
+﻿package com.unistack.app.feature_home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -7,6 +7,8 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
@@ -22,19 +24,22 @@ class HomeViewModel(
     private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
     private val expensesRepository: ExpensesRepository = AppContainer.expensesRepository,
     private val academicWorksRepository: AcademicWorksRepository = AppContainer.academicWorksRepository,
+    private val scheduleRepository: ScheduleRepository = AppContainer.scheduleRepository,
     private val userRepository: UserRepository = AppContainer.userRepository
 ) : ViewModel() {
     private val homeContent = combine(
         gradesRepository.subjects,
         tasksRepository.tasks,
         expensesRepository.expenses,
-        academicWorksRepository.works
-    ) { subjects, tasks, expenses, works ->
+        academicWorksRepository.works,
+        scheduleRepository.sessions
+    ) { subjects, tasks, expenses, works, classSessions ->
         HomeContent(
             subjects = subjects,
             tasks = tasks,
             expenses = expenses,
-            works = works
+            works = works,
+            classSessions = classSessions
         )
     }
 
@@ -61,5 +66,6 @@ internal data class HomeContent(
     val subjects: List<Subject>,
     val tasks: List<StudentTask>,
     val expenses: List<Expense>,
-    val works: List<AcademicWork>
+    val works: List<AcademicWork>,
+    val classSessions: List<ClassSession> = emptyList()
 )

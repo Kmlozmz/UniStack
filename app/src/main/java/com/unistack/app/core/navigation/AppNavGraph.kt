@@ -55,10 +55,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.AppContainer
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AddSubjectScreen
+import com.unistack.app.feature_grades.presentation.AcademicScreen
 import com.unistack.app.feature_grades.presentation.GradesScreen
 import com.unistack.app.feature_grades.presentation.PriorHistoryScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
@@ -68,13 +71,22 @@ import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
 import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
 import com.unistack.app.feature_profile.presentation.ProfileScreen
+import com.unistack.app.feature_profile.presentation.ProfileScreenMode
 import com.unistack.app.feature_profile.presentation.ProScreen
+import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
+import com.unistack.app.feature_profile.presentation.AccessibilitySettingsScreen
+import com.unistack.app.feature_profile.presentation.SettingsHubScreen
+import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.BottomBarStyle
+import com.unistack.app.feature_user.domain.InitialTab
+import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlin.math.roundToInt
 
 private const val MAIN_TRANSITION_MILLIS = 220
 private const val MAIN_EXIT_MILLIS = 150
@@ -88,6 +100,8 @@ fun MainNavGraph(
     onLaunchRouteConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
+    val motionScale = LocalMotionDurationScale.current
+    val appearance = LocalAppearancePreferences.current
     val enabledModules by remember {
         AppContainer.userRepository.userProfile
             .map { it?.enabledModules ?: DefaultEnabledModules }
@@ -96,12 +110,26 @@ fun MainNavGraph(
         initialValue = AppContainer.userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
     )
     val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
+    val resolvedInitialRoute = remember(initialRoute, appearance.initialTab, enabledModules) {
+        if (initialRoute != AppRoutes.Home) {
+            initialRoute
+        } else {
+            when (appearance.initialTab) {
+                InitialTab.HOME -> AppRoutes.Home
+                InitialTab.GRADES -> if (AppModule.GRADES in enabledModules) AppRoutes.Academic else AppRoutes.Home
+                InitialTab.TASKS -> if (AppModule.TASKS in enabledModules) AppRoutes.Academic else AppRoutes.Home
+                InitialTab.EXPENSES -> if (AppModule.EXPENSES in enabledModules) AppRoutes.Expenses else AppRoutes.Home
+            }
+        }
+    }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
     val showBottomBar = currentRoute in setOf(
         AppRoutes.Home,
+        AppRoutes.Academic,
         AppRoutes.Grades,
         AppRoutes.Tasks,
+        AppRoutes.Calendar,
         AppRoutes.Expenses,
         AppRoutes.Profile
     )
@@ -134,21 +162,27 @@ fun MainNavGraph(
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = initialRoute,
+                startDestination = resolvedInitialRoute,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
                 enterTransition = {
-                    mainSlideIn(fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route))
+                    mainSlideIn(
+                        fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route),
+                        motionScale = motionScale
+                    )
                 },
                 exitTransition = {
-                    mainSlideOut(toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route))
+                    mainSlideOut(
+                        toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route),
+                        motionScale = motionScale
+                    )
                 },
                 popEnterTransition = {
-                    mainSlideIn(fromRight = false)
+                    mainSlideIn(fromRight = false, motionScale = motionScale)
                 },
                 popExitTransition = {
-                    mainSlideOut(toLeft = false)
+                    mainSlideOut(toLeft = false, motionScale = motionScale)
                 }
             ) {
                 composable(AppRoutes.Home) {
@@ -161,9 +195,20 @@ fun MainNavGraph(
                         onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
                         onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
                         onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
+                        onCalendarClick = { navController.navigate(AppRoutes.Calendar) },
                         onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
                         onNotificationsClick = {
                             navController.navigate(AppRoutes.Notifications) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onSettingsClick = {
+                            navController.navigate(AppRoutes.Settings) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onDataClick = {
+                            navController.navigate(AppRoutes.DataSettings) {
                                 launchSingleTop = true
                             }
                         },
@@ -188,7 +233,7 @@ fun MainNavGraph(
                         navController.navigate(AppRoutes.notificationDetail(notificationId))
                     },
                     onSettingsClick = {
-                        navController.navigate(AppRoutes.Profile) {
+                        navController.navigate(AppRoutes.NotificationSettings) {
                             launchSingleTop = true
                         }
                     }
@@ -228,7 +273,115 @@ fun MainNavGraph(
             }
             composable(AppRoutes.Profile) {
                 ProfileScreen(
-                    onOpenProClick = { navController.navigate(AppRoutes.Pro) }
+                    onOpenProClick = { navController.navigate(AppRoutes.Pro) },
+                    onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) }
+                )
+            }
+            composable(AppRoutes.Academic) {
+                AcademicScreen(
+                    onAddSubjectClick = {
+                        navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules)
+                    },
+                    onSubjectClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules)
+                    },
+                    onNewTaskClick = {
+                        navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
+                    },
+                    onEditTaskClick = { taskId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
+                    },
+                    onCompleteHistoryClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.priorHistory(subjectId), enabledModules)
+                    }
+                )
+            }
+            composable(AppRoutes.Settings) {
+                SettingsHubScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Profile)
+                        }
+                    },
+                    onAppearanceClick = { navController.navigate(AppRoutes.AppearanceSettings) },
+                    onAccessibilityClick = { navController.navigate(AppRoutes.AccessibilitySettings) },
+                    onProfileClick = {
+                        navController.navigate(AppRoutes.Profile) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) },
+                    onModulesClick = { navController.navigate(AppRoutes.ModuleSettings) },
+                    onNotificationsClick = { navController.navigate(AppRoutes.NotificationSettings) },
+                    onDataClick = { navController.navigate(AppRoutes.DataSettings) }
+                )
+            }
+            composable(AppRoutes.AppearanceSettings) {
+                AppearanceSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
+                )
+            }
+            composable(AppRoutes.AccessibilitySettings) {
+                AccessibilitySettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
+                )
+            }
+            composable(AppRoutes.Calendar) {
+                CalendarScheduleScreen(
+                    onAddTaskClick = {
+                        navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
+                    },
+                    onTaskClick = { taskId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
+                    }
+                )
+            }
+            composable(AppRoutes.AcademicSettings) {
+                ProfileScreen(
+                    mode = ProfileScreenMode.ACADEMIC,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
+                )
+            }
+            composable(AppRoutes.ModuleSettings) {
+                ProfileScreen(
+                    mode = ProfileScreenMode.MODULES,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
+                )
+            }
+            composable(AppRoutes.NotificationSettings) {
+                ProfileScreen(
+                    mode = ProfileScreenMode.NOTIFICATIONS,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
+                )
+            }
+            composable(AppRoutes.DataSettings) {
+                ProfileScreen(
+                    mode = ProfileScreenMode.DATA,
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
                 )
             }
             composable(AppRoutes.Pro) {
@@ -468,21 +621,30 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Notifications) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.NotificationDetail) -> AppRoutes.Home
-        routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Tasks
-        routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Grades
-        routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Tasks
-        routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Tasks
-        routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Tasks
+        routeBelongsTo(route, AppRoutes.Academic) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.Grades) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Settings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.AppearanceSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.AccessibilitySettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Calendar) -> AppRoutes.Calendar
+        routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null
@@ -525,33 +687,41 @@ internal fun isForwardNavigation(initialRoute: String?, targetRoute: String?): B
     return routeDepth(targetRoute) >= routeDepth(initialRoute)
 }
 
-private fun mainSlideIn(fromRight: Boolean) =
+private fun mainSlideIn(fromRight: Boolean, motionScale: Float) =
     slideInHorizontally(
-        initialOffsetX = { width -> if (fromRight) width / 3 else -width / 3 },
-        animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+        initialOffsetX = { width ->
+            ((if (fromRight) width / 3 else -width / 3) * motionScale).roundToInt()
+        },
+        animationSpec = tween((MAIN_TRANSITION_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
     ) + fadeIn(
-        animationSpec = tween(110, delayMillis = 25, easing = FastOutSlowInEasing)
+        animationSpec = tween(
+            (110 * motionScale).roundToInt(),
+            delayMillis = (25 * motionScale).roundToInt(),
+            easing = FastOutSlowInEasing
+        )
     ) + scaleIn(
-        initialScale = 0.985f,
-        animationSpec = tween(MAIN_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+        initialScale = 1f - (0.015f * motionScale),
+        animationSpec = tween((MAIN_TRANSITION_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
     )
 
-private fun mainSlideOut(toLeft: Boolean) =
+private fun mainSlideOut(toLeft: Boolean, motionScale: Float) =
     slideOutHorizontally(
-        targetOffsetX = { width -> if (toLeft) -width / 4 else width / 4 },
-        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+        targetOffsetX = { width ->
+            ((if (toLeft) -width / 4 else width / 4) * motionScale).roundToInt()
+        },
+        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
     ) + fadeOut(
-        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
     ) + scaleOut(
-        targetScale = 0.992f,
-        animationSpec = tween(MAIN_EXIT_MILLIS, easing = FastOutSlowInEasing)
+        targetScale = 1f - (0.008f * motionScale),
+        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
     )
 
 private fun routeRank(route: String?): Int {
     return when (bottomRouteFor(route)) {
         AppRoutes.Home -> 0
-        AppRoutes.Grades -> 1
-        AppRoutes.Tasks -> 2
+        AppRoutes.Academic -> 1
+        AppRoutes.Calendar -> 2
         AppRoutes.Expenses -> 3
         AppRoutes.Profile -> 4
         else -> 0
@@ -647,6 +817,7 @@ private fun UniStackBottomBarContent(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val appearance = LocalAppearancePreferences.current
     val barColor = if (UniStackColors.IsDarkTheme) {
         androidx.compose.ui.graphics.Color(0xFF050913)
     } else {
@@ -664,17 +835,29 @@ private fun UniStackBottomBarContent(
     }
     val density = LocalDensity.current
     val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
+    val showLabels = appearance.bottomBarStyle == BottomBarStyle.LABELED && items.size <= 5
+    val floating = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
 
     Surface(
         modifier = modifier
+            .padding(
+                start = if (floating) 12.dp else 0.dp,
+                top = 0.dp,
+                end = if (floating) 12.dp else 0.dp,
+                bottom = if (floating) 8.dp else 0.dp
+            )
             .fillMaxWidth()
-            .height(78.dp + navigationBarBottom),
-        shape = RoundedCornerShape(
-            topStart = 24.dp,
-            topEnd = 24.dp,
-            bottomStart = 0.dp,
-            bottomEnd = 0.dp
-        ),
+            .height((if (showLabels) 78.dp else 66.dp) + navigationBarBottom),
+        shape = if (floating) {
+            RoundedCornerShape(24.dp)
+        } else {
+            RoundedCornerShape(
+                topStart = 24.dp,
+                topEnd = 24.dp,
+                bottomStart = 0.dp,
+                bottomEnd = 0.dp
+            )
+        },
         color = barColor,
         tonalElevation = 1.dp,
         shadowElevation = 0.dp,
@@ -701,6 +884,7 @@ private fun UniStackBottomBarContent(
                     item = item,
                     selected = selected,
                     inactiveColor = inactiveColor,
+                    showLabel = showLabels,
                     onClick = { onNavigate(item.route) },
                     modifier = Modifier.weight(1f)
                 )
@@ -714,26 +898,28 @@ private fun UniStackBottomBarItem(
     item: BottomNavItem,
     selected: Boolean,
     inactiveColor: androidx.compose.ui.graphics.Color,
+    showLabel: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val motionDuration = (180 * LocalMotionDurationScale.current).roundToInt().coerceAtLeast(0)
     val contentColor by animateColorAsState(
         targetValue = if (selected) {
             MaterialTheme.colorScheme.primary
         } else {
             inactiveColor
         },
-        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
         label = "bottomItemColor"
     )
     val iconScale by animateFloatAsState(
         targetValue = if (selected) 1.05f else 1f,
-        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
         label = "bottomItemIconScale"
     )
     val indicatorAlpha by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(180, easing = FastOutSlowInEasing),
+        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
         label = "bottomItemIndicatorAlpha"
     )
     val interactionSource = remember { MutableInteractionSource() }
@@ -776,16 +962,18 @@ private fun UniStackBottomBarItem(
                 }
         )
         }
-        Text(
-            text = item.label,
-            color = contentColor,
-            fontSize = 11.sp,
-            lineHeight = 14.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(top = 3.dp)
-        )
+        if (showLabel) {
+            Text(
+                text = item.label,
+                color = contentColor,
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+        }
         Box(
             modifier = Modifier
                 .padding(top = 4.dp)

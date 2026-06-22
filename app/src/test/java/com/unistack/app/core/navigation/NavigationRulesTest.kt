@@ -11,10 +11,11 @@ class NavigationRulesTest {
 
     @Test
     fun bottomRouteForMapsNestedRoutesToTheirTab() {
-        assertEquals(AppRoutes.Grades, bottomRouteFor("${AppRoutes.SubjectDetail}/subject-1"))
-        assertEquals(AppRoutes.Grades, bottomRouteFor("${AppRoutes.SubjectPeriodDetail}/subject-1/period-1"))
-        assertEquals(AppRoutes.Grades, bottomRouteFor("${AppRoutes.EditGrade}/subject-1/grade-1"))
-        assertEquals(AppRoutes.Tasks, bottomRouteFor("${AppRoutes.EditTask}/task-1"))
+        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectDetail}/subject-1"))
+        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectPeriodDetail}/subject-1/period-1"))
+        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.EditGrade}/subject-1/grade-1"))
+        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.EditTask}/task-1"))
+        assertEquals(AppRoutes.Calendar, bottomRouteFor(AppRoutes.Calendar))
         assertEquals(AppRoutes.Expenses, bottomRouteFor(AppRoutes.AddExpense))
         assertEquals(AppRoutes.Expenses, bottomRouteFor("${AppRoutes.EditExpense}/expense-1"))
         assertEquals(AppRoutes.Profile, bottomRouteFor(AppRoutes.Profile))
@@ -36,21 +37,21 @@ class NavigationRulesTest {
     fun bottomNavigationDoesNotRestoreHomeChildRoutes() {
         assertFalse(shouldRestoreBottomRouteState(AppRoutes.AddTask, AppRoutes.Home))
         assertFalse(shouldRestoreBottomRouteState(AppRoutes.AcademicTemplates, AppRoutes.Home))
-        assertTrue(shouldRestoreBottomRouteState(AppRoutes.Home, AppRoutes.Tasks))
+        assertTrue(shouldRestoreBottomRouteState(AppRoutes.Home, AppRoutes.Academic))
     }
 
     @Test
     fun selectedBottomRoutePopsToItsRoot() {
-        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AddTask, AppRoutes.Tasks))
+        assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AddTask, AppRoutes.Academic))
         assertTrue(shouldPopSelectedBottomRoute(AppRoutes.AcademicTemplates, AppRoutes.Home))
         assertFalse(shouldPopSelectedBottomRoute(AppRoutes.Home, AppRoutes.Home))
     }
 
     @Test
     fun slideDirectionFollowsTabOrderAndChildDepth() {
-        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Grades))
-        assertTrue(isForwardNavigation(AppRoutes.Grades, AppRoutes.Tasks))
-        assertFalse(isForwardNavigation(AppRoutes.Expenses, AppRoutes.Tasks))
+        assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Academic))
+        assertTrue(isForwardNavigation(AppRoutes.Academic, AppRoutes.Calendar))
+        assertFalse(isForwardNavigation(AppRoutes.Expenses, AppRoutes.Academic))
         assertTrue(isForwardNavigation(AppRoutes.Home, AppRoutes.Profile))
         assertFalse(isForwardNavigation(AppRoutes.Profile, AppRoutes.Home))
     }

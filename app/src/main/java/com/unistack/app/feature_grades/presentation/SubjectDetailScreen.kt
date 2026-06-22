@@ -76,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
@@ -86,6 +87,7 @@ import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.GradingScale
 import java.util.Locale
 import kotlin.math.round
@@ -707,37 +709,66 @@ private fun SubjectOverviewCard(
                     lineHeight = 18.sp
                 )
             }
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                CircularProgressIndicator(
-                    progress = { 1f },
-                    modifier = Modifier.fillMaxSize(),
-                    color = UniStackColors.Primary.copy(alpha = 0.1f),
-                    strokeWidth = 7.dp,
-                    trackColor = Color.Transparent
-                )
-                CircularProgressIndicator(
-                    progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
-                    modifier = Modifier.fillMaxSize(),
-                    color = UniStackColors.Primary,
-                    strokeWidth = 7.dp,
-                    trackColor = Color.Transparent
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "${formatPercent(evaluated)}%",
-                        color = UniStackColors.TextPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        "evaluado",
-                        color = UniStackColors.TextSecondary,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+            val indicatorStyle = LocalAppearancePreferences.current.academicIndicatorStyle
+            when (indicatorStyle) {
+                AcademicIndicatorStyle.RINGS -> {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                        CircularProgressIndicator(
+                            progress = { 1f },
+                            modifier = Modifier.fillMaxSize(),
+                            color = UniStackColors.Primary.copy(alpha = 0.1f),
+                            strokeWidth = 7.dp,
+                            trackColor = Color.Transparent
+                        )
+                        CircularProgressIndicator(
+                            progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
+                            modifier = Modifier.fillMaxSize(),
+                            color = UniStackColors.Primary,
+                            strokeWidth = 7.dp,
+                            trackColor = Color.Transparent
+                        )
+                        EvaluationValue(evaluated)
+                    }
                 }
+                AcademicIndicatorStyle.BARS -> {
+                    Column(
+                        modifier = Modifier.width(88.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        EvaluationValue(evaluated)
+                        LinearProgressIndicator(
+                            progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(7.dp)
+                                .clip(CircleShape),
+                            color = UniStackColors.Primary,
+                            trackColor = UniStackColors.Primary.copy(alpha = 0.12f)
+                        )
+                    }
+                }
+                AcademicIndicatorStyle.NUMBERS -> EvaluationValue(evaluated)
             }
         }
+    }
+}
+
+@Composable
+private fun EvaluationValue(evaluated: Double) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            "${formatPercent(evaluated)}%",
+            color = UniStackColors.TextPrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Text(
+            "evaluado",
+            color = UniStackColors.TextSecondary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

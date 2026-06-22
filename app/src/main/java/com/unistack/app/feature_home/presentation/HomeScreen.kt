@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -48,17 +49,27 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Wallet
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,6 +95,9 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackFabMenu
+import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.notifications.NotificationHistoryStore
@@ -104,8 +118,11 @@ import com.unistack.app.feature_home.domain.SubjectRiskSummary
 import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.HomeSection
+import com.unistack.app.feature_user.domain.InterfaceDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.LocalTime
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -121,15 +138,21 @@ fun HomeScreen(
     onAddTaskClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onNotificationsClick: () -> Unit = {}
+    onCalendarClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
+    onDataClick: () -> Unit = {}
 ) {
     val summary = uiState.summary
+    val appearance = LocalAppearancePreferences.current
     val context = LocalContext.current
     val notifications by remember(context) {
         NotificationHistoryStore.observe(context)
     }.collectAsStateWithLifecycle()
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
     var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val drawerScope = rememberCoroutineScope()
     val priorityActionLabel = summary.priority.action.actionLabel()
     val openPriorityAction = {
         when (summary.priority.action) {
@@ -138,14 +161,53 @@ fun HomeScreen(
             HomePriorityAction.TASKS -> onSeeTasksClick()
             HomePriorityAction.EXPENSES -> onSeeExpensesClick()
             HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+            HomePriorityAction.SCHEDULE -> onCalendarClick()
         }
     }
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(HomeBackgroundBrush)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            HomeNavigationPanel(
+                displayName = displayName,
+                onClose = { drawerScope.launch { drawerState.close() } },
+                onSemesterClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onSeeAllSubjectsClick()
+                },
+                onWorksClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onOpenTemplatesClick()
+                },
+                onNotificationsClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onNotificationsClick()
+                },
+                onCalendarClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onCalendarClick()
+                },
+                onDataClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onDataClick()
+                },
+                onSettingsClick = {
+                    drawerScope.launch { drawerState.close() }
+                    onSettingsClick()
+                }
+            )
+        }
     ) {
-        val isCompact = maxHeight < 840.dp || maxWidth < 390.dp
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .background(HomeBackgroundBrush)
+        ) {
+        val viewportIsCompact = maxHeight < 840.dp || maxWidth < 390.dp
+        val isCompact = when (appearance.interfaceDensity) {
+            InterfaceDensity.COMPACT -> true
+            InterfaceDensity.BALANCED -> viewportIsCompact
+            InterfaceDensity.COMFORTABLE -> maxHeight < 760.dp || maxWidth < 350.dp
+        }
         val sidePadding = if (isCompact) 20.dp else 22.dp
         val sectionSpacing = if (isCompact) 15.dp else 18.dp
 
@@ -165,39 +227,53 @@ fun HomeScreen(
                 HomeHeader(
                     photoUrl = summary.avatarPhotoUrl,
                     unreadNotificationCount = notifications.count { !it.read },
+                    onMenuClick = { drawerScope.launch { drawerState.open() } },
+                    onCalendarClick = onCalendarClick,
                     onNotificationsClick = onNotificationsClick,
                     onProfileClick = onProfileClick
                 )
             }
-            item {
-                HomeGreeting(name = displayName, compact = isCompact)
+            if (appearance.showHomeGreeting) {
+                item {
+                    HomeGreeting(name = displayName, compact = isCompact)
+                }
             }
-            item {
-                PriorityHero(
-                    title = summary.priority.title,
-                    description = summary.priority.shortDescription,
-                    actionLabel = priorityActionLabel,
-                    compact = isCompact,
-                    onOpenClick = openPriorityAction,
-                    onDetailsClick = { showPriorityDetails = true }
-                )
-            }
-            item {
-                TodayAgenda(
-                    summary = summary,
-                    compact = isCompact,
-                    onTasksClick = onSeeTasksClick
-                )
-            }
-            item {
-                SemesterSnapshot(
-                    summary = summary,
-                    compact = isCompact,
-                    onSubjectsClick = onSeeAllSubjectsClick,
-                    onTasksClick = onSeeTasksClick,
-                    onExpensesClick = onSeeExpensesClick,
-                    onWorksClick = onOpenTemplatesClick
-                )
+            appearance.homeSectionOrder.forEach { section ->
+                when (section) {
+                    HomeSection.HERO -> if (appearance.showHomeHero) {
+                        item {
+                            PriorityHero(
+                                title = summary.priority.title,
+                                description = summary.priority.shortDescription,
+                                actionLabel = priorityActionLabel,
+                                compact = isCompact,
+                                onOpenClick = openPriorityAction,
+                                onDetailsClick = { showPriorityDetails = true }
+                            )
+                        }
+                    }
+                    HomeSection.AGENDA -> if (appearance.showHomeAgenda) {
+                        item {
+                            TodayAgenda(
+                                summary = summary,
+                                compact = isCompact,
+                                onTasksClick = onSeeTasksClick
+                            )
+                        }
+                    }
+                    HomeSection.SNAPSHOT -> if (appearance.showHomeSnapshot) {
+                        item {
+                            SemesterSnapshot(
+                                summary = summary,
+                                compact = isCompact,
+                                onSubjectsClick = onSeeAllSubjectsClick,
+                                onTasksClick = onSeeTasksClick,
+                                onExpensesClick = onSeeExpensesClick,
+                                onWorksClick = onOpenTemplatesClick
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -226,12 +302,257 @@ fun HomeScreen(
             )
         }
     }
+    }
+}
+
+@Composable
+private fun HomeNavigationDrawer(
+    displayName: String,
+    onClose: () -> Unit,
+    onSemesterClick: () -> Unit,
+    onWorksClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onDataClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    ModalDrawerSheet(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(310.dp),
+        drawerContainerColor = UniStackColors.Card
+    ) {
+        Column(
+            modifier = Modifier
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = "Centro UniStack",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = "Hola, $displayName",
+                color = UniStackColors.TextSecondary,
+                modifier = Modifier.padding(bottom = 14.dp)
+            )
+            DrawerDestination(
+                icon = Icons.Rounded.School,
+                title = "Resumen académico",
+                subtitle = "Materias, notas y progreso",
+                onClick = onSemesterClick
+            )
+            DrawerDestination(
+                icon = Icons.Rounded.Description,
+                title = "Trabajos académicos",
+                subtitle = "Plantillas, avances y entregas",
+                onClick = onWorksClick
+            )
+            DrawerDestination(
+                icon = Icons.Rounded.NotificationsNone,
+                title = "Historial de avisos",
+                subtitle = "Notificaciones recibidas",
+                onClick = onNotificationsClick
+            )
+            DrawerDestination(
+                icon = Icons.Rounded.Backup,
+                title = "Datos y respaldos",
+                subtitle = "Exportar, restaurar y sincronizar",
+                onClick = onDataClick
+            )
+            DrawerDestination(
+                icon = Icons.Rounded.Settings,
+                title = "Configuración",
+                subtitle = "Apariencia, cuenta y preferencias",
+                onClick = onSettingsClick
+            )
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("Cerrar")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerDestination(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    NavigationDrawerItem(
+        selected = false,
+        onClick = onClick,
+        icon = { Icon(icon, contentDescription = null, tint = UniStackColors.Primary) },
+        label = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, fontWeight = FontWeight.SemiBold)
+                Text(
+                    subtitle,
+                    color = UniStackColors.TextSecondary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun HomeNavigationPanel(
+    displayName: String,
+    onClose: () -> Unit,
+    onSemesterClick: () -> Unit,
+    onWorksClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onDataClick: () -> Unit,
+    onSettingsClick: () -> Unit
+) {
+    ModalDrawerSheet(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(282.dp),
+        drawerContainerColor = Color.Transparent
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(end = 10.dp),
+            shape = RoundedCornerShape(topEnd = 26.dp, bottomEnd = 26.dp),
+            color = UniStackColors.Card
+        ) {
+            Column(
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        "Centro UniStack",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        "Hola, $displayName",
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = AppShapes.MediumCard,
+                    color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.13f else 0.09f),
+                    border = BorderStroke(1.dp, UniStackColors.Primary.copy(alpha = 0.18f))
+                ) {
+                    Text(
+                        "Herramientas secundarias. Las áreas principales viven en la barra inferior.",
+                        modifier = Modifier.padding(13.dp),
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                        lineHeight = 17.sp
+                    )
+                }
+
+                DrawerPanelSection("Accesos")
+                DrawerPanelItem(
+                    icon = Icons.Rounded.Description,
+                    title = "Trabajos",
+                    subtitle = "Plantillas y entregas",
+                    onClick = onWorksClick
+                )
+
+                DrawerPanelItem(
+                    icon = Icons.Rounded.NotificationsNone,
+                    title = "Avisos",
+                    subtitle = "Historial de notificaciones",
+                    onClick = onNotificationsClick
+                )
+                DrawerPanelItem(
+                    icon = Icons.Rounded.Backup,
+                    title = "Respaldos",
+                    subtitle = "Exportar y restaurar datos",
+                    onClick = onDataClick
+                )
+
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Text("Cerrar", fontWeight = FontWeight.SemiBold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerPanelSection(text: String) {
+    Text(
+        text = text.uppercase(),
+        color = UniStackColors.TextSecondary,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 3.dp, start = 4.dp)
+    )
+}
+
+@Composable
+private fun DrawerPanelItem(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        shape = AppShapes.MediumCard,
+        color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.55f else 0.78f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(AppShapes.SmallCard)
+                    .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(11.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(title, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+                Text(
+                    subtitle,
+                    color = UniStackColors.TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                Icons.Rounded.ChevronRight,
+                contentDescription = null,
+                tint = UniStackColors.TextSecondary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
 }
 
 @Composable
 private fun HomeHeader(
     photoUrl: String?,
     unreadNotificationCount: Int,
+    onMenuClick: () -> Unit,
+    onCalendarClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onProfileClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -243,6 +564,7 @@ private fun HomeHeader(
     ) {
         HeaderIcon(
             icon = Icons.Rounded.Menu,
+            onClick = onMenuClick,
             contentDescription = "Menú",
             modifier = Modifier.align(Alignment.CenterStart)
         )
@@ -666,13 +988,16 @@ private fun PriorityHero(
     val heroHeight = if (compact) 174.dp else 190.dp
     val heroPadding = if (compact) 16.dp else 18.dp
     val isDarkTheme = UniStackColors.IsDarkTheme
+    val accessibility = com.unistack.app.core.design.theme.LocalAccessibilityPreferences.current
+    val motionScale = LocalMotionDurationScale.current
+    val heroMotionScale = if (accessibility.heroAnimationEnabled) motionScale else 0f
     val heroStar = HomeHeroStar
     val heroStarSoft = HomeHeroStarSoft
     val heroAssetShadow = HomeHeroAssetShadow
     val sparkleMotion = rememberInfiniteTransition(label = "heroSparkleMotion")
     val sparkleOneFloat by sparkleMotion.animateFloat(
-        initialValue = 2f,
-        targetValue = -3f,
+        initialValue = 2f * heroMotionScale,
+        targetValue = -3f * heroMotionScale,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -680,8 +1005,8 @@ private fun PriorityHero(
         label = "heroSparkleOneFloat"
     )
     val sparkleTwoFloat by sparkleMotion.animateFloat(
-        initialValue = -1f,
-        targetValue = 4f,
+        initialValue = -1f * heroMotionScale,
+        targetValue = 4f * heroMotionScale,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 5600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -689,8 +1014,8 @@ private fun PriorityHero(
         label = "heroSparkleTwoFloat"
     )
     val sparkleThreeFloat by sparkleMotion.animateFloat(
-        initialValue = 1f,
-        targetValue = -2.5f,
+        initialValue = 1f * heroMotionScale,
+        targetValue = -2.5f * heroMotionScale,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 3600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -1281,11 +1606,7 @@ private fun DrawScope.drawSoftSparkle(
 }
 
 private val HomeBackgroundBrush: Brush
-    @Composable get() = if (UniStackColors.IsDarkTheme) {
-        androidx.compose.ui.graphics.SolidColor(UniStackColors.Background)
-    } else {
-        Brush.linearGradient(listOf(Color(0xFFF8F6FF), Color(0xFFFFFFFF)))
-    }
+    @Composable get() = androidx.compose.ui.graphics.SolidColor(UniStackColors.Background)
 
 private val HeroBrush: Brush
     @Composable get() = if (UniStackColors.IsDarkTheme) {
@@ -1405,6 +1726,7 @@ private fun HomePriorityAction.actionLabel(): String {
         HomePriorityAction.TASKS -> "Ver mis tareas"
         HomePriorityAction.EXPENSES -> "Ver gastos"
         HomePriorityAction.TEMPLATES -> "Ver trabajos"
+        HomePriorityAction.SCHEDULE -> "Ver horario"
     }
 }
 
@@ -1437,6 +1759,7 @@ private fun HomePriorityAction.focusIcon(): ImageVector {
         HomePriorityAction.TASKS -> Icons.AutoMirrored.Rounded.EventNote
         HomePriorityAction.EXPENSES -> Icons.Rounded.Wallet
         HomePriorityAction.TEMPLATES -> Icons.Rounded.Description
+        HomePriorityAction.SCHEDULE -> Icons.Rounded.CalendarMonth
     }
 }
 
@@ -1448,6 +1771,7 @@ private fun HomePriorityAction.agendaAccent(): Color {
         HomePriorityAction.TASKS -> HomeTeal
         HomePriorityAction.EXPENSES -> HomeCoral
         HomePriorityAction.TEMPLATES -> HomeYellow
+        HomePriorityAction.SCHEDULE -> HomeTeal
     }
 }
 

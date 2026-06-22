@@ -5,6 +5,13 @@ import com.unistack.app.feature_user.domain.UserProfile
 import java.util.Locale
 
 object GradingScaleUtils {
+    @Volatile
+    private var preferredDecimalPlaces: Int? = null
+
+    fun configureDecimalPlaces(decimalPlaces: Int) {
+        preferredDecimalPlaces = decimalPlaces.coerceIn(0, 2)
+    }
+
     fun maxGradeFor(scale: GradingScale): Double {
         return when (scale) {
             GradingScale.ZERO_TO_FIVE -> 5.0
@@ -23,10 +30,11 @@ object GradingScaleUtils {
 
     fun formatGrade(value: Double?, scale: GradingScale): String {
         if (value == null) return "--"
-        return when (scale) {
+        val decimals = preferredDecimalPlaces ?: when (scale) {
             GradingScale.ZERO_TO_HUNDRED,
-            GradingScale.CUSTOM -> String.format(Locale.US, "%.0f", value)
-            GradingScale.ZERO_TO_FIVE -> String.format(Locale.US, "%.1f", value)
+            GradingScale.CUSTOM -> 0
+            GradingScale.ZERO_TO_FIVE -> 1
         }
+        return String.format(Locale.US, "%.${decimals}f", value)
     }
 }

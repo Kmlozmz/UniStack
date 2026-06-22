@@ -8,7 +8,9 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,7 +22,16 @@ object AppRoutes {
     const val NotificationDetail = "notification_detail"
     const val Grades = "grades"
     const val Tasks = "tasks"
+    const val Academic = "academic"
     const val Profile = "profile"
+    const val Settings = "settings"
+    const val AppearanceSettings = "appearance_settings"
+    const val AccessibilitySettings = "accessibility_settings"
+    const val Calendar = "calendar"
+    const val AcademicSettings = "academic_settings"
+    const val ModuleSettings = "module_settings"
+    const val NotificationSettings = "notification_settings"
+    const val DataSettings = "data_settings"
     const val Pro = "pro"
     const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"
@@ -65,17 +76,17 @@ data class BottomNavItem(
             selectedIcon = Icons.Rounded.Home,
             unselectedIcon = Icons.Outlined.Home
         )
-        private val gradesItem = BottomNavItem(
-            route = AppRoutes.Grades,
-            label = "Materias",
+        private val academicItem = BottomNavItem(
+            route = AppRoutes.Academic,
+            label = "Académico",
             selectedIcon = Icons.AutoMirrored.Rounded.MenuBook,
             unselectedIcon = Icons.AutoMirrored.Outlined.MenuBook
         )
-        private val tasksItem = BottomNavItem(
-            route = AppRoutes.Tasks,
-            label = "Tareas",
-            selectedIcon = Icons.AutoMirrored.Rounded.Assignment,
-            unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
+        private val calendarItem = BottomNavItem(
+            route = AppRoutes.Calendar,
+            label = "Horario",
+            selectedIcon = Icons.Rounded.CalendarMonth,
+            unselectedIcon = Icons.Outlined.CalendarMonth
         )
         private val expensesItem = BottomNavItem(
             route = AppRoutes.Expenses,
@@ -90,13 +101,13 @@ data class BottomNavItem(
             unselectedIcon = Icons.Outlined.Person
         )
 
-        val items = listOf(homeItem, gradesItem, tasksItem, expensesItem, profileItem)
+        val items = listOf(homeItem, academicItem, calendarItem, expensesItem, profileItem)
 
         fun itemsFor(enabledModules: Set<AppModule>): List<BottomNavItem> {
             return buildList {
                 add(homeItem)
-                if (AppModule.GRADES in enabledModules) add(gradesItem)
-                if (AppModule.TASKS in enabledModules) add(tasksItem)
+                if (AppModule.GRADES in enabledModules || AppModule.TASKS in enabledModules) add(academicItem)
+                add(calendarItem)
                 if (AppModule.EXPENSES in enabledModules) add(expensesItem)
                 add(profileItem)
             }

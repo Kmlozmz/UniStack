@@ -17,6 +17,8 @@ import com.unistack.app.feature_templates.data.RoomAcademicWorksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_tasks.data.RoomTasksRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
+import com.unistack.app.feature_schedule.data.RoomScheduleRepository
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_user.data.DataStoreUserRepository
 import com.unistack.app.feature_user.data.FirebaseGoogleAuthService
 import com.unistack.app.feature_user.domain.AccountAuthService
@@ -28,6 +30,7 @@ data class AppDependencies(
     val tasksRepository: TasksRepository,
     val expensesRepository: ExpensesRepository,
     val academicWorksRepository: AcademicWorksRepository,
+    val scheduleRepository: ScheduleRepository,
     val accountAuthService: AccountAuthService,
     val cloudBackupRepository: CloudBackupRepository,
     val localBackupRepository: LocalBackupRepository,
@@ -59,20 +62,27 @@ object AppDependencyFactory {
             academicWorkDao = database.academicWorkDao(),
             userRepository = userRepository
         )
+        val scheduleRepository = RoomScheduleRepository(
+            dao = database.classSessionDao(),
+            occurrenceDao = database.classOccurrenceDao(),
+            userRepository = userRepository
+        )
         val cloudBackupRepository = FirebaseCloudBackupRepository(
             context = appContext,
             userRepository = userRepository,
             gradesRepository = gradesRepository,
             tasksRepository = tasksRepository,
             expensesRepository = expensesRepository,
-            academicWorksRepository = academicWorksRepository
+            academicWorksRepository = academicWorksRepository,
+            scheduleRepository = scheduleRepository
         )
         val localBackupRepository = LocalJsonBackupRepository(
             userRepository = userRepository,
             gradesRepository = gradesRepository,
             tasksRepository = tasksRepository,
             expensesRepository = expensesRepository,
-            academicWorksRepository = academicWorksRepository
+            academicWorksRepository = academicWorksRepository,
+            scheduleRepository = scheduleRepository
         )
 
         return AppDependencies(
@@ -81,6 +91,7 @@ object AppDependencyFactory {
             tasksRepository = tasksRepository,
             expensesRepository = expensesRepository,
             academicWorksRepository = academicWorksRepository,
+            scheduleRepository = scheduleRepository,
             accountAuthService = accountAuthService,
             cloudBackupRepository = cloudBackupRepository,
             localBackupRepository = localBackupRepository,
@@ -109,6 +120,9 @@ object AppContainer {
 
     val academicWorksRepository: AcademicWorksRepository
         get() = installed.academicWorksRepository
+
+    val scheduleRepository: ScheduleRepository
+        get() = installed.scheduleRepository
 
     val accountAuthService: AccountAuthService
         get() = installed.accountAuthService
