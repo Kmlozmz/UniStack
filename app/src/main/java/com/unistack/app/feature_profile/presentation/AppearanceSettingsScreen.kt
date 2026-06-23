@@ -923,8 +923,10 @@ private fun ColorChoice(
 ) {
     Column(
         modifier = Modifier
-            .width(62.dp)
-            .clickable(onClick = onClick),
+            .width(66.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
@@ -997,8 +999,9 @@ private fun PreferenceSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
             .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 3.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {

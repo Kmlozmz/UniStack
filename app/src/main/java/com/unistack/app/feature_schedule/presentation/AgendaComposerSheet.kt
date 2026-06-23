@@ -3,7 +3,6 @@
 package com.unistack.app.feature_schedule.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,9 +25,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Campaign
 import androidx.compose.material.icons.rounded.Event
-import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.PresentToAll
 import androidx.compose.material.icons.rounded.Quiz
 import androidx.compose.material.icons.rounded.Save
@@ -84,7 +80,7 @@ internal enum class AgendaCreateKind(
     PRESENTATION("Presentación", "Exposición o sustentación", Icons.Rounded.PresentToAll, true),
     PERSONAL("Evento personal", "Cita, reunión o actividad", Icons.Rounded.Event, false),
     REMINDER("Recordatorio", "Algo que no quieres olvidar", Icons.Rounded.Alarm, false),
-    CUSTOM("Personalizado", "Crea una categoría flexible", Icons.Rounded.Tune, false)
+    CUSTOM("Tipo personalizado", "Crea una categoría flexible", Icons.Rounded.Tune, false)
 }
 
 @Composable
@@ -95,56 +91,117 @@ internal fun AgendaCreateMenuSheet(
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background, shape = AppShapes.LargeCard) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 4.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Agregar a la agenda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-            Text("Elige qué quieres programar.", color = UniStackColors.TextSecondary)
-            AgendaCreateKind.entries.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    row.forEach { kind ->
-                        AgendaKindCard(kind, { onSelect(kind) }, Modifier.weight(1f))
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.CalendarMonth, null, tint = UniStackColors.Primary)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Agregar a la agenda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Elige el tipo y se abre el formulario correcto.",
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            AgendaKindCard(
+
+            AgendaSectionLabel("Académico")
+            listOf(
+                AgendaCreateKind.TASK,
+                AgendaCreateKind.EVALUATION,
+                AgendaCreateKind.PRESENTATION
+            ).forEach { kind ->
+                AgendaKindRow(kind = kind, onClick = { onSelect(kind) })
+            }
+            AgendaKindRow(
                 kind = null,
                 onClick = onAddClass,
-                modifier = Modifier.fillMaxWidth(),
                 title = "Clase recurrente",
                 subtitle = "Añade una materia al horario",
                 icon = Icons.AutoMirrored.Rounded.MenuBook
             )
-            Spacer(Modifier.height(8.dp))
+
+            AgendaSectionLabel("Personal")
+            listOf(
+                AgendaCreateKind.PERSONAL,
+                AgendaCreateKind.REMINDER,
+                AgendaCreateKind.CUSTOM
+            ).forEach { kind ->
+                AgendaKindRow(kind = kind, onClick = { onSelect(kind) })
+            }
         }
     }
 }
 
 @Composable
-private fun AgendaKindCard(
+private fun AgendaSectionLabel(text: String) {
+    Text(
+        text = text,
+        color = UniStackColors.Primary,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 6.dp)
+    )
+}
+
+@Composable
+private fun AgendaKindRow(
     kind: AgendaCreateKind?,
     onClick: () -> Unit,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     title: String = kind?.title.orEmpty(),
     subtitle: String = kind?.subtitle.orEmpty(),
     icon: ImageVector = kind?.icon ?: Icons.Rounded.Event
 ) {
     UniCard(
-        modifier = modifier.height(82.dp),
+        modifier = modifier.fillMaxWidth(),
         tonalElevation = 0.dp,
         onClick = onClick,
-        contentPadding = PaddingValues(11.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
-                Modifier.size(34.dp).clip(CircleShape).background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(UniStackColors.Primary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
-            ) { Icon(icon, null, tint = UniStackColors.Primary, modifier = Modifier.size(19.dp)) }
-            Spacer(Modifier.width(9.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(subtitle, color = UniStackColors.TextSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+            ) {
+                Icon(icon, null, tint = UniStackColors.Primary, modifier = Modifier.size(19.dp))
+            }
+            Spacer(Modifier.width(11.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    title,
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    subtitle,
+                    color = UniStackColors.TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
