@@ -32,14 +32,26 @@ fun releaseProperty(localName: String, envName: String): String =
 fun releaseStoreFileValue(): String =
     releaseProperty("releaseStoreFile", "RELEASE_STORE_FILE").ifBlank { ".signing/unistack-release.jks" }
 
-fun releaseStorePasswordValue(): String =
-    releaseProperty("releaseStorePassword", "RELEASE_STORE_PASSWORD").ifBlank { "unistack-dev-release" }
+fun releaseStorePasswordValue(): String {
+    val value = releaseProperty("releaseStorePassword", "RELEASE_STORE_PASSWORD")
+    if (value.isBlank()) {
+        logger.warn("⚠️  RELEASE_STORE_PASSWORD no configurada. Usando valor local de desarrollo. NO usar en producción.")
+        return "unistack-dev-release"
+    }
+    return value
+}
 
 fun releaseKeyAliasValue(): String =
     releaseProperty("releaseKeyAlias", "RELEASE_KEY_ALIAS").ifBlank { "unistack" }
 
-fun releaseKeyPasswordValue(): String =
-    releaseProperty("releaseKeyPassword", "RELEASE_KEY_PASSWORD").ifBlank { "unistack-dev-release" }
+fun releaseKeyPasswordValue(): String {
+    val value = releaseProperty("releaseKeyPassword", "RELEASE_KEY_PASSWORD")
+    if (value.isBlank()) {
+        logger.warn("⚠️  RELEASE_KEY_PASSWORD no configurada. Usando valor local de desarrollo. NO usar en producción.")
+        return "unistack-dev-release"
+    }
+    return value
+}
 
 fun hasConfiguredReleaseSigning(): Boolean {
     val storeFile = rootProject.file(releaseStoreFileValue())
@@ -102,7 +114,8 @@ android {
         }
 
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("localRelease")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
