@@ -165,20 +165,22 @@ fun HomeScreen(
     var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val drawerScope = rememberCoroutineScope()
-    val closeDrawer = {
+    val closeDrawer: () -> Unit = {
         drawerScope.launch {
             drawerState.close()
             onDrawerOpenChange(false)
         }
+        Unit
     }
     val closeDrawerAndRun: (() -> Unit) -> Unit = { action ->
         onDrawerOpenChange(false)
         drawerScope.launch { drawerState.close() }
         action()
     }
-    val openDrawer = {
+    val openDrawer: () -> Unit = {
         onDrawerOpenChange(true)
         drawerScope.launch { drawerState.open() }
+        Unit
     }
     LaunchedEffect(drawerState.isOpen) {
         onDrawerOpenChange(drawerState.isOpen)
