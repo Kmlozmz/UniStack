@@ -82,6 +82,7 @@ import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
+import com.unistack.app.feature_updates.presentation.UpdateSettingsScreen
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.InitialTab
@@ -321,7 +322,17 @@ fun MainNavGraph(
                     onAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) },
                     onModulesClick = { navController.navigate(AppRoutes.ModuleSettings) },
                     onNotificationsClick = { navController.navigate(AppRoutes.NotificationSettings) },
-                    onDataClick = { navController.navigate(AppRoutes.DataSettings) }
+                    onDataClick = { navController.navigate(AppRoutes.DataSettings) },
+                    onUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
+                )
+            }
+            composable(AppRoutes.UpdateSettings) {
+                UpdateSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.navigate(AppRoutes.Settings)
+                        }
+                    }
                 )
             }
             composable(AppRoutes.AppearanceSettings) {
@@ -650,6 +661,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.UpdateSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null

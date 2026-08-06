@@ -32,6 +32,7 @@ object AppRoutes {
     const val ModuleSettings = "module_settings"
     const val NotificationSettings = "notification_settings"
     const val DataSettings = "data_settings"
+    const val UpdateSettings = "update_settings"
     const val Pro = "pro"
     const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"

@@ -39,6 +39,7 @@ import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.ShapeLine
 import androidx.compose.material.icons.rounded.SpaceDashboard
@@ -589,6 +590,7 @@ fun SettingsHubScreen(
     onModulesClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onDataClick: () -> Unit,
+    onUpdatesClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -671,6 +673,14 @@ fun SettingsHubScreen(
                 title = "Datos y respaldos",
                 subtitle = "Exportar, restaurar y repetir configuración inicial",
                 onClick = onDataClick
+            )
+        }
+        item {
+            SettingsDestination(
+                icon = Icons.Rounded.Refresh,
+                title = "Actualizaciones",
+                subtitle = "Verifica y descarga la última versión",
+                onClick = onUpdatesClick
             )
         }
     }
