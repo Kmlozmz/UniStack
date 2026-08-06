@@ -3,8 +3,9 @@ package com.unistack.app.feature_profile.presentation
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.AcademicPeriod
@@ -17,6 +18,10 @@ import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_billing.domain.BillingRepository
+import com.unistack.app.feature_sync.domain.CloudBackupRepository
+import com.unistack.app.feature_sync.domain.LocalBackupRepository
+import com.unistack.app.feature_user.domain.AccountAuthService
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.VisualPreset
 import com.unistack.app.feature_user.domain.VisualPreference
@@ -31,16 +36,17 @@ data class ProfileActionState(
     val errorMessage: String? = null
 )
 
-class ProfileViewModel(
-    private val userRepository: UserRepository = AppContainer.userRepository
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val userRepository: UserRepository,
+    private val billingRepository: BillingRepository,
+    private val accountAuthService: AccountAuthService,
+    private val localBackupRepository: LocalBackupRepository,
+    private val cloudBackupRepository: CloudBackupRepository
 ) : ViewModel() {
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
     val currentUser = userRepository.currentUser
-    val billingState = AppContainer.billingRepository.state
-    private val accountAuthService = AppContainer.accountAuthService
-    private val billingRepository = AppContainer.billingRepository
-    private val localBackupRepository = AppContainer.localBackupRepository
-    private val cloudBackupRepository = AppContainer.cloudBackupRepository
+    val billingState = billingRepository.state
     val cloudBackupState = cloudBackupRepository.state
 
     private val _actionState = MutableStateFlow(ProfileActionState())

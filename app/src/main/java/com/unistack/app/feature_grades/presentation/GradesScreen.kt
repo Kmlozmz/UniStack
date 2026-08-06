@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.AppShapes
@@ -59,7 +59,7 @@ fun GradesScreen(
     onAddSubjectClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel(),
+    viewModel: GradesViewModel = hiltViewModel(),
     embedded: Boolean = false
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()

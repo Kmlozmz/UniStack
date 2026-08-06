@@ -45,7 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.AppContainer
+import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -59,7 +59,8 @@ fun ProScreen(
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBackClick)
-    val billingRepository = remember { AppContainer.billingRepository }
+    val entryPoint = rememberUniStackEntryPoint()
+    val billingRepository = remember { entryPoint.billingRepository() }
     val billingState by billingRepository.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context.findActivity()

@@ -1,8 +1,10 @@
 package com.unistack.app.feature_schedule.presentation
 
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
+import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
@@ -12,11 +14,14 @@ import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.AgendaEvent
 import com.unistack.app.feature_schedule.domain.AgendaEventKind
 import com.unistack.app.feature_schedule.domain.AgendaRecurrence
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
+import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
 import java.time.LocalDate
 import java.time.ZoneId
@@ -35,8 +40,13 @@ data class ScheduleUiState(
     val accessibility: AccessibilityPreferences = AccessibilityPreferences()
 )
 
-class ScheduleViewModel : ViewModel() {
-    private val repository = AppContainer.scheduleRepository
+@HiltViewModel
+class ScheduleViewModel @Inject constructor(
+    private val repository: ScheduleRepository,
+    private val gradesRepository: GradesRepository,
+    private val tasksRepository: TasksRepository,
+    private val userRepository: UserRepository
+) : ViewModel() {
 
     private val scheduleData = combine(
         repository.sessions,
@@ -46,9 +56,9 @@ class ScheduleViewModel : ViewModel() {
 
     val uiState: StateFlow<ScheduleUiState> = combine(
         scheduleData,
-        AppContainer.gradesRepository.subjects,
-        AppContainer.tasksRepository.tasks,
-        AppContainer.userRepository.userProfile
+        gradesRepository.subjects,
+        tasksRepository.tasks,
+        userRepository.userProfile
     ) { schedule, subjects, tasks, profile ->
         ScheduleUiState(
             sessions = schedule.first,
@@ -108,12 +118,11 @@ class ScheduleViewModel : ViewModel() {
         if (startMinute !in 0 until 24 * 60 || endMinute !in 1..24 * 60 || endMinute <= startMinute) return false
         if (repeatEveryWeeks !in 1..12) return false
 
-        val gradesRepository = AppContainer.gradesRepository
         val currentSubject = existing?.let { session ->
             gradesRepository.subjects.value.firstOrNull { it.id == session.subjectId }
         }
         val subject = if (currentSubject == null) {
-            val profile = AppContainer.userRepository.userProfile.value
+            val profile = userRepository.userProfile.value
             val periodScheme = profile?.academicPeriodScheme
                 ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
             Subject(
@@ -207,7 +216,7 @@ class ScheduleViewModel : ViewModel() {
         val cleanTitle = title.trim()
         if (cleanTitle.length !in 2..100) return false
         val resolvedSubject = subjectId?.takeIf { id ->
-            AppContainer.gradesRepository.subjects.value.any { it.id == id }
+            gradesRepository.subjects.value.any { it.id == id }
         }
         if (generatesGrade && resolvedSubject == null) return false
         val zone = ZoneId.systemDefault()
@@ -215,9 +224,9 @@ class ScheduleViewModel : ViewModel() {
             .plusMinutes((minute ?: 23 * 60 + 59).toLong())
             .toInstant()
             .toEpochMilli()
-        val subject = AppContainer.gradesRepository.subjects.value.firstOrNull { it.id == resolvedSubject }
+        val subject = gradesRepository.subjects.value.firstOrNull { it.id == resolvedSubject }
         val now = System.currentTimeMillis()
-        AppContainer.tasksRepository.addTask(
+        tasksRepository.addTask(
             StudentTask(
                 id = "task-${UUID.randomUUID()}",
                 title = cleanTitle,

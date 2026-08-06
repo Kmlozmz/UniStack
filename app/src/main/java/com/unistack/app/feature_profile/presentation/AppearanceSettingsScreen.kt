@@ -69,7 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
@@ -97,7 +97,7 @@ import com.unistack.app.feature_user.domain.VisualPreset
 fun AppearanceSettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()
@@ -426,7 +426,7 @@ fun AppearanceSettingsScreen(
 fun AccessibilitySettingsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()
@@ -590,7 +590,7 @@ fun SettingsHubScreen(
     onNotificationsClick: () -> Unit,
     onDataClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = viewModel()
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()

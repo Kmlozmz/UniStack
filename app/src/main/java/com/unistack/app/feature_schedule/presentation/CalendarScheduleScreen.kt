@@ -93,7 +93,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
@@ -139,7 +139,7 @@ private enum class ScheduleView {
 fun CalendarScheduleScreen(
     onTaskClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ScheduleViewModel = viewModel()
+    viewModel: ScheduleViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var identityView by rememberSaveable { mutableStateOf(IdentityScheduleView.TIMETABLE) }

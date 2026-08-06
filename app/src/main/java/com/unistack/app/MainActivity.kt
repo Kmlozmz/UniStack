@@ -16,10 +16,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import dagger.hilt.android.AndroidEntryPoint
 
 private const val RUNTIME_PERMISSION_PREFS = "unistack_runtime_permissions"
 private const val NOTIFICATION_PERMISSION_ASKED = "notification_permission_asked"
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val pendingLaunchRoute = mutableStateOf<String?>(null)
 

@@ -18,7 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.AppContainer
+import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
 import com.unistack.app.feature_setup.presentation.SetupFlow
 import kotlinx.coroutines.delay
@@ -39,18 +39,20 @@ fun RootNavGraph(
             1f
         ) == 0f
     }
+    val entryPoint = rememberUniStackEntryPoint()
+    val userRepository = remember { entryPoint.userRepository() }
     val setupCompleted by remember {
-        AppContainer.userRepository.userProfile
+        userRepository.userProfile
             .map { it?.setupCompleted }
             .distinctUntilChanged()
     }.collectAsStateWithLifecycle(initialValue = null)
     var setupLaunchRoute by remember { mutableStateOf<String?>(null) }
     var launchAnimationFinished by rememberSaveable { mutableStateOf(animationsDisabled) }
-    var repositoryDidLoad by remember { mutableStateOf(AppContainer.userRepository.didLoad) }
+    var repositoryDidLoad by remember { mutableStateOf(userRepository.didLoad) }
 
     LaunchedEffect(Unit) {
         while (!repositoryDidLoad) {
-            repositoryDidLoad = AppContainer.userRepository.didLoad
+            repositoryDidLoad = userRepository.didLoad
             if (!repositoryDidLoad) {
                 delay(16)
             }

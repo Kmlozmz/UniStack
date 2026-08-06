@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -74,7 +74,7 @@ fun AddGradeScreen(
     subjectId: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel(),
+    viewModel: GradesViewModel = hiltViewModel(),
     gradeId: String? = null,
     initialPeriodId: String? = null,
     onCompleteHistoryClick: (String) -> Unit = {}

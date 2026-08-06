@@ -64,7 +64,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -108,7 +108,7 @@ private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale
 fun AddExpenseScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ExpensesViewModel = viewModel(),
+    viewModel: ExpensesViewModel = hiltViewModel(),
     expenseId: String? = null
 ) {
     BackHandler(onBack = onBackClick)

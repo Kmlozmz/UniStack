@@ -56,7 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.components.UniEmptyStateCard
 import com.unistack.app.core.design.components.UniFilterChipRow
@@ -83,7 +83,7 @@ import kotlinx.coroutines.launch
 fun AcademicTemplatesScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AcademicTemplatesViewModel = viewModel()
+    viewModel: AcademicTemplatesViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
 

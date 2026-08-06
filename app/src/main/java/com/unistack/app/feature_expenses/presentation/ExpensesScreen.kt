@@ -85,7 +85,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -137,7 +137,7 @@ fun ExpensesScreen(
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ExpensesViewModel = viewModel()
+    viewModel: ExpensesViewModel = hiltViewModel()
 ) {
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()

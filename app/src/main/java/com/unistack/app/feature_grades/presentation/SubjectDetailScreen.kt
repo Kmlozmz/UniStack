@@ -73,7 +73,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
@@ -106,7 +106,7 @@ fun SubjectDetailScreen(
     onCompleteHistoryClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -410,7 +410,7 @@ fun SubjectPeriodDetailScreen(
     onAddGradeClick: (String, String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()

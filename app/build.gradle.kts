@@ -10,6 +10,8 @@ plugins {
     id("com.google.devtools.ksp")
     //noinspection NewerVersionAvailable
     id("org.jetbrains.kotlin.plugin.compose") version "2.2.21"
+    id("com.google.dagger.hilt.android")
+    id("org.jetbrains.kotlin.kapt")
 }
 
 if (file("google-services.json").exists()) {
@@ -196,6 +198,14 @@ dependencies {
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     ksp("androidx.room:room-compiler:$roomVersion")
+
+    implementation("com.google.dagger:hilt-android:2.56.2")
+    kapt("com.google.dagger:hilt-compiler:2.56.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    testImplementation("com.google.dagger:hilt-android-testing:2.56.2")
+    kaptTest("com.google.dagger:hilt-compiler:2.56.2")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.56.2")
+    kaptAndroidTest("com.google.dagger:hilt-compiler:2.56.2")
 }
 
 

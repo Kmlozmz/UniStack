@@ -2,7 +2,6 @@
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.unistack.app.core.AppContainer
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import com.unistack.app.feature_grades.domain.GradesRepository
@@ -14,18 +13,21 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-class HomeViewModel(
-    private val gradesRepository: GradesRepository = AppContainer.gradesRepository,
-    private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
-    private val expensesRepository: ExpensesRepository = AppContainer.expensesRepository,
-    private val academicWorksRepository: AcademicWorksRepository = AppContainer.academicWorksRepository,
-    private val scheduleRepository: ScheduleRepository = AppContainer.scheduleRepository,
-    private val userRepository: UserRepository = AppContainer.userRepository
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val gradesRepository: GradesRepository,
+    private val tasksRepository: TasksRepository,
+    private val expensesRepository: ExpensesRepository,
+    private val academicWorksRepository: AcademicWorksRepository,
+    private val scheduleRepository: ScheduleRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     private val homeContent = combine(
         gradesRepository.subjects,

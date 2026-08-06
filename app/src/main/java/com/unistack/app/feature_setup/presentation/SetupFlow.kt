@@ -106,7 +106,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -142,7 +142,7 @@ private const val SETUP_EXIT_MILLIS = 220
 fun SetupFlow(
     onSetupFinished: (createFirstSubject: Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SetupViewModel = viewModel()
+    viewModel: SetupViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
 

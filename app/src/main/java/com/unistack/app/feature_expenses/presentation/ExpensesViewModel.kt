@@ -1,19 +1,23 @@
 package com.unistack.app.feature_expenses.presentation
 
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.feature_expenses.domain.Expense
+import com.unistack.app.feature_user.domain.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpensesRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
-class ExpensesViewModel(
-    private val repository: ExpensesRepository = AppContainer.expensesRepository
+@HiltViewModel
+class ExpensesViewModel @Inject constructor(
+    private val repository: ExpensesRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     val expenses: StateFlow<List<Expense>> = repository.expenses
-    val userProfile = AppContainer.userRepository.userProfile
+    val userProfile = userRepository.userProfile
 
     fun expenseById(expenseId: String): Expense? {
         return expenses.value.firstOrNull { it.id == expenseId }
@@ -89,12 +93,12 @@ class ExpensesViewModel(
         weeklyBudgetInput: String,
         monthlyBudgetInput: String
     ): Boolean {
-        val current = AppContainer.userRepository.userProfile.value ?: return false
+        val current = userRepository.userProfile.value ?: return false
         val weeklyBudget = weeklyBudgetInput.toIntOrNull() ?: return false
         val monthlyBudget = monthlyBudgetInput.toIntOrNull() ?: return false
         if (weeklyBudget !in 0..99_999_999) return false
         if (monthlyBudget !in 0..999_999_999) return false
-        AppContainer.userRepository.saveUserProfile(
+        userRepository.saveUserProfile(
             current.copy(
                 weeklyBudget = weeklyBudget,
                 monthlyBudget = monthlyBudget
@@ -104,14 +108,14 @@ class ExpensesViewModel(
     }
 
     fun toggleExpenseCategory(category: ExpenseCategory): Boolean {
-        val current = AppContainer.userRepository.userProfile.value ?: return false
+        val current = userRepository.userProfile.value ?: return false
         val next = if (category in current.enabledExpenseCategories) {
             current.enabledExpenseCategories - category
         } else {
             current.enabledExpenseCategories + category
         }
         if (next.isEmpty()) return false
-        AppContainer.userRepository.saveUserProfile(
+        userRepository.saveUserProfile(
             current.copy(enabledExpenseCategories = next)
         )
         return true

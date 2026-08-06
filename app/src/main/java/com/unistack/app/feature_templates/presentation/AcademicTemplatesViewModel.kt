@@ -1,8 +1,9 @@
 package com.unistack.app.feature_templates.presentation
 
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.TextValidators
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
@@ -14,9 +15,10 @@ import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
-class AcademicTemplatesViewModel(
-    private val worksRepository: AcademicWorksRepository = AppContainer.academicWorksRepository,
-    gradesRepository: GradesRepository = AppContainer.gradesRepository
+@HiltViewModel
+class AcademicTemplatesViewModel @Inject constructor(
+    private val worksRepository: AcademicWorksRepository,
+    gradesRepository: GradesRepository
 ) : ViewModel() {
     val works: StateFlow<List<AcademicWork>> = worksRepository.works
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects

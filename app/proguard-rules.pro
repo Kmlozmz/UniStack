@@ -181,6 +181,21 @@
 }
 
 # -----------------------------------------------------------------------------
+# Hilt
+# -----------------------------------------------------------------------------
+-keep class dagger.hilt.** { *; }
+-keep class javax.inject.** { *; }
+-keep @dagger.hilt.android.HiltAndroidApp class * { *; }
+-keep @dagger.hilt.android.AndroidEntryPoint class * { *; }
+-keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }
+-keep @dagger.Module class * { *; }
+-keep @dagger.hilt.InstallIn class * { *; }
+-keepclassmembers class * {
+    @javax.inject.Inject *;
+}
+-dontwarn dagger.hilt.**
+
+# -----------------------------------------------------------------------------
 # Prevent obfuscation of test-related classes
 # -----------------------------------------------------------------------------
 -dontwarn org.junit.**

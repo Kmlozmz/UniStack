@@ -43,7 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -58,7 +58,7 @@ fun PriorHistoryScreen(
     onBackClick: () -> Unit,
     onAddActivitiesClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: GradesViewModel = viewModel()
+    viewModel: GradesViewModel = hiltViewModel()
 ) {
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()

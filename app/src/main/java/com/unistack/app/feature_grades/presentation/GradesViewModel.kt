@@ -1,8 +1,9 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.TextValidators
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.GradeItem
@@ -15,6 +16,8 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_templates.domain.AcademicWork
+import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_billing.domain.BillingRepository
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
@@ -25,16 +28,19 @@ import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
 
-class GradesViewModel(
-    private val repository: GradesRepository = AppContainer.gradesRepository,
-    private val userRepository: UserRepository = AppContainer.userRepository,
-    private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
-    private val scheduleRepository: ScheduleRepository = AppContainer.scheduleRepository
+@HiltViewModel
+class GradesViewModel @Inject constructor(
+    private val repository: GradesRepository,
+    private val userRepository: UserRepository,
+    private val tasksRepository: TasksRepository,
+    private val scheduleRepository: ScheduleRepository,
+    private val billingRepository: BillingRepository,
+    private val academicWorksRepository: AcademicWorksRepository
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
     val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
-    val billingState = AppContainer.billingRepository.state
-    val academicWorks: StateFlow<List<AcademicWork>> = AppContainer.academicWorksRepository.works
+    val billingState = billingRepository.state
+    val academicWorks: StateFlow<List<AcademicWork>> = academicWorksRepository.works
     val classSessions: StateFlow<List<ClassSession>> = scheduleRepository.sessions
 
     private fun getMaxGrade(): Double {

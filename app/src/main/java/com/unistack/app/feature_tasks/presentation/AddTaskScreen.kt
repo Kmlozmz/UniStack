@@ -85,7 +85,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -112,7 +112,7 @@ fun AddTaskScreen(
     onCreateSubjectClick: () -> Unit,
     onEditLinkedGrade: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
-    viewModel: TasksViewModel = viewModel(),
+    viewModel: TasksViewModel = hiltViewModel(),
     taskId: String? = null
 ) {
     BackHandler(onBack = onBackClick)

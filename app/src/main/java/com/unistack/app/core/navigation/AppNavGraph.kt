@@ -48,14 +48,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.unistack.app.core.AppContainer
+import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
@@ -104,12 +104,13 @@ fun MainNavGraph(
     val navController = rememberNavController()
     val motionScale = LocalMotionDurationScale.current
     val appearance = LocalAppearancePreferences.current
+    val userRepository = rememberUniStackEntryPoint().userRepository()
     val enabledModules by remember {
-        AppContainer.userRepository.userProfile
+        userRepository.userProfile
             .map { it?.enabledModules ?: DefaultEnabledModules }
             .distinctUntilChanged()
     }.collectAsStateWithLifecycle(
-        initialValue = AppContainer.userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
+        initialValue = userRepository.userProfile.value?.enabledModules ?: DefaultEnabledModules
     )
     val bottomItems = remember(enabledModules) { BottomNavItem.itemsFor(enabledModules) }
     val resolvedInitialRoute = remember(initialRoute, appearance.initialTab, enabledModules) {
@@ -192,7 +193,7 @@ fun MainNavGraph(
                 }
             ) {
                 composable(AppRoutes.Home) {
-                    val viewModel: HomeViewModel = viewModel()
+                    val viewModel: HomeViewModel = hiltViewModel()
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                     HomeScreen(
                         uiState = uiState,

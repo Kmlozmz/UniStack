@@ -93,7 +93,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.AppShapes
@@ -118,7 +118,7 @@ fun TasksScreen(
     onEditTaskClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onCompleteHistoryClick: (String) -> Unit = {},
-    viewModel: TasksViewModel = viewModel(),
+    viewModel: TasksViewModel = hiltViewModel(),
     embedded: Boolean = false
 ) {
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()

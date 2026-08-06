@@ -1,8 +1,9 @@
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.GradingScaleUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
@@ -20,10 +21,11 @@ import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 
-class TasksViewModel(
-    private val tasksRepository: TasksRepository = AppContainer.tasksRepository,
-    private val gradesRepository: GradesRepository = AppContainer.gradesRepository,
-    private val userRepository: UserRepository = AppContainer.userRepository
+@HiltViewModel
+class TasksViewModel @Inject constructor(
+    private val tasksRepository: TasksRepository,
+    private val gradesRepository: GradesRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     val tasks: StateFlow<List<StudentTask>> = tasksRepository.tasks
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects

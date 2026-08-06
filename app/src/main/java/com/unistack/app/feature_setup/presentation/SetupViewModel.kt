@@ -5,8 +5,9 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.unistack.app.core.AppContainer
 import com.unistack.app.core.utils.TextValidators
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
@@ -20,8 +21,9 @@ import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.ValidationResult
 
-class SetupViewModel(
-    private val userRepository: UserRepository = AppContainer.userRepository
+@HiltViewModel
+class SetupViewModel @Inject constructor(
+    private val userRepository: UserRepository
 ) : ViewModel() {
     var preferredName by mutableStateOf("")
         private set
