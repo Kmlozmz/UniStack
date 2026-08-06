@@ -37,7 +37,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -124,7 +126,11 @@ fun MainNavGraph(
     }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
-    val showBottomBar = currentRoute in setOf(
+    var homeDrawerOpen by remember { mutableStateOf(false) }
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
+    }
+    val showBottomBar = !homeDrawerOpen && currentRoute in setOf(
         AppRoutes.Home,
         AppRoutes.Academic,
         AppRoutes.Grades,
@@ -219,7 +225,8 @@ fun MainNavGraph(
                         },
                         onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
                         onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                        onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) }
+                        onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
+                        onDrawerOpenChange = { open -> homeDrawerOpen = open }
                     )
                 }
             composable(AppRoutes.Notifications) {
