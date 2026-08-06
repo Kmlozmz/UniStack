@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface UpdateRepository {
     val state: StateFlow<UpdateState>
     suspend fun checkForUpdates()
+    suspend fun checkForUpdatesIfDue()
     fun downloadUpdate()
     fun installUpdate()
     fun clearDownload()

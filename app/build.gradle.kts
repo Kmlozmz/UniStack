@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import java.security.MessageDigest
 import java.util.Properties
 import java.time.LocalDateTime
@@ -65,6 +67,13 @@ fun hasConfiguredReleaseSigning(): Boolean {
     ).all { it.isNotBlank() } && storeFile.exists()
 }
 
+val devFallbackSigningValue = "unistack-dev-release"
+
+fun isUsingRealReleaseSigning(): Boolean =
+    hasConfiguredReleaseSigning() &&
+        releaseStorePasswordValue() != devFallbackSigningValue &&
+        releaseKeyPasswordValue() != devFallbackSigningValue
+
 val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHH"))
 val generatedVersionCode = providers.gradleProperty("versionCode")
     .orElse(providers.environmentVariable("VERSION_CODE"))
@@ -74,11 +83,14 @@ val generatedVersionCode = providers.gradleProperty("versionCode")
     .take(9)
     .toIntOrNull()
     ?: fallbackVersionCode.toInt()
-val generatedVersionName = providers.gradleProperty("versionName")
+val explicitVersionNameProvider = providers.gradleProperty("versionName")
     .orElse(providers.environmentVariable("VERSION_NAME"))
+val hasExplicitVersionName = explicitVersionNameProvider.isPresent
+val generatedVersionName = explicitVersionNameProvider
     .orElse("1.0.$generatedVersionCode")
     .get()
 
+val githubRepoSlug = "Kmlozmz/UniStack"
 val roomVersion = "2.8.4"
 
 android {
@@ -95,6 +107,7 @@ android {
 
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${localProperty("googleWebClientId")}\"")
         buildConfigField("String", "PRO_MONTHLY_PRODUCT_ID", "\"${localProperty("proMonthlyProductId").ifBlank { "unistack_pro_monthly" }}\"")
+        buildConfigField("String", "GITHUB_REPO", "\"$githubRepoSlug\"")
 
         vectorDrawables {
             useSupportLibrary = true
@@ -190,7 +203,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-config")
     implementation("androidx.credentials:credentials:1.6.0")
     implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.2.0")
@@ -534,8 +546,139 @@ val assembleReleaseAndSendToTelegram = tasks.register("assembleReleaseAndSendToT
     finalizedBy(sendReleaseApkToTelegram)
 }
 
+fun githubReleaseSnapshotFile(): File =
+    rootProject.file(".gradle/github-release.snapshot.properties")
+
+fun readGithubReleaseSnapshot(): Map<String, String> {
+    val file = githubReleaseSnapshotFile()
+    if (!file.exists()) return emptyMap()
+    return Properties().apply {
+        file.inputStream().use(::load)
+    }.entries.associate { (key, value) -> key.toString() to value.toString() }
+}
+
+fun writeGithubReleaseSnapshot(snapshot: Map<String, String>) {
+    val file = githubReleaseSnapshotFile()
+    file.parentFile.mkdirs()
+    Properties().apply {
+        snapshot.forEach { (path, hash) -> setProperty(path, hash) }
+        file.outputStream().use { store(it, "Last UniStack GitHub Release snapshot") }
+    }
+}
+
+fun githubChangelogLines(currentSnapshot: Map<String, String>): List<String> {
+    val previousSnapshot = readGithubReleaseSnapshot()
+    if (previousSnapshot.isEmpty()) {
+        return listOf("Primera version publicada en GitHub Releases.")
+    }
+    val changedFiles = changedFilesSinceSnapshot(previousSnapshot, currentSnapshot)
+    return summarizeChangeFiles(changedFiles)
+        .ifEmpty { listOf("Sin cambios de codigo desde la ultima version publicada.") }
+}
+
+fun githubReleaseBody(lines: List<String>): String =
+    lines.joinToString("\n") { "- $it" }
+
+val validateGitHubPublishReady = tasks.register("validateGitHubPublishReady") {
+    group = "verification"
+    description = "Validates that a build is intentional and properly signed before publishing a public GitHub Release."
+
+    doLast {
+        if (!isUsingRealReleaseSigning()) {
+            throw GradleException(
+                "El release esta firmado con credenciales de desarrollo por defecto (o falta configurar la firma). " +
+                    "Configura RELEASE_STORE_PASSWORD y RELEASE_KEY_PASSWORD reales en local.properties o variables de " +
+                    "entorno antes de publicar en GitHub Releases."
+            )
+        }
+        if (!hasExplicitVersionName) {
+            throw GradleException(
+                "Falta indicar la version publica. Vuelve a ejecutar con -PversionName=X.Y.Z (ej: -PversionName=1.1.0)."
+            )
+        }
+    }
+}
+
+val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
+    group = "distribution"
+    description = "Creates a GitHub Release with the signed release APK and a friendly changelog. " +
+        "Never runs automatically: requires an explicit -PversionName and real release signing."
+    dependsOn(validateGitHubPublishReady)
+    dependsOn("assembleRelease")
+
+    doLast {
+        val apkPath = findApkForVariant("release")
+        val telegramEnv = readTelegramEnv()
+        val githubToken = providers.environmentVariable("GITHUB_TOKEN")
+            .orElse(telegramEnv["GITHUB_TOKEN"] ?: "")
+            .get()
+        if (githubToken.isBlank()) {
+            throw GradleException("GITHUB_TOKEN debe estar configurado (variable de entorno o en .env) para publicar en GitHub.")
+        }
+
+        val versionName = generatedVersionName
+        val tagName = "v$versionName"
+        val currentSnapshot = currentProjectSnapshot()
+        val body = githubReleaseBody(githubChangelogLines(currentSnapshot))
+
+        val createPayload = JsonOutput.toJson(
+            mapOf(
+                "tag_name" to tagName,
+                "name" to versionName,
+                "body" to body,
+                "draft" to false,
+                "prerelease" to false
+            )
+        )
+
+        println("Creating GitHub Release $tagName...")
+        val createExec = providers.exec {
+            commandLine(
+                "curl",
+                "--silent",
+                "--show-error",
+                "--fail-with-body",
+                "-X", "POST",
+                "-H", "Authorization: Bearer $githubToken",
+                "-H", "Accept: application/vnd.github+json",
+                "-H", "Content-Type: application/json",
+                "-d", createPayload,
+                "https://api.github.com/repos/$githubRepoSlug/releases"
+            )
+        }
+        createExec.result.get().assertNormalExitValue()
+        val createResponse = createExec.standardOutput.asText.get()
+
+        @Suppress("UNCHECKED_CAST")
+        val parsed = JsonSlurper().parseText(createResponse) as Map<String, Any?>
+        val releaseId = (parsed["id"] as? Number)?.toLong()
+            ?: throw GradleException("No se pudo leer el id del release creado. Respuesta: $createResponse")
+
+        println("Uploading ${apkPath.name} as release asset...")
+        val uploadUrl = "https://uploads.github.com/repos/$githubRepoSlug/releases/$releaseId/assets?name=${apkPath.name}"
+        val uploadExec = providers.exec {
+            commandLine(
+                "curl",
+                "--silent",
+                "--show-error",
+                "--fail-with-body",
+                "-X", "POST",
+                "-H", "Authorization: Bearer $githubToken",
+                "-H", "Content-Type: application/vnd.android.package-archive",
+                "--data-binary", "@${apkPath.absolutePath}",
+                uploadUrl
+            )
+        }
+        uploadExec.result.get().assertNormalExitValue()
+
+        writeGithubReleaseSnapshot(currentSnapshot)
+        println("Published $tagName to https://github.com/$githubRepoSlug/releases/tag/$tagName")
+    }
+}
+
 afterEvaluate {
     tasks.findByName("assembleRelease")?.mustRunAfter(validateReleaseReady)
+    tasks.findByName("assembleRelease")?.mustRunAfter(validateGitHubPublishReady)
 
     if (!skipTelegramApk.get()) {
         tasks.named("assembleDebug") {

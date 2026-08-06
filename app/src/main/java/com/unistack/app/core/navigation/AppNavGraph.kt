@@ -82,7 +82,10 @@ import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
+import com.unistack.app.feature_updates.domain.UpdateState
+import com.unistack.app.feature_updates.presentation.UpdateDetailSheet
 import com.unistack.app.feature_updates.presentation.UpdateSettingsScreen
+import com.unistack.app.feature_updates.presentation.UpdateViewModel
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.InitialTab
@@ -230,6 +233,24 @@ fun MainNavGraph(
                         onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
                         onDrawerOpenChange = { open -> homeDrawerOpen = open }
                     )
+
+                    val updateViewModel: UpdateViewModel = hiltViewModel()
+                    val updateState by updateViewModel.state.collectAsStateWithLifecycle()
+                    val updateInfo = when (val current = updateState) {
+                        is UpdateState.Available -> current.info
+                        is UpdateState.Downloading -> current.info
+                        is UpdateState.ReadyToInstall -> current.info
+                        else -> null
+                    }
+                    if (updateInfo != null) {
+                        UpdateDetailSheet(
+                            info = updateInfo,
+                            state = updateState,
+                            onDownloadClick = updateViewModel::downloadUpdate,
+                            onInstallClick = updateViewModel::installUpdate,
+                            onDismiss = updateViewModel::dismiss
+                        )
+                    }
                 }
             composable(AppRoutes.Notifications) {
                 NotificationHistoryScreen(
