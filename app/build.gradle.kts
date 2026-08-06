@@ -601,8 +601,8 @@ val validateGitHubPublishReady = tasks.register("validateGitHubPublishReady") {
 
 val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
     group = "distribution"
-    description = "Creates a GitHub Release with the signed release APK and a friendly changelog. " +
-        "Never runs automatically: requires an explicit -PversionName and real release signing."
+    description = "Creates a GitHub Release with the signed release APK and changelog. " +
+        "Run: ./gradlew publishReleaseToGitHub -PversionName=X.Y.Z (requires real release signing + GITHUB_TOKEN)"
     dependsOn(validateGitHubPublishReady)
     dependsOn("assembleRelease")
 
@@ -613,7 +613,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
             .orElse(telegramEnv["GITHUB_TOKEN"] ?: "")
             .get()
         if (githubToken.isBlank()) {
-            throw GradleException("GITHUB_TOKEN debe estar configurado (variable de entorno o en .env) para publicar en GitHub.")
+            throw GradleException("GITHUB_TOKEN no configurado en .env o variable de entorno.")
         }
 
         val versionName = generatedVersionName
@@ -621,58 +621,73 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
         val currentSnapshot = currentProjectSnapshot()
         val body = githubReleaseBody(githubChangelogLines(currentSnapshot))
 
-        val createPayload = JsonOutput.toJson(
-            mapOf(
-                "tag_name" to tagName,
-                "name" to versionName,
-                "body" to body,
-                "draft" to false,
-                "prerelease" to false
-            )
+        val createPayload = mapOf(
+            "tag_name" to tagName,
+            "name" to versionName,
+            "body" to body,
+            "draft" to false,
+            "prerelease" to false
         )
 
+        val tempDir = File(buildDir, "github-release").apply { mkdirs() }
+        val payloadFile = File(tempDir, "payload.json")
+        val responseFile = File(tempDir, "response.json")
+
+        payloadFile.writeText(JsonOutput.toJson(createPayload))
+
         println("Creating GitHub Release $tagName...")
-        val createExec = providers.exec {
-            commandLine(
-                "curl",
-                "--silent",
-                "--show-error",
-                "--fail-with-body",
-                "-X", "POST",
+        val createResult = project.exec {
+            commandLine = listOf(
+                "curl", "-s", "-X", "POST",
                 "-H", "Authorization: Bearer $githubToken",
                 "-H", "Accept: application/vnd.github+json",
                 "-H", "Content-Type: application/json",
-                "-d", createPayload,
+                "-d", "@${payloadFile.absolutePath}",
                 "https://api.github.com/repos/$githubRepoSlug/releases"
             )
+            standardOutput = responseFile.outputStream()
+            isIgnoreExitValue = true
         }
-        createExec.result.get().assertNormalExitValue()
-        val createResponse = createExec.standardOutput.asText.get()
 
+        if (createResult.exitValue != 0) {
+            throw GradleException("curl exited with ${createResult.exitValue}. Response: ${responseFile.readText()}")
+        }
+
+        if (!responseFile.exists() || responseFile.length() == 0L) {
+            throw GradleException("No response from GitHub API. Check GITHUB_TOKEN and connectivity.")
+        }
+
+        val responseText = responseFile.readText()
         @Suppress("UNCHECKED_CAST")
-        val parsed = JsonSlurper().parseText(createResponse) as Map<String, Any?>
-        val releaseId = (parsed["id"] as? Number)?.toLong()
-            ?: throw GradleException("No se pudo leer el id del release creado. Respuesta: $createResponse")
+        val parsed = JsonSlurper().parseText(responseText) as Map<String, Any?>
 
-        println("Uploading ${apkPath.name} as release asset...")
+        if (parsed.containsKey("errors") || parsed.containsKey("message")) {
+            throw GradleException("GitHub API error: ${parsed["message"] ?: parsed["errors"]}")
+        }
+
+        val releaseId = (parsed["id"] as? Number)?.toLong()
+            ?: throw GradleException("Could not extract release ID. Response: $responseText")
+
+        println("Uploading ${apkPath.name}...")
         val uploadUrl = "https://uploads.github.com/repos/$githubRepoSlug/releases/$releaseId/assets?name=${apkPath.name}"
-        val uploadExec = providers.exec {
-            commandLine(
-                "curl",
-                "--silent",
-                "--show-error",
-                "--fail-with-body",
-                "-X", "POST",
+
+        val uploadResult = project.exec {
+            commandLine = listOf(
+                "curl", "-s", "-X", "POST",
                 "-H", "Authorization: Bearer $githubToken",
                 "-H", "Content-Type: application/vnd.android.package-archive",
                 "--data-binary", "@${apkPath.absolutePath}",
                 uploadUrl
             )
+            isIgnoreExitValue = true
         }
-        uploadExec.result.get().assertNormalExitValue()
+
+        if (uploadResult.exitValue != 0) {
+            throw GradleException("APK upload failed (curl exit ${uploadResult.exitValue})")
+        }
 
         writeGithubReleaseSnapshot(currentSnapshot)
-        println("Published $tagName to https://github.com/$githubRepoSlug/releases/tag/$tagName")
+        println("✓ Published $tagName to https://github.com/$githubRepoSlug/releases/tag/$tagName")
     }
 }
 
