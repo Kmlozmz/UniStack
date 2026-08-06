@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        pendingLaunchRoute.value = intent.launchRoute()
+        pendingLaunchRoute.value = intent.resolveLaunchRoute()
         applyEdgeToEdge(darkTheme = isSystemInDarkMode())
         requestNotificationPermissionOnFirstOpen()
         setContent {
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        pendingLaunchRoute.value = intent.launchRoute()
+        pendingLaunchRoute.value = intent.resolveLaunchRoute()
     }
 
     private fun requestNotificationPermissionOnFirstOpen() {
@@ -94,6 +94,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun Intent.launchRoute(): String? = getStringExtra(EXTRA_LAUNCH_ROUTE)
+
+    private fun Intent.resolveLaunchRoute(): String? {
+        val explicit = launchRoute()
+        if (explicit != null) return explicit
+
+        val navigateTo = getStringExtra("navigate_to")
+        return when (navigateTo) {
+            "updates" -> "settings/updates"
+            else -> null
+        }
+    }
 
     companion object {
         const val EXTRA_LAUNCH_ROUTE = "com.unistack.app.extra.LAUNCH_ROUTE"

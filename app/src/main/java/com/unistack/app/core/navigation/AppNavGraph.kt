@@ -83,6 +83,7 @@ import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_updates.domain.UpdateState
+import com.unistack.app.feature_updates.presentation.UpdateAvailableBanner
 import com.unistack.app.feature_updates.presentation.UpdateDetailSheet
 import com.unistack.app.feature_updates.presentation.UpdateSettingsScreen
 import com.unistack.app.feature_updates.presentation.UpdateViewModel
@@ -199,40 +200,6 @@ fun MainNavGraph(
                 composable(AppRoutes.Home) {
                     val viewModel: HomeViewModel = hiltViewModel()
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                    HomeScreen(
-                        uiState = uiState,
-                        onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                        onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                        onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
-                        onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
-                        onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
-                        onCalendarClick = { navController.navigate(AppRoutes.Calendar) },
-                        onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
-                        onNotificationsClick = {
-                            navController.navigate(AppRoutes.Notifications) {
-                                launchSingleTop = true
-                            }
-                        },
-                        onSettingsClick = {
-                            navController.navigate(AppRoutes.Settings) {
-                                launchSingleTop = true
-                            }
-                        },
-                        onDataClick = {
-                            navController.navigate(AppRoutes.DataSettings) {
-                                launchSingleTop = true
-                            }
-                        },
-                        onProfileClick = {
-                            navController.navigate(AppRoutes.Profile) {
-                                launchSingleTop = true
-                            }
-                        },
-                        onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                        onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                        onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
-                        onDrawerOpenChange = { open -> homeDrawerOpen = open }
-                    )
 
                     val updateViewModel: UpdateViewModel = hiltViewModel()
                     val updateState by updateViewModel.state.collectAsStateWithLifecycle()
@@ -242,6 +209,58 @@ fun MainNavGraph(
                         is UpdateState.ReadyToInstall -> current.info
                         else -> null
                     }
+
+                    val onNavigateToUpdates = {
+                        navController.navigate(AppRoutes.Settings) {
+                            launchSingleTop = true
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (updateInfo != null && updateState is UpdateState.Available) {
+                            UpdateAvailableBanner(
+                                versionName = updateInfo.versionName,
+                                onTap = onNavigateToUpdates
+                            )
+                        }
+
+                        HomeScreen(
+                            uiState = uiState,
+                            onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
+                            onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                            onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
+                            onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
+                            onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
+                            onCalendarClick = { navController.navigate(AppRoutes.Calendar) },
+                            onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
+                            onNotificationsClick = {
+                                navController.navigate(AppRoutes.Notifications) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onSettingsClick = {
+                                navController.navigate(AppRoutes.Settings) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onDataClick = {
+                                navController.navigate(AppRoutes.DataSettings) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onProfileClick = {
+                                navController.navigate(AppRoutes.Profile) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                            onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
+                            onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
+                            onDrawerOpenChange = { open -> homeDrawerOpen = open },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
                     if (updateInfo != null) {
                         UpdateDetailSheet(
                             info = updateInfo,

@@ -39,16 +39,19 @@ class GitHubReleaseUpdateRepository(
     private val _state = MutableStateFlow<UpdateState>(UpdateState.Idle)
     override val state: StateFlow<UpdateState> = _state.asStateFlow()
 
+    private val notificationManager = UpdateNotificationManager(context)
     private var downloadId: Long = -1L
 
     override suspend fun checkForUpdates() {
         _state.value = UpdateState.Checking
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
-                _state.value = if (info != null && isNewerVersion(info.versionName, BuildConfig.VERSION_NAME)) {
-                    UpdateState.Available(info)
+                if (info != null && isNewerVersion(info.versionName, BuildConfig.VERSION_NAME)) {
+                    _state.value = UpdateState.Available(info)
+                    notificationManager.showUpdateAvailableNotification(info.versionName)
                 } else {
-                    UpdateState.UpToDate
+                    _state.value = UpdateState.UpToDate
+                    notificationManager.dismissNotification()
                 }
             }
             .onFailure { error ->

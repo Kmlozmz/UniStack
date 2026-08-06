@@ -157,6 +157,14 @@ android {
         }
     }
 
+    applicationVariants.configureEach {
+        outputs.configureEach {
+            if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                this.outputFileName = "UniStack-${versionName}-${buildType.name}.apk"
+            }
+        }
+    }
+
 }
 
 ksp {
@@ -169,6 +177,7 @@ dependencies {
 
     //noinspection GradleDependency
     implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.core:core:1.18.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
