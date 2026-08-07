@@ -275,7 +275,7 @@ private fun DrawerPanelHeader(
         Box(
             modifier = Modifier
                 .size(58.dp)
-                .clip(RoundedCornerShape(18.dp))
+                .clip(AppShapes.MediumCard)
                 .background(
                     SolidColor(UniStackColors.Primary)
                 ),
@@ -422,7 +422,7 @@ private fun DrawerIconTile(
     Box(
         modifier = Modifier
             .size(42.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(AppShapes.Small)
             .background(
                 SolidColor(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.18f))
             ),

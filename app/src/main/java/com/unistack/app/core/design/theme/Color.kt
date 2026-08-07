@@ -1,3 +1,6 @@
+// design-tokens-exempt: este archivo ES la definición del sistema de color.
+// Aquí viven las paletas base y la matemática de contraste y mezcla; el resto de la app
+// debe consumir estos tokens en lugar de declarar colores propios.
 package com.unistack.app.core.design.theme
 
 import androidx.compose.runtime.getValue
@@ -135,6 +138,15 @@ object UniStackColors {
     /** Contenido legible sobre [PrimaryLight]. */
     var OnPrimaryContainer by mutableStateOf(lightPalette.primaryDark)
         private set
+
+    /**
+     * Base para los velos de diálogos y hojas modales. Aplica la opacidad en el punto de
+     * uso: `UniStackColors.Scrim.copy(alpha = 0.62f)`.
+     *
+     * Es negro en ambos temas a propósito: un velo oscurece lo que hay detrás, y aclararlo
+     * en tema oscuro rompería la jerarquía de profundidad.
+     */
+    val Scrim: Color = Color.Black
 
     /**
      * Color de contenido legible sobre [background], eligiendo entre tinta clara y oscura

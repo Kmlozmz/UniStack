@@ -605,7 +605,7 @@ private fun WelcomeFeatureCard(
         Box(
             modifier = Modifier
                 .size(38.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .clip(AppShapes.Small)
                 .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
@@ -814,12 +814,12 @@ private fun SetupNameHero(name: String) {
                     translationY = badgeFloat.dp.toPx()
                     rotationZ = 12f + badgeTilt
                 }
-                .clip(RoundedCornerShape(16.dp))
+                .clip(AppShapes.SmallCard)
                 .background(cardColor)
                 .border(
                     width = 1.dp,
                     color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.32f),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = AppShapes.SmallCard
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -982,7 +982,7 @@ private fun SetupNameInput(
                         Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
                     }
                 },
-                shape = RoundedCornerShape(17.dp),
+                shape = AppShapes.SmallCard,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = UniStackColors.Primary,
                     unfocusedBorderColor = UniStackColors.Primary,
@@ -1005,7 +1005,7 @@ private fun SetupNameInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
-        shape = RoundedCornerShape(18.dp),
+        shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.76f else 0.9f),
         borderWidth = 1.dp,
@@ -1216,7 +1216,7 @@ private fun EducationLevelCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(15.dp)
+    val shape = AppShapes.SmallCard
     val cardColor = if (selected) {
         UniStackColors.PrimaryLight
     } else {
@@ -1509,7 +1509,7 @@ private fun AcademicProgramHelpCard(
     UniCard(
         modifier = modifier.fillMaxWidth(),
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant,
-        shape = RoundedCornerShape(15.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
@@ -1602,7 +1602,7 @@ private fun SetupCustomProgramField(
                     color = UniStackColors.TextSecondary.copy(alpha = 0.72f)
                 )
             },
-            shape = RoundedCornerShape(17.dp),
+            shape = AppShapes.SmallCard,
             colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = UniStackColors.Primary,
                 unfocusedBorderColor = UniStackColors.SoftOutline,
@@ -1870,7 +1870,7 @@ private fun ScaleTypeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(15.dp)
+    val shape = AppShapes.SmallCard
     UniCard(
         modifier = modifier
             .height(120.dp)
@@ -2005,7 +2005,7 @@ private fun ConfirmedScaleRangeRow(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.52f else 0.72f),
-        shape = RoundedCornerShape(13.dp),
+        shape = AppShapes.Small,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.9f),
         borderWidth = 1.dp,
@@ -2041,7 +2041,7 @@ private fun GradeGoalInputRow(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.SurfaceVariant,
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -2097,7 +2097,7 @@ private fun GradeValueField(
     value: String,
     onValueChange: (String) -> Unit
 ) {
-    val shape = RoundedCornerShape(11.dp)
+    val shape = AppShapes.Small
     Box(
         modifier = Modifier
             .width(92.dp)
@@ -2139,7 +2139,7 @@ private fun ScaleInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.SurfaceVariant,
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -2283,7 +2283,7 @@ private fun AcademicDistributionCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
-        shape = RoundedCornerShape(16.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
         borderWidth = 1.dp,
@@ -2353,12 +2353,12 @@ private fun EvaluationTypeSegmentedControl(
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(AppShapes.Small)
             .background(UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.62f else 0.82f))
             .border(
                 width = 1.dp,
                 color = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 0.9f),
-                shape = RoundedCornerShape(12.dp)
+                shape = AppShapes.Small
             )
             .padding(3.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -2384,7 +2384,7 @@ private fun EvaluationSegment(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(AppShapes.Small)
             .background(if (selected) UniStackColors.Primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -2426,7 +2426,7 @@ private fun PeriodCountDropdown(
     val density = LocalDensity.current
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "period-count-dropdown-arrow")
     var anchorWidth by remember { mutableIntStateOf(0) }
-    val shape = RoundedCornerShape(12.dp)
+    val shape = AppShapes.Small
     val countLabel = when {
         count <= 0 -> "Selecciona una cantidad"
         customCountSelected && count == 6 -> "Otro (personalizado)"
@@ -2480,7 +2480,7 @@ private fun PeriodCountDropdown(
         }
 
         MaterialTheme(
-            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(12.dp)),
+            shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.Small),
             colorScheme = MaterialTheme.colorScheme.copy(surface = UniStackColors.Card)
         ) {
             androidx.compose.material3.DropdownMenu(
@@ -2493,7 +2493,7 @@ private fun PeriodCountDropdown(
                     )
                     .background(
                         UniStackColors.SurfaceVariant,
-                        RoundedCornerShape(12.dp)
+                        AppShapes.Small
                     )
             ) {
                 options.forEach { option ->
@@ -2561,7 +2561,7 @@ private fun PeriodDistributionSection(
         UniCard(
             modifier = Modifier.fillMaxWidth(),
             color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.46f else 0.72f),
-            shape = RoundedCornerShape(12.dp),
+            shape = AppShapes.Small,
             tonalElevation = 0.dp,
             borderColor = Color.Transparent,
             borderWidth = 0.dp,
@@ -2682,7 +2682,7 @@ private fun PeriodSummaryCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = if (isValid) UniStackColors.GreenLight else UniStackColors.SurfaceVariant,
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.Small,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -3197,7 +3197,7 @@ private fun SetupModuleSelectionCard(
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = RoundedCornerShape(15.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = 0.9f),
         borderWidth = if (selected) 1.3.dp else 1.dp,
@@ -3238,7 +3238,7 @@ private fun SetupModuleSelectionCard(
 
 @Composable
 private fun SetupModuleCheckBox(selected: Boolean) {
-    val shape = RoundedCornerShape(10.dp)
+    val shape = AppShapes.Small
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -3267,7 +3267,7 @@ private fun SetupModulesInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.SurfaceVariant,
-        shape = RoundedCornerShape(15.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.78f),
         borderWidth = 1.dp,
@@ -3334,7 +3334,7 @@ private fun SummaryInfoCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.84f),
         borderWidth = 1.dp,
@@ -3505,7 +3505,7 @@ private fun SetupSummaryNoticeCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.PrimaryLight,
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -3630,7 +3630,7 @@ private fun FinishSemesterCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.86f),
         borderWidth = 1.dp,
@@ -3768,7 +3768,7 @@ private fun FinishRecommendedCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
-        shape = RoundedCornerShape(15.dp),
+        shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = UniStackColors.Primary.copy(alpha = 0.86f),
         borderWidth = 1.2.dp,
@@ -4520,7 +4520,7 @@ private fun SetupDropdownField(
     val density = LocalDensity.current
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "setup-dropdown-arrow")
     var anchorWidth by remember { mutableIntStateOf(0) }
-    val shape = RoundedCornerShape(17.dp)
+    val shape = AppShapes.SmallCard
     val displayValue = value.ifBlank { "Seleccionar" }
     val isPlaceholder = value.isBlank()
 
@@ -4595,7 +4595,7 @@ private fun SetupDropdownField(
             }
 
             MaterialTheme(
-                shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(17.dp)),
+                shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.SmallCard),
                 colorScheme = MaterialTheme.colorScheme.copy(surface = UniStackColors.Card)
             ) {
                 androidx.compose.material3.DropdownMenu(
@@ -4613,7 +4613,7 @@ private fun SetupDropdownField(
                         .heightIn(max = 300.dp)
                         .background(
                             UniStackColors.SurfaceVariant,
-                            RoundedCornerShape(17.dp)
+                            AppShapes.SmallCard
                         )
                 ) {
                     options.forEach { option ->
@@ -4652,7 +4652,7 @@ private fun SetupDropdownField(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                 .background(
                                     if (isSelected) UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.9f) else Color.Transparent,
-                                    RoundedCornerShape(13.dp)
+                                    AppShapes.Small
                                 ),
                             onClick = {
                                 onExpandedChange(false)
@@ -4675,7 +4675,7 @@ private fun DropdownIconBox(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(11.dp))
+            .clip(AppShapes.Small)
             .background(
                 UniStackColors.PrimaryLight.copy(
                     alpha = when {

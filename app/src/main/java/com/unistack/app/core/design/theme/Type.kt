@@ -25,29 +25,34 @@ val UniStackTypography = Typography().run {
     )
 }
 
+/**
+ * Tipografía de la app aplicando solo la familia elegida.
+ *
+ * El tamaño NO se escala aquí: la preferencia de "texto grande" se aplica sobre el
+ * `fontScale` de la densidad en [UniStackTheme], para que también alcance a los tamaños
+ * declarados sueltos en las pantallas. Escalar en ambos sitios lo aplicaría dos veces.
+ */
 fun appearanceTypography(
-    scale: Float,
     useSystemFont: Boolean
 ): Typography {
     val family = if (useSystemFont) FontFamily.Default else FontFamily.SansSerif
-    fun TextUnit.scaled() = this * scale
     return UniStackTypography.run {
         copy(
-            displayLarge = displayLarge.copy(fontFamily = family, fontSize = displayLarge.fontSize.scaled()),
-            displayMedium = displayMedium.copy(fontFamily = family, fontSize = displayMedium.fontSize.scaled()),
-            displaySmall = displaySmall.copy(fontFamily = family, fontSize = displaySmall.fontSize.scaled()),
-            headlineLarge = headlineLarge.copy(fontFamily = family, fontSize = headlineLarge.fontSize.scaled()),
-            headlineMedium = headlineMedium.copy(fontFamily = family, fontSize = headlineMedium.fontSize.scaled()),
-            headlineSmall = headlineSmall.copy(fontFamily = family, fontSize = headlineSmall.fontSize.scaled()),
-            titleLarge = titleLarge.copy(fontFamily = family, fontSize = titleLarge.fontSize.scaled()),
-            titleMedium = titleMedium.copy(fontFamily = family, fontSize = titleMedium.fontSize.scaled()),
-            titleSmall = titleSmall.copy(fontFamily = family, fontSize = titleSmall.fontSize.scaled()),
-            bodyLarge = bodyLarge.copy(fontFamily = family, fontSize = bodyLarge.fontSize.scaled()),
-            bodyMedium = bodyMedium.copy(fontFamily = family, fontSize = bodyMedium.fontSize.scaled()),
-            bodySmall = bodySmall.copy(fontFamily = family, fontSize = bodySmall.fontSize.scaled()),
-            labelLarge = labelLarge.copy(fontFamily = family, fontSize = labelLarge.fontSize.scaled()),
-            labelMedium = labelMedium.copy(fontFamily = family, fontSize = labelMedium.fontSize.scaled()),
-            labelSmall = labelSmall.copy(fontFamily = family, fontSize = labelSmall.fontSize.scaled())
+            displayLarge = displayLarge.copy(fontFamily = family),
+            displayMedium = displayMedium.copy(fontFamily = family),
+            displaySmall = displaySmall.copy(fontFamily = family),
+            headlineLarge = headlineLarge.copy(fontFamily = family),
+            headlineMedium = headlineMedium.copy(fontFamily = family),
+            headlineSmall = headlineSmall.copy(fontFamily = family),
+            titleLarge = titleLarge.copy(fontFamily = family),
+            titleMedium = titleMedium.copy(fontFamily = family),
+            titleSmall = titleSmall.copy(fontFamily = family),
+            bodyLarge = bodyLarge.copy(fontFamily = family),
+            bodyMedium = bodyMedium.copy(fontFamily = family),
+            bodySmall = bodySmall.copy(fontFamily = family),
+            labelLarge = labelLarge.copy(fontFamily = family),
+            labelMedium = labelMedium.copy(fontFamily = family),
+            labelSmall = labelSmall.copy(fontFamily = family)
         )
     }
 }

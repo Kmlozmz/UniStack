@@ -614,7 +614,7 @@ private fun TaskGradeResultSheet(
                             } else {
                                 MaterialTheme.colorScheme.surfaceVariant
                             },
-                            shape = RoundedCornerShape(10.dp)
+                            shape = AppShapes.Small
                         ) {
                             Text(
                                 period.name,
@@ -723,7 +723,7 @@ private fun TaskSearchBar(
             .fillMaxWidth()
             .height(56.dp),
         singleLine = true,
-        shape = RoundedCornerShape(20.dp),
+        shape = AppShapes.MediumCard,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(
             onSearch = { onSearchDone() },
@@ -935,7 +935,7 @@ private fun TaskFilterSummaryChip(
 
     Surface(
         modifier = Modifier.cleanClickable(onClick),
-        shape = RoundedCornerShape(18.dp),
+        shape = AppShapes.MediumCard,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
     ) {
@@ -998,7 +998,7 @@ private fun PendingGradesBanner(
     val count = tasks.size
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
     ) {
@@ -1287,7 +1287,7 @@ private fun TaskCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(40.dp),
-                                shape = RoundedCornerShape(12.dp),
+                                shape = AppShapes.Small,
                                 contentPadding = PaddingValues(horizontal = 14.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -1458,7 +1458,7 @@ private fun NewTaskFab(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = AppShapes.LargeCard,
         color = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1520,7 +1520,7 @@ private fun TasksFilterBottomSheet(
                 modifier = Modifier
                     .padding(top = 10.dp)
                     .size(width = 44.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(100.dp))
+                    .clip(AppShapes.Pill)
                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
             )
         }
@@ -1654,7 +1654,7 @@ private fun StatusFilterOption(
 ) {
     Surface(
         modifier = modifier.cleanClickable(onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = AppShapes.SmallCard,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
         border = BorderStroke(
             width = 0.8.dp,
@@ -1702,7 +1702,7 @@ private fun SubjectDropdownSelector(
                 modifier = Modifier
                     .fillMaxWidth()
                     .cleanClickable { expanded = !expanded },
-                shape = RoundedCornerShape(16.dp),
+                shape = AppShapes.SmallCard,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f))
             ) {
@@ -1741,7 +1741,7 @@ private fun SubjectDropdownSelector(
             if (expanded) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = AppShapes.SmallCard,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
                     border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
                     tonalElevation = 0.dp,
@@ -1829,7 +1829,7 @@ private fun PrioritySegmentedControl(
         modifier = Modifier
             .fillMaxWidth()
             .height(46.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = AppShapes.SmallCard,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f))
     ) {
@@ -1841,7 +1841,7 @@ private fun PrioritySegmentedControl(
                         .weight(1f)
                         .fillMaxHeight()
                         .padding(3.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(AppShapes.Small)
                         .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.88f) else Color.Transparent)
                         .cleanClickable { onPrioritySelected(priority) },
                     contentAlignment = Alignment.Center
@@ -1913,7 +1913,7 @@ private fun FiltersSheetFooter(onDismiss: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = AppShapes.MediumCard,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = UniStackColors.OnPrimary

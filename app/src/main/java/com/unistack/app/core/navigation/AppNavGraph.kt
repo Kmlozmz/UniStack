@@ -1,5 +1,7 @@
 package com.unistack.app.core.navigation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -906,7 +908,7 @@ private fun UniStackBottomBarContent(
             .fillMaxWidth()
             .height((if (showLabels) 78.dp else 66.dp) + navigationBarBottom),
         shape = if (floating) {
-            RoundedCornerShape(24.dp)
+            AppShapes.LargeCard
         } else {
             RoundedCornerShape(
                 topStart = 24.dp,
@@ -997,7 +999,7 @@ private fun UniStackBottomBarItem(
             modifier = Modifier
                 .height(30.dp)
                 .width(42.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(AppShapes.SmallCard)
                 .background(
                     if (selected) {
                         MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f)

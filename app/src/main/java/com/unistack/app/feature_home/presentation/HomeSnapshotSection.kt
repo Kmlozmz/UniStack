@@ -1,5 +1,7 @@
 package com.unistack.app.feature_home.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +79,7 @@ internal fun SemesterSnapshot(
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(17.dp),
+            shape = AppShapes.SmallCard,
             color = HomeCard,
             border = BorderStroke(1.dp, HomeBorder)
         ) {
@@ -146,7 +148,7 @@ private fun SnapshotMetric(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(AppShapes.SmallCard)
             .background(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.08f else 0.07f))
             .cleanClickable(onClick)
             .padding(horizontal = if (compact) 11.dp else 12.dp, vertical = if (compact) 10.dp else 12.dp),

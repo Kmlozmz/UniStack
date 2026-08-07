@@ -1,5 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -92,7 +94,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import java.util.Locale
 import kotlin.math.round
 
-private val LargeCardShape = RoundedCornerShape(16.dp)
+private val LargeCardShape = AppShapes.SmallCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -288,7 +290,7 @@ fun SubjectDetailScreen(
                                 modifier = Modifier.bounceClick {
                                     viewModel.setActivePeriod(subject.id, period.id)
                                 },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = AppShapes.Small,
                                 color = if (selected) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
@@ -350,7 +352,7 @@ fun SubjectDetailScreen(
         ) {
             Button(
                 onClick = { onAddGradeClick(subject.id, subject.activePeriodId) },
-                shape = RoundedCornerShape(24.dp),
+                shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UniStackColors.Primary,
                     contentColor = UniStackColors.OnPrimary
@@ -780,7 +782,7 @@ private fun SubjectMetricsBand(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -1008,7 +1010,7 @@ private fun PeriodCard(
                         Box(
                             modifier = Modifier
                                 .size(38.dp)
-                                .background(accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                                .background(accent.copy(alpha = 0.15f), AppShapes.Small),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -1171,7 +1173,7 @@ private fun PeriodDetailPanel(
 
             Button(
                 onClick = onAddGradeClick,
-                shape = RoundedCornerShape(12.dp),
+                shape = AppShapes.Small,
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.92f),
                     contentColor = UniStackColors.Primary
@@ -1189,7 +1191,7 @@ private fun PeriodDetailPanel(
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
                 color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.13f else 0.08f),
-                shape = RoundedCornerShape(12.dp),
+                shape = AppShapes.Small,
                 tonalElevation = 0.dp,
                 borderColor = UniStackColors.Primary.copy(alpha = 0.12f),
                 borderWidth = 1.dp,
@@ -1353,7 +1355,7 @@ private fun GradeRowItem(
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .background(grade.type.colorLocal().copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                .background(grade.type.colorLocal().copy(alpha = 0.15f), AppShapes.Small),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1535,7 +1537,7 @@ private fun EmptyPeriodNotesInline() {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(UniStackColors.Primary.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                .background(UniStackColors.Primary.copy(alpha = 0.12f), AppShapes.Small),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1606,7 +1608,7 @@ private fun EmptyPeriodNotesCard() {
 private fun StatusBadge(status: PeriodStatus) {
     Box(
         modifier = Modifier
-            .background(status.color.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+            .background(status.color.copy(alpha = 0.12f), AppShapes.Small)
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(
@@ -1622,7 +1624,7 @@ private fun StatusBadge(status: PeriodStatus) {
 private fun CustomStatusBadge(label: String, color: Color) {
     Box(
         modifier = Modifier
-            .background(color.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.12f), AppShapes.Small)
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(

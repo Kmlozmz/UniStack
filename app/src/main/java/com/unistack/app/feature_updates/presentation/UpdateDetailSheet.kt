@@ -1,5 +1,7 @@
 package com.unistack.app.feature_updates.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -98,7 +100,7 @@ fun UpdateDetailSheet(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(13.dp)
+                    shape = AppShapes.Small
                 ) {
                     Text("Más tarde")
                 }
@@ -106,7 +108,7 @@ fun UpdateDetailSheet(
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
                     enabled = state !is UpdateState.Downloading,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = RoundedCornerShape(13.dp),
+                    shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = UniStackColors.Primary,
                         contentColor = UniStackColors.OnPrimary

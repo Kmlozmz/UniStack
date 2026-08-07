@@ -1039,7 +1039,7 @@ private fun MonthCalendarDialog(
             }
         },
         containerColor = UniStackDatePickerColors.Surface,
-        shape = RoundedCornerShape(18.dp)
+        shape = AppShapes.MediumCard
     )
 }
 
@@ -1336,7 +1336,7 @@ private fun CalendarMonthGrid(
                                     enabled -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
-                                shape = RoundedCornerShape(10.dp)
+                                shape = AppShapes.Small
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1393,7 +1393,7 @@ private fun SubjectDropdown(
             },
             containerColor = SubjectSheetSurface,
             contentColor = UniStackColors.OnPrimary,
-            scrimColor = Color.Black.copy(alpha = 0.62f),
+            scrimColor = UniStackColors.Scrim.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
             contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
             dragHandle = {
@@ -1403,7 +1403,7 @@ private fun SubjectDropdown(
                         .size(width = 42.dp, height = 4.dp)
                         .background(
                             UniStackColors.OnPrimary.copy(alpha = 0.20f),
-                            RoundedCornerShape(100.dp)
+                            AppShapes.Pill
                         )
                 )
             }
@@ -1516,7 +1516,7 @@ private fun PeriodDropdown(
             onDismissRequest = { showSheet = false },
             containerColor = SubjectSheetSurface,
             contentColor = UniStackColors.OnPrimary,
-            scrimColor = Color.Black.copy(alpha = 0.62f),
+            scrimColor = UniStackColors.Scrim.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(
@@ -1562,11 +1562,11 @@ private fun SubjectSearchField(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .background(SubjectSheetField, RoundedCornerShape(18.dp))
+            .background(SubjectSheetField, AppShapes.MediumCard)
             .border(
                 width = 0.5.dp,
                 color = UniStackColors.OnPrimary.copy(alpha = 0.07f),
-                shape = RoundedCornerShape(18.dp)
+                shape = AppShapes.MediumCard
             )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1612,7 +1612,7 @@ private fun SubjectSheetOption(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = AppShapes.MediumCard
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1639,7 +1639,7 @@ private fun SubjectSheetOption(
                 .size(48.dp)
                 .background(
                     color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = AppShapes.SmallCard
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -1680,12 +1680,12 @@ private fun SubjectSheetOption(
                 .size(28.dp)
                 .background(
                     color = if (selected) SubjectSheetAccent.copy(alpha = 0.18f) else Color.Transparent,
-                    shape = RoundedCornerShape(999.dp)
+                    shape = AppShapes.Pill
                 )
                 .border(
                     width = 1.dp,
                     color = if (selected) SubjectSheetAccent else SubjectSheetMuted.copy(alpha = 0.36f),
-                    shape = RoundedCornerShape(999.dp)
+                    shape = AppShapes.Pill
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -1703,7 +1703,7 @@ private fun SubjectSheetOption(
 
 @Composable
 private fun CreateSubjectSheetAction(onClick: () -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = AppShapes.MediumCard
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1721,7 +1721,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(SubjectSheetAccent, RoundedCornerShape(16.dp)),
+                .background(SubjectSheetAccent, AppShapes.SmallCard),
             contentAlignment = Alignment.Center
         ) {
             Icon(

@@ -1013,7 +1013,7 @@ private fun ExpenseCategorySheetOption(
         modifier = modifier
             .height(50.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         color = if (selected) accent.copy(alpha = 0.12f) else ExpenseCardHigh,
         border = BorderStroke(
             width = 1.dp,
@@ -1147,7 +1147,7 @@ private fun RegisterExpenseButton(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = AppShapes.LargeCard,
         color = ExpenseCoral,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1263,7 +1263,7 @@ private fun ExpenseBudgetSheet(
                     )
                 },
                 enabled = isValid,
-                shape = RoundedCornerShape(16.dp),
+                shape = AppShapes.SmallCard,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExpenseCoral,
                     contentColor = UniStackColors.contentColorOn(ExpenseCoral),
@@ -1290,7 +1290,7 @@ private fun BudgetInputField(
 ) {
     Surface(
         modifier = modifier.height(72.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = AppShapes.SmallCard,
         color = ExpenseCardHigh,
         border = BorderStroke(1.dp, ExpenseDivider),
         tonalElevation = 0.dp,

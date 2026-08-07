@@ -1,5 +1,7 @@
 package com.unistack.app.feature_home.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -142,7 +144,7 @@ internal fun PriorityHero(
             .fillMaxWidth()
             .height(heroHeight)
             .cleanClickable(onDetailsClick),
-        shape = RoundedCornerShape(19.dp),
+        shape = AppShapes.MediumCard,
         color = Color.Transparent,
         border = BorderStroke(1.dp, HomeHeroStroke),
         shadowElevation = 0.dp
@@ -244,7 +246,7 @@ internal fun PriorityHero(
                         modifier = Modifier
                             .width(if (compact) 128.dp else 138.dp)
                             .height(if (compact) 32.dp else 34.dp)
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(AppShapes.MediumCard)
                             .background(UniStackColors.Primary)
                             .cleanClickable(onOpenClick)
                             .padding(horizontal = 13.dp),
@@ -255,12 +257,12 @@ internal fun PriorityHero(
                                 actionLabel,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color.White,
+                                color = UniStackColors.OnPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f)
                             )
-                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = UniStackColors.OnPrimary, modifier = Modifier.size(15.dp))
                         }
                     }
                 }
@@ -295,7 +297,7 @@ internal fun PriorityContextSheet(
         onDismissRequest = onDismiss,
         containerColor = HomePrioritySheetSurface,
         contentColor = HomePrioritySheetText,
-        scrimColor = Color.Black.copy(alpha = 0.64f),
+        scrimColor = UniStackColors.Scrim.copy(alpha = 0.64f),
         shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
@@ -303,7 +305,7 @@ internal fun PriorityContextSheet(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 4.dp)
                     .size(width = 42.dp, height = 4.dp)
-                    .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(100.dp))
+                    .background(UniStackColors.OnPrimary.copy(alpha = 0.18f), AppShapes.Pill)
             )
         }
     ) {
@@ -358,11 +360,11 @@ internal fun PriorityContextSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(HomePrioritySheetSuggestion, RoundedCornerShape(18.dp))
+                    .background(HomePrioritySheetSuggestion, AppShapes.MediumCard)
                     .border(
                         width = 0.7.dp,
                         color = HomePrioritySheetCardBorder,
-                        shape = RoundedCornerShape(18.dp)
+                        shape = AppShapes.MediumCard
                     )
                     .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -397,7 +399,7 @@ internal fun PriorityContextSheet(
             ) {
                 Button(
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(13.dp),
+                    shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = HomePrioritySheetSecondaryButton,
                         contentColor = HomePrioritySheetText
@@ -410,10 +412,10 @@ internal fun PriorityContextSheet(
                 }
                 Button(
                     onClick = onActionClick,
-                    shape = RoundedCornerShape(13.dp),
+                    shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = HomePurple,
-                        contentColor = Color.White
+                        contentColor = UniStackColors.OnPrimary
                     ),
                     modifier = Modifier
                         .weight(1f)
@@ -555,6 +557,7 @@ internal fun DrawScope.drawSoftSparkle(
         close()
     }
     drawPath(sparkle, color.copy(alpha = alpha))
+    // design-tokens-ok: núcleo del destello, es luz blanca por definición
     drawCircle(color = Color.White.copy(alpha = alpha * 0.18f), radius = radius * 0.16f, center = center)
 }
 

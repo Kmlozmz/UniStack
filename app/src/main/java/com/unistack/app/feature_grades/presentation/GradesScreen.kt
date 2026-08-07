@@ -46,6 +46,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.CategoricalSubjectAccents
+import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
@@ -318,7 +320,7 @@ private fun SubjectProgressMetric(progressVisual: SubjectProgressVisual) {
 private fun SubjectStatusPill(text: String, color: Color) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
+            .clip(AppShapes.Pill)
             .background(color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.16f else 0.12f))
             .padding(horizontal = 9.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center
@@ -343,7 +345,7 @@ private fun SubjectProgressBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(5.dp)
-            .clip(RoundedCornerShape(999.dp))
+            .clip(AppShapes.Pill)
             .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
     ) {
         Box(
@@ -426,7 +428,7 @@ private fun AddSubjectButton(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = AppShapes.LargeCard,
         color = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -470,12 +472,12 @@ fun subjectAccent(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.PURPLE -> UniStackColors.Primary
     SubjectVisualType.GREEN -> UniStackColors.Green
     SubjectVisualType.YELLOW -> UniStackColors.Yellow
-    SubjectVisualType.ROSE -> Color(0xFFE84A8A)
-    SubjectVisualType.INDIGO -> Color(0xFF4D5BD7)
-    SubjectVisualType.ORANGE -> Color(0xFFF57C00)
-    SubjectVisualType.CYAN -> Color(0xFF00A6D6)
-    SubjectVisualType.LIME -> Color(0xFF7CB342)
-    SubjectVisualType.SLATE -> Color(0xFF607D8B)
+    SubjectVisualType.ROSE -> CategoricalSubjectAccents.Rose
+    SubjectVisualType.INDIGO -> CategoricalSubjectAccents.Indigo
+    SubjectVisualType.ORANGE -> CategoricalSubjectAccents.Orange
+    SubjectVisualType.CYAN -> CategoricalSubjectAccents.Cyan
+    SubjectVisualType.LIME -> CategoricalSubjectAccents.Lime
+    SubjectVisualType.SLATE -> CategoricalSubjectAccents.Slate
 }
 
 fun subjectAccent(subject: Subject): Color {
@@ -489,12 +491,12 @@ fun subjectBackground(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.PURPLE -> UniStackColors.PrimaryLight
     SubjectVisualType.GREEN -> UniStackColors.GreenLight
     SubjectVisualType.YELLOW -> UniStackColors.YellowLight
-    SubjectVisualType.ROSE -> if (UniStackColors.IsDarkTheme) Color(0xFF3B1F2D) else Color(0xFFFFE4EF)
-    SubjectVisualType.INDIGO -> if (UniStackColors.IsDarkTheme) Color(0xFF20274A) else Color(0xFFE5E8FF)
-    SubjectVisualType.ORANGE -> if (UniStackColors.IsDarkTheme) Color(0xFF3D2817) else Color(0xFFFFE8D3)
-    SubjectVisualType.CYAN -> if (UniStackColors.IsDarkTheme) Color(0xFF123444) else Color(0xFFDDF7FF)
-    SubjectVisualType.LIME -> if (UniStackColors.IsDarkTheme) Color(0xFF243719) else Color(0xFFEAF7D7)
-    SubjectVisualType.SLATE -> if (UniStackColors.IsDarkTheme) Color(0xFF25313A) else Color(0xFFE8EEF2)
+    SubjectVisualType.ROSE -> CategoricalSubjectBackgrounds.rose(UniStackColors.IsDarkTheme)
+    SubjectVisualType.INDIGO -> CategoricalSubjectBackgrounds.indigo(UniStackColors.IsDarkTheme)
+    SubjectVisualType.ORANGE -> CategoricalSubjectBackgrounds.orange(UniStackColors.IsDarkTheme)
+    SubjectVisualType.CYAN -> CategoricalSubjectBackgrounds.cyan(UniStackColors.IsDarkTheme)
+    SubjectVisualType.LIME -> CategoricalSubjectBackgrounds.lime(UniStackColors.IsDarkTheme)
+    SubjectVisualType.SLATE -> CategoricalSubjectBackgrounds.slate(UniStackColors.IsDarkTheme)
 }
 
 @Composable

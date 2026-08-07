@@ -9,6 +9,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AppearancePreferences
@@ -41,15 +43,25 @@ fun UniStackTheme(
         extraLarge = RoundedCornerShape(radius + 10.dp)
     )
     val typography = appearanceTypography(
-        scale = if (accessibility.textScale == TextScalePreference.LARGE) 1.10f else 1f,
         useSystemFont = appearance.typographyStyle == TypographyStyle.SYSTEM
     )
+
+    // La preferencia de "texto grande" se aplica sobre el fontScale de la densidad, no
+    // sobre los estilos de tipografía. Así la respetan TODAS las medidas en sp de la app,
+    // incluidas las que se declaran sueltas en las pantallas; escalando solo la Typography,
+    // cualquier `fontSize = 13.sp` se saltaba el ajuste.
+    val density = LocalDensity.current
+    val textScale = if (accessibility.textScale == TextScalePreference.LARGE) 1.10f else 1f
 
     CompositionLocalProvider(
         LocalAppearancePreferences provides appearance,
         LocalAccessibilityPreferences provides accessibility,
         LocalMotionDurationScale provides accessibility.motionScale(),
-        LocalInterfaceSpacing provides appearance.interfaceSpacing()
+        LocalInterfaceSpacing provides appearance.interfaceSpacing(),
+        LocalDensity provides Density(
+            density = density.density,
+            fontScale = density.fontScale * textScale
+        )
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) darkUniStackColorScheme() else lightUniStackColorScheme(),

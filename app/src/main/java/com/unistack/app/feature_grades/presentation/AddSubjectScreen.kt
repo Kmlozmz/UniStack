@@ -74,7 +74,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -679,7 +681,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text(
                             selected.toHexString(),
-                            color = if (hsv[2] > 0.55f) Color.Black else Color.White,
+                            color = UniStackColors.contentColorOn(selected),
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
@@ -754,7 +756,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text(
                             "Aplicar",
-                            color = if (hsv[2] > 0.55f) Color.Black else Color.White
+                            color = UniStackColors.contentColorOn(selected)
                         )
                     }
                 }
@@ -774,7 +776,7 @@ private fun SaturationValuePicker(
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(AppShapes.SmallCard)
             .pointerInput(hue) {
                 fun update(offset: Offset) {
                     onSelected(
@@ -800,6 +802,9 @@ private fun SaturationValuePicker(
                 }
             }
     ) {
+        // design-tokens-ok-begin: lienzo saturación/valor del selector HSV. El blanco y el
+        // negro son los ejes del espacio de color, no decisiones de marca; el cursor va en
+        // blanco con contorno oscuro para verse sobre cualquier punto del lienzo.
         drawRect(
             Brush.horizontalGradient(
                 listOf(Color.White, Color.hsv(hue, 1f, 1f))
@@ -809,6 +814,7 @@ private fun SaturationValuePicker(
         val center = Offset(saturation * size.width, (1f - value) * size.height)
         drawCircle(Color.White, radius = 7.dp.toPx(), center = center, style = Stroke(2.dp.toPx()))
         drawCircle(Color.Black.copy(alpha = 0.45f), radius = 9.dp.toPx(), center = center, style = Stroke(1.dp.toPx()))
+        // design-tokens-ok-end
     }
 }
 
@@ -828,21 +834,12 @@ private fun SaveSubjectButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Button(
+    UniStackButton(
+        text = text,
         onClick = onClick,
         enabled = enabled,
-        shape = AppShapes.Pill,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
-            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
-        ),
-        contentPadding = PaddingValues(vertical = 0.dp),
-        modifier = modifier.height(56.dp)
-    ) {
-        Text(text, fontWeight = FontWeight.ExtraBold)
-    }
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -877,37 +874,11 @@ private fun ColorSwatch(
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White)
+            Icon(Icons.Rounded.Check, contentDescription = null, tint = UniStackColors.contentColorOn(color))
         }
     }
 }
 
-private val SubjectColorPalette = listOf(
-    Color(0xFF10B8AC),
-    Color(0xFF58A6FF),
-    Color(0xFFFF6B7A),
-    Color(0xFF8B5CF6),
-    Color(0xFF22C55E),
-    Color(0xFFF5C542),
-    Color(0xFFE84A8A),
-    Color(0xFF6366F1),
-    Color(0xFFFF9F43),
-    Color(0xFF06B6D4),
-    Color(0xFF84CC16),
-    Color(0xFF94A3B8),
-    Color(0xFFFF4D4D),
-    Color(0xFFFF7A1A),
-    Color(0xFF00D084),
-    Color(0xFF14B8A6),
-    Color(0xFF2DD4BF),
-    Color(0xFF38BDF8),
-    Color(0xFF3B82F6),
-    Color(0xFF7C3AED),
-    Color(0xFFA855F7),
-    Color(0xFFD946EF),
-    Color(0xFFF472B6),
-    Color(0xFF64748B)
-)
 
 private fun Color.accessibilityLabel(): String = "#${toArgb().toUInt().toString(16).takeLast(6)}"
 

@@ -1,5 +1,7 @@
 package com.unistack.app.core.design.components
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -172,7 +174,7 @@ fun UniStackFabMenu(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = scrimAlpha))
+                    .background(UniStackColors.Scrim.copy(alpha = scrimAlpha))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -252,7 +254,7 @@ private fun FabMenuOption(
         Surface(
             onClick = onSelected,
             modifier = modifier.semantics { contentDescription = item.contentDescription },
-            shape = RoundedCornerShape(18.dp),
+            shape = AppShapes.MediumCard,
             color = if (UniStackColors.IsDarkTheme) {
                 UniStackColors.Card
             } else {
@@ -309,7 +311,7 @@ private fun FabMenuButton(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier.size(56.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = AppShapes.MediumCard,
         containerColor = UniStackColors.Primary,
         contentColor = UniStackColors.OnPrimary
     ) {

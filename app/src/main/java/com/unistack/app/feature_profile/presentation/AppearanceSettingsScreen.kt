@@ -1,5 +1,7 @@
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -546,7 +548,7 @@ private fun HomeSectionOrderEditor(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(AppShapes.Small)
                     .background(UniStackColors.SurfaceVariant.copy(alpha = 0.58f))
                     .padding(start = 12.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -798,7 +800,7 @@ private fun AppearanceSection(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(AppShapes.Small)
                         .background(UniStackColors.Primary.copy(alpha = 0.13f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -836,7 +838,7 @@ private fun <T> ChoiceGrid(
                     Surface(
                         onClick = { onSelected(entry) },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = AppShapes.Small,
                         color = if (isSelected) {
                             UniStackColors.Primary.copy(alpha = 0.14f)
                         } else {
@@ -871,12 +873,15 @@ private fun BackgroundChoices(
     onSelected: (BackgroundStyle) -> Unit,
     onCustomColor: (Int) -> Unit
 ) {
+    // design-tokens-ok-begin: muestras del selector; enseñan el color literal que se va a
+    // aplicar, así que no pueden derivar del tema actual sin dejar de representar la opción.
     val choices = listOf(
         BackgroundStyle.DEFAULT to UniStackColors.Background,
         BackgroundStyle.PURE to if (UniStackColors.IsDarkTheme) Color.Black else Color.White,
         BackgroundStyle.COOL to if (UniStackColors.IsDarkTheme) Color(0xFF050A13) else Color(0xFFF5F7FC),
         BackgroundStyle.VIOLET to if (UniStackColors.IsDarkTheme) Color(0xFF0D0818) else Color(0xFFFAF7FF)
     )
+    // design-tokens-ok-end
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(choices) { (style, color) ->
             ColorChoice(
@@ -906,11 +911,13 @@ private fun AccentChoices(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             add(AccentStyle.DYNAMIC to UniStackColors.Primary)
         }
+        // design-tokens-ok-begin: muestras de acento; cada una debe verse con su color real
         add(AccentStyle.VIOLET to Color(0xFF6750F5))
         add(AccentStyle.BLUE to Color(0xFF1E7BEA))
         add(AccentStyle.TEAL to Color(0xFF00AFA5))
         add(AccentStyle.GREEN to Color(0xFF3DBB68))
         add(AccentStyle.PINK to Color(0xFFD83D87))
+        // design-tokens-ok-end
     }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(choices) { (style, color) ->
@@ -939,7 +946,7 @@ private fun ColorChoice(
     Column(
         modifier = Modifier
             .width(66.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(AppShapes.SmallCard)
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -952,6 +959,7 @@ private fun ColorChoice(
                 .background(color)
                 .then(
                     if (selected) {
+                        // design-tokens-ok: velo de selección sobre la muestra de color
                         Modifier.background(Color.Black.copy(alpha = 0.08f))
                     } else {
                         Modifier
@@ -963,7 +971,7 @@ private fun ColorChoice(
                 Icon(
                     Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = if (color.luminanceValue() > 0.55f) Color.Black else Color.White
+                    tint = UniStackColors.contentColorOn(color)
                 )
             }
         }
@@ -999,7 +1007,7 @@ private fun HexColorField(
             )
         },
         singleLine = true,
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.Small,
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -1014,7 +1022,7 @@ private fun PreferenceSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(AppShapes.SmallCard)
             .clickable { onCheckedChange(!checked) }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1071,7 +1079,7 @@ private fun SettingsDestination(
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(AppShapes.Small)
                     .background(UniStackColors.Primary.copy(alpha = 0.13f)),
                 contentAlignment = Alignment.Center
             ) {

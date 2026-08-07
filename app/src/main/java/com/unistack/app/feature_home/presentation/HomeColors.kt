@@ -112,7 +112,7 @@ internal val HomeStroke: Color
 internal val HomeHeroLight: Color
     @Composable get() = UniStackColors.OnPrimary
 
-/** Las sombras sí son negras por física, no por marca. */
+/** design-tokens-ok: las sombras son negras por física, no por marca. */
 internal val HomeShadow = Color.Black
 
 internal val HomeHeroLightModeStart: Color

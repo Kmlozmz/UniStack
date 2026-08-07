@@ -1,5 +1,7 @@
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -65,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.UniStackTheme
@@ -96,8 +99,8 @@ private val ExpenseFormOptionText: Color
     @Composable get() = UniStackColors.TextSecondary
 private val ExpenseFormDisabled: Color
     @Composable get() = UniStackColors.SurfaceVariant
-private val ExpenseFormShape = RoundedCornerShape(18.dp)
-private val ExpenseFieldShape = RoundedCornerShape(14.dp)
+private val ExpenseFormShape = AppShapes.MediumCard
+private val ExpenseFieldShape = AppShapes.SmallCard
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
 
 @Composable
@@ -575,27 +578,13 @@ private fun SaveExpenseButton(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val container = if (enabled) ExpenseFormCoral else ExpenseFormDisabled
-    val content = if (enabled) UniStackColors.contentColorOn(container) else ExpenseFormMuted
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .then(if (enabled) Modifier.cleanClickable(onClick) else Modifier),
-        shape = RoundedCornerShape(16.dp),
-        color = container,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                text = text,
-                color = content,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
+    UniStackButton(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        height = 52.dp,
+        containerColor = ExpenseFormCoral
+    )
 }
 
 @Composable
@@ -769,7 +758,7 @@ private fun ExpenseCalendarMonthGrid(
                                     date != null -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
-                                shape = RoundedCornerShape(10.dp)
+                                shape = AppShapes.Small
                             ),
                         contentAlignment = Alignment.Center
                     ) {

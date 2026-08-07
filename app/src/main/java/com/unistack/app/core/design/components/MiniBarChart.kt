@@ -1,5 +1,7 @@
 package com.unistack.app.core.design.components
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +56,7 @@ fun MiniBarChart(
                         modifier = Modifier
                             .width(9.dp)
                             .height(barHeight)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(AppShapes.Small)
                             .background(
                                 SolidColor(UniStackColors.Primary)
                             )

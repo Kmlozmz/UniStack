@@ -1,5 +1,7 @@
 package com.unistack.app.feature_updates.presentation
 
+import com.unistack.app.core.design.theme.AppShapes
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +25,6 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Refresh
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniStackLoadingIndicator
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_updates.domain.UpdateState
@@ -207,9 +209,8 @@ private fun UpdateCheckCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (isChecking) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
+                    UniStackLoadingIndicator(
+                        size = 20.dp,
                         color = UniStackColors.Primary
                     )
                 } else {
@@ -245,7 +246,7 @@ private fun UpdateIconTile(
     Box(
         modifier = Modifier
             .size(42.dp)
-            .background(accent.copy(alpha = 0.13f), RoundedCornerShape(12.dp)),
+            .background(accent.copy(alpha = 0.13f), AppShapes.Small),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = null, tint = accent)

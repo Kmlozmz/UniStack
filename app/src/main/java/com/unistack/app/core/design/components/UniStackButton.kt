@@ -70,7 +70,13 @@ fun UniStackButton(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
     trailingIcon: ImageVector? = null,
-    height: Dp = 56.dp
+    height: Dp = 56.dp,
+    /**
+     * Color de relleno propio, para secciones con identidad cromática (por ejemplo el coral
+     * de Gastos). El contenido se calcula sobre él, así que sigue siendo legible.
+     * Si es null se usa el color que corresponda a [variant].
+     */
+    containerColor: Color? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
@@ -91,12 +97,14 @@ fun UniStackButton(
 
     val containerTarget = when {
         !enabled -> UniStackColors.SurfaceVariant
+        containerColor != null -> containerColor
         variant == UniStackButtonVariant.Filled -> UniStackColors.Primary
         variant == UniStackButtonVariant.Tonal -> UniStackColors.PrimaryLight
         else -> Color.Transparent
     }
     val contentTarget = when {
         !enabled -> UniStackColors.TextSecondary
+        containerColor != null -> UniStackColors.contentColorOn(containerColor)
         variant == UniStackButtonVariant.Filled -> UniStackColors.OnPrimary
         variant == UniStackButtonVariant.Tonal -> UniStackColors.OnPrimaryContainer
         else -> UniStackColors.Primary

@@ -295,7 +295,7 @@ private fun NotificationInboxSummary(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.Small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -367,7 +367,7 @@ private fun NotificationFilterBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(AppShapes.SmallCard)
             .background(NotificationFilterSurface.copy(alpha = 0.72f))
             .horizontalScroll(rememberScrollState())
             .padding(5.dp),
@@ -406,7 +406,7 @@ private fun NotificationHistoryCard(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.Small,
         color = NotificationCard,
         border = BorderStroke(
             1.dp,
@@ -418,7 +418,7 @@ private fun NotificationHistoryCard(
                 Box(
                     modifier = Modifier
                         .size(46.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(AppShapes.Small)
                         .background(category.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -582,7 +582,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = AppShapes.Small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -596,7 +596,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
                 Box(
                     modifier = Modifier
                         .size(58.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(AppShapes.SmallCard)
                         .background(category.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -642,7 +642,7 @@ private fun NotificationDetailMessage(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = AppShapes.Small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -688,7 +688,7 @@ private fun NotificationMetaCard(item: NotificationHistoryItem) {
     val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = AppShapes.Small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -758,7 +758,7 @@ private fun NotificationHintCard(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
+        shape = AppShapes.Small,
         color = category.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.12f else 0.09f),
         border = BorderStroke(1.dp, category.color.copy(alpha = 0.18f))
     ) {

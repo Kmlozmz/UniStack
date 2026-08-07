@@ -236,6 +236,79 @@ dependencies {
 
 
 
+/**
+ * Impide que vuelvan a colarse colores fijos en la capa de UI.
+ *
+ * El lenguaje de diseño se define en `core/design/theme`; cualquier otro sitio debe usar
+ * los tokens de `UniStackColors`. Sin esta verificación la limpieza se deshace sola: basta
+ * con que alguien pegue un `Color(0xFF...)` en una pantalla.
+ *
+ * Dos vías de exención, ambas explícitas y auto-documentadas:
+ *  - Archivo entero: poner `design-tokens-exempt: <motivo>` en las primeras líneas.
+ *    Reservado a definiciones de paleta y a paletas categóricas (colores que el usuario
+ *    elige, no tokens de marca).
+ *  - Línea suelta: comentario `design-tokens-ok: <motivo>` en la línea o en la anterior.
+ *  - Bloque: `design-tokens-ok-begin: <motivo>` ... `design-tokens-ok-end`, para literales
+ *    que ocupan varias líneas (listas de muestras de color, lienzos de selector).
+ */
+val verifyDesignTokens = tasks.register("verifyDesignTokens") {
+    group = "verification"
+    description = "Falla si hay colores hardcodeados fuera del sistema de diseño."
+
+    val sourceRoot = file("src/main/java")
+    inputs.dir(sourceRoot)
+    // Sin salidas reales; marcamos un archivo sello para que Gradle pueda cachear la tarea.
+    val stamp = layout.buildDirectory.file("reports/design-tokens/ok.txt")
+    outputs.file(stamp)
+
+    doLast {
+        val hexColor = Regex("""Color\(0x[0-9A-Fa-f]{8}\)""")
+        val namedColor = Regex("""Color\.(White|Black)\b""")
+        val violations = mutableListOf<String>()
+
+        sourceRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" }
+            .forEach { source ->
+                val lines = source.readLines()
+                val fileExempt = lines.take(20).any { "design-tokens-exempt:" in it }
+                if (fileExempt) return@forEach
+
+                var insideExemptBlock = false
+                lines.forEachIndexed { index, line ->
+                    if ("design-tokens-ok-begin:" in line) insideExemptBlock = true
+                    if ("design-tokens-ok-end" in line) insideExemptBlock = false
+                    if (insideExemptBlock) return@forEachIndexed
+                    if (!hexColor.containsMatchIn(line) && !namedColor.containsMatchIn(line)) return@forEachIndexed
+                    val previous = lines.getOrNull(index - 1).orEmpty()
+                    if ("design-tokens-ok:" in line || "design-tokens-ok:" in previous) return@forEachIndexed
+                    val relative = source.relativeTo(sourceRoot).invariantSeparatorsPath
+                    violations += "  $relative:${index + 1}  ${line.trim()}"
+                }
+            }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("Colores hardcodeados fuera del sistema de diseño (${violations.size}):")
+                    violations.forEach { appendLine(it) }
+                    appendLine()
+                    appendLine("Usa los tokens de UniStackColors, o UniStackColors.contentColorOn(fondo)")
+                    appendLine("para contenido sobre un color arbitrario.")
+                    appendLine("Si el color es legítimo (paleta, matemática de contraste, sombra), añade")
+                    appendLine("un comentario 'design-tokens-ok: <motivo>' en esa línea.")
+                }
+            )
+        }
+
+        stamp.get().asFile.apply {
+            parentFile.mkdirs()
+            writeText("sin colores hardcodeados\n")
+        }
+    }
+}
+
+tasks.named("check") { dependsOn(verifyDesignTokens) }
+
 fun readTelegramEnv(): Map<String, String> {
     val envFile = rootProject.file(".env")
     if (!envFile.exists()) return emptyMap()

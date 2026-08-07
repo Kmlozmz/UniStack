@@ -72,7 +72,9 @@ fun UniCard(
             .shadow(
                 elevation = resolvedElevation,
                 shape = resolvedShape,
+                // design-tokens-ok: las sombras son negro translúcido por física, no por marca
                 ambientColor = Color(0x14000000),
+                // design-tokens-ok: idem
                 spotColor = Color(0x10000000)
             )
             .clip(resolvedShape)
