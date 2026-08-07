@@ -1,7 +1,10 @@
 package com.unistack.app.feature_setup.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -142,13 +145,33 @@ import kotlin.math.roundToInt
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
     const val Name = "setup_name"
-    const val Education = "setup_education"
-    const val Academic = "setup_academic"
+    const val Profile = "setup_profile"
+    const val Modules = "setup_modules"
     const val Scale = "setup_scale"
     const val Periods = "setup_periods"
-    const val Modules = "setup_modules"
-    const val Summary = "setup_summary"
-    const val Finish = "setup_finish"
+    const val Done = "setup_done"
+}
+
+/**
+ * Numeración de los pasos con indicador. La bienvenida queda fuera: no pide datos y no
+ * lleva barra de progreso.
+ *
+ * Módulos va antes que la escala y los periodos a propósito: si el usuario desactiva el
+ * módulo de notas, esos dos pasos dejan de tener sentido y se saltan. Preguntándolos antes
+ * se corría el riesgo de pedir datos que luego se descartaban.
+ */
+private object SetupSteps {
+    const val Name = 1
+    const val Profile = 2
+    const val Modules = 3
+    const val Scale = 4
+    const val Periods = 5
+
+    /** Con notas: nombre, perfil, módulos, escala, periodos y final. Sin notas se caen dos. */
+    fun total(gradesEnabled: Boolean): Int = if (gradesEnabled) 6 else 4
+
+    /** El paso final siempre es el último, tenga el flujo la longitud que tenga. */
+    fun done(gradesEnabled: Boolean): Int = total(gradesEnabled)
 }
 
 private const val SETUP_EXIT_MILLIS = 220
@@ -182,6 +205,9 @@ fun SetupFlow(
     viewModel: SetupViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
+    // La longitud del flujo depende de si el usuario conserva el módulo de notas.
+    val gradesEnabled = AppModule.GRADES in viewModel.enabledModules
+    val totalSteps = SetupSteps.total(gradesEnabled)
 
     NavHost(
         navController = navController,
@@ -239,42 +265,36 @@ fun SetupFlow(
             SetupNameScreen(
                 name = viewModel.preferredName,
                 nameValidation = viewModel.nameValidation,
+                totalSteps = totalSteps,
                 onNameChange = viewModel::updatePreferredName,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Education) }
+                onContinueClick = { navController.navigate(SetupRoutes.Profile) }
             )
         }
-        composable(SetupRoutes.Education) {
-            SetupEducationLevelScreen(
-                selected = viewModel.educationLevel,
-                onSelected = viewModel::updateEducationLevel,
-                onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Academic) }
-            )
-        }
-        composable(SetupRoutes.Academic) {
-            SetupAcademicInfoScreen(
+        composable(SetupRoutes.Profile) {
+            SetupProfileScreen(
                 educationLevel = viewModel.educationLevel,
-                value = viewModel.academicInfo,
                 studyArea = viewModel.studyArea,
                 selectedProgram = viewModel.selectedProgram,
                 customProgram = viewModel.customProgram,
                 isValid = viewModel.isAcademicInfoValid,
                 customProgramValidation = viewModel.customProgramValidation,
-                onValueChange = viewModel::updateAcademicInfo,
+                totalSteps = totalSteps,
+                onEducationLevelSelected = viewModel::updateEducationLevel,
                 onStudyAreaSelected = viewModel::updateStudyArea,
                 onProgramSelected = viewModel::updateSelectedProgram,
                 onCustomProgramChange = viewModel::updateCustomProgram,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Scale) },
+                onContinueClick = { navController.navigate(SetupRoutes.Modules) },
                 onSkipClick = {
                     viewModel.skipAcademicInfo()
-                    navController.navigate(SetupRoutes.Scale)
+                    navController.navigate(SetupRoutes.Modules)
                 }
             )
         }
         composable(SetupRoutes.Scale) {
             SetupGradingScaleScreen(
+                totalSteps = totalSteps,
                 selectedScale = viewModel.gradingScale,
                 customGradeMax = viewModel.customGradeMax,
                 customGradeRangeConfirmed = viewModel.customGradeRangeConfirmed,
@@ -296,23 +316,29 @@ fun SetupFlow(
                 label = viewModel.academicPeriodLabel,
                 weights = viewModel.academicPeriodWeights,
                 isValid = viewModel.isAcademicPeriodsValid,
+                totalSteps = totalSteps,
                 onLabelSelected = viewModel::updateAcademicPeriodLabel,
                 onCountSelected = viewModel::updateAcademicPeriodCount,
                 onWeightChange = viewModel::updateAcademicPeriodWeight,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Modules) }
+                onContinueClick = { navController.navigate(SetupRoutes.Done) }
             )
         }
         composable(SetupRoutes.Modules) {
             SetupModulesScreen(
                 selectedModules = viewModel.enabledModules,
+                totalSteps = totalSteps,
                 onToggleModule = viewModel::toggleModule,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(SetupRoutes.Summary) }
+                onContinueClick = {
+                    // Sin el módulo de notas, la escala y los periodos no aplican.
+                    val next = if (gradesEnabled) SetupRoutes.Scale else SetupRoutes.Done
+                    navController.navigate(next)
+                }
             )
         }
-        composable(SetupRoutes.Summary) {
-            SetupSummaryScreen(
+        composable(SetupRoutes.Done) {
+            SetupDoneScreen(
                 name = viewModel.preferredName,
                 educationLevel = viewModel.educationLevel,
                 studyArea = viewModel.studyArea,
@@ -326,24 +352,8 @@ fun SetupFlow(
                 periodLabel = viewModel.academicPeriodLabel,
                 periodWeights = viewModel.academicPeriodWeights,
                 enabledModules = viewModel.enabledModules,
-                onBackClick = { navController.navigateUp() },
-                onConfirmClick = { navController.navigate(SetupRoutes.Finish) }
-            )
-        }
-        composable(SetupRoutes.Finish) {
-            SetupFinishScreen(
-                name = viewModel.preferredName,
-                educationLevel = viewModel.educationLevel,
-                studyArea = viewModel.studyArea,
-                selectedProgram = viewModel.selectedProgram,
-                customProgram = viewModel.customProgram,
-                academicInfo = viewModel.academicInfo,
-                gradingScale = viewModel.gradingScale,
-                customGradeMax = viewModel.customGradeMax,
-                periodLabel = viewModel.academicPeriodLabel,
-                periodWeights = viewModel.academicPeriodWeights,
-                enabledModules = viewModel.enabledModules,
-                createSubjectEnabled = AppModule.GRADES in viewModel.enabledModules,
+                gradesEnabled = gradesEnabled,
+                totalSteps = totalSteps,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
                     viewModel.finishSetup()
@@ -714,12 +724,14 @@ fun SetupNameScreen(
     onNameChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    totalSteps: Int = 6
 ) {
     BackHandler(onBack = onBackClick)
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 2,
+        step = SetupSteps.Name,
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
             UniStackButton(
@@ -1041,25 +1053,59 @@ private fun SetupNameInfoCard() {
     }
 }
 
+/**
+ * Perfil académico: nivel de estudio y, si procede, área y carrera.
+ *
+ * Antes eran dos pasos seguidos. Se fusionan porque forman una única cascada —el nivel
+ * determina qué se pregunta después— y porque el segundo era saltable, es decir, un dato
+ * opcional ocupando una pantalla entera.
+ *
+ * El bloque de área y carrera solo aparece en nivel universitario: en primaria o secundaria
+ * esos desplegables no significan nada, y antes se mostraban igualmente.
+ */
 @Composable
-fun SetupEducationLevelScreen(
-    selected: EducationLevel,
-    onSelected: (EducationLevel) -> Unit,
+fun SetupProfileScreen(
+    educationLevel: EducationLevel,
+    studyArea: StudyArea?,
+    selectedProgram: String?,
+    customProgram: String,
+    isValid: Boolean,
+    onEducationLevelSelected: (EducationLevel) -> Unit,
+    onStudyAreaSelected: (StudyArea) -> Unit,
+    onProgramSelected: (String) -> Unit,
+    onCustomProgramChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onSkipClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    customProgramValidation: ValidationResult? = null,
+    totalSteps: Int = 6
 ) {
+    var areaExpanded by remember { mutableStateOf(false) }
+    var programExpanded by remember { mutableStateOf(false) }
+    val needsProgram = educationLevel == EducationLevel.UNIVERSITY
+
     BackHandler(onBack = onBackClick)
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 3,
+        step = SetupSteps.Profile,
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
             UniStackButton(
                 text = "Continuar",
                 onClick = onContinueClick,
+                enabled = isValid || !needsProgram,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
+            if (needsProgram) {
+                UniStackButton(
+                    text = "Prefiero hacerlo después",
+                    onClick = onSkipClick,
+                    variant = UniStackButtonVariant.Outlined,
+                    height = 48.dp
+                )
+            }
         }
     ) {
         Column(
@@ -1069,16 +1115,74 @@ fun SetupEducationLevelScreen(
         ) {
             SetupEducationHero()
             SetupEducationTitle()
-            Text(
-                text = "Selecciona una opción",
-                color = UniStackColors.Primary,
-                fontSize = 12.sp,
-                lineHeight = 15.sp
-            )
             EducationLevelGrid(
-                selected = selected,
-                onSelected = onSelected
+                selected = educationLevel,
+                onSelected = onEducationLevelSelected
             )
+
+            // El área y la carrera se revelan solo cuando el nivel las hace pertinentes.
+            AnimatedVisibility(
+                visible = needsProgram,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(13.dp)
+                ) {
+                    Text(
+                        text = "¿Qué estudias?",
+                        color = UniStackColors.TextPrimary,
+                        fontSize = 18.sp,
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    SetupDropdownField(
+                        label = "Área de estudio",
+                        value = studyArea?.let(::labelFor).orEmpty(),
+                        options = StudyArea.entries.map(::labelFor),
+                        enabled = true,
+                        expanded = areaExpanded,
+                        leadingIcon = studyArea?.let(::studyAreaIcon) ?: Icons.Rounded.School,
+                        optionIcon = { option -> studyAreaForLabel(option)?.let(::studyAreaIcon) ?: Icons.Rounded.GridView },
+                        onExpandedChange = { expanded ->
+                            areaExpanded = expanded
+                            if (expanded) programExpanded = false
+                        },
+                        onOptionSelected = { selectedLabel ->
+                            StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
+                        }
+                    )
+                    SetupDropdownField(
+                        label = "Programa o carrera",
+                        value = selectedProgram.orEmpty(),
+                        options = studyArea?.let(::programsFor).orEmpty(),
+                        enabled = studyArea != null,
+                        expanded = programExpanded,
+                        leadingIcon = Icons.Rounded.School,
+                        optionIcon = { option -> programIcon(option) },
+                        onExpandedChange = { expanded ->
+                            programExpanded = expanded
+                            if (expanded) areaExpanded = false
+                        },
+                        onOptionSelected = onProgramSelected
+                    )
+                    AcademicProgramHelpCard(
+                        selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
+                        onClick = {
+                            onStudyAreaSelected(StudyArea.OTHER)
+                            onProgramSelected(OTHER_OPTION)
+                        }
+                    )
+                    if (studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
+                        SetupCustomProgramField(
+                            value = customProgram,
+                            validation = customProgramValidation,
+                            onValueChange = onCustomProgramChange
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -1304,203 +1408,6 @@ private data class EducationLevelCardContent(
 )
 
 @Composable
-fun SetupAcademicInfoScreen(
-    educationLevel: EducationLevel,
-    value: String,
-    studyArea: StudyArea?,
-    selectedProgram: String?,
-    customProgram: String,
-    isValid: Boolean,
-    modifier: Modifier = Modifier,
-    customProgramValidation: ValidationResult? = null,
-    onValueChange: (String) -> Unit,
-    onStudyAreaSelected: (StudyArea) -> Unit,
-    onProgramSelected: (String) -> Unit,
-    onCustomProgramChange: (String) -> Unit,
-    onBackClick: () -> Unit,
-    onContinueClick: () -> Unit,
-    onSkipClick: () -> Unit
-) {
-    var areaExpanded by remember { mutableStateOf(false) }
-    var programExpanded by remember { mutableStateOf(false) }
-
-    BackHandler(onBack = onBackClick)
-    SetupScaffold(
-        onBackClick = onBackClick,
-        step = 4,
-        modifier = modifier,
-        actions = {
-            UniStackButton(
-                text = "Continuar",
-                onClick = onContinueClick,
-                enabled = isValid || educationLevel != EducationLevel.UNIVERSITY,
-                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-            )
-        }
-    ) {
-        val area = studyArea
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            SetupAcademicHero()
-            SetupAcademicTitle()
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(13.dp)
-            ) {
-                SetupDropdownField(
-                    label = "Área de estudio",
-                    value = area?.let(::labelFor).orEmpty(),
-                    options = StudyArea.entries.map(::labelFor),
-                    enabled = true,
-                    expanded = areaExpanded,
-                    leadingIcon = area?.let(::studyAreaIcon) ?: Icons.Rounded.School,
-                    optionIcon = { option -> studyAreaForLabel(option)?.let(::studyAreaIcon) ?: Icons.Rounded.GridView },
-                    onExpandedChange = { expanded ->
-                        areaExpanded = expanded
-                        if (expanded) programExpanded = false
-                    },
-                    onOptionSelected = { selectedLabel ->
-                        StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
-                    }
-                )
-
-                SetupDropdownField(
-                    label = "Programa o carrera",
-                    value = selectedProgram.orEmpty(),
-                    options = area?.let(::programsFor).orEmpty(),
-                    enabled = area != null,
-                    expanded = programExpanded,
-                    leadingIcon = Icons.Rounded.School,
-                    optionIcon = { option -> programIcon(option) },
-                    onExpandedChange = { expanded ->
-                        programExpanded = expanded
-                        if (expanded) areaExpanded = false
-                    },
-                    onOptionSelected = onProgramSelected
-                )
-
-                AcademicProgramHelpCard(
-                    selected = area == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
-                    onClick = {
-                        onStudyAreaSelected(StudyArea.OTHER)
-                        onProgramSelected(OTHER_OPTION)
-                    }
-                )
-
-                if (area == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
-                    SetupCustomProgramField(
-                        value = customProgram,
-                        validation = customProgramValidation,
-                        onValueChange = onCustomProgramChange
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SetupAcademicHero() {
-    val glowAlpha = if (UniStackColors.IsDarkTheme) 0.42f else 0.16f
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(112.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier
-                .size(104.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            UniStackColors.Primary.copy(alpha = glowAlpha),
-                            UniStackColors.Primary.copy(alpha = 0.08f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        Box(
-            modifier = Modifier
-                .size(78.dp)
-                .clip(CircleShape)
-                .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.7f else 1f))
-                .border(
-                    width = 1.dp,
-                    color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.34f),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.BusinessCenter,
-                contentDescription = null,
-                tint = UniStackColors.Primary,
-                modifier = Modifier.size(39.dp)
-            )
-        }
-        Icon(
-            imageVector = Icons.Rounded.AutoAwesome,
-            contentDescription = null,
-            tint = UniStackColors.Primary.copy(alpha = 0.86f),
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = 72.dp, y = 28.dp)
-                .size(8.dp)
-        )
-        Icon(
-            imageVector = Icons.Rounded.AutoAwesome,
-            contentDescription = null,
-            tint = UniStackColors.Primary.copy(alpha = 0.72f),
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .offset(x = (-70).dp, y = (-18).dp)
-                .size(7.dp)
-        )
-    }
-}
-
-@Composable
-private fun SetupAcademicTitle() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(9.dp)
-    ) {
-        Text(
-            text = buildAnnotatedString {
-                append("¿Cuál es tu ")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
-                    append("carrera")
-                }
-                append("\no ")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
-                    append("programa?")
-                }
-            },
-            color = UniStackColors.TextPrimary,
-            fontSize = 27.sp,
-            lineHeight = 31.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "Primero elige tu área de estudio\ny luego tu carrera.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 13.sp,
-            lineHeight = 19.sp,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
 private fun AcademicProgramHelpCard(
     selected: Boolean,
     onClick: () -> Unit,
@@ -1658,7 +1565,8 @@ fun SetupGradingScaleScreen(
     onTargetAverageChange: (String) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    totalSteps: Int = 6
 ) {
     BackHandler(onBack = onBackClick)
     val selectedChoice = when {
@@ -1668,7 +1576,8 @@ fun SetupGradingScaleScreen(
     }
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 5,
+        step = SetupSteps.Scale,
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
             UniStackButton(
@@ -2195,7 +2104,8 @@ fun SetupAcademicPeriodsScreen(
     onWeightChange: (Int, String) -> Unit,
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    totalSteps: Int = 6
 ) {
     val total = weights.sumOf { it.toDoubleOrNull() ?: 0.0 }
     val remaining = 100.0 - total
@@ -2205,7 +2115,8 @@ fun SetupAcademicPeriodsScreen(
     BackHandler(onBack = onBackClick)
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 6,
+        step = SetupSteps.Periods,
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
             AcademicPeriodsBottomActions(
@@ -2904,6 +2815,7 @@ private fun CustomGradeRangeSelector(
 
 @Composable
 fun SetupModulesScreen(
+    totalSteps: Int = 6,
     selectedModules: Set<AppModule>,
     onToggleModule: (AppModule) -> Unit,
     onBackClick: () -> Unit,
@@ -2913,7 +2825,8 @@ fun SetupModulesScreen(
     BackHandler(onBack = onBackClick)
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 7,
+        step = SetupSteps.Modules,
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
             UniStackButton(
@@ -2939,8 +2852,18 @@ fun SetupModulesScreen(
     }
 }
 
+/**
+ * Paso final: celebración, repaso de lo configurado y salida a la app.
+ *
+ * Antes eran dos pantallas seguidas —«Resumen» y «Listo»— que mostraban exactamente los
+ * mismos datos y se confirmaban uno detrás de otro. Se fusionan en una: el repaso sigue
+ * estando, pero se confirma una sola vez.
+ *
+ * Los bloques de escala y evaluación se ocultan si el usuario desactivó el módulo de notas,
+ * porque en ese caso esos pasos ni siquiera se le preguntaron.
+ */
 @Composable
-fun SetupSummaryScreen(
+fun SetupDoneScreen(
     name: String,
     educationLevel: EducationLevel,
     studyArea: StudyArea?,
@@ -2955,29 +2878,41 @@ fun SetupSummaryScreen(
     periodWeights: List<String>,
     enabledModules: Set<AppModule>,
     onBackClick: () -> Unit,
-    onConfirmClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onCreateSubjectClick: () -> Unit,
+    onGoHomeClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    gradesEnabled: Boolean = true,
+    totalSteps: Int = 6
 ) {
     BackHandler(onBack = onBackClick)
+    val displayName = name.ifBlank { "Usuario" }
     val program = resolvedProgram(educationLevel, selectedProgram, customProgram, academicInfo)
     val weights = periodWeights.filter { it.isNotBlank() }
     SetupScaffold(
         onBackClick = onBackClick,
-        step = 8,
+        step = SetupSteps.done(gradesEnabled),
+        totalSteps = totalSteps,
         modifier = modifier,
         actions = {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            if (gradesEnabled) {
                 UniStackButton(
-                    text = "Volver",
-                    onClick = onBackClick,
-                    variant = UniStackButtonVariant.Outlined,
-                    modifier = Modifier.weight(0.9f)
+                    text = "Crear mi primera materia",
+                    onClick = onCreateSubjectClick,
+                    leadingIcon = Icons.Rounded.Add,
+                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
                 )
                 UniStackButton(
-                    text = "Confirmar",
-                    onClick = onConfirmClick,
-                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    modifier = Modifier.weight(1.1f)
+                    text = "Ir al inicio",
+                    onClick = onGoHomeClick,
+                    variant = UniStackButtonVariant.Outlined,
+                    leadingIcon = Icons.Rounded.Home
+                )
+            } else {
+                UniStackButton(
+                    text = "Ir al inicio",
+                    onClick = onGoHomeClick,
+                    leadingIcon = Icons.Rounded.Home,
+                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
                 )
             }
         }
@@ -2986,34 +2921,36 @@ fun SetupSummaryScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            SetupSummaryHeader()
+            SetupFinishHero(name = displayName)
             SummaryInfoCard(
                 icon = Icons.Rounded.School,
                 title = "Información académica"
             ) {
-                SummaryKeyValueRow("Nombre", name.ifBlank { "Usuario" })
+                SummaryKeyValueRow("Nombre", displayName)
                 SummaryKeyValueRow("Nivel de estudio", educationLevel.label())
                 SummaryKeyValueRow("Área de estudio", studyArea?.let(::labelFor) ?: "Sin definir")
                 SummaryKeyValueRow("Carrera", program.ifBlank { "Sin definir" })
             }
-            SummaryInfoCard(
-                icon = Icons.Rounded.BarChart,
-                title = "Escala de notas"
-            ) {
-                SummaryKeyValueRow("Escala", gradingScale.summaryLabel(customGradeMax))
-                SummaryKeyValueRow("Nota mínima", passingGrade)
-                SummaryKeyValueRow("Promedio objetivo", targetAverage)
-            }
-            SummaryInfoCard(
-                icon = Icons.Rounded.Percent,
-                title = "Evaluación"
-            ) {
-                SummaryKeyValueRow("Sistema", periodLabel.singular)
-                SummaryKeyValueRow(
-                    "Cantidad",
-                    if (weights.isEmpty()) "Sin definir" else "${weights.size} ${periodLabel.plural.lowercase()}"
-                )
-                SummaryDistributionRow(weights = weights)
+            if (gradesEnabled) {
+                SummaryInfoCard(
+                    icon = Icons.Rounded.BarChart,
+                    title = "Escala de notas"
+                ) {
+                    SummaryKeyValueRow("Escala", gradingScale.summaryLabel(customGradeMax))
+                    SummaryKeyValueRow("Nota mínima", passingGrade)
+                    SummaryKeyValueRow("Promedio objetivo", targetAverage)
+                }
+                SummaryInfoCard(
+                    icon = Icons.Rounded.Percent,
+                    title = "Evaluación"
+                ) {
+                    SummaryKeyValueRow("Sistema", periodLabel.singular)
+                    SummaryKeyValueRow(
+                        "Cantidad",
+                        if (weights.isEmpty()) "Sin definir" else "${weights.size} ${periodLabel.plural.lowercase()}"
+                    )
+                    SummaryDistributionRow(weights = weights)
+                }
             }
             SummaryInfoCard(
                 icon = Icons.Rounded.GridView,
@@ -3022,71 +2959,6 @@ fun SetupSummaryScreen(
                 SummaryModulesList(enabledModules = enabledModules)
             }
             SetupSummaryNoticeCard()
-        }
-    }
-}
-
-@Composable
-fun SetupFinishScreen(
-    name: String,
-    educationLevel: EducationLevel,
-    studyArea: StudyArea?,
-    selectedProgram: String?,
-    customProgram: String,
-    academicInfo: String,
-    gradingScale: GradingScale,
-    customGradeMax: Double,
-    periodLabel: AcademicPeriodLabel,
-    periodWeights: List<String>,
-    enabledModules: Set<AppModule>,
-    modifier: Modifier = Modifier,
-    createSubjectEnabled: Boolean = true,
-    onBackClick: () -> Unit,
-    onCreateSubjectClick: () -> Unit,
-    onGoHomeClick: () -> Unit
-) {
-    BackHandler(onBack = onBackClick)
-    val displayName = name.ifBlank { "Usuario" }
-    val program = resolvedProgram(educationLevel, selectedProgram, customProgram, academicInfo).ifBlank { "Sin definir" }
-    val moduleText = enabledModules.sortedBy { it.ordinal }.joinToString(" · ") { it.shortLabel() }
-    val periodCount = if (periodWeights.isEmpty()) {
-        "Sin definir"
-    } else {
-        "${periodWeights.size} ${periodLabel.plural.lowercase()}"
-    }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = UniStackColors.Background,
-        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp)
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp)
-                .padding(top = 0.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            SetupFinishTopBar(onBackClick = onBackClick)
-            SetupFinishHero(name = displayName)
-            FinishSemesterCard(
-                education = educationLevel.label(),
-                program = program,
-                scale = gradingScale.summaryLabel(customGradeMax),
-                periodLabel = "${periodLabel.plural} académicos",
-                periodCount = periodCount,
-                modules = moduleText.ifBlank { "Notas" }
-            )
-            FinishRecommendedCard()
-            FinishActionButtons(
-                createSubjectEnabled = createSubjectEnabled,
-                onCreateSubjectClick = onCreateSubjectClick,
-                onGoHomeClick = onGoHomeClick
-            )
         }
     }
 }
@@ -3292,34 +3164,6 @@ private fun SetupModulesInfoCard() {
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SetupSummaryHeader() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            SetupPurpleIconBox(icon = Icons.AutoMirrored.Rounded.Assignment, size = 60.dp, iconSize = 30.dp)
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Resumen de tu\nconfiguración",
-                color = UniStackColors.TextPrimary,
-                fontSize = 23.sp,
-                lineHeight = 25.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = "Revisa y confirma que todo esté correcto.",
-                color = UniStackColors.TextSecondary,
-                fontSize = 13.sp,
-                lineHeight = 17.sp
             )
         }
     }
@@ -3537,40 +3381,6 @@ private fun SetupSummaryNoticeCard() {
 }
 
 @Composable
-private fun SetupFinishTopBar(onBackClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = UniStackColors.TextPrimary,
-                modifier = Modifier.size(26.dp)
-            )
-        }
-        Box(
-            modifier = Modifier
-                .clip(AppShapes.Pill)
-                .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.88f))
-                .border(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.72f), AppShapes.Pill)
-                .padding(horizontal = 14.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "9 de 9",
-                color = UniStackColors.Primary,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
 private fun SetupFinishHero(name: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -3615,248 +3425,6 @@ private fun SetupFinishHero(name: String) {
             fontSize = 15.sp,
             lineHeight = 21.sp
         )
-    }
-}
-
-@Composable
-private fun FinishSemesterCard(
-    education: String,
-    program: String,
-    scale: String,
-    periodLabel: String,
-    periodCount: String,
-    modules: String
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.SmallCard,
-        tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = 0.86f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Tu semestre",
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 17.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = null,
-                    tint = UniStackColors.TextSecondary,
-                    modifier = Modifier.size(21.dp)
-                )
-            }
-            SetupDivider()
-            FinishSummaryWideRow(
-                icon = Icons.Rounded.School,
-                label = education,
-                value = program
-            )
-            SetupDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FinishSummaryMiniBlock(
-                    icon = Icons.Rounded.Percent,
-                    label = "Sistema de notas",
-                    value = scale,
-                    modifier = Modifier.weight(1f)
-                )
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(42.dp)
-                        .background(UniStackColors.SoftOutline.copy(alpha = 0.62f))
-                )
-                FinishSummaryMiniBlock(
-                    icon = Icons.Rounded.CalendarMonth,
-                    label = periodLabel,
-                    value = periodCount,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            SetupDivider()
-            FinishSummaryWideRow(
-                icon = Icons.Rounded.GridView,
-                label = "Módulos activos",
-                value = modules
-            )
-        }
-    }
-}
-
-@Composable
-private fun FinishSummaryWideRow(
-    icon: ImageVector,
-    label: String,
-    value: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp)
-    ) {
-        SetupPurpleIconBox(icon = icon, size = 38.dp, iconSize = 21.dp)
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = label,
-                color = UniStackColors.TextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 15.sp
-            )
-            Text(
-                text = value,
-                color = UniStackColors.TextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun FinishSummaryMiniBlock(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(9.dp)
-    ) {
-        SetupPurpleIconBox(icon = icon, size = 36.dp, iconSize = 20.dp)
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
-            Text(
-                text = label,
-                color = UniStackColors.TextSecondary,
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = value,
-                color = UniStackColors.TextPrimary,
-                fontSize = 13.sp,
-                lineHeight = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun FinishRecommendedCard() {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.SmallCard,
-        tonalElevation = 0.dp,
-        borderColor = UniStackColors.Primary.copy(alpha = 0.86f),
-        borderWidth = 1.2.dp,
-        contentPadding = PaddingValues(horizontal = 15.dp, vertical = 13.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.68f else 1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.AutoAwesome,
-                    contentDescription = null,
-                    tint = UniStackColors.Primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(AppShapes.Pill)
-                        .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.84f else 1f))
-                        .padding(horizontal = 9.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "PRIMER PASO RECOMENDADO",
-                        color = UniStackColors.Primary,
-                        fontSize = 10.sp,
-                        lineHeight = 12.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-                Text(
-                    text = "Crea tu primera materia",
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 16.sp,
-                    lineHeight = 19.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = "para empezar a organizar notas,\ntareas y gastos.",
-                    color = UniStackColors.TextSecondary,
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FinishActionButtons(
-    createSubjectEnabled: Boolean,
-    onCreateSubjectClick: () -> Unit,
-    onGoHomeClick: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        if (createSubjectEnabled) {
-            UniStackButton(
-                text = "Crear mi primera materia",
-                onClick = onCreateSubjectClick,
-                leadingIcon = Icons.Rounded.Add,
-                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-            )
-            UniStackButton(
-                text = "Ir al inicio",
-                onClick = onGoHomeClick,
-                variant = UniStackButtonVariant.Outlined,
-                leadingIcon = Icons.Rounded.Home
-            )
-        } else {
-            UniStackButton(
-                text = "Ir al inicio",
-                onClick = onGoHomeClick,
-                leadingIcon = Icons.Rounded.Home,
-                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-            )
-        }
     }
 }
 
@@ -3933,6 +3501,7 @@ private fun SetupScaffold(
     modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null,
     step: Int? = null,
+    totalSteps: Int = 6,
     welcome: Boolean = false,
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
@@ -3947,6 +3516,7 @@ private fun SetupScaffold(
                 SetupTopBar(
                     onBackClick = onBackClick,
                     step = step,
+                    totalSteps = totalSteps,
                     modifier = Modifier
                         .statusBarsPadding()
                         .padding(horizontal = 22.dp, vertical = 5.dp)
@@ -4009,6 +3579,7 @@ private fun SetupScaffold(
 private fun SetupTopBar(
     onBackClick: (() -> Unit)?,
     step: Int?,
+    totalSteps: Int,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -4027,7 +3598,7 @@ private fun SetupTopBar(
             }
             if (step != null) {
                 Text(
-                    text = "Paso $step de 9",
+                    text = "Paso $step de $totalSteps",
                     color = UniStackColors.TextPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -4042,8 +3613,11 @@ private fun SetupTopBar(
                     .padding(horizontal = 54.dp),
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-                repeat(8) { index ->
-                    val isActive = index < step.coerceIn(1, 8)
+                // Una barra por paso, y se llenan tantas como pasos completados incluyendo
+                // el actual. Antes había 8 barras fijas para 9 pasos y el relleno iba
+                // adelantado en uno.
+                repeat(totalSteps) { index ->
+                    val isActive = index < step.coerceIn(1, totalSteps)
                     val barColor by animateColorAsState(
                         targetValue = if (isActive) {
                             UniStackColors.Primary
