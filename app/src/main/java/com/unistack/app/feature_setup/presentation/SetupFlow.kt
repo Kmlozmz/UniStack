@@ -133,6 +133,7 @@ import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.components.expressiveSelection
 import com.unistack.app.core.design.components.rememberSelectionShape
+import com.unistack.app.core.design.components.revealIntoView
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
@@ -1151,7 +1152,9 @@ fun SetupProfileScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .revealIntoView(isSchoolLevel),
                     verticalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
                     SetupProfileSectionTitle("¿En qué grado vas?")
@@ -1176,7 +1179,9 @@ fun SetupProfileScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .revealIntoView(isUniversity),
                     verticalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
                     SetupProfileSectionTitle("¿Qué estudias?")
@@ -1240,7 +1245,9 @@ fun SetupProfileScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .revealIntoView(isOther),
                     verticalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
                     SetupProfileSectionTitle("¿Qué estás estudiando?")
@@ -2443,7 +2450,10 @@ private fun EvaluationSegment(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(AppShapes.Small)
+            // Escala contenida: el segmento vive dentro de un control con vecinos pegados,
+            // así que un rebote grande invadiría el de al lado.
+            .expressiveSelection(selected, selectedScale = 1.02f)
+            .clip(rememberSelectionShape(selected, extraRadiusWhenSelected = 6.dp))
             .background(if (selected) UniStackColors.Primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -4081,6 +4091,7 @@ private fun SetupChoiceChip(
     UniCard(
         modifier = modifier
             .height(46.dp)
+            .expressiveSelection(selected)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -4089,7 +4100,7 @@ private fun SetupChoiceChip(
                 onClick = onClick
             ),
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = AppShapes.SmallCard,
+        shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
         borderWidth = if (selected) 1.2.dp else 1.dp,
@@ -4202,6 +4213,7 @@ private fun ScaleChip(
     UniCard(
         modifier = modifier
             .height(42.dp)
+            .expressiveSelection(selected)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -4210,7 +4222,7 @@ private fun ScaleChip(
                 onClick = onClick
             ),
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = AppShapes.SmallCard,
+        shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
         borderWidth = if (selected) 1.2.dp else 1.dp,

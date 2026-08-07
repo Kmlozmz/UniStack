@@ -1,6 +1,11 @@
 package com.unistack.app
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -52,7 +57,16 @@ fun UniStackApp(
         accessibility = accessibility
     ) {
         RootNavGraph(
-            modifier = modifier,
+            // Con enableEdgeToEdge la ventana deja de redimensionarse sola, así que
+            // esquivar el teclado pasa a ser responsabilidad de la app. Se aplica aquí,
+            // en la raíz, para que valga en todas las pantallas.
+            //
+            // Se excluye el inset de la barra de navegación porque el del teclado ya lo
+            // incluye, y muchas pantallas aplican además navigationBarsPadding(): sin la
+            // exclusión ese espacio se contaría dos veces.
+            modifier = modifier.windowInsetsPadding(
+                WindowInsets.ime.exclude(WindowInsets.navigationBars)
+            ),
             launchRoute = launchRoute,
             onLaunchRouteConsumed = onLaunchRouteConsumed
         )
