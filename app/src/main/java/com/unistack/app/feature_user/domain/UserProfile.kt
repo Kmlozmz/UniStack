@@ -15,6 +15,14 @@ data class UserProfile(
     val careerOrProgram: String?,
     val studyArea: StudyArea?,
     val gradeLevel: String?,
+    /**
+     * Nombre de la institución tal y como lo escribió el usuario, sin normalizar.
+     *
+     * Se guarda en crudo a propósito: si algún día se añade un catálogo canónico, poder
+     * mapear el texto original a una entidad es posible; recuperar lo que la persona
+     * escribió después de haberlo sobrescrito, no. Es opcional en todos los niveles.
+     */
+    val institutionName: String? = null,
     val gradingScale: GradingScale,
     val customGradeMax: Double = 100.0,
     val passingGrade: Double,

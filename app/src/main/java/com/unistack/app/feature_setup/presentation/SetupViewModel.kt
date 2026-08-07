@@ -47,6 +47,10 @@ class SetupViewModel @Inject constructor(
         private set
     var targetAverageText by mutableStateOf("4.0")
         private set
+    /** Texto crudo de la institución, tal y como lo escribe el usuario. Opcional. */
+    var institutionName by mutableStateOf("")
+        private set
+
     var enabledModules by mutableStateOf(AppModule.entries.toSet())
         private set
     var academicPeriodLabel by mutableStateOf(AcademicPeriodLabel.CORTE)
@@ -62,6 +66,18 @@ class SetupViewModel @Inject constructor(
 
     val isNameValid: Boolean
         get() = nameValidation.isValid
+
+    /** En primaria y secundaria no se pregunta carrera, sino grado o curso. */
+    val isSchoolLevel: Boolean
+        get() = educationLevel.isSchoolLevel()
+
+    /** Grados disponibles para el nivel escolar actual. */
+    val gradeOptions: List<String>
+        get() = educationLevel.standardGradeOptions()
+
+    /** El grado se guarda en el mismo campo que el resto de información académica. */
+    val selectedGrade: String
+        get() = academicInfo
 
     val isAcademicInfoValid: Boolean
         get() {
@@ -108,6 +124,15 @@ class SetupViewModel @Inject constructor(
         studyArea = null
         selectedProgram = null
         customProgram = ""
+        // La institución se conserva: cambiar de nivel por error no debe borrar lo escrito.
+    }
+
+    fun updateInstitutionName(value: String) {
+        institutionName = value.take(80)
+    }
+
+    fun updateGradeLevel(value: String) {
+        academicInfo = value
     }
 
     fun updateAcademicInfo(value: String) {
@@ -203,6 +228,9 @@ class SetupViewModel @Inject constructor(
             careerOrProgram = if (educationLevel.isSchoolLevel()) null else info,
             studyArea = studyArea,
             gradeLevel = if (educationLevel.isSchoolLevel()) info else null,
+            // Se guarda sin normalizar: conservar el original permite mapearlo a un
+            // catálogo canónico más adelante.
+            institutionName = institutionName.trim().takeIf { it.isNotEmpty() },
             gradingScale = gradingScale,
             customGradeMax = customGradeMax.coerceIn(1.0, 100.0),
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,

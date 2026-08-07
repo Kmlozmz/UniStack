@@ -67,6 +67,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val STUDY_AREA = stringPreferencesKey("study_area")
         val CAREER_OR_PROGRAM = stringPreferencesKey("career_or_program")
         val GRADE_LEVEL = stringPreferencesKey("grade_level")
+        val INSTITUTION_NAME = stringPreferencesKey("institution_name")
         val GRADING_SCALE = stringPreferencesKey("grading_scale")
         val CUSTOM_GRADE_MAX = doublePreferencesKey("custom_grade_max")
         val PASSING_GRADE = doublePreferencesKey("passing_grade")
@@ -134,6 +135,7 @@ class UserPreferencesDataSource(private val context: Context) {
             studyArea = studyArea,
             careerOrProgram = prefs[Keys.CAREER_OR_PROGRAM],
             gradeLevel = prefs[Keys.GRADE_LEVEL],
+            institutionName = prefs[Keys.INSTITUTION_NAME],
             gradingScale = gradingScale,
             customGradeMax = prefs[Keys.CUSTOM_GRADE_MAX]?.coerceIn(1.0, 100.0) ?: 100.0,
             passingGrade = prefs[Keys.PASSING_GRADE] ?: 3.0,
@@ -265,6 +267,11 @@ class UserPreferencesDataSource(private val context: Context) {
                 prefs[Keys.GRADE_LEVEL] = profile.gradeLevel
             } else {
                 prefs.remove(Keys.GRADE_LEVEL)
+            }
+            if (profile.institutionName != null) {
+                prefs[Keys.INSTITUTION_NAME] = profile.institutionName
+            } else {
+                prefs.remove(Keys.INSTITUTION_NAME)
             }
         }
     }

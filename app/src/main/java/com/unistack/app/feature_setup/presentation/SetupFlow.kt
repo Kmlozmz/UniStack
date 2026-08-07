@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -130,6 +131,8 @@ import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
+import com.unistack.app.core.design.components.expressiveSelection
+import com.unistack.app.core.design.components.rememberSelectionShape
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
@@ -280,6 +283,12 @@ fun SetupFlow(
                 isValid = viewModel.isAcademicInfoValid,
                 customProgramValidation = viewModel.customProgramValidation,
                 totalSteps = totalSteps,
+                isSchoolLevel = viewModel.isSchoolLevel,
+                gradeOptions = viewModel.gradeOptions,
+                selectedGrade = viewModel.selectedGrade,
+                onGradeSelected = viewModel::updateGradeLevel,
+                institutionName = viewModel.institutionName,
+                onInstitutionNameChange = viewModel::updateInstitutionName,
                 onEducationLevelSelected = viewModel::updateEducationLevel,
                 onStudyAreaSelected = viewModel::updateStudyArea,
                 onProgramSelected = viewModel::updateSelectedProgram,
@@ -354,6 +363,8 @@ fun SetupFlow(
                 enabledModules = viewModel.enabledModules,
                 gradesEnabled = gradesEnabled,
                 totalSteps = totalSteps,
+                isSchoolLevel = viewModel.isSchoolLevel,
+                institutionName = viewModel.institutionName,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
                     viewModel.finishSetup()
@@ -1054,14 +1065,20 @@ private fun SetupNameInfoCard() {
 }
 
 /**
- * Perfil académico: nivel de estudio y, si procede, área y carrera.
+ * Perfil académico: nivel de estudio y lo que ese nivel hace pertinente preguntar.
  *
  * Antes eran dos pasos seguidos. Se fusionan porque forman una única cascada —el nivel
  * determina qué se pregunta después— y porque el segundo era saltable, es decir, un dato
  * opcional ocupando una pantalla entera.
  *
- * El bloque de área y carrera solo aparece en nivel universitario: en primaria o secundaria
- * esos desplegables no significan nada, y antes se mostraban igualmente.
+ * Cada nivel pregunta lo suyo, y nada más:
+ *  - Primaria y secundaria: grado o curso. No existe la carrera todavía.
+ *  - Universidad: área y programa, del catálogo.
+ *  - Otro: texto libre. No se intenta clasificar al usuario dentro de una taxonomía de
+ *    entidades (instituto, corporación, fundación…): siempre habría casos fuera, y ese
+ *    dato no cambia el comportamiento de la app.
+ *
+ * El nombre de la institución es opcional y común a todos los niveles.
  */
 @Composable
 fun SetupProfileScreen(
@@ -1079,11 +1096,18 @@ fun SetupProfileScreen(
     onSkipClick: () -> Unit,
     modifier: Modifier = Modifier,
     customProgramValidation: ValidationResult? = null,
-    totalSteps: Int = 6
+    totalSteps: Int = 6,
+    isSchoolLevel: Boolean = false,
+    gradeOptions: List<String> = emptyList(),
+    selectedGrade: String = "",
+    onGradeSelected: (String) -> Unit = {},
+    institutionName: String = "",
+    onInstitutionNameChange: (String) -> Unit = {}
 ) {
     var areaExpanded by remember { mutableStateOf(false) }
     var programExpanded by remember { mutableStateOf(false) }
-    val needsProgram = educationLevel == EducationLevel.UNIVERSITY
+    val isUniversity = educationLevel == EducationLevel.UNIVERSITY
+    val isOther = educationLevel == EducationLevel.OTHER
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
@@ -1095,10 +1119,10 @@ fun SetupProfileScreen(
             UniStackButton(
                 text = "Continuar",
                 onClick = onContinueClick,
-                enabled = isValid || !needsProgram,
+                enabled = isValid || !isUniversity,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
-            if (needsProgram) {
+            if (isUniversity) {
                 UniStackButton(
                     text = "Prefiero hacerlo después",
                     onClick = onSkipClick,
@@ -1120,9 +1144,9 @@ fun SetupProfileScreen(
                 onSelected = onEducationLevelSelected
             )
 
-            // El área y la carrera se revelan solo cuando el nivel las hace pertinentes.
+            // Primaria y secundaria: grado, no carrera.
             AnimatedVisibility(
-                visible = needsProgram,
+                visible = isSchoolLevel,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
@@ -1130,13 +1154,32 @@ fun SetupProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(13.dp)
                 ) {
-                    Text(
-                        text = "¿Qué estudias?",
-                        color = UniStackColors.TextPrimary,
-                        fontSize = 18.sp,
-                        lineHeight = 22.sp,
-                        fontWeight = FontWeight.ExtraBold
+                    SetupProfileSectionTitle("¿En qué grado vas?")
+                    GradeLevelChips(
+                        options = gradeOptions,
+                        selected = selectedGrade,
+                        onSelected = onGradeSelected
                     )
+                    InstitutionField(
+                        value = institutionName,
+                        label = "Colegio",
+                        placeholder = "Nombre de tu colegio",
+                        onValueChange = onInstitutionNameChange
+                    )
+                }
+            }
+
+            // Universidad: área y programa del catálogo.
+            AnimatedVisibility(
+                visible = isUniversity,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(13.dp)
+                ) {
+                    SetupProfileSectionTitle("¿Qué estudias?")
                     SetupDropdownField(
                         label = "Área de estudio",
                         value = studyArea?.let(::labelFor).orEmpty(),
@@ -1181,7 +1224,103 @@ fun SetupProfileScreen(
                             onValueChange = onCustomProgramChange
                         )
                     }
+                    InstitutionField(
+                        value = institutionName,
+                        label = "Universidad",
+                        placeholder = "Nombre de tu universidad",
+                        onValueChange = onInstitutionNameChange
+                    )
                 }
+            }
+
+            // Otro: texto libre, sin taxonomía de entidades.
+            AnimatedVisibility(
+                visible = isOther,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(13.dp)
+                ) {
+                    SetupProfileSectionTitle("¿Qué estás estudiando?")
+                    SetupCustomProgramField(
+                        value = customProgram,
+                        validation = customProgramValidation,
+                        onValueChange = onCustomProgramChange
+                    )
+                    InstitutionField(
+                        value = institutionName,
+                        label = "¿Dónde estudias?",
+                        placeholder = "Instituto, academia, plataforma…",
+                        onValueChange = onInstitutionNameChange
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupProfileSectionTitle(text: String) {
+    Text(
+        text = text,
+        color = UniStackColors.TextPrimary,
+        fontSize = 18.sp,
+        lineHeight = 22.sp,
+        fontWeight = FontWeight.ExtraBold,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+/** Selector de grado escolar. Chips en lugar de desplegable: son pocos y caben a la vista. */
+@Composable
+private fun GradeLevelChips(
+    options: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { option ->
+            val isSelected = option == selected
+            val containerColor by animateColorAsState(
+                targetValue = if (isSelected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+                label = "grade-chip-container"
+            )
+            val contentColor by animateColorAsState(
+                targetValue = if (isSelected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+                label = "grade-chip-content"
+            )
+            val scale by animateFloatAsState(
+                targetValue = if (isSelected) 1.06f else 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                label = "grade-chip-scale"
+            )
+            Box(
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .clip(AppShapes.Pill)
+                    .background(containerColor)
+                    .clickable(role = Role.RadioButton) { onSelected(option) }
+                    .semantics { stateDescription = if (isSelected) "Seleccionado" else "No seleccionado" }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = option,
+                    color = contentColor,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -1190,6 +1329,7 @@ fun SetupProfileScreen(
 @Composable
 private fun SetupEducationHero() {
     val glowAlpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.16f
+    val heroFloat = floatingOffset(travel = 5f, durationMillis = 3000, label = "education-hero-float")
 
     Box(
         modifier = Modifier
@@ -1213,6 +1353,7 @@ private fun SetupEducationHero() {
         )
         Box(
             modifier = Modifier
+                .graphicsLayer { translationY = heroFloat.dp.toPx() }
                 .size(68.dp)
                 .clip(CircleShape)
                 .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.68f else 1f))
@@ -1320,7 +1461,6 @@ private fun EducationLevelCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = AppShapes.SmallCard
     val cardColor = if (selected) {
         UniStackColors.PrimaryLight
     } else {
@@ -1330,6 +1470,7 @@ private fun EducationLevelCard(
     UniCard(
         modifier = modifier
             .height(136.dp)
+            .expressiveSelection(selected)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -1341,7 +1482,7 @@ private fun EducationLevelCard(
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
         color = cardColor,
-        shape = shape,
+        shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
@@ -1657,6 +1798,8 @@ fun SetupGradingScaleScreen(
 
 @Composable
 private fun SetupScaleHero() {
+    val float = floatingOffset(travel = 4f, durationMillis = 3100, label = "scale-hero-float")
+    val breath = floatingOffset(travel = 0.05f, durationMillis = 3900, label = "scale-hero-breath")
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1665,6 +1808,11 @@ private fun SetupScaleHero() {
     ) {
         Box(
             modifier = Modifier
+                .graphicsLayer {
+                    translationY = float.dp.toPx()
+                    scaleX = 1f + breath
+                    scaleY = 1f + breath
+                }
                 .size(54.dp)
                 .clip(CircleShape)
                 .background(
@@ -1779,10 +1927,10 @@ private fun ScaleTypeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = AppShapes.SmallCard
     UniCard(
         modifier = modifier
             .height(120.dp)
+            .expressiveSelection(selected)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
@@ -1794,7 +1942,7 @@ private fun ScaleTypeCard(
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = shape,
+        shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
@@ -2882,7 +3030,9 @@ fun SetupDoneScreen(
     onGoHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     gradesEnabled: Boolean = true,
-    totalSteps: Int = 6
+    totalSteps: Int = 6,
+    isSchoolLevel: Boolean = false,
+    institutionName: String = ""
 ) {
     BackHandler(onBack = onBackClick)
     val displayName = name.ifBlank { "Usuario" }
@@ -2922,41 +3072,33 @@ fun SetupDoneScreen(
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             SetupFinishHero(name = displayName)
+            // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
+            // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
+            // un error caro —la escala o los pesos— antes de empezar a cargar datos.
             SummaryInfoCard(
                 icon = Icons.Rounded.School,
-                title = "Información académica"
+                title = "Tu configuración"
             ) {
-                SummaryKeyValueRow("Nombre", displayName)
                 SummaryKeyValueRow("Nivel de estudio", educationLevel.label())
-                SummaryKeyValueRow("Área de estudio", studyArea?.let(::labelFor) ?: "Sin definir")
-                SummaryKeyValueRow("Carrera", program.ifBlank { "Sin definir" })
-            }
-            if (gradesEnabled) {
-                SummaryInfoCard(
-                    icon = Icons.Rounded.BarChart,
-                    title = "Escala de notas"
-                ) {
+                if (isSchoolLevel) {
+                    SummaryKeyValueRow("Grado", academicInfo.ifBlank { "Sin definir" })
+                } else {
+                    SummaryKeyValueRow("Carrera", program.ifBlank { "Sin definir" })
+                }
+                if (institutionName.isNotBlank()) {
+                    SummaryKeyValueRow("Institución", institutionName)
+                }
+                if (gradesEnabled) {
                     SummaryKeyValueRow("Escala", gradingScale.summaryLabel(customGradeMax))
-                    SummaryKeyValueRow("Nota mínima", passingGrade)
-                    SummaryKeyValueRow("Promedio objetivo", targetAverage)
-                }
-                SummaryInfoCard(
-                    icon = Icons.Rounded.Percent,
-                    title = "Evaluación"
-                ) {
-                    SummaryKeyValueRow("Sistema", periodLabel.singular)
                     SummaryKeyValueRow(
-                        "Cantidad",
-                        if (weights.isEmpty()) "Sin definir" else "${weights.size} ${periodLabel.plural.lowercase()}"
+                        periodLabel.plural,
+                        if (weights.isEmpty()) "Sin definir" else "${weights.size} · ${weights.joinToString(" / ") { "$it%" }}"
                     )
-                    SummaryDistributionRow(weights = weights)
                 }
-            }
-            SummaryInfoCard(
-                icon = Icons.Rounded.GridView,
-                title = "Módulos activos"
-            ) {
-                SummaryModulesList(enabledModules = enabledModules)
+                SummaryKeyValueRow(
+                    "Módulos",
+                    enabledModules.sortedBy { it.ordinal }.joinToString(" · ") { it.shortLabel() }
+                )
             }
             SetupSummaryNoticeCard()
         }
@@ -2965,6 +3107,8 @@ fun SetupDoneScreen(
 
 @Composable
 private fun SetupModulesHero() {
+    val float = floatingOffset(travel = 4f, durationMillis = 2900, label = "modules-hero-float")
+    val breath = floatingOffset(travel = 0.05f, durationMillis = 3700, label = "modules-hero-breath")
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -2973,6 +3117,10 @@ private fun SetupModulesHero() {
     ) {
         Box(
             modifier = Modifier
+                .graphicsLayer {
+                    scaleX = 1f + breath
+                    scaleY = 1f + breath
+                }
                 .size(66.dp)
                 .clip(CircleShape)
                 .background(
@@ -2987,6 +3135,7 @@ private fun SetupModulesHero() {
         )
         Box(
             modifier = Modifier
+                .graphicsLayer { translationY = float.dp.toPx() }
                 .size(50.dp)
                 .clip(CircleShape)
                 .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 1f))
@@ -3058,6 +3207,7 @@ private fun SetupModuleSelectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(68.dp)
+            .expressiveSelection(selected)
             .toggleable(
                 value = selected,
                 role = Role.Checkbox,
@@ -3069,7 +3219,7 @@ private fun SetupModuleSelectionCard(
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
         color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
-        shape = AppShapes.SmallCard,
+        shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = 0.9f),
         borderWidth = if (selected) 1.3.dp else 1.dp,
