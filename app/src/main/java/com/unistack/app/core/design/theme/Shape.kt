@@ -2,6 +2,7 @@ package com.unistack.app.core.design.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 val UniStackShapes = Shapes(
@@ -34,9 +35,21 @@ object AppShapes {
 
     /** El radio más usado de la app; no tenía token y se escribía suelto como 12.dp. */
     val Small
-        get() = RoundedCornerShape(
-            (AppearanceRuntime.cornerStyle.cardRadius().value - 4f).coerceAtLeast(4f).dp
-        )
+        get() = RoundedCornerShape(smallRadius)
+
+    /**
+     * Radio de [Small] como medida, no como forma.
+     *
+     * Sirve para anidar formas concéntricas: un elemento dentro de un contenedor debe usar
+     * el radio del contenedor menos el relleno que los separa, o los arcos no encajan y se
+     * ve un borde redondo alrededor de otro más cuadrado.
+     */
+    val smallRadius: Dp
+        get() = (AppearanceRuntime.cornerStyle.cardRadius().value - 4f).coerceAtLeast(4f).dp
+
+    /** Radio concéntrico para un hijo separado del contenedor [Small] por [inset]. */
+    fun insetFromSmall(inset: Dp): RoundedCornerShape =
+        RoundedCornerShape((smallRadius.value - inset.value).coerceAtLeast(2f).dp)
 
     val Pill = RoundedCornerShape(50)
     val BottomBar

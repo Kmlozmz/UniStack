@@ -90,6 +90,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -179,6 +180,9 @@ private object SetupSteps {
 }
 
 private const val SETUP_EXIT_MILLIS = 220
+
+/** Separación entre el control segmentado y sus segmentos; define el radio concéntrico. */
+private val SEGMENT_INSET = 3.dp
 
 /**
  * Oscilación infinita entre -[travel] y +[travel] para elementos decorativos
@@ -2426,7 +2430,7 @@ private fun EvaluationTypeSegmentedControl(
                 color = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 0.9f),
                 shape = AppShapes.Small
             )
-            .padding(3.dp),
+            .padding(SEGMENT_INSET),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         AcademicPeriodLabel.entries.forEach { option ->
@@ -2453,7 +2457,10 @@ private fun EvaluationSegment(
             // Escala contenida: el segmento vive dentro de un control con vecinos pegados,
             // así que un rebote grande invadiría el de al lado.
             .expressiveSelection(selected, selectedScale = 1.02f)
-            .clip(rememberSelectionShape(selected, extraRadiusWhenSelected = 6.dp))
+            // Forma concéntrica con el contenedor, descontando su relleno de 3.dp. Sin
+            // esto la píldora seleccionada quedaba más redonda que el borde que la
+            // envuelve y los arcos no encajaban.
+            .clip(AppShapes.insetFromSmall(SEGMENT_INSET))
             .background(if (selected) UniStackColors.Primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -3079,8 +3086,9 @@ fun SetupDoneScreen(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Spacer(modifier = Modifier.height(8.dp))
             SetupFinishHero(name = displayName)
             // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
             // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
@@ -3359,12 +3367,7 @@ private fun SummaryInfoCard(
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f)
                 )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = UniStackColors.TextSecondary,
-                    modifier = Modifier.size(21.dp)
-                )
+                // Sin flecha: la tarjeta no lleva a ninguna parte y la flecha prometía que sí.
             }
             Column(
                 modifier = Modifier.padding(start = 44.dp),
@@ -3542,29 +3545,67 @@ private fun SetupSummaryNoticeCard() {
 
 @Composable
 private fun SetupFinishHero(name: String) {
+    // El sello entra con rebote: es el único momento del onboarding que celebra algo, y
+    // aparecer ya colocado lo hacía indistinguible de una cabecera cualquiera.
+    val motionEnabled = LocalMotionDurationScale.current > 0f
+    var appeared by remember { mutableStateOf(!motionEnabled) }
+    LaunchedEffect(Unit) { appeared = true }
+    val badgeScale by animateFloatAsState(
+        targetValue = if (appeared) 1f else 0.55f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "finish-badge-appear"
+    )
+    val badgeFloat = floatingOffset(travel = 4f, durationMillis = 3200, label = "finish-badge-float")
+
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(78.dp)
-                .padding(start = 7.dp),
-            contentAlignment = Alignment.CenterStart
+                .size(132.dp)
+                .graphicsLayer {
+                    scaleX = badgeScale
+                    scaleY = badgeScale
+                    translationY = badgeFloat.dp.toPx()
+                },
+            contentAlignment = Alignment.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(58.dp)
+                    .size(132.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.Primary),
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.18f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+            Box(
+                modifier = Modifier
+                    .size(88.dp)
+                    .clip(CircleShape)
+                    .background(UniStackColors.PrimaryLight),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = UniStackColors.OnPrimary,
-                    modifier = Modifier.size(34.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(UniStackColors.Primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = UniStackColors.OnPrimary,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
             }
         }
         Text(
@@ -3575,15 +3616,18 @@ private fun SetupFinishHero(name: String) {
                 }
             },
             color = UniStackColors.TextPrimary,
-            fontSize = 31.sp,
-            lineHeight = 33.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontSize = 32.sp,
+            lineHeight = 36.sp,
+            fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center
         )
         Text(
-            text = "UniStack ya está listo para\nacompañarte este semestre.",
+            text = "UniStack ya está listo para acompañarte este semestre.",
             color = UniStackColors.TextSecondary,
             fontSize = 15.sp,
-            lineHeight = 21.sp
+            lineHeight = 21.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 12.dp)
         )
     }
 }
