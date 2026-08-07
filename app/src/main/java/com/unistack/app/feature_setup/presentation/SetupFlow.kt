@@ -281,7 +281,7 @@ fun SetupFlow(
                 studyArea = viewModel.studyArea,
                 selectedProgram = viewModel.selectedProgram,
                 customProgram = viewModel.customProgram,
-                isValid = viewModel.isAcademicInfoValid,
+                canContinue = viewModel.canContinueFromProfile,
                 customProgramValidation = viewModel.customProgramValidation,
                 totalSteps = totalSteps,
                 isSchoolLevel = viewModel.isSchoolLevel,
@@ -1083,11 +1083,11 @@ private fun SetupNameInfoCard() {
  */
 @Composable
 fun SetupProfileScreen(
-    educationLevel: EducationLevel,
+    educationLevel: EducationLevel?,
     studyArea: StudyArea?,
     selectedProgram: String?,
     customProgram: String,
-    isValid: Boolean,
+    canContinue: Boolean,
     onEducationLevelSelected: (EducationLevel) -> Unit,
     onStudyAreaSelected: (StudyArea) -> Unit,
     onProgramSelected: (String) -> Unit,
@@ -1120,7 +1120,7 @@ fun SetupProfileScreen(
             UniStackButton(
                 text = "Continuar",
                 onClick = onContinueClick,
-                enabled = isValid || !isUniversity,
+                enabled = canContinue,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
             if (isUniversity) {
@@ -1413,7 +1413,7 @@ private fun SetupEducationTitle() {
 
 @Composable
 private fun EducationLevelGrid(
-    selected: EducationLevel,
+    selected: EducationLevel?,
     onSelected: (EducationLevel) -> Unit
 ) {
     val options = listOf(
@@ -3023,7 +3023,7 @@ fun SetupModulesScreen(
 @Composable
 fun SetupDoneScreen(
     name: String,
-    educationLevel: EducationLevel,
+    educationLevel: EducationLevel?,
     studyArea: StudyArea?,
     selectedProgram: String?,
     customProgram: String,
@@ -3089,7 +3089,7 @@ fun SetupDoneScreen(
                 icon = Icons.Rounded.School,
                 title = "Tu configuración"
             ) {
-                SummaryKeyValueRow("Nivel de estudio", educationLevel.label())
+                SummaryKeyValueRow("Nivel de estudio", educationLevel?.label() ?: "Sin definir")
                 if (isSchoolLevel) {
                     SummaryKeyValueRow("Grado", academicInfo.ifBlank { "Sin definir" })
                 } else {
@@ -4179,7 +4179,7 @@ private fun EducationLevel.label(): String = when (this) {
 }
 
 private fun resolvedProgram(
-    educationLevel: EducationLevel,
+    educationLevel: EducationLevel?,
     selectedProgram: String?,
     customProgram: String,
     academicInfo: String

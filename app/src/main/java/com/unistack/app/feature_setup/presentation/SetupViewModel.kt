@@ -27,7 +27,11 @@ class SetupViewModel @Inject constructor(
 ) : ViewModel() {
     var preferredName by mutableStateOf("")
         private set
-    var educationLevel by mutableStateOf(EducationLevel.UNIVERSITY)
+    /**
+     * Sin elegir hasta que el usuario elige. Antes venía preseleccionado a universidad, lo
+     * que además de decidir por él dejaba pasar el paso sin haberlo mirado.
+     */
+    var educationLevel by mutableStateOf<EducationLevel?>(null)
         private set
     var academicInfo by mutableStateOf("")
         private set
@@ -69,11 +73,11 @@ class SetupViewModel @Inject constructor(
 
     /** En primaria y secundaria no se pregunta carrera, sino grado o curso. */
     val isSchoolLevel: Boolean
-        get() = educationLevel.isSchoolLevel()
+        get() = educationLevel?.isSchoolLevel() == true
 
     /** Grados disponibles para el nivel escolar actual. */
     val gradeOptions: List<String>
-        get() = educationLevel.standardGradeOptions()
+        get() = educationLevel?.standardGradeOptions().orEmpty()
 
     /** El grado se guarda en el mismo campo que el resto de información académica. */
     val selectedGrade: String
@@ -81,7 +85,9 @@ class SetupViewModel @Inject constructor(
 
     val isAcademicInfoValid: Boolean
         get() {
-            if (educationLevel == EducationLevel.UNIVERSITY) {
+            val level = educationLevel ?: return false
+
+            if (level == EducationLevel.UNIVERSITY) {
                 val area = studyArea ?: return false
                 val program = selectedProgram ?: return false
                 if (area == StudyArea.OTHER || program == OTHER_OPTION) {
@@ -90,14 +96,24 @@ class SetupViewModel @Inject constructor(
                 return true
             }
 
-            if (educationLevel.isSchoolLevel()) {
+            if (level.isSchoolLevel()) {
                 val value = academicInfo.trim()
-                if (value in educationLevel.standardGradeOptions()) return true
+                if (value in level.standardGradeOptions()) return true
                 return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
             }
 
             val value = academicInfo.trim()
             return value.isEmpty() || TextValidators.validateCustomCareer(value).isValid
+        }
+
+    /**
+     * Elegir nivel es obligatorio; el resto del paso solo lo es en universidad, donde el
+     * área y la carrera dan de comer al catálogo de materias.
+     */
+    val canContinueFromProfile: Boolean
+        get() {
+            val level = educationLevel ?: return false
+            return level != EducationLevel.UNIVERSITY || isAcademicInfoValid
         }
 
     val isGradesValid: Boolean
@@ -221,13 +237,17 @@ class SetupViewModel @Inject constructor(
     fun finishSetup() {
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
+        // No se puede pasar del paso de perfil sin elegir nivel, así que aquí siempre hay
+        // uno. El repliegue existe solo para no arrastrar nulabilidad hasta el perfil
+        // guardado, donde el nivel es obligatorio.
+        val level = educationLevel ?: EducationLevel.OTHER
         val profile = UserProfile(
             userId = UserIds.LOCAL,
             preferredName = TextValidators.normalizeText(preferredName),
-            educationLevel = educationLevel,
-            careerOrProgram = if (educationLevel.isSchoolLevel()) null else info,
+            educationLevel = level,
+            careerOrProgram = if (level.isSchoolLevel()) null else info,
             studyArea = studyArea,
-            gradeLevel = if (educationLevel.isSchoolLevel()) info else null,
+            gradeLevel = if (level.isSchoolLevel()) info else null,
             // Se guarda sin normalizar: conservar el original permite mapearlo a un
             // catálogo canónico más adelante.
             institutionName = institutionName.trim().takeIf { it.isNotEmpty() },
