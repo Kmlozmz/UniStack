@@ -1343,7 +1343,7 @@ private fun CalendarMonthGrid(
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
                             color = when {
-                                selected -> Color.White
+                                selected -> UniStackColors.OnPrimary
                                 enabled -> UniStackDatePickerColors.Text
                                 else -> UniStackDatePickerColors.Muted.copy(alpha = 0.35f)
                             },
@@ -1392,7 +1392,7 @@ private fun SubjectDropdown(
                 subjectQuery = ""
             },
             containerColor = SubjectSheetSurface,
-            contentColor = Color.White,
+            contentColor = UniStackColors.OnPrimary,
             scrimColor = Color.Black.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
             contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
@@ -1402,7 +1402,7 @@ private fun SubjectDropdown(
                         .padding(top = 12.dp, bottom = 4.dp)
                         .size(width = 42.dp, height = 4.dp)
                         .background(
-                            Color.White.copy(alpha = 0.20f),
+                            UniStackColors.OnPrimary.copy(alpha = 0.20f),
                             RoundedCornerShape(100.dp)
                         )
                 )
@@ -1515,7 +1515,7 @@ private fun PeriodDropdown(
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             containerColor = SubjectSheetSurface,
-            contentColor = Color.White,
+            contentColor = UniStackColors.OnPrimary,
             scrimColor = Color.Black.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
@@ -1565,7 +1565,7 @@ private fun SubjectSearchField(
             .background(SubjectSheetField, RoundedCornerShape(18.dp))
             .border(
                 width = 0.5.dp,
-                color = Color.White.copy(alpha = 0.07f),
+                color = UniStackColors.OnPrimary.copy(alpha = 0.07f),
                 shape = RoundedCornerShape(18.dp)
             )
             .padding(horizontal = 16.dp),
@@ -1623,7 +1623,7 @@ private fun SubjectSheetOption(
             )
             .border(
                 width = 0.8.dp,
-                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else Color.White.copy(alpha = 0.07f),
+                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else UniStackColors.OnPrimary.copy(alpha = 0.07f),
                 shape = shape
             )
             .clickable(
@@ -1709,7 +1709,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 74.dp)
             .background(SubjectSheetCreateSurface, shape)
-            .border(0.7.dp, Color.White.copy(alpha = 0.08f), shape)
+            .border(0.7.dp, UniStackColors.OnPrimary.copy(alpha = 0.08f), shape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1727,7 +1727,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = null,
-                tint = Color.White,
+                tint = UniStackColors.OnPrimary,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -1902,7 +1902,7 @@ private fun CreateTaskButton(
         shape = AppShapes.Pill,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
+            contentColor = UniStackColors.OnPrimary,
             disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
         ),
@@ -1926,15 +1926,24 @@ private fun CreateTaskButton(
 
 private val SubjectSheetSurface: Color
     @Composable get() = UniStackColors.Background
-private val SubjectSheetField = Color(0xFF171A2C)
-private val SubjectSheetItemSurface = Color(0xFF111423)
-private val SubjectSheetSelectedSurface = Color(0xFF171239)
-private val SubjectSheetCreateSurface = Color(0xFF14182A)
-private val SubjectSheetAccent = Color(0xFF581DD6)
-private val SubjectSheetAccentSoft = Color(0xFFA78BFA)
-private val SubjectSheetSelectedIcon = Color(0xFFC4B5FD)
-private val SubjectSheetText = Color(0xFFF4F3FF)
-private val SubjectSheetMuted = Color(0xFFB8BDD0)
+private val SubjectSheetField: Color
+    @Composable get() = UniStackColors.SurfaceVariant
+private val SubjectSheetItemSurface: Color
+    @Composable get() = UniStackColors.Card
+private val SubjectSheetSelectedSurface: Color
+    @Composable get() = UniStackColors.PrimaryLight
+private val SubjectSheetCreateSurface: Color
+    @Composable get() = UniStackColors.SurfaceVariant
+private val SubjectSheetAccent: Color
+    @Composable get() = UniStackColors.Primary
+private val SubjectSheetAccentSoft: Color
+    @Composable get() = UniStackColors.PrimaryDark
+private val SubjectSheetSelectedIcon: Color
+    @Composable get() = UniStackColors.Primary
+private val SubjectSheetText: Color
+    @Composable get() = UniStackColors.TextPrimary
+private val SubjectSheetMuted: Color
+    @Composable get() = UniStackColors.TextSecondary
 
 private fun TaskType.label(): String {
     return when (this) {

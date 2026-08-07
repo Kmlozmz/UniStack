@@ -4,13 +4,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import kotlin.math.pow
 import com.unistack.app.feature_user.domain.AccentIntensity
 import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.SurfaceStyle
 
+/**
+ * Roles tonales tomados del esquema dinámico del sistema (Material You / Monet).
+ *
+ * Se leen tal cual del [androidx.compose.material3.ColorScheme] en vez de derivarlos con
+ * mezclas: fabricar el "container" mezclando el acento hacia el fondo daba un tono
+ * grisáceo, no el pastel característico de Monet.
+ */
+data class DynamicAccent(
+    val primary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color
+)
+
 object UniStackColors {
+    /** Tinta oscura para contenido sobre superficies claras (más suave que el negro puro). */
+    private val DarkInk = Color(0xFF171427)
+    private const val DARK_INK_LUMINANCE = 0.0136f
+
     private val lightPalette = UniStackColorPalette(
         primary = Color(0xFF6750F5),
         primaryDark = Color(0xFF2E1A78),
@@ -110,29 +128,60 @@ object UniStackColors {
     var BottomBarSelected by mutableStateOf(lightPalette.bottomBarSelected)
         private set
 
+    /** Contenido legible sobre [Primary]. Nunca asumas blanco: con Monet puede ser tinta oscura. */
+    var OnPrimary by mutableStateOf(Color.White)
+        private set
+
+    /** Contenido legible sobre [PrimaryLight]. */
+    var OnPrimaryContainer by mutableStateOf(lightPalette.primaryDark)
+        private set
+
+    /**
+     * Color de contenido legible sobre [background], eligiendo entre tinta clara y oscura
+     * por ratio de contraste WCAG.
+     *
+     * Úsalo en lugar de `Color.White` sobre cualquier superficie de color: el blanco fijo
+     * deja de ser legible en cuanto el acento es claro (por ejemplo el primary pastel que
+     * Monet entrega en modo oscuro, o un color de materia elegido por el usuario).
+     */
+    fun contentColorOn(background: Color): Color {
+        val luminance = relativeLuminance(background)
+        val contrastWithLight = 1.05f / (luminance + 0.05f)
+        val contrastWithDark = (luminance + 0.05f) / (DARK_INK_LUMINANCE + 0.05f)
+        return if (contrastWithLight >= contrastWithDark) Color.White else DarkInk
+    }
+
     internal fun applyTheme(
         darkTheme: Boolean,
         oledTheme: Boolean,
         appearance: AppearancePreferences,
-        highContrast: Boolean = false
+        highContrast: Boolean = false,
+        dynamicAccent: DynamicAccent? = null
     ) {
         val normalized = appearance.normalized()
-        val signature = 31 * (31 * (31 * darkTheme.hashCode() + oledTheme.hashCode()) + normalized.hashCode()) +
-            highContrast.hashCode()
+        val signature = 31 * (31 * (31 * (31 * darkTheme.hashCode() + oledTheme.hashCode()) + normalized.hashCode()) +
+            highContrast.hashCode()) + dynamicAccent.hashCode()
         if (appliedSignature == signature) return
 
+        // Los tonos de Monet solo se adoptan si el usuario tiene el acento en "del sistema";
+        // con un acento fijo seguimos derivándolos del color elegido.
+        val dynamicTones = dynamicAccent?.takeIf { normalized.accentStyle == AccentStyle.DYNAMIC }
         val base = if (darkTheme) darkPalette else lightPalette
         val background = resolveBackground(base, darkTheme, oledTheme, normalized)
-        val primary = resolveAccent(base, background, darkTheme, normalized)
+        val primary = resolveAccent(base, background, darkTheme, normalized, dynamicTones?.primary)
         val card = resolveCard(background, darkTheme, normalized.surfaceStyle)
         val surfaceVariant = mix(card, if (darkTheme) Color.White else Color.Black, if (darkTheme) 0.045f else 0.035f)
-        val primaryLight = mix(primary, background, if (darkTheme) 0.72f else 0.84f)
+        val primaryLight = dynamicTones?.primaryContainer
+            ?: mix(primary, background, if (darkTheme) 0.72f else 0.84f)
 
         appliedSignature = signature
         IsDarkTheme = darkTheme
         Primary = primary
-        PrimaryDark = if (darkTheme) mix(primary, Color.White, 0.72f) else mix(primary, Color.Black, 0.45f)
+        PrimaryDark = dynamicTones?.onPrimaryContainer
+            ?: if (darkTheme) mix(primary, Color.White, 0.72f) else mix(primary, Color.Black, 0.45f)
         PrimaryLight = primaryLight
+        OnPrimary = contentColorOn(primary)
+        OnPrimaryContainer = dynamicTones?.onPrimaryContainer ?: contentColorOn(primaryLight)
         Blue = base.blue
         BlueLight = base.blueLight
         Teal = base.teal
@@ -183,9 +232,13 @@ object UniStackColors {
         base: UniStackColorPalette,
         background: Color,
         darkTheme: Boolean,
-        appearance: AppearancePreferences
+        appearance: AppearancePreferences,
+        dynamicAccent: Color?
     ): Color {
         val selected = when (appearance.accentStyle) {
+            // Si el dispositivo no expone Monet (API < 31) caemos al violeta de marca.
+            AccentStyle.DYNAMIC -> dynamicAccent
+                ?: if (darkTheme) Color(0xFF9A4DFF) else Color(0xFF6750F5)
             AccentStyle.VIOLET -> if (darkTheme) Color(0xFF9A4DFF) else Color(0xFF6750F5)
             AccentStyle.BLUE -> if (darkTheme) Color(0xFF65A7FF) else Color(0xFF1E7BEA)
             AccentStyle.TEAL -> if (darkTheme) Color(0xFF21D6BF) else Color(0xFF008F87)
@@ -208,6 +261,13 @@ object UniStackColors {
             SurfaceStyle.ELEVATED -> mix(background, contrast, if (darkTheme) 0.065f else 0.035f)
             SurfaceStyle.TRANSLUCENT -> mix(background, contrast, if (darkTheme) 0.045f else 0.025f)
         }
+    }
+
+    /** Luminancia relativa WCAG 2.1 (con corrección gamma sRGB). */
+    private fun relativeLuminance(color: Color): Float {
+        fun channel(value: Float): Float =
+            if (value <= 0.03928f) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
+        return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
     }
 
     private fun mix(first: Color, second: Color, amount: Float): Color {

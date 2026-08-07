@@ -1,5 +1,6 @@
 package com.unistack.app.feature_profile.presentation
 
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -900,13 +901,17 @@ private fun AccentChoices(
     onSelected: (AccentStyle) -> Unit,
     onCustomColor: (Int) -> Unit
 ) {
-    val choices = listOf(
-        AccentStyle.VIOLET to Color(0xFF6750F5),
-        AccentStyle.BLUE to Color(0xFF1E7BEA),
-        AccentStyle.TEAL to Color(0xFF00AFA5),
-        AccentStyle.GREEN to Color(0xFF3DBB68),
-        AccentStyle.PINK to Color(0xFFD83D87)
-    )
+    val choices = buildList {
+        // Material You solo existe desde Android 12; en versiones previas no ofrecemos la opción.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            add(AccentStyle.DYNAMIC to UniStackColors.Primary)
+        }
+        add(AccentStyle.VIOLET to Color(0xFF6750F5))
+        add(AccentStyle.BLUE to Color(0xFF1E7BEA))
+        add(AccentStyle.TEAL to Color(0xFF00AFA5))
+        add(AccentStyle.GREEN to Color(0xFF3DBB68))
+        add(AccentStyle.PINK to Color(0xFFD83D87))
+    }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(choices) { (style, color) ->
             ColorChoice(
@@ -1132,6 +1137,7 @@ private fun BackgroundStyle.label() = when (this) {
 }
 
 private fun AccentStyle.label() = when (this) {
+    AccentStyle.DYNAMIC -> "Del sistema"
     AccentStyle.VIOLET -> "Violeta"
     AccentStyle.BLUE -> "Azul"
     AccentStyle.TEAL -> "Turquesa"

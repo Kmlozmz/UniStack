@@ -440,19 +440,19 @@ private fun AddSubjectButton(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f)),
+                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = Color(0xFF15131D),
+                    tint = UniStackColors.contentColorOn(UniStackColors.Primary),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Agregar materia",
-                color = Color(0xFF15131D),
+                color = UniStackColors.contentColorOn(UniStackColors.Primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,

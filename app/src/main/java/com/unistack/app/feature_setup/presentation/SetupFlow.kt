@@ -1,7 +1,16 @@
 package com.unistack.app.feature_setup.presentation
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,6 +72,7 @@ import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -80,6 +90,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +99,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -112,9 +125,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniStackButton
+import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
@@ -135,8 +151,29 @@ private object SetupRoutes {
     const val Finish = "setup_finish"
 }
 
-private const val SETUP_TRANSITION_MILLIS = 320
 private const val SETUP_EXIT_MILLIS = 220
+
+/**
+ * Oscilación infinita entre -[travel] y +[travel] para elementos decorativos
+ * (blobs, gafete, destellos). El recorrido se atenúa con la preferencia de movimiento
+ * del usuario y se anula por completo si eligió "sin animaciones".
+ */
+@Composable
+private fun floatingOffset(travel: Float, durationMillis: Int, label: String): Float {
+    val motionScale = LocalMotionDurationScale.current
+    if (motionScale <= 0f) return 0f
+    val transition = rememberInfiniteTransition(label = label)
+    val animated by transition.animateFloat(
+        initialValue = -travel,
+        targetValue = travel,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = label
+    )
+    return animated * motionScale
+}
 
 @Composable
 fun SetupFlow(
@@ -153,45 +190,45 @@ fun SetupFlow(
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it / 2 },
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
             ) + fadeIn(
                 animationSpec = tween(190, delayMillis = 45, easing = FastOutSlowInEasing)
             ) + scaleIn(
                 initialScale = 0.96f,
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
             )
         },
         exitTransition = {
             slideOutHorizontally(
                 targetOffsetX = { -it / 5 },
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
             ) + fadeOut(
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             ) + scaleOut(
                 targetScale = 0.985f,
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
             )
         },
         popEnterTransition = {
             slideInHorizontally(
                 initialOffsetX = { -it / 2 },
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
             ) + fadeIn(
                 animationSpec = tween(190, delayMillis = 45, easing = FastOutSlowInEasing)
             ) + scaleIn(
                 initialScale = 0.96f,
-                animationSpec = tween(SETUP_TRANSITION_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
             )
         },
         popExitTransition = {
             slideOutHorizontally(
                 targetOffsetX = { it / 5 },
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
             ) + fadeOut(
                 animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
             ) + scaleOut(
                 targetScale = 0.985f,
-                animationSpec = tween(SETUP_EXIT_MILLIS, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
             )
         }
     ) {
@@ -327,7 +364,11 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
         modifier = modifier,
         welcome = false,
         actions = {
-            WelcomeSetupButton(onClick = onStartClick)
+            UniStackButton(
+                text = "Comenzar configuración",
+                onClick = onStartClick,
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
+            )
             WelcomeTimeHint()
         }
     ) {
@@ -336,13 +377,11 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .padding(top = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             WelcomeBrand()
-            Spacer(modifier = Modifier.height(8.dp))
-            WelcomeTitle()
-            WelcomeHeroImage()
-            WelcomeBenefitsCard()
+            WelcomeHeroCard()
+            WelcomeFeaturesGrid()
         }
     }
 }
@@ -365,249 +404,284 @@ private fun WelcomeBrand() {
 }
 
 @Composable
-private fun WelcomeTitle() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = buildAnnotatedString {
-                append("Bienvenido a\n")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
-                    append("tu semestre ✨")
-                }
-            },
-            color = UniStackColors.TextPrimary,
-            fontSize = 30.sp,
-            lineHeight = 34.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-            text = buildAnnotatedString {
-                append("Te haremos algunas preguntas rápidas\n")
-                append("para adaptar UniStack a tus necesidades\n")
-                append("y que tengas ")
-                withStyle(SpanStyle(color = UniStackColors.Primary, fontWeight = FontWeight.Normal)) {
-                    append("todo listo")
-                }
-                append(" desde el inicio.")
-            },
-            color = UniStackColors.TextSecondary,
-            fontSize = 13.sp,
-            lineHeight = 19.sp
-        )
-    }
-}
-
-@Composable
-private fun WelcomeHeroImage() {
-    val glowAlpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.13f
+private fun WelcomeHeroCard() {
+    // Duraciones distintas para que los dos blobs nunca queden sincronizados.
+    val blobOneDrift = floatingOffset(travel = 9f, durationMillis = 3200, label = "hero-blob-one")
+    val blobOneBreath = floatingOffset(travel = 0.05f, durationMillis = 4300, label = "hero-blob-one-breath")
+    val blobTwoDrift = floatingOffset(travel = 13f, durationMillis = 4100, label = "hero-blob-two")
+    val blobTwoBreath = floatingOffset(travel = 0.07f, durationMillis = 3500, label = "hero-blob-two-breath")
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp),
-        contentAlignment = Alignment.BottomCenter
+            .clip(AppShapes.LargeCard)
+            .background(UniStackColors.PrimaryLight)
     ) {
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
-                .size(226.dp)
+                .align(Alignment.TopEnd)
+                .offset(x = 22.dp, y = (-22).dp)
+                .graphicsLayer {
+                    translationY = blobOneDrift.dp.toPx()
+                    translationX = (blobOneDrift * 0.45f).dp.toPx()
+                    scaleX = 1f + blobOneBreath
+                    scaleY = 1f + blobOneBreath
+                }
+                .size(112.dp)
                 .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            UniStackColors.Primary.copy(alpha = glowAlpha),
-                            UniStackColors.Primary.copy(alpha = glowAlpha * 0.32f),
-                            Color.Transparent
-                        )
-                    )
-                )
+                .background(UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.24f))
         )
-        Image(
-            painter = painterResource(R.drawable.welcome_unistack_hero),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = (-26).dp, y = 32.dp)
+                .graphicsLayer {
+                    translationY = (-blobTwoDrift).dp.toPx()
+                    translationX = (blobTwoDrift * 0.3f).dp.toPx()
+                    scaleX = 1f + blobTwoBreath
+                    scaleY = 1f + blobTwoBreath
+                }
+                .size(82.dp)
+                .clip(CircleShape)
+                .background(UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.22f else 0.16f))
+        )
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(204.dp)
-                .offset(y = 5.dp)
-        )
-        Icon(
-            imageVector = Icons.Rounded.AutoAwesome,
-            contentDescription = null,
-            tint = UniStackColors.Primary,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 52.dp, y = 20.dp)
-                .size(9.dp)
-        )
-        Icon(
-            imageVector = Icons.Rounded.AutoAwesome,
-            contentDescription = null,
-            tint = UniStackColors.Primary.copy(alpha = 0.84f),
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 94.dp, y = 11.dp)
-                .size(6.dp)
-        )
-    }
-}
-
-@Composable
-private fun WelcomeBenefitsCard() {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            if (UniStackColors.IsDarkTheme) {
-                listOf(
-                    UniStackColors.SurfaceVariant.copy(alpha = 0.82f),
-                    UniStackColors.Card.copy(alpha = 0.92f)
-                )
-            } else {
-                listOf(
-                    UniStackColors.Card.copy(alpha = 0.98f),
-                    UniStackColors.SurfaceVariant.copy(alpha = 0.78f)
-                )
-            }
-        ),
-        shape = RoundedCornerShape(14.dp),
-        tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.9f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                .padding(horizontal = 22.dp, vertical = 26.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             Text(
-                text = "Con tu configuración, UniStack podrá:",
-                color = UniStackColors.TextPrimary,
+                text = "BIENVENIDO",
+                color = UniStackColors.Primary,
+                fontSize = 12.sp,
+                lineHeight = 14.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = buildAnnotatedString {
+                    append("Tu semestre,\n")
+                    withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                        append("a tu medida")
+                    }
+                },
+                color = UniStackColors.PrimaryDark,
+                fontSize = 30.sp,
+                lineHeight = 34.sp,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                text = "Unas preguntas rápidas y UniStack estará listo desde el primer día.",
+                color = UniStackColors.PrimaryDark.copy(alpha = 0.82f),
                 fontSize = 13.sp,
-                lineHeight = 16.sp
+                lineHeight = 19.sp,
+                modifier = Modifier.fillMaxWidth(0.82f)
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                WelcomeFeatureItem(
-                    icon = Icons.Rounded.School,
-                    title = "Organizar",
-                    caption = "tus materias",
-                    modifier = Modifier.weight(1f)
-                )
-                WelcomeFeatureItem(
-                    icon = Icons.Rounded.CalendarMonth,
-                    title = "Personalizar",
-                    caption = "tus tareas",
-                    modifier = Modifier.weight(1f)
-                )
-                WelcomeFeatureItem(
-                    icon = Icons.Rounded.Percent,
-                    title = "Adaptar",
-                    caption = "tu sistema de notas",
-                    modifier = Modifier.weight(1f)
-                )
-                WelcomeFeatureItem(
-                    icon = Icons.Rounded.GridView,
-                    title = "Configurar",
-                    caption = "tus módulos",
-                    modifier = Modifier.weight(1f)
-                )
+        }
+    }
+}
+
+private data class WelcomeFeature(
+    val icon: ImageVector,
+    val label: String,
+    val description: String
+)
+
+@Composable
+private fun WelcomeFeaturesGrid() {
+    val features = remember {
+        listOf(
+            WelcomeFeature(
+                icon = Icons.Rounded.School,
+                label = "Organizar materias",
+                description = "Registra cada materia con su color, su docente y su horario. " +
+                    "Es la base sobre la que UniStack arma tus notas, tus tareas y tus recordatorios."
+            ),
+            WelcomeFeature(
+                icon = Icons.Rounded.CalendarMonth,
+                label = "Gestionar tareas",
+                description = "Crea tareas con fecha de entrega y prioridad. " +
+                    "Las que vencen pronto aparecen destacadas en tu panel de inicio."
+            ),
+            WelcomeFeature(
+                icon = Icons.Rounded.Percent,
+                label = "Seguir tus notas",
+                description = "Anota tus calificaciones por corte y UniStack calcula tu promedio " +
+                    "y cuánto necesitas en lo que falta para llegar a tu meta."
+            ),
+            WelcomeFeature(
+                icon = Icons.Rounded.GridView,
+                label = "Configurar módulos",
+                description = "Activa solo lo que vayas a usar: notas, tareas, gastos u horario. " +
+                    "Puedes cambiarlo cuando quieras desde Ajustes."
+            )
+        )
+    }
+    // La selección persiste tras cerrar el diálogo; por eso son dos estados y no uno.
+    var selectedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+    var dialogIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "Con tu configuración podrás",
+            color = UniStackColors.TextSecondary,
+            fontSize = 12.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.6.sp
+        )
+        features.withIndex().chunked(2).forEach { row ->
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { (index, feature) ->
+                    WelcomeFeatureCard(
+                        feature = feature,
+                        selected = selectedIndex == index,
+                        onClick = {
+                            selectedIndex = index
+                            dialogIndex = index
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
-}
 
-@Composable
-private fun WelcomeFeatureItem(
-    icon: ImageVector,
-    title: String,
-    caption: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.88f else 1f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = UniStackColors.Primary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Text(
-                text = title,
-                color = UniStackColors.TextPrimary,
-                fontSize = 10.sp,
-                lineHeight = 12.sp,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = caption,
-                color = UniStackColors.TextSecondary,
-                fontSize = 9.sp,
-                lineHeight = 11.sp,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+    dialogIndex?.let { index ->
+        WelcomeFeatureDialog(
+            feature = features[index],
+            onDismiss = { dialogIndex = null }
+        )
     }
 }
 
 @Composable
-private fun WelcomeSetupButton(
+private fun WelcomeFeatureCard(
+    feature: WelcomeFeature,
+    selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = RoundedCornerShape(14.dp)
-    Button(
-        onClick = onClick,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = Color.White
-        ),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 0.dp),
+    val colorSpec = spring<Color>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
+    val containerColor by animateColorAsState(
+        targetValue = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
+        animationSpec = colorSpec,
+        label = "feature-container"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+        animationSpec = colorSpec,
+        label = "feature-content"
+    )
+    val iconBackground by animateColorAsState(
+        targetValue = if (selected) UniStackColors.OnPrimary.copy(alpha = 0.18f) else UniStackColors.PrimaryLight,
+        animationSpec = colorSpec,
+        label = "feature-icon-bg"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary,
+        animationSpec = colorSpec,
+        label = "feature-icon-tint"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.04f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "feature-scale"
+    )
+
+    Column(
         modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .clip(shape)
-            .background(Brush.horizontalGradient(listOf(Color(0xFF6E2DFF), Color(0xFF7E18FF))))
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(AppShapes.MediumCard)
+            .background(containerColor)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Comenzar configuración",
-                color = Color.White,
-                fontSize = 15.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.align(Alignment.Center)
-            )
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBackground),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                imageVector = feature.icon,
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(24.dp)
+                tint = iconTint,
+                modifier = Modifier.size(19.dp)
             )
         }
+        Text(
+            text = feature.label,
+            color = contentColor,
+            fontSize = 13.sp,
+            lineHeight = 16.sp,
+            fontWeight = FontWeight.Medium
+        )
     }
+}
+
+@Composable
+private fun WelcomeFeatureDialog(
+    feature: WelcomeFeature,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(CircleShape)
+                    .background(UniStackColors.PrimaryLight),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = feature.icon,
+                    contentDescription = null,
+                    tint = UniStackColors.Primary,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        },
+        title = {
+            Text(
+                text = feature.label,
+                color = UniStackColors.TextPrimary,
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Text(
+                text = feature.description,
+                color = UniStackColors.TextSecondary,
+                fontSize = 14.sp,
+                lineHeight = 21.sp,
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "Entendido",
+                    color = UniStackColors.Primary,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        containerColor = UniStackColors.Card,
+        shape = AppShapes.LargeCard
+    )
 }
 
 @Composable
@@ -648,10 +722,11 @@ fun SetupNameScreen(
         step = 2,
         modifier = modifier,
         actions = {
-            NameSetupContinueButton(
+            UniStackButton(
                 text = "Continuar",
+                onClick = onContinueClick,
                 enabled = nameValidation.isValid,
-                onClick = onContinueClick
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     ) {
@@ -660,7 +735,7 @@ fun SetupNameScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SetupNameHero()
+            SetupNameHero(name = name)
             SetupNameTitle()
             SetupNameInput(
                 name = name,
@@ -673,25 +748,14 @@ fun SetupNameScreen(
 }
 
 @Composable
-private fun SetupNameHero() {
+private fun SetupNameHero(name: String) {
     val glowAlpha = if (UniStackColors.IsDarkTheme) 0.36f else 0.18f
-    val cardBrush = if (UniStackColors.IsDarkTheme) {
-        Brush.linearGradient(
-            listOf(
-                Color(0xFF160A3E).copy(alpha = 0.92f),
-                UniStackColors.SurfaceVariant.copy(alpha = 0.92f),
-                Color(0xFF050A15).copy(alpha = 0.98f)
-            )
-        )
-    } else {
-        Brush.linearGradient(
-            listOf(
-                UniStackColors.Card,
-                UniStackColors.PrimaryLight.copy(alpha = 0.72f),
-                UniStackColors.Card
-            )
-        )
-    }
+    val cardColor = if (UniStackColors.IsDarkTheme) UniStackColors.SurfaceVariant else UniStackColors.Card
+
+    val badgeFloat = floatingOffset(travel = 7f, durationMillis = 2800, label = "name-badge-float")
+    val badgeTilt = floatingOffset(travel = 2.5f, durationMillis = 3600, label = "name-badge-tilt")
+    val sparkleBig = floatingOffset(travel = 0.22f, durationMillis = 1500, label = "name-sparkle-big")
+    val sparkleSmall = floatingOffset(travel = 0.28f, durationMillis = 1900, label = "name-sparkle-small")
 
     Box(
         modifier = Modifier
@@ -720,6 +784,12 @@ private fun SetupNameHero() {
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(x = (-88).dp, y = (-48).dp)
+                .graphicsLayer {
+                    scaleX = 1f + sparkleBig
+                    scaleY = 1f + sparkleBig
+                    rotationZ = sparkleBig * 45f
+                    alpha = 0.72f + sparkleBig
+                }
                 .size(23.dp)
         )
         Icon(
@@ -729,14 +799,23 @@ private fun SetupNameHero() {
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(x = (-102).dp, y = (-22).dp)
+                .graphicsLayer {
+                    scaleX = 1f + sparkleSmall
+                    scaleY = 1f + sparkleSmall
+                    rotationZ = -sparkleSmall * 55f
+                    alpha = 0.66f + sparkleSmall
+                }
                 .size(10.dp)
         )
         Box(
             modifier = Modifier
                 .size(width = 104.dp, height = 112.dp)
-                .rotate(12f)
+                .graphicsLayer {
+                    translationY = badgeFloat.dp.toPx()
+                    rotationZ = 12f + badgeTilt
+                }
                 .clip(RoundedCornerShape(16.dp))
-                .background(cardBrush)
+                .background(cardColor)
                 .border(
                     width = 1.dp,
                     color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.32f),
@@ -759,7 +838,7 @@ private fun SetupNameHero() {
                         modifier = Modifier
                             .size(15.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.18f))
+                            .background(UniStackColors.OnPrimary.copy(alpha = 0.18f))
                     )
                 }
                 Box(
@@ -769,21 +848,57 @@ private fun SetupNameHero() {
                         .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
                         .background(UniStackColors.Primary)
                 )
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .width(64.dp)
-                            .height(6.dp)
-                            .clip(AppShapes.Pill)
-                            .background(UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.45f else 0.72f))
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(78.dp)
-                            .height(6.dp)
-                            .clip(AppShapes.Pill)
-                            .background(UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.54f))
-                    )
+                // El nombre se va escribiendo aquí en vivo; sin nombre aún, barras de relleno.
+                val badgeName = name.trim()
+                Box(
+                    modifier = Modifier
+                        .width(84.dp)
+                        .height(19.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Crossfade(targetState = badgeName.isEmpty(), label = "name-badge-content") { isEmpty ->
+                        if (isEmpty) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(64.dp)
+                                        .height(6.dp)
+                                        .clip(AppShapes.Pill)
+                                        .background(
+                                            UniStackColors.SoftOutline.copy(
+                                                alpha = if (UniStackColors.IsDarkTheme) 0.45f else 0.72f
+                                            )
+                                        )
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(78.dp)
+                                        .height(6.dp)
+                                        .clip(AppShapes.Pill)
+                                        .background(
+                                            UniStackColors.SoftOutline.copy(
+                                                alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.54f
+                                            )
+                                        )
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = badgeName,
+                                color = UniStackColors.TextPrimary,
+                                fontSize = 12.sp,
+                                lineHeight = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -889,12 +1004,7 @@ private fun SetupNameInput(
 private fun SetupNameInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.76f else 0.96f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.54f else 0.78f)
-            )
-        ),
+        color = UniStackColors.Card,
         shape = RoundedCornerShape(18.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.76f else 0.9f),
@@ -945,10 +1055,10 @@ fun SetupEducationLevelScreen(
         step = 3,
         modifier = modifier,
         actions = {
-            NameSetupContinueButton(
+            UniStackButton(
                 text = "Continuar",
-                enabled = true,
-                onClick = onContinueClick
+                onClick = onContinueClick,
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     ) {
@@ -1107,20 +1217,10 @@ private fun EducationLevelCard(
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(15.dp)
-    val cardBrush = if (selected) {
-        Brush.linearGradient(
-            listOf(
-                UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.24f else 0.9f),
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f)
-            )
-        )
+    val cardColor = if (selected) {
+        UniStackColors.PrimaryLight
     } else {
-        Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.44f)
-            )
-        )
+        UniStackColors.Card
     }
 
     UniCard(
@@ -1136,7 +1236,7 @@ private fun EducationLevelCard(
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
-        brush = cardBrush,
+        color = cardColor,
         shape = shape,
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
@@ -1156,7 +1256,7 @@ private fun EducationLevelCard(
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = UniStackColors.OnPrimary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -1230,10 +1330,11 @@ fun SetupAcademicInfoScreen(
         step = 4,
         modifier = modifier,
         actions = {
-            NameSetupContinueButton(
+            UniStackButton(
                 text = "Continuar",
+                onClick = onContinueClick,
                 enabled = isValid || educationLevel != EducationLevel.UNIVERSITY,
-                onClick = onContinueClick
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     ) {
@@ -1407,19 +1508,7 @@ private fun AcademicProgramHelpCard(
 ) {
     UniCard(
         modifier = modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            if (selected) {
-                listOf(
-                    UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 0.92f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f)
-                )
-            } else {
-                listOf(
-                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.76f else 0.86f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.94f else 1f)
-                )
-            }
-        ),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant,
         shape = RoundedCornerShape(15.dp),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
@@ -1467,7 +1556,7 @@ private fun AcademicProgramHelpCard(
             Icon(
                 imageVector = if (selected) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = if (selected) Color.White else UniStackColors.Primary,
+                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary,
                 modifier = Modifier
                     .size(if (selected) 24.dp else 26.dp)
                     .then(
@@ -1582,10 +1671,11 @@ fun SetupGradingScaleScreen(
         step = 5,
         modifier = modifier,
         actions = {
-            NameSetupContinueButton(
+            UniStackButton(
                 text = "Continuar",
+                onClick = onContinueClick,
                 enabled = isValid,
-                onClick = onContinueClick
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     ) {
@@ -1794,19 +1884,7 @@ private fun ScaleTypeCard(
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
-        brush = Brush.linearGradient(
-            if (selected) {
-                listOf(
-                    UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.32f else 0.92f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.95f else 1f)
-                )
-            } else {
-                listOf(
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.3f else 0.6f)
-                )
-            }
-        ),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = shape,
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
@@ -1962,12 +2040,7 @@ private fun GradeGoalInputRow(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.82f),
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.94f else 1f)
-            )
-        ),
+        color = UniStackColors.SurfaceVariant,
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2065,12 +2138,7 @@ private fun GradeValueField(
 private fun ScaleInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.9f),
-                UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.72f)
-            )
-        ),
+        color = UniStackColors.SurfaceVariant,
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2086,12 +2154,12 @@ private fun ScaleInfoCard() {
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))),
+                    .background(UniStackColors.Primary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "i",
-                    color = Color.White,
+                    color = UniStackColors.OnPrimary,
                     fontSize = 19.sp,
                     lineHeight = 21.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -2214,12 +2282,7 @@ private fun AcademicDistributionCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.3f else 0.62f)
-            )
-        ),
+        color = UniStackColors.Card,
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
@@ -2322,13 +2385,7 @@ private fun EvaluationSegment(
         modifier = modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(10.dp))
-            .background(
-                if (selected) {
-                    Brush.horizontalGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))
-                } else {
-                    Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
-                }
-            )
+            .background(if (selected) UniStackColors.Primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null,
@@ -2343,12 +2400,12 @@ private fun EvaluationSegment(
             Icon(
                 imageVector = Icons.Rounded.CalendarMonth,
                 contentDescription = null,
-                tint = if (selected) Color.White else UniStackColors.TextSecondary,
+                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
                 modifier = Modifier.size(16.dp)
             )
             Text(
                 text = label,
-                color = if (selected) Color.White else UniStackColors.TextPrimary,
+                color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
                 fontSize = 13.sp,
                 lineHeight = 16.sp,
                 fontWeight = FontWeight.SemiBold
@@ -2389,12 +2446,7 @@ private fun PeriodCountDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp),
-            brush = Brush.linearGradient(
-                listOf(
-                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.64f else 0.82f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.94f else 1f)
-                )
-            ),
+            color = UniStackColors.SurfaceVariant,
             shape = shape,
             tonalElevation = 0.dp,
             borderColor = if (expanded) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.92f),
@@ -2440,12 +2492,7 @@ private fun PeriodCountDropdown(
                         if (anchorWidth > 0) Modifier.width(with(density) { anchorWidth.toDp() }) else Modifier.fillMaxWidth()
                     )
                     .background(
-                        Brush.linearGradient(
-                            listOf(
-                                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.98f else 0.96f),
-                                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.98f else 1f)
-                            )
-                        ),
+                        UniStackColors.SurfaceVariant,
                         RoundedCornerShape(12.dp)
                     )
             ) {
@@ -2552,12 +2599,12 @@ private fun PeriodWeightRow(
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))),
+                .background(UniStackColors.Primary),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = (index + 1).toString(),
-                color = Color.White,
+                color = UniStackColors.OnPrimary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -2634,19 +2681,7 @@ private fun PeriodSummaryCard(
     val accent = if (isValid) UniStackColors.Green else UniStackColors.Primary
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            if (isValid) {
-                listOf(
-                    UniStackColors.GreenLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.52f else 0.9f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 1f)
-                )
-            } else {
-                listOf(
-                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.84f),
-                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.88f else 1f)
-                )
-            }
-        ),
+        color = if (isValid) UniStackColors.GreenLight else UniStackColors.SurfaceVariant,
         shape = RoundedCornerShape(12.dp),
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2731,9 +2766,11 @@ private fun AcademicPeriodsBottomActions(
     enabled: Boolean,
     onContinueClick: () -> Unit
 ) {
-    PeriodsContinueButton(
+    UniStackButton(
+        text = "Continuar",
+        onClick = onContinueClick,
         enabled = enabled,
-        onClick = onContinueClick
+        trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
     )
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -2753,62 +2790,6 @@ private fun AcademicPeriodsBottomActions(
             fontSize = 10.sp,
             lineHeight = 12.sp
         )
-    }
-}
-
-@Composable
-private fun PeriodsContinueButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val shape = RoundedCornerShape(14.dp)
-    val brush = if (enabled) {
-        Brush.horizontalGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))
-    } else {
-        Brush.horizontalGradient(
-            listOf(
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.9f else 0.72f),
-                UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.44f else 0.64f)
-            )
-        )
-    }
-
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            contentColor = Color.White,
-            disabledContentColor = UniStackColors.TextSecondary
-        ),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(shape)
-            .background(brush)
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Continuar",
-                color = if (enabled) Color.White else UniStackColors.TextSecondary,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.align(Alignment.Center)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = if (enabled) Color.White else UniStackColors.TextSecondary,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(24.dp)
-            )
-        }
     }
 }
 
@@ -2849,7 +2830,7 @@ private fun CustomGradeRangeSelector(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.SurfaceVariant)),
+        color = UniStackColors.PrimaryLight,
         shape = AppShapes.LargeCard,
         tonalElevation = 6.dp,
         borderColor = UniStackColors.Primary.copy(alpha = 0.18f),
@@ -2916,7 +2897,7 @@ private fun CustomGradeRangeSelector(
                     Text(mark, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Normal)
                 }
             }
-            PrimarySetupButton(text = "Confirmar rango", onClick = onConfirmClick)
+            UniStackButton(text = "Confirmar rango", onClick = onConfirmClick)
         }
     }
 }
@@ -2935,9 +2916,10 @@ fun SetupModulesScreen(
         step = 7,
         modifier = modifier,
         actions = {
-            SetupGradientButton(
+            UniStackButton(
                 text = "Continuar",
-                onClick = onContinueClick
+                onClick = onContinueClick,
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     ) {
@@ -2985,14 +2967,16 @@ fun SetupSummaryScreen(
         modifier = modifier,
         actions = {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SummaryOutlinedButton(
+                UniStackButton(
                     text = "Volver",
                     onClick = onBackClick,
+                    variant = UniStackButtonVariant.Outlined,
                     modifier = Modifier.weight(0.9f)
                 )
-                SetupGradientButton(
+                UniStackButton(
                     text = "Confirmar",
                     onClick = onConfirmClick,
+                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     modifier = Modifier.weight(1.1f)
                 )
             }
@@ -3212,16 +3196,7 @@ private fun SetupModuleSelectionCard(
             .semantics {
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                if (selected) {
-                    UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.62f)
-                } else {
-                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.32f else 0.62f)
-                }
-            )
-        ),
+        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
         shape = RoundedCornerShape(15.dp),
         tonalElevation = 0.dp,
         borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = 0.9f),
@@ -3280,7 +3255,7 @@ private fun SetupModuleCheckBox(selected: Boolean) {
             Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
-                tint = Color.White,
+                tint = UniStackColors.OnPrimary,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -3291,12 +3266,7 @@ private fun SetupModuleCheckBox(selected: Boolean) {
 private fun SetupModulesInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.82f),
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.88f else 1f)
-            )
-        ),
+        color = UniStackColors.SurfaceVariant,
         shape = RoundedCornerShape(15.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.78f),
@@ -3363,12 +3333,7 @@ private fun SummaryInfoCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.62f)
-            )
-        ),
+        color = UniStackColors.Card,
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.84f),
@@ -3539,12 +3504,7 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
 private fun SetupSummaryNoticeCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.5f else 0.9f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.84f)
-            )
-        ),
+        color = UniStackColors.PrimaryLight,
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -3626,13 +3586,13 @@ private fun SetupFinishHero(name: String) {
                 modifier = Modifier
                     .size(58.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))),
+                    .background(UniStackColors.Primary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = UniStackColors.OnPrimary,
                     modifier = Modifier.size(34.dp)
                 )
             }
@@ -3669,12 +3629,7 @@ private fun FinishSemesterCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.32f else 0.62f)
-            )
-        ),
+        color = UniStackColors.Card,
         shape = RoundedCornerShape(14.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline.copy(alpha = 0.86f),
@@ -3812,12 +3767,7 @@ private fun FinishSummaryMiniBlock(
 private fun FinishRecommendedCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.62f)
-            )
-        ),
+        color = UniStackColors.Card,
         shape = RoundedCornerShape(15.dp),
         tonalElevation = 0.dp,
         borderColor = UniStackColors.Primary.copy(alpha = 0.86f),
@@ -3887,23 +3837,24 @@ private fun FinishActionButtons(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         if (createSubjectEnabled) {
-            SetupGradientButton(
+            UniStackButton(
                 text = "Crear mi primera materia",
                 onClick = onCreateSubjectClick,
                 leadingIcon = Icons.Rounded.Add,
-                height = 54.dp
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
-            SetupOutlinedActionButton(
+            UniStackButton(
                 text = "Ir al inicio",
                 onClick = onGoHomeClick,
+                variant = UniStackButtonVariant.Outlined,
                 leadingIcon = Icons.Rounded.Home
             )
         } else {
-            SetupGradientButton(
+            UniStackButton(
                 text = "Ir al inicio",
                 onClick = onGoHomeClick,
                 leadingIcon = Icons.Rounded.Home,
-                height = 54.dp
+                trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
         }
     }
@@ -3919,7 +3870,7 @@ private fun SetupPurpleIconBox(
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape((size.value * 0.28f).dp))
-            .background(Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.Primary.copy(alpha = 0.42f)))),
+            .background(UniStackColors.PrimaryLight),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -3937,175 +3888,15 @@ private fun SetupInfoDot(size: androidx.compose.ui.unit.Dp) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))),
+            .background(UniStackColors.Primary),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "i",
-            color = Color.White,
+            color = UniStackColors.OnPrimary,
             fontSize = (size.value * 0.48f).sp,
             lineHeight = (size.value * 0.52f).sp,
             fontWeight = FontWeight.ExtraBold
-        )
-    }
-}
-
-@Composable
-private fun SetupGradientButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    height: androidx.compose.ui.unit.Dp = 52.dp,
-    enabled: Boolean = true
-) {
-    val shape = RoundedCornerShape(14.dp)
-    val brush = if (enabled) {
-        Brush.horizontalGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))
-    } else {
-        Brush.horizontalGradient(listOf(UniStackColors.SurfaceVariant, UniStackColors.PrimaryLight.copy(alpha = 0.5f)))
-    }
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            contentColor = Color.White,
-            disabledContentColor = Color.White.copy(alpha = 0.6f)
-        ),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .clip(shape)
-            .background(brush)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (leadingIcon != null) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = leadingIcon,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(21.dp)
-                    )
-                }
-            }
-            Text(
-                text = text,
-                color = Color.White,
-                fontSize = 15.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SetupOutlinedActionButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null
-) {
-    val shape = RoundedCornerShape(14.dp)
-    Button(
-        onClick = onClick,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = UniStackColors.TextPrimary
-        ),
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.9f)),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (leadingIcon != null) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(UniStackColors.SurfaceVariant.copy(alpha = 0.92f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = leadingIcon,
-                        contentDescription = null,
-                        tint = UniStackColors.TextSecondary,
-                        modifier = Modifier.size(21.dp)
-                    )
-                }
-            }
-            Text(
-                text = text,
-                color = UniStackColors.TextPrimary,
-                fontSize = 15.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = UniStackColors.TextSecondary,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SummaryOutlinedButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            contentColor = UniStackColors.Primary
-        ),
-        border = BorderStroke(1.dp, UniStackColors.Primary),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-    ) {
-        Text(
-            text = text,
-            color = UniStackColors.Primary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -4195,13 +3986,7 @@ private fun SetupScaffold(
                             Modifier
                                 .clip(AppShapes.LargeCard)
                                 .background(
-                                    Brush.linearGradient(
-                                        listOf(
-                                            UniStackColors.Card,
-                                            UniStackColors.SurfaceVariant,
-                                            UniStackColors.PrimaryLight.copy(alpha = 0.55f)
-                                        )
-                                    )
+                                    UniStackColors.Card
                                 )
                                 .border(
                                     width = 1.dp,
@@ -4258,18 +4043,33 @@ private fun SetupTopBar(
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 repeat(8) { index ->
+                    val isActive = index < step.coerceIn(1, 8)
+                    val barColor by animateColorAsState(
+                        targetValue = if (isActive) {
+                            UniStackColors.Primary
+                        } else {
+                            UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.5f else 0.72f)
+                        },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        ),
+                        label = "setup-progress-color"
+                    )
+                    val barHeight by animateDpAsState(
+                        targetValue = if (isActive) 6.dp else 5.dp,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "setup-progress-height"
+                    )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(5.dp)
+                            .height(barHeight)
                             .clip(AppShapes.Pill)
-                            .background(
-                                if (index < step.coerceIn(1, 8)) {
-                                    UniStackColors.Primary
-                                } else {
-                                    UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.5f else 0.72f)
-                                }
-                            )
+                            .background(barColor)
                     )
                 }
             }
@@ -4302,7 +4102,7 @@ private fun SetupHeroIcon(size: androidx.compose.ui.unit.Dp = 62.dp) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Brush.linearGradient(listOf(UniStackColors.Primary, UniStackColors.Blue))),
+            .background(UniStackColors.Primary),
         contentAlignment = Alignment.Center
     ) {
         UniStackLogoMarkWhite(size = size * 0.56f)
@@ -4346,113 +4146,6 @@ private fun SetupStepHeader(
                 lineHeight = 19.sp
             )
         }
-    }
-}
-
-@Composable
-private fun PrimarySetupButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    trailing: Boolean = false
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(15.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = UniStackColors.Primary,
-            disabledContainerColor = UniStackColors.Primary.copy(alpha = 0.38f),
-            disabledContentColor = Color.White.copy(alpha = 0.72f)
-        ),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-    ) {
-        Text(text, fontWeight = FontWeight.SemiBold, modifier = if (trailing) Modifier.weight(1f) else Modifier)
-        if (trailing) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(20.dp))
-        }
-    }
-}
-
-@Composable
-private fun NameSetupContinueButton(
-    text: String,
-    onClick: () -> Unit,
-    enabled: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val shape = RoundedCornerShape(17.dp)
-    val buttonBrush = if (enabled) {
-        Brush.horizontalGradient(listOf(UniStackColors.Primary, Color(0xFF6D1CFF)))
-    } else {
-        Brush.horizontalGradient(
-            listOf(
-                UniStackColors.Primary.copy(alpha = 0.28f),
-                UniStackColors.Primary.copy(alpha = 0.18f)
-            )
-        )
-    }
-
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Transparent,
-            disabledContainerColor = Color.Transparent,
-            contentColor = Color.White,
-            disabledContentColor = Color.White.copy(alpha = 0.58f)
-        ),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .clip(shape)
-            .background(buttonBrush)
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = text,
-                color = Color.White.copy(alpha = if (enabled) 1f else 0.58f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.Center)
-            )
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = Color.White.copy(alpha = if (enabled) 1f else 0.58f),
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(25.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SecondarySetupButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Button(
-        onClick = onClick,
-        shape = RoundedCornerShape(15.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = UniStackColors.SurfaceVariant,
-            contentColor = UniStackColors.TextPrimary
-        ),
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-    ) {
-        Text(text, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -4850,12 +4543,7 @@ private fun SetupDropdownField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(72.dp),
-                brush = Brush.linearGradient(
-                    listOf(
-                        UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.96f else 1f),
-                        UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.26f else 0.5f)
-                    )
-                ),
+                color = UniStackColors.Card,
                 shape = shape,
                 tonalElevation = 0.dp,
                 borderColor = when {
@@ -4924,12 +4612,7 @@ private fun SetupDropdownField(
                         )
                         .heightIn(max = 300.dp)
                         .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.98f else 0.96f),
-                                    UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.98f else 1f)
-                                )
-                            ),
+                            UniStackColors.SurfaceVariant,
                             RoundedCornerShape(17.dp)
                         )
                 ) {

@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.theme.UniStackColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniStackFabMenu
@@ -313,7 +314,7 @@ private fun HomeHeader(
                     ) {
                         Text(
                             text = unreadNotificationCount.coerceAtMost(9).toString(),
-                            color = Color.White,
+                            color = UniStackColors.OnPrimary,
                             fontSize = 8.sp,
                             lineHeight = 9.sp,
                             fontWeight = FontWeight.Bold
@@ -326,12 +327,12 @@ private fun HomeHeader(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(HomeAvatarPurpleTop, HomeAvatarPurpleBottom)))
+                    .background(UniStackColors.Primary)
                     .cleanClickable(onProfileClick),
                 contentAlignment = Alignment.Center
             ) {
                 if (photoUrl.isNullOrBlank()) {
-                    Text("P", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("P", color = UniStackColors.OnPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 } else {
                     AsyncImage(
                         model = photoUrl,

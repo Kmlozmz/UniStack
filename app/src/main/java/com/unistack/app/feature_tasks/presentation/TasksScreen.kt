@@ -1472,19 +1472,19 @@ private fun NewTaskFab(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f)),
+                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = Color(0xFF15131D),
+                    tint = UniStackColors.contentColorOn(UniStackColors.Primary),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Nueva tarea",
-                color = Color(0xFF15131D),
+                color = UniStackColors.contentColorOn(UniStackColors.Primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1916,12 +1916,12 @@ private fun FiltersSheetFooter(onDismiss: () -> Unit) {
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White
+            contentColor = UniStackColors.OnPrimary
         )
     ) {
         Text(
             "Ver resultados",
-            color = Color.White,
+            color = UniStackColors.OnPrimary,
             fontWeight = FontWeight.ExtraBold
         )
     }

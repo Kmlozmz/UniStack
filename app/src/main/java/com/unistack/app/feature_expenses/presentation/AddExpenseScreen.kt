@@ -79,17 +79,13 @@ import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
 private val ExpenseFormBackground: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF080B13) else Color(0xFFFCFBFF)
+    @Composable get() = UniStackColors.Background
 private val ExpenseFormCard: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF10131B) else Color.White
+    @Composable get() = UniStackColors.Card
 private val ExpenseFormCardHigh: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF121620) else Color(0xFFF4F0FA)
+    @Composable get() = UniStackColors.SurfaceVariant
 private val ExpenseFormBorder: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Color.White.copy(alpha = 0.08f)
-    } else {
-        Color(0xFFDCD2EA).copy(alpha = 0.72f)
-    }
+    @Composable get() = UniStackColors.SoftOutline
 private val ExpenseFormCoral: Color
     @Composable get() = UniStackColors.Coral
 private val ExpenseFormText: Color
@@ -97,9 +93,9 @@ private val ExpenseFormText: Color
 private val ExpenseFormMuted: Color
     @Composable get() = UniStackColors.TextSecondary
 private val ExpenseFormOptionText: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFD3D0DD) else UniStackColors.TextSecondary
+    @Composable get() = UniStackColors.TextSecondary
 private val ExpenseFormDisabled: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF242631) else Color(0xFFE8E2F0)
+    @Composable get() = UniStackColors.SurfaceVariant
 private val ExpenseFormShape = RoundedCornerShape(18.dp)
 private val ExpenseFieldShape = RoundedCornerShape(14.dp)
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
@@ -580,7 +576,7 @@ private fun SaveExpenseButton(
     onClick: () -> Unit
 ) {
     val container = if (enabled) ExpenseFormCoral else ExpenseFormDisabled
-    val content = if (enabled) Color(0xFF15131D) else ExpenseFormMuted
+    val content = if (enabled) UniStackColors.contentColorOn(container) else ExpenseFormMuted
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -779,7 +775,7 @@ private fun ExpenseCalendarMonthGrid(
                     ) {
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
-                            color = if (selected) Color.White else UniStackDatePickerColors.Text,
+                            color = if (selected) UniStackColors.OnPrimary else UniStackDatePickerColors.Text,
                             fontSize = 12.sp,
                             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
                         )

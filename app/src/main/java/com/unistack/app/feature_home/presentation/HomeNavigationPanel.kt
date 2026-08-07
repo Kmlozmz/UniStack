@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,21 +99,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.Description,
             title = "Trabajos",
             subtitle = "Plantillas, entregas y exportaciones",
-            accent = Color(0xFFB04CFF),
+            accent = UniStackColors.Primary,
             onClick = onWorksClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Calculate,
             title = "Calculadora GPA",
             subtitle = "Simula y calcula tu promedio",
-            accent = Color(0xFFB04CFF),
+            accent = UniStackColors.Primary,
             onClick = onSemesterClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
             subtitle = "Bloc de notas temporal",
-            accent = Color(0xFFD05CFF),
+            accent = UniStackColors.Primary,
             onClick = onTasksClick
         )
     )
@@ -121,14 +122,14 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.Settings,
             title = "Configuración",
             subtitle = "Apariencia, recordatorios y preferencias",
-            accent = Color(0xFF58A6FF),
+            accent = UniStackColors.Blue,
             onClick = onSettingsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Backup,
             title = "Sincronización",
             subtitle = "Respaldos, importar, exportar y más",
-            accent = Color(0xFF58A6FF),
+            accent = UniStackColors.Blue,
             onClick = onDataClick
         )
     )
@@ -137,7 +138,7 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
             subtitle = "Tu asistente académico potenciado con IA",
-            accent = Color(0xFFB04CFF),
+            accent = UniStackColors.Primary,
             badge = "NUEVO",
             onClick = mutedAction
         ),
@@ -145,14 +146,14 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.History,
             title = "Historial",
             subtitle = "Actividad reciente y cambios realizados",
-            accent = Color(0xFF1FD18B),
+            accent = UniStackColors.Green,
             onClick = onNotificationsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
             subtitle = "Descubre qué hay de nuevo",
-            accent = Color(0xFF58A6FF),
+            accent = UniStackColors.Blue,
             onClick = mutedAction
         )
     )
@@ -161,14 +162,14 @@ internal fun HomeNavigationPanel(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             title = "Recursos",
             subtitle = "Biblioteca y enlaces útiles",
-            accent = Color(0xFF52D65E),
+            accent = UniStackColors.Green,
             onClick = mutedAction
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
             subtitle = "Funciones experimentales y beta features",
-            accent = Color(0xFFFFB13B),
+            accent = UniStackColors.Yellow,
             badge = "BETA",
             onClick = mutedAction
         )
@@ -178,21 +179,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
             subtitle = "Centro de ayuda y contacto",
-            accent = Color(0xFF58A6FF),
+            accent = UniStackColors.Blue,
             onClick = mutedAction
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Lightbulb,
             title = "Enviar sugerencia",
             subtitle = "Cuéntanos cómo podemos mejorar",
-            accent = Color(0xFFFFC44D),
+            accent = UniStackColors.Yellow,
             onClick = mutedAction
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Info,
             title = "Acerca de",
             subtitle = "Versión, novedades y políticas",
-            accent = Color(0xFFB04CFF),
+            accent = UniStackColors.Primary,
             onClick = onProfileClick
         )
     )
@@ -276,16 +277,14 @@ private fun DrawerPanelHeader(
                 .size(58.dp)
                 .clip(RoundedCornerShape(18.dp))
                 .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFFB04CFF), Color(0xFF4C14D9))
-                    )
+                    SolidColor(UniStackColors.Primary)
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Rounded.School,
                 contentDescription = null,
-                tint = Color.White,
+                tint = UniStackColors.OnPrimary,
                 modifier = Modifier.size(31.dp)
             )
         }
@@ -352,7 +351,7 @@ private fun DrawerPanelSection(text: String) {
         )
         Text(
             text = text.uppercase(),
-            color = if (UniStackColors.IsDarkTheme) Color(0xFFA9B5FF) else UniStackColors.Primary,
+            color = UniStackColors.Primary,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 0.4.sp
@@ -425,12 +424,7 @@ private fun DrawerIconTile(
             .size(42.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                Brush.linearGradient(
-                    listOf(
-                        accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.42f else 0.24f),
-                        accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.16f else 0.12f)
-                    )
-                )
+                SolidColor(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.18f))
             ),
         contentAlignment = Alignment.Center
     ) {

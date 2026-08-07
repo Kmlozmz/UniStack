@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalContext
@@ -849,7 +850,7 @@ private fun AccountSyncCard(
             shape = AppShapes.Pill,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (currentUser.isLinked) UniStackColors.SurfaceVariant else UniStackColors.Primary,
-                contentColor = if (currentUser.isLinked) UniStackColors.TextPrimary else Color.White
+                contentColor = if (currentUser.isLinked) UniStackColors.TextPrimary else UniStackColors.OnPrimary
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -874,13 +875,7 @@ private fun AccountAvatar(
         modifier = modifier
             .clip(CircleShape)
             .background(
-                Brush.linearGradient(
-                    listOf(
-                        Color(0xFFFFD8C8),
-                        Color(0xFFE6E0FF),
-                        Color(0xFFDDEBFF)
-                    )
-                )
+                SolidColor(UniStackColors.PrimaryLight)
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -936,7 +931,7 @@ private fun PlanStatusCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.Card)),
+        color = UniStackColors.PrimaryLight,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -964,7 +959,7 @@ private fun ProfileHeaderCard(profile: UserProfile) {
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(listOf(UniStackColors.PrimaryLight, UniStackColors.Card)),
+        color = UniStackColors.PrimaryLight,
         shape = AppShapes.LargeCard
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

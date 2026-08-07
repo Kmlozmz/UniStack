@@ -356,19 +356,13 @@ fun AcademicTemplatesScreen(
 private fun HeaderCard(workCount: Int, activeCount: Int) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.PrimaryLight,
-                UniStackColors.SurfaceVariant,
-                UniStackColors.Card
-            )
-        ),
+        color = UniStackColors.PrimaryLight,
         shape = AppShapes.LargeCard,
         tonalElevation = 6.dp,
         contentPadding = PaddingValues(18.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(Icons.AutoMirrored.Rounded.Assignment, UniStackColors.Primary, Color.White)
+            IconBadge(Icons.AutoMirrored.Rounded.Assignment, UniStackColors.Primary, UniStackColors.OnPrimary)
             Column(
                 modifier = Modifier.padding(start = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -551,7 +545,7 @@ private fun TemplateOption(
             IconBadge(
                 icon = if (selected) Icons.Rounded.Star else Icons.AutoMirrored.Rounded.MenuBook,
                 background = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
-                tint = if (selected) Color.White else UniStackColors.Primary
+                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary
             )
             Column(
                 modifier = Modifier

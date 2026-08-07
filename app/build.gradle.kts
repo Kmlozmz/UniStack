@@ -189,6 +189,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    // Polígonos redondeados y morphing entre formas (motor sobre el que Material construye
+    // MaterialShapes). Estable, e independiente de material3: nos da las formas expresivas
+    // sin arrastrar el canal alpha de material3 1.5.
+    implementation("androidx.graphics:graphics-shapes:1.1.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")

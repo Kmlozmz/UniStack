@@ -127,13 +127,7 @@ private fun ProHeroCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        brush = Brush.linearGradient(
-            listOf(
-                UniStackColors.Primary,
-                Color(0xFF816DFB),
-                Color(0xFFB8A9FF)
-            )
-        ),
+        color = UniStackColors.Primary,
         shape = AppShapes.LargeCard,
         tonalElevation = 8.dp,
         contentPadding = PaddingValues(20.dp)
@@ -143,19 +137,19 @@ private fun ProHeroCard(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.22f)),
+                    .background(UniStackColors.OnPrimary.copy(alpha = 0.22f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Star,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = UniStackColors.OnPrimary,
                     modifier = Modifier.size(28.dp)
                 )
             }
             Text(
                 text = "UniStack Pro",
-                color = Color.White,
+                color = UniStackColors.OnPrimary,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -165,7 +159,7 @@ private fun ProHeroCard(
                 } else {
                     "Desbloquea materias ilimitadas para organizar todos tus semestres."
                 },
-                color = Color.White.copy(alpha = 0.88f),
+                color = UniStackColors.OnPrimary.copy(alpha = 0.88f),
                 fontSize = 14.sp,
                 lineHeight = 19.sp
             )
@@ -174,7 +168,7 @@ private fun ProHeroCard(
                 enabled = canBuy,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
+                    containerColor = UniStackColors.OnPrimary,
                     contentColor = UniStackColors.Primary
                 ),
                 modifier = Modifier.fillMaxWidth()

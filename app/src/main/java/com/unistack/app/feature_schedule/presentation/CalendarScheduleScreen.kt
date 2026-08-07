@@ -116,10 +116,14 @@ import kotlin.math.roundToInt
 
 private val ScheduleGreen: Color
     get() = UniStackColors.Primary
-private val ScheduleBlue = Color(0xFF2E7DD7)
-private val SchedulePurple = Color(0xFF7A55C7)
-private val ScheduleOrange = Color(0xFFF07D19)
-private val SchedulePink = Color(0xFFE8548B)
+private val ScheduleBlue: Color
+    @Composable get() = UniStackColors.Blue
+private val SchedulePurple: Color
+    @Composable get() = UniStackColors.Primary
+private val ScheduleOrange: Color
+    @Composable get() = UniStackColors.Yellow
+private val SchedulePink: Color
+    @Composable get() = UniStackColors.Coral
 private val ScheduleShape
     get() = AppShapes.SmallCard
 
@@ -389,8 +393,8 @@ private fun WeekPicker(
                             .padding(vertical = 5.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(dayLetter(date.dayOfWeek), fontSize = 10.sp, color = if (selected) Color.White else UniStackColors.TextSecondary)
-                        Text(date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) Color.White else UniStackColors.TextPrimary)
+                        Text(dayLetter(date.dayOfWeek), fontSize = 10.sp, color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary)
+                        Text(date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary)
                     }
                 }
             }
@@ -425,7 +429,7 @@ private fun TimetableRangeControls(
                 thumbColor = ScheduleGreen,
                 activeTrackColor = ScheduleGreen,
                 inactiveTrackColor = UniStackColors.SoftOutline,
-                activeTickColor = Color.White.copy(alpha = 0.72f),
+                activeTickColor = UniStackColors.OnPrimary.copy(alpha = 0.72f),
                 inactiveTickColor = ScheduleGreen.copy(alpha = 0.55f)
             )
         )
@@ -563,13 +567,13 @@ private fun WeeklyTimeline(
                         ) {
                             Text(
                                 "${formatMinute(session.startMinute, use24Hour)}\n${formatMinute(session.endMinute, use24Hour)}",
-                                color = Color.White,
+                                color = UniStackColors.OnPrimary,
                                 fontSize = 7.sp,
                                 lineHeight = 8.sp
                             )
                             Text(
                                 subject?.name ?: "Clase",
-                                color = Color.White,
+                                color = UniStackColors.OnPrimary,
                                 fontSize = 7.sp,
                                 lineHeight = 8.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -578,7 +582,7 @@ private fun WeeklyTimeline(
                             )
                             Text(
                                 session.place.room.ifBlank { "Sin aula" },
-                                color = Color.White.copy(alpha = 0.9f),
+                                color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
                                 fontSize = 7.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -776,7 +780,7 @@ private fun MonthCell(
         Text(
             date.dayOfMonth.toString(),
             color = when {
-                selected && !expanded -> Color.White
+                selected && !expanded -> UniStackColors.OnPrimary
                 !inMonth -> UniStackColors.TextSecondary.copy(alpha = 0.45f)
                 else -> UniStackColors.TextPrimary
             },
@@ -794,7 +798,7 @@ private fun MonthCell(
                         .clip(RoundedCornerShape(3.dp))
                         .background(subject.scheduleColor())
                         .padding(horizontal = 2.dp, vertical = 1.dp),
-                    color = Color.White,
+                    color = UniStackColors.OnPrimary,
                     fontSize = 7.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -899,7 +903,7 @@ private fun AgendaClassCard(
                     Modifier.padding(start = 14.dp).size(48.dp).clip(ScheduleShape).background(color.copy(alpha = 0.86f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = Color.White)
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.OnPrimary)
                 }
             }
             Column(Modifier.padding(start = 14.dp).width(64.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1162,7 +1166,7 @@ private fun ClassEditorDialog(
                                             Modifier.size(25.dp).clip(CircleShape).background(swatch).clickable { color = swatch },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            if (color == swatch) Icon(Icons.Rounded.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                            if (color == swatch) Icon(Icons.Rounded.Check, contentDescription = null, tint = UniStackColors.contentColorOn(swatch), modifier = Modifier.size(16.dp))
                                         }
                                     }
                                 }
@@ -1180,7 +1184,7 @@ private fun ClassEditorDialog(
                                         .clickable { days = if (selected) days - day else days + day },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(dayLetter(DayOfWeek.of(day)), color = if (selected) Color.White else UniStackColors.TextSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text(dayLetter(DayOfWeek.of(day)), color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -1380,7 +1384,7 @@ private fun SubjectHistoryDialog(
                     modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleGreen)
                 ) {
                     IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(4.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.OnPrimary)
                     }
                     Box(
                         modifier = Modifier.align(Alignment.BottomCenter).offset(y = 22.dp).size(50.dp)
@@ -1506,7 +1510,7 @@ private fun ClassDetailsSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clip(ScheduleShape).background(subject.scheduleColor()), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = Color.White)
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.OnPrimary)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
@@ -1687,6 +1691,7 @@ private fun ClassAttendanceStatus.label(): String = when (this) {
     ClassAttendanceStatus.RESCHEDULED -> "Reprogramada"
 }
 
+@Composable
 private fun ClassAttendanceStatus.color(): Color = when (this) {
     ClassAttendanceStatus.PENDING -> UniStackColors.TextSecondary
     ClassAttendanceStatus.ATTENDED -> ScheduleGreen

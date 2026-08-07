@@ -710,14 +710,14 @@ private fun IdentityWeeklyTimeline(
                             ) {
                                 Text(
                                     text = "${formatIdentityMinute(session.startMinute, use24Hour)}\n${formatIdentityMinute(session.endMinute, use24Hour)}",
-                                    color = Color.White,
+                                    color = UniStackColors.OnPrimary,
                                     fontSize = 8.sp,
                                     lineHeight = 9.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = subject?.name ?: "Clase",
-                                    color = Color.White,
+                                    color = UniStackColors.OnPrimary,
                                     fontSize = 8.sp,
                                     lineHeight = 9.sp,
                                     fontWeight = FontWeight.Bold,
@@ -726,7 +726,7 @@ private fun IdentityWeeklyTimeline(
                                 )
                                 Text(
                                     text = session.identityPlace().room.ifBlank { "Sin aula" },
-                                    color = Color.White.copy(alpha = 0.9f),
+                                    color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
                                     fontSize = 8.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -912,7 +912,7 @@ private fun IdentityMonthCell(
         Text(
             text = date.dayOfMonth.toString(),
             color = when {
-                selected -> Color.White
+                selected -> UniStackColors.OnPrimary
                 inMonth -> UniStackColors.TextPrimary
                 else -> UniStackColors.TextSecondary.copy(alpha = 0.45f)
             },
@@ -927,7 +927,7 @@ private fun IdentityMonthCell(
                         Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(if (selected) Color.White.copy(alpha = 0.78f) else color)
+                            .background(if (selected) UniStackColors.OnPrimary.copy(alpha = 0.78f) else color)
                     )
                 }
             }

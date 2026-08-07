@@ -311,7 +311,7 @@ private fun FabMenuButton(
         modifier = modifier.size(56.dp),
         shape = RoundedCornerShape(18.dp),
         containerColor = UniStackColors.Primary,
-        contentColor = Color.White
+        contentColor = UniStackColors.OnPrimary
     ) {
         Icon(
             imageVector = Icons.Rounded.Add,

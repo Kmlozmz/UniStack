@@ -4,7 +4,7 @@ data class AppearancePreferences(
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEFAULT,
     val customBackgroundColor: Int? = null,
     val customThemeBase: CustomThemeBase = CustomThemeBase.SYSTEM,
-    val accentStyle: AccentStyle = AccentStyle.VIOLET,
+    val accentStyle: AccentStyle = AccentStyle.DYNAMIC,
     val customAccentColor: Int? = null,
     val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
     val surfaceStyle: SurfaceStyle = SurfaceStyle.OUTLINED,
@@ -83,6 +83,8 @@ enum class CustomThemeBase {
 }
 
 enum class AccentStyle {
+    /** Toma el color del fondo de pantalla del sistema (Material You / Monet, Android 12+). */
+    DYNAMIC,
     VIOLET,
     BLUE,
     TEAL,

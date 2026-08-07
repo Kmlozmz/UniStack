@@ -81,6 +81,7 @@ internal fun PriorityHero(
     val heroStar = HomeHeroStar
     val heroStarSoft = HomeHeroStarSoft
     val heroAssetShadow = HomeHeroAssetShadow
+    val heroGlow = HomeHeroLightModeGlow
     val sparkleMotion = rememberInfiniteTransition(label = "heroSparkleMotion")
     val sparkleOneFloat by sparkleMotion.animateFloat(
         initialValue = 2f * heroMotionScale,
@@ -152,93 +153,23 @@ internal fun PriorityHero(
                 .background(HeroBrush)
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
+                // Un único halo radial. Antes había cinco capas de degradado apiladas
+                // (lavados, sombras y profundidad) que producían el aspecto metálico;
+                // la superficie base ya es plana, así que basta con la luz.
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = if (isDarkTheme) {
-                            listOf(
-                                HomeHeroLightViolet.copy(alpha = 0.24f),
-                                HomeHeroVioletWash.copy(alpha = 0.20f),
-                                HomeHeroVioletDepth.copy(alpha = 0.08f),
-                                Color.Transparent
-                            )
-                        } else {
-                            listOf(
-                                HomeHeroLightModeGlow.copy(alpha = 0.70f),
-                                HomeHeroLightModeAccent.copy(alpha = 0.34f),
-                                Color.Transparent
-                            )
-                        },
-                        center = Offset(size.width * 0.79f, size.height * 0.52f),
-                        radius = size.width * if (isDarkTheme) 0.42f else 0.52f
-                    )
-                )
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = if (isDarkTheme) {
-                            listOf(
-                                Color.Transparent,
-                                HomeHeroTransition.copy(alpha = 0.10f),
-                                HomeHeroVioletDepth.copy(alpha = 0.18f)
-                            )
-                        } else {
-                            listOf(
-                                Color.Transparent,
-                                HomeHeroLightModeAccent.copy(alpha = 0.24f),
-                                HomeHeroLightModeDepth.copy(alpha = 0.18f)
-                            )
-                        },
-                        start = Offset(size.width * 0.36f, size.height * 0.16f),
-                        end = Offset(size.width * 1.04f, size.height * 0.88f)
-                    )
-                )
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = if (isDarkTheme) {
-                            listOf(
-                                HomeHeroLight.copy(alpha = 0.020f),
-                                Color.Transparent,
-                                HomeShadow.copy(alpha = 0.24f)
-                            )
-                        } else {
-                            listOf(
-                                Color.White.copy(alpha = 0.64f),
-                                Color.Transparent,
-                                HomeHeroLightModeDepth.copy(alpha = 0.12f)
-                            )
-                        }
-                    )
-                )
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = if (isDarkTheme) {
-                            listOf(
-                                HomeShadow.copy(alpha = 0.30f),
-                                Color.Transparent,
-                                HomeShadow.copy(alpha = 0.18f)
-                            )
-                        } else {
-                            listOf(
-                                HomeHeroLightModeDepth.copy(alpha = 0.08f),
-                                Color.Transparent,
-                                HomeHeroLightModeAccent.copy(alpha = 0.12f)
-                            )
-                        }
-                    )
-                )
-                drawRect(
-                    brush = Brush.verticalGradient(
                         colors = listOf(
-                            HomeShadow.copy(alpha = if (isDarkTheme) 0.08f else 0.02f),
-                            Color.Transparent,
-                            HomeShadow.copy(alpha = if (isDarkTheme) 0.22f else 0.04f)
-                        )
+                            heroGlow.copy(alpha = if (isDarkTheme) 0.26f else 0.38f),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.79f, size.height * 0.52f),
+                        radius = size.width * 0.52f
                     )
                 )
                 drawOval(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            heroAssetShadow.copy(alpha = if (isDarkTheme) 0.46f else 0.22f),
-                            HomeHeroVioletDepth.copy(alpha = if (isDarkTheme) 0.16f else 0.06f),
+                            heroAssetShadow.copy(alpha = if (isDarkTheme) 0.40f else 0.20f),
                             Color.Transparent
                         ),
                         center = Offset(size.width * 0.80f, size.height * 0.77f),
@@ -314,7 +245,7 @@ internal fun PriorityHero(
                             .width(if (compact) 128.dp else 138.dp)
                             .height(if (compact) 32.dp else 34.dp)
                             .clip(RoundedCornerShape(18.dp))
-                            .background(Brush.linearGradient(listOf(HomeHeroButtonStart, HomeHeroButtonEnd)))
+                            .background(UniStackColors.Primary)
                             .cleanClickable(onOpenClick)
                             .padding(horizontal = 13.dp),
                         contentAlignment = Alignment.Center
@@ -497,6 +428,8 @@ internal fun PriorityContextSheet(
 
 @Composable
 private fun PrioritySunBadge(modifier: Modifier = Modifier) {
+    // El token se lee en composición: dentro del Canvas ya no hay contexto @Composable.
+    val sunColor = HomePrioritySheetSun
     Box(
         modifier = modifier
             .size(56.dp)
@@ -508,7 +441,7 @@ private fun PrioritySunBadge(modifier: Modifier = Modifier) {
             val rayStart = size.minDimension * 0.35f
             val rayEnd = size.minDimension * 0.48f
             drawCircle(
-                color = HomePrioritySheetSun,
+                color = sunColor,
                 radius = size.minDimension * 0.20f,
                 center = center
             )
@@ -523,7 +456,7 @@ private fun PrioritySunBadge(modifier: Modifier = Modifier) {
                     y = center.y + kotlin.math.sin(angle).toFloat() * rayEnd
                 )
                 drawLine(
-                    color = HomePrioritySheetSun,
+                    color = sunColor,
                     start = start,
                     end = end,
                     strokeWidth = 2.2.dp.toPx(),

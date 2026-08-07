@@ -1,11 +1,14 @@
 package com.unistack.app.core.design.theme
 
+import android.os.Build
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AppearancePreferences
@@ -26,7 +29,8 @@ fun UniStackTheme(
         darkTheme = darkTheme,
         oledTheme = oledTheme,
         appearance = appearance,
-        highContrast = accessibility.highContrastEnabled
+        highContrast = accessibility.highContrastEnabled,
+        dynamicAccent = dynamicAccent(darkTheme)
     )
     val radius = appearance.cornerStyle.cardRadius()
     val shapes = UniStackShapes.copy(
@@ -56,16 +60,36 @@ fun UniStackTheme(
     }
 }
 
+/**
+ * Roles tonales extraídos del fondo de pantalla del sistema (Material You / Monet).
+ * Devuelve null en API < 31, donde el llamador cae al violeta de marca.
+ *
+ * Tomamos el esquema que corresponde al modo actual —incluido el oscuro, con su `primary`
+ * pastel de tono 80—. Es seguro porque el contenido encima se resuelve con
+ * [UniStackColors.contentColorOn] en vez de asumir blanco.
+ */
+@Composable
+private fun dynamicAccent(darkTheme: Boolean): DynamicAccent? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+    val context = LocalContext.current
+    val scheme = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    return DynamicAccent(
+        primary = scheme.primary,
+        primaryContainer = scheme.primaryContainer,
+        onPrimaryContainer = scheme.onPrimaryContainer
+    )
+}
+
 private fun lightUniStackColorScheme() = lightColorScheme(
     primary = UniStackColors.Primary,
-    onPrimary = contrastingText(UniStackColors.Primary),
+    onPrimary = UniStackColors.OnPrimary,
     primaryContainer = UniStackColors.PrimaryLight,
-    onPrimaryContainer = UniStackColors.PrimaryDark,
+    onPrimaryContainer = UniStackColors.OnPrimaryContainer,
     secondary = UniStackColors.Blue,
-    onSecondary = Color.White,
+    onSecondary = UniStackColors.contentColorOn(UniStackColors.Blue),
     secondaryContainer = UniStackColors.BlueLight,
     tertiary = UniStackColors.Teal,
-    onTertiary = Color.White,
+    onTertiary = UniStackColors.contentColorOn(UniStackColors.Teal),
     tertiaryContainer = UniStackColors.TealLight,
     background = UniStackColors.Background,
     onBackground = UniStackColors.TextPrimary,
@@ -78,14 +102,14 @@ private fun lightUniStackColorScheme() = lightColorScheme(
 
 private fun darkUniStackColorScheme() = darkColorScheme(
     primary = UniStackColors.Primary,
-    onPrimary = contrastingText(UniStackColors.Primary),
+    onPrimary = UniStackColors.OnPrimary,
     primaryContainer = UniStackColors.PrimaryLight,
-    onPrimaryContainer = UniStackColors.PrimaryDark,
+    onPrimaryContainer = UniStackColors.OnPrimaryContainer,
     secondary = UniStackColors.Blue,
-    onSecondary = Color(0xFF0A2446),
+    onSecondary = UniStackColors.contentColorOn(UniStackColors.Blue),
     secondaryContainer = UniStackColors.BlueLight,
     tertiary = UniStackColors.Teal,
-    onTertiary = Color(0xFF003735),
+    onTertiary = UniStackColors.contentColorOn(UniStackColors.Teal),
     tertiaryContainer = UniStackColors.TealLight,
     background = UniStackColors.Background,
     onBackground = UniStackColors.TextPrimary,
@@ -95,8 +119,3 @@ private fun darkUniStackColorScheme() = darkColorScheme(
     onSurfaceVariant = UniStackColors.TextSecondary,
     outline = UniStackColors.SoftOutline
 )
-
-private fun contrastingText(background: Color): Color {
-    val luminance = 0.299f * background.red + 0.587f * background.green + 0.114f * background.blue
-    return if (luminance > 0.58f) Color(0xFF171427) else Color.White
-}

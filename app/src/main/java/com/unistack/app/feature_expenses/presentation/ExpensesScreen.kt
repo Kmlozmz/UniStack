@@ -99,13 +99,13 @@ import kotlin.math.roundToInt
 private val ExpenseBackground: Color
     @Composable get() = UniStackColors.Background
 private val ExpenseCard: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF10131B) else Color.White
+    @Composable get() = UniStackColors.Card
 private val ExpenseCardHigh: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF121620) else Color(0xFFF4F0FA)
+    @Composable get() = UniStackColors.SurfaceVariant
 private val ExpenseCoral: Color
     @Composable get() = UniStackColors.Coral
 private val ExpenseCoralDeep: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFFF5F66) else Color(0xFFE84F44)
+    @Composable get() = UniStackColors.Coral
 private val ExpensePurple: Color
     @Composable get() = UniStackColors.Primary
 private val ExpenseText: Color
@@ -113,23 +113,23 @@ private val ExpenseText: Color
 private val ExpenseMuted: Color
     @Composable get() = UniStackColors.TextSecondary
 private val ExpenseTrack: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF292633) else Color(0xFFE6DEF2)
+    @Composable get() = UniStackColors.SurfaceVariant
 private val ExpenseBorder: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Color.White.copy(alpha = 0.06f)
+        UniStackColors.OnPrimary.copy(alpha = 0.06f)
     } else {
         UniStackColors.SoftOutline.copy(alpha = 0.7f)
     }
 private val ExpenseDivider: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        Color.White.copy(alpha = 0.08f)
+        UniStackColors.OnPrimary.copy(alpha = 0.08f)
     } else {
         UniStackColors.SoftOutline.copy(alpha = 0.5f)
     }
 private val ExpenseSelectedText: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFA78BFA) else UniStackColors.Primary
+    @Composable get() = UniStackColors.Primary
 private val ExpenseNeutralIcon: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFFD8D6E3) else UniStackColors.TextSecondary
+    @Composable get() = UniStackColors.TextSecondary
 private val ReferenceBars = listOf(28, 55, 35, 78, 32, 52, 40)
 
 @Composable
@@ -736,9 +736,7 @@ private fun BudgetProgress(
                 .fillMaxWidth(progress.coerceIn(0.03f, 1f))
                 .clip(AppShapes.Pill)
                 .background(
-                    Brush.horizontalGradient(
-                        listOf(ExpensePurple, ExpensePurple.copy(alpha = 0.74f))
-                    )
+                    SolidColor(ExpensePurple)
                 )
         )
     }
@@ -1163,19 +1161,19 @@ private fun RegisterExpenseButton(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f)),
+                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = Color(0xFF15131D),
+                    tint = UniStackColors.contentColorOn(ExpenseCoral),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Registrar gasto",
-                color = Color(0xFF15131D),
+                color = UniStackColors.contentColorOn(ExpenseCoral),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1268,7 +1266,7 @@ private fun ExpenseBudgetSheet(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExpenseCoral,
-                    contentColor = Color(0xFF15131D),
+                    contentColor = UniStackColors.contentColorOn(ExpenseCoral),
                     disabledContainerColor = ExpenseTrack,
                     disabledContentColor = ExpenseMuted
                 ),

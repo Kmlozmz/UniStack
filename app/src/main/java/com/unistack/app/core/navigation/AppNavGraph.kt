@@ -876,17 +876,17 @@ private fun UniStackBottomBarContent(
 ) {
     val appearance = LocalAppearancePreferences.current
     val barColor = if (UniStackColors.IsDarkTheme) {
-        androidx.compose.ui.graphics.Color(0xFF050913)
+        UniStackColors.BottomBar
     } else {
         UniStackColors.BottomBar
     }
     val inactiveColor = if (UniStackColors.IsDarkTheme) {
-        androidx.compose.ui.graphics.Color(0xFFA7ADBE)
+        UniStackColors.TextSecondary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
     }
     val borderColor = if (UniStackColors.IsDarkTheme) {
-        androidx.compose.ui.graphics.Color(0xFF1A2230)
+        UniStackColors.SoftOutline
     } else {
         MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
     }

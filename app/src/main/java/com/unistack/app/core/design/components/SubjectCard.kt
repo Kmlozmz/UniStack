@@ -46,12 +46,7 @@ fun SubjectCard(
         modifier = modifier
             .height(102.dp)
             .bounceClick(onClick),
-        brush = Brush.linearGradient(
-            listOf(
-                backgroundColor,
-                UniStackColors.GradientEnd
-            )
-        ),
+        color = backgroundColor,
         shape = AppShapes.MediumCard,
         tonalElevation = 4.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 11.dp)
@@ -69,7 +64,9 @@ fun SubjectCard(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White,
+                    // El color de materia lo elige el usuario: el contenido se calcula
+                    // para seguir siendo legible sobre un amarillo o un lima.
+                    tint = UniStackColors.contentColorOn(accentColor),
                     modifier = Modifier.size(15.dp)
                 )
             }

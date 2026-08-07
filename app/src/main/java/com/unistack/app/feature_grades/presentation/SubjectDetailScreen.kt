@@ -298,7 +298,7 @@ fun SubjectDetailScreen(
                                 Text(
                                     periodDisplayName(period),
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                    color = if (selected) Color.White else UniStackColors.TextSecondary,
+                                    color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -353,7 +353,7 @@ fun SubjectDetailScreen(
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UniStackColors.Primary,
-                    contentColor = Color.White
+                    contentColor = UniStackColors.OnPrimary
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -364,13 +364,13 @@ fun SubjectDetailScreen(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = UniStackColors.OnPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         "Agregar nota a ${periodDisplayName(activePeriod)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = Color.White
+                        color = UniStackColors.OnPrimary
                     )
                 }
             }
@@ -557,7 +557,7 @@ private fun SubjectHeader(
                     Icon(
                         Icons.Rounded.BarChart,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = UniStackColors.OnPrimary,
                         modifier = Modifier.size(10.dp)
                     )
                 }
@@ -1707,7 +1707,7 @@ private fun GradeType.colorLocal(): Color {
         GradeType.EXAM,
         GradeType.QUIZ -> UniStackColors.Yellow
         GradeType.PROJECT,
-        GradeType.RESEARCH -> Color(0xFF38BDF8)
+        GradeType.RESEARCH -> UniStackColors.Blue
         GradeType.OTHER -> UniStackColors.TextSecondary
     }
 }

@@ -262,7 +262,7 @@ private fun FullScheduleDayHeader(
                         ) {
                             Text(
                                 date.dayOfMonth.toString(),
-                                color = if (isToday) Color.White else UniStackColors.TextPrimary,
+                                color = if (isToday) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -411,7 +411,7 @@ private fun FullScheduleSession(
     ) {
         Text(
             "${fullScheduleTime(session.startMinute, use24Hour)} – ${fullScheduleTime(session.endMinute, use24Hour)}",
-            color = Color.White,
+            color = UniStackColors.OnPrimary,
             fontSize = 8.sp,
             lineHeight = 9.sp,
             fontWeight = FontWeight.SemiBold,
@@ -419,7 +419,7 @@ private fun FullScheduleSession(
         )
         Text(
             subject?.name ?: "Clase",
-            color = Color.White,
+            color = UniStackColors.OnPrimary,
             fontSize = 9.sp,
             lineHeight = 10.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -430,7 +430,7 @@ private fun FullScheduleSession(
         if (room.isNotBlank()) {
             Text(
                 room,
-                color = Color.White.copy(alpha = 0.9f),
+                color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
                 fontSize = 8.sp,
                 lineHeight = 9.sp,
                 maxLines = 1,

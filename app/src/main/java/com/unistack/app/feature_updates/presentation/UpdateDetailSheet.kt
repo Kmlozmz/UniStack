@@ -109,7 +109,7 @@ fun UpdateDetailSheet(
                     shape = RoundedCornerShape(13.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = UniStackColors.Primary,
-                        contentColor = androidx.compose.ui.graphics.Color.White
+                        contentColor = UniStackColors.OnPrimary
                     )
                 ) {
                     Text(

@@ -66,7 +66,7 @@ private val FormFieldColor: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) UniStackColors.SurfaceVariant else UniStackColors.Card
 
 private val DisabledButtonColor: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) Color(0xFF1A2230) else UniStackColors.SurfaceVariant
+    @Composable get() = UniStackColors.SurfaceVariant
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -527,7 +527,7 @@ fun AddGradeScreen(
                 shape = RoundedCornerShape(24.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UniStackColors.Primary,
-                    contentColor = Color.White,
+                    contentColor = UniStackColors.OnPrimary,
                     disabledContainerColor = DisabledButtonColor,
                     disabledContentColor = UniStackColors.TextSecondary
                 ),
@@ -540,7 +540,7 @@ fun AddGradeScreen(
                     text = if (isEditing) "Guardar cambios" else "Guardar nota",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = if (isValid) Color.White else UniStackColors.TextSecondary
+                    color = if (isValid) UniStackColors.OnPrimary else UniStackColors.TextSecondary
                 )
             }
         }
@@ -604,7 +604,7 @@ private fun ActivityChip(
     ) {
         Text(
             text = label,
-            color = if (isSelected) Color.White else UniStackColors.TextSecondary,
+            color = if (isSelected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )
