@@ -35,6 +35,12 @@ class UpdateViewModel @Inject constructor(
         updateRepository.installUpdate()
     }
 
+    /**
+     * Se consulta en cada composición y no se cachea: el usuario puede conceder el permiso
+     * en Ajustes y volver, y el estado tiene que reflejarlo.
+     */
+    fun canInstallPackages(): Boolean = updateRepository.canInstallPackages()
+
     fun clearDownload() {
         updateRepository.clearDownload()
     }

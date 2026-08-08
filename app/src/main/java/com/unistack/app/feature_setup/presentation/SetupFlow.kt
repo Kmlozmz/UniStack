@@ -155,6 +155,7 @@ private object SetupRoutes {
     const val Modules = "setup_modules"
     const val Scale = "setup_scale"
     const val Periods = "setup_periods"
+    const val Permissions = "setup_permissions"
     const val Done = "setup_done"
 }
 
@@ -166,18 +167,22 @@ private object SetupRoutes {
  * módulo de notas, esos dos pasos dejan de tener sentido y se saltan. Preguntándolos antes
  * se corría el riesgo de pedir datos que luego se descartaban.
  */
-private object SetupSteps {
+internal object SetupSteps {
     const val Name = 1
     const val Profile = 2
     const val Modules = 3
     const val Scale = 4
     const val Periods = 5
 
-    /** Con notas: nombre, perfil, módulos, escala, periodos y final. Sin notas se caen dos. */
-    fun total(gradesEnabled: Boolean): Int = if (gradesEnabled) 6 else 4
+    /** Escala y periodos solo existen con el módulo de notas activo. */
+    fun permissions(gradesEnabled: Boolean): Int = if (gradesEnabled) 6 else 4
 
     /** El paso final siempre es el último, tenga el flujo la longitud que tenga. */
-    fun done(gradesEnabled: Boolean): Int = total(gradesEnabled)
+    fun done(gradesEnabled: Boolean, permissionsNeeded: Boolean): Int =
+        permissions(gradesEnabled) + if (permissionsNeeded) 1 else 0
+
+    fun total(gradesEnabled: Boolean, permissionsNeeded: Boolean): Int =
+        done(gradesEnabled, permissionsNeeded)
 }
 
 private const val SETUP_EXIT_MILLIS = 220
@@ -191,7 +196,7 @@ private val SEGMENT_INSET = 3.dp
  * del usuario y se anula por completo si eligió "sin animaciones".
  */
 @Composable
-private fun floatingOffset(travel: Float, durationMillis: Int, label: String): Float {
+internal fun floatingOffset(travel: Float, durationMillis: Int, label: String): Float {
     val motionScale = LocalMotionDurationScale.current
     if (motionScale <= 0f) return 0f
     val transition = rememberInfiniteTransition(label = label)
@@ -214,9 +219,12 @@ fun SetupFlow(
     viewModel: SetupViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
-    // La longitud del flujo depende de si el usuario conserva el módulo de notas.
+    // La longitud del flujo depende de si el usuario conserva el módulo de notas y de si
+    // este Android pide el permiso de notificaciones en ejecución.
     val gradesEnabled = AppModule.GRADES in viewModel.enabledModules
-    val totalSteps = SetupSteps.total(gradesEnabled)
+    val permissionsNeeded = notificationPermissionRequired()
+    val totalSteps = SetupSteps.total(gradesEnabled, permissionsNeeded)
+    val afterEvaluation = if (permissionsNeeded) SetupRoutes.Permissions else SetupRoutes.Done
 
     NavHost(
         navController = navController,
@@ -336,6 +344,14 @@ fun SetupFlow(
                 onCountSelected = viewModel::updateAcademicPeriodCount,
                 onWeightChange = viewModel::updateAcademicPeriodWeight,
                 onBackClick = { navController.navigateUp() },
+                onContinueClick = { navController.navigate(afterEvaluation) }
+            )
+        }
+        composable(SetupRoutes.Permissions) {
+            SetupPermissionsScreen(
+                step = SetupSteps.permissions(gradesEnabled),
+                totalSteps = totalSteps,
+                onBackClick = { navController.navigateUp() },
                 onContinueClick = { navController.navigate(SetupRoutes.Done) }
             )
         }
@@ -347,7 +363,7 @@ fun SetupFlow(
                 onBackClick = { navController.navigateUp() },
                 onContinueClick = {
                     // Sin el módulo de notas, la escala y los periodos no aplican.
-                    val next = if (gradesEnabled) SetupRoutes.Scale else SetupRoutes.Done
+                    val next = if (gradesEnabled) SetupRoutes.Scale else afterEvaluation
                     navController.navigate(next)
                 }
             )
@@ -368,6 +384,7 @@ fun SetupFlow(
                 periodWeights = viewModel.academicPeriodWeights,
                 enabledModules = viewModel.enabledModules,
                 gradesEnabled = gradesEnabled,
+                permissionsNeeded = permissionsNeeded,
                 totalSteps = totalSteps,
                 isSchoolLevel = viewModel.isSchoolLevel,
                 institutionName = viewModel.institutionName,
@@ -3051,7 +3068,8 @@ fun SetupDoneScreen(
     onGoHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     gradesEnabled: Boolean = true,
-    totalSteps: Int = 6,
+    permissionsNeeded: Boolean = true,
+    totalSteps: Int = 7,
     isSchoolLevel: Boolean = false,
     institutionName: String = ""
 ) {
@@ -3061,7 +3079,7 @@ fun SetupDoneScreen(
     val weights = periodWeights.filter { it.isNotBlank() }
     SetupScaffold(
         onBackClick = onBackClick,
-        step = SetupSteps.done(gradesEnabled),
+        step = SetupSteps.done(gradesEnabled, permissionsNeeded),
         totalSteps = totalSteps,
         modifier = modifier,
         actions = {
@@ -3724,7 +3742,7 @@ private fun setupModuleOptions(): List<ModuleOption> = listOf(
 )
 
 @Composable
-private fun SetupScaffold(
+internal fun SetupScaffold(
     modifier: Modifier = Modifier,
     onBackClick: (() -> Unit)? = null,
     step: Int? = null,

@@ -1,9 +1,6 @@
 package com.unistack.app
 
-import android.Manifest
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Build
@@ -12,30 +9,20 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import dagger.hilt.android.AndroidEntryPoint
-
-private const val RUNTIME_PERMISSION_PREFS = "unistack_runtime_permissions"
-private const val NOTIFICATION_PERMISSION_ASKED = "notification_permission_asked"
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val pendingLaunchRoute = mutableStateOf<String?>(null)
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {
-        markNotificationPermissionAsked()
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
         applyEdgeToEdge(darkTheme = isSystemInDarkMode())
-        requestNotificationPermissionOnFirstOpen()
+        // El permiso de notificaciones ya no se pide aquí: saltaba nada más instalar, sin
+        // que el usuario supiera para qué. Ahora se pide en su paso del onboarding, después
+        // de explicar qué avisos va a recibir.
         setContent {
             UniStackApp(
                 launchRoute = pendingLaunchRoute.value,
@@ -51,26 +38,6 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
-    }
-
-    private fun requestNotificationPermissionOnFirstOpen() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
-
-        val prefs = getSharedPreferences(RUNTIME_PERMISSION_PREFS, Context.MODE_PRIVATE)
-        if (prefs.getBoolean(NOTIFICATION_PERMISSION_ASKED, false)) return
-
-        prefs.edit {
-            putBoolean(NOTIFICATION_PERMISSION_ASKED, true)
-        }
-        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-    }
-
-    private fun markNotificationPermissionAsked() {
-        getSharedPreferences(RUNTIME_PERMISSION_PREFS, Context.MODE_PRIVATE)
-            .edit {
-                putBoolean(NOTIFICATION_PERMISSION_ASKED, true)
-            }
     }
 
     private fun applyEdgeToEdge(darkTheme: Boolean) {

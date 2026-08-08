@@ -37,7 +37,8 @@ fun UpdateDetailSheet(
     state: UpdateState,
     onDownloadClick: () -> Unit,
     onInstallClick: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    canInstall: Boolean = true
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -116,7 +117,10 @@ fun UpdateDetailSheet(
                 ) {
                     Text(
                         when (state) {
-                            is UpdateState.ReadyToInstall -> "Instalar"
+                            // Si falta autorizar el origen, el botón lleva a Ajustes y no
+                            // al instalador. Decirlo evita que el desvío parezca un fallo.
+                            is UpdateState.ReadyToInstall ->
+                                if (canInstall) "Instalar" else "Permitir instalación"
                             is UpdateState.Downloading -> "Descargando..."
                             else -> "Descargar"
                         }

@@ -151,6 +151,7 @@ fun UpdateSettingsScreen(
                 state = state,
                 onDownloadClick = viewModel::downloadUpdate,
                 onInstallClick = viewModel::installUpdate,
+                canInstall = viewModel.canInstallPackages(),
                 onDismiss = {
                     showSheet = false
                     viewModel.dismiss()

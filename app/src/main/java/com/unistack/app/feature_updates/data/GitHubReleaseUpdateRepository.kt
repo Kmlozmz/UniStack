@@ -4,7 +4,9 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
@@ -170,8 +172,31 @@ class GitHubReleaseUpdateRepository(
         }
     }
 
+    /**
+     * Desde Android 8 instalar un APK exige que el usuario autorice a esta app como origen,
+     * y esa autorización se concede en una pantalla de Ajustes, no en un diálogo.
+     */
+    override fun canInstallPackages(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+            context.packageManager.canRequestPackageInstalls()
+
+    override fun openInstallPermissionSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val intent = Intent(
+            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+            Uri.parse("package:${context.packageName}")
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
+
     override fun installUpdate() {
         val readyState = _state.value as? UpdateState.ReadyToInstall ?: return
+        // Sin el permiso, lanzar el instalador dejaba al usuario en un desvío del sistema
+        // sin contexto. Se le lleva directo al interruptor que necesita.
+        if (!canInstallPackages()) {
+            openInstallPermissionSettings()
+            return
+        }
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(readyState.apkUri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
