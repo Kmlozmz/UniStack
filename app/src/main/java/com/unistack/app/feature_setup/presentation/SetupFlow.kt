@@ -129,6 +129,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.R
+import com.unistack.app.core.design.components.AnimatedCheckmark
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
@@ -1891,12 +1892,14 @@ private fun ScaleTypeSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
+            // El rango es el nombre de la opción: repetirlo como insignia y otra vez como
+            // descripción decía tres veces lo mismo. Solo la escala personalizada necesita
+            // una línea extra, porque su título no dice cuál es el rango.
             ScaleTypeCard(
                 option = ScaleTypeOption(
                     choice = SetupScaleChoice.FIVE,
-                    badge = "0.0 - 5.0",
                     title = "0.0 a 5.0",
-                    subtitle = "Escala de 0.0\nhasta 5.0",
+                    subtitle = null,
                     icon = null
                 ),
                 selected = selectedChoice == SetupScaleChoice.FIVE,
@@ -1906,9 +1909,8 @@ private fun ScaleTypeSection(
             ScaleTypeCard(
                 option = ScaleTypeOption(
                     choice = SetupScaleChoice.HUNDRED,
-                    badge = "0 - 100",
                     title = "0 a 100",
-                    subtitle = "Escala de 0\nhasta 100",
+                    subtitle = null,
                     icon = null
                 ),
                 selected = selectedChoice == SetupScaleChoice.HUNDRED,
@@ -1918,9 +1920,8 @@ private fun ScaleTypeSection(
             ScaleTypeCard(
                 option = ScaleTypeOption(
                     choice = SetupScaleChoice.CUSTOM,
-                    badge = null,
                     title = "Personalizada",
-                    subtitle = "Definir mi propia\nescala",
+                    subtitle = "Define tu rango",
                     icon = Icons.Rounded.AutoAwesome
                 ),
                 selected = selectedChoice == SetupScaleChoice.CUSTOM,
@@ -1973,28 +1974,32 @@ private fun ScaleTypeCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                ScaleBadge(
-                    text = option.badge,
-                    icon = option.icon,
-                    selected = selected
-                )
+                if (option.icon != null) {
+                    ScaleBadge(
+                        text = null,
+                        icon = option.icon,
+                        selected = selected
+                    )
+                }
                 Text(
                     text = option.title,
                     color = UniStackColors.TextPrimary,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = if (option.icon == null) 17.sp else 13.sp,
+                    lineHeight = if (option.icon == null) 21.sp else 16.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = option.subtitle,
-                    color = UniStackColors.TextSecondary,
-                    fontSize = 10.sp,
-                    lineHeight = 12.sp,
-                    textAlign = TextAlign.Center
-                )
+                if (option.subtitle != null) {
+                    Text(
+                        text = option.subtitle,
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 11.sp,
+                        lineHeight = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -2247,9 +2252,8 @@ private fun ScaleInfoCard() {
 
 private data class ScaleTypeOption(
     val choice: SetupScaleChoice,
-    val badge: String?,
     val title: String,
-    val subtitle: String,
+    val subtitle: String?,
     val icon: ImageVector?
 )
 
@@ -3114,8 +3118,9 @@ fun SetupDoneScreen(
                     )
                 }
                 SummaryKeyValueRow(
-                    "Módulos",
-                    enabledModules.sortedBy { it.ordinal }.joinToString(" · ") { it.shortLabel() }
+                    label = "Módulos",
+                    value = enabledModules.sortedBy { it.ordinal }.joinToString(" · ") { it.shortLabel() },
+                    divider = false
                 )
             }
             SetupSummaryNoticeCard()
@@ -3378,31 +3383,51 @@ private fun SummaryInfoCard(
     }
 }
 
+/**
+ * Fila del repaso final, en dos columnas alineadas.
+ *
+ * El valor va alineado a la izquierda de su columna y no a la derecha: alineado a la
+ * derecha, un valor largo que ocupa dos líneas quedaba en escalera y la tabla dejaba de
+ * leerse como tal. [divider] separa las filas salvo la última.
+ */
 @Composable
-private fun SummaryKeyValueRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Text(
-            text = label,
-            color = UniStackColors.TextSecondary,
-            fontSize = 12.sp,
-            lineHeight = 14.sp,
-            modifier = Modifier.weight(0.85f)
-        )
-        Text(
-            text = value,
-            color = UniStackColors.TextPrimary,
-            fontSize = 12.sp,
-            lineHeight = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.End,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1.15f)
-        )
+private fun SummaryKeyValueRow(
+    label: String,
+    value: String,
+    divider: Boolean = true
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                text = label,
+                color = UniStackColors.TextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                modifier = Modifier.weight(0.9f)
+            )
+            Text(
+                text = value,
+                color = UniStackColors.TextPrimary,
+                fontSize = 13.sp,
+                lineHeight = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1.1f)
+            )
+        }
+        if (divider) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(UniStackColors.SoftOutline.copy(alpha = 0.5f))
+            )
+        }
     }
 }
 
@@ -3599,11 +3624,9 @@ private fun SetupFinishHero(name: String) {
                         .background(UniStackColors.Primary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint = UniStackColors.OnPrimary,
-                        modifier = Modifier.size(38.dp)
+                    AnimatedCheckmark(
+                        size = 38.dp,
+                        color = UniStackColors.OnPrimary
                     )
                 }
             }

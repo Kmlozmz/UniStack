@@ -134,8 +134,12 @@ class SetupViewModel @Inject constructor(
         preferredName = value.take(30)
     }
 
+    /**
+     * Alterna el nivel: volver a tocar el ya elegido lo deselecciona. Sin esto, el primer
+     * toque era irreversible y no había forma de volver al estado inicial.
+     */
     fun updateEducationLevel(value: EducationLevel) {
-        educationLevel = value
+        educationLevel = if (educationLevel == value) null else value
         academicInfo = ""
         studyArea = null
         selectedProgram = null
