@@ -3108,9 +3108,8 @@ fun SetupDoneScreen(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
             SetupFinishHero(name = displayName)
             // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
             // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
@@ -3559,18 +3558,17 @@ private fun SetupSummaryNoticeCard() {
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            SetupInfoDot(size = 32.dp)
+            SetupInfoDot(size = 28.dp)
             Text(
                 text = buildAnnotatedString {
-                    append("Puedes cambiar cualquier configuración más\n")
-                    append("adelante desde ")
+                    append("Puedes cambiar todo esto desde ")
                     withStyle(SpanStyle(color = UniStackColors.Primary, fontWeight = FontWeight.SemiBold)) {
                         append("Ajustes")
                     }
@@ -3603,11 +3601,11 @@ private fun SetupFinishHero(name: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(132.dp)
+                .size(96.dp)
                 .graphicsLayer {
                     scaleX = badgeScale
                     scaleY = badgeScale
@@ -3617,7 +3615,7 @@ private fun SetupFinishHero(name: String) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(132.dp)
+                    .size(96.dp)
                     .clip(CircleShape)
                     .background(
                         Brush.radialGradient(
@@ -3630,20 +3628,20 @@ private fun SetupFinishHero(name: String) {
             )
             Box(
                 modifier = Modifier
-                    .size(88.dp)
+                    .size(66.dp)
                     .clip(CircleShape)
                     .background(UniStackColors.PrimaryLight),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(UniStackColors.Primary),
                     contentAlignment = Alignment.Center
                 ) {
                     AnimatedCheckmark(
-                        size = 38.dp,
+                        size = 28.dp,
                         color = UniStackColors.OnPrimary
                     )
                 }
@@ -3651,24 +3649,16 @@ private fun SetupFinishHero(name: String) {
         }
         Text(
             text = buildAnnotatedString {
-                append("Todo listo,\n")
+                append("Todo listo, ")
                 withStyle(SpanStyle(color = UniStackColors.Primary)) {
                     append("$name.")
                 }
             },
             color = UniStackColors.TextPrimary,
-            fontSize = 32.sp,
-            lineHeight = 36.sp,
+            fontSize = 26.sp,
+            lineHeight = 30.sp,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center
-        )
-        Text(
-            text = "UniStack ya está listo para acompañarte este semestre.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 15.sp,
-            lineHeight = 21.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 12.dp)
         )
     }
 }

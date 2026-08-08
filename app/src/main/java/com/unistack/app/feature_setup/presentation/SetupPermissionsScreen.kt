@@ -191,7 +191,7 @@ fun SetupPermissionsScreen(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "UniStack solo te escribe cuando hay algo que hacer. Nada de promociones.",
+                text = "Actívalas para no perderte fechas, clases ni cambios en tu promedio.",
                 color = UniStackColors.TextSecondary,
                 fontSize = 15.sp,
                 lineHeight = 21.sp,
