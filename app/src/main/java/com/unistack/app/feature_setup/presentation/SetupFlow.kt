@@ -38,10 +38,13 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -110,6 +113,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -747,6 +751,10 @@ fun SetupNameScreen(
         step = SetupSteps.Name,
         totalSteps = totalSteps,
         modifier = modifier,
+        // Aquí el teclado se superpone en vez de encoger la pantalla: subirlo todo dejaba
+        // fuera de vista el hero, y con él el nombre escribiéndose en vivo en la tarjeta,
+        // que es justo lo que da sentido a este paso mientras se teclea.
+        overlayKeyboard = true,
         actions = {
             UniStackButton(
                 text = "Continuar",
@@ -756,23 +764,12 @@ fun SetupNameScreen(
             )
         }
     ) {
-        // El hero ocupa 164dp, más de lo que sobra cuando entra el teclado: con él puesto,
-        // la tarjeta de abajo quedaba cortada a media línea contra el botón. Se recoge
-        // mientras se escribe, que es justo cuando no aporta nada, y vuelve al cerrarse.
-        val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            AnimatedVisibility(
-                visible = !keyboardVisible,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                SetupNameHero(name = name)
-            }
+            SetupNameHero(name = name)
             SetupNameTitle()
             SetupNameInput(
                 name = name,
@@ -3729,12 +3726,22 @@ internal fun SetupScaffold(
     step: Int? = null,
     totalSteps: Int = 6,
     welcome: Boolean = false,
+    overlayKeyboard: Boolean = false,
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // El teclado se esquiva aquí y no en la raíz de la app: así este paso puede optar por
+    // que se superponga. Se excluye el inset de la barra de navegación porque el del
+    // teclado ya lo incluye y las barras de acciones aplican navigationBarsPadding().
+    val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
+    val density = LocalDensity.current
+    // Alto real de la barra de acciones flotante, para reservar sitio al final del scroll.
+    var floatingActionsHeight by remember { mutableStateOf(0.dp) }
+
     Scaffold(
         modifier = modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .then(if (overlayKeyboard) Modifier else Modifier.windowInsetsPadding(imeInsets)),
         containerColor = UniStackColors.Background,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
@@ -3750,7 +3757,10 @@ internal fun SetupScaffold(
             }
         },
         bottomBar = {
-            if (actions != null) {
+            // Con superposición la barra no va aquí: Scaffold le resta su alto al contenido,
+            // así que subirla por el teclado encogería la pantalla igual que antes. Pasa a
+            // flotar sobre el contenido, más abajo.
+            if (actions != null && !overlayKeyboard) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -3769,12 +3779,17 @@ internal fun SetupScaffold(
         // foco y el único recurso era el botón atrás del sistema. Los hijos se comprueban
         // antes, así que tocar un campo o un botón sigue funcionando igual.
         val focusManager = LocalFocusManager.current
-        // Con el teclado fuera sobra altura y el contenido, anclado arriba, dejaba un hueco
-        // muerto justo encima del botón. Centrarlo reparte ese aire. Solo aplica mientras el
-        // teclado está abierto: si el contenido desborda, la alineación no cambia nada.
-        val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+        // Al superponerse, el final del contenido queda debajo del teclado y de la barra
+        // flotante. Se reserva ese alto para poder desplazarse hasta él; sin esto, en una
+        // pantalla corta el campo quedaría tapado sin manera de sacarlo.
+        val overlayBottomRoom = if (overlayKeyboard) {
+            floatingActionsHeight + with(density) { WindowInsets.ime.getBottom(density).toDp() }
+        } else {
+            0.dp
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
         Box(
-            contentAlignment = if (keyboardVisible) Alignment.Center else Alignment.TopStart,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -3784,7 +3799,10 @@ internal fun SetupScaffold(
                 }
                 .then(if (actions == null) Modifier.navigationBarsPadding() else Modifier)
                 .verticalScroll(scrollState)
-                .padding(top = if (step == null) 10.dp else 7.dp, bottom = 14.dp)
+                .padding(
+                    top = if (step == null) 10.dp else 7.dp,
+                    bottom = 14.dp + overlayBottomRoom
+                )
         ) {
             Column(
                 modifier = Modifier
@@ -3809,6 +3827,32 @@ internal fun SetupScaffold(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
                 content = content
             )
+        }
+
+            if (actions != null && overlayKeyboard) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .windowInsetsPadding(imeInsets)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // Se mide aquí, fuera del desplazamiento por el teclado, para que
+                            // el alto reservado arriba sea el de la barra y no incluya el IME.
+                            .onSizeChanged {
+                                floatingActionsHeight = with(density) { it.height.toDp() }
+                            }
+                            .background(UniStackColors.Background)
+                            .navigationBarsPadding()
+                            .padding(horizontal = 22.dp)
+                            .padding(top = 6.dp, bottom = 7.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        content = actions
+                    )
+                }
+            }
         }
     }
 }

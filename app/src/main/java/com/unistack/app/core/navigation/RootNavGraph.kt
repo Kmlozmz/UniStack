@@ -7,7 +7,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,11 +67,22 @@ fun RootNavGraph(
     val isLoading = setupCompleted == null && !repositoryDidLoad
     val showLaunchScreen = !launchAnimationFinished || isLoading
 
+    // Con enableEdgeToEdge la ventana deja de redimensionarse sola, así que esquivar el
+    // teclado pasa a ser responsabilidad de la app. Se excluye el inset de la barra de
+    // navegación porque el del teclado ya lo incluye, y muchas pantallas aplican además
+    // navigationBarsPadding(): sin la exclusión ese espacio se contaría dos veces.
+    //
+    // Va aquí y no en la raíz porque el onboarding lo gestiona por su cuenta: su paso del
+    // nombre deja que el teclado se superponga en vez de encoger la pantalla.
+    val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
+
     Box(modifier = modifier.fillMaxSize()) {
         if (!isLoading) {
             when {
                 setupCompleted == true -> MainNavGraph(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(imeInsets),
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute ?: setupLaunchRoute,
                     onLaunchRouteConsumed = {
