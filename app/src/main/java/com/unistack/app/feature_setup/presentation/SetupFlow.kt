@@ -2264,7 +2264,7 @@ private data class ScaleTypeOption(
 
 @Composable
 fun SetupAcademicPeriodsScreen(
-    label: AcademicPeriodLabel,
+    label: AcademicPeriodLabel?,
     weights: List<String>,
     isValid: Boolean,
     onLabelSelected: (AcademicPeriodLabel) -> Unit,
@@ -2347,7 +2347,7 @@ private fun AcademicPeriodsTitle() {
 
 @Composable
 private fun AcademicDistributionCard(
-    label: AcademicPeriodLabel,
+    label: AcademicPeriodLabel?,
     weights: List<String>,
     total: Double,
     remaining: Double,
@@ -2381,51 +2381,66 @@ private fun AcademicDistributionCard(
                 onSelected = onLabelSelected
             )
             Text(
-                text = "Momentos de evaluación dentro del semestre.",
+                // Ambas opciones se comportan igual: solo cambia el nombre. Decirlo evita
+                // que se lea como una decisión de cálculo y que se dude en elegir.
+                text = "Como los llame tu institución. Solo cambia el nombre, no el cálculo.",
                 color = UniStackColors.TextSecondary,
                 fontSize = 11.sp,
                 lineHeight = 14.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-            SetupDivider()
-            Text(
-                text = "Cantidad de ${label.plural.lowercase()}",
-                color = UniStackColors.TextPrimary,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            PeriodCountDropdown(
-                label = label,
-                count = weights.size,
-                expanded = countExpanded,
-                customCountSelected = customCountSelected,
-                onExpandedChange = onCountExpandedChange,
-                onCountSelected = onCountSelected
-            )
-            if (weights.isNotEmpty()) {
-                SetupDivider()
-                PeriodDistributionSection(
-                    label = label,
-                    weights = weights,
-                    total = total,
-                    isValid = isValid,
-                    onWeightChange = onWeightChange
-                )
+
+            // Todo lo demás se nombra a partir del tipo, así que no aparece hasta elegirlo.
+            // Antes se mostraba de entrada un resumen «0% asignado / 100% restante» que no
+            // resumía nada, porque aún no había nada que repartir.
+            AnimatedVisibility(
+                visible = label != null,
+                modifier = Modifier.revealIntoView(label != null),
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SetupDivider()
+                    Text(
+                        text = "Cantidad de ${(label ?: AcademicPeriodLabel.CORTE).plural.lowercase()}",
+                        color = UniStackColors.TextPrimary,
+                        fontSize = 14.sp,
+                        lineHeight = 17.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    PeriodCountDropdown(
+                        label = label ?: AcademicPeriodLabel.CORTE,
+                        count = weights.size,
+                        expanded = countExpanded,
+                        customCountSelected = customCountSelected,
+                        onExpandedChange = onCountExpandedChange,
+                        onCountSelected = onCountSelected
+                    )
+                    if (weights.isNotEmpty()) {
+                        SetupDivider()
+                        PeriodDistributionSection(
+                            label = label ?: AcademicPeriodLabel.CORTE,
+                            weights = weights,
+                            total = total,
+                            isValid = isValid,
+                            onWeightChange = onWeightChange
+                        )
+                    }
+                    PeriodSummaryCard(
+                        total = total,
+                        remaining = remaining,
+                        isValid = isValid
+                    )
+                }
             }
-            PeriodSummaryCard(
-                total = total,
-                remaining = remaining,
-                isValid = isValid
-            )
         }
     }
 }
 
 @Composable
 private fun EvaluationTypeSegmentedControl(
-    selected: AcademicPeriodLabel,
+    selected: AcademicPeriodLabel?,
     onSelected: (AcademicPeriodLabel) -> Unit
 ) {
     Row(
@@ -3048,7 +3063,7 @@ fun SetupDoneScreen(
     customGradeMax: Double,
     passingGrade: String,
     targetAverage: String,
-    periodLabel: AcademicPeriodLabel,
+    periodLabel: AcademicPeriodLabel?,
     periodWeights: List<String>,
     enabledModules: Set<AppModule>,
     onBackClick: () -> Unit,
@@ -3118,7 +3133,8 @@ fun SetupDoneScreen(
                 if (gradesEnabled) {
                     SummaryKeyValueRow("Escala", gradingScale.summaryLabel(customGradeMax))
                     SummaryKeyValueRow(
-                        periodLabel.plural,
+                        // No se llega aquí sin tipo elegido: el paso no deja continuar sin él.
+                        periodLabel?.plural ?: "Distribución",
                         if (weights.isEmpty()) "Sin definir" else "${weights.size} · ${weights.joinToString(" / ") { "$it%" }}"
                     )
                 }

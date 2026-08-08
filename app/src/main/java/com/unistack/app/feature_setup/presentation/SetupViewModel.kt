@@ -57,7 +57,11 @@ class SetupViewModel @Inject constructor(
 
     var enabledModules by mutableStateOf(AppModule.entries.toSet())
         private set
-    var academicPeriodLabel by mutableStateOf(AcademicPeriodLabel.CORTE)
+    /**
+     * Sin elegir de partida: preseleccionar «Cortes» daba por hecho una nomenclatura que no
+     * es la de todo el mundo, y al venir ya marcada era fácil pasar de largo sin leerla.
+     */
+    var academicPeriodLabel by mutableStateOf<AcademicPeriodLabel?>(null)
         private set
     var academicPeriodWeights by mutableStateOf(emptyList<String>())
         private set
@@ -223,8 +227,15 @@ class SetupViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Alterna el tipo igual que el nivel de estudio: volver a tocar el elegido lo suelta.
+     * Al soltarlo se descarta la distribución, porque sus tramos se nombran a partir de él.
+     */
     fun updateAcademicPeriodLabel(label: AcademicPeriodLabel) {
-        academicPeriodLabel = label
+        academicPeriodLabel = if (academicPeriodLabel == label) null else label
+        if (academicPeriodLabel == null) {
+            academicPeriodWeights = emptyList()
+        }
     }
 
     fun updateAcademicPeriodCount(count: Int) {
@@ -283,16 +294,18 @@ class SetupViewModel @Inject constructor(
     }
 
     private fun buildAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
+        // Sin tipo elegido el paso no está resuelto, y de paso deja el botón bloqueado.
+        val label = academicPeriodLabel ?: return null
         val weights = academicPeriodWeights.map { it.toDoubleOrNull()?.div(100.0) ?: return null }
         if (weights.any { it <= 0.0 }) return null
         if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return null
         return AcademicPeriodScheme(
-            label = academicPeriodLabel,
+            label = label,
             periods = weights.mapIndexed { index, weight ->
                 val order = index + 1
                 AcademicPeriod(
                     id = "period-$order",
-                    name = "${academicPeriodLabel.singular} $order",
+                    name = "${label.singular} $order",
                     weight = weight,
                     order = order
                 )
