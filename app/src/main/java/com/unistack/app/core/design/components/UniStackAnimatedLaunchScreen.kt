@@ -50,9 +50,12 @@ import kotlin.math.sqrt
 private const val UniText = "Uni"
 private const val StackText = "Stack"
 
-private val Pill1Colors = listOf(Color(0xFF9B7FE6), Color(0xFFC4ABF0))
-private val Pill2Colors = listOf(Color(0xFF4E2A8E), Color(0xFF7B5CC0))
-private val Pill3Colors = listOf(Color(0xFF6B8BF5), Color(0xFF9B6FF0))
+// Los gradientes del propio símbolo de marca, medidos del PNG para poder animar cada
+// píldora por separado. No salen de los tokens a propósito: son el logo, no interfaz, y
+// deben verse igual en claro, oscuro y OLED, como se vería la imagen.
+private val Pill1Colors = listOf(Color(0xFF9B7FE6), Color(0xFFC4ABF0)) // design-tokens-ok: color de marca
+private val Pill2Colors = listOf(Color(0xFF4E2A8E), Color(0xFF7B5CC0)) // design-tokens-ok: color de marca
+private val Pill3Colors = listOf(Color(0xFF6B8BF5), Color(0xFF9B6FF0)) // design-tokens-ok: color de marca
 
 private fun cascadeSpringEasing(w: Float = 9.6f, d: Float = 0.6f): Easing {
     val wd = w * sqrt(1f - d * d)
