@@ -36,9 +36,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -74,7 +77,6 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -108,7 +110,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -413,7 +417,6 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
                 onClick = onStartClick,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
-            WelcomeTimeHint()
         }
     ) {
         Column(
@@ -729,29 +732,6 @@ private fun WelcomeFeatureDialog(
 }
 
 @Composable
-private fun WelcomeTimeHint() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Schedule,
-            contentDescription = null,
-            tint = UniStackColors.Primary,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = "Tardarás menos de 2 minutos.",
-            color = UniStackColors.TextSecondary,
-            fontSize = 11.sp,
-            lineHeight = 14.sp
-        )
-    }
-}
-
-@Composable
 fun SetupNameScreen(
     name: String,
     nameValidation: ValidationResult,
@@ -776,12 +756,23 @@ fun SetupNameScreen(
             )
         }
     ) {
+        // El hero ocupa 164dp, más de lo que sobra cuando entra el teclado: con él puesto,
+        // la tarjeta de abajo quedaba cortada a media línea contra el botón. Se recoge
+        // mientras se escribe, que es justo cuando no aporta nada, y vuelve al cerrarse.
+        val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SetupNameHero(name = name)
+            AnimatedVisibility(
+                visible = !keyboardVisible,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                SetupNameHero(name = name)
+            }
             SetupNameTitle()
             SetupNameInput(
                 name = name,
@@ -3774,11 +3765,23 @@ internal fun SetupScaffold(
         }
     ) { innerPadding ->
         val scrollState = rememberScrollState()
+        // Sin esto no había manera de cerrar el teclado: tocar fuera del campo no quitaba el
+        // foco y el único recurso era el botón atrás del sistema. Los hijos se comprueban
+        // antes, así que tocar un campo o un botón sigue funcionando igual.
+        val focusManager = LocalFocusManager.current
+        // Con el teclado fuera sobra altura y el contenido, anclado arriba, dejaba un hueco
+        // muerto justo encima del botón. Centrarlo reparte ese aire. Solo aplica mientras el
+        // teclado está abierto: si el contenido desborda, la alineación no cambia nada.
+        val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         Box(
+            contentAlignment = if (keyboardVisible) Alignment.Center else Alignment.TopStart,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 22.dp)
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }
                 .then(if (actions == null) Modifier.navigationBarsPadding() else Modifier)
                 .verticalScroll(scrollState)
                 .padding(top = if (step == null) 10.dp else 7.dp, bottom = 14.dp)
