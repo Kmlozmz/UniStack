@@ -75,6 +75,7 @@ fun isUsingRealReleaseSigning(): Boolean =
         releaseKeyPasswordValue() != devFallbackSigningValue
 
 val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHH"))
+val debugBuildStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmm"))
 val generatedVersionCode = providers.gradleProperty("versionCode")
     .orElse(providers.environmentVariable("VERSION_CODE"))
     .orElse(fallbackVersionCode)
@@ -160,7 +161,16 @@ android {
     applicationVariants.configureEach {
         outputs.configureEach {
             if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
-                this.outputFileName = "UniStack-${versionName}-${buildType.name}.apk"
+                // El versionCode se genera por hora, así que dos builds de debug seguidos
+                // salían con el mismo nombre de archivo y no había manera de distinguirlos
+                // una vez enviados. Al de debug se le añade la hora y el minuto reales del
+                // build. El de release conserva el nombre limpio: ahí el nombre es el de la
+                // versión publicada y no debe llevar ruido.
+                this.outputFileName = if (buildType.name == "debug") {
+                    "UniStack-${versionName}-debug-$debugBuildStamp.apk"
+                } else {
+                    "UniStack-${versionName}-${buildType.name}.apk"
+                }
             }
         }
     }
