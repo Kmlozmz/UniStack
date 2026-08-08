@@ -3830,17 +3830,17 @@ internal fun SetupScaffold(
         }
 
             if (actions != null && overlayKeyboard) {
+                // La barra se queda anclada abajo y el teclado también la tapa: subirla con
+                // el IME la traía encima del contenido, que es lo que se quería evitar. Para
+                // pulsarla se cierra antes el teclado tocando fuera del campo.
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .windowInsetsPadding(imeInsets)
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            // Se mide aquí, fuera del desplazamiento por el teclado, para que
-                            // el alto reservado arriba sea el de la barra y no incluya el IME.
                             .onSizeChanged {
                                 floatingActionsHeight = with(density) { it.height.toDp() }
                             }

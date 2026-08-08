@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,7 +30,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.revealIntoView
@@ -56,6 +59,17 @@ fun InstitutionField(
     }
     val showSuggestions = suggestions.isNotEmpty() && suggestions.none { it == value }
 
+    // El campo lleva su propia selección en vez de solo el texto: al elegir una sugerencia
+    // el contenido se sustituye entero, y con un String suelto el cursor se quedaba donde
+    // se había tecleado, partiendo el nombre por la mitad.
+    var fieldValue by remember { mutableStateOf(TextFieldValue(value, TextRange(value.length))) }
+    // Cambios llegados de fuera (restaurar el perfil, limpiar el paso): se recolocan al final.
+    LaunchedEffect(value) {
+        if (value != fieldValue.text) {
+            fieldValue = TextFieldValue(value, TextRange(value.length))
+        }
+    }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(7.dp)
@@ -79,10 +93,11 @@ fun InstitutionField(
         }
         MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(surface = Color.Transparent)) {
             OutlinedTextField(
-                value = value,
+                value = fieldValue,
                 onValueChange = {
                     dismissedSuggestions = false
-                    onValueChange(it)
+                    fieldValue = it
+                    onValueChange(it.text)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,6 +136,7 @@ fun InstitutionField(
                             .clip(AppShapes.Small)
                             .background(UniStackColors.SurfaceVariant)
                             .clickable {
+                                fieldValue = TextFieldValue(suggestion, TextRange(suggestion.length))
                                 onValueChange(suggestion)
                                 dismissedSuggestions = true
                             }
