@@ -1,12 +1,17 @@
 package com.unistack.app.core.design.components
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.AppearanceRuntime
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
+import com.unistack.app.core.design.theme.cardRadius
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -296,22 +301,49 @@ private fun FabMenuOption(
     }
 }
 
+/**
+ * Disparador del menú, con el morfismo de forma que pide el lenguaje expresivo.
+ *
+ * Al desplegarse deja de ser una tarjeta redondeada y se cierra en círculo, a la vez que el
+ * aspa gira. Antes solo giraba el icono: el contenedor se quedaba idéntico abierto y cerrado,
+ * de modo que el botón no participaba del cambio de estado que él mismo provocaba.
+ *
+ * El radio se anima en vez de cambiarse de golpe, y con muelle en vez de curva fija, para que
+ * la forma se estire al llegar en lugar de frenar en seco.
+ */
 @Composable
 private fun FabMenuButton(
     expanded: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val motionEnabled = LocalMotionDurationScale.current > 0f
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 45f else 0f,
-        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "fabIconRotation"
+    )
+    // Cerrado toma el radio de tarjeta que el usuario tenga configurado; abierto se va al
+    // círculo. Sin movimiento, la forma se queda en la que corresponde a cada estado.
+    val closedRadius = AppearanceRuntime.cornerStyle.cardRadius()
+    val targetRadius = if (expanded) 28.dp else closedRadius
+    val radius by animateDpAsState(
+        targetValue = targetRadius,
+        animationSpec = if (motionEnabled) {
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+        } else {
+            snap()
+        },
+        label = "fabShapeMorph"
     )
 
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier.size(56.dp),
-        shape = AppShapes.MediumCard,
+        shape = RoundedCornerShape(radius),
         containerColor = UniStackColors.Primary,
         contentColor = UniStackColors.OnPrimary
     ) {

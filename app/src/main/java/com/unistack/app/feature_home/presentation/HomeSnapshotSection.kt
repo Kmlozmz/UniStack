@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.expressivePress
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -160,7 +161,7 @@ private fun SnapshotMetric(
             // Contorno de un pelo: sin él las casillas y el fondo quedaban casi al mismo
             // tono y la rejilla se leía como una mancha en vez de como cuatro piezas.
             .border(1.dp, HomeBorder, AppShapes.SmallCard)
-            .cleanClickable(onClick)
+            .expressivePress(onClick = onClick)
             .padding(inset),
         verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
     ) {
