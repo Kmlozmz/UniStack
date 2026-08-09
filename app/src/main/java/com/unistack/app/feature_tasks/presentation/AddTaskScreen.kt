@@ -1565,7 +1565,7 @@ private fun SubjectSearchField(
             .background(SubjectSheetField, AppShapes.MediumCard)
             .border(
                 width = 0.5.dp,
-                color = UniStackColors.OnPrimary.copy(alpha = 0.07f),
+                color = UniStackColors.SoftOutline,
                 shape = AppShapes.MediumCard
             )
             .padding(horizontal = 16.dp),
@@ -1623,7 +1623,7 @@ private fun SubjectSheetOption(
             )
             .border(
                 width = 0.8.dp,
-                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else UniStackColors.OnPrimary.copy(alpha = 0.07f),
+                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else UniStackColors.SoftOutline,
                 shape = shape
             )
             .clickable(
@@ -1709,7 +1709,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 74.dp)
             .background(SubjectSheetCreateSurface, shape)
-            .border(0.7.dp, UniStackColors.OnPrimary.copy(alpha = 0.08f), shape)
+            .border(0.7.dp, UniStackColors.SoftOutline, shape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

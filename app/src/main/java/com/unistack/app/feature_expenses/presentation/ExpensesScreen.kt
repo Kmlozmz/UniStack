@@ -114,15 +114,20 @@ private val ExpenseMuted: Color
     @Composable get() = UniStackColors.TextSecondary
 private val ExpenseTrack: Color
     @Composable get() = UniStackColors.SurfaceVariant
+// Los filetes salen de SoftOutline, que mezcla la tarjeta con el color de texto y por tanto
+// se comporta bien en cualquier tema. Antes en oscuro salían de OnPrimary al 6%, y OnPrimary
+// es «contenido sobre el acento»: con un acento claro —el caso normal con Monet en oscuro—
+// se resuelve a tinta oscura, y tinta oscura al 6% sobre un fondo oscuro no se ve. De ahí
+// que los contornos hubieran desaparecido en esta pantalla.
 private val ExpenseBorder: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.OnPrimary.copy(alpha = 0.06f)
+        UniStackColors.SoftOutline
     } else {
         UniStackColors.SoftOutline.copy(alpha = 0.7f)
     }
 private val ExpenseDivider: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.OnPrimary.copy(alpha = 0.08f)
+        UniStackColors.SoftOutline.copy(alpha = 0.8f)
     } else {
         UniStackColors.SoftOutline.copy(alpha = 0.5f)
     }
