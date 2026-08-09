@@ -113,8 +113,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -3087,7 +3085,6 @@ fun SetupDoneScreen(
     // terminado, no a dónde se va. Se recuerda cuál se pulsó y la ruta se resuelve al final.
     var exiting by remember { mutableStateOf(false) }
     var createSubjectOnExit by remember { mutableStateOf(false) }
-    var checkCenter by remember { mutableStateOf(Offset.Unspecified) }
     val startExit: (Boolean) -> Unit = { createSubject ->
         if (!exiting) {
             createSubjectOnExit = createSubject
@@ -3097,22 +3094,22 @@ fun SetupDoneScreen(
 
     val contentAlpha by animateFloatAsState(
         targetValue = if (exiting) 0f else 1f,
-        animationSpec = tween(durationMillis = 220),
+        animationSpec = tween(durationMillis = 320),
         label = "done-content-alpha"
     )
     val contentShift by animateFloatAsState(
-        targetValue = if (exiting) 20f else 0f,
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        targetValue = if (exiting) 24f else 0f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
         label = "done-content-shift"
     )
     val actionsAlpha by animateFloatAsState(
         targetValue = if (exiting) 0f else 1f,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = tween(durationMillis = 280),
         label = "done-actions-alpha"
     )
     val actionsShift by animateFloatAsState(
         targetValue = if (exiting) 54f else 0f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
         label = "done-actions-shift"
     )
 
@@ -3162,10 +3159,7 @@ fun SetupDoneScreen(
                 },
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SetupFinishHero(
-                name = displayName,
-                onCheckCenterChanged = { checkCenter = it }
-            )
+            SetupFinishHero(name = displayName)
             // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
             // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
             // un error caro —la escala o los pesos— antes de empezar a cargar datos.
@@ -3200,9 +3194,8 @@ fun SetupDoneScreen(
         }
     }
 
-        if (exiting && checkCenter != Offset.Unspecified) {
+        if (exiting) {
             SetupFinishTransition(
-                origin = checkCenter,
                 onFinished = {
                     if (createSubjectOnExit) onCreateSubjectClick() else onGoHomeClick()
                 }
@@ -3651,10 +3644,7 @@ private fun SetupSummaryNoticeCard() {
 }
 
 @Composable
-private fun SetupFinishHero(
-    name: String,
-    onCheckCenterChanged: (Offset) -> Unit
-) {
+private fun SetupFinishHero(name: String) {
     // El sello entra con rebote: es el único momento del onboarding que celebra algo, y
     // aparecer ya colocado lo hacía indistinguible de una cabecera cualquiera.
     val motionEnabled = LocalMotionDurationScale.current > 0f
@@ -3675,11 +3665,6 @@ private fun SetupFinishHero(
         Box(
             modifier = Modifier
                 .size(96.dp)
-                // La animación de cierre hace brotar el logo justo de aquí, así que necesita
-                // el centro real: calcularlo a ojo dejaba un salto al empezar.
-                .onGloballyPositioned { coordinates ->
-                    onCheckCenterChanged(coordinates.boundsInRoot().center)
-                }
                 .graphicsLayer {
                     scaleX = badgeScale
                     scaleY = badgeScale

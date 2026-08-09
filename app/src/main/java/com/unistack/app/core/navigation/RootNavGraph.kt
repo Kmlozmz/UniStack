@@ -2,6 +2,7 @@ package com.unistack.app.core.navigation
 
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
@@ -76,12 +78,26 @@ fun RootNavGraph(
     // nombre deja que el teclado se superponga en vez de encoger la pantalla.
     val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
 
+    // El onboarding termina dispersando el logo y dejando el fondo limpio. Sin esto, el
+    // inicio aparecía de golpe sobre ese fondo y rompía la calma con la que se cierra;
+    // apareciendo con un fundido, el relevo entre las dos pantallas no tiene costura.
+    val mainAlpha = remember { Animatable(if (animationsDisabled) 1f else 0f) }
+    LaunchedEffect(setupCompleted, animationsDisabled) {
+        if (setupCompleted != true) return@LaunchedEffect
+        if (animationsDisabled) {
+            mainAlpha.snapTo(1f)
+        } else {
+            mainAlpha.animateTo(1f, tween(durationMillis = 420, easing = FastOutSlowInEasing))
+        }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         if (!isLoading) {
             when {
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()
+                        .graphicsLayer { alpha = mainAlpha.value }
                         .windowInsetsPadding(imeInsets),
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute ?: setupLaunchRoute,
