@@ -113,6 +113,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -3080,40 +3082,90 @@ fun SetupDoneScreen(
     val displayName = name.ifBlank { "Usuario" }
     val program = resolvedProgram(educationLevel, selectedProgram, customProgram, academicInfo)
     val weights = periodWeights.filter { it.isNotBlank() }
+
+    // La celebración es la misma se pulse el botón que se pulse: lo que se celebra es haber
+    // terminado, no a dónde se va. Se recuerda cuál se pulsó y la ruta se resuelve al final.
+    var exiting by remember { mutableStateOf(false) }
+    var createSubjectOnExit by remember { mutableStateOf(false) }
+    var checkCenter by remember { mutableStateOf(Offset.Unspecified) }
+    val startExit: (Boolean) -> Unit = { createSubject ->
+        if (!exiting) {
+            createSubjectOnExit = createSubject
+            exiting = true
+        }
+    }
+
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (exiting) 0f else 1f,
+        animationSpec = tween(durationMillis = 220),
+        label = "done-content-alpha"
+    )
+    val contentShift by animateFloatAsState(
+        targetValue = if (exiting) 20f else 0f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "done-content-shift"
+    )
+    val actionsAlpha by animateFloatAsState(
+        targetValue = if (exiting) 0f else 1f,
+        animationSpec = tween(durationMillis = 200),
+        label = "done-actions-alpha"
+    )
+    val actionsShift by animateFloatAsState(
+        targetValue = if (exiting) 54f else 0f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "done-actions-shift"
+    )
+
+    Box(modifier = modifier.fillMaxSize()) {
     SetupScaffold(
         onBackClick = onBackClick,
         step = SetupSteps.done(gradesEnabled, permissionsNeeded),
         totalSteps = totalSteps,
-        modifier = modifier,
         actions = {
-            if (gradesEnabled) {
-                UniStackButton(
-                    text = "Crear mi primera materia",
-                    onClick = onCreateSubjectClick,
-                    leadingIcon = Icons.Rounded.Add,
-                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-                )
-                UniStackButton(
-                    text = "Ir al inicio",
-                    onClick = onGoHomeClick,
-                    variant = UniStackButtonVariant.Outlined,
-                    leadingIcon = Icons.Rounded.Home
-                )
-            } else {
-                UniStackButton(
-                    text = "Ir al inicio",
-                    onClick = onGoHomeClick,
-                    leadingIcon = Icons.Rounded.Home,
-                    trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
-                )
+            Column(
+                modifier = Modifier.graphicsLayer {
+                    alpha = actionsAlpha
+                    translationY = actionsShift.dp.toPx()
+                },
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (gradesEnabled) {
+                    UniStackButton(
+                        text = "Crear mi primera materia",
+                        onClick = { startExit(true) },
+                        leadingIcon = Icons.Rounded.Add,
+                        trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                    )
+                    UniStackButton(
+                        text = "Ir al inicio",
+                        onClick = { startExit(false) },
+                        variant = UniStackButtonVariant.Outlined,
+                        leadingIcon = Icons.Rounded.Home
+                    )
+                } else {
+                    UniStackButton(
+                        text = "Ir al inicio",
+                        onClick = { startExit(false) },
+                        leadingIcon = Icons.Rounded.Home,
+                        trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
+                    )
+                }
             }
         }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = contentAlpha
+                    translationY = contentShift.dp.toPx()
+                },
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SetupFinishHero(name = displayName)
+            SetupFinishHero(
+                name = displayName,
+                onCheckCenterChanged = { checkCenter = it }
+            )
             // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
             // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
             // un error caro —la escala o los pesos— antes de empezar a cargar datos.
@@ -3145,6 +3197,16 @@ fun SetupDoneScreen(
                 )
             }
             SetupSummaryNoticeCard()
+        }
+    }
+
+        if (exiting && checkCenter != Offset.Unspecified) {
+            SetupFinishTransition(
+                origin = checkCenter,
+                onFinished = {
+                    if (createSubjectOnExit) onCreateSubjectClick() else onGoHomeClick()
+                }
+            )
         }
     }
 }
@@ -3589,7 +3651,10 @@ private fun SetupSummaryNoticeCard() {
 }
 
 @Composable
-private fun SetupFinishHero(name: String) {
+private fun SetupFinishHero(
+    name: String,
+    onCheckCenterChanged: (Offset) -> Unit
+) {
     // El sello entra con rebote: es el único momento del onboarding que celebra algo, y
     // aparecer ya colocado lo hacía indistinguible de una cabecera cualquiera.
     val motionEnabled = LocalMotionDurationScale.current > 0f
@@ -3610,6 +3675,11 @@ private fun SetupFinishHero(name: String) {
         Box(
             modifier = Modifier
                 .size(96.dp)
+                // La animación de cierre hace brotar el logo justo de aquí, así que necesita
+                // el centro real: calcularlo a ojo dejaba un salto al empezar.
+                .onGloballyPositioned { coordinates ->
+                    onCheckCenterChanged(coordinates.boundsInRoot().center)
+                }
                 .graphicsLayer {
                     scaleX = badgeScale
                     scaleY = badgeScale

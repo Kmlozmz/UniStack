@@ -9,13 +9,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,9 +25,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -50,12 +44,8 @@ import kotlin.math.sqrt
 private const val UniText = "Uni"
 private const val StackText = "Stack"
 
-// Los gradientes del propio símbolo de marca, medidos del PNG para poder animar cada
-// píldora por separado. No salen de los tokens a propósito: son el logo, no interfaz, y
-// deben verse igual en claro, oscuro y OLED, como se vería la imagen.
-private val Pill1Colors = listOf(Color(0xFF9B7FE6), Color(0xFFC4ABF0)) // design-tokens-ok: color de marca
-private val Pill2Colors = listOf(Color(0xFF4E2A8E), Color(0xFF7B5CC0)) // design-tokens-ok: color de marca
-private val Pill3Colors = listOf(Color(0xFF6B8BF5), Color(0xFF9B6FF0)) // design-tokens-ok: color de marca
+/** Ancho del símbolo en la pantalla de arranque; el alto sale de su proporción. */
+private val LaunchMarkWidth = 168.dp
 
 private fun cascadeSpringEasing(w: Float = 9.6f, d: Float = 0.6f): Easing {
     val wd = w * sqrt(1f - d * d)
@@ -191,75 +181,55 @@ private fun UniStackLaunchLogoStage(
     glow3Alpha: Float,
     modifier: Modifier = Modifier
 ) {
-    val stageWidth = 168.dp
-    val stageHeight = 144.dp
+    val markWidth = LaunchMarkWidth
+    val slides = listOf(pill1X, pill2X, pill3X)
+    val glows = listOf(glow1Alpha, glow2Alpha, glow3Alpha)
 
     Box(
-        modifier = modifier.size(width = stageWidth, height = stageHeight)
+        modifier = modifier.size(
+            width = markWidth,
+            height = markWidth * UniStackBrandMark.HeightRatio
+        )
     ) {
-        UniStackLaunchPill(
-            left = 40.dp,
-            top = 2.dp,
-            width = 110.dp,
-            height = 39.dp,
-            gradientColors = Pill1Colors,
-            glowColor = Pill1Colors[1],
-            slideX = pill1X,
-            glowAlpha = glow1Alpha
-        )
-        UniStackLaunchPill(
-            left = 12.dp,
-            top = 46.dp,
-            width = 122.dp,
-            height = 40.dp,
-            gradientColors = Pill2Colors,
-            glowColor = Pill2Colors[1],
-            slideX = pill2X,
-            glowAlpha = glow2Alpha
-        )
-        UniStackLaunchPill(
-            left = 31.dp,
-            top = 91.dp,
-            width = 115.dp,
-            height = 40.dp,
-            gradientColors = Pill3Colors,
-            glowColor = Pill3Colors[1],
-            slideX = pill3X,
-            glowAlpha = glow3Alpha
-        )
+        UniStackBrandMark.Pills.forEachIndexed { index, pill ->
+            UniStackLaunchPillGlow(
+                pill = pill,
+                markWidth = markWidth,
+                slideX = slides[index],
+                alpha = glows[index]
+            )
+            UniStackBrandPill(
+                pill = pill,
+                markWidth = markWidth,
+                modifier = Modifier.graphicsLayer { translationX = slides[index].toPx() }
+            )
+        }
     }
 }
 
+/** Contorno que destella al aterrizar la píldora, un poco mayor que ella para rodearla. */
 @Composable
-private fun UniStackLaunchPill(
-    left: Dp,
-    top: Dp,
-    width: Dp,
-    height: Dp,
-    gradientColors: List<Color>,
-    glowColor: Color,
+private fun UniStackLaunchPillGlow(
+    pill: UniStackBrandMark.Pill,
+    markWidth: Dp,
     slideX: Dp,
-    glowAlpha: Float
+    alpha: Float
 ) {
-    val glowPad = 4.dp
+    val markHeight = markWidth * UniStackBrandMark.HeightRatio
+    val pad = 4.dp
     Box(
         modifier = Modifier
-            .offset(x = left - glowPad, y = top - glowPad)
-            .size(width = width + glowPad * 2, height = height + glowPad * 2)
+            .offset(x = markWidth * pill.left - pad, y = markHeight * pill.top - pad)
+            .size(
+                width = markWidth * pill.width + pad * 2,
+                height = markHeight * pill.height + pad * 2
+            )
             .graphicsLayer { translationX = slideX.toPx() }
             .border(
                 width = 2.dp,
-                color = glowColor.copy(alpha = glowAlpha),
+                color = pill.gradientEnd.copy(alpha = alpha),
                 shape = RoundedCornerShape(percent = 50)
             )
-    )
-    Box(
-        modifier = Modifier
-            .offset(x = left, y = top)
-            .size(width = width, height = height)
-            .graphicsLayer { translationX = slideX.toPx() }
-            .clip(RoundedCornerShape(percent = 50))
-            .background(Brush.horizontalGradient(gradientColors))
     )
 }
 
