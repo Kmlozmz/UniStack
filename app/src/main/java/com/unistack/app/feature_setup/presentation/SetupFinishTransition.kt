@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -133,26 +134,13 @@ fun SetupFinishTransition(
             delay(110)
         }
 
-        // La onda arranca antes de que salga la última píldora: encadenadas se leen como un
+        // El anillo sale antes de que se vaya la última píldora: encadenados se leen como un
         // solo gesto —la dispersión libera el color—, mientras que en secuencia limpia
         // parecen dos animaciones pegadas.
-        delay(200)
+        delay(160)
         waveProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 440, easing = FastOutSlowInEasing)
-        )
-        delay(110)
-
-        // Y se retira encogiéndose, no desvaneciéndose. El color es claro y lo que queda
-        // debajo es oscuro: a media opacidad la mezcla da un azul apagado que no es ninguno
-        // de los dos y se lee como un destello aparte. Encogiendo no hay mezcla en ningún
-        // momento, solo un círculo que se cierra sobre el fondo de la app.
-        //
-        // Tiene que resolverse aquí dentro: al terminar, esta pantalla desaparece de golpe,
-        // y dejarla llena de color habría dado un corte seco contra el fondo del inicio.
-        waveProgress.animateTo(
-            targetValue = 0f,
-            animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 620, easing = FastOutSlowInEasing)
         )
         latestOnFinished()
     }
@@ -206,19 +194,33 @@ fun SetupFinishTransition(
 }
 
 /**
- * Círculo del color de marca que crece desde el centro hasta cubrir la pantalla.
+ * Anillo del color de marca que se abre desde donde estaba el logo y se disuelve.
  *
- * Sale de UniStackColors.Primary, que con el acento dinámico activo lo deriva Monet del
- * fondo de pantalla del usuario, así que el cierre se tiñe de su propio color.
+ * Es a propósito un contorno y no un círculo relleno. Un relleno acaba cubriendo la
+ * pantalla, y entonces hay que quitarlo de encima: desvanecerlo mezcla el color claro con
+ * el fondo oscuro y da un azul turbio que se lee como un segundo destello, encogerlo hace
+ * el efecto de apagar un televisor de tubo, y cortarlo salta. El contorno no llega a tapar
+ * nada, así que se disuelve sin dejar nada que resolver.
+ *
+ * El color sale de UniStackColors.Primary, que con el acento dinámico activo lo deriva
+ * Monet del fondo de pantalla, así que el cierre se tiñe del color del usuario.
  */
 @Composable
 private fun SetupFinishWave(progress: Float) {
-    if (progress <= 0f) return
+    if (progress <= 0f || progress >= 1f) return
     val color = UniStackColors.Primary
     Canvas(modifier = Modifier.fillMaxSize()) {
         val center = Offset(size.width / 2f, size.height / 2f)
-        // Radio necesario para alcanzar las esquinas desde el centro.
         val farthest = hypot(size.width / 2f, size.height / 2f)
-        drawCircle(color = color, radius = farthest * progress, center = center)
+        // Arranca ya con el tamaño del logo, no desde cero: es de ahí de donde sale.
+        val radius = farthest * (0.16f + 0.84f * progress)
+        // Se afina y se apaga según se aleja, como una onda que pierde fuerza.
+        val fade = 1f - progress
+        drawCircle(
+            color = color.copy(alpha = 0.55f * fade),
+            radius = radius,
+            center = center,
+            style = Stroke(width = (2.dp.toPx() + 4.dp.toPx() * fade))
+        )
     }
 }
