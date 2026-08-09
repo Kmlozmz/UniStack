@@ -62,12 +62,21 @@ private fun cascadeSpringEasing(w: Float = 9.6f, d: Float = 0.6f): Easing {
     }
 }
 
+/**
+ * @param timeScale factor sobre todos los tiempos. Escala la animación entera en lugar de
+ *   recortarle fases: la coreografía es idéntica, solo transcurre más deprisa. Se usa para
+ *   que quien ya pasó por el setup no vuelva a esperar la versión larga cada vez que abre.
+ */
 @Composable
 fun UniStackAnimatedLaunchScreen(
     modifier: Modifier = Modifier,
+    timeScale: Float = 1f,
     onAnimationFinished: () -> Unit
 ) {
     val latestOnAnimationFinished by rememberUpdatedState(onAnimationFinished)
+    val scale = timeScale.coerceIn(0.2f, 1f)
+    fun Int.scaled(): Int = (this * scale).toInt().coerceAtLeast(1)
+    suspend fun wait(millis: Int) = delay(millis.scaled().toLong())
 
     val pill1X = remember { Animatable(280f) }
     val pill2X = remember { Animatable(-280f) }
@@ -82,54 +91,54 @@ fun UniStackAnimatedLaunchScreen(
     val wordmarkAlpha = remember { Animatable(0f) }
     val cursorAlpha = remember { Animatable(0f) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(scale) {
         val springEasing = cascadeSpringEasing()
 
-        delay(260)
-        pill1X.animateTo(0f, tween(durationMillis = 440, easing = springEasing))
+        wait(260)
+        pill1X.animateTo(0f, tween(durationMillis = 440.scaled(), easing = springEasing))
         launch {
             glow1Alpha.snapTo(0.7f)
-            glow1Alpha.animateTo(0f, tween(durationMillis = 300, easing = LinearEasing))
+            glow1Alpha.animateTo(0f, tween(durationMillis = 300.scaled(), easing = LinearEasing))
         }
 
-        delay(90)
-        pill2X.animateTo(0f, tween(durationMillis = 340, easing = springEasing))
+        wait(90)
+        pill2X.animateTo(0f, tween(durationMillis = 340.scaled(), easing = springEasing))
         launch {
             glow2Alpha.snapTo(0.7f)
-            glow2Alpha.animateTo(0f, tween(durationMillis = 300, easing = LinearEasing))
+            glow2Alpha.animateTo(0f, tween(durationMillis = 300.scaled(), easing = LinearEasing))
         }
 
-        delay(60)
-        pill3X.animateTo(0f, tween(durationMillis = 250, easing = springEasing))
+        wait(60)
+        pill3X.animateTo(0f, tween(durationMillis = 250.scaled(), easing = springEasing))
         launch {
             glow3Alpha.snapTo(0.7f)
-            glow3Alpha.animateTo(0f, tween(durationMillis = 300, easing = LinearEasing))
+            glow3Alpha.animateTo(0f, tween(durationMillis = 300.scaled(), easing = LinearEasing))
         }
 
-        delay(320)
+        wait(320)
         wordmarkAlpha.snapTo(1f)
         cursorAlpha.snapTo(1f)
 
         repeat(UniText.length) {
             uniRevealCount++
-            delay(42)
+            wait(42)
         }
-        delay(260)
+        wait(260)
         repeat(StackText.length) {
             stackRevealCount++
-            delay(42)
+            wait(42)
         }
 
         repeat(2) {
-            delay(220)
+            wait(220)
             cursorAlpha.snapTo(0f)
-            delay(220)
+            wait(220)
             cursorAlpha.snapTo(1f)
         }
-        delay(180)
-        cursorAlpha.animateTo(0f, tween(durationMillis = 200))
+        wait(180)
+        cursorAlpha.animateTo(0f, tween(durationMillis = 200.scaled()))
 
-        delay(220)
+        wait(220)
         latestOnAnimationFinished()
     }
 

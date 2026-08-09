@@ -71,6 +71,18 @@ fun RootNavGraph(
     val isLoading = setupCompleted == null && !repositoryDidLoad
     val showLaunchScreen = !launchAnimationFinished || isLoading
 
+    // En el primer arranque la animación se ve entera: es la presentación de la marca y el
+    // usuario aún no la conoce. Cumplido ese papel pasa a estorbar, así que a partir de
+    // entonces corre más. No se le recorta ninguna fase; solo transcurre más deprisa.
+    //
+    // La decisión hay que tomarla en el primer fotograma, cuando el perfil todavía no ha
+    // cargado, y por eso se consulta la pista de arranque en vez del perfil.
+    val launchTimeScale = remember { if (LaunchHints.setupCompleted(context)) 0.6f else 1f }
+    LaunchedEffect(setupCompleted) {
+        val completed = setupCompleted ?: return@LaunchedEffect
+        LaunchHints.setSetupCompleted(context, completed)
+    }
+
     // Con enableEdgeToEdge la ventana deja de redimensionarse sola, así que esquivar el
     // teclado pasa a ser responsabilidad de la app. Se excluye el inset de la barra de
     // navegación porque el del teclado ya lo incluye, y muchas pantallas aplican además
@@ -143,6 +155,7 @@ fun RootNavGraph(
         ) {
             UniStackAnimatedLaunchScreen(
                 modifier = Modifier.fillMaxSize(),
+                timeScale = launchTimeScale,
                 onAnimationFinished = { launchAnimationFinished = true }
             )
         }
