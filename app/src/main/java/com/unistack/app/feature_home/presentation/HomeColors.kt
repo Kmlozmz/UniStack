@@ -20,12 +20,29 @@ import com.unistack.app.core.design.theme.UniStackColors
 internal val HomeBackgroundBrush: Brush
     @Composable get() = SolidColor(UniStackColors.Background)
 
-/** El hero es una superficie plana del contenedor del acento, sin degradado. */
+/**
+ * El hero es una superficie rellena con el acento, no su contenedor claro.
+ *
+ * Pasa de `PrimaryLight` a `Primary` para que la tarjeta sea el elemento con más peso de la
+ * pantalla, que es lo que pide ser: contiene la única acción sugerida. El contenido va en
+ * `OnPrimary`, que se calcula por contraste, así que en un tema donde el acento sea claro la
+ * tinta saldrá oscura sola en vez de quedarse en blanco ilegible.
+ */
 internal val HeroBrush: Brush
-    @Composable get() = SolidColor(UniStackColors.PrimaryLight)
+    @Composable get() = SolidColor(UniStackColors.Primary)
 
 internal val HomeCard: Color
     @Composable get() = UniStackColors.Card
+
+/**
+ * Fondo de las casillas del tablero: una superficie neutra, no teñida del acento.
+ *
+ * Antes cada casilla se pintaba con su propio color al 7%, así que la rejilla salía a
+ * cuatro tintes distintos y ninguna cifra destacaba. El color se queda solo en el chip del
+ * icono, que es donde distingue de un vistazo, y el fondo pasa a ser el mismo en las cuatro.
+ */
+internal val HomeSnapshotTile: Color
+    @Composable get() = UniStackColors.SurfaceVariant
 internal val HomeText: Color
     @Composable get() = UniStackColors.TextPrimary
 internal val HomeSoftText: Color
@@ -67,18 +84,26 @@ internal val HomeHeroVioletWash: Color
 internal val HomeHeroLightViolet: Color
     @Composable get() = UniStackColors.Primary
 
+// Todo lo que va encima del hero se deriva de OnPrimary, nunca de los textos de la pantalla:
+// el fondo ya no es el de la pantalla, así que TextPrimary podía quedar ilegible encima.
 internal val HomeHeroTitle: Color
-    @Composable get() = UniStackColors.TextPrimary
+    @Composable get() = UniStackColors.OnPrimary
 internal val HomeHeroSecondary: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.78f)
 internal val HomeHeroLabel: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.86f)
 internal val HomeHeroStar: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = UniStackColors.OnPrimary
 internal val HomeHeroStarSoft: Color
-    @Composable get() = UniStackColors.Primary.copy(alpha = 0.68f)
+    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.68f)
+
+/** Los círculos decorativos: la misma tinta del contenido, apenas insinuada. */
+internal val HomeHeroOrnament: Color
+    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.10f)
+
+/** Sin borde: una superficie rellena no necesita contorno para separarse del fondo. */
 internal val HomeHeroStroke: Color
-    @Composable get() = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.13f else 0.54f)
+    get() = Color.Transparent
 internal val HomeHeroAssetShadow: Color
     @Composable get() = UniStackColors.Primary.copy(alpha = 0.32f)
 internal val HomeHeroButtonStart: Color

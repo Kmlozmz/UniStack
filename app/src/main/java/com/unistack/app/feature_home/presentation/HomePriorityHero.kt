@@ -10,7 +10,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -44,19 +43,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.R
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
@@ -76,68 +71,35 @@ internal fun PriorityHero(
     val heroLabel = title.heroLabel()
     val heroHeight = if (compact) 174.dp else 190.dp
     val heroPadding = if (compact) 16.dp else 18.dp
-    val isDarkTheme = UniStackColors.IsDarkTheme
     val accessibility = LocalAccessibilityPreferences.current
     val motionScale = LocalMotionDurationScale.current
     val heroMotionScale = if (accessibility.heroAnimationEnabled) motionScale else 0f
     val heroStar = HomeHeroStar
-    val heroStarSoft = HomeHeroStarSoft
-    val heroAssetShadow = HomeHeroAssetShadow
-    val heroGlow = HomeHeroLightModeGlow
-    val sparkleMotion = rememberInfiniteTransition(label = "heroSparkleMotion")
-    val sparkleOneFloat by sparkleMotion.animateFloat(
+    // Se lee aquí porque dentro del Canvas ya no hay contexto @Composable.
+    val heroOrnament = HomeHeroOrnament
+
+    // Deriva de los dos círculos decorativos. Antes esta transición movía tres destellos con
+    // su propia opacidad; al sustituirlos por los círculos quedan dos recorridos y ninguna
+    // animación de opacidad. Sigue respetando heroAnimationEnabled y la escala de movimiento:
+    // con el ajuste desactivado el factor es 0 y los círculos se quedan quietos.
+    val ornamentMotion = rememberInfiniteTransition(label = "heroOrnamentMotion")
+    val sparkleOneFloat by ornamentMotion.animateFloat(
         initialValue = 2f * heroMotionScale,
         targetValue = -3f * heroMotionScale,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "heroSparkleOneFloat"
+        label = "heroOrnamentOneFloat"
     )
-    val sparkleTwoFloat by sparkleMotion.animateFloat(
+    val sparkleTwoFloat by ornamentMotion.animateFloat(
         initialValue = -1f * heroMotionScale,
         targetValue = 4f * heroMotionScale,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 5600, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "heroSparkleTwoFloat"
-    )
-    val sparkleThreeFloat by sparkleMotion.animateFloat(
-        initialValue = 1f * heroMotionScale,
-        targetValue = -2.5f * heroMotionScale,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroSparkleThreeFloat"
-    )
-    val sparkleOneAlpha by sparkleMotion.animateFloat(
-        initialValue = 0.78f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 5200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroSparkleOneAlpha"
-    )
-    val sparkleTwoAlpha by sparkleMotion.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.72f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 6100, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroSparkleTwoAlpha"
-    )
-    val sparkleThreeAlpha by sparkleMotion.animateFloat(
-        initialValue = 0.70f,
-        targetValue = 0.94f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4700, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroSparkleThreeAlpha"
+        label = "heroOrnamentTwoFloat"
     )
     Surface(
         modifier = modifier
@@ -155,48 +117,29 @@ internal fun PriorityHero(
                 .background(HeroBrush)
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                // Un único halo radial. Antes había cinco capas de degradado apiladas
-                // (lavados, sombras y profundidad) que producían el aspecto metálico;
-                // la superficie base ya es plana, así que basta con la luz.
-                drawRect(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            heroGlow.copy(alpha = if (isDarkTheme) 0.26f else 0.38f),
-                            Color.Transparent
-                        ),
-                        center = Offset(size.width * 0.79f, size.height * 0.52f),
-                        radius = size.width * 0.52f
+                // Dos círculos asomando por el borde derecho, del mismo color del contenido
+                // apenas insinuado. Sustituyen a la ilustración del cuaderno y a los
+                // destellos: sobre una superficie rellena ya no hacía falta decorar tanto, y
+                // la ilustración se comía la mitad del ancho que necesita el texto.
+                //
+                // Se salen del recuadro a propósito; el recorte de la tarjeta los recorta y
+                // eso es lo que les da la sensación de estar detrás de ella. Van con una
+                // deriva mínima para que la tarjeta no quede del todo quieta.
+                drawCircle(
+                    color = heroOrnament,
+                    radius = size.height * 0.42f,
+                    center = Offset(
+                        x = size.width * 0.92f,
+                        y = size.height * 0.02f + sparkleOneFloat.dp.toPx()
                     )
                 )
-                drawOval(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            heroAssetShadow.copy(alpha = if (isDarkTheme) 0.40f else 0.20f),
-                            Color.Transparent
-                        ),
-                        center = Offset(size.width * 0.80f, size.height * 0.77f),
-                        radius = size.width * 0.24f
-                    ),
-                    topLeft = Offset(size.width * 0.64f, size.height * 0.68f),
-                    size = Size(size.width * 0.32f, size.height * 0.18f)
-                )
-                drawSoftSparkle(
-                    center = Offset(size.width * 0.55f, size.height * 0.37f + sparkleOneFloat.dp.toPx()),
-                    radius = size.minDimension * 0.022f,
-                    color = heroStar,
-                    alpha = (if (isDarkTheme) 0.54f else 0.40f) * sparkleOneAlpha
-                )
-                drawSoftSparkle(
-                    center = Offset(size.width * 0.88f, size.height * 0.27f + sparkleTwoFloat.dp.toPx()),
-                    radius = size.minDimension * 0.030f,
-                    color = heroStarSoft,
-                    alpha = (if (isDarkTheme) 0.48f else 0.34f) * sparkleTwoAlpha
-                )
-                drawSoftSparkle(
-                    center = Offset(size.width * 0.68f, size.height * 0.24f + sparkleThreeFloat.dp.toPx()),
-                    radius = size.minDimension * 0.014f,
-                    color = heroStar,
-                    alpha = (if (isDarkTheme) 0.38f else 0.26f) * sparkleThreeAlpha
+                drawCircle(
+                    color = heroOrnament,
+                    radius = size.height * 0.26f,
+                    center = Offset(
+                        x = size.width * 0.80f,
+                        y = size.height * 1.02f + sparkleTwoFloat.dp.toPx()
+                    )
                 )
             }
 
@@ -206,8 +149,9 @@ internal fun PriorityHero(
                     .padding(heroPadding)
             ) {
                 Column(
+                    // Sin ilustración a la derecha, el texto recupera casi todo el ancho.
                     modifier = Modifier
-                        .fillMaxWidth(0.56f)
+                        .fillMaxWidth(0.86f)
                         .align(Alignment.CenterStart),
                     verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
                 ) {
@@ -242,41 +186,40 @@ internal fun PriorityHero(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.cleanClickable(onDetailsClick)
                     )
+                    // Píldora, como pide el lenguaje expresivo para una acción principal. El
+                    // relleno es el contenedor del acento y no el acento: sobre una tarjeta
+                    // que ya es del color de marca, un botón del mismo color desaparecería.
                     Box(
                         modifier = Modifier
-                            .width(if (compact) 128.dp else 138.dp)
-                            .height(if (compact) 32.dp else 34.dp)
-                            .clip(AppShapes.MediumCard)
-                            .background(UniStackColors.Primary)
+                            .height(if (compact) 36.dp else 38.dp)
+                            .clip(CircleShape)
+                            .background(UniStackColors.PrimaryLight)
                             .cleanClickable(onOpenClick)
-                            .padding(horizontal = 13.dp),
+                            .padding(horizontal = if (compact) 16.dp else 18.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Text(
                                 actionLabel,
-                                fontSize = 10.sp,
+                                fontSize = if (compact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = UniStackColors.OnPrimary,
+                                color = UniStackColors.OnPrimaryContainer,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = UniStackColors.OnPrimary, modifier = Modifier.size(15.dp))
+                            Icon(
+                                Icons.Rounded.ChevronRight,
+                                contentDescription = null,
+                                tint = UniStackColors.OnPrimaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }
 
-                Image(
-                    painter = painterResource(R.drawable.hero_notebook_pen),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .width(if (compact) 144.dp else 160.dp)
-                        .height(if (compact) 154.dp else 176.dp)
-                        .offset(x = if (compact) 20.dp else 24.dp)
-                )
             }
         }
     }

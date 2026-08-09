@@ -376,13 +376,16 @@ private fun HomeGreeting(
         verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
     ) {
         Text(
-            text = "$greeting, $name! 👋",
+            // Sin el nombre: la cabecera ya lleva el avatar de quien ha iniciado sesión, y
+            // repetirlo aquí obligaba a dos líneas en cuanto el nombre era medianamente
+            // largo, empujando todo lo demás hacia abajo.
+            text = "$greeting 👋",
             color = HomeText,
             fontSize = if (compact) 28.sp else 30.sp,
             lineHeight = if (compact) 32.sp else 35.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.sp,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Text(
