@@ -4,6 +4,7 @@ import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -92,10 +93,15 @@ fun RootNavGraph(
             setupCompleted == false -> cameFromSetup = true
             setupCompleted == true && cameFromSetup && !animationsDisabled -> {
                 handoffAlpha.snapTo(1f)
-                delay(90)
+                // Lo justo para que el inicio quede compuesto debajo antes de destapar.
+                delay(80)
+                // Corto a propósito. El velo es un color claro y el inicio es oscuro, así
+                // que a media opacidad la mezcla da un azul más apagado que no es ninguno
+                // de los dos; alargarlo lo convertía en un color propio que se leía como un
+                // segundo destello. En 180ms el paso no da tiempo a leerse como tal.
                 handoffAlpha.animateTo(
                     targetValue = 0f,
-                    animationSpec = tween(durationMillis = 460, easing = FastOutSlowInEasing)
+                    animationSpec = tween(durationMillis = 180, easing = LinearEasing)
                 )
             }
         }
