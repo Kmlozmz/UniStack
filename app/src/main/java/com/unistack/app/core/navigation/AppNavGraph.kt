@@ -138,15 +138,7 @@ fun MainNavGraph(
     LaunchedEffect(currentRoute) {
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
     }
-    val showBottomBar = !homeDrawerOpen && currentRoute in setOf(
-        AppRoutes.Home,
-        AppRoutes.Academic,
-        AppRoutes.Grades,
-        AppRoutes.Tasks,
-        AppRoutes.Calendar,
-        AppRoutes.Expenses,
-        AppRoutes.Profile
-    )
+    val showBottomBar = !homeDrawerOpen && routeShowsBottomBar(currentRoute)
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -674,6 +666,46 @@ private fun ModuleAccessGuard(
     }
 }
 
+/**
+ * Rutas que se comportan como una tarea y no como un destino: crear y editar.
+ *
+ * Son las únicas que ocultan la barra inferior. Fuera de aquí, cualquier pantalla que
+ * pertenezca a una sección la conserva, para que se vea dónde estás y se pueda cambiar de
+ * sección sin tener que desandar el camino.
+ *
+ * El motivo de esconderla aquí no es estético: con la barra puesta, un toque en cualquier
+ * pestaña abandona un formulario a medio llenar sin decir nada. Mientras no haya un aviso
+ * antes de descartar, la salida de un formulario se queda en atrás o guardar.
+ */
+private val ModalRoutes = setOf(
+    AppRoutes.AddSubject,
+    AppRoutes.AddSubjectFromTask,
+    AppRoutes.EditSubject,
+    AppRoutes.AddGrade,
+    AppRoutes.AddGradeFromHistory,
+    AppRoutes.EditGrade,
+    AppRoutes.AddTask,
+    AppRoutes.EditTask,
+    AppRoutes.AddExpense,
+    AppRoutes.EditExpense
+)
+
+/**
+ * Si una ruta muestra la barra inferior.
+ *
+ * Se deriva de [bottomRouteFor] en vez de mantener una lista aparte. Antes eran dos fuentes
+ * de verdad que no se hablaban: el mapa sabía que «agregar nota» pertenece a Académico, pero
+ * la lista blanca de rutas con barra se escribía a mano y solo cubría siete. De las 29 rutas
+ * mapeadas, veintidós calculaban su pestaña para nada.
+ *
+ * De paso corrige el salto que eso producía: el detalle de una materia es una pantalla de
+ * consulta igual que su lista, y se quedaba sin barra mientras la lista la tenía.
+ */
+internal fun routeShowsBottomBar(route: String?): Boolean {
+    if (ModalRoutes.any { routeBelongsTo(route, it) }) return false
+    return bottomRouteFor(route) != null
+}
+
 internal fun bottomRouteFor(route: String?): String? {
     return when {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
@@ -687,7 +719,11 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddGradeFromHistory) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Academic
+        // Faltaban las dos del historial. Sin mapear, la de consulta se quedaba sin barra
+        // por omisión y no por decisión, que es justo lo que este cambio viene a corregir.
+        routeBelongsTo(route, AppRoutes.PriorHistory) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Academic
