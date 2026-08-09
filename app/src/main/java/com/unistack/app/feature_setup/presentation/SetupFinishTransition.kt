@@ -104,7 +104,7 @@ fun SetupFinishTransition(
         // Respiro con todo en pantalla: es lo que se ha estado construyendo, y sin esta
         // pausa pasa tan deprisa que no da tiempo ni a leer la frase ni a reconocer el
         // símbolo de la marca.
-        delay(680)
+        delay(540)
 
         // La frase se retira antes que las píldoras, para no leerse a medio dispersar.
         launch {
@@ -139,7 +139,20 @@ fun SetupFinishTransition(
         delay(200)
         waveProgress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 520, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 440, easing = FastOutSlowInEasing)
+        )
+        delay(110)
+
+        // Y se retira encogiéndose, no desvaneciéndose. El color es claro y lo que queda
+        // debajo es oscuro: a media opacidad la mezcla da un azul apagado que no es ninguno
+        // de los dos y se lee como un destello aparte. Encogiendo no hay mezcla en ningún
+        // momento, solo un círculo que se cierra sobre el fondo de la app.
+        //
+        // Tiene que resolverse aquí dentro: al terminar, esta pantalla desaparece de golpe,
+        // y dejarla llena de color habría dado un corte seco contra el fondo del inicio.
+        waveProgress.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing)
         )
         latestOnFinished()
     }

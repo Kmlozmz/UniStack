@@ -4,7 +4,6 @@ import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -81,29 +80,22 @@ fun RootNavGraph(
     // nombre deja que el teclado se superponga en vez de encoger la pantalla.
     val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
 
-    // El onboarding cierra con la pantalla cubierta por el color de marca. Ese velo se pinta
-    // aquí y no allí porque tiene que sobrevivir al relevo: al completarse el setup esta
-    // rama sustituye SetupFlow por MainNavGraph, y cualquier cosa dibujada dentro del
-    // onboarding desaparecería de golpe. Manteniéndolo fuera, el cambio ocurre debajo del
-    // color y solo entonces se desvanece, así que no hay corte visible.
-    var cameFromSetup by remember { mutableStateOf(false) }
-    val handoffAlpha = remember { Animatable(0f) }
-    LaunchedEffect(setupCompleted) {
-        when {
-            setupCompleted == false -> cameFromSetup = true
-            setupCompleted == true && cameFromSetup && !animationsDisabled -> {
-                handoffAlpha.snapTo(1f)
-                // Lo justo para que el inicio quede compuesto debajo antes de destapar.
-                delay(80)
-                // Corto a propósito. El velo es un color claro y el inicio es oscuro, así
-                // que a media opacidad la mezcla da un azul más apagado que no es ninguno
-                // de los dos; alargarlo lo convertía en un color propio que se leía como un
-                // segundo destello. En 180ms el paso no da tiempo a leerse como tal.
-                handoffAlpha.animateTo(
-                    targetValue = 0f,
-                    animationSpec = tween(durationMillis = 180, easing = LinearEasing)
-                )
-            }
+    // El inicio entra con su propio fundido desde el fondo de la app.
+    //
+    // No hay velo de color aquí a propósito: la onda del onboarding se queda dentro del
+    // onboarding. Fundir aquel color claro sobre el inicio, que es oscuro, obligaba a pasar
+    // por mezclas intermedias que no son ninguno de los dos y se leían como un segundo
+    // destello. Al no coincidir nunca en pantalla, ese problema no puede darse.
+    val mainAlpha = remember { Animatable(if (animationsDisabled) 1f else 0f) }
+    LaunchedEffect(setupCompleted, animationsDisabled) {
+        if (setupCompleted != true) return@LaunchedEffect
+        if (animationsDisabled) {
+            mainAlpha.snapTo(1f)
+        } else {
+            mainAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
+            )
         }
     }
 
@@ -119,6 +111,7 @@ fun RootNavGraph(
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()
+                        .graphicsLayer { alpha = mainAlpha.value }
                         .windowInsetsPadding(imeInsets),
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute ?: setupLaunchRoute,
@@ -137,15 +130,6 @@ fun RootNavGraph(
                     }
                 )
             }
-        }
-
-        if (handoffAlpha.value > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = handoffAlpha.value }
-                    .background(UniStackColors.Primary)
-            )
         }
 
         AnimatedVisibility(
