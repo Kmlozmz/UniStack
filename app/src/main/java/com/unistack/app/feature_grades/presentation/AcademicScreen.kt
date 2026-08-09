@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 
 private enum class AcademicTab(val label: String) {
@@ -31,6 +32,11 @@ private enum class AcademicTab(val label: String) {
     TASKS("Tareas")
 }
 
+/**
+ * @param initialTab pestaña con la que abrir, tal y como venga en la ruta. Quien navega
+ *   decide: la casilla «Pendientes» de Inicio pide Tareas y la de «Materias» pide Materias.
+ *   Cambiarla a mano después sigue funcionando; el valor de la ruta solo fija el arranque.
+ */
 @Composable
 fun AcademicScreen(
     onAddSubjectClick: () -> Unit,
@@ -38,9 +44,20 @@ fun AcademicScreen(
     onNewTaskClick: () -> Unit,
     onEditTaskClick: (String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialTab: String? = null
 ) {
-    var selectedTab by rememberSaveable { mutableStateOf(AcademicTab.SUBJECTS) }
+    // La clave es la pestaña pedida: al volver a navegar aquí con otra distinta, el estado se
+    // reinicia y manda la nueva. Sin clave, la primera elección quedaba congelada y las
+    // llamadas posteriores no tenían efecto.
+    var selectedTab by rememberSaveable(initialTab) {
+        mutableStateOf(
+            when (initialTab) {
+                AppRoutes.AcademicTabTasks -> AcademicTab.TASKS
+                else -> AcademicTab.SUBJECTS
+            }
+        )
+    }
 
     Column(
         modifier = modifier

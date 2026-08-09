@@ -25,6 +25,24 @@ class NavigationRulesTest {
     }
 
     @Test
+    fun academicWithItsTabArgumentStillBelongsToItsTab() {
+        // Navigation informa el patrón, no la URL rellena: lo que llega es
+        // «academic?tab={tab}». Si el reconocimiento de rutas no contempla el argumento
+        // opcional, Académico deja de pertenecer a su pestaña y se queda sin barra.
+        assertEquals(AppRoutes.Academic, bottomRouteFor(AppRoutes.AcademicWithTab))
+        assertTrue(routeShowsBottomBar(AppRoutes.AcademicWithTab))
+        assertEquals(AppRoutes.Academic, bottomRouteFor(AppRoutes.academic(AppRoutes.AcademicTabTasks)))
+    }
+
+    @Test
+    fun theOldStandaloneRoutesStillResolve() {
+        // Siguen existiendo como redirección: hay recordatorios ya programados que llevan
+        // la cadena guardada dentro y apuntarían a la nada si se borraran.
+        assertEquals(AppRoutes.Academic, bottomRouteFor(AppRoutes.Grades))
+        assertEquals(AppRoutes.Academic, bottomRouteFor(AppRoutes.Tasks))
+    }
+
+    @Test
     fun browsingScreensKeepTheBottomBar() {
         // Las pantallas de consulta la conservan, estén al nivel que estén. El detalle de
         // una materia es el caso que motivó el cambio: se quedaba sin barra mientras su
