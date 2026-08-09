@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material3.Button
@@ -43,15 +44,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
@@ -78,29 +78,13 @@ internal fun PriorityHero(
     // Se lee aquí porque dentro del Canvas ya no hay contexto @Composable.
     val heroOrnament = HomeHeroOrnament
 
-    // Deriva de los dos círculos decorativos. Antes esta transición movía tres destellos con
-    // su propia opacidad; al sustituirlos por los círculos quedan dos recorridos y ninguna
-    // animación de opacidad. Sigue respetando heroAnimationEnabled y la escala de movimiento:
-    // con el ajuste desactivado el factor es 0 y los círculos se quedan quietos.
-    val ornamentMotion = rememberInfiniteTransition(label = "heroOrnamentMotion")
-    val sparkleOneFloat by ornamentMotion.animateFloat(
-        initialValue = 2f * heroMotionScale,
-        targetValue = -3f * heroMotionScale,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroOrnamentOneFloat"
-    )
-    val sparkleTwoFloat by ornamentMotion.animateFloat(
-        initialValue = -1f * heroMotionScale,
-        targetValue = 4f * heroMotionScale,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 5600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "heroOrnamentTwoFloat"
-    )
+    // Mismo movimiento ambiente que los heroes del onboarding: floatingOffset en vez de una
+    // transición propia. Con los recorridos y los tiempos desparejados, los dos círculos
+    // nunca coinciden en su punto alto y el conjunto no late a compás.
+    val circleBigFloat = floatingOffset(travel = 5f, durationMillis = 4200, label = "home-hero-circle-big")
+    val circleSmallFloat = floatingOffset(travel = 3.5f, durationMillis = 5600, label = "home-hero-circle-small")
+    val sparkleBig = floatingOffset(travel = 0.22f, durationMillis = 1500, label = "home-hero-sparkle-big")
+    val sparkleSmall = floatingOffset(travel = 0.28f, durationMillis = 1900, label = "home-hero-sparkle-small")
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -130,7 +114,7 @@ internal fun PriorityHero(
                     radius = size.height * 0.42f,
                     center = Offset(
                         x = size.width * 0.92f,
-                        y = size.height * 0.02f + sparkleOneFloat.dp.toPx()
+                        y = size.height * 0.02f + circleBigFloat.dp.toPx()
                     )
                 )
                 drawCircle(
@@ -138,10 +122,44 @@ internal fun PriorityHero(
                     radius = size.height * 0.26f,
                     center = Offset(
                         x = size.width * 0.80f,
-                        y = size.height * 1.02f + sparkleTwoFloat.dp.toPx()
+                        y = size.height * 1.02f + circleSmallFloat.dp.toPx()
                     )
                 )
             }
+
+            // Los mismos destellos del onboarding: AutoAwesome girando y latiendo, en vez del
+            // trazo dibujado a mano que había aquí. Se colocan sobre los círculos, que es
+            // donde hay sitio libre, y no encima del texto.
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = heroStar.copy(alpha = 0.62f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-26).dp, y = 30.dp)
+                    .graphicsLayer {
+                        scaleX = 1f + sparkleBig
+                        scaleY = 1f + sparkleBig
+                        rotationZ = sparkleBig * 45f
+                        alpha = 0.72f + sparkleBig
+                    }
+                    .size(18.dp)
+            )
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = heroStar.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-54).dp, y = 54.dp)
+                    .graphicsLayer {
+                        scaleX = 1f + sparkleSmall
+                        scaleY = 1f + sparkleSmall
+                        rotationZ = -sparkleSmall * 55f
+                        alpha = 0.66f + sparkleSmall
+                    }
+                    .size(10.dp)
+            )
 
             Box(
                 modifier = Modifier
@@ -155,15 +173,20 @@ internal fun PriorityHero(
                         .align(Alignment.CenterStart),
                     verticalArrangement = Arrangement.spacedBy(if (compact) 7.dp else 8.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PremiumSparkle(tint = HomeHeroStar, modifier = Modifier.size(13.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            tint = HomeHeroStar,
+                            modifier = Modifier.size(13.dp)
+                        )
                         Text(
                             text = heroLabel,
                             color = HomeHeroLabel,
-                            fontSize = 8.sp,
-                            lineHeight = 11.sp,
+                            fontSize = 10.sp,
+                            lineHeight = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.sp
+                            letterSpacing = 0.6.sp
                         )
                     }
                     Text(
@@ -427,81 +450,6 @@ private fun PriorityBulbBadge(modifier: Modifier = Modifier) {
             modifier = Modifier.size(24.dp)
         )
     }
-}
-
-@Composable
-internal fun PremiumSparkle(
-    tint: Color,
-    modifier: Modifier = Modifier
-) {
-    Canvas(modifier = modifier) {
-        drawSoftSparkle(
-            center = Offset(size.width * 0.5f, size.height * 0.5f),
-            radius = size.minDimension * 0.42f,
-            color = tint,
-            alpha = 0.92f
-        )
-    }
-}
-
-internal fun DrawScope.drawSoftSparkle(
-    center: Offset,
-    radius: Float,
-    color: Color,
-    alpha: Float
-) {
-    drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(
-                color.copy(alpha = alpha * 0.22f),
-                Color.Transparent
-            ),
-            center = center,
-            radius = radius * 2.25f
-        ),
-        radius = radius * 2.25f,
-        center = center
-    )
-
-    val sparkle = Path().apply {
-        moveTo(center.x, center.y - radius)
-        cubicTo(
-            center.x + radius * 0.14f,
-            center.y - radius * 0.28f,
-            center.x + radius * 0.28f,
-            center.y - radius * 0.14f,
-            center.x + radius,
-            center.y
-        )
-        cubicTo(
-            center.x + radius * 0.28f,
-            center.y + radius * 0.14f,
-            center.x + radius * 0.14f,
-            center.y + radius * 0.28f,
-            center.x,
-            center.y + radius
-        )
-        cubicTo(
-            center.x - radius * 0.14f,
-            center.y + radius * 0.28f,
-            center.x - radius * 0.28f,
-            center.y + radius * 0.14f,
-            center.x - radius,
-            center.y
-        )
-        cubicTo(
-            center.x - radius * 0.28f,
-            center.y - radius * 0.14f,
-            center.x - radius * 0.14f,
-            center.y - radius * 0.28f,
-            center.x,
-            center.y - radius
-        )
-        close()
-    }
-    drawPath(sparkle, color.copy(alpha = alpha))
-    // design-tokens-ok: núcleo del destello, es luz blanca por definición
-    drawCircle(color = Color.White.copy(alpha = alpha * 0.18f), radius = radius * 0.16f, center = center)
 }
 
 internal fun HomePriorityAction.actionLabel(): String {

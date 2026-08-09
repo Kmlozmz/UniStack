@@ -143,6 +143,7 @@ import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.components.expressiveSelection
 import com.unistack.app.core.design.components.rememberSelectionShape
+import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.revealIntoView
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
@@ -197,28 +198,6 @@ private const val SETUP_EXIT_MILLIS = 220
 
 /** Separación entre el control segmentado y sus segmentos; define el radio concéntrico. */
 private val SEGMENT_INSET = 3.dp
-
-/**
- * Oscilación infinita entre -[travel] y +[travel] para elementos decorativos
- * (blobs, gafete, destellos). El recorrido se atenúa con la preferencia de movimiento
- * del usuario y se anula por completo si eligió "sin animaciones".
- */
-@Composable
-internal fun floatingOffset(travel: Float, durationMillis: Int, label: String): Float {
-    val motionScale = LocalMotionDurationScale.current
-    if (motionScale <= 0f) return 0f
-    val transition = rememberInfiniteTransition(label = label)
-    val animated by transition.animateFloat(
-        initialValue = -travel,
-        targetValue = travel,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = label
-    )
-    return animated * motionScale
-}
 
 @Composable
 fun SetupFlow(

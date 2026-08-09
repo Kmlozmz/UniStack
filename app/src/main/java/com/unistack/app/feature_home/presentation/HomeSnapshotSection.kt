@@ -3,11 +3,11 @@ package com.unistack.app.feature_home.presentation
 import com.unistack.app.core.design.theme.AppShapes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -75,16 +75,21 @@ internal fun SemesterSnapshot(
     val showWorks = AppModule.ACADEMIC_TEMPLATES in summary.enabledModules &&
         (summary.openAcademicWorks > 0 || summary.nextAcademicWork != null)
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Tu tablero", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.weight(1f))
-            Text("Actualizado", color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-        }
-        // Las casillas van sueltas sobre el fondo. La tarjeta que las envolvía metía un
-        // segundo borde alrededor de cuatro superficies que ya se distinguen solas, y comía
-        // ancho justo donde hace falta para que la cifra respire.
-        val gap = if (compact) 9.dp else 11.dp
+    // Rejilla y separación comparten medida: el hueco entre columnas es el mismo que entre
+    // filas y que el que separa el título de las casillas. Con tres valores distintos, como
+    // había antes, la rejilla se leía torcida aunque cada pieza estuviera bien.
+    val gap = if (compact) 10.dp else 12.dp
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
+        // Sin «Actualizado»: era una etiqueta fija que no informaba de nada —no había un
+        // «desactualizado» posible— y ocupaba el sitio de la derecha como si fuera una acción.
+        Text(
+            text = "Tu semestre",
+            color = HomeText,
+            fontSize = 15.sp,
+            lineHeight = 19.sp,
+            fontWeight = FontWeight.Bold
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.fillMaxWidth()) {
             SnapshotMetric(
                 label = "Materias",
@@ -145,16 +150,19 @@ private fun SnapshotMetric(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // El relleno es igual en los cuatro lados: la casilla es un cuadrado de contenido y
+    // cualquier asimetría se nota al ponerlas en rejilla.
+    val inset = if (compact) 14.dp else 16.dp
     Column(
         modifier = modifier
             .clip(AppShapes.SmallCard)
             .background(HomeSnapshotTile)
+            // Contorno de un pelo: sin él las casillas y el fondo quedaban casi al mismo
+            // tono y la rejilla se leía como una mancha en vez de como cuatro piezas.
+            .border(1.dp, HomeBorder, AppShapes.SmallCard)
             .cleanClickable(onClick)
-            .padding(
-                horizontal = if (compact) 12.dp else 14.dp,
-                vertical = if (compact) 12.dp else 14.dp
-            ),
-        verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)
+            .padding(inset),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
     ) {
         Box(
             modifier = Modifier
