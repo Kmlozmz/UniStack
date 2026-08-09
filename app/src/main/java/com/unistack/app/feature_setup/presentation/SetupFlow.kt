@@ -3118,6 +3118,7 @@ fun SetupDoneScreen(
         onBackClick = onBackClick,
         step = SetupSteps.done(gradesEnabled, permissionsNeeded),
         totalSteps = totalSteps,
+        chromeAlpha = contentAlpha,
         actions = {
             Column(
                 modifier = Modifier.graphicsLayer {
@@ -3798,6 +3799,8 @@ internal fun SetupScaffold(
     totalSteps: Int = 6,
     welcome: Boolean = false,
     overlayKeyboard: Boolean = false,
+    /** Opacidad del encabezado. La usa el cierre del onboarding para retirarlo con el resto. */
+    chromeAlpha: Float = 1f,
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -3822,6 +3825,7 @@ internal fun SetupScaffold(
                     step = step,
                     totalSteps = totalSteps,
                     modifier = Modifier
+                        .graphicsLayer { alpha = chromeAlpha }
                         .statusBarsPadding()
                         .padding(horizontal = 22.dp, vertical = 5.dp)
                 )

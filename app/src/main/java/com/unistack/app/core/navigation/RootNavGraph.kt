@@ -7,6 +7,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
+import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_setup.presentation.SetupFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -78,26 +80,39 @@ fun RootNavGraph(
     // nombre deja que el teclado se superponga en vez de encoger la pantalla.
     val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
 
-    // El onboarding termina dispersando el logo y dejando el fondo limpio. Sin esto, el
-    // inicio aparecía de golpe sobre ese fondo y rompía la calma con la que se cierra;
-    // apareciendo con un fundido, el relevo entre las dos pantallas no tiene costura.
-    val mainAlpha = remember { Animatable(if (animationsDisabled) 1f else 0f) }
-    LaunchedEffect(setupCompleted, animationsDisabled) {
-        if (setupCompleted != true) return@LaunchedEffect
-        if (animationsDisabled) {
-            mainAlpha.snapTo(1f)
-        } else {
-            mainAlpha.animateTo(1f, tween(durationMillis = 420, easing = FastOutSlowInEasing))
+    // El onboarding cierra con la pantalla cubierta por el color de marca. Ese velo se pinta
+    // aquí y no allí porque tiene que sobrevivir al relevo: al completarse el setup esta
+    // rama sustituye SetupFlow por MainNavGraph, y cualquier cosa dibujada dentro del
+    // onboarding desaparecería de golpe. Manteniéndolo fuera, el cambio ocurre debajo del
+    // color y solo entonces se desvanece, así que no hay corte visible.
+    var cameFromSetup by remember { mutableStateOf(false) }
+    val handoffAlpha = remember { Animatable(0f) }
+    LaunchedEffect(setupCompleted) {
+        when {
+            setupCompleted == false -> cameFromSetup = true
+            setupCompleted == true && cameFromSetup && !animationsDisabled -> {
+                handoffAlpha.snapTo(1f)
+                delay(90)
+                handoffAlpha.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(durationMillis = 460, easing = FastOutSlowInEasing)
+                )
+            }
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            // Sin esto asomaba el fondo blanco de la ventana en cualquier hueco en que no
+            // hubiera nada opaco encima: el tema hereda de Theme.Material.Light.
+            .background(UniStackColors.Background)
+    ) {
         if (!isLoading) {
             when {
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = mainAlpha.value }
                         .windowInsetsPadding(imeInsets),
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute ?: setupLaunchRoute,
@@ -116,6 +131,15 @@ fun RootNavGraph(
                     }
                 )
             }
+        }
+
+        if (handoffAlpha.value > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = handoffAlpha.value }
+                    .background(UniStackColors.Primary)
+            )
         }
 
         AnimatedVisibility(
