@@ -13,3 +13,6 @@ captures/
 .env
 .antigravitycli/
 .signing/
+
+# Notas de diseño internas: se trabajan en local y no se publican con el código.
+design-system/
