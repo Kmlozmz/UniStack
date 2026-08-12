@@ -160,6 +160,7 @@ fun ProfileScreen(
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
+    var pendingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
     var notificationPermissionGranted by remember {
         mutableStateOf(context.hasNotificationPermission())
@@ -349,10 +350,19 @@ fun ProfileScreen(
                             feedback = null
                         },
                         onSaveClick = {
-                            feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
-                                "Configuración académica actualizada."
+                            val impact = viewModel.gradingScaleChangeImpact()
+                            // El aviso solo aparece si de verdad hay algo que perder. Sacarlo
+                            // siempre —lo normal es cambiar de escala recién salido del setup,
+                            // sin una sola nota— enseña a cerrar diálogos sin leerlos, y
+                            // entonces deja de servir el día que sí importa.
+                            if (selectedScale != current.gradingScale && impact.isDestructive) {
+                                pendingScaleChange = impact
                             } else {
-                                "Revisa que las notas estén dentro de la escala."
+                                feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
+                                    "Configuración académica actualizada."
+                                } else {
+                                    "Revisa que las notas estén dentro de la escala."
+                                }
                             }
                         }
                     )
@@ -594,6 +604,42 @@ fun ProfileScreen(
                 }
             }
         }
+    }
+
+    pendingScaleChange?.let { impact ->
+        AlertDialog(
+            onDismissRequest = { pendingScaleChange = null },
+            title = { Text("¿Cambiar la escala de notas?") },
+            // El conteo va en el texto a propósito: «perderás tus notas» se descarta sin
+            // leer, «borrará 23 notas en 4 materias» hace parar.
+            text = {
+                Text(
+                    "Esto borrará ${impact.describe()}. Una nota registrada en otra escala " +
+                        "no se puede reexpresar sin inventar el número, así que se elimina en " +
+                        "vez de convertirse. Las metas de tus materias vuelven al valor del perfil."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingScaleChange = null
+                        feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
+                            "Escala actualizada. Se borraron ${impact.describe()}."
+                        } else {
+                            "Revisa que las notas estén dentro de la escala."
+                        }
+                    }
+                ) {
+                    Text("Borrar y cambiar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingScaleChange = null }) {
+                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = UniStackColors.Background
+        )
     }
 
     if (showRestartDialog) {

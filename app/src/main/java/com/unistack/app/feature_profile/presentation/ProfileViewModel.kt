@@ -7,6 +7,7 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
@@ -36,9 +37,25 @@ data class ProfileActionState(
     val errorMessage: String? = null
 )
 
+/** Lo que se perdería al cambiar de escala de notas. */
+data class GradingScaleChangeImpact(
+    val gradeCount: Int,
+    val subjectCount: Int
+) {
+    /** Sin notas registradas no hay nada que advertir: el cambio es inofensivo. */
+    val isDestructive: Boolean get() = gradeCount > 0
+
+    fun describe(): String {
+        val notas = if (gradeCount == 1) "1 nota" else "$gradeCount notas"
+        val materias = if (subjectCount == 1) "1 materia" else "$subjectCount materias"
+        return "$notas en $materias"
+    }
+}
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val gradesRepository: GradesRepository,
     private val billingRepository: BillingRepository,
     private val accountAuthService: AccountAuthService,
     private val localBackupRepository: LocalBackupRepository,
@@ -65,6 +82,44 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
+    /**
+     * Cuántas notas y en cuántas materias se perderían al cambiar de escala.
+     *
+     * Una nota es un registro de lo que puso un profesor, no una medida que se pueda
+     * reexpresar: convertir 85 sobre 100 en 4.3 sobre 5 inventa un número que nadie dio,
+     * y como se guarda con un decimal, ida y vuelta ya no devuelve 85. Por eso el cambio
+     * de escala borra en vez de convertir, y por eso hay que decir cuánto se borra.
+     */
+    fun gradingScaleChangeImpact(): GradingScaleChangeImpact {
+        val subjects = gradesRepository.subjects.value
+        val affected = subjects.filter { it.grades.isNotEmpty() }
+        return GradingScaleChangeImpact(
+            gradeCount = affected.sumOf { it.grades.size },
+            subjectCount = affected.size
+        )
+    }
+
+    /**
+     * Borra las notas de todas las materias y devuelve sus metas al valor del perfil.
+     *
+     * Reajustar la meta es tan necesario como borrar: `targetAverage` vive en cada materia
+     * y también está expresada en la escala vieja. Si solo se vaciaran las notas, una
+     * materia con meta 4.0 quedaría pidiendo un 4 sobre 100.
+     */
+    private fun wipeGradesForScaleChange(newTargetAverage: Double) {
+        gradesRepository.subjects.value.forEach { subject ->
+            if (subject.grades.isNotEmpty() || subject.targetAverage != newTargetAverage) {
+                gradesRepository.updateSubject(
+                    subject.copy(
+                        grades = emptyList(),
+                        targetAverage = newTargetAverage,
+                        unknownPeriodIds = emptySet()
+                    )
+                )
+            }
+        }
+    }
+
     fun updateGradingSettings(
         gradingScale: GradingScale,
         passingGradeInput: String,
@@ -82,6 +137,12 @@ class ProfileViewModel @Inject constructor(
         if (passingGrade !in 0.0..maxGrade) return false
         if (targetAverage !in 0.0..maxGrade) return false
         if (targetAverage < passingGrade) return false
+
+        // Solo se borra si la escala cambia de verdad. Ajustar la mínima o la meta sin
+        // tocar la escala deja las notas donde están: siguen midiendo lo mismo.
+        if (gradingScale != current.gradingScale) {
+            wipeGradesForScaleChange(newTargetAverage = targetAverage)
+        }
 
         save(
             current.copy(
