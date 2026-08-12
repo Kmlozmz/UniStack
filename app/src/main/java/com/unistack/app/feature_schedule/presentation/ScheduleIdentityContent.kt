@@ -680,7 +680,12 @@ private fun IdentityWeeklyTimeline(
         }
         Spacer(Modifier.height(7.dp))
         BoxWithConstraints(Modifier.fillMaxWidth().height(hourHeight * visibleHours)) {
-            val dayWidth = (maxWidth - axisWidth) / 5
+            // El ancho de columna y las líneas se derivan de visibleDays, no de un 5 fijo.
+            // La cabecera reparte con weight(1f) entre los días visibles, así que en cuanto
+            // la rejilla se estira a siete la aritmética tiene que estirarse con ella o los
+            // bloques se dibujan con el paso de cinco columnas y se salen por la derecha.
+            val dayCount = visibleDays.count()
+            val dayWidth = (maxWidth - axisWidth) / dayCount
             Column {
                 (startHour until endHour).forEach { hour ->
                     Row(Modifier.height(hourHeight), verticalAlignment = Alignment.Top) {
@@ -694,7 +699,7 @@ private fun IdentityWeeklyTimeline(
                     }
                 }
             }
-            (0..5).forEach { line ->
+            (0..dayCount).forEach { line ->
                 Box(
                     Modifier
                         .offset(x = axisWidth + dayWidth * line)
@@ -715,7 +720,7 @@ private fun IdentityWeeklyTimeline(
                             val cardHeight = (hourHeight * ((visibleEnd - visibleStart) / 60f)).coerceAtLeast(42.dp)
                             Column(
                                 modifier = Modifier
-                                    .offset(x = axisWidth + dayWidth * (day - 1) + 3.dp, y = y)
+                                    .offset(x = axisWidth + dayWidth * (day - visibleDays.first) + 3.dp, y = y)
                                     .width(dayWidth - 6.dp)
                                     .height(cardHeight)
                                     .clip(RoundedCornerShape(8.dp))
