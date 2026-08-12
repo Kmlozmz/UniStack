@@ -964,8 +964,11 @@ private fun UniStackBottomBarContent(
     Surface(
         modifier = modifier
             .padding(
-                start = if (floating) 12.dp else 0.dp,
-                end = if (floating) 12.dp else 0.dp,
+                // Márgenes ajustados: cada 2dp que se recorta aquí son 4dp más de ancho
+                // para cada destino, que es lo que decide si «Académico» cabe entero o
+                // acaba en puntos suspensivos.
+                start = if (floating) 8.dp else 0.dp,
+                end = if (floating) 8.dp else 0.dp,
                 bottom = if (floating) 12.dp + navigationBarBottom else 0.dp
             )
             .fillMaxWidth()
@@ -978,10 +981,7 @@ private fun UniStackBottomBarContent(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    horizontal = 8.dp,
-                    vertical = 0.dp
-                )
+                .padding(horizontal = 4.dp)
                 .padding(bottom = if (floating) 0.dp else navigationBarBottom),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -1058,11 +1058,14 @@ private fun UniStackBottomBarItem(
     ) {
         Box(
             modifier = Modifier
-                // Los 64dp del spec son un máximo, no una medida fija. Flotando, la barra
-                // pierde los márgenes laterales y cada casilla baja de 64dp: con un ancho
-                // rígido el indicador desbordaba su columna, las píldoras se solapaban y
-                // la etiqueta más larga quedaba cortada.
-                .widthIn(max = 64.dp)
+                // Máximo, no medida fija: flotando, cada casilla baja de 64dp y un ancho
+                // rígido desbordaba la columna.
+                //
+                // Y por debajo del máximo del spec. Con 64 de ancho y 32 de alto la
+                // píldora es el doble de larga que alta, y como el icono ocupa 24dp
+                // quedan 20 de relleno a cada lado: en una barra de cinco destinos eso
+                // se lee como una mancha estirada en vez de un indicador.
+                .widthIn(max = 56.dp)
                 .fillMaxWidth()
                 .height(32.dp)
                 .clip(RoundedCornerShape(16.dp))

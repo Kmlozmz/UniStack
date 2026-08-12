@@ -13,12 +13,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -251,18 +255,19 @@ fun AddSubjectScreen(
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
             }
         }
+        // La barra llega hasta el borde inferior de la pantalla y el margen del sistema va
+        // por dentro. Con navigationBarsPadding() por fuera se levantaba entera y dejaba
+        // una franja transparente debajo por la que se veía pasar el formulario al
+        // desplazarse: eso era lo que se veía cortado.
+        //
+        // union() en vez de encadenar los dos márgenes: el hueco del teclado ya incluye el
+        // de la barra de gestos, así que sumarlos dejaría el botón flotando de más.
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                // Con targetSdk 36 la ventana ya no se redimensiona sola al abrir el
-                // teclado —edge-to-edge es obligatorio y adjustResize deja de aplicarse—,
-                // así que el desplazamiento hay que pedirlo aquí. Sin esto la barra se
-                // queda debajo del teclado o se le monta encima.
-                .imePadding()
-                .navigationBarsPadding(),
-            // Opaca del todo. Al 98% el contenido del formulario se traslucía por debajo
-            // al desplazarse y parecía que la barra estaba superpuesta sobre todo.
+                .fillMaxWidth(),
+            // Opaca del todo. Al 98% el contenido se traslucía por debajo y parecía que la
+            // barra estaba superpuesta sobre todo.
             color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
@@ -328,6 +333,7 @@ fun AddSubjectScreen(
                     }
                 },
                 modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
             )
