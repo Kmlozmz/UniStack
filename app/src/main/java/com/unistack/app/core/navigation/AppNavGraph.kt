@@ -44,6 +44,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -942,72 +944,48 @@ private fun UniStackBottomBarContent(
     modifier: Modifier = Modifier
 ) {
     val appearance = LocalAppearancePreferences.current
-    val barColor = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.BottomBar
-    } else {
-        UniStackColors.BottomBar
-    }
-    val inactiveColor = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.TextSecondary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f)
-    }
-    val borderColor = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.SoftOutline
-    } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
-    }
     val density = LocalDensity.current
     val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
     val showLabels = appearance.bottomBarStyle == BottomBarStyle.LABELED && items.size <= 5
     val floating = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
 
+    /* Las dos presentaciones son las dos variantes de barra de Material 3.
+       Acoplada: pegada al borde, a todo lo ancho y con las esquinas rectas; el borde de
+       la pantalla ya la delimita, así que no lleva contorno propio.
+       Flotante: separada de los bordes, con forma de píldora y elevación, porque aquí sí
+       tiene que despegarse del contenido que pasa por debajo.
+       La altura sale del spec: 80dp con etiqueta, 64dp solo con iconos. */
+    val barHeight = if (showLabels) 80.dp else 64.dp
+
     Surface(
         modifier = modifier
             .padding(
-                start = if (floating) 12.dp else 0.dp,
-                top = 0.dp,
-                end = if (floating) 12.dp else 0.dp,
-                bottom = if (floating) 8.dp else 0.dp
+                start = if (floating) 16.dp else 0.dp,
+                end = if (floating) 16.dp else 0.dp,
+                bottom = if (floating) 16.dp + navigationBarBottom else 0.dp
             )
             .fillMaxWidth()
-            .height((if (showLabels) 78.dp else 66.dp) + navigationBarBottom),
-        shape = if (floating) {
-            AppShapes.LargeCard
-        } else {
-            RoundedCornerShape(
-                topStart = 24.dp,
-                topEnd = 24.dp,
-                bottomStart = 0.dp,
-                bottomEnd = 0.dp
-            )
-        },
-        color = barColor,
-        tonalElevation = 1.dp,
-        shadowElevation = 0.dp,
-        border = BorderStroke(
-            width = 0.5.dp,
-            color = borderColor
-        )
+            .height(barHeight + if (floating) 0.dp else navigationBarBottom),
+        shape = if (floating) RoundedCornerShape(percent = 50) else RectangleShape,
+        color = UniStackColors.BottomBar,
+        tonalElevation = if (floating) 3.dp else 2.dp,
+        shadowElevation = if (floating) 3.dp else 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
-                    start = 12.dp,
-                    top = 7.dp,
-                    end = 12.dp,
-                    bottom = 7.dp + navigationBarBottom
-                ),
+                    horizontal = 8.dp,
+                    vertical = 0.dp
+                )
+                .padding(bottom = if (floating) 0.dp else navigationBarBottom),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
-                val selected = selectedRoute == item.route
                 UniStackBottomBarItem(
                     item = item,
-                    selected = selected,
-                    inactiveColor = inactiveColor,
+                    selected = selectedRoute == item.route,
                     showLabel = showLabels,
                     onClick = { onNavigate(item.route) },
                     modifier = Modifier.weight(1f)
@@ -1021,97 +999,81 @@ private fun UniStackBottomBarContent(
 private fun UniStackBottomBarItem(
     item: BottomNavItem,
     selected: Boolean,
-    inactiveColor: androidx.compose.ui.graphics.Color,
     showLabel: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val motionDuration = (180 * LocalMotionDurationScale.current).roundToInt().coerceAtLeast(0)
-    val contentColor by animateColorAsState(
+
+    /* Un solo indicador, la píldora de 64x32 del spec. Antes había dos a la vez: un
+       rectángulo redondeado detrás del icono y además un subrayado suelto debajo de la
+       etiqueta, así que el elemento activo se marcaba por duplicado.
+
+       El contenedor sale del acento y no de secondaryContainer, que es lo que pide
+       Material: en esta app "secondary" es un azul con identidad propia, no una variante
+       tonal del primario, y usarlo dejaría el indicador azul bajo un acento violeta. */
+    val indicatorColor by animateColorAsState(
+        targetValue = if (selected) UniStackColors.PrimaryLight else Color.Transparent,
+        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
+        label = "bottomItemIndicator"
+    )
+    val iconColor by animateColorAsState(
         targetValue = if (selected) {
-            MaterialTheme.colorScheme.primary
+            UniStackColors.OnPrimaryContainer
         } else {
-            inactiveColor
+            MaterialTheme.colorScheme.onSurfaceVariant
         },
         animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
-        label = "bottomItemColor"
+        label = "bottomItemIcon"
     )
-    val iconScale by animateFloatAsState(
-        targetValue = if (selected) 1.05f else 1f,
+    val labelColor by animateColorAsState(
+        targetValue = if (selected) {
+            UniStackColors.TextPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
         animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
-        label = "bottomItemIconScale"
-    )
-    val indicatorAlpha by animateFloatAsState(
-        targetValue = if (selected) 1f else 0f,
-        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
-        label = "bottomItemIndicatorAlpha"
+        label = "bottomItemLabel"
     )
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
         modifier = modifier
             .fillMaxHeight()
+            .clip(RoundedCornerShape(percent = 50))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
-            )
-            .padding(top = 5.dp, bottom = 2.dp),
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .height(30.dp)
-                .width(42.dp)
-                .clip(AppShapes.SmallCard)
-                .background(
-                    if (selected) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f)
-                    } else {
-                        androidx.compose.ui.graphics.Color.Transparent
-                    }
-                ),
+                .height(32.dp)
+                .width(64.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(indicatorColor),
             contentAlignment = Alignment.Center
         ) {
-        Icon(
-            imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-            contentDescription = item.label,
-            tint = contentColor,
-            modifier = Modifier
-                .size(24.dp)
-                .graphicsLayer {
-                    scaleX = iconScale
-                    scaleY = iconScale
-                }
-        )
+            Icon(
+                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                contentDescription = item.label,
+                tint = iconColor,
+                modifier = Modifier.size(24.dp)
+            )
         }
         if (showLabel) {
             Text(
                 text = item.label,
-                color = contentColor,
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = labelColor,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
                 softWrap = false,
-                modifier = Modifier.padding(top = 3.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
-        }
-        Box(
-            modifier = Modifier
-                .padding(top = 4.dp)
-                .size(width = 16.dp, height = 3.dp)
-                .graphicsLayer { alpha = indicatorAlpha },
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.primary,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) {}
         }
     }
 }
