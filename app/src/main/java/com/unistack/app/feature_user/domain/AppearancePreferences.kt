@@ -4,7 +4,10 @@ data class AppearancePreferences(
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEFAULT,
     val customBackgroundColor: Int? = null,
     val customThemeBase: CustomThemeBase = CustomThemeBase.SYSTEM,
-    val accentStyle: AccentStyle = AccentStyle.DYNAMIC,
+    // El acento de marca manda por defecto. Monet queda a un toque de distancia en
+    // Apariencia, pero dejarlo de serie hacía que la app se viera del color del fondo
+    // de pantalla de cada quien: UniStack no tenía identidad propia en su propia app.
+    val accentStyle: AccentStyle = AccentStyle.VIOLET,
     val customAccentColor: Int? = null,
     val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
     val surfaceStyle: SurfaceStyle = SurfaceStyle.OUTLINED,

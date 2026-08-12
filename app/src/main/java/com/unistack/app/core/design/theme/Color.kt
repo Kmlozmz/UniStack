@@ -61,8 +61,11 @@ object UniStackColors {
         primary = Color(0xFF8F35FF),
         primaryDark = Color(0xFFF1E7FF),
         primaryLight = Color(0xFF24105C),
-        blue = Color(0xFF8F35FF),
-        blueLight = Color(0xFF1D1048),
+        // Antes este par era una copia literal de `primary`, así que el rol
+        // "secundario" salía morado y no había forma de distinguirlo del
+        // principal en tema oscuro.
+        blue = Color(0xFF6FA8FF),
+        blueLight = Color(0xFF10203F),
         teal = Color(0xFF00E0B8),
         tealLight = Color(0xFF063D35),
         green = Color(0xFF74C981),
