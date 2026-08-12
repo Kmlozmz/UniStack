@@ -13,13 +13,25 @@ data class PeriodGradeCalculation(
     val weightedPoints: Double,
     val usesOfficialResult: Boolean,
     val unknownWeightCount: Int,
-    val recordedGradeCount: Int
+    val recordedGradeCount: Int,
+    /**
+     * Suma real de los pesos, sin recortar a 1.0. Solo difiere de [evaluatedFraction]
+     * cuando el corte está sobreasignado, que es justo lo que detecta [isOverAllocated].
+     */
+    val allocatedFraction: Double = evaluatedFraction
 ) {
     val isComplete: Boolean
         get() = evaluatedFraction >= 0.9999
 
     val isProvisional: Boolean
         get() = average != null && (!isComplete || unknownWeightCount > 0)
+
+    /**
+     * Los pesos del corte suman más del 100%. El promedio sigue siendo correcto —es una
+     * media ponderada— pero los datos no lo son, y merece avisarse en pantalla.
+     */
+    val isOverAllocated: Boolean
+        get() = allocatedFraction > 1.0001
 }
 
 data class SubjectGradeCalculation(
@@ -74,12 +86,19 @@ object GradeCalculator {
         val knownActivities = activities.filter {
             it.weightStatus == GradeWeightStatus.KNOWN && it.percentage > 0.0
         }
-        val evaluatedFraction = knownActivities.sumOf { it.percentage }.coerceIn(0.0, 1.0)
+        // Se divide por lo que realmente se sumó, no por la fracción recortada. Si los
+        // pesos pasan del 100% —dato que puede llegar de un respaldo restaurado o de un
+        // esquema de cortes editado después— recortar solo el denominador inflaba el
+        // resultado: tres actividades del 50% con 5.0 daban 7.5 en una escala de 0 a 5.
+        // Dividiendo por la suma real sigue siendo una media ponderada de verdad, así que
+        // nunca puede superar la nota más alta que haya entre los datos.
+        val allocatedFraction = knownActivities.sumOf { it.percentage }
+        val evaluatedFraction = allocatedFraction.coerceIn(0.0, 1.0)
         val weightedPoints = knownActivities.sumOf { it.value * it.percentage }
-        val average = if (evaluatedFraction <= 0.0) {
+        val average = if (allocatedFraction <= 0.0) {
             null
         } else {
-            roundToOneDecimal(weightedPoints / evaluatedFraction)
+            roundToOneDecimal(weightedPoints / allocatedFraction)
         }
         return PeriodGradeCalculation(
             average = average,
@@ -87,7 +106,8 @@ object GradeCalculator {
             weightedPoints = weightedPoints,
             usesOfficialResult = false,
             unknownWeightCount = activities.count { it.weightStatus == GradeWeightStatus.UNKNOWN },
-            recordedGradeCount = activities.size
+            recordedGradeCount = activities.size,
+            allocatedFraction = allocatedFraction
         )
     }
 

@@ -94,6 +94,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
@@ -103,6 +104,7 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import com.unistack.app.feature_tasks.domain.StudentTask
 import java.time.DayOfWeek
 import java.time.Instant
@@ -1101,12 +1103,16 @@ private fun ClassEditorDialog(
     var name by remember(existing) { mutableStateOf(existingSubject?.name.orEmpty()) }
     var professor by remember(existing) { mutableStateOf(place.professor) }
     var color by remember(existing) { mutableStateOf(existingSubject.scheduleColor()) }
-    var days by remember(existing) { mutableStateOf(existing?.daysOfWeek ?: setOf(1, 3, 5)) }
-    var startMinute by remember(existing) { mutableStateOf(existing?.startMinute ?: 390) }
-    var endMinute by remember(existing) { mutableStateOf(existing?.endMinute ?: 570) }
+    // Los valores de partida salen de SubjectScheduleDraft, que es donde ya los define la
+    // ruta académica. Estaban escritos a mano aquí y no coincidían: esta pantalla abría en
+    // 06:30-09:30 y la otra en 08:00-10:00 para crear exactamente lo mismo.
+    val scheduleDefaults = remember { SubjectScheduleDraft() }
+    var days by remember(existing) { mutableStateOf(existing?.daysOfWeek ?: scheduleDefaults.daysOfWeek) }
+    var startMinute by remember(existing) { mutableStateOf(existing?.startMinute ?: scheduleDefaults.startMinute) }
+    var endMinute by remember(existing) { mutableStateOf(existing?.endMinute ?: scheduleDefaults.endMinute) }
     var room by remember(existing) { mutableStateOf(place.room) }
-    var reminder by remember(existing) { mutableStateOf(existing?.reminderMinutes ?: 15) }
-    var repeatEveryWeeks by remember(existing) { mutableStateOf(existing?.repeatEveryWeeks ?: 1) }
+    var reminder by remember(existing) { mutableStateOf(existing?.reminderMinutes ?: scheduleDefaults.reminderMinutes) }
+    var repeatEveryWeeks by remember(existing) { mutableStateOf(existing?.repeatEveryWeeks ?: scheduleDefaults.repeatEveryWeeks) }
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
     var reminderExpanded by remember { mutableStateOf(false) }
@@ -1137,20 +1143,9 @@ private fun ClassEditorDialog(
                         color = UniStackColors.TextPrimary,
                         fontWeight = FontWeight.Bold
                     )
-                    TextButton(onClick = {
-                        error = when {
-                            name.trim().length < 2 -> "Escribe el nombre de la materia."
-                            days.isEmpty() -> "Selecciona al menos un d\u00eda."
-                            endMinute <= startMinute -> "La hora final debe ser posterior a la inicial."
-                            !onSave(name, professor, color.toArgb(), days, startMinute, endMinute, room, reminder, repeatEveryWeeks) -> "No se pudo guardar la materia."
-                            else -> null
-                        }
-                    }) {
-                        Text("Guardar", color = ScheduleAccent, fontWeight = FontWeight.SemiBold)
-                    }
                 }
                 Column(
-                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(9.dp)
                 ) {
                     FormTextField("Nombre de la materia", name, { name = it.take(80) }, "Fundamentos de Costos")
@@ -1261,6 +1256,24 @@ private fun ClassEditorDialog(
                     error?.let { Text(it, color = UniStackColors.Coral, fontSize = 12.sp) }
                     Spacer(Modifier.height(16.dp))
                 }
+                // Guardar vive abajo y a todo lo ancho, como en el resto de formularios
+                // de la app («Crear tarea», «Guardar gasto», «Guardar materia»). Antes
+                // era un enlace de texto en la barra superior, la única pantalla así.
+                UniStackButton(
+                    text = if (existing == null) "Guardar materia" else "Guardar cambios",
+                    onClick = {
+                        error = when {
+                            name.trim().length < 2 -> "Escribe el nombre de la materia."
+                            days.isEmpty() -> "Selecciona al menos un día."
+                            endMinute <= startMinute -> "La hora final debe ser posterior a la inicial."
+                            !onSave(name, professor, color.toArgb(), days, startMinute, endMinute, room, reminder, repeatEveryWeeks) -> "No se pudo guardar la materia."
+                            else -> null
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .fillMaxWidth()
+                )
             }
         }
     }

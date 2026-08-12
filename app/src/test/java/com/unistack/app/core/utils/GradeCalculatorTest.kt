@@ -182,4 +182,46 @@ class GradeCalculatorTest {
             )
         )
     }
+
+    @Test
+    fun `average never exceeds the scale when weights add past 100 percent`() {
+        // Tres actividades del 50% suman 150%. Antes se dividía por la fracción recortada
+        // a 1.0 y el promedio salía 7.5 en una escala de 0 a 5.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Parcial", value = 5.0, percentage = 0.5),
+            GradeItem(id = "2", name = "Taller", value = 5.0, percentage = 0.5),
+            GradeItem(id = "3", name = "Quiz", value = 5.0, percentage = 0.5)
+        )
+
+        val calculation = GradeCalculator.calculatePeriod(grades)
+
+        assertEquals(5.0, calculation.average!!, 0.0001)
+        assertTrue("el corte queda marcado como sobreasignado", calculation.isOverAllocated)
+        assertEquals("el progreso mostrado sigue tope 100%", 1.0, calculation.evaluatedFraction, 0.0)
+        assertEquals(1.5, calculation.allocatedFraction, 0.0001)
+    }
+
+    @Test
+    fun `weights past 100 percent still produce a real weighted average`() {
+        val grades = listOf(
+            GradeItem(id = "1", name = "Parcial", value = 4.0, percentage = 0.6),
+            GradeItem(id = "2", name = "Taller", value = 2.0, percentage = 0.6)
+        )
+
+        // (4.0*0.6 + 2.0*0.6) / 1.2 = 3.0
+        assertEquals(3.0, GradeCalculator.calculatePeriod(grades).average!!, 0.0001)
+    }
+
+    @Test
+    fun `well formed periods are not flagged as over allocated`() {
+        val grades = listOf(
+            GradeItem(id = "1", name = "Parcial", value = 4.0, percentage = 0.5),
+            GradeItem(id = "2", name = "Quiz", value = 3.0, percentage = 0.25)
+        )
+
+        val calculation = GradeCalculator.calculatePeriod(grades)
+
+        assertTrue(!calculation.isOverAllocated)
+        assertEquals(0.75, calculation.allocatedFraction, 0.0001)
+    }
 }
