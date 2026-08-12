@@ -53,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -138,15 +140,7 @@ fun MainNavGraph(
     LaunchedEffect(currentRoute) {
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
     }
-    val showBottomBar = !homeDrawerOpen && currentRoute in setOf(
-        AppRoutes.Home,
-        AppRoutes.Academic,
-        AppRoutes.Grades,
-        AppRoutes.Tasks,
-        AppRoutes.Calendar,
-        AppRoutes.Expenses,
-        AppRoutes.Profile
-    )
+    val showBottomBar = !homeDrawerOpen && routeShowsBottomBar(currentRoute)
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -229,8 +223,8 @@ fun MainNavGraph(
                         HomeScreen(
                             uiState = uiState,
                             onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                            onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
-                            onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.Tasks, enabledModules) },
+                            onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules) },
+                            onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
                             onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
                             onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
                             onCalendarClick = { navController.navigate(AppRoutes.Calendar) },
@@ -255,7 +249,7 @@ fun MainNavGraph(
                                     launchSingleTop = true
                                 }
                             },
-                            onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.Grades, enabledModules) },
+                            onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules) },
                             onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
                             onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
                             onDrawerOpenChange = { open -> homeDrawerOpen = open },
@@ -307,20 +301,15 @@ fun MainNavGraph(
                     }
                 )
             }
+            // Materias y Tareas ya no son pantallas propias: viven como pestañas de
+            // Académico, que es donde llega la barra inferior. Aquí solo quedan como
+            // redirección porque hay recordatorios ya programados con la cadena "tasks"
+            // guardada dentro; borrarlas dejaría esas notificaciones apuntando a la nada.
             composable(AppRoutes.Grades) {
-                GradesScreen(
-                    onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
-                    onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) }
-                )
+                RedirectToAcademic(navController, AppRoutes.AcademicTabSubjects)
             }
             composable(AppRoutes.Tasks) {
-                TasksScreen(
-                    onNewTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
-                    onEditTaskClick = { taskId -> navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules) },
-                    onCompleteHistoryClick = { subjectId ->
-                        navController.navigateIfModuleEnabled(AppRoutes.priorHistory(subjectId), enabledModules)
-                    }
-                )
+                RedirectToAcademic(navController, AppRoutes.AcademicTabTasks)
             }
             composable(AppRoutes.Profile) {
                 ProfileScreen(
@@ -328,8 +317,18 @@ fun MainNavGraph(
                     onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) }
                 )
             }
-            composable(AppRoutes.Academic) {
+            composable(
+                route = AppRoutes.AcademicWithTab,
+                arguments = listOf(
+                    navArgument(AppRoutes.AcademicTabArg) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { entry ->
                 AcademicScreen(
+                    initialTab = entry.arguments?.getString(AppRoutes.AcademicTabArg),
                     onAddSubjectClick = {
                         navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules)
                     },
@@ -460,7 +459,7 @@ fun MainNavGraph(
             composable(AppRoutes.AddSubject) {
                 AddSubjectScreen(
                     onBackClick = {
-                        navController.navigateBackOr(AppRoutes.Grades, enabledModules)
+                        navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
                     onSubjectSaved = { subjectId ->
                         navController.navigate(AppRoutes.subjectDetail(subjectId)) {
@@ -492,7 +491,7 @@ fun MainNavGraph(
                 SubjectDetailScreen(
                     subjectId = subjectId,
                     onBackClick = {
-                        navController.navigateBackOr(AppRoutes.Grades, enabledModules)
+                        navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
                     onAddGradeClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, periodId), enabledModules) },
                     onPeriodClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.subjectPeriodDetail(id, periodId), enabledModules) },
@@ -502,8 +501,8 @@ fun MainNavGraph(
                         navController.navigateIfModuleEnabled(AppRoutes.priorHistory(id), enabledModules)
                     },
                     onSubjectDeleted = {
-                        if (!navController.popBackStack(AppRoutes.Grades, inclusive = false)) {
-                            navController.navigate(AppRoutes.Grades) {
+                        if (!navController.popBackStack(AppRoutes.Academic, inclusive = false)) {
+                            navController.navigate(AppRoutes.academic(AppRoutes.AcademicTabSubjects)) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     inclusive = false
                                 }
@@ -607,7 +606,7 @@ fun MainNavGraph(
             }
             composable(AppRoutes.AddTask) {
                 AddTaskScreen(
-                    onBackClick = { navController.navigateBackOr(AppRoutes.Tasks, enabledModules) },
+                    onBackClick = { navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
                     onCreateSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubjectFromTask, enabledModules) }
                 )
             }
@@ -623,7 +622,7 @@ fun MainNavGraph(
                         )
                     },
                     onBackClick = {
-                        navController.navigateBackOr(AppRoutes.Tasks, enabledModules)
+                        navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules)
                     }
                 )
             }
@@ -674,6 +673,46 @@ private fun ModuleAccessGuard(
     }
 }
 
+/**
+ * Rutas que se comportan como una tarea y no como un destino: crear y editar.
+ *
+ * Son las únicas que ocultan la barra inferior. Fuera de aquí, cualquier pantalla que
+ * pertenezca a una sección la conserva, para que se vea dónde estás y se pueda cambiar de
+ * sección sin tener que desandar el camino.
+ *
+ * El motivo de esconderla aquí no es estético: con la barra puesta, un toque en cualquier
+ * pestaña abandona un formulario a medio llenar sin decir nada. Mientras no haya un aviso
+ * antes de descartar, la salida de un formulario se queda en atrás o guardar.
+ */
+private val ModalRoutes = setOf(
+    AppRoutes.AddSubject,
+    AppRoutes.AddSubjectFromTask,
+    AppRoutes.EditSubject,
+    AppRoutes.AddGrade,
+    AppRoutes.AddGradeFromHistory,
+    AppRoutes.EditGrade,
+    AppRoutes.AddTask,
+    AppRoutes.EditTask,
+    AppRoutes.AddExpense,
+    AppRoutes.EditExpense
+)
+
+/**
+ * Si una ruta muestra la barra inferior.
+ *
+ * Se deriva de [bottomRouteFor] en vez de mantener una lista aparte. Antes eran dos fuentes
+ * de verdad que no se hablaban: el mapa sabía que «agregar nota» pertenece a Académico, pero
+ * la lista blanca de rutas con barra se escribía a mano y solo cubría siete. De las 29 rutas
+ * mapeadas, veintidós calculaban su pestaña para nada.
+ *
+ * De paso corrige el salto que eso producía: el detalle de una materia es una pantalla de
+ * consulta igual que su lista, y se quedaba sin barra mientras la lista la tenía.
+ */
+internal fun routeShowsBottomBar(route: String?): Boolean {
+    if (ModalRoutes.any { routeBelongsTo(route, it) }) return false
+    return bottomRouteFor(route) != null
+}
+
 internal fun bottomRouteFor(route: String?): String? {
     return when {
         routeBelongsTo(route, AppRoutes.Home) -> AppRoutes.Home
@@ -687,7 +726,11 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.AddGradeFromHistory) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditGrade) -> AppRoutes.Academic
+        // Faltaban las dos del historial. Sin mapear, la de consulta se quedaba sin barra
+        // por omisión y no por decisión, que es justo lo que este cambio viene a corregir.
+        routeBelongsTo(route, AppRoutes.PriorHistory) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.Tasks) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Academic
@@ -839,8 +882,30 @@ private fun NavHostController.navigateBackOr(
     }
 }
 
+/**
+ * Reenvía a Académico en la pestaña indicada y se quita del historial.
+ *
+ * Sirve a las rutas antiguas de Materias y Tareas, que ya no tienen pantalla propia pero
+ * siguen llegando desde recordatorios agendados antes de este cambio. Se sustituye a sí misma
+ * en la pila para que el botón atrás no devuelva a una pantalla que solo redirige.
+ */
+@Composable
+private fun RedirectToAcademic(navController: NavHostController, tab: String) {
+    LaunchedEffect(tab) {
+        navController.navigate(AppRoutes.academic(tab)) {
+            popUpTo(AppRoutes.Home)
+            launchSingleTop = true
+        }
+    }
+}
+
 private fun routeBelongsTo(route: String?, baseRoute: String): Boolean {
-    return route == baseRoute || route?.startsWith("$baseRoute/") == true
+    return route == baseRoute ||
+        route?.startsWith("$baseRoute/") == true ||
+        // Rutas con argumento opcional: el patrón que informa el destino es
+        // «academic?tab={tab}», que no es igual a «academic» ni empieza por «academic/».
+        // Sin esta rama, una ruta así deja de pertenecer a su pestaña y pierde la barra.
+        route?.startsWith("$baseRoute?") == true
 }
 
 @Composable

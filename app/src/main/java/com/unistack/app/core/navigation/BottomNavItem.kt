@@ -50,6 +50,23 @@ object AppRoutes {
     const val AddExpense = "add_expense"
     const val EditExpense = "edit_expense"
 
+    /**
+     * Pestaña con la que abrir Académico.
+     *
+     * Va en la ruta y no en el estado interno de la pantalla porque quien navega es quien
+     * sabe a qué viene: la casilla «Pendientes» de Inicio quiere Tareas, y el ajuste de
+     * pantalla inicial quiere la que el usuario eligió. Mientras fue estado privado no había
+     * forma de decírselo, y por eso elegir «Tareas» como pantalla de arranque abría Materias.
+     */
+    const val AcademicTabArg = "tab"
+    const val AcademicTabSubjects = "subjects"
+    const val AcademicTabTasks = "tasks"
+
+    /** Con argumento opcional: navegar a [Academic] a secas sigue siendo válido. */
+    const val AcademicWithTab = "$Academic?$AcademicTabArg={$AcademicTabArg}"
+
+    fun academic(tab: String) = "$Academic?$AcademicTabArg=$tab"
+
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
     fun subjectPeriodDetail(subjectId: String, periodId: String) = "$SubjectPeriodDetail/$subjectId/$periodId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
