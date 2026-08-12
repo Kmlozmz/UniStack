@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Icono para la barra de estado. Android descarta el color y se queda solo
+    con el canal alfa, así que aquí todo va en blanco opaco: lo que importa
+    es la silueta. El símbolo de la marca redibujado a 24dp con separaciones
+    de 2dp entre píldoras, porque las del logo original quedan pegadas y se
+    leen como una mancha a este tamaño.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9.2,2.5 H19.2 A2.5,2.5 0 0 1 19.2,7.5 H9.2 A2.5,2.5 0 0 1 9.2,2.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4.8,9.5 H14.8 A2.5,2.5 0 0 1 14.8,14.5 H4.8 A2.5,2.5 0 0 1 4.8,9.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7.8,16.5 H17.8 A2.5,2.5 0 0 1 17.8,21.5 H7.8 A2.5,2.5 0 0 1 7.8,16.5 Z" />
+</vector>

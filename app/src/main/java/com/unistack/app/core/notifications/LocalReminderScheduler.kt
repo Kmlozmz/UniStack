@@ -35,8 +35,22 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-private const val CHANNEL_ID = "unistack_reminders"
-private const val CHANNEL_NAME = "Recordatorios UniStack"
+/* El canal viejo nace con IMPORTANCE_DEFAULT, que en Android nunca muestra
+   ventana emergente. La importancia de un canal ya creado no se puede subir
+   por código —el sistema ignora el cambio para respetar al usuario—, así que
+   la única salida es publicar en canales nuevos y borrar el anterior. */
+private const val LEGACY_CHANNEL_ID = "unistack_reminders"
+
+/* Lo que tiene hora y se puede perder: entregas, clases, vencidos. Asoma. */
+private const val CHANNEL_ID_ALERTS = "unistack_alerts_v2"
+private const val CHANNEL_NAME_ALERTS = "Entregas y clases"
+
+/* Lo que solo informa: resumen del día, avisos de notas. No interrumpe. */
+private const val CHANNEL_ID_DIGEST = "unistack_digest_v2"
+private const val CHANNEL_NAME_DIGEST = "Resumen y seguimiento"
+
+private const val BRAND_COLOR = 0xFF5B46E0.toInt()
+
 private const val MAX_REMINDERS_PER_KIND = 8
 private const val MAX_SMART_SUBJECT_REMINDERS = 3
 private const val REQUEST_CODE_PREFS = "unistack_scheduled_notifications"
@@ -46,6 +60,8 @@ private const val EXTRA_TITLE = "title"
 private const val EXTRA_BODY = "body"
 private const val EXTRA_NOTIFICATION_ID = "notification_id"
 private const val EXTRA_TARGET_ROUTE = "target_route"
+private const val EXTRA_SUBTEXT = "subtext"
+private const val EXTRA_CHANNEL_ID = "channel_id"
 
 class LocalReminderScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -75,12 +91,17 @@ class LocalReminderScheduler(private val context: Context) {
                 .sortedBy { it.dueDateMillis }
                 .take(MAX_REMINDERS_PER_KIND)
                 .forEach { task ->
+                    // El nombre de la materia va en el subtítulo, junto al de la
+                    // app: se lee de un vistazo sin robarle sitio al título, que
+                    // se reserva para lo único que identifica el aviso.
+                    val subjectLabel = subjects.firstOrNull { it.id == task.subjectId }?.name ?: "Tarea"
                     scheduleReminder(
                         profile = currentProfile,
                         requestCode = task.id.stableRequestCode("task-lead"),
                         triggerAtMillis = task.dueDateMillis - leadMillis,
-                        title = "Tarea próxima",
-                        body = "${task.title} ${TaskDateUtils.dueText(task.dueDateMillis)}.",
+                        subText = subjectLabel,
+                        title = task.title,
+                        body = "${TaskDateUtils.dueText(task.dueDateMillis).sentenceCase()}.",
                         targetRoute = AppRoutes.editTask(task.id)
                     )
                     if (currentProfile.overdueRemindersEnabled) {
@@ -88,8 +109,9 @@ class LocalReminderScheduler(private val context: Context) {
                             profile = currentProfile,
                             requestCode = task.id.stableRequestCode("task-overdue"),
                             triggerAtMillis = task.dueDateMillis + 60L * 60L * 1000L,
-                            title = "Tarea vencida",
-                            body = "${task.title} ya venció. Revísala cuando puedas.",
+                            subText = subjectLabel,
+                            title = "Venció: ${task.title}",
+                            body = "Márcala como hecha o muévela de fecha.",
                             targetRoute = AppRoutes.editTask(task.id)
                         )
                     }
@@ -111,9 +133,11 @@ class LocalReminderScheduler(private val context: Context) {
                         profile = currentProfile,
                         requestCode = task.id.stableRequestCode("task-grade-pending"),
                         triggerAtMillis = requireNotNull(task.completedAt) + 24L * 60L * 60L * 1000L,
-                        title = "¿Ya recibiste la nota?",
-                        body = "La tarea ${task.title} sigue esperando resultado. Regístralo cuando lo conozcas.",
-                        targetRoute = AppRoutes.Tasks
+                        subText = "Nota pendiente",
+                        title = "¿Ya te dieron la nota de ${task.title}?",
+                        body = "Regístrala para que tu promedio deje de ser una proyección.",
+                        targetRoute = AppRoutes.Tasks,
+                        channelId = CHANNEL_ID_DIGEST
                     )
                 }
         }
@@ -129,8 +153,9 @@ class LocalReminderScheduler(private val context: Context) {
                         profile = currentProfile,
                         requestCode = work.id.stableRequestCode("work-lead"),
                         triggerAtMillis = dueDateMillis - leadMillis,
-                        title = "Trabajo próximo",
-                        body = "${work.title} ${TaskDateUtils.dueText(dueDateMillis)}.",
+                        subText = "Trabajo",
+                        title = work.title,
+                        body = "${TaskDateUtils.dueText(dueDateMillis).sentenceCase()}.",
                         targetRoute = AppRoutes.AcademicTemplates
                     )
                     if (currentProfile.overdueRemindersEnabled) {
@@ -138,8 +163,9 @@ class LocalReminderScheduler(private val context: Context) {
                             profile = currentProfile,
                             requestCode = work.id.stableRequestCode("work-overdue"),
                             triggerAtMillis = dueDateMillis + 60L * 60L * 1000L,
-                            title = "Trabajo vencido",
-                            body = "${work.title} ya venció. Revisa su checklist.",
+                            subText = "Trabajo",
+                            title = "Venció: ${work.title}",
+                            body = "Revisa su checklist y actualiza en qué estado quedó.",
                             targetRoute = AppRoutes.AcademicTemplates
                         )
                     }
@@ -163,9 +189,11 @@ class LocalReminderScheduler(private val context: Context) {
                 profile = currentProfile,
                 requestCode = DAILY_DIGEST_REQUEST_CODE,
                 triggerAtMillis = nextTriggerAt(hour = 7, minute = 30, daysFromNow = 1),
-                title = "Resumen del dia",
+                subText = "Resumen",
+                title = "Tu día en UniStack",
                 body = smartDigestBody(currentProfile, tasks, works, subjects),
-                targetRoute = AppRoutes.Home
+                targetRoute = AppRoutes.Home,
+                channelId = CHANNEL_ID_DIGEST
             )
         }
 
@@ -190,13 +218,16 @@ class LocalReminderScheduler(private val context: Context) {
             .take(MAX_REMINDERS_PER_KIND)
             .forEach { (session, trigger) ->
                 val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu clase"
-                val locationSuffix = session.location.takeIf(String::isNotBlank)?.let { " en $it" }.orEmpty()
                 scheduleReminder(
                     profile = profile,
                     requestCode = session.id.stableRequestCode("class-reminder"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                    title = "$subjectName empieza pronto",
-                    body = "Tu clase comienza en ${session.reminderMinutes} min$locationSuffix.",
+                    subText = "Clase",
+                    // Los minutos van en el título: es el dato que decide si te
+                    // levantas ya o no, y así se ve sin desplegar el aviso.
+                    title = "$subjectName empieza en ${session.reminderMinutes} min",
+                    body = session.location.takeIf(String::isNotBlank)?.let { "Nos vemos en $it." }
+                        ?: "Alista lo que necesites antes de entrar.",
                     targetRoute = AppRoutes.Calendar
                 )
             }
@@ -227,9 +258,11 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = "${session.id}:$epochDay".stableRequestCode("class-attendance"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    subText = "Asistencia",
                     title = "¿Asististe a $subjectName?",
-                    body = "Registra tu asistencia, modalidad o cualquier cambio de esta clase.",
-                    targetRoute = AppRoutes.Calendar
+                    body = "Déjalo registrado para llevar la cuenta de tus faltas.",
+                    targetRoute = AppRoutes.Calendar,
+                    channelId = CHANNEL_ID_DIGEST
                 )
             }
     }
@@ -259,9 +292,11 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = event.id.stableRequestCode("agenda-event"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    subText = "Agenda",
                     title = event.title,
-                    body = event.location.takeIf(String::isNotBlank)?.let { "Próximamente en $it." }
-                        ?: "Tienes un evento próximo en tu agenda.",
+                    body = event.location.takeIf(String::isNotBlank)
+                        ?.let { "Empieza en ${event.reminderMinutes} min, en $it." }
+                        ?: "Empieza en ${event.reminderMinutes} min.",
                     targetRoute = AppRoutes.Calendar
                 )
             }
@@ -293,9 +328,11 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = hint.subject.id.stableRequestCode("subject-insight"),
                     triggerAtMillis = nextTriggerAt(hour = 18, minute = index * 10, daysFromNow = 1),
+                    subText = hint.subject.name,
                     title = hint.notificationTitle(),
                     body = hint.message,
-                    targetRoute = AppRoutes.subjectDetail(hint.subject.id)
+                    targetRoute = AppRoutes.subjectDetail(hint.subject.id),
+                    channelId = CHANNEL_ID_DIGEST
                 )
             }
     }
@@ -328,31 +365,37 @@ class LocalReminderScheduler(private val context: Context) {
             when {
                 missingPriorPeriods > 0 -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.MISSING_PERIODS,
                     severity = 3,
                     message = "Falta ${if (missingPriorPeriods == 1) "un corte anterior" else "$missingPriorPeriods cortes anteriores"} en ${subject.name}. Complétalo para afinar tu meta."
                 )
                 unknownWeights > 0 -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.UNKNOWN_WEIGHTS,
                     severity = 2,
                     message = "${subject.name} tiene $unknownWeights ${if (unknownWeights == 1) "nota sin porcentaje" else "notas sin porcentaje"}. La proyección seguirá provisional."
                 )
                 subject.grades.isEmpty() -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.NO_GRADES,
                     severity = 1,
                     message = "Aún no tienes notas en ${subject.name}. Agrega la primera para activar tu promedio real."
                 )
                 average != null && average < profile.passingGrade -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.BELOW_PASSING,
                     severity = 4,
                     message = "${subject.name} está bajo la nota mínima con ${GradingScaleUtils.formatGrade(average, profile.gradingScale)}. Revisa el siguiente corte."
                 )
                 neededGrade != null && neededGrade > maxGrade -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.TARGET_UNREACHABLE,
                     severity = 3,
                     message = "La meta de ${subject.name} está difícil con lo restante. Ajusta estrategia o pesos de notas."
                 )
                 average != null && average < subject.targetAverage -> SubjectNotificationHint(
                     subject = subject,
+                    kind = SubjectHintKind.BELOW_TARGET,
                     severity = 2,
                     message = "${subject.name} va en ${GradingScaleUtils.formatGrade(average, profile.gradingScale)}. Tu meta es ${GradingScaleUtils.formatGrade(subject.targetAverage, profile.gradingScale)}."
                 )
@@ -403,11 +446,13 @@ class LocalReminderScheduler(private val context: Context) {
         triggerAtMillis: Long,
         title: String,
         body: String,
-        targetRoute: String? = null
+        targetRoute: String? = null,
+        subText: String? = null,
+        channelId: String = CHANNEL_ID_ALERTS
     ) {
         val adjustedTrigger = adjustForQuietHours(profile, triggerAtMillis)
         if (adjustedTrigger <= System.currentTimeMillis()) return
-        val intent = reminderIntent(requestCode, title, body, targetRoute)
+        val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -441,22 +486,47 @@ class LocalReminderScheduler(private val context: Context) {
         requestCode: Int,
         title: String,
         body: String,
-        targetRoute: String?
+        targetRoute: String?,
+        subText: String? = null,
+        channelId: String = CHANNEL_ID_ALERTS
     ): Intent {
         return Intent(context, ReminderReceiver::class.java).apply {
             putExtra(EXTRA_TITLE, title)
             putExtra(EXTRA_BODY, body)
             putExtra(EXTRA_NOTIFICATION_ID, requestCode)
             putExtra(EXTRA_TARGET_ROUTE, targetRoute)
+            putExtra(EXTRA_SUBTEXT, subText)
+            putExtra(EXTRA_CHANNEL_ID, channelId)
         }
     }
 
     private fun createChannel() {
-        val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT).apply {
-            description = "Avisos inteligentes para tareas, trabajos y seguimiento académico."
+        val manager = context.getSystemService(NotificationManager::class.java)
+
+        val alerts = NotificationChannel(
+            CHANNEL_ID_ALERTS,
+            CHANNEL_NAME_ALERTS,
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Avisos con hora: entregas próximas o vencidas, clases y eventos de tu agenda."
+            setShowBadge(true)
+            enableVibration(true)
+            enableLights(true)
+            lightColor = BRAND_COLOR
+        }
+
+        val digest = NotificationChannel(
+            CHANNEL_ID_DIGEST,
+            CHANNEL_NAME_DIGEST,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Tu resumen de la mañana, notas pendientes de registrar y avisos sobre tus promedios."
             setShowBadge(true)
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+
+        manager.createNotificationChannel(alerts)
+        manager.createNotificationChannel(digest)
+        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
     }
 
     private fun nextTriggerAt(hour: Int, minute: Int, daysFromNow: Long): Long {
@@ -517,22 +587,37 @@ class LocalReminderScheduler(private val context: Context) {
         return "$kind:$this".hashCode() and Int.MAX_VALUE
     }
 
+    /* dueText() devuelve fragmentos pensados para ir dentro de una frase
+       («vence mañana 15:00»). Aquí abren el cuerpo del aviso, así que hay que
+       levantar la primera letra. */
+    private fun String.sentenceCase(): String =
+        replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+    private enum class SubjectHintKind {
+        MISSING_PERIODS,
+        UNKNOWN_WEIGHTS,
+        NO_GRADES,
+        BELOW_PASSING,
+        TARGET_UNREACHABLE,
+        BELOW_TARGET
+    }
+
     private data class SubjectNotificationHint(
         val subject: Subject,
+        val kind: SubjectHintKind,
         val severity: Int,
         val message: String
     ) {
-        fun notificationTitle(): String {
-            val normalized = message.lowercase()
-            return when {
-                "sin porcentaje" in normalized -> "Faltan porcentajes en ${subject.name}"
-                "corte anterior" in normalized || "cortes anteriores" in normalized -> "Completa cortes de ${subject.name}"
-                "no tienes notas" in normalized -> "Empieza ${subject.name}"
-                severity >= 4 -> "${subject.name} necesita atencion"
-                "meta" in normalized && "dif" in normalized -> "Meta dificil en ${subject.name}"
-                "meta" in normalized -> "${subject.name} bajo tu meta"
-                else -> "Revisa ${subject.name}"
-            }
+        /* El nombre de la materia ya viaja en el subtítulo del aviso, así que
+           el título se queda solo con el qué: dicho de corrido se lee
+           «Cálculo III · Vas por debajo de tu meta». */
+        fun notificationTitle(): String = when (kind) {
+            SubjectHintKind.MISSING_PERIODS -> "Te faltan cortes por registrar"
+            SubjectHintKind.UNKNOWN_WEIGHTS -> "Faltan porcentajes"
+            SubjectHintKind.NO_GRADES -> "Aún sin notas"
+            SubjectHintKind.BELOW_PASSING -> "Vas por debajo de la nota mínima"
+            SubjectHintKind.TARGET_UNREACHABLE -> "Tu meta se complicó"
+            SubjectHintKind.BELOW_TARGET -> "Vas por debajo de tu meta"
         }
     }
 
@@ -568,13 +653,27 @@ class LocalReminderScheduler(private val context: Context) {
                 launchIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+            val channelId = intent.getStringExtra(EXTRA_CHANNEL_ID) ?: CHANNEL_ID_ALERTS
+            val subText = intent.getStringExtra(EXTRA_SUBTEXT)
+            val isAlert = channelId == CHANNEL_ID_ALERTS
+            val notification = NotificationCompat.Builder(context, channelId)
+                // Un mipmap de lanzador no sirve aquí: el sistema se queda solo
+                // con su alfa y, al ser una imagen opaca de borde a borde, sale
+                // un cuadro blanco. Hace falta una silueta monocroma de 24dp.
+                .setSmallIcon(R.drawable.ic_stat_unistack)
+                .setColor(BRAND_COLOR)
                 .setContentTitle(title)
                 .setContentText(body)
+                .setSubText(subText)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true)
+                .setCategory(if (isAlert) NotificationCompat.CATEGORY_REMINDER else NotificationCompat.CATEGORY_STATUS)
+                // PRIORITY_* es lo que atiende Android 7 y anteriores; de Oreo
+                // en adelante manda la importancia del canal. Se ponen los dos
+                // para que la ventana emergente salga en todas las versiones.
+                .setPriority(if (isAlert) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
+                .setDefaults(if (isAlert) NotificationCompat.DEFAULT_ALL else 0)
                 .build()
             notificationManager.notify(notificationId, notification)
         }
