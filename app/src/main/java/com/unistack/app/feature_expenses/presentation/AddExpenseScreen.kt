@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DirectionsBus
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material3.AlertDialog
@@ -119,7 +120,11 @@ fun AddExpenseScreen(
     val expense = expenseId?.let { id -> expenses.firstOrNull { it.id == id } }
     val isEditing = expenseId != null
 
-    var category by rememberSaveable(expenseId) { mutableStateOf(ExpenseCategory.FOOD) }
+    // Sin categoría de partida. Venía con «Comida» puesta, que ahorra un toque en el caso
+    // frecuente pero hace igual de fácil guardar un transporte etiquetado como comida sin
+    // que nadie lo elija: un gasto mal clasificado ensucia el resumen y cuesta más
+    // encontrarlo que el toque que se ahorra.
+    var category by rememberSaveable(expenseId) { mutableStateOf<ExpenseCategory?>(null) }
     var amount by rememberSaveable(expenseId) { mutableStateOf("") }
     var date by rememberSaveable(expenseId) { mutableStateOf(ExpenseDateUtils.formatInput(ExpenseDateUtils.today())) }
     var initialized by rememberSaveable(expenseId) { mutableStateOf(false) }
@@ -131,6 +136,7 @@ fun AddExpenseScreen(
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
     val visibleCategories = (enabledCategories + listOfNotNull(expense?.category)).toList().sortedBy { it.ordinal }
     val isValid = (!isEditing || expense != null) &&
+        category != null &&
         parsedAmount != null &&
         parsedAmount in 1..99_999_999 &&
         parsedDate != null
@@ -167,17 +173,21 @@ fun AddExpenseScreen(
         error = error,
         onBackClick = onBackClick,
         onSaveClick = {
+            val chosenCategory = category ?: run {
+                error = "Elige una categoría para el gasto."
+                return@AddExpenseContent
+            }
             val editingExpenseId = expenseId
             val saved = if (editingExpenseId != null) {
                 viewModel.updateExpense(
                     expenseId = editingExpenseId,
-                    category = category,
+                    category = chosenCategory,
                     amountInput = amount,
                     dateInput = date
                 )
             } else {
                 viewModel.addExpense(
-                    category = category,
+                    category = chosenCategory,
                     amountInput = amount,
                     dateInput = date
                 )
@@ -213,7 +223,7 @@ private fun AddExpenseContent(
     onAmountChange: (String) -> Unit,
     date: LocalDate,
     onDateClick: () -> Unit,
-    category: ExpenseCategory,
+    category: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory) -> Unit,
     isValid: Boolean,
@@ -443,7 +453,7 @@ private fun ExpenseDateField(
 
 @Composable
 private fun ExpenseCategorySection(
-    selectedCategory: ExpenseCategory,
+    selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory) -> Unit
 ) {
@@ -517,7 +527,7 @@ private fun ExpenseCategoryOption(
 
 @Composable
 private fun ExpensePreviewCard(
-    category: ExpenseCategory,
+    category: ExpenseCategory?,
     amount: Int,
     date: LocalDate
 ) {
@@ -549,16 +559,18 @@ private fun ExpensePreviewCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = category.icon(),
+                        // Sin categoría elegida la vista previa no se inventa una: enseña
+                        // un hueco, que es exactamente lo que falta por decidir.
+                        imageVector = category?.icon() ?: Icons.Rounded.HelpOutline,
                         contentDescription = null,
-                        tint = ExpenseFormCoral,
+                        tint = if (category != null) ExpenseFormCoral else ExpenseFormMuted,
                         modifier = Modifier.size(22.dp)
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
-                        text = category.label(),
-                        color = ExpenseFormText,
+                        text = category?.label() ?: "Elige una categoría",
+                        color = if (category != null) ExpenseFormText else ExpenseFormMuted,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
