@@ -14,6 +14,7 @@ import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
 import java.io.File
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +49,7 @@ class GitHubReleaseUpdateRepository(
         _state.value = UpdateState.Checking
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
-                if (info != null && isNewerVersion(info.versionName, BuildConfig.VERSION_NAME)) {
+                if (isNewerVersion(info.versionName, BuildConfig.VERSION_NAME)) {
                     _state.value = UpdateState.Available(info)
                     notificationManager.showUpdateAvailableNotification(info.versionName)
                 } else {
@@ -70,7 +71,8 @@ class GitHubReleaseUpdateRepository(
         checkForUpdates()
     }
 
-    private suspend fun fetchLatestRelease(): UpdateInfo? = withContext(Dispatchers.IO) {
+    /** Devuelve la última versión publicada, o lanza explicando por qué no pudo saberlo. */
+    private suspend fun fetchLatestRelease(): UpdateInfo = withContext(Dispatchers.IO) {
         val url = URL("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases/latest")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -78,9 +80,28 @@ class GitHubReleaseUpdateRepository(
         connection.readTimeout = 10_000
         connection.setRequestProperty("Accept", "application/vnd.github+json")
         try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+            /* Antes cualquier respuesta que no fuera 200 se convertía en null, y el
+               llamador entiende null como «estás al día». Es decir: sin conexión, con la
+               API caída, con el repositorio privado o con el límite de peticiones agotado,
+               la app afirmaba que todo estaba en orden. Ahora cada caso se lanza con su
+               motivo para que la pantalla pueda decir que no pudo comprobarlo, que es
+               distinto de no tener nada que instalar. */
+            when (val code = connection.responseCode) {
+                HttpURLConnection.HTTP_OK -> Unit
+                HttpURLConnection.HTTP_NOT_FOUND -> throw IOException(
+                    "No se encontró ninguna publicación en ${BuildConfig.GITHUB_REPO}. " +
+                        "Si el repositorio es privado, sus publicaciones no son visibles sin iniciar sesión."
+                )
+                HttpURLConnection.HTTP_FORBIDDEN -> throw IOException(
+                    "GitHub rechazó la consulta, probablemente por exceso de peticiones. Inténtalo más tarde."
+                )
+                else -> throw IOException("GitHub respondió $code al consultar la última versión.")
+            }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             parseRelease(JSONObject(body))
+                ?: throw IOException(
+                    "La última publicación no trae ningún APK adjunto, así que no hay nada que descargar."
+                )
         } finally {
             connection.disconnect()
         }

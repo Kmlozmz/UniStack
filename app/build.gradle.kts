@@ -91,7 +91,17 @@ val generatedVersionName = explicitVersionNameProvider
     .orElse("1.0.$generatedVersionCode")
     .get()
 
-val githubRepoSlug = "Kmlozmz/UniStack"
+/*
+ * El código vive en un repositorio privado y las publicaciones en uno público aparte.
+ *
+ * Tienen que estar separados: las publicaciones de un repositorio privado devuelven 404 a
+ * quien no ha iniciado sesión, así que ni el actualizador de la app ni el botón de descarga
+ * de la web podrían llegar a ellas. La alternativa —incrustar un token en el APK— no sirve:
+ * se extrae del paquete en un momento y daría acceso de escritura al código.
+ *
+ * Este repositorio solo aloja etiquetas y APK; el código fuente no se publica.
+ */
+val githubReleasesSlug = "Kmlozmz/UniStack-releases"
 val roomVersion = "2.8.4"
 
 android {
@@ -108,7 +118,7 @@ android {
 
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${localProperty("googleWebClientId")}\"")
         buildConfigField("String", "PRO_MONTHLY_PRODUCT_ID", "\"${localProperty("proMonthlyProductId").ifBlank { "unistack_pro_monthly" }}\"")
-        buildConfigField("String", "GITHUB_REPO", "\"$githubRepoSlug\"")
+        buildConfigField("String", "GITHUB_REPO", "\"$githubReleasesSlug\"")
 
         vectorDrawables {
             useSupportLibrary = true
@@ -739,7 +749,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
                 "-H", "Accept: application/vnd.github+json",
                 "-H", "Content-Type: application/json",
                 "-d", "@${payloadFile.absolutePath}",
-                "https://api.github.com/repos/$githubRepoSlug/releases"
+                "https://api.github.com/repos/$githubReleasesSlug/releases"
             )
             standardOutput = responseFile.outputStream()
             isIgnoreExitValue = true
@@ -765,7 +775,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
             ?: throw GradleException("Could not extract release ID. Response: $responseText")
 
         println("Uploading ${apkPath.name}...")
-        val uploadUrl = "https://uploads.github.com/repos/$githubRepoSlug/releases/$releaseId/assets?name=${apkPath.name}"
+        val uploadUrl = "https://uploads.github.com/repos/$githubReleasesSlug/releases/$releaseId/assets?name=${apkPath.name}"
 
         val uploadResult = project.exec {
             commandLine = listOf(
@@ -783,7 +793,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
         }
 
         writeGithubReleaseSnapshot(currentSnapshot)
-        println("✓ Published $tagName to https://github.com/$githubRepoSlug/releases/tag/$tagName")
+        println("✓ Published $tagName to https://github.com/$githubReleasesSlug/releases/tag/$tagName")
     }
 }
 
