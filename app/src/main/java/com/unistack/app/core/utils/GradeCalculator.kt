@@ -4,7 +4,6 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import kotlin.math.round
 
 data class PeriodGradeCalculation(
@@ -48,11 +47,6 @@ data class SubjectGradeCalculation(
 object GradeCalculator {
     fun calculateCurrentAverage(grades: List<GradeItem>): Double? {
         return calculatePeriod(grades).average
-    }
-
-    fun calculateFinalAverage(grades: List<GradeItem>): Double {
-        val calculation = calculatePeriod(grades)
-        return roundToOneDecimal(calculation.weightedPoints)
     }
 
     fun calculateEvaluatedPercentage(grades: List<GradeItem>): Double {
@@ -127,22 +121,6 @@ object GradeCalculator {
         val evaluatedWeight = evaluatedSemesterFraction(grades, periods)
         if (evaluatedWeight <= 0.0) return null
         return roundToOneDecimal(calculateWeightedPointsByPeriods(grades, periods) / evaluatedWeight)
-    }
-
-    fun calculateFinalAverageByPeriods(
-        grades: List<GradeItem>,
-        scheme: AcademicPeriodScheme
-    ): Double? {
-        if (scheme.periods.isEmpty()) return null
-        val calculations = scheme.periods.map { period ->
-            period to calculatePeriod(grades.filter { it.periodId == period.id })
-        }
-        if (calculations.none { it.second.average != null }) return null
-        return roundToOneDecimal(
-            calculations.sumOf { (period, calculation) ->
-                calculation.weightedPoints * period.weight
-            }
-        )
     }
 
     fun calculateEvaluatedSemesterPercentage(

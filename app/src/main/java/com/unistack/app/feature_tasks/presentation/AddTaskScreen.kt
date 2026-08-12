@@ -1,5 +1,7 @@
 package com.unistack.app.feature_tasks.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -1297,7 +1299,7 @@ private fun CalendarMonthGrid(
     val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
     val cells = List(leadingEmptyCells) { null } + days
     val weeks = cells.chunked(7)
-    val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
+    val dayLabels = DayLabels.short
 
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {

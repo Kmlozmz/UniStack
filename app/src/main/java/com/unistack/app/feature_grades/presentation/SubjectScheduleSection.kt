@@ -1,5 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -318,6 +320,6 @@ internal fun defaultSubjectScheduleDraft(): SubjectScheduleDraft = SubjectSchedu
 )
 
 private fun dayLetter(day: DayOfWeek): String =
-    listOf("L", "M", "X", "J", "V", "S", "D")[day.value - 1]
+    DayLabels.short[day.value - 1]
 
 private fun formatMinute(value: Int): String = "%02d:%02d".format(value / 60, value % 60)

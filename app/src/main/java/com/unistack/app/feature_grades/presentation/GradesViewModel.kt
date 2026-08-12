@@ -349,17 +349,17 @@ class GradesViewModel @Inject constructor(
 
     fun neededGrade(subject: Subject): Double? {
         if (subject.grades.isEmpty()) return null
-        val periods = subject.periodScheme.periods
-        val currentWeightedPoints = GradeCalculator.calculateWeightedPointsByPeriods(subject.grades, periods)
-        val remainingPercentage =
-            (1.0 - GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods) / 100.0)
-                .coerceAtLeast(0.0)
-        return GradeCalculator.calculateNeededGrade(
-            currentWeightedPoints = currentWeightedPoints,
-            remainingPercentage = remainingPercentage,
+        // Se delega en calculateSubject en vez de rehacer el cálculo aquí. La versión
+        // anterior sacaba el porcentaje restante pasando por
+        // calculateEvaluatedSemesterPercentage, que redondea a un decimal y multiplica
+        // por 100, para luego volver a dividir entre 100: ese viaje de ida y vuelta hacía
+        // que esta pantalla y la de detalle pudieran dar cifras distintas para lo mismo.
+        return GradeCalculator.calculateSubject(
+            grades = subject.grades,
+            periods = subject.periodScheme.periods,
             targetAverage = subject.targetAverage,
             maxGrade = getMaxGrade()
-        )
+        ).neededForTarget
     }
 
     fun setActivePeriod(subjectId: String, periodId: String): Boolean {

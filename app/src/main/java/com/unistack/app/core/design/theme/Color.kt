@@ -34,8 +34,6 @@ object UniStackColors {
 
     private val lightPalette = UniStackColorPalette(
         primary = Color(0xFF5B46E0),
-        primaryDark = Color(0xFF2E1A78),
-        primaryLight = Color(0xFFE9DDFF),
         blue = Color(0xFF1E7BEA),
         blueLight = Color(0xFFDDEBFF),
         teal = Color(0xFF00AFA5),
@@ -46,21 +44,11 @@ object UniStackColors {
         coralLight = Color(0xFFFFE1DC),
         yellow = Color(0xFFE2A900),
         yellowLight = Color(0xFFFFF4CC),
-        background = Color(0xFFFCFBFF),
-        card = Color(0xFFFFFFFF),
-        surfaceVariant = Color(0xFFF4F0FA),
-        textPrimary = Color(0xFF171427),
-        textSecondary = Color(0xFF5F5B6B),
-        softOutline = Color(0xFFDCD2EA),
-        gradientEnd = Color(0xFFFFFFFF),
-        bottomBar = Color(0xFFFFFCFF),
-        bottomBarSelected = Color(0xFFF0EAFF)
+        background = Color(0xFFFCFBFF)
     )
 
     private val darkPalette = UniStackColorPalette(
         primary = Color(0xFFA996FF),
-        primaryDark = Color(0xFFF1E7FF),
-        primaryLight = Color(0xFF24105C),
         // Antes este par era una copia literal de `primary`, así que el rol
         // "secundario" salía morado y no había forma de distinguirlo del
         // principal en tema oscuro.
@@ -76,15 +64,7 @@ object UniStackColors {
         yellowLight = Color(0xFF4A3308),
         // Negro con sesgo violeta, no azulado: el fondo anterior (#070B14) tiraba al azul
         // por debajo de un acento morado y los subtonos peleaban entre sí.
-        background = Color(0xFF0E0C16),
-        card = Color(0xFF080D17),
-        surfaceVariant = Color(0xFF0B111D),
-        textPrimary = Color(0xFFF8F4FF),
-        textSecondary = Color(0xFFD3D0E0),
-        softOutline = Color(0xFF1A2230),
-        gradientEnd = Color(0xFF000309),
-        bottomBar = Color(0xFF050913),
-        bottomBarSelected = Color(0xFF24105C)
+        background = Color(0xFF0E0C16)
     )
 
     private var appliedSignature: Int? = null
@@ -93,9 +73,12 @@ object UniStackColors {
         private set
     var Primary by mutableStateOf(lightPalette.primary)
         private set
-    var PrimaryDark by mutableStateOf(lightPalette.primaryDark)
+    // Los valores de arranque de aquí abajo son solo el estado antes de que corra
+    // applyTheme(), que los recalcula todos a partir del acento y del fondo. Son los
+    // del tema claro para que una previsualización sin tema aplicado se vea coherente.
+    var PrimaryDark by mutableStateOf(Color(0xFF2E1A78))
         private set
-    var PrimaryLight by mutableStateOf(lightPalette.primaryLight)
+    var PrimaryLight by mutableStateOf(Color(0xFFE9DDFF))
         private set
     var Blue by mutableStateOf(lightPalette.blue)
         private set
@@ -119,21 +102,21 @@ object UniStackColors {
         private set
     var Background by mutableStateOf(lightPalette.background)
         private set
-    var Card by mutableStateOf(lightPalette.card)
+    var Card by mutableStateOf(Color(0xFFFFFFFF))
         private set
-    var SurfaceVariant by mutableStateOf(lightPalette.surfaceVariant)
+    var SurfaceVariant by mutableStateOf(Color(0xFFF4F0FA))
         private set
-    var TextPrimary by mutableStateOf(lightPalette.textPrimary)
+    var TextPrimary by mutableStateOf(Color(0xFF171427))
         private set
-    var TextSecondary by mutableStateOf(lightPalette.textSecondary)
+    var TextSecondary by mutableStateOf(Color(0xFF5F5B6B))
         private set
-    var SoftOutline by mutableStateOf(lightPalette.softOutline)
+    var SoftOutline by mutableStateOf(Color(0xFFDCD2EA))
         private set
-    var GradientEnd by mutableStateOf(lightPalette.gradientEnd)
+    var GradientEnd by mutableStateOf(Color(0xFFFFFFFF))
         private set
-    var BottomBar by mutableStateOf(lightPalette.bottomBar)
+    var BottomBar by mutableStateOf(Color(0xFFFFFCFF))
         private set
-    var BottomBarSelected by mutableStateOf(lightPalette.bottomBarSelected)
+    var BottomBarSelected by mutableStateOf(Color(0xFFF0EAFF))
         private set
 
     /** Contenido legible sobre [Primary]. Nunca asumas blanco: con Monet puede ser tinta oscura. */
@@ -141,7 +124,7 @@ object UniStackColors {
         private set
 
     /** Contenido legible sobre [PrimaryLight]. */
-    var OnPrimaryContainer by mutableStateOf(lightPalette.primaryDark)
+    var OnPrimaryContainer by mutableStateOf(Color(0xFF2E1A78))
         private set
 
     /**
@@ -309,10 +292,17 @@ object UniStackColors {
     }
 }
 
+/**
+ * Solo lo que [UniStackColors.applyTheme] llega a leer.
+ *
+ * Tenía diez campos más —`card`, `surfaceVariant`, `textPrimary`, `textSecondary`,
+ * `softOutline`, `gradientEnd`, `bottomBar`, `bottomBarSelected`, `primaryDark` y
+ * `primaryLight`— que `applyTheme` recalculaba por su cuenta sin mirarlos nunca.
+ * Cambiar cualquiera de ellos no tenía efecto y solo servía para perder el rato
+ * buscando por qué la app seguía igual.
+ */
 private data class UniStackColorPalette(
     val primary: Color,
-    val primaryDark: Color,
-    val primaryLight: Color,
     val blue: Color,
     val blueLight: Color,
     val teal: Color,
@@ -323,13 +313,5 @@ private data class UniStackColorPalette(
     val coralLight: Color,
     val yellow: Color,
     val yellowLight: Color,
-    val background: Color,
-    val card: Color,
-    val surfaceVariant: Color,
-    val textPrimary: Color,
-    val textSecondary: Color,
-    val softOutline: Color,
-    val gradientEnd: Color,
-    val bottomBar: Color,
-    val bottomBarSelected: Color
+    val background: Color
 )

@@ -1,5 +1,7 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -441,7 +443,7 @@ private fun FullScheduleSession(
 }
 
 private fun fullScheduleDayLetter(day: DayOfWeek): String =
-    listOf("L", "M", "X", "J", "V", "S", "D")[day.value - 1]
+    DayLabels.short[day.value - 1]
 
 private fun fullScheduleTime(value: Int, use24Hour: Boolean): String {
     val hour = (value / 60) % 24

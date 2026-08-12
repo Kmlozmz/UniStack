@@ -1,5 +1,7 @@
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -578,7 +580,7 @@ private fun WeeklyMiniChart(
     scale: Float,
     modifier: Modifier = Modifier
 ) {
-    val labels = listOf("L", "M", "M", "J", "V", "S", "D")
+    val labels = DayLabels.short
     val normalizedValues = values.take(7).let { current ->
         if (current.size == 7) current else current + List(7 - current.size) { 0 }
     }

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
@@ -830,33 +831,44 @@ private fun SubjectInsightCard(
     scale: GradingScale,
     modifier: Modifier = Modifier
 ) {
-    val annotatedText = remember(neededForTarget, targetGrade, maxGrade, scale) {
+    // El color sale del mismo sitio que el mensaje. Antes la tarjeta era verde siempre,
+    // así que «tu meta está en riesgo» se leía sobre fondo verde y con el número
+    // resaltado también en verde: el color decía lo contrario que el texto.
+    val tone = when {
+        neededForTarget == null -> UniStackColors.TextSecondary
+        neededForTarget <= 0.0 -> UniStackColors.Green
+        neededForTarget > maxGrade -> UniStackColors.Coral
+        neededForTarget > targetGrade -> UniStackColors.Yellow
+        else -> UniStackColors.Green
+    }
+
+    val annotatedText = remember(neededForTarget, targetGrade, maxGrade, scale, tone) {
         buildAnnotatedString {
             if (neededForTarget == null) {
                 append("Registra notas en los cortes para estimar lo necesario para tu meta.")
             } else if (neededForTarget <= 0.0) {
                 append("¡Excelente! Con tu rendimiento actual ya aseguraste tu meta de ")
-                withStyle(style = SpanStyle(color = UniStackColors.Green, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
                     append(GradingScaleUtils.formatGrade(targetGrade, scale))
                 }
                 append(".")
             } else if (neededForTarget > maxGrade) {
                 append("La meta de ")
-                withStyle(style = SpanStyle(color = UniStackColors.Green, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
                     append(GradingScaleUtils.formatGrade(targetGrade, scale))
                 }
                 append(" está en riesgo: necesitas más de ")
-                withStyle(style = SpanStyle(color = UniStackColors.Yellow, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
                     append(GradingScaleUtils.formatGrade(maxGrade, scale))
                 }
                 append(" en lo restante.")
             } else {
                 append("Necesitas un promedio de ")
-                withStyle(style = SpanStyle(color = UniStackColors.Green, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
                     append(GradingScaleUtils.formatGrade(neededForTarget, scale))
                 }
                 append(" en los cortes restantes para mantener la materia por encima de ")
-                withStyle(style = SpanStyle(color = UniStackColors.Green, fontWeight = FontWeight.Bold)) {
+                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
                     append(GradingScaleUtils.formatGrade(targetGrade, scale))
                 }
                 append(".")
@@ -866,9 +878,9 @@ private fun SubjectInsightCard(
 
     UniCard(
         modifier = modifier.fillMaxWidth(),
-        color = UniStackColors.Green.copy(alpha = 0.08f),
+        color = tone.copy(alpha = 0.08f),
         shape = LargeCardShape,
-        borderColor = UniStackColors.Green.copy(alpha = 0.2f),
+        borderColor = tone.copy(alpha = 0.2f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -877,9 +889,15 @@ private fun SubjectInsightCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                Icons.AutoMirrored.Rounded.TrendingUp,
+                // El icono también sigue al estado: una flecha al alza junto a un aviso
+                // de meta en riesgo contradecía lo que decía el texto.
+                if (neededForTarget != null && neededForTarget > targetGrade) {
+                    Icons.Rounded.PriorityHigh
+                } else {
+                    Icons.AutoMirrored.Rounded.TrendingUp
+                },
                 contentDescription = null,
-                tint = UniStackColors.Green,
+                tint = tone,
                 modifier = Modifier.size(24.dp)
             )
             Text(

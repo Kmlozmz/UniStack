@@ -1,5 +1,7 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import com.unistack.app.core.utils.NO_DATA
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -856,7 +858,7 @@ private fun IdentityMonthCalendar(
                 }
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                listOf("LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM").forEach { label ->
+                DayLabels.medium.forEach { label ->
                     Text(
                         text = label,
                         modifier = Modifier.weight(1f),
@@ -1115,7 +1117,7 @@ private fun String.identityCapitalized(): String = replaceFirstChar {
     if (it.isLowerCase()) it.titlecase(IdentityLocale) else it.toString()
 }
 
-private fun identityDayLetter(day: DayOfWeek): String = listOf("L", "M", "X", "J", "V", "S", "D")[day.value - 1]
+private fun identityDayLetter(day: DayOfWeek): String = DayLabels.short[day.value - 1]
 
 private fun formatIdentityMinute(value: Int, use24Hour: Boolean): String {
     val hour = value / 60

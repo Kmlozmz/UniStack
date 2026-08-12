@@ -1,5 +1,7 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.utils.DayLabels
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -716,7 +718,7 @@ private fun MonthGrid(
     val cellCount = ((leadingDays + month.lengthOfMonth() + 6) / 7) * 7
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Row(Modifier.fillMaxWidth()) {
-            listOf("LUN", "MAR", "MI\u00c9", "JUE", "VIE", "S\u00c1B", "DOM").forEach { label ->
+            DayLabels.medium.forEach { label ->
                 Text(label, Modifier.weight(1f), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 10.sp)
             }
         }
@@ -1642,7 +1644,7 @@ private fun String.shortName(): String = split(' ').filter(String::isNotBlank).t
     if (word.length <= 5) word else word.take(5) + "."
 }
 
-private fun dayLetter(day: DayOfWeek): String = listOf("L", "M", "X", "J", "V", "S", "D")[day.value - 1]
+private fun dayLetter(day: DayOfWeek): String = DayLabels.short[day.value - 1]
 
 private fun formatMinute(value: Int, use24Hour: Boolean): String {
     val hour = value / 60

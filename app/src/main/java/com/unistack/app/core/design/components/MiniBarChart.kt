@@ -1,5 +1,7 @@
 package com.unistack.app.core.design.components
 
+import com.unistack.app.core.utils.DayLabels
+
 import com.unistack.app.core.design.theme.AppShapes
 
 import androidx.compose.foundation.background
@@ -30,7 +32,7 @@ fun MiniBarChart(
     values: List<Int>,
     modifier: Modifier = Modifier
 ) {
-    val labels = listOf("L", "M", "M", "J", "V", "S", "D")
+    val labels = DayLabels.short
     val max = values.maxOrNull()?.coerceAtLeast(1) ?: 1
 
     Row(

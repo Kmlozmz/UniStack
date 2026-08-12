@@ -28,8 +28,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ColorLens
 import androidx.compose.material.icons.rounded.DarkMode
@@ -41,12 +43,16 @@ import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.LightMode
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.ShapeLine
 import androidx.compose.material.icons.rounded.SpaceDashboard
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -80,7 +86,6 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.AccentIntensity
 import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
-import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.BottomBarStyle
@@ -454,30 +459,23 @@ fun AccessibilitySettingsScreen(
         item {
             SettingsHeader(
                 title = "Accesibilidad",
-                subtitle = "Lectura, movimiento, idioma y formatos",
+                subtitle = "Lectura, movimiento y formatos",
                 onBackClick = onBackClick
             )
         }
         item {
+            // Aquí había un selector de idioma con Sistema / Español / English. La
+            // preferencia se guardaba y hasta se sincronizaba, pero nadie la leía nunca:
+            // no existen traducciones y la interfaz está solo en español. El propio texto
+            // de ayuda lo admitía. Ofrecer un control que no hace nada es una promesa
+            // incumplida, y en la pantalla de accesibilidad es donde peor sienta.
+            //
+            // AppLanguage y su persistencia siguen en pie para no romper los respaldos ya
+            // guardados; lo que vuelve es el selector, cuando haya algo que seleccionar.
             AppearanceSection(
                 icon = Icons.Rounded.Language,
-                title = "Idioma y formatos"
+                title = "Formatos"
             ) {
-                SectionLabel("Idioma")
-                ChoiceGrid(
-                    entries = AppLanguage.entries,
-                    selected = accessibility.appLanguage,
-                    label = AppLanguage::label,
-                    columns = 3,
-                    onSelected = { language ->
-                        viewModel.updateAccessibility { it.copy(appLanguage = language) }
-                    }
-                )
-                Text(
-                    "La interfaz actual está completa en español. El selector deja preparada la preferencia para las traducciones progresivas.",
-                    color = UniStackColors.TextSecondary,
-                    style = MaterialTheme.typography.bodySmall
-                )
                 PreferenceSwitch(
                     title = "Formato de 24 horas",
                     subtitle = if (accessibility.use24HourTime) "Ejemplo: 18:30" else "Ejemplo: 6:30 p. m.",
@@ -632,15 +630,15 @@ fun SettingsHubScreen(
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.FormatSize,
+                icon = Icons.Rounded.Accessibility,
                 title = "Accesibilidad",
-                subtitle = "Texto, contraste, movimiento, idioma y formatos",
+                subtitle = "Texto, contraste, movimiento y formatos",
                 onClick = onAccessibilityClick
             )
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.Tune,
+                icon = Icons.Rounded.Person,
                 title = "Cuenta y perfil",
                 subtitle = "Nombre, cuenta vinculada y sincronización",
                 onClick = onProfileClick
@@ -648,7 +646,7 @@ fun SettingsHubScreen(
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.FormatSize,
+                icon = Icons.Rounded.School,
                 title = "Configuración académica",
                 subtitle = "Escala, metas y estructura de cortes",
                 onClick = onAcademicClick
@@ -656,7 +654,7 @@ fun SettingsHubScreen(
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.ShapeLine,
+                icon = Icons.Rounded.Widgets,
                 title = "Módulos",
                 subtitle = "Activa las áreas que quieres usar",
                 onClick = onModulesClick
@@ -664,7 +662,7 @@ fun SettingsHubScreen(
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.AutoAwesome,
+                icon = Icons.Rounded.Notifications,
                 title = "Notificaciones",
                 subtitle = "Recordatorios, permisos y horario silencioso",
                 onClick = onNotificationsClick
@@ -672,7 +670,7 @@ fun SettingsHubScreen(
         }
         item {
             SettingsDestination(
-                icon = Icons.Rounded.ShapeLine,
+                icon = Icons.Rounded.Backup,
                 title = "Datos y respaldos",
                 subtitle = "Exportar, restaurar y repetir configuración inicial",
                 onClick = onDataClick
@@ -1183,12 +1181,6 @@ private fun MotionPreference.label() = when (this) {
     MotionPreference.FULL -> "Completo"
     MotionPreference.REDUCED -> "Reducido"
     MotionPreference.NONE -> "Sin movimiento"
-}
-
-private fun AppLanguage.label() = when (this) {
-    AppLanguage.SYSTEM -> "Sistema"
-    AppLanguage.SPANISH -> "Español"
-    AppLanguage.ENGLISH -> "English"
 }
 
 private fun TextScalePreference.label() = when (this) {
