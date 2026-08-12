@@ -79,6 +79,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -348,7 +349,9 @@ fun SubjectDetailScreen(
                         )
                     )
                 )
-                .navigationBarsPadding()
+                // El degradado ya se dibuja hasta el borde porque va antes que el margen;
+                // lo que faltaba era apartarse del teclado.
+                .bottomActionInsets()
                 .padding(horizontal = 22.dp, vertical = 14.dp)
         ) {
             Button(

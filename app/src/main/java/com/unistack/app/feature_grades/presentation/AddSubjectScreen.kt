@@ -18,11 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -83,6 +78,7 @@ import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -333,7 +329,7 @@ fun AddSubjectScreen(
                     }
                 },
                 modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                    .bottomActionInsets()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
             )

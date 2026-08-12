@@ -62,13 +62,14 @@ import com.unistack.app.feature_home.domain.HomePrioritySummary
 internal fun PriorityHero(
     title: String,
     description: String,
+    action: HomePriorityAction,
     actionLabel: String,
     compact: Boolean,
     onOpenClick: () -> Unit,
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val heroLabel = title.heroLabel()
+    val heroLabel = title.heroLabel(action)
     val heroHeight = if (compact) 174.dp else 190.dp
     val heroPadding = if (compact) 16.dp else 18.dp
     val accessibility = LocalAccessibilityPreferences.current
@@ -463,7 +464,19 @@ internal fun HomePriorityAction.actionLabel(): String {
     }
 }
 
-private fun String.heroLabel(): String {
+/**
+ * Rótulo que encabeza la tarjeta y dice de qué va el aviso.
+ *
+ * El comodín era «PULSO DE HOY», que no significa nada concreto: ni el usuario sabe qué es
+ * un pulso ni la tarjeta está midiendo ninguno. Y caía ahí más de la cuenta, porque las
+ * palabras clave no cubren todos los casos —un aviso de clase no contiene ninguna—.
+ *
+ * Ahora el respaldo sale de [HomePriorityAction], que es un dato real que la prioridad ya
+ * traía consigo, en vez de una cadena inventada. Las palabras clave siguen delante porque
+ * distinguen matices que la acción no ve: dos avisos que llevan a la misma pantalla pueden
+ * ser una alerta o una simple proyección.
+ */
+private fun String.heroLabel(action: HomePriorityAction): String {
     val normalized = lowercase()
     return when {
         "espera su nota" in normalized || "resultados esperan" in normalized -> "RESULTADO PENDIENTE"
@@ -473,7 +486,13 @@ private fun String.heroLabel(): String {
         "cerca" in normalized || "atención" in normalized || "limite" in normalized -> "ENFOQUE"
         "gasto" in normalized -> "FINANZAS"
         "primera" in normalized || "materia" in normalized || "nota" in normalized || "semestre" in normalized -> "PRÓXIMO PASO"
-        else -> "PULSO DE HOY"
+        else -> when (action) {
+            HomePriorityAction.SCHEDULE -> "PRÓXIMA CLASE"
+            HomePriorityAction.TASKS -> "PENDIENTES"
+            HomePriorityAction.EXPENSES -> "FINANZAS"
+            HomePriorityAction.TEMPLATES -> "TRABAJOS"
+            HomePriorityAction.SUBJECT, HomePriorityAction.SUBJECTS -> "TUS MATERIAS"
+        }
     }
 }
 

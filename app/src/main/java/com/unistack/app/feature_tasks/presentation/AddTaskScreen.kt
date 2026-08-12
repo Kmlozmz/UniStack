@@ -91,6 +91,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -570,12 +571,14 @@ private fun AddTaskContent(
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
             }
         }
+        // La superficie llega al borde de la pantalla y el margen del sistema va dentro,
+        // sobre el botón. Por fuera levantaba la barra entera y dejaba una franja
+        // transparente contra el borde por la que se veía pasar el formulario.
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+                .fillMaxWidth(),
+            color = MaterialTheme.colorScheme.background,
             tonalElevation = 0.dp,
             shadowElevation = 8.dp
         ) {
@@ -584,6 +587,7 @@ private fun AddTaskContent(
                 enabled = isSaveEnabled,
                 onClick = onSaveClick,
                 modifier = Modifier
+                    .bottomActionInsets()
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
             )

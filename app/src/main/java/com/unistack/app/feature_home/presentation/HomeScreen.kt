@@ -203,6 +203,7 @@ fun HomeScreen(
                                 PriorityHero(
                                     title = summary.priority.title,
                                     description = summary.priority.shortDescription,
+                                    action = summary.priority.action,
                                     actionLabel = priorityActionLabel,
                                     compact = isCompact,
                                     onOpenClick = openPriorityAction,
