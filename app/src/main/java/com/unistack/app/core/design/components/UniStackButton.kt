@@ -84,11 +84,6 @@ fun UniStackButton(
     val motionEnabled = LocalMotionDurationScale.current > 0f
     val squish = pressed && enabled && motionEnabled
 
-    val scale by animateFloatAsState(
-        targetValue = if (squish) PressedScale else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "button-squish"
-    )
     val cornerRadius by animateDpAsState(
         targetValue = if (squish) PressedRadius else RestingRadius,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMedium),
@@ -135,10 +130,7 @@ fun UniStackButton(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
+            .squishOnPress(interactionSource, enabled = enabled, scale = PressedScale)
             .clip(shape)
     ) {
         Row(

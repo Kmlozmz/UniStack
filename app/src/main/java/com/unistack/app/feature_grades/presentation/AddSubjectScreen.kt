@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -254,8 +255,15 @@ fun AddSubjectScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                // Con targetSdk 36 la ventana ya no se redimensiona sola al abrir el
+                // teclado —edge-to-edge es obligatorio y adjustResize deja de aplicarse—,
+                // así que el desplazamiento hay que pedirlo aquí. Sin esto la barra se
+                // queda debajo del teclado o se le monta encima.
+                .imePadding()
                 .navigationBarsPadding(),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+            // Opaca del todo. Al 98% el contenido del formulario se traslucía por debajo
+            // al desplazarse y parecía que la barra estaba superpuesta sobre todo.
+            color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
             SaveSubjectButton(

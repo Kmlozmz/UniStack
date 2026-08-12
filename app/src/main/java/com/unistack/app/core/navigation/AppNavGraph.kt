@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -45,6 +46,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.unistack.app.core.design.components.squishOnPress
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -960,9 +964,9 @@ private fun UniStackBottomBarContent(
     Surface(
         modifier = modifier
             .padding(
-                start = if (floating) 16.dp else 0.dp,
-                end = if (floating) 16.dp else 0.dp,
-                bottom = if (floating) 16.dp + navigationBarBottom else 0.dp
+                start = if (floating) 12.dp else 0.dp,
+                end = if (floating) 12.dp else 0.dp,
+                bottom = if (floating) 12.dp + navigationBarBottom else 0.dp
             )
             .fillMaxWidth()
             .height(barHeight + if (floating) 0.dp else navigationBarBottom),
@@ -1040,6 +1044,9 @@ private fun UniStackBottomBarItem(
     Column(
         modifier = modifier
             .fillMaxHeight()
+            // Un poco menos de compresión que en un botón: el destino se aprieta lo justo
+            // para notarse bajo el dedo sin saltar dentro de una barra tan compacta.
+            .squishOnPress(interactionSource, scale = 0.90f)
             .clip(RoundedCornerShape(percent = 50))
             .clickable(
                 interactionSource = interactionSource,
@@ -1051,8 +1058,13 @@ private fun UniStackBottomBarItem(
     ) {
         Box(
             modifier = Modifier
+                // Los 64dp del spec son un máximo, no una medida fija. Flotando, la barra
+                // pierde los márgenes laterales y cada casilla baja de 64dp: con un ancho
+                // rígido el indicador desbordaba su columna, las píldoras se solapaban y
+                // la etiqueta más larga quedaba cortada.
+                .widthIn(max = 64.dp)
+                .fillMaxWidth()
                 .height(32.dp)
-                .width(64.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(indicatorColor),
             contentAlignment = Alignment.Center
@@ -1072,7 +1084,13 @@ private fun UniStackBottomBarItem(
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                 maxLines = 1,
                 softWrap = false,
-                modifier = Modifier.padding(top = 4.dp)
+                // Antes cortaba en seco a media palabra. Si no cabe, que al menos se vea
+                // que falta texto.
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, start = 2.dp, end = 2.dp)
             )
         }
     }

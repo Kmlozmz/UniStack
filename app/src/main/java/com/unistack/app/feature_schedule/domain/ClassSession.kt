@@ -35,7 +35,12 @@ data class ClassSession(
 data class SubjectScheduleDraft(
     val enabled: Boolean = true,
     val professor: String = "",
-    val daysOfWeek: Set<Int> = setOf(1, 3, 5),
+    // Sin días marcados de entrada. Venían lunes, miércoles y viernes preseleccionados,
+    // que presupone un horario que la app no conoce: quien tenga clase martes y jueves
+    // primero tiene que deseleccionar tres días antes de elegir los suyos, y quien no se
+    // fije guarda una materia en unos días que nunca escogió. El formulario ya exige al
+    // menos un día para guardar, así que el vacío no deja pasar nada roto.
+    val daysOfWeek: Set<Int> = emptySet(),
     val startMinute: Int = 8 * 60,
     val endMinute: Int = 10 * 60,
     val room: String = "",
