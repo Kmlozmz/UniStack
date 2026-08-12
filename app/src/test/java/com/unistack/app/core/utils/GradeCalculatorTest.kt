@@ -16,7 +16,7 @@ class GradeCalculatorTest {
         assertEquals("4.3", GradingScaleUtils.formatGrade(4.25, GradingScale.ZERO_TO_FIVE))
         assertEquals("89", GradingScaleUtils.formatGrade(88.6, GradingScale.ZERO_TO_HUNDRED))
         assertEquals("89", GradingScaleUtils.formatGrade(88.6, GradingScale.CUSTOM))
-        assertEquals("--", GradingScaleUtils.formatGrade(null, GradingScale.ZERO_TO_FIVE))
+        assertEquals(NO_DATA, GradingScaleUtils.formatGrade(null, GradingScale.ZERO_TO_FIVE))
     }
 
     @Test

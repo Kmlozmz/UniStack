@@ -1,5 +1,6 @@
 package com.unistack.app.feature_tasks.domain
 
+import com.unistack.app.core.utils.NO_DATA
 import java.time.LocalDate
 import java.time.LocalTime
 import org.junit.Assert.assertEquals
@@ -75,7 +76,7 @@ class TaskDateUtilsTest {
 
     @Test
     fun `estimated time text formats minutes and hours`() {
-        assertEquals("--", TaskDateUtils.estimatedTimeText(0))
+        assertEquals(NO_DATA, TaskDateUtils.estimatedTimeText(0))
         assertEquals("45 min", TaskDateUtils.estimatedTimeText(45))
         assertEquals("2 h", TaskDateUtils.estimatedTimeText(120))
         assertEquals("2 h 15 min", TaskDateUtils.estimatedTimeText(135))

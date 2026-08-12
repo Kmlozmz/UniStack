@@ -1,6 +1,7 @@
 package com.unistack.app.feature_home.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.utils.NO_DATA
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -50,9 +51,7 @@ internal fun SemesterSnapshot(
     // una tercera línea de matiz, y con textos como «Sin notas» la cifra dejaba de leerse de
     // un vistazo, que es lo único que un tablero tiene que hacer. Cuando no hay dato se pone
     // una raya: comunica «todavía nada» sin ocupar el sitio del número.
-    val averageText = summary.generalAverage
-        ?.let { GradingScaleUtils.formatGrade(it, summary.gradingScale) }
-        ?: "—"
+    val averageText = GradingScaleUtils.formatGrade(summary.generalAverage, summary.gradingScale)
     val pendingValue = when {
         summary.overdueTasks > 0 -> summary.overdueTasks
         summary.tasksToday > 0 -> summary.tasksToday
@@ -66,12 +65,14 @@ internal fun SemesterSnapshot(
     val worksText = when {
         summary.openAcademicWorks > 0 -> summary.openAcademicWorks.toString()
         summary.nextAcademicWork != null -> "1"
-        else -> "—"
+        else -> NO_DATA
     }
     val moneyText = when {
-        AppModule.EXPENSES !in summary.enabledModules -> "—"
-        summary.weeklyExpenseTotal > 0 -> CurrencyFormatter.formatCop(summary.weeklyExpenseTotal)
-        else -> "—"
+        // Con el módulo apagado no hay dato que dar; con el módulo encendido y sin gastos
+        // sí lo hay, y es «$0». Antes ambos casos mostraban raya, así que una semana sin
+        // gastar —que es buena noticia— se veía igual que no llevar las cuentas.
+        AppModule.EXPENSES !in summary.enabledModules -> NO_DATA
+        else -> CurrencyFormatter.formatCop(summary.weeklyExpenseTotal)
     }
     val showWorks = AppModule.ACADEMIC_TEMPLATES in summary.enabledModules &&
         (summary.openAcademicWorks > 0 || summary.nextAcademicWork != null)

@@ -152,7 +152,7 @@ private fun SubjectsStatsRow(
             modifier = Modifier.weight(1f)
         )
         MetricCard(
-            value = generalAverage?.let { GradingScaleUtils.formatGrade(it, gradingScale) } ?: "--",
+            value = GradingScaleUtils.formatGrade(generalAverage, gradingScale),
             label = "Promedio",
             icon = Icons.Rounded.Grade,
             iconColor = MaterialTheme.colorScheme.primary,

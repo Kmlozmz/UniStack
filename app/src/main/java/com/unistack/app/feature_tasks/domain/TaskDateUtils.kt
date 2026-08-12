@@ -1,5 +1,6 @@
 package com.unistack.app.feature_tasks.domain
 
+import com.unistack.app.core.utils.NO_DATA
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -82,7 +83,7 @@ object TaskDateUtils {
     }
 
     fun estimatedTimeText(minutes: Int): String {
-        if (minutes <= 0) return "--"
+        if (minutes <= 0) return NO_DATA
         if (minutes < 60) return "$minutes min"
 
         val hours = minutes / 60

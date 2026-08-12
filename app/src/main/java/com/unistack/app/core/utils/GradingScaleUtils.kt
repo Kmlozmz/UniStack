@@ -29,7 +29,7 @@ object GradingScaleUtils {
     }
 
     fun formatGrade(value: Double?, scale: GradingScale): String {
-        if (value == null) return "--"
+        if (value == null) return NO_DATA
         val decimals = preferredDecimalPlaces ?: when (scale) {
             GradingScale.ZERO_TO_HUNDRED,
             GradingScale.CUSTOM -> 0

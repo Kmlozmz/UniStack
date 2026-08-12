@@ -1,5 +1,6 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.utils.NO_DATA
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -385,7 +386,7 @@ private fun TimetableMetrics(
 ) {
     val next = remember(sessions) { findUpcomingClass(LocalDate.now(), sessions) }
     val subjectCount = subjects.count { subject -> sessions.any { it.subjectId == subject.id } }
-    val room = next?.second?.identityPlace()?.room.orEmpty().ifBlank { "--" }
+    val room = next?.second?.identityPlace()?.room.orEmpty().ifBlank { NO_DATA }
     val openUpcoming = next?.let { upcoming ->
         { onSessionClick(upcoming.first, upcoming.second) }
     }
@@ -402,7 +403,7 @@ private fun TimetableMetrics(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Schedule,
             iconColor = IdentityAccent,
-            value = next?.second?.let { formatIdentityMinute(it.startMinute, use24Hour) } ?: "--",
+            value = next?.second?.let { formatIdentityMinute(it.startMinute, use24Hour) } ?: NO_DATA,
             label = "Próxima",
             onClick = openUpcoming
         )

@@ -687,7 +687,7 @@ private fun SubjectOverviewCard(
                 )
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                        GradingScaleUtils.formatGrade(average, scale),
                         color = UniStackColors.Primary,
                     fontSize = 42.sp,
                         fontWeight = FontWeight.ExtraBold
@@ -966,7 +966,7 @@ private fun PeriodCard(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
-                                summary.average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                                GradingScaleUtils.formatGrade(summary.average, scale),
                                 color = if (summary.average != null) accent else UniStackColors.TextSecondary,
                                 fontSize = 24.sp,
                                 lineHeight = 28.sp,
@@ -1077,7 +1077,7 @@ private fun PeriodDetailPanel(
                     )
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            summary.average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                            GradingScaleUtils.formatGrade(summary.average, scale),
                             color = summary.status.color,
                             fontSize = 42.sp,
                             lineHeight = 46.sp,
@@ -1257,7 +1257,7 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                     )
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            summary.average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "--",
+                            GradingScaleUtils.formatGrade(summary.average, scale),
                             color = summary.status.color,
                             fontSize = 44.sp,
                             fontWeight = FontWeight.ExtraBold

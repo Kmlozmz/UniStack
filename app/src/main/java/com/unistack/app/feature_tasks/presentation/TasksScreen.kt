@@ -220,18 +220,24 @@ fun TasksScreen(
                     TasksHeader()
                 }
             }
-            item {
-                TaskSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { searchQuery = it },
-                    onSearchDone = clearSearchFocus
-                )
-            }
-            item {
-                TaskStatsRow(
-                    tasks = tasks,
-                    onUserInteraction = clearSearchFocus
-                )
+            // Buscador, cifras y filtro solo aparecen si hay algo que buscar, contar o
+            // filtrar. La condición mira `tasks`, no `filteredTasks`: si el usuario tiene
+            // tareas pero un filtro las esconde, los controles deben seguir ahí para poder
+            // deshacerlo. Lo que sobra es el andamiaje cuando no hay ni una sola tarea.
+            if (tasks.isNotEmpty()) {
+                item {
+                    TaskSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearchDone = clearSearchFocus
+                    )
+                }
+                item {
+                    TaskStatsRow(
+                        tasks = tasks,
+                        onUserInteraction = clearSearchFocus
+                    )
+                }
             }
             if (pendingGradeCount > 0) {
                 item {
@@ -256,17 +262,19 @@ fun TasksScreen(
                     )
                 }
             }
-            item {
-                TaskFilterSummaryChip(
-                    selectedStatus = selectedFilter,
-                    selectedSubjectName = selectedSubjectName,
-                    selectedPriority = selectedPriority,
-                    sortOrder = sortOrder,
-                    onClick = {
-                        clearSearchFocus()
-                        showFiltersSheet = true
-                    }
-                )
+            if (tasks.isNotEmpty()) {
+                item {
+                    TaskFilterSummaryChip(
+                        selectedStatus = selectedFilter,
+                        selectedSubjectName = selectedSubjectName,
+                        selectedPriority = selectedPriority,
+                        sortOrder = sortOrder,
+                        onClick = {
+                            clearSearchFocus()
+                            showFiltersSheet = true
+                        }
+                    )
+                }
             }
             when {
                 tasks.isEmpty() -> item {
