@@ -108,10 +108,15 @@ class ProfileViewModel @Inject constructor(
      */
     private fun wipeGradesForScaleChange(newTargetAverage: Double) {
         gradesRepository.subjects.value.forEach { subject ->
-            if (subject.grades.isNotEmpty() || subject.targetAverage != newTargetAverage) {
+            // Las notas se borran con clearGrades, no pasando un Subject con la lista
+            // vacía: updateSubject solo escribe los campos de la materia y las notas
+            // viven en su propia tabla, así que copy(grades = emptyList()) no borraba nada.
+            if (subject.grades.isNotEmpty()) {
+                gradesRepository.clearGrades(subject.id)
+            }
+            if (subject.targetAverage != newTargetAverage || subject.unknownPeriodIds.isNotEmpty()) {
                 gradesRepository.updateSubject(
                     subject.copy(
-                        grades = emptyList(),
                         targetAverage = newTargetAverage,
                         unknownPeriodIds = emptySet()
                     )

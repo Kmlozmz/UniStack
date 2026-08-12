@@ -161,6 +161,7 @@ fun ProfileScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
     var pendingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
+    var confirmingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
     var notificationPermissionGranted by remember {
         mutableStateOf(context.hasNotificationPermission())
@@ -623,6 +624,38 @@ fun ProfileScreen(
                 TextButton(
                     onClick = {
                         pendingScaleChange = null
+                        confirmingScaleChange = impact
+                    }
+                ) {
+                    Text("Continuar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingScaleChange = null }) {
+                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = UniStackColors.Background
+        )
+    }
+
+    // Segundo paso. El primero explica y da contexto; este solo pregunta si de verdad,
+    // y es deliberadamente escueto: si repitiera el razonamiento se leería como el mismo
+    // diálogo dos veces y se cerraría por inercia. Aquí lo único nuevo es que no hay vuelta atrás.
+    confirmingScaleChange?.let { impact ->
+        AlertDialog(
+            onDismissRequest = { confirmingScaleChange = null },
+            title = { Text("Esto no se puede deshacer") },
+            text = {
+                Text(
+                    "Vas a borrar ${impact.describe()} de forma permanente. No hay copia " +
+                        "de seguridad ni forma de recuperarlas después."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingScaleChange = null
                         feedback = if (viewModel.updateGradingSettings(selectedScale, passingGradeInput, targetAverageInput)) {
                             "Escala actualizada. Se borraron ${impact.describe()}."
                         } else {
@@ -630,11 +663,11 @@ fun ProfileScreen(
                         }
                     }
                 ) {
-                    Text("Borrar y cambiar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Sí, borrar definitivamente", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingScaleChange = null }) {
+                TextButton(onClick = { confirmingScaleChange = null }) {
                     Text("Cancelar", fontWeight = FontWeight.Bold)
                 }
             },

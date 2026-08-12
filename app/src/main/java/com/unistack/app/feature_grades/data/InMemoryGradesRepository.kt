@@ -20,7 +20,13 @@ class InMemoryGradesRepository : GradesRepository {
 
     override fun updateSubject(subject: Subject) {
         _subjects.update { current ->
-            current.map { existing -> if (existing.id == subject.id) subject else existing }
+            current.map { existing ->
+                // Se conservan las notas que ya había. Esta implementación reemplazaba el
+                // objeto entero, mientras que la de Room solo escribe los campos de la
+                // materia: cualquier código probado contra este doble daba por hecho que
+                // podía cambiar las notas por aquí y luego no lo hacía en producción.
+                if (existing.id == subject.id) subject.copy(grades = existing.grades) else existing
+            }
         }
     }
 
@@ -64,6 +70,14 @@ class InMemoryGradesRepository : GradesRepository {
                 } else {
                     subject
                 }
+            }
+        }
+    }
+
+    override fun clearGrades(subjectId: String) {
+        _subjects.update { current ->
+            current.map { subject ->
+                if (subject.id == subjectId) subject.copy(grades = emptyList()) else subject
             }
         }
     }

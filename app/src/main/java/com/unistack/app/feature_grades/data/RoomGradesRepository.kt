@@ -127,4 +127,10 @@ class RoomGradesRepository(
             gradeDao.deleteGradeById(gradeId)
         }
     }
+
+    override fun clearGrades(subjectId: String) {
+        scope.launch {
+            gradeDao.deleteGradesForSubject(subjectId)
+        }
+    }
 }
