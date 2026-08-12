@@ -95,6 +95,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -114,16 +115,16 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private val ScheduleGreen: Color
+/* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
+   así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
+   nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
+   literal de ScheduleAccent, y SchedulePink, que solo alimentaba la lista de muestras. */
+private val ScheduleAccent: Color
     get() = UniStackColors.Primary
-private val ScheduleBlue: Color
+private val ScheduleRescheduled: Color
     @Composable get() = UniStackColors.Blue
-private val SchedulePurple: Color
-    @Composable get() = UniStackColors.Primary
-private val ScheduleOrange: Color
+private val ScheduleCancelled: Color
     @Composable get() = UniStackColors.Yellow
-private val SchedulePink: Color
-    @Composable get() = UniStackColors.Coral
 private val ScheduleShape
     get() = AppShapes.SmallCard
 
@@ -388,7 +389,7 @@ private fun WeekPicker(
                         modifier = Modifier
                             .weight(1f)
                             .clip(ScheduleShape)
-                            .background(if (selected) ScheduleGreen else Color.Transparent)
+                            .background(if (selected) ScheduleAccent else Color.Transparent)
                             .clickable { onSelect(date) }
                             .padding(vertical = 5.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -417,7 +418,7 @@ private fun TimetableRangeControls(
             onClick = { onVisibleHoursChange((visibleHours + 2).coerceAtMost(14)) },
             modifier = Modifier.size(32.dp)
         ) {
-            Icon(Icons.Rounded.ZoomOut, contentDescription = "Mostrar m\u00e1s horas", tint = ScheduleGreen, modifier = Modifier.size(19.dp))
+            Icon(Icons.Rounded.ZoomOut, contentDescription = "Mostrar m\u00e1s horas", tint = ScheduleAccent, modifier = Modifier.size(19.dp))
         }
         Slider(
             value = visibleHours.toFloat(),
@@ -426,21 +427,21 @@ private fun TimetableRangeControls(
             valueRange = 4f..14f,
             steps = 4,
             colors = SliderDefaults.colors(
-                thumbColor = ScheduleGreen,
-                activeTrackColor = ScheduleGreen,
+                thumbColor = ScheduleAccent,
+                activeTrackColor = ScheduleAccent,
                 inactiveTrackColor = UniStackColors.SoftOutline,
                 activeTickColor = UniStackColors.OnPrimary.copy(alpha = 0.72f),
-                inactiveTickColor = ScheduleGreen.copy(alpha = 0.55f)
+                inactiveTickColor = ScheduleAccent.copy(alpha = 0.55f)
             )
         )
         IconButton(
             onClick = { onVisibleHoursChange((visibleHours - 2).coerceAtLeast(4)) },
             modifier = Modifier.size(32.dp)
         ) {
-            Icon(Icons.Rounded.ZoomIn, contentDescription = "Acercar horario", tint = ScheduleGreen, modifier = Modifier.size(19.dp))
+            Icon(Icons.Rounded.ZoomIn, contentDescription = "Acercar horario", tint = ScheduleAccent, modifier = Modifier.size(19.dp))
         }
         IconButton(onClick = onOpenList, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.AutoMirrored.Rounded.ViewList, contentDescription = "Abrir lista del mes", tint = ScheduleGreen, modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Rounded.ViewList, contentDescription = "Abrir lista del mes", tint = ScheduleAccent, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -684,11 +685,11 @@ private fun CalendarToolbar(
                         modifier = Modifier
                             .weight(1f)
                             .clip(ScheduleShape)
-                            .background(if (mode == option) ScheduleGreen.copy(alpha = 0.16f) else Color.Transparent)
+                            .background(if (mode == option) ScheduleAccent.copy(alpha = 0.16f) else Color.Transparent)
                             .clickable { onMode(option) }
                             .padding(vertical = 8.dp),
                         textAlign = TextAlign.Center,
-                        color = if (mode == option) ScheduleGreen else UniStackColors.TextSecondary,
+                        color = if (mode == option) ScheduleAccent else UniStackColors.TextSecondary,
                         fontWeight = if (mode == option) FontWeight.Bold else FontWeight.Normal,
                         fontSize = 12.sp
                     )
@@ -770,8 +771,8 @@ private fun MonthCell(
             .then(
                 if (selected) Modifier
                     .clip(ScheduleShape)
-                    .background(ScheduleGreen.copy(alpha = if (expanded) 0.12f else 0.92f))
-                    .border(1.dp, ScheduleGreen, ScheduleShape)
+                    .background(ScheduleAccent.copy(alpha = if (expanded) 0.12f else 0.92f))
+                    .border(1.dp, ScheduleAccent, ScheduleShape)
                 else Modifier
             )
             .clickable(onClick = onClick),
@@ -813,7 +814,7 @@ private fun MonthCell(
                     val subject = subjects.firstOrNull { it.id == session.subjectId }
                     Box(Modifier.size(6.dp).clip(CircleShape).background(subject.scheduleColor()))
                 }
-                if (tasks.isNotEmpty()) Box(Modifier.size(6.dp).clip(CircleShape).background(ScheduleOrange))
+                if (tasks.isNotEmpty()) Box(Modifier.size(6.dp).clip(CircleShape).background(ScheduleCancelled))
             }
         }
     }
@@ -862,9 +863,9 @@ private fun DayAgenda(
         if (sessions.isEmpty() && tasks.isEmpty()) {
             Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleGreen, modifier = Modifier.size(30.dp))
+                    Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleAccent, modifier = Modifier.size(30.dp))
                     Text("No hay clases para este d\u00eda", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
-                    TextButton(onClick = onAddClass) { Text("A\u00f1adir clase", color = ScheduleGreen) }
+                    TextButton(onClick = onAddClass) { Text("A\u00f1adir clase", color = ScheduleAccent) }
                 }
             }
         } else {
@@ -932,8 +933,8 @@ private fun AgendaTaskCard(task: StudentTask, subject: Subject?, onClick: (Strin
         border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
     ) {
         Row(Modifier.height(70.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(4.dp).fillMaxHeight().background(ScheduleOrange))
-            Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleOrange, modifier = Modifier.padding(horizontal = 14.dp))
+            Box(Modifier.width(4.dp).fillMaxHeight().background(ScheduleCancelled))
+            Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleCancelled, modifier = Modifier.padding(horizontal = 14.dp))
             Column(Modifier.weight(1f)) {
                 Text(task.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(subject?.name ?: "Tarea", color = UniStackColors.TextSecondary, fontSize = 12.sp)
@@ -1073,7 +1074,7 @@ private fun DayScheduleView(
             TextButton(onClick = onAddClass, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                 Icon(Icons.Rounded.Add, contentDescription = null)
                 Spacer(Modifier.width(5.dp))
-                Text("A\u00f1adir clase", color = ScheduleGreen)
+                Text("A\u00f1adir clase", color = ScheduleAccent)
             }
         }
     }
@@ -1111,7 +1112,10 @@ private fun ClassEditorDialog(
     var reminderExpanded by remember { mutableStateOf(false) }
     var recurrenceExpanded by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val swatches = listOf(ScheduleGreen, ScheduleBlue, SchedulePurple, ScheduleOrange, SchedulePink)
+    // La misma paleta que ofrece la pantalla académica. Antes eran cinco alias del tema
+    // de los que dos —"Green" y "Purple"— apuntaban ambos a Primary, así que se pintaban
+    // dos muestras idénticas y elegir una u otra guardaba exactamente el mismo color.
+    val swatches = SubjectColorPalette.take(8)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -1142,7 +1146,7 @@ private fun ClassEditorDialog(
                             else -> null
                         }
                     }) {
-                        Text("Guardar", color = ScheduleGreen, fontWeight = FontWeight.SemiBold)
+                        Text("Guardar", color = ScheduleAccent, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 Column(
@@ -1179,8 +1183,8 @@ private fun ClassEditorDialog(
                                 val selected = day in days
                                 Box(
                                     Modifier.weight(1f).height(36.dp).clip(ScheduleShape)
-                                        .background(if (selected) ScheduleGreen else UniStackColors.Background)
-                                        .border(1.dp, if (selected) ScheduleGreen else UniStackColors.SoftOutline, ScheduleShape)
+                                        .background(if (selected) ScheduleAccent else UniStackColors.Background)
+                                        .border(1.dp, if (selected) ScheduleAccent else UniStackColors.SoftOutline, ScheduleShape)
                                         .clickable { days = if (selected) days - day else days + day },
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -1305,7 +1309,7 @@ private fun FormTextField(
                     lineHeight = 17.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                cursorBrush = SolidColor(ScheduleGreen),
+                cursorBrush = SolidColor(ScheduleAccent),
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (value.isBlank()) {
@@ -1350,7 +1354,7 @@ private fun TimePickerAlert(title: String, minute: Int, onDismiss: () -> Unit, o
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { TimePicker(state) },
-        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar", color = ScheduleGreen) } },
+        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar", color = ScheduleAccent) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
 }
@@ -1381,7 +1385,7 @@ private fun SubjectHistoryDialog(
         Surface(Modifier.fillMaxSize(), color = UniStackColors.Background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleGreen)
+                    modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleAccent)
                 ) {
                     IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(4.dp)) {
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.OnPrimary)
@@ -1389,10 +1393,10 @@ private fun SubjectHistoryDialog(
                     Box(
                         modifier = Modifier.align(Alignment.BottomCenter).offset(y = 22.dp).size(50.dp)
                             .clip(CircleShape).background(UniStackColors.Background)
-                            .border(1.dp, ScheduleGreen.copy(alpha = 0.35f), CircleShape),
+                            .border(1.dp, ScheduleAccent.copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = ScheduleGreen)
+                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = ScheduleAccent)
                     }
                 }
                 Spacer(Modifier.height(30.dp))
@@ -1422,7 +1426,7 @@ private fun SubjectHistoryDialog(
                             CircularProgressIndicator(
                                 progress = { rate / 100f },
                                 modifier = Modifier.fillMaxSize(),
-                                color = ScheduleGreen,
+                                color = ScheduleAccent,
                                 trackColor = UniStackColors.SoftOutline,
                                 strokeWidth = 4.dp
                             )
@@ -1459,7 +1463,7 @@ private fun SubjectHistoryDialog(
                     enabled = pending != null,
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     shape = ScheduleShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = ScheduleGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = ScheduleAccent),
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     Text("Marcar asistencia", fontWeight = FontWeight.Bold)
@@ -1585,7 +1589,7 @@ private fun OptionsSheet(
 @Composable
 private fun OptionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clip(ScheduleShape).clickable(onClick = onClick).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = ScheduleGreen)
+        Icon(icon, contentDescription = null, tint = ScheduleAccent)
         Spacer(Modifier.width(12.dp))
         Text(label, color = UniStackColors.TextPrimary, fontWeight = FontWeight.SemiBold)
     }
@@ -1607,7 +1611,7 @@ private val ClassSession.place: SessionPlace
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
-private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: ScheduleGreen
+private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: ScheduleAccent
 
 private fun LocalDate.weekStart(): LocalDate = minusDays((dayOfWeek.value - 1).toLong())
 
@@ -1694,8 +1698,8 @@ private fun ClassAttendanceStatus.label(): String = when (this) {
 @Composable
 private fun ClassAttendanceStatus.color(): Color = when (this) {
     ClassAttendanceStatus.PENDING -> UniStackColors.TextSecondary
-    ClassAttendanceStatus.ATTENDED -> ScheduleGreen
+    ClassAttendanceStatus.ATTENDED -> ScheduleAccent
     ClassAttendanceStatus.ABSENT -> UniStackColors.Coral
-    ClassAttendanceStatus.CANCELLED -> ScheduleOrange
-    ClassAttendanceStatus.RESCHEDULED -> ScheduleBlue
+    ClassAttendanceStatus.CANCELLED -> ScheduleCancelled
+    ClassAttendanceStatus.RESCHEDULED -> ScheduleRescheduled
 }

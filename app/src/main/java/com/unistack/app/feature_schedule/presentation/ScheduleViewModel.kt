@@ -6,6 +6,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -120,6 +121,18 @@ class ScheduleViewModel @Inject constructor(
 
         val currentSubject = existing?.let { session ->
             gradesRepository.subjects.value.firstOrNull { it.id == session.subjectId }
+        }
+        // Crear una clase con un nombre nuevo crea también la materia, así que este
+        // camino tiene que respetar el mismo tope que la pantalla académica. Sin esta
+        // comprobación, Horario era una puerta abierta para saltarse el límite del plan
+        // gratis en cuanto se active PRO_FEATURES_ENABLED.
+        if (currentSubject == null &&
+            !FeatureGate.canCreateSubject(
+                plan = FeatureGate.planFor(isPro = false),
+                currentSubjectCount = gradesRepository.subjects.value.size
+            )
+        ) {
+            return false
         }
         val subject = if (currentSubject == null) {
             val profile = userRepository.userProfile.value
