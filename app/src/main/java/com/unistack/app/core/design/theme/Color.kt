@@ -33,7 +33,7 @@ object UniStackColors {
     private const val DARK_INK_LUMINANCE = 0.0136f
 
     private val lightPalette = UniStackColorPalette(
-        primary = Color(0xFF6750F5),
+        primary = Color(0xFF5B46E0),
         primaryDark = Color(0xFF2E1A78),
         primaryLight = Color(0xFFE9DDFF),
         blue = Color(0xFF1E7BEA),
@@ -58,7 +58,7 @@ object UniStackColors {
     )
 
     private val darkPalette = UniStackColorPalette(
-        primary = Color(0xFF8F35FF),
+        primary = Color(0xFFA996FF),
         primaryDark = Color(0xFFF1E7FF),
         primaryLight = Color(0xFF24105C),
         // Antes este par era una copia literal de `primary`, así que el rol
@@ -74,7 +74,9 @@ object UniStackColors {
         coralLight = Color(0xFF421522),
         yellow = Color(0xFFFFB800),
         yellowLight = Color(0xFF4A3308),
-        background = Color(0xFF070B14),
+        // Negro con sesgo violeta, no azulado: el fondo anterior (#070B14) tiraba al azul
+        // por debajo de un acento morado y los subtonos peleaban entre sí.
+        background = Color(0xFF0E0C16),
         card = Color(0xFF080D17),
         surfaceVariant = Color(0xFF0B111D),
         textPrimary = Color(0xFFF8F4FF),
@@ -243,6 +245,18 @@ object UniStackColors {
         }
     }
 
+    /**
+     * El violeta de marca, el mismo del símbolo y de la web.
+     *
+     * En claro es el tono pleno; en oscuro sube a un lavanda claro en lugar de saturar
+     * el morado. No es una preferencia estética: el `#9A4DFF` anterior solo alcanzaba
+     * 4.30:1 con texto blanco encima —por debajo del mínimo AA de 4.5:1—, mientras que
+     * este llega a 6.67:1 con tinta oscura, que es la que le pone [contentColorOn].
+     * Además, un morado muy saturado sobre fondo oscuro produce halo.
+     */
+    private fun brandViolet(darkTheme: Boolean): Color =
+        if (darkTheme) Color(0xFFA996FF) else Color(0xFF5B46E0)
+
     private fun resolveAccent(
         base: UniStackColorPalette,
         background: Color,
@@ -252,9 +266,8 @@ object UniStackColors {
     ): Color {
         val selected = when (appearance.accentStyle) {
             // Si el dispositivo no expone Monet (API < 31) caemos al violeta de marca.
-            AccentStyle.DYNAMIC -> dynamicAccent
-                ?: if (darkTheme) Color(0xFF9A4DFF) else Color(0xFF6750F5)
-            AccentStyle.VIOLET -> if (darkTheme) Color(0xFF9A4DFF) else Color(0xFF6750F5)
+            AccentStyle.DYNAMIC -> dynamicAccent ?: brandViolet(darkTheme)
+            AccentStyle.VIOLET -> brandViolet(darkTheme)
             AccentStyle.BLUE -> if (darkTheme) Color(0xFF65A7FF) else Color(0xFF1E7BEA)
             AccentStyle.TEAL -> if (darkTheme) Color(0xFF21D6BF) else Color(0xFF008F87)
             AccentStyle.GREEN -> if (darkTheme) Color(0xFF74D88B) else Color(0xFF2F9E50)
