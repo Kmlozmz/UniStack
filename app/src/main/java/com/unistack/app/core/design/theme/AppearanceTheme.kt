@@ -16,6 +16,19 @@ val LocalMotionDurationScale = staticCompositionLocalOf { 1f }
 
 val LocalInterfaceSpacing = staticCompositionLocalOf { InterfaceSpacing() }
 
+/**
+ * Altura que la barra de navegación tapa del contenido, para que cada pantalla la sume al
+ * final de su lista y su último elemento pueda subir por encima al desplazarse.
+ *
+ * Es cero con la barra acoplada, porque ahí el Scaffold ya reserva su hueco y el contenido
+ * termina por encima. Solo tiene valor con la barra flotante, que se dibuja *sobre* el
+ * contenido: sin este margen, lo último de cada pantalla quedaría debajo para siempre.
+ *
+ * Existe para que las pantallas dejen de llevar el número a mano. Había 126dp en Inicio,
+ * 118dp en dos más y entre 6dp y 20dp en las otras cuatro, que es justo donde se rompía.
+ */
+val LocalBottomBarOverlay = staticCompositionLocalOf { 0.dp }
+
 object AppearanceRuntime {
     var cornerStyle: CornerStyle = CornerStyle.BALANCED
         internal set

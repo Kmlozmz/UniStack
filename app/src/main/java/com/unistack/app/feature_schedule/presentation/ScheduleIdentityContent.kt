@@ -73,6 +73,7 @@ import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -130,11 +131,13 @@ internal fun ScheduleIdentityContent(
             .fillMaxSize()
             .background(UniStackColors.Background)
             .statusBarsPadding(),
+        // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
+        // la barra acoplada el valor es cero y esto queda igual que antes.
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
             top = spacing.cardPadding,
             end = spacing.screenHorizontal,
-            bottom = spacing.cardPadding
+            bottom = spacing.cardPadding + LocalBottomBarOverlay.current
         ),
         verticalArrangement = Arrangement.spacedBy(spacing.section)
     ) {

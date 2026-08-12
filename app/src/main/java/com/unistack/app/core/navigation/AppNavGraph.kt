@@ -27,6 +27,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -147,6 +153,7 @@ fun MainNavGraph(
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
     }
     val showBottomBar = !homeDrawerOpen && routeShowsBottomBar(currentRoute)
+    val barFloats = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -173,13 +180,32 @@ fun MainNavGraph(
             }
         }
     ) { innerPadding ->
+        /* Con la barra flotante el contenido pasa por debajo: se le quita el hueco que el
+           Scaffold había reservado y esa misma altura se publica en LocalBottomBarOverlay
+           para que cada pantalla la añada al final de su lista. Así lo último sigue
+           pudiendo subir por encima de la barra al desplazarse, pero mientras tanto se ve
+           correr por detrás, que es lo que hace una barra flotante.
+
+           Acoplada no se toca nada: ahí el hueco reservado es el comportamiento correcto. */
+        val overlayHeight = if (barFloats && showBottomBar) {
+            innerPadding.calculateBottomPadding()
+        } else {
+            0.dp
+        }
+        val contentPadding = PaddingValues(
+            start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+            top = innerPadding.calculateTopPadding(),
+            end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+            bottom = if (barFloats) 0.dp else innerPadding.calculateBottomPadding()
+        )
+        CompositionLocalProvider(LocalBottomBarOverlay provides overlayHeight) {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
                 startDestination = resolvedInitialRoute,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(contentPadding),
                 enterTransition = {
                     mainSlideIn(
                         fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route),
@@ -654,6 +680,7 @@ fun MainNavGraph(
                 )
             }
             }
+        }
         }
     }
 }

@@ -80,6 +80,7 @@ import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
@@ -229,7 +230,14 @@ fun ProfileScreen(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background),
-        contentPadding = PaddingValues(start = 20.dp, top = 58.dp, end = 20.dp, bottom = 20.dp),
+        // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
+        // la barra acoplada el valor es cero y esto queda igual que antes.
+        contentPadding = PaddingValues(
+            start = 20.dp,
+            top = 58.dp,
+            end = 20.dp,
+            bottom = 20.dp + LocalBottomBarOverlay.current
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
