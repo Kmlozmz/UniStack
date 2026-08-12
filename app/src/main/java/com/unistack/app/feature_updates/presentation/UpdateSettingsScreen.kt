@@ -177,7 +177,7 @@ private fun UpdateSettingsHeader(onBackClick: () -> Unit) {
         Spacer(Modifier.width(4.dp))
         Column {
             Text(
-                "Actualizaciones del sistema",
+                "Actualizaciones de UniStack",
                 style = MaterialTheme.typography.headlineSmall,
                 color = UniStackColors.TextPrimary,
                 fontWeight = FontWeight.Bold

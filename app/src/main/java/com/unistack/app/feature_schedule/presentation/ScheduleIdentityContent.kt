@@ -639,8 +639,21 @@ private fun IdentityWeeklyTimeline(
     onSessionClick: (LocalDate, ClassSession) -> Unit
 ) {
     val weekStart = selectedDate.weekStartIdentity()
+
+    // La rejilla se queda en L-V mientras no haya nada el fin de semana, y se estira a los
+    // siete días en cuanto lo hay. Antes el rango era (1..5) fijo, así que una clase de
+    // sábado —que el selector de días deja crear sin problema— no aparecía por ninguna
+    // parte: quedaba guardada y era invisible.
+    val hasWeekendSession = sessions.any { session ->
+        (6..7).any { day ->
+            val date = weekStart.plusDays((day - 1).toLong())
+            session.occursOn(date.toEpochDay(), day)
+        }
+    }
+    val visibleDays = if (hasWeekendSession) 1..7 else 1..5
+
     val weekdaySessions = sessions.filter { session ->
-        (1..5).any { day ->
+        visibleDays.any { day ->
             val date = weekStart.plusDays((day - 1).toLong())
             session.occursOn(date.toEpochDay(), day)
         }
@@ -654,7 +667,7 @@ private fun IdentityWeeklyTimeline(
 
     Column {
         Row(Modifier.padding(start = axisWidth)) {
-            (1..5).forEach { day ->
+            visibleDays.forEach { day ->
                 Text(
                     text = identityDayLetter(DayOfWeek.of(day)),
                     modifier = Modifier.weight(1f),
@@ -691,7 +704,7 @@ private fun IdentityWeeklyTimeline(
                 )
             }
             sessions.forEach { session ->
-                (1..5).forEach { day ->
+                visibleDays.forEach { day ->
                     val date = weekStart.plusDays((day - 1).toLong())
                     if (session.occursOn(date.toEpochDay(), day)) {
                         val visibleStart = session.startMinute.coerceAtLeast(startHour * 60)

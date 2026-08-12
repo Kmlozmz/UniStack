@@ -557,11 +557,15 @@ private fun ExpenseTrendLine(
     Text(
         text = buildAnnotatedString {
             append(recordCountLabel(recordCount))
-            append("  •  ")
-            withStyle(SpanStyle(color = ExpenseCoral, fontWeight = FontWeight.SemiBold)) {
-                append(percent)
+            // Sin tendencia que mostrar tampoco se pinta el separador, o quedaría un
+            // «0 registros  •» colgando sin nada detrás.
+            if (trendText.isNotBlank()) {
+                append("  •  ")
+                withStyle(SpanStyle(color = ExpenseCoral, fontWeight = FontWeight.SemiBold)) {
+                    append(percent)
+                }
+                append(suffix)
             }
-            append(suffix)
         },
         color = ExpenseMuted,
         fontSize = scaledSp(14f, scale),
@@ -1455,8 +1459,12 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
     )
 }
 
+/** Cadena vacía si no hay periodo anterior: sin nada con qué comparar no hay tendencia. */
 private fun trendText(total: Int, previousTotal: Int): String {
-    if (previousTotal <= 0) return "+0% vs anterior"
+    // Antes devolvía «+0% vs anterior», que suena a que gastaste lo mismo que el periodo
+    // pasado cuando en realidad no hay periodo pasado. Un 0% inventado es peor que
+    // no decir nada.
+    if (previousTotal <= 0) return ""
     val percent = (((total - previousTotal) / previousTotal.toFloat()) * 100).roundToInt()
     val sign = if (percent >= 0) "+" else ""
     return "$sign$percent% vs anterior"
