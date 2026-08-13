@@ -17,6 +17,19 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+### Corregido
+
+- **La vista previa del horario esconde clases si el día está repartido.** Enseñaba una ventana
+  de siete horas colocada sobre la clase más temprana, así que una clase a la 1:00 dejaba fuera
+  todo el resto del día, y quien tuviera algo a las 6:30 y otra cosa a las 15:30 no veía la
+  segunda. Ahora enseña las horas que tienen clase y pliega los huecos vacíos con una marca.
+
+### Añadido
+
+- **Al poner una hora de inicio de madrugada, la app pregunta si es correcta.** Casi siempre es
+  un error al girar la rueda —querías las 13:00 y pusiste la 1:00—, así que lo dice y ofrece
+  volver. Si la clase es de verdad a esa hora, se confirma y ya.
+
 ---
 
 ## [1.0.0-alpha.4] — 2026-08-13

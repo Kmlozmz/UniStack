@@ -662,12 +662,16 @@ private fun IdentityWeeklyTimeline(
             session.occursOn(date.toEpochDay(), day)
         }
     }
-    val earliest = weekdaySessions.minOfOrNull(ClassSession::startMinute) ?: 6 * 60
-    val startHour = (earliest / 60).coerceIn(0, 17)
-    val visibleHours = 7
-    val endHour = startHour + visibleHours
+    // La rejilla enseña las horas que tienen clase y pliega los huecos, en vez de una ventana
+    // de siete horas anclada a la más temprana: con eso, una clase suelta a la 1:00 escondía
+    // todo lo demás y un día repartido no cabía. El detalle, en TimelineRows.kt.
+    val timelineRows = remember(weekdaySessions) {
+        buildTimelineRows(weekdaySessions.map { it.startMinute..it.endMinute })
+    }
     val hourHeight = 36.dp
+    val breakHeight = 16.dp
     val axisWidth = 42.dp
+    val gridHeight = timelineHeight(timelineRows, hourHeight.value, breakHeight.value).dp
 
     Column {
         Row(Modifier.padding(start = axisWidth)) {
@@ -683,7 +687,7 @@ private fun IdentityWeeklyTimeline(
             }
         }
         Spacer(Modifier.height(7.dp))
-        BoxWithConstraints(Modifier.fillMaxWidth().height(hourHeight * visibleHours)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().height(gridHeight)) {
             // El ancho de columna y las líneas se derivan de visibleDays, no de un 5 fijo.
             // La cabecera reparte con weight(1f) entre los días visibles, así que en cuanto
             // la rejilla se estira a siete la aritmética tiene que estirarse con ella o los
@@ -691,15 +695,38 @@ private fun IdentityWeeklyTimeline(
             val dayCount = visibleDays.count()
             val dayWidth = (maxWidth - axisWidth) / dayCount
             Column {
-                (startHour until endHour).forEach { hour ->
-                    Row(Modifier.height(hourHeight), verticalAlignment = Alignment.Top) {
-                        Text(
-                            text = formatIdentityMinute(hour * 60, use24Hour),
-                            modifier = Modifier.width(axisWidth).offset(y = (-7).dp),
-                            color = UniStackColors.TextSecondary,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                        HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.7f))
+                timelineRows.forEach { row ->
+                    when (row) {
+                        is TimelineRow.Hour -> Row(
+                            Modifier.height(hourHeight),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = formatIdentityMinute(row.hour * 60, use24Hour),
+                                modifier = Modifier.width(axisWidth).offset(y = (-7).dp),
+                                color = UniStackColors.TextSecondary,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.7f))
+                        }
+
+                        // El corte se ve: si no, dos bloques separados por horas parecerían
+                        // seguidos y la rejilla estaría mintiendo sobre el tiempo.
+                        is TimelineRow.Break -> Row(
+                            Modifier.height(breakHeight).fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "\u22ee",
+                                modifier = Modifier.width(axisWidth),
+                                textAlign = TextAlign.Center,
+                                color = UniStackColors.TextSecondary,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            HorizontalDivider(
+                                color = UniStackColors.SoftOutline.copy(alpha = 0.45f)
+                            )
+                        }
                     }
                 }
             }
@@ -716,12 +743,16 @@ private fun IdentityWeeklyTimeline(
                 visibleDays.forEach { day ->
                     val date = weekStart.plusDays((day - 1).toLong())
                     if (session.occursOn(date.toEpochDay(), day)) {
-                        val visibleStart = session.startMinute.coerceAtLeast(startHour * 60)
-                        val visibleEnd = session.endMinute.coerceAtMost(endHour * 60)
-                        if (visibleEnd > visibleStart) {
+                        val top = offsetForMinute(
+                            timelineRows, session.startMinute, hourHeight.value, breakHeight.value
+                        )
+                        val bottom = offsetForMinute(
+                            timelineRows, session.endMinute, hourHeight.value, breakHeight.value
+                        )
+                        if (top != null && bottom != null && bottom > top) {
                             val subject = subjects.firstOrNull { it.id == session.subjectId }
-                            val y = hourHeight * ((visibleStart - startHour * 60) / 60f)
-                            val cardHeight = (hourHeight * ((visibleEnd - visibleStart) / 60f)).coerceAtLeast(42.dp)
+                            val y = top.dp
+                            val cardHeight = (bottom - top).dp.coerceAtLeast(42.dp)
                             Column(
                                 modifier = Modifier
                                     .offset(x = axisWidth + dayWidth * (day - visibleDays.first) + 3.dp, y = y)

@@ -43,6 +43,8 @@ internal fun SubjectWhenFields(
     var startPickerVisible by remember { mutableStateOf(false) }
     var endPickerVisible by remember { mutableStateOf(false) }
     var recurrenceExpanded by remember { mutableStateOf(false) }
+    // Una hora elegida de madrugada espera confirmación antes de aplicarse.
+    var unusualStart by remember { mutableStateOf<Int?>(null) }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ScheduleDays(draft, onDraftChange)
@@ -102,10 +104,42 @@ internal fun SubjectWhenFields(
     }
 
     if (startPickerVisible) {
-        SubjectTimePicker("Hora de inicio", draft.startMinute, { startPickerVisible = false }) {
-            onDraftChange(draft.copy(startMinute = it))
+        SubjectTimePicker("Hora de inicio", draft.startMinute, { startPickerVisible = false }) { chosen ->
             startPickerVisible = false
+            // Casi siempre que aparece una hora así es un error al girar la rueda: quien la
+            // puso a la 1:00 quería las 13:00. Se pregunta en vez de impedirlo, porque clases
+            // de madrugada existen.
+            if (isUnusualClassHour(chosen)) unusualStart = chosen else onDraftChange(draft.copy(startMinute = chosen))
         }
+    }
+    unusualStart?.let { chosen ->
+        AlertDialog(
+            onDismissRequest = { unusualStart = null },
+            title = { Text("¿Clase de madrugada?") },
+            text = {
+                Text(
+                    "Pusiste las ${formatMinute(chosen)}. Si querías las " +
+                        "${formatMinute(chosen + 12 * 60)}, vuelve y cámbialo."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDraftChange(draft.copy(startMinute = chosen))
+                        unusualStart = null
+                    }
+                ) { Text("Sí, es a esa hora", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        unusualStart = null
+                        startPickerVisible = true
+                    }
+                ) { Text("Volver") }
+            },
+            shape = AppShapes.LargeCard
+        )
     }
     if (endPickerVisible) {
         SubjectTimePicker("Hora de fin", draft.endMinute, { endPickerVisible = false }) {
@@ -266,6 +300,12 @@ internal fun SubjectScheduleDraft.whenSummary(): String {
     val days = daysOfWeek.sorted().joinToString(" ") { DayLabels.shortByIsoDay(it) }
     return "$days  ·  ${formatMinute(startMinute)}"
 }
+
+/**
+ * Si una hora de inicio cae en la madrugada, que en la práctica casi siempre es un error de
+ * dedo: la rueda de las horas se pasa de las 13 a la 1 con un gesto.
+ */
+internal fun isUnusualClassHour(minute: Int): Boolean = minute < 6 * 60
 
 private fun dayLetter(day: DayOfWeek): String =
     DayLabels.short[day.value - 1]
