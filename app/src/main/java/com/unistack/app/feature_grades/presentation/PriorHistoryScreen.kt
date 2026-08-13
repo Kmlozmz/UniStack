@@ -1,6 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.SquishyButton
 
 import androidx.activity.compose.BackHandler
@@ -86,7 +87,7 @@ fun PriorHistoryScreen(
             .fillMaxSize()
             .background(UniStackColors.Background)
             .statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 30.dp),
+        contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {

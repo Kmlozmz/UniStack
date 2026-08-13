@@ -3,6 +3,7 @@ package com.unistack.app.feature_expenses.presentation
 import com.unistack.app.core.utils.DayLabels
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -239,7 +240,7 @@ private fun AddExpenseContent(
             .verticalScroll(rememberScrollState())
             .statusBarsPadding()
             .padding(horizontal = 24.dp)
-            .padding(top = 16.dp, bottom = 24.dp),
+            .padding(top = 16.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         IconButton(

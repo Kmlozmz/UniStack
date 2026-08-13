@@ -64,6 +64,7 @@ import com.unistack.app.core.design.components.UniFilterOption
 import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.bounceClick
@@ -153,7 +154,7 @@ fun AcademicTemplatesScreen(
                 .fillMaxSize()
                 .background(UniStackColors.Background)
                 .padding(padding),
-            contentPadding = PaddingValues(20.dp),
+            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {

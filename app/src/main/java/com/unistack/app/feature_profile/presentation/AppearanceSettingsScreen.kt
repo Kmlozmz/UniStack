@@ -1,6 +1,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -122,7 +123,7 @@ fun AppearanceSettingsScreen(
             start = spacing.screenHorizontal,
             end = spacing.screenHorizontal,
             top = 8.dp,
-            bottom = 40.dp
+            bottom = scrollBottomRoom
         ),
         verticalArrangement = Arrangement.spacedBy(spacing.section)
     ) {
@@ -452,7 +453,7 @@ fun AccessibilitySettingsScreen(
             start = spacing.screenHorizontal,
             end = spacing.screenHorizontal,
             top = 8.dp,
-            bottom = 40.dp
+            bottom = scrollBottomRoom
         ),
         verticalArrangement = Arrangement.spacedBy(spacing.section)
     ) {
@@ -608,7 +609,7 @@ fun SettingsHubScreen(
             start = spacing.screenHorizontal,
             end = spacing.screenHorizontal,
             top = 8.dp,
-            bottom = 36.dp
+            bottom = scrollBottomRoom
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

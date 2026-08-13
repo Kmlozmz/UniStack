@@ -1,6 +1,7 @@
 package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -75,7 +76,7 @@ fun UpdateSettingsScreen(
             start = spacing.screenHorizontal,
             end = spacing.screenHorizontal,
             top = 8.dp,
-            bottom = 36.dp
+            bottom = scrollBottomRoom
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

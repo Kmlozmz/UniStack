@@ -1,5 +1,6 @@
 package com.unistack.app.core.design.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,20 @@ val LocalInterfaceSpacing = staticCompositionLocalOf { InterfaceSpacing() }
  * 118dp en dos más y entre 6dp y 20dp en las otras cuatro, que es justo donde se rompía.
  */
 val LocalBottomBarOverlay = staticCompositionLocalOf { 0.dp }
+
+/**
+ * Margen inferior mínimo para cualquier lista o columna desplazable.
+ *
+ * Hay aire propio —para que lo último no acabe pegado al borde— más lo que tape la barra
+ * flotante si está. Se suma a lo que la pantalla ya reserve por su cuenta, como el hueco de
+ * un botón anclado; no lo sustituye.
+ *
+ * Existe porque la mitad de las pantallas no reservaban nada o se quedaban en 18-40dp, y su
+ * último elemento no llegaba a subir lo suficiente para verse entero. La cifra es la misma
+ * en todas partes precisamente para que dejen de improvisarla.
+ */
+val scrollBottomRoom: Dp
+    @Composable get() = 28.dp + LocalBottomBarOverlay.current
 
 object AppearanceRuntime {
     var cornerStyle: CornerStyle = CornerStyle.BALANCED

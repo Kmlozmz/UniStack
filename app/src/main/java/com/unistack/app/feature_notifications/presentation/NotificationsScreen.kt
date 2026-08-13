@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.notifications.NotificationHistoryItem
 import com.unistack.app.core.notifications.NotificationHistoryStore
@@ -152,7 +153,7 @@ fun NotificationHistoryScreen(
             .fillMaxSize()
             .background(NotificationSurface)
             .statusBarsPadding(),
-        contentPadding = PaddingValues(start = 18.dp, top = 8.dp, end = 18.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 18.dp, top = 8.dp, end = 18.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
