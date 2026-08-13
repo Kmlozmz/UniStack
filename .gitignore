@@ -16,3 +16,9 @@ captures/
 
 # Notas de diseño internas: se trabajan en local y no se publican con el código.
 design-system/
+
+# Documentación interna de trabajo. No acompaña al código: el traspaso entre sesiones y el
+# manual de publicación son cosa nuestra, no de quien lea el repositorio.
+# CHANGELOG.md sí se queda: de ahí salen las notas públicas de cada versión.
+CONTEXTO.md
+PUBLICAR.md
