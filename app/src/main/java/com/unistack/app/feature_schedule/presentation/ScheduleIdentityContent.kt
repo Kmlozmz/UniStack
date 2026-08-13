@@ -752,42 +752,21 @@ private fun IdentityWeeklyTimeline(
                         if (top != null && bottom != null && bottom > top) {
                             val subject = subjects.firstOrNull { it.id == session.subjectId }
                             val y = top.dp
-                            val cardHeight = (bottom - top).dp.coerceAtLeast(42.dp)
-                            Column(
+                            // 26dp es una clase de media hora con esta escala: por debajo el
+                            // nombre no cabe ni en una línea.
+                            val cardHeight = (bottom - top).dp.coerceAtLeast(26.dp)
+                            ClassBlock(
                                 modifier = Modifier
                                     .offset(x = axisWidth + dayWidth * (day - visibleDays.first) + 3.dp, y = y)
                                     .width(dayWidth - 6.dp)
-                                    .height(cardHeight)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(subject.identityColor())
-                                    .clickable { onSessionClick(date, session) }
-                                    .padding(5.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Text(
-                                    text = "${formatIdentityMinute(session.startMinute, use24Hour)}\n${formatIdentityMinute(session.endMinute, use24Hour)}",
-                                    color = UniStackColors.OnPrimary,
-                                    fontSize = 8.sp,
-                                    lineHeight = 9.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = subject?.name ?: "Clase",
-                                    color = UniStackColors.OnPrimary,
-                                    fontSize = 8.sp,
-                                    lineHeight = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 3,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = session.identityPlace().room.ifBlank { "Sin aula" },
-                                    color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
-                                    fontSize = 8.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                                    .height(cardHeight),
+                                height = cardHeight,
+                                color = subject.identityColor(),
+                                name = subject?.name ?: "Clase",
+                                room = session.identityPlace().room,
+                                startLabel = formatIdentityMinute(session.startMinute, use24Hour),
+                                onClick = { onSessionClick(date, session) }
+                            )
                         }
                     }
                 }
@@ -1139,7 +1118,7 @@ private fun ClassSession.identityPlace(): IdentityPlace {
     return IdentityPlace(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" })
 }
 
-private fun Subject?.identityColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: IdentityAccent
+private fun Subject?.identityColor(): Color = scheduleBlockColor(IdentityAccent)
 
 private fun AgendaEvent.identityColor(): Color = colorArgb?.let(::Color) ?: when (kind) {
     AgendaEventKind.PERSONAL -> UniStackColors.Teal

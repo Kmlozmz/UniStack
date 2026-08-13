@@ -3,7 +3,6 @@ package com.unistack.app.feature_schedule.presentation
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -46,7 +44,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,7 +51,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
-import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassSession
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -354,6 +350,9 @@ private fun FullScheduleGrid(
             repeat(7) { dayIndex ->
                 val date = weekStart.plusDays(dayIndex.toLong())
                 if (session.occursOn(date.toEpochDay(), date.dayOfWeek.value)) {
+                    val blockHeight =
+                        (FullScheduleHourHeight * ((session.endMinute - session.startMinute) / 60f) - 6.dp)
+                            .coerceAtLeast(30.dp)
                     FullScheduleSession(
                         modifier = Modifier
                             .offset(
@@ -362,10 +361,8 @@ private fun FullScheduleGrid(
                                     FullScheduleHourHeight * ((session.startMinute - startHour * 60) / 60f) + 3.dp
                             )
                             .width(dayWidth - 6.dp)
-                            .height(
-                                (FullScheduleHourHeight * ((session.endMinute - session.startMinute) / 60f) - 6.dp)
-                                    .coerceAtLeast(38.dp)
-                            ),
+                            .height(blockHeight),
+                        height = blockHeight,
                         session = session,
                         subject = subjects.firstOrNull { it.id == session.subjectId },
                         use24Hour = use24Hour,
@@ -397,49 +394,21 @@ private fun FullScheduleGrid(
 @Composable
 private fun FullScheduleSession(
     modifier: Modifier,
+    height: Dp,
     session: ClassSession,
     subject: Subject?,
     use24Hour: Boolean,
     onClick: () -> Unit
 ) {
-    val color = subject?.let(::subjectAccent) ?: UniStackColors.Primary
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(color)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 5.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(
-            "${fullScheduleTime(session.startMinute, use24Hour)} – ${fullScheduleTime(session.endMinute, use24Hour)}",
-            color = UniStackColors.OnPrimary,
-            fontSize = 8.sp,
-            lineHeight = 9.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2
-        )
-        Text(
-            subject?.name ?: "Clase",
-            color = UniStackColors.OnPrimary,
-            fontSize = 9.sp,
-            lineHeight = 10.sp,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis
-        )
-        val room = session.location.substringBefore('•').trim()
-        if (room.isNotBlank()) {
-            Text(
-                room,
-                color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
-                fontSize = 8.sp,
-                lineHeight = 9.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
+    ClassBlock(
+        modifier = modifier,
+        height = height,
+        color = subject.scheduleBlockColor(UniStackColors.Primary),
+        name = subject?.name ?: "Clase",
+        room = session.place.room,
+        startLabel = fullScheduleTime(session.startMinute, use24Hour),
+        onClick = onClick
+    )
 }
 
 private fun fullScheduleDayLetter(day: DayOfWeek): String =

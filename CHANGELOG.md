@@ -23,6 +23,28 @@ número y la fecha, y se abre una nueva.
   de siete horas colocada sobre la clase más temprana, así que una clase a la 1:00 dejaba fuera
   todo el resto del día, y quien tuviera algo a las 6:30 y otra cosa a las 15:30 no veía la
   segunda. Ahora enseña las horas que tienen clase y pliega los huecos vacíos con una marca.
+- **El selector de color se quedaba pegado al arrastrar el dedo.** El punto no seguía la mano:
+  el gesto se cancelaba solo a mitad del arrastre y había que soltar y volver a tocar para
+  moverlo un poco más. Ahora sigue el dedo hasta que se levanta.
+- **El teclado no se quitaba al tocar fuera de un campo.** En los formularios de materia y de
+  nota se quedaba puesto tapando media pantalla. Ahora se cierra al tocar fuera o al desplazar.
+- **El detalle de una clase salía a media pantalla.** El panel abría por la mitad y las
+  opciones de abajo —historial, editar, eliminar— quedaban fuera hasta que se arrastraba hacia
+  arriba. Ahora abre entero, y rueda si no cabe.
+
+### Cambiado
+
+- **Las clases del horario ocupan menos.** Cada bloque se pintaba entero del color de la
+  materia y apilaba la hora de inicio, la de fin, el nombre y el aula en una columna estrecha,
+  repitiendo lo que el eje de horas ya decía. Ahora el color va en una franja y un fondo suave,
+  manda el nombre, y el resto aparece solo si el bloque da de sí.
+- **El detalle de una clase enseña sus datos en rejilla:** horario, duración, aula, profesor,
+  cada cuántas semanas se repite y el recordatorio, más el estado de asistencia del día a la
+  vista. Antes iban en una línea de texto que quedaba vacía si faltaba el aula y el profesor.
+- **Volver a tocar el estado de asistencia marcado lo deshace.** Si te equivocabas de botón, no
+  había forma de volver a «pendiente».
+- **El horario completo respeta el color que elegiste para la materia.** Usaba el color que la
+  app deriva del nombre, así que la misma materia salía de dos colores según la pantalla.
 
 ### Añadido
 

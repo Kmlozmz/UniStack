@@ -43,6 +43,12 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.EventBusy
+import androidx.compose.material.icons.rounded.HourglassBottom
+import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Schedule
@@ -60,6 +66,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -1049,34 +1056,94 @@ private fun ClassDetailsSheet(
     onDelete: () -> Unit,
     onStatus: (ClassAttendanceStatus) -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background) {
+    // Abierto del todo desde el principio. Con la altura a medias \u2014lo que hace un
+    // ModalBottomSheet por defecto\u2014 las acciones del final quedaban fuera de la pantalla y
+    // hab\u00eda que arrastrar el sheet hacia arriba para descubrir que estaban ah\u00ed.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val accent = subject.scheduleColor()
+    val status = occurrence?.status ?: ClassAttendanceStatus.PENDING
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = UniStackColors.Background
+    ) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            Modifier
+                .fillMaxWidth()
+                // Y aun as\u00ed el contenido rueda: en una pantalla baja, o con la letra del
+                // sistema en grande, el sheet completo tampoco da para todo.
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 18.dp, end = 18.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(48.dp).clip(ScheduleShape).background(subject.scheduleColor()), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.OnPrimary)
+                Box(Modifier.size(46.dp).clip(ScheduleShape).background(accent), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.contentColorOn(accent))
                 }
                 Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
-                    Text("${date.longTitle()}  \u2022  ${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}", color = UniStackColors.TextSecondary, fontSize = 12.sp)
-                    Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        subject?.name ?: "Clase",
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 19.sp,
+                        lineHeight = 22.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(date.longTitle(), color = UniStackColors.TextSecondary, fontSize = 12.sp)
                 }
+                StatusPill(status)
             }
+
+            // Los datos, en rejilla de dos. Antes iban en una l\u00ednea de texto pegados con
+            // puntos: si faltaba el aula y el profesor, la l\u00ednea quedaba vac\u00eda y el hueco
+            // parec\u00eda un fallo de la app en vez de un dato que nadie hab\u00eda rellenado.
+            ClassInfoGrid(
+                listOf(
+                    ClassInfo(Icons.Rounded.Schedule, "Horario", "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
+                    ClassInfo(Icons.Rounded.HourglassBottom, "Duraci\u00f3n", durationLabel(session.endMinute - session.startMinute)),
+                    ClassInfo(Icons.Rounded.Place, "Aula", session.place.room.ifBlank { "Sin aula" }),
+                    ClassInfo(Icons.Rounded.Person, "Profesor", session.place.professor.ifBlank { "Sin profesor" }),
+                    ClassInfo(Icons.Rounded.Repeat, "Repetici\u00f3n", repeatLabel(session.repeatEveryWeeks)),
+                    ClassInfo(Icons.Rounded.NotificationsNone, "Recordatorio", reminderLabel(session.reminderMinutes))
+                )
+            )
+
             Text("Registrar asistencia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(ClassAttendanceStatus.ATTENDED, ClassAttendanceStatus.ABSENT, ClassAttendanceStatus.CANCELLED).forEach { status ->
-                    val selected = occurrence?.status == status
+                listOf(ClassAttendanceStatus.ATTENDED, ClassAttendanceStatus.ABSENT, ClassAttendanceStatus.CANCELLED).forEach { option ->
+                    val selected = occurrence?.status == option
                     Surface(
-                        onClick = { onStatus(status) },
+                        // Volver a tocar el estado marcado lo deshace: si te equivocas de
+                        // bot\u00f3n, antes no hab\u00eda forma de volver a \u00abpendiente\u00bb.
+                        onClick = { onStatus(if (selected) ClassAttendanceStatus.PENDING else option) },
                         modifier = Modifier.weight(1f),
                         shape = ScheduleShape,
-                        color = if (selected) status.color().copy(alpha = 0.18f) else UniStackColors.SurfaceVariant,
-                        border = BorderStroke(1.dp, if (selected) status.color() else UniStackColors.SoftOutline)
+                        color = if (selected) option.color().copy(alpha = 0.18f) else UniStackColors.SurfaceVariant,
+                        border = BorderStroke(1.dp, if (selected) option.color() else UniStackColors.SoftOutline)
                     ) {
-                        Text(status.label(), Modifier.padding(vertical = 10.dp), textAlign = TextAlign.Center, color = if (selected) status.color() else UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        Column(
+                            Modifier.padding(vertical = 9.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                option.icon(),
+                                contentDescription = null,
+                                tint = if (selected) option.color() else UniStackColors.TextSecondary,
+                                modifier = Modifier.size(17.dp)
+                            )
+                            Text(
+                                option.label(),
+                                textAlign = TextAlign.Center,
+                                color = if (selected) option.color() else UniStackColors.TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
@@ -1086,6 +1153,95 @@ private fun ClassDetailsSheet(
             DetailActionRow(Icons.Rounded.DeleteOutline, "Eliminar clase", UniStackColors.Coral, onDelete)
         }
     }
+}
+
+/** El estado de hoy, al lado del nombre: es lo primero que se viene a mirar. */
+@Composable
+private fun StatusPill(status: ClassAttendanceStatus) {
+    Surface(
+        shape = CircleShape,
+        color = status.color().copy(alpha = 0.16f),
+        border = BorderStroke(1.dp, status.color().copy(alpha = 0.5f))
+    ) {
+        Text(
+            status.label(),
+            Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            color = status.color(),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+private data class ClassInfo(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String,
+    val value: String
+)
+
+@Composable
+private fun ClassInfoGrid(items: List<ClassInfo>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pair.forEach { info ->
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = ScheduleShape,
+                        color = UniStackColors.SurfaceVariant
+                    ) {
+                        Column(
+                            Modifier.padding(horizontal = 11.dp, vertical = 9.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(info.icon, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.size(13.dp))
+                                Spacer(Modifier.width(5.dp))
+                                Text(info.label, color = UniStackColors.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Text(
+                                info.value,
+                                color = UniStackColors.TextPrimary,
+                                fontSize = 12.sp,
+                                lineHeight = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+private fun durationLabel(minutes: Int): String {
+    val hours = minutes / 60
+    val rest = minutes % 60
+    return when {
+        hours == 0 -> "$rest min"
+        rest == 0 -> "$hours h"
+        else -> "$hours h $rest min"
+    }
+}
+
+private fun repeatLabel(everyWeeks: Int): String =
+    if (everyWeeks <= 1) "Cada semana" else "Cada $everyWeeks semanas"
+
+private fun reminderLabel(minutes: Int): String = when {
+    minutes <= 0 -> "Sin recordatorio"
+    minutes % 60 == 0 -> "${minutes / 60} h antes"
+    else -> "$minutes min antes"
+}
+
+private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
+    ClassAttendanceStatus.ATTENDED -> Icons.Rounded.Check
+    ClassAttendanceStatus.ABSENT -> Icons.Rounded.Close
+    ClassAttendanceStatus.CANCELLED -> Icons.Rounded.EventBusy
+    ClassAttendanceStatus.RESCHEDULED -> Icons.Rounded.Schedule
+    ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
 }
 
 @Composable
