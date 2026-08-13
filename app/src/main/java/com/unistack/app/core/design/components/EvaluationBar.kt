@@ -37,7 +37,10 @@ fun EvaluationBar(
             .fillMaxWidth()
             .height(height)
             .clip(AppShapes.Pill)
-            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+            // La pista tiene que verse. Al 12% sobre fondo oscuro era invisible, así que un
+            // 30% evaluado se leía como un trozo de barra suelto flotando a la izquierda en
+            // vez de como un tercio de algo.
+            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
     ) {
         Box(
             modifier = Modifier

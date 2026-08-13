@@ -201,6 +201,9 @@ fun AddGradeScreen(
     }
 
     val remainingWeight = ((1.0 - currentPercentage) * 100.0).coerceAtLeast(0.0)
+    // El nombre que se pone solo cuando registras la nota final del corte. Se compara
+    // con lo escrito para saber si sigue siendo automático o si el usuario lo cambió.
+    val periodFinalName = "Resultado final ${periodDisplayName(selectedPeriod)}"
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
@@ -264,6 +267,10 @@ fun AddGradeScreen(
                         isSelected = selectedSource == GradeSource.ACTIVITY,
                         onClick = {
                             selectedSource = GradeSource.ACTIVITY
+                            // Al volver aquí se retira el nombre que puso la otra opción. Se
+                            // quedaba puesto, así que la actividad nacía llamándose
+                            // «Resultado final Corte 1» sin que nadie lo hubiera escrito.
+                            if (name == periodFinalName) name = ""
                             error = null
                         }
                     )
@@ -274,7 +281,7 @@ fun AddGradeScreen(
                             selectedSource = GradeSource.PERIOD_FINAL
                             weightUnknown = false
                             percentage = "100"
-                            if (name.isBlank()) name = "Resultado final ${periodDisplayName(selectedPeriod)}"
+                            if (name.isBlank()) name = periodFinalName
                             error = null
                         }
                     )

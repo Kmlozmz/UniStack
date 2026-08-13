@@ -171,6 +171,12 @@ fun SubjectDetailScreen(
                 .thenBy { it.period.order }
         )
     }
+    // Los cortes cerrados se apartan: ni se pueden elegir como destino de notas nuevas ni
+    // compiten por la atención con los que aún están en juego.
+    val openPeriodSummaries = orderedPeriodSummaries.filter { it.status != PeriodStatus.COMPLETED }
+    val completedPeriodSummaries = periodSummaries
+        .filter { it.status == PeriodStatus.COMPLETED }
+        .sortedBy { it.period.order }
 
     // Una sola cuenta para toda la pantalla. Antes había tres: el promedio salía del
     // calculador, la proyección final se calculaba aquí a mano con otra fórmula —contaba un
@@ -289,14 +295,17 @@ fun SubjectDetailScreen(
             }
             item {
                 PeriodChooser(
-                    periods = periodScheme.periods,
+                    // Un corte con el 100% repartido ya no admite más notas, así que sale de
+                    // la lista de destinos. Seguir ofreciéndolo era ofrecer un sitio donde
+                    // cualquier peso nuevo iba a ser rechazado al guardar.
+                    periods = openPeriodSummaries.map { it.period },
                     chosenPeriodId = subject.chosenPeriodId,
                     onChoose = { viewModel.setActivePeriod(subject.id, it) }
                 )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    orderedPeriodSummaries.forEach { summary ->
+                    openPeriodSummaries.forEach { summary ->
                         val needsHistory = chosenPeriod != null &&
                             summary.period.order < activePeriodOrder &&
                             summary.grades.isEmpty() &&
@@ -315,6 +324,32 @@ fun SubjectDetailScreen(
                                 }
                             }
                         )
+                    }
+                }
+            }
+            if (completedPeriodSummaries.isNotEmpty()) {
+                item {
+                    Text(
+                        "Completados",
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        completedPeriodSummaries.forEach { summary ->
+                            // Siguen siendo tarjetas normales: se entra a consultarlas y, si
+                            // hace falta corregir algo, a editar sus notas desde dentro.
+                            PeriodCard(
+                                summary = summary,
+                                maxGrade = maxGrade,
+                                scale = scale,
+                                isActive = false,
+                                needsHistory = false,
+                                onClick = { onPeriodClick(subject.id, summary.period.id) }
+                            )
+                        }
                     }
                 }
             }
@@ -342,9 +377,14 @@ fun SubjectDetailScreen(
         ) {
             // Sin corte elegido el botón no lleva a ninguna parte: no hay a qué corte añadir
             // la nota. Queda apagado y dice qué falta, en vez de mandar la nota al primero.
+            // Además de «sin elegir», el botón se apaga cuando el corte elegido ya está
+            // cerrado y no queda ninguno abierto: no hay dónde meter la nota.
+            val addTarget = chosenPeriod?.takeIf { period ->
+                openPeriodSummaries.any { it.period.id == period.id }
+            }
             SquishyButton(
-                onClick = { chosenPeriod?.let { onAddGradeClick(subject.id, it.id) } },
-                enabled = chosenPeriod != null,
+                onClick = { addTarget?.let { onAddGradeClick(subject.id, it.id) } },
+                enabled = addTarget != null,
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UniStackColors.Primary,
@@ -361,7 +401,7 @@ fun SubjectDetailScreen(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    val buttonContent = if (chosenPeriod == null) {
+                    val buttonContent = if (addTarget == null) {
                         UniStackColors.TextSecondary
                     } else {
                         UniStackColors.OnPrimary
@@ -369,10 +409,10 @@ fun SubjectDetailScreen(
                     Icon(Icons.Rounded.Add, contentDescription = null, tint = buttonContent)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        if (chosenPeriod == null) {
-                            "Elige un corte para agregar notas"
-                        } else {
-                            "Agregar nota a ${periodDisplayName(chosenPeriod)}"
+                        when {
+                            addTarget != null -> "Agregar nota a ${periodDisplayName(addTarget)}"
+                            openPeriodSummaries.isEmpty() -> "Todos los cortes están completos"
+                            else -> "Elige un corte para agregar notas"
                         },
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -798,6 +838,14 @@ private fun PeriodChooser(
     chosenPeriodId: String?,
     onChoose: (String) -> Unit
 ) {
+    if (periods.isEmpty()) {
+        Text(
+            "Todos los cortes están completos.",
+            color = UniStackColors.TextSecondary,
+            fontSize = 13.sp
+        )
+        return
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             if (chosenPeriodId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",

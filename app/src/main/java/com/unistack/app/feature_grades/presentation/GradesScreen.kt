@@ -208,9 +208,9 @@ private fun SubjectListCard(
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
-        // Dos líneas y nada más. La lista es para recorrerla: lo que cabe en una tarjeta es
-        // el nombre, cómo va y cuánto lleva evaluado. El detalle de dónde puede acabar vive
-        // en la pantalla de la materia, que es donde hay sitio para explicarlo.
+        // Dos columnas: a la izquierda quién y cuándo, a la derecha cómo va. Con los datos
+        // sueltos en tres filas la tarjeta crecía y no se leía en diagonal; así ocupa lo
+        // mismo que cuando solo llevaba el nombre y la cifra.
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
@@ -224,7 +224,7 @@ private fun SubjectListCard(
             Box(
                 modifier = Modifier
                     .padding(start = 12.dp)
-                    .size(40.dp)
+                    .size(38.dp)
                     .background(
                         subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f),
                         CircleShape
@@ -235,14 +235,14 @@ private fun SubjectListCard(
                     imageVector = Icons.Rounded.School,
                     contentDescription = null,
                     tint = subjectColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(19.dp)
                 )
             }
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 12.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp)
+                    .padding(start = 12.dp, end = 8.dp, top = 11.dp, bottom = 11.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -268,40 +268,36 @@ private fun SubjectListCard(
                         maxLines = 1
                     )
                 }
-                // Profesor y horario, que se piden al crear la materia y hasta ahora solo se
-                // veían en Horario. La línea solo aparece si hay algo que poner en ella.
-                val classLine = classSession?.let { session ->
-                    listOfNotNull(
-                        session.place.professor.takeIf { it.isNotBlank() },
-                        session.daysAndTimeLabel().takeIf { it.isNotBlank() }
-                    ).joinToString("  ·  ")
-                }?.takeIf { it.isNotBlank() }
-                if (classLine != null) {
-                    Text(
-                        classLine,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    EvaluationBar(
-                        fraction = calculation.evaluatedSemesterFraction,
-                        modifier = Modifier.weight(1f),
-                        height = 4.dp
-                    )
+                    // Profesor y horario, que se piden al crear la materia y hasta ahora solo
+                    // se veían en Horario. Comparte fila con el estado en vez de abrir otra.
+                    val classLine = classSession?.let { session ->
+                        listOfNotNull(
+                            session.place.professor.takeIf { it.isNotBlank() },
+                            session.daysAndTimeLabel().takeIf { it.isNotBlank() }
+                        ).joinToString("  ·  ")
+                    }?.takeIf { it.isNotBlank() }
                     Text(
-                        "${String.format(Locale.US, "%.0f", evaluated)}%",
+                        classLine ?: "${String.format(Locale.US, "%.0f", evaluated)}% evaluado",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
+                    if (classLine != null) {
+                        Text(
+                            "${String.format(Locale.US, "%.0f", evaluated)}%",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1
+                        )
+                    }
                     Text(
                         tone.label,
                         color = tone.color,
@@ -310,6 +306,10 @@ private fun SubjectListCard(
                         maxLines = 1
                     )
                 }
+                EvaluationBar(
+                    fraction = calculation.evaluatedSemesterFraction,
+                    height = 4.dp
+                )
             }
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,

@@ -66,6 +66,66 @@ class GradesViewModelTest {
     }
 
     @Test
+    fun `una materia nueva no trae corte elegido`() {
+        val subject = viewModel.addSubject("Cálculo", 4.0, SubjectVisualType.TEAL)!!
+
+        assertNull("nadie ha dicho todavía en qué corte va", subject.chosenPeriodId)
+        assertEquals("pero hay dónde escribir si hace falta", "period-1", subject.defaultPeriodId)
+    }
+
+    @Test
+    fun `completar un corte pasa el destino de las notas al siguiente`() {
+        val subject = viewModel.addSubject("Física", 4.0, SubjectVisualType.TEAL)!!
+
+        // Media del corte 1: la mitad del peso.
+        viewModel.saveGrade(
+            subjectId = subject.id,
+            name = "Parcial",
+            value = 4.0,
+            percentageInput = 50.0,
+            periodId = "period-1"
+        )
+        assertEquals(
+            "con el corte a medias se queda donde está",
+            "period-1",
+            viewModel.subjectById(subject.id)!!.chosenPeriodId
+        )
+
+        // La otra mitad lo cierra.
+        viewModel.saveGrade(
+            subjectId = subject.id,
+            name = "Final",
+            value = 4.0,
+            percentageInput = 50.0,
+            periodId = "period-1"
+        )
+        assertEquals(
+            "cerrado el corte 1, lo nuevo entra en el 2",
+            "period-2",
+            viewModel.subjectById(subject.id)!!.chosenPeriodId
+        )
+    }
+
+    @Test
+    fun `el ultimo corte completo no salta a ninguna parte`() {
+        val subject = viewModel.addSubject("Historia", 4.0, SubjectVisualType.TEAL)!!
+
+        viewModel.saveGrade(
+            subjectId = subject.id,
+            name = "Final",
+            value = 4.0,
+            percentageInput = 100.0,
+            periodId = "period-3"
+        )
+
+        assertEquals(
+            "no hay corte posterior al que pasar",
+            "period-3",
+            viewModel.subjectById(subject.id)!!.chosenPeriodId
+        )
+    }
+
+    @Test
     fun `addSubject con nombre valido crea la materia`() {
         val subject = viewModel.addSubject(
             name = "Cálculo",

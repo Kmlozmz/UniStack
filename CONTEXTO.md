@@ -115,6 +115,13 @@ el profesor por `place` (el modelo parte `"aula•profesor"`, y esa división vi
 formato lo define él) y los días y la hora por `daysAndTimeLabel()`. Lo que esté vacío se omite,
 y sin clase no aparece nada.
 
+**Un corte con el 100% repartido se cierra y se aparta.** Al guardar la nota que lo completa,
+`periodAfterSaving()` pasa el destino de las notas nuevas al siguiente corte con hueco —solo
+hacia delante; saltar hacia atrás sería volver a suponer en qué punto del semestre va el
+usuario—. Los cerrados salen del selector, porque cualquier peso nuevo ahí lo rechazaría el
+propio guardado, y bajan a un apartado «Completados». Se sigue entrando en ellos a consultar o
+a corregir sus notas.
+
 **El corte activo lo elige el usuario, no la app.** `Subject.activePeriodId` **vacío** significa
 «sin elegir», y es como nace toda materia. Léelo por `chosenPeriodId` (null si no hay elección)
 o por `defaultPeriodId` (con qué rellenar un formulario). Mientras no haya elección, el detalle

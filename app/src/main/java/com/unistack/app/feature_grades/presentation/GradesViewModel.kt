@@ -5,6 +5,7 @@ import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.GradeCalculator
+import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.feature_grades.domain.GradeItem
@@ -226,28 +227,54 @@ class GradesViewModel @Inject constructor(
                 .forEach { repository.deleteGrade(subjectId, it.id) }
         }
 
-        repository.addGrade(
-            subjectId = subjectId,
-            grade = GradeItem(
-                id = "grade-${UUID.randomUUID()}",
-                name = TextValidators.normalizeText(name),
-                value = value,
-                percentage = percentage,
-                type = type,
-                periodId = periodId,
-                source = source,
-                weightStatus = weightStatus,
-                taskId = taskId,
-                recordedAt = System.currentTimeMillis()
-            )
+        val newGrade = GradeItem(
+            id = "grade-${UUID.randomUUID()}",
+            name = TextValidators.normalizeText(name),
+            value = value,
+            percentage = percentage,
+            type = type,
+            periodId = periodId,
+            source = source,
+            weightStatus = weightStatus,
+            taskId = taskId,
+            recordedAt = System.currentTimeMillis()
         )
+        repository.addGrade(subjectId = subjectId, grade = newGrade)
         val shouldSuggestHistory = subject.grades.isEmpty() &&
             subject.historyPromptStatus == PriorHistoryPromptStatus.NOT_SHOWN &&
             subject.periodScheme.periods.firstOrNull { it.id == periodId }?.order?.let { it > 1 } == true
-        if (periodId != subject.activePeriodId) {
-            repository.updateSubject(subject.copy(activePeriodId = periodId))
+        // Se calcula sobre la lista de aquí y no sobre el flujo del repositorio: con Room la
+        // consulta puede no haber emitido todavía cuando volvemos de addGrade.
+        val nextActive = periodAfterSaving(subject, subject.grades + newGrade, periodId)
+        if (nextActive != subject.activePeriodId) {
+            repository.updateSubject(subject.copy(activePeriodId = nextActive))
         }
         return GradeSaveOutcome(saved = true, suggestPriorHistory = shouldSuggestHistory)
+    }
+
+
+    /**
+     * A qué corte pasa la materia después de guardar una nota.
+     *
+     * Al corte donde entró la nota, salvo que con ella quede repartido al 100%: entonces salta
+     * al siguiente que aún tenga hueco. Un corte cerrado ya no admite más reparto, así que
+     * dejarlo como destino de las notas nuevas obligaba a cambiarlo a mano cada vez.
+     *
+     * Solo hacia delante. Si por detrás quedó un corte a medias, saltar hacia atrás sería otra
+     * suposición sobre en qué punto del semestre va el usuario, y eso lo decide él.
+     */
+    private fun periodAfterSaving(
+        subject: Subject,
+        gradesAfterSaving: List<GradeItem>,
+        savedPeriodId: String
+    ): String {
+        val periods = subject.periodScheme.periods.sortedBy { it.order }
+        val saved = periods.firstOrNull { it.id == savedPeriodId } ?: return savedPeriodId
+        fun isComplete(period: AcademicPeriod): Boolean =
+            GradeCalculator.calculatePeriod(gradesAfterSaving.filter { it.periodId == period.id }).isComplete
+
+        if (!isComplete(saved)) return savedPeriodId
+        return periods.firstOrNull { it.order > saved.order && !isComplete(it) }?.id ?: savedPeriodId
     }
 
     fun updateGrade(
