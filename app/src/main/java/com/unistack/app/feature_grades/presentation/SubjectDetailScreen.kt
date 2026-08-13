@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -52,7 +53,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
@@ -85,12 +86,13 @@ import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.core.utils.SubjectGradeCalculation
+import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradeType
-import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
@@ -157,42 +159,21 @@ fun SubjectDetailScreen(
         )
     }
 
-    val evaluatedSubjectPercentage = remember(subject.grades, periodScheme) {
-        GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periodScheme.periods)
+    // Una sola cuenta para toda la pantalla. Antes había tres: el promedio salía del
+    // calculador, la proyección final se calculaba aquí a mano con otra fórmula —contaba un
+    // corte apenas empezado con su peso completo— y lo necesario para la meta volvía a pasar
+    // por el porcentaje ya redondeado. La tarjeta llegaba a enseñar dos cifras distintas
+    // para lo mismo, una encima de la otra.
+    val calculation = remember(subject.grades, periodScheme, subject.targetAverage, maxGrade) {
+        GradeCalculator.calculateSubject(
+            grades = subject.grades,
+            periods = periodScheme.periods,
+            targetAverage = subject.targetAverage,
+            maxGrade = maxGrade
+        )
     }
-
-    val currentWeightedAverage = remember(subject.grades, periodScheme) {
-        GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periodScheme.periods)
-    }
-
-    val activeCuts = remember(periodSummaries) {
-        periodSummaries.filter { it.average != null }
-    }
-
-    val sumWeightsOfActiveCuts = remember(activeCuts) {
-        activeCuts.sumOf { it.period.weight }
-    }
-
-    val projectedFinalGrade = remember(activeCuts, sumWeightsOfActiveCuts) {
-        if (sumWeightsOfActiveCuts <= 0.0) null else {
-            val sumWeightedCuts = activeCuts.sumOf { (it.average ?: 0.0) * it.period.weight }
-            val proj = sumWeightedCuts / sumWeightsOfActiveCuts
-            round(proj * 10.0) / 10.0
-        }
-    }
-
-    val remainingSubjectPercentage = (100.0 - evaluatedSubjectPercentage).coerceAtLeast(0.0)
-
-    val neededForTarget = remember(subject.grades, periodScheme, remainingSubjectPercentage, subject.targetAverage, maxGrade) {
-        if (remainingSubjectPercentage <= 0.0) null else {
-            GradeCalculator.calculateNeededGrade(
-                currentWeightedPoints = GradeCalculator.calculateWeightedPointsByPeriods(subject.grades, periodScheme.periods),
-                remainingPercentage = remainingSubjectPercentage / 100.0,
-                targetAverage = subject.targetAverage,
-                maxGrade = maxGrade
-            )
-        }
-    }
+    val evaluatedSubjectPercentage = calculation.evaluatedSemesterFraction * 100.0
+    val remainingSubjectPercentage = calculation.remainingSemesterFraction * 100.0
 
     Box(
         modifier = modifier
@@ -216,7 +197,10 @@ fun SubjectDetailScreen(
             item {
                 SubjectHeader(
                     title = subject.name,
-                    subtitle = "Materia activa",
+                    // «Materia activa» era una etiqueta fija que no distinguía nada: no
+                    // existen materias inactivas. La meta sí dice algo y no se repite en
+                    // ningún otro sitio de la cabecera.
+                    subtitle = "Meta ${GradingScaleUtils.formatGrade(subject.targetAverage, scale)}",
                     onBackClick = onBackClick,
                     showMenu = showSubjectMenu,
                     onMenuClick = { showSubjectMenu = true },
@@ -241,9 +225,8 @@ fun SubjectDetailScreen(
             }
             item {
                 SubjectOverviewCard(
-                    subject = subject,
-                    average = currentWeightedAverage,
-                    projectedFinal = projectedFinalGrade,
+                    calculation = calculation,
+                    targetGrade = subject.targetAverage,
                     evaluated = evaluatedSubjectPercentage,
                     maxGrade = maxGrade,
                     scale = scale
@@ -251,14 +234,16 @@ fun SubjectDetailScreen(
             }
             item {
                 SubjectMetricsBand(
-                    passingGrade = GradingScaleUtils.formatGrade(passingGrade, scale),
-                    targetGrade = GradingScaleUtils.formatGrade(subject.targetAverage, scale),
-                    remainingPercentage = "${formatPercent(remainingSubjectPercentage)}%"
+                    calculation = calculation,
+                    passingGrade = passingGrade,
+                    targetGrade = subject.targetAverage,
+                    remainingPercentage = remainingSubjectPercentage,
+                    scale = scale
                 )
             }
             item {
                 SubjectInsightCard(
-                    neededForTarget = neededForTarget,
+                    calculation = calculation,
                     targetGrade = subject.targetAverage,
                     maxGrade = maxGrade,
                     scale = scale
@@ -283,8 +268,11 @@ fun SubjectDetailScreen(
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Estos chips parecían un filtro de la lista de abajo y no filtran nada:
+                    // lo que hacen es guardar en la materia a qué corte van las notas nuevas.
+                    // El rótulo ahora dice eso.
                     Text(
-                        "Corte actual",
+                        "Las notas nuevas entran en",
                         color = UniStackColors.TextSecondary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
@@ -671,15 +659,23 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
     }
 }
 
+/**
+ * Dónde está la materia y entre qué dos notas puede acabar.
+ *
+ * La segunda línea decía «con el rendimiento actual, terminarías con X» a partir de un
+ * cálculo propio que contaba los cortes empezados con su peso entero: una sola nota del 5%
+ * en un corte del 40% movía la cifra como si el corte estuviera cerrado. En su lugar van los
+ * dos extremos reales —sacar 0 en lo que falta y sacarlo todo—, que no suponen nada.
+ */
 @Composable
 private fun SubjectOverviewCard(
-    subject: Subject,
-    average: Double?,
-    projectedFinal: Double?,
+    calculation: SubjectGradeCalculation,
+    targetGrade: Double,
     evaluated: Double,
     maxGrade: Double,
     scale: GradingScale
 ) {
+    val average = calculation.currentAverage
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
@@ -689,89 +685,195 @@ private fun SubjectOverviewCard(
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f).padding(end = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    "Proyección actual de la materia",
-                    color = UniStackColors.TextSecondary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(verticalAlignment = Alignment.Bottom) {
+                Column(
+                    modifier = Modifier.weight(1f).padding(end = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        GradingScaleUtils.formatGrade(average, scale),
-                        color = UniStackColors.Primary,
-                    fontSize = 42.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
+                        if (calculation.isFinished) "Nota final" else "Promedio de lo evaluado",
                         color = UniStackColors.TextSecondary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (average == null) {
+                        Text(
+                            "Sin evaluar",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    } else {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                GradingScaleUtils.formatGrade(average, scale),
+                                color = UniStackColors.Primary,
+                                fontSize = 42.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
+                                color = UniStackColors.TextSecondary,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                            )
+                        }
+                    }
+                }
+                val indicatorStyle = LocalAppearancePreferences.current.academicIndicatorStyle
+                when (indicatorStyle) {
+                    AcademicIndicatorStyle.RINGS -> {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+                            CircularProgressIndicator(
+                                progress = { 1f },
+                                modifier = Modifier.fillMaxSize(),
+                                color = UniStackColors.Primary.copy(alpha = 0.1f),
+                                strokeWidth = 7.dp,
+                                trackColor = Color.Transparent
+                            )
+                            CircularProgressIndicator(
+                                progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
+                                modifier = Modifier.fillMaxSize(),
+                                color = UniStackColors.Primary,
+                                strokeWidth = 7.dp,
+                                trackColor = Color.Transparent
+                            )
+                            EvaluationValue(evaluated)
+                        }
+                    }
+                    AcademicIndicatorStyle.BARS -> {
+                        Column(
+                            modifier = Modifier.width(88.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            EvaluationValue(evaluated)
+                            EvaluationBar(
+                                fraction = evaluated / 100.0,
+                                height = 7.dp,
+                                color = UniStackColors.Primary
+                            )
+                        }
+                    }
+                    AcademicIndicatorStyle.NUMBERS -> EvaluationValue(evaluated)
+                }
+            }
+
+            val floor = calculation.guaranteedMinimum
+            val ceiling = calculation.bestPossible
+            when {
+                floor == null || ceiling == null -> {
+                    Text(
+                        "Registra tu primera nota para saber entre qué notas puedes acabar.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
                     )
                 }
-                Text(
-                    if (average != null && projectedFinal != null) {
-                        "Con el rendimiento actual, terminarías con $projectedFinal"
-                    } else {
-                        "Registra notas para proyectar tu promedio final."
-                    },
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp
-                )
-            }
-            val indicatorStyle = LocalAppearancePreferences.current.academicIndicatorStyle
-            when (indicatorStyle) {
-                AcademicIndicatorStyle.RINGS -> {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                        CircularProgressIndicator(
-                            progress = { 1f },
-                            modifier = Modifier.fillMaxSize(),
-                            color = UniStackColors.Primary.copy(alpha = 0.1f),
-                            strokeWidth = 7.dp,
-                            trackColor = Color.Transparent
+                calculation.isFinished -> {
+                    Text(
+                        "Ya no queda nada por evaluar: esta es la nota definitiva.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+                }
+                else -> {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "Dónde puedes acabar",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        CircularProgressIndicator(
-                            progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
-                            modifier = Modifier.fillMaxSize(),
-                            color = UniStackColors.Primary,
-                            strokeWidth = 7.dp,
-                            trackColor = Color.Transparent
+                        OutcomeRangeBar(
+                            floor = floor,
+                            ceiling = ceiling,
+                            target = targetGrade,
+                            maxGrade = maxGrade
                         )
-                        EvaluationValue(evaluated)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), UniStackColors.TextSecondary)
+                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), UniStackColors.TextPrimary)
+                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), UniStackColors.TextSecondary)
+                        }
                     }
                 }
-                AcademicIndicatorStyle.BARS -> {
-                    Column(
-                        modifier = Modifier.width(88.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        EvaluationValue(evaluated)
-                        LinearProgressIndicator(
-                            progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(7.dp)
-                                .clip(CircleShape),
-                            color = UniStackColors.Primary,
-                            trackColor = UniStackColors.Primary.copy(alpha = 0.12f)
-                        )
-                    }
-                }
-                AcademicIndicatorStyle.NUMBERS -> EvaluationValue(evaluated)
             }
         }
+    }
+}
+
+/**
+ * La franja de notas finales todavía posibles, sobre la escala completa, con la meta marcada.
+ *
+ * El extremo izquierdo es sacar 0 en todo lo que falta y el derecho sacarlo todo, así que la
+ * franja solo se estrecha según se van registrando notas. Si la marca de la meta queda fuera
+ * de la franja, la meta ya no se puede alcanzar y se ve sin leer ningún texto.
+ */
+@Composable
+private fun OutcomeRangeBar(
+    floor: Double,
+    ceiling: Double,
+    target: Double,
+    maxGrade: Double
+) {
+    if (maxGrade <= 0.0) return
+    val start = (floor / maxGrade).coerceIn(0.0, 1.0).toFloat()
+    val end = (ceiling / maxGrade).coerceIn(0.0, 1.0).toFloat()
+    val targetAt = (target / maxGrade).coerceIn(0.0, 1.0).toFloat()
+    val targetIsInside = target in floor..ceiling
+    val bandColor = if (targetIsInside) UniStackColors.Primary else UniStackColors.Coral
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(14.dp)
+    ) {
+        val fullWidth = maxWidth
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxWidth()
+                .height(10.dp)
+                .clip(CircleShape)
+                .background(UniStackColors.SurfaceVariant)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = fullWidth * start)
+                .width((fullWidth * (end - start)).coerceAtLeast(3.dp))
+                .height(10.dp)
+                .clip(CircleShape)
+                .background(bandColor)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = (fullWidth * targetAt - 1.5.dp).coerceAtLeast(0.dp))
+                .width(3.dp)
+                .fillMaxHeight()
+                .clip(CircleShape)
+                .background(UniStackColors.TextPrimary)
+        )
+    }
+}
+
+@Composable
+private fun RangeLegend(label: String, value: String, valueColor: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
 
@@ -793,10 +895,46 @@ private fun EvaluationValue(evaluated: Double) {
     }
 }
 
+/**
+ * Aprobación, objetivo y lo que queda por evaluar.
+ *
+ * Los dos primeros iban en verde fijo, dijeran lo que dijeran los datos: la nota de
+ * aprobación se pintaba igual de verde estando ya perdida. Ahora cada una se colorea según
+ * siga estando a tiro con lo que falta.
+ */
 @Composable
 private fun SubjectMetricsBand(
+    calculation: SubjectGradeCalculation,
+    passingGrade: Double,
+    targetGrade: Double,
+    remainingPercentage: Double,
+    scale: GradingScale
+) {
+    val reachTone: (Double) -> Color = { threshold ->
+        val floor = calculation.guaranteedMinimum
+        val ceiling = calculation.bestPossible
+        when {
+            floor == null || ceiling == null -> UniStackColors.TextSecondary
+            floor >= threshold - 0.0001 -> UniStackColors.Green
+            ceiling < threshold - 0.0001 -> UniStackColors.Coral
+            else -> UniStackColors.Yellow
+        }
+    }
+    SubjectMetricsBandContent(
+        passingGrade = GradingScaleUtils.formatGrade(passingGrade, scale),
+        passingTone = reachTone(passingGrade),
+        targetGrade = GradingScaleUtils.formatGrade(targetGrade, scale),
+        targetTone = reachTone(targetGrade),
+        remainingPercentage = "${formatPercent(remainingPercentage)}%"
+    )
+}
+
+@Composable
+private fun SubjectMetricsBandContent(
     passingGrade: String,
+    passingTone: Color,
     targetGrade: String,
+    targetTone: Color,
     remainingPercentage: String
 ) {
     Surface(
@@ -815,9 +953,9 @@ private fun SubjectMetricsBand(
                 .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            MetricBandItem("Aprobación", passingGrade, UniStackColors.Green, Modifier.weight(1f))
+            MetricBandItem("Aprobación", passingGrade, passingTone, Modifier.weight(1f))
             MetricDivider()
-            MetricBandItem("Objetivo", targetGrade, UniStackColors.Green, Modifier.weight(1f))
+            MetricBandItem("Objetivo", targetGrade, targetTone, Modifier.weight(1f))
             MetricDivider()
             MetricBandItem("Por evaluar", remainingPercentage, UniStackColors.TextPrimary, Modifier.weight(1f))
         }
@@ -843,7 +981,7 @@ private fun MetricDivider() {
 
 @Composable
 private fun SubjectInsightCard(
-    neededForTarget: Double?,
+    calculation: SubjectGradeCalculation,
     targetGrade: Double,
     maxGrade: Double,
     scale: GradingScale,
@@ -852,44 +990,80 @@ private fun SubjectInsightCard(
     // El color sale del mismo sitio que el mensaje. Antes la tarjeta era verde siempre,
     // así que «tu meta está en riesgo» se leía sobre fondo verde y con el número
     // resaltado también en verde: el color decía lo contrario que el texto.
-    val tone = when {
-        neededForTarget == null -> UniStackColors.TextSecondary
-        neededForTarget <= 0.0 -> UniStackColors.Green
-        neededForTarget > maxGrade -> UniStackColors.Coral
-        neededForTarget > targetGrade -> UniStackColors.Yellow
-        else -> UniStackColors.Green
+    val tone = when (calculation.outlook) {
+        TargetOutlook.NO_DATA -> UniStackColors.TextSecondary
+        TargetOutlook.SECURED -> UniStackColors.Green
+        TargetOutlook.ON_TRACK -> UniStackColors.Teal
+        TargetOutlook.AT_RISK -> UniStackColors.Yellow
+        TargetOutlook.UNREACHABLE -> UniStackColors.Coral
     }
 
-    val annotatedText = remember(neededForTarget, targetGrade, maxGrade, scale, tone) {
+    val annotatedText = remember(calculation, targetGrade, maxGrade, scale, tone) {
+        val target = GradingScaleUtils.formatGrade(targetGrade, scale)
+        val bold = SpanStyle(color = tone, fontWeight = FontWeight.Bold)
         buildAnnotatedString {
-            if (neededForTarget == null) {
-                append("Registra notas en los cortes para estimar lo necesario para tu meta.")
-            } else if (neededForTarget <= 0.0) {
-                append("¡Excelente! Con tu rendimiento actual ya aseguraste tu meta de ")
-                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                    append(GradingScaleUtils.formatGrade(targetGrade, scale))
+            when (calculation.outlook) {
+                TargetOutlook.NO_DATA ->
+                    append("Registra notas en los cortes para saber qué te hace falta para tu meta.")
+
+                TargetOutlook.SECURED -> {
+                    // Con la materia cerrada, el mensaje habla en pasado. Antes «lo que falta
+                    // para la meta» era null tanto sin notas como con todo evaluado, así que
+                    // una materia terminada pedía registrar notas.
+                    if (calculation.isFinished) {
+                        append("Materia cerrada con ")
+                        withStyle(bold) {
+                            append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
+                        }
+                        append(": cumpliste tu meta de $target.")
+                    } else {
+                        append("Tu meta de ")
+                        withStyle(bold) { append(target) }
+                        append(" ya está asegurada: aunque saques 0 en todo lo que falta, terminas con ")
+                        withStyle(bold) {
+                            append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
+                        }
+                        append(".")
+                    }
                 }
-                append(".")
-            } else if (neededForTarget > maxGrade) {
-                append("La meta de ")
-                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                    append(GradingScaleUtils.formatGrade(targetGrade, scale))
+
+                TargetOutlook.ON_TRACK -> {
+                    append("Vas por encima de tu meta de $target. Te basta con ")
+                    withStyle(bold) {
+                        append(GradingScaleUtils.formatGrade(calculation.neededForTarget, scale))
+                    }
+                    append(" en el ")
+                    append("${formatPercent(calculation.remainingSemesterFraction * 100)}% que falta por evaluar")
+                    append(" para no bajar de ahí.")
                 }
-                append(" está en riesgo: necesitas más de ")
-                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                    append(GradingScaleUtils.formatGrade(maxGrade, scale))
+
+                TargetOutlook.AT_RISK -> {
+                    append("Necesitas ")
+                    withStyle(bold) {
+                        append(GradingScaleUtils.formatGrade(calculation.neededForTarget, scale))
+                    }
+                    // «en los cortes restantes» era inexacto: lo que falta suele ser parte de
+                    // un corte ya empezado, no cortes enteros.
+                    append(" en el ${formatPercent(calculation.remainingSemesterFraction * 100)}% que falta por evaluar")
+                    append(" para llegar a tu meta de $target.")
                 }
-                append(" en lo restante.")
-            } else {
-                append("Necesitas un promedio de ")
-                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                    append(GradingScaleUtils.formatGrade(neededForTarget, scale))
+
+                TargetOutlook.UNREACHABLE -> {
+                    if (calculation.isFinished) {
+                        append("Materia cerrada con ")
+                        withStyle(bold) {
+                            append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
+                        }
+                        append(", por debajo de tu meta de $target.")
+                    } else {
+                        append("Tu meta de $target ya no es alcanzable: aun sacando ")
+                        append("${GradingScaleUtils.formatGrade(maxGrade, scale)} en todo lo que falta, terminarías con ")
+                        withStyle(bold) {
+                            append(GradingScaleUtils.formatGrade(calculation.bestPossible, scale))
+                        }
+                        append(".")
+                    }
                 }
-                append(" en los cortes restantes para mantener la materia por encima de ")
-                withStyle(style = SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                    append(GradingScaleUtils.formatGrade(targetGrade, scale))
-                }
-                append(".")
             }
         }
     }
@@ -909,10 +1083,10 @@ private fun SubjectInsightCard(
             Icon(
                 // El icono también sigue al estado: una flecha al alza junto a un aviso
                 // de meta en riesgo contradecía lo que decía el texto.
-                if (neededForTarget != null && neededForTarget > targetGrade) {
-                    Icons.Rounded.PriorityHigh
-                } else {
-                    Icons.AutoMirrored.Rounded.TrendingUp
+                when (calculation.outlook) {
+                    TargetOutlook.SECURED -> Icons.Rounded.CheckCircle
+                    TargetOutlook.AT_RISK, TargetOutlook.UNREACHABLE -> Icons.Rounded.PriorityHigh
+                    else -> Icons.AutoMirrored.Rounded.TrendingUp
                 },
                 contentDescription = null,
                 tint = tone,
@@ -938,7 +1112,7 @@ private fun PeriodCard(
     needsHistory: Boolean,
     onClick: () -> Unit
 ) {
-    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     val accent = when {
         needsHistory -> UniStackColors.Yellow
         isActive -> UniStackColors.Primary
@@ -987,34 +1161,54 @@ private fun PeriodCard(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
-                            when {
-                                needsHistory -> CustomStatusBadge("Completar historial", UniStackColors.Yellow)
-                                isActive -> CustomStatusBadge("Corte actual", UniStackColors.Primary)
-                                else -> StatusBadge(status = summary.status)
+                            // La insignia dice siempre el estado del corte. Antes, en el corte
+                            // activo la ocupaba «Corte actual», así que de ese corte —el único
+                            // que importa ahora mismo— no se podía saber si estaba pendiente,
+                            // en curso o completado.
+                            if (needsHistory) {
+                                CustomStatusBadge("Completar historial", UniStackColors.Yellow)
+                            } else {
+                                StatusBadge(status = summary.status)
                             }
                         }
                         Text(
-                            "${formatPercent(summary.period.weight * 100)}% de la materia",
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 12.sp
+                            buildString {
+                                append("${formatPercent(summary.period.weight * 100)}% de la materia")
+                                if (isActive) append("  ·  Corte actual")
+                            },
+                            color = if (isActive) UniStackColors.Primary else UniStackColors.TextSecondary,
+                            fontSize = 12.sp,
+                            fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(verticalAlignment = Alignment.Bottom) {
+                        if (summary.average == null) {
                             Text(
-                                GradingScaleUtils.formatGrade(summary.average, scale),
-                                color = if (summary.average != null) accent else UniStackColors.TextSecondary,
-                                fontSize = 24.sp,
+                                "Sin evaluar",
+                                color = UniStackColors.TextSecondary,
+                                fontSize = 18.sp,
                                 lineHeight = 28.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
-                            Text(
-                                " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = UniStackColors.TextSecondary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
-                            )
+                        } else {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    GradingScaleUtils.formatGrade(summary.average, scale),
+                                    // La cifra sigue al estado del corte, no a si es el corte
+                                    // activo: ser el corte en curso no dice nada de la nota.
+                                    color = summary.status.color,
+                                    fontSize = 24.sp,
+                                    lineHeight = 28.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Text(
+                                    " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
+                                    color = UniStackColors.TextSecondary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
+                                )
+                            }
                         }
                         Text(
                             "${formatPercent(summary.evaluated)}% evaluado",
@@ -1022,15 +1216,7 @@ private fun PeriodCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        LinearProgressIndicator(
-                            progress = { progress },
-                            modifier = Modifier
-                                .fillMaxWidth(0.8f)
-                                .height(5.dp)
-                                .clip(CircleShape),
-                            color = accent,
-                            trackColor = UniStackColors.SurfaceVariant
-                        )
+                        EvaluationBar(fraction = progress, height = 5.dp)
                     }
                 }
 
@@ -1085,7 +1271,7 @@ private fun PeriodDetailPanel(
     onEditGradeClick: (GradeItem) -> Unit,
     onDeleteGradeClick: (GradeItem) -> Unit
 ) {
-    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = summary.status.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.10f else 0.07f),
@@ -1165,15 +1351,7 @@ private fun PeriodDetailPanel(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(CircleShape),
-                    color = summary.status.color,
-                    trackColor = UniStackColors.SurfaceVariant
-                )
+                EvaluationBar(fraction = progress)
             }
 
             val notesText = if (grades.isEmpty()) {
@@ -1268,7 +1446,7 @@ private fun PeriodDetailPanel(
 
 @Composable
 private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: GradingScale) {
-    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0).toFloat()
+    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
@@ -1291,20 +1469,32 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Row(verticalAlignment = Alignment.Bottom) {
+                    if (summary.average == null) {
+                        // Sin notas se escribía la raya de «sin dato» a 44sp y en el color del
+                        // estado: una mancha ámbar del tamaño de una nota, que se leía como un
+                        // valor y no como una ausencia.
                         Text(
-                            GradingScaleUtils.formatGrade(summary.average, scale),
-                            color = summary.status.color,
-                            fontSize = 44.sp,
+                            "Sin evaluar",
+                            color = UniStackColors.TextSecondary,
+                            fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
-                        Text(
-                            " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
-                        )
+                    } else {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                GradingScaleUtils.formatGrade(summary.average, scale),
+                                color = summary.status.color,
+                                fontSize = 44.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
+                                color = UniStackColors.TextSecondary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
+                            )
+                        }
                     }
                 }
                 Column(
@@ -1313,9 +1503,9 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                 ) {
                     Text(
                         "Estado",
-                        color = UniStackColors.TextPrimary,
+                        color = UniStackColors.TextSecondary,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1345,25 +1535,21 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                     fontWeight = FontWeight.Medium
                 )
 
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .clip(CircleShape),
-                    color = summary.status.color,
-                    trackColor = UniStackColors.SurfaceVariant
-                )
+                EvaluationBar(fraction = progress)
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                val notesText = if (summary.evaluated >= 99.9) {
-                    "${summary.grades.size} de ${summary.grades.size} notas registradas"
-                } else {
-                    "${summary.grades.size} ${if (summary.grades.size == 1) "nota registrada" else "notas registradas"}"
-                }
+                // Decía «3 de 3 notas registradas» comparando un número consigo mismo. Lo que
+                // falta por decir cuando el corte no está cerrado es cuánto peso queda libre.
+                val remainingWeight = (100.0 - summary.evaluated).coerceAtLeast(0.0)
                 Text(
-                    notesText,
+                    buildString {
+                        append(gradeCountLabel(summary.grades.size))
+                        append(if (summary.grades.size == 1) " registrada" else " registradas")
+                        if (remainingWeight > 0.05) {
+                            append("  ·  queda ${formatPercent(remainingWeight)}% del corte por repartir")
+                        }
+                    },
                     color = UniStackColors.TextSecondary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium

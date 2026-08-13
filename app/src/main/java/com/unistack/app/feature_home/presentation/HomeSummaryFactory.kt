@@ -171,7 +171,7 @@ internal object HomeSummaryFactory {
         return SubjectSummary(
             id = subject.id,
             name = subject.name,
-            average = GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periods),
+            average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods),
             targetAverage = subject.targetAverage,
             progress = evaluatedPercentage.toFloat(),
             type = subject.visualType
@@ -183,7 +183,7 @@ internal object HomeSummaryFactory {
         if (subjectsWithGrades.isEmpty()) return null
 
         val validGrades = subjectsWithGrades.mapNotNull { subject ->
-            GradeCalculator.calculateProjectedAverageByPeriods(
+            GradeCalculator.calculateCurrentAverageByPeriods(
                 subject.grades,
                 subject.periodScheme.periods
             )?.let { average ->
@@ -468,7 +468,7 @@ internal object HomeSummaryFactory {
         return subjects
             .map { subject ->
                 val periods = subject.periodScheme.periods
-                val average = GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periods)
+                val average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
                 val evaluated = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods)
                 AcademicFocusSummary(
                     subjectId = subject.id,
@@ -636,7 +636,7 @@ internal object HomeSummaryFactory {
                 targetAverage = subject.targetAverage,
                 maxGrade = maxGrade
             )
-            val average = calculation.projectedAverage ?: return@mapNotNull null
+            val average = calculation.currentAverage ?: return@mapNotNull null
             val remainingPercentage = calculation.remainingSemesterFraction
             val needed = calculation.neededForTarget
             val severity = riskSeverity(

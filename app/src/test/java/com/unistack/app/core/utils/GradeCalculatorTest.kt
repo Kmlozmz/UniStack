@@ -6,6 +6,7 @@ import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -53,7 +54,7 @@ class GradeCalculatorTest {
         assertEquals(4.5, GradeCalculator.calculatePeriodAverage(grades)!!, 0.0)
         assertEquals(1.35, GradeCalculator.calculateWeightedPointsByPeriods(grades, periods), 0.0001)
         assertEquals(30.0, GradeCalculator.calculateEvaluatedSemesterPercentage(grades, periods), 0.0)
-        assertEquals(4.5, GradeCalculator.calculateProjectedAverageByPeriods(grades, periods)!!, 0.0)
+        assertEquals(4.5, GradeCalculator.calculateCurrentAverageByPeriods(grades, periods)!!, 0.0)
     }
 
     @Test
@@ -117,7 +118,7 @@ class GradeCalculatorTest {
             maxGrade = 5.0
         )
 
-        assertEquals(4.1, result.projectedAverage!!, 0.0)
+        assertEquals(4.1, result.currentAverage!!, 0.0)
         assertEquals(0.30, result.evaluatedSemesterFraction, 0.0001)
         assertEquals(4.7, result.neededForTarget!!, 0.0)
         assertTrue(result.targetIsReachable == true)
@@ -210,6 +211,103 @@ class GradeCalculatorTest {
 
         // (4.0*0.6 + 2.0*0.6) / 1.2 = 3.0
         assertEquals(3.0, GradeCalculator.calculatePeriod(grades).average!!, 0.0001)
+    }
+
+    @Test
+    fun `the subject does not inflate what an over allocated period already corrected`() {
+        // Tres actividades del 50% con 5.0: el corte ya devolvía 5.0, pero la materia sumaba
+        // los puntos crudos (7.5) y los dividía entre la fracción recortada a 1.0, así que la
+        // tarjeta del corte decía 5.0 y la de la materia 7.5 con los mismos datos.
+        val periods = listOf(AcademicPeriod(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
+        val grades = listOf(
+            GradeItem(id = "1", name = "Parcial", value = 5.0, percentage = 0.5),
+            GradeItem(id = "2", name = "Taller", value = 5.0, percentage = 0.5),
+            GradeItem(id = "3", name = "Quiz", value = 5.0, percentage = 0.5)
+        )
+
+        assertEquals(5.0, GradeCalculator.calculateCurrentAverageByPeriods(grades, periods)!!, 0.0001)
+        assertEquals(5.0, GradeCalculator.calculateWeightedPointsByPeriods(grades, periods), 0.0001)
+    }
+
+    @Test
+    fun `floor and ceiling frame the target without guessing the future`() {
+        val periods = listOf(
+            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        )
+        // Corte 1 cerrado en 60 sobre 100. Queda el 70% del semestre.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Parcial", value = 60.0, percentage = 1.0, periodId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+
+        assertEquals("promedio de lo evaluado", 60.0, result.currentAverage!!, 0.0001)
+        assertEquals("si saca 0 en lo que falta", 18.0, result.guaranteedMinimum!!, 0.0001)
+        assertEquals("si lo borda en lo que falta", 88.0, result.bestPossible!!, 0.0001)
+        assertEquals(TargetOutlook.AT_RISK, result.outlook)
+        assertFalse(result.isFinished)
+    }
+
+    @Test
+    fun `a barely started period no longer swings the subject number`() {
+        // Este era el caso que rompía el detalle de materia: contaba el Corte 2 entero al
+        // ritmo de su única nota, así que un quiz del 5% sacado en 100 disparaba la cifra.
+        val periods = listOf(
+            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 60.0, percentage = 1.0, periodId = "period-1"),
+            GradeItem(id = "2", name = "Quiz", value = 100.0, percentage = 0.05, periodId = "period-2")
+        )
+
+        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+
+        // (60*0.30 + 100*0.05*0.40) / (0.30 + 0.05*0.40) = 20 / 0.32 = 62.5
+        assertEquals(62.5, result.currentAverage!!, 0.0001)
+    }
+
+    @Test
+    fun `a finished subject reports its final grade instead of asking for more`() {
+        val periods = listOf(AcademicPeriod(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
+        val grades = listOf(
+            GradeItem(id = "1", name = "Final", value = 84.0, percentage = 1.0, periodId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+
+        assertTrue(result.isFinished)
+        assertEquals(84.0, result.guaranteedMinimum!!, 0.0001)
+        assertEquals("el suelo y el techo coinciden cuando ya no queda nada", 84.0, result.bestPossible!!, 0.0001)
+        assertEquals(TargetOutlook.SECURED, result.outlook)
+        assertNull("no queda nada que pedir", result.neededForTarget)
+    }
+
+    @Test
+    fun `an unreachable target is called unreachable and not just hard`() {
+        val periods = listOf(
+            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.70, order = 1),
+            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.30, order = 2)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, periodId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+
+        // 28 + 0.30*100 = 58, por debajo de 80 aunque saque 100 en todo lo que queda.
+        assertEquals(58.0, result.bestPossible!!, 0.0001)
+        assertEquals(TargetOutlook.UNREACHABLE, result.outlook)
+    }
+
+    @Test
+    fun `the close to target margin follows the scale`() {
+        // Estaba fijo en 0.5: un 10% en la escala de 0 a 5 y un 0,5% en la de 0 a 100.
+        assertEquals(0.5, GradeCalculator.closeToTargetMargin(5.0), 0.0001)
+        assertEquals(10.0, GradeCalculator.closeToTargetMargin(100.0), 0.0001)
     }
 
     @Test

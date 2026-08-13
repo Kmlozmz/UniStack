@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeType
@@ -339,27 +340,35 @@ class GradesViewModel @Inject constructor(
         return subjects.value.firstOrNull { it.id == subjectId }
     }
 
-    fun currentAverage(subject: Subject): Double? {
-        return GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, subject.periodScheme.periods)
-    }
-
-    fun evaluatedPercentage(subject: Subject): Double {
-        return GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, subject.periodScheme.periods)
-    }
-
-    fun neededGrade(subject: Subject): Double? {
-        if (subject.grades.isEmpty()) return null
-        // Se delega en calculateSubject en vez de rehacer el cálculo aquí. La versión
-        // anterior sacaba el porcentaje restante pasando por
-        // calculateEvaluatedSemesterPercentage, que redondea a un decimal y multiplica
-        // por 100, para luego volver a dividir entre 100: ese viaje de ida y vuelta hacía
-        // que esta pantalla y la de detalle pudieran dar cifras distintas para lo mismo.
+    /**
+     * Todo lo que hay que saber de una materia, en una sola cuenta.
+     *
+     * Cada pantalla sacaba sus cifras por su lado y acababan discrepando: el detalle de
+     * materia llegó a enseñar dos proyecciones distintas en la misma tarjeta. Pasando por
+     * aquí, promedio, suelo, techo y lo que falta para la meta salen todos de la misma
+     * llamada y no pueden contradecirse.
+     */
+    fun calculationFor(subject: Subject): SubjectGradeCalculation {
         return GradeCalculator.calculateSubject(
             grades = subject.grades,
             periods = subject.periodScheme.periods,
             targetAverage = subject.targetAverage,
             maxGrade = getMaxGrade()
-        ).neededForTarget
+        )
+    }
+
+    fun currentAverage(subject: Subject): Double? = calculationFor(subject).currentAverage
+
+    fun evaluatedPercentage(subject: Subject): Double =
+        GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, subject.periodScheme.periods)
+
+    fun neededGrade(subject: Subject): Double? {
+        if (subject.grades.isEmpty()) return null
+        // El porcentaje restante no se recalcula a mano: la versión anterior lo sacaba
+        // pasando por calculateEvaluatedSemesterPercentage, que redondea a un decimal y
+        // multiplica por 100, para luego volver a dividir entre 100. Ese viaje de ida y
+        // vuelta hacía que dos pantallas dieran cifras distintas para lo mismo.
+        return calculationFor(subject).neededForTarget
     }
 
     fun setActivePeriod(subjectId: String, periodId: String): Boolean {

@@ -81,6 +81,41 @@ convertiría «Añadir clase» en un botón que lleva a Inicio. Hay un test que 
 
 ---
 
+## Cómo se cuentan las notas
+
+**Todo sale de `GradeCalculator`.** Ninguna pantalla rehace una cuenta por su lado. La regla
+nació de encontrarse el detalle de materia enseñando dos proyecciones distintas en la misma
+tarjeta: el número grande venía del calculador y el «terminarías con» de una fórmula escrita
+allí mismo que contaba los cortes empezados con su peso entero. Una nota del 5% en un corte
+del 40% movía la cifra como si el corte estuviera cerrado. En presentación se pide
+`GradesViewModel.calculationFor(subject)` y se usan sus campos.
+
+**No hay proyecciones, hay suelo y techo.** Cualquier «vas a terminar con X» necesita suponer
+cómo saldrá lo que aún no se ha hecho, y esa suposición nunca estaba escrita en ninguna parte.
+En su lugar se enseñan los dos extremos exactos:
+- `guaranteedMinimum` — la nota final sacando 0 en todo lo que falta.
+- `bestPossible` — la nota final sacándolo todo.
+
+La meta se dibuja como una marca dentro de esa franja (`OutcomeRangeBar`). Si la marca queda
+fuera, la meta ya no se alcanza y se ve sin leer nada.
+
+**`TargetOutlook` decide el color y el mensaje.** `SECURED`, `ON_TRACK`, `AT_RISK`,
+`UNREACHABLE`, `NO_DATA`. Salen de comparar la meta con el suelo y el techo, así que son
+estados comprobables. Antes se deducían del número de «lo que necesitas», que era `null`
+tanto sin notas como con la materia terminada: una materia cerrada pedía registrar notas.
+
+**Los umbrales van en fracción de la escala, nunca en puntos.**
+`GradeCalculator.closeToTargetMargin(maxGrade)` es el 10%. Estaba escrito como `0.5` fijo, que
+en la escala de 0 a 5 es ese 10% pero en la de 0 a 100 es medio punto: el estado ámbar solo
+aparecía entre 79.5 y 80.
+
+**La longitud de una barra mide avance; el color, nunca rendimiento.** `EvaluationBar` va en
+gris a propósito: una barra corta y roja decía dos cosas a la vez. El rendimiento lo lleva la
+cifra. Y no se usa `LinearProgressIndicator` para esto: desde Material 3 1.3 dibuja un punto
+al final de la pista, y con la barra a cero ese punto queda flotando solo al otro extremo.
+
+---
+
 ## Reglas que hay que respetar al tocar UI
 
 **Márgenes inferiores.** Dos valores compartidos en `core/design/theme/AppearanceTheme.kt`:
@@ -161,9 +196,15 @@ antes cualquier fallo se convertía en «estás al día».
 
 ## Pendiente
 
-**Probar el formulario unificado en el móvil.** Está compilado y con los tests en verde, pero
-las tres puertas de Horario —«Agregar clase», «Añadir clase» del día vacío y «Clase recurrente»
-de la hoja de agenda— no se han recorrido a mano.
+**Probar en el móvil lo de las dos últimas tandas.** Todo compila y los tests pasan, pero no se
+ha recorrido a mano: las tres puertas de Horario al formulario de materia —«Agregar clase»,
+«Añadir clase» del día vacío y «Clase recurrente» de la hoja de agenda— y las tres pantallas
+de Académico con una materia que ya tenga notas repartidas en varios cortes, que es donde se
+ve si el suelo y el techo cuadran.
+
+**El promedio general de la lista es la media simple de las materias.** Sin créditos por
+materia no hay nada mejor que hacer, pero conviene decidirlo a conciencia: hoy una materia con
+el 10% evaluado pesa igual que una terminada.
 
 **Otros hilos abiertos:** separar el token de Gastos del de error; `Configuración` aparece en el
 cajón y dentro de Perfil; `Sincronización` del cajón solapa con «Datos y respaldos»; los módulos

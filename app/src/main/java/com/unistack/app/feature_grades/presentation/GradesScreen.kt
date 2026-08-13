@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.AppShapes
@@ -50,7 +53,10 @@ import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
+import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.core.utils.SubjectGradeCalculation
+import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -68,6 +74,7 @@ fun GradesScreen(
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
+    val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
     val averages = subjects.mapNotNull(viewModel::currentAverage)
     val generalAverage = averages.takeIf { it.isNotEmpty() }?.average()
     val evaluatedSubjects = subjects.count { it.grades.isNotEmpty() }
@@ -119,9 +126,9 @@ fun GradesScreen(
                 items(subjects, key = { it.id }) { subject ->
                     SubjectListCard(
                         subject = subject,
-                        average = viewModel.currentAverage(subject),
-                        evaluatedPercentage = viewModel.evaluatedPercentage(subject),
+                        calculation = viewModel.calculationFor(subject),
                         gradingScale = scale,
+                        maxGrade = maxGrade,
                         onClick = { onSubjectClick(subject.id) }
                     )
                 }
@@ -173,58 +180,61 @@ private fun SubjectsStatsRow(
 @Composable
 private fun SubjectListCard(
     subject: Subject,
-    average: Double?,
-    evaluatedPercentage: Double,
+    calculation: SubjectGradeCalculation,
     gradingScale: GradingScale,
+    maxGrade: Double,
     onClick: () -> Unit
 ) {
-    val progressVisual = rememberSubjectProgressVisual(
-        subject = subject,
-        average = average,
-        gradingScale = gradingScale
-    )
+    val tone = subjectTone(calculation, subject.targetAverage, maxGrade)
     val subjectColor = subjectAccent(subject)
+    val evaluated = calculation.evaluatedSemesterFraction * 100.0
+    val targetText = GradingScaleUtils.formatGrade(subject.targetAverage, gradingScale)
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(112.dp)
             .bounceClick(onClick),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        // Alto libre en vez de 112dp fijos. Con la altura clavada, dos de las cuatro líneas
+        // no cabían nunca y salían recortadas: «Agrega la primera n…», «0% evaluado de la
+        // mat…». La cifra también se ha traído a la columna de texto, que antes competía por
+        // el ancho con ella y con el chevron.
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             Box(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
                     .background(subjectColor)
             )
-            Box(
-                modifier = Modifier
-                    .padding(start = 18.dp)
-                    .size(46.dp)
-                    .background(subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.School,
-                    contentDescription = null,
-                    tint = subjectColor,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
             Column(
                 modifier = Modifier
-                    .padding(start = 14.dp, end = 8.dp)
-                    .weight(1f, fill = true),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .weight(1f)
+                    .padding(start = 14.dp, end = 6.dp, top = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(
+                                subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.School,
+                            contentDescription = null,
+                            tint = subjectColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Text(
                         subject.name,
                         fontWeight = FontWeight.SemiBold,
@@ -234,88 +244,106 @@ private fun SubjectListCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    SubjectStatusPill(
-                        text = subjectStatusText(average, subject.targetAverage, evaluatedPercentage),
-                        color = progressVisual.color
+                    SubjectStatusPill(text = tone.label, color = tone.color)
+                }
+                Row(verticalAlignment = Alignment.Bottom) {
+                    if (calculation.currentAverage == null) {
+                        // Sin notas no se pinta una raya gigante donde va la nota: lo único
+                        // que hay que decir es a dónde se apunta.
+                        Text(
+                            "Meta $targetText",
+                            color = tone.color,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            GradingScaleUtils.formatGrade(calculation.currentAverage, gradingScale),
+                            color = tone.color,
+                            fontSize = 26.sp,
+                            lineHeight = 28.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Text(
+                            " / $targetText",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        "${String.format(Locale.US, "%.0f", evaluated)}% evaluado",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
+                EvaluationBar(fraction = calculation.evaluatedSemesterFraction, height = 5.dp)
                 Text(
-                    subjectNextAction(subject, average, evaluatedPercentage, gradingScale),
+                    subjectRangeText(calculation, gradingScale),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                SubjectProgressBar(
-                    evaluatedPercentage = evaluatedPercentage,
-                    color = progressVisual.color
-                )
-                Text(
-                    "${String.format(Locale.US, "%.0f", evaluatedPercentage)}% evaluado de la materia",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            SubjectProgressMetric(progressVisual)
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
-                    .padding(start = 4.dp, end = 10.dp)
+                    .align(Alignment.CenterVertically)
+                    .padding(end = 10.dp)
                     .size(22.dp)
             )
         }
     }
 }
 
-private data class SubjectProgressVisual(
+private data class SubjectTone(
     val color: Color,
-    val text: String
+    val label: String
 )
 
+/**
+ * Color y rótulo de una materia, a partir de dónde puede acabar y no solo de dónde está.
+ *
+ * El margen para el aviso sale de la escala. Estaba escrito como 0.5 fijo, que en la escala
+ * de 0 a 100 es medio punto: el estado ámbar solo existía entre 79.5 y 80.
+ */
 @Composable
-private fun rememberSubjectProgressVisual(
-    subject: Subject,
-    average: Double?,
-    gradingScale: GradingScale
-): SubjectProgressVisual {
-    val target = subject.targetAverage
-    val targetText = GradingScaleUtils.formatGrade(target, gradingScale)
-    val color = when {
-        average == null -> MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.62f)
-        average >= target -> UniStackColors.Teal
-        target - average <= 0.5 -> UniStackColors.Yellow
-        else -> UniStackColors.Coral
-    }
-
-    return if (average == null) {
-        SubjectProgressVisual(
-            color = color,
-            text = "Meta $targetText"
+private fun subjectTone(
+    calculation: SubjectGradeCalculation,
+    target: Double,
+    maxGrade: Double
+): SubjectTone {
+    return when (calculation.outlook) {
+        TargetOutlook.NO_DATA -> SubjectTone(
+            MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.62f),
+            "Sin notas"
         )
-    } else {
-        SubjectProgressVisual(
-            color = color,
-            text = "${GradingScaleUtils.formatGrade(average, gradingScale)} / $targetText"
+        TargetOutlook.SECURED -> SubjectTone(
+            UniStackColors.Green,
+            if (calculation.isFinished) "Meta cumplida" else "Meta asegurada"
+        )
+        TargetOutlook.ON_TRACK -> SubjectTone(UniStackColors.Teal, "Sobre meta")
+        TargetOutlook.AT_RISK -> {
+            val current = calculation.currentAverage
+            val closeToTarget = current != null &&
+                target - current <= GradeCalculator.closeToTargetMargin(maxGrade)
+            SubjectTone(
+                if (closeToTarget) UniStackColors.Yellow else UniStackColors.Coral,
+                "Por subir"
+            )
+        }
+        TargetOutlook.UNREACHABLE -> SubjectTone(
+            UniStackColors.Coral,
+            if (calculation.isFinished) "Bajo la meta" else "Fuera de alcance"
         )
     }
-}
-
-@Composable
-private fun SubjectProgressMetric(progressVisual: SubjectProgressVisual) {
-    Text(
-        text = progressVisual.text,
-        color = progressVisual.color,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 13.sp,
-        maxLines = 1,
-        softWrap = false
-    )
 }
 
 @Composable
@@ -338,54 +366,25 @@ private fun SubjectStatusPill(text: String, color: Color) {
     }
 }
 
-@Composable
-private fun SubjectProgressBar(
-    evaluatedPercentage: Double,
-    color: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(5.dp)
-            .clip(AppShapes.Pill)
-            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth((evaluatedPercentage / 100.0).coerceIn(0.0, 1.0).toFloat())
-                .fillMaxHeight()
-                .background(color)
-        )
-    }
-}
-
-private fun subjectStatusText(
-    average: Double?,
-    targetAverage: Double,
-    evaluatedPercentage: Double
-): String {
-    return when {
-        average == null -> "Sin notas"
-        evaluatedPercentage >= 99.9 -> "Completa"
-        average >= targetAverage -> "Sobre meta"
-        targetAverage - average <= 0.5 -> "Atención"
-        else -> "Revisar"
-    }
-}
-
-private fun subjectNextAction(
-    subject: Subject,
-    average: Double?,
-    evaluatedPercentage: Double,
+/**
+ * Entre qué dos notas puede terminar la materia: sacando 0 en todo lo que falta y sacándolo
+ * todo. Son dos números exactos, y por eso sustituyen al «terminarías con» de antes, que
+ * suponía que lo que falta saldría como lo ya hecho sin decirlo en ninguna parte.
+ */
+private fun subjectRangeText(
+    calculation: SubjectGradeCalculation,
     gradingScale: GradingScale
 ): String {
-    if (average == null) return "Agrega la primera nota para activar la proyección."
-    val remaining = (100.0 - evaluatedPercentage).coerceAtLeast(0.0)
-    return if (remaining > 0.0) {
-        "Promedio ${GradingScaleUtils.formatGrade(average, gradingScale)}. Falta ${String.format(Locale.US, "%.0f", remaining)}% por evaluar."
-    } else {
-        "Promedio final ${GradingScaleUtils.formatGrade(average, gradingScale)} en ${subject.name}."
+    val floor = calculation.guaranteedMinimum
+    val ceiling = calculation.bestPossible
+    if (floor == null || ceiling == null) {
+        return "Agrega tu primera nota para saber dónde puedes acabar."
     }
+    if (calculation.isFinished) {
+        return "Nota final ${GradingScaleUtils.formatGrade(floor, gradingScale)}."
+    }
+    return "Puedes acabar entre ${GradingScaleUtils.formatGrade(floor, gradingScale)} y " +
+        "${GradingScaleUtils.formatGrade(ceiling, gradingScale)}."
 }
 
 @Composable

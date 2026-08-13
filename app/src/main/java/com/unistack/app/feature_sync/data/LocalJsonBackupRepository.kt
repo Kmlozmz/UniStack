@@ -147,7 +147,7 @@ class LocalJsonBackupRepository(
             appendLine("Estudiante: ${profile?.preferredName?.takeIf { it.isNotBlank() } ?: "Estudiante"}")
             appendLine()
             gradesRepository.subjects.value.forEach { subject ->
-                val average = GradeCalculator.calculateProjectedAverageByPeriods(
+                val average = GradeCalculator.calculateCurrentAverageByPeriods(
                     subject.grades,
                     subject.periodScheme.periods
                 )

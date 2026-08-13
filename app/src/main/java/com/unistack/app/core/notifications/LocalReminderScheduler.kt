@@ -341,7 +341,7 @@ class LocalReminderScheduler(private val context: Context) {
         val maxGrade = GradingScaleUtils.maxGradeFor(profile)
         return subjects.mapNotNull { subject ->
             val periods = subject.periodScheme.periods
-            val average = GradeCalculator.calculateProjectedAverageByPeriods(subject.grades, periods)
+            val average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
             val evaluatedPercentage = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods)
             val weightedPoints = GradeCalculator.calculateWeightedPointsByPeriods(subject.grades, periods)
             val remainingPercentage = (1.0 - evaluatedPercentage / 100.0).coerceAtLeast(0.0)
