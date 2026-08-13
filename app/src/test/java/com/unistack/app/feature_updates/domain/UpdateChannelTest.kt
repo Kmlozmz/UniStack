@@ -15,36 +15,33 @@ class UpdateChannelTest {
     }
 
     @Test
-    fun `beta acepta candidatas y definitivas, no alphas`() {
-        assertTrue(UpdateChannel.BETA.accepts("1.0.0-beta.1"))
-        assertTrue(UpdateChannel.BETA.accepts("1.0.0-rc.1"))
-        assertTrue(UpdateChannel.BETA.accepts("1.0.0"))
+    fun `alpha y beta son publicos distintos, no escalones`() {
+        // Era una escalera, y por eso un solo codigo abria los dos canales.
+        assertFalse(UpdateChannel.ALPHA.accepts("1.0.0-beta.1"))
         assertFalse(UpdateChannel.BETA.accepts("1.0.0-alpha.1"))
     }
 
     @Test
-    fun `alpha acepta todo`() {
-        UpdateChannel.entries.forEach { _ ->
-            assertTrue(UpdateChannel.ALPHA.accepts("1.0.0-alpha.1"))
-            assertTrue(UpdateChannel.ALPHA.accepts("1.0.0-beta.1"))
-            assertTrue(UpdateChannel.ALPHA.accepts("1.0.0"))
+    fun `cada canal recibe lo suyo`() {
+        assertTrue(UpdateChannel.ALPHA.accepts("1.0.0-alpha.3"))
+        assertTrue(UpdateChannel.BETA.accepts("1.0.0-beta.1"))
+        assertTrue(UpdateChannel.BETA.accepts("1.0.0-rc.1"))
+    }
+
+    @Test
+    fun `la version definitiva llega a todos los canales`() {
+        // Es la salida de cualquier preestreno: sin esto, quien prueba una alpha se queda
+        // anclado en ella para siempre.
+        UpdateChannel.entries.forEach { canal ->
+            assertTrue(canal.name, canal.accepts("1.0.0"))
         }
     }
 
     @Test
-    fun `un canal es un suelo, no un filtro exclusivo`() {
-        // Quien prueba alphas también tiene que recibir la definitiva que las sustituye: es la
-        // versión buena de lo que estaba probando.
-        assertTrue(UpdateChannel.ALPHA.accepts("1.0.0"))
-        assertTrue(UpdateChannel.BETA.accepts("1.0.0"))
-    }
-
-    @Test
-    fun `un sufijo desconocido se trata como lo mas inestable`() {
-        // «dev» no se publica, pero si algo raro llegara a publicarse no debe colarse en el
-        // canal tranquilo por no reconocerlo.
-        assertFalse(UpdateChannel.STABLE.accepts("1.0.0-dev.26081311"))
-        assertFalse(UpdateChannel.BETA.accepts("1.0.0-loquesea"))
+    fun `un sufijo desconocido se trata como alpha`() {
+        // El circulo mas pequeno, para no colarlo donde hay mas gente.
         assertTrue(UpdateChannel.ALPHA.accepts("1.0.0-loquesea"))
+        assertFalse(UpdateChannel.BETA.accepts("1.0.0-loquesea"))
+        assertFalse(UpdateChannel.STABLE.accepts("1.0.0-loquesea"))
     }
 }

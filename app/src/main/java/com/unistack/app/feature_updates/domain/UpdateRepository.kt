@@ -9,8 +9,11 @@ interface UpdateRepository {
     val channel: StateFlow<UpdateChannel>
     fun setChannel(channel: UpdateChannel)
 
-    /** El canal más alto que este móvil tiene permitido elegir. */
-    val unlockedChannel: StateFlow<UpdateChannel>
+    /**
+     * Los canales que este móvil puede elegir. Siempre incluye [UpdateChannel.STABLE], que no
+     * necesita permiso; cada código añade el suyo, y tener el de alpha no da el de beta.
+     */
+    val unlockedChannels: StateFlow<Set<UpdateChannel>>
 
     /**
      * Canjea un código de acceso contra la lista publicada.

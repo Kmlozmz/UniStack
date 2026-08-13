@@ -14,7 +14,7 @@ el número que Android mira para decidir qué APK se puede instalar encima de cu
 
 | Nombre de versión | `versionCode` | Qué es |
 |---|---:|---|
-| `0.0.0-dev.<yyMMddHH>` | `1` | Compilación local. Nunca se publica. |
+| `0.0.0-sinpublicar.<yyMMddHH>` | `1` | Compilación de trabajo. No es una versión ni se distribuye. |
 | `1.0.0-alpha.N` | `1_000_010 + N` | Preestreno temprano. |
 | `1.0.0-beta.N` | `1_000_030 + N` | Preestreno estable. |
 | `1.0.0-rc.N` | `1_000_060 + N` | Candidata a publicación. |
@@ -32,11 +32,12 @@ parche. Pasar de ahí rompe el orden, y ningún test lo va a avisar.
 
 ## Cuándo se usa cada peldaño
 
-**`dev`** — cada vez que compilas. Sale sola con `assembleDebug` y se va a Telegram. No se
-publica nunca en GitHub.
+**Hay tres peldaños y nada más: `alpha`, `beta` y la definitiva.** Lo que se compila sin
+`-PversionName` no es un peldaño: es un binario de trabajo, no se distribuye y no llega a nadie.
 
-**`alpha`** — cuando quieres probar por el canal real de actualización, tú o dos o tres personas
-de confianza. Se espera que algo se rompa. Es el peldaño para «esto ya se puede tocar».
+**`alpha`** — para quien tenga el código de alpha. Se espera que algo se rompa. Es también **la
+única versión que sale por el bot de Telegram**: beta y definitiva llegan por la app, a quien
+corresponda.
 
 **`beta`** — cuando lo que entra en esa versión ya está cerrado y quieres que gente de fuera la
 use de verdad, con sus datos. De aquí en adelante **no entran funciones nuevas**: solo arreglos.
@@ -69,10 +70,10 @@ De ahí sale todo lo demás:
 
 | De → a | ¿Entra? | Por qué |
 |---|:--:|---|
-| `dev` → cualquier publicada | ✅ | 1 → 1.000.011 o más |
+| Compilación de trabajo → cualquier publicada | ✅ | 1 → 1.000.011 o más |
 | `alpha.1` → `alpha.2` → `beta.1` → `rc.1` → `1.0.0` | ✅ | Sube en cada paso |
 | `1.0.0` → `1.0.1` → `1.1.0` | ✅ | Sube |
-| Publicada → `dev` | ❌ | 1.000.099 → 1, es bajar |
+| Publicada → compilación de trabajo | ❌ | 1.000.099 → 1, es bajar |
 | `1.0.0` → `1.0.0-alpha.2` | ❌ | La alpha va por debajo de su definitiva |
 | `1.0.0-alpha.1` reetiquetada | ❌ | Mismo número: quien ya la tenga no la ve como nueva |
 
@@ -112,17 +113,21 @@ datos», que no le sirve a nadie.
 En Ajustes → Actualizaciones hay tres canales, y cada uno es **un suelo de estabilidad**, no un
 filtro exclusivo:
 
-| Canal | Recibe |
-|---|---|
-| **Estable** (por defecto) | Solo versiones sin sufijo: `1.0.0`, `1.0.1`, `1.1.0` |
-| **Beta** | Lo anterior, más `-beta.N` y `-rc.N` |
-| **Alpha** | Todo, incluidas las `-alpha.N` |
+Los tres canales son **públicos distintos, no escalones**: alpha y beta se prueban con gente
+distinta y por motivos distintos, así que cada uno tiene su propio código y el de alpha **no**
+abre beta.
 
-Quien está en Alpha también recibe la definitiva cuando sale: es la versión buena de lo que
-estaba probando. Un sufijo que la app no reconozca se trata como lo más inestable, para que no
-se cuele en el canal tranquilo.
+| Canal | Recibe | Cómo se entra |
+|---|---|---|
+| **Estable** (por defecto) | Solo `1.0.0`, `1.0.1`, `1.1.0`… | Sin código |
+| **Beta** | `-beta.N`, `-rc.N` y las definitivas | Código de beta |
+| **Alpha** | `-alpha.N` y las definitivas | Código de alpha |
 
-**Las `dev` no entran en ningún canal**: no se publican en GitHub, salen por Telegram.
+**La definitiva llega a todos los canales.** Es la salida de cualquier preestreno: sin eso, quien
+prueba una alpha se queda anclado en ella para siempre. Un sufijo que la app no reconozca cuenta
+como alpha, el círculo más pequeño, para no colarlo donde hay más gente.
+
+Se pueden tener varios códigos a la vez: cada uno suma su canal y se revoca por separado.
 
 **Cuándo se entera la gente.** Un trabajo en segundo plano mira cada 2 horas con la app cerrada,
 y al abrirla se consulta si han pasado 45 minutos. **No es instantáneo y se decidió que basta**
@@ -174,8 +179,7 @@ Basta con el peldaño; yo pongo el comando.
 
 | Lo que dices | Lo que ejecuto |
 |---|---|
-| «sácame un APK de pruebas» | `./gradlew assembleDebug` → va solo a Telegram |
-| «publica la alpha 2» | `publishReleaseToGitHub -PversionName=1.0.0-alpha.2` |
+| «publica la alpha 2» | `publishReleaseToGitHub -PversionName=1.0.0-alpha.2` → publica **y** te la manda por Telegram |
 | «pasamos a beta» | `-PversionName=1.0.0-beta.1` |
 | «publica la rc» | `-PversionName=1.0.0-rc.1` |
 | «saca la 1.0.0» | `-PversionName=1.0.0` — sin sufijo, no es preestreno |

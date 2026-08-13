@@ -100,6 +100,17 @@ val debugBuildStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH
  * sus preestrenos. Que una alpha no se instale sobre la definitiva es lo correcto: es un paso
  * atrás, y para eso se desinstala a conciencia.
  */
+/**
+ * Si un nombre de versión es una alpha.
+ *
+ * `alpha` es el único peldaño cuyo destinatario es una persona concreta a la que se le manda el
+ * APK; beta y definitiva llegan por la propia app, a quien corresponda.
+ */
+fun isAlphaVersion(versionName: String): Boolean {
+    val suffix = versionName.substringAfter('-', missingDelimiterValue = "").lowercase()
+    return suffix.startsWith("alpha")
+}
+
 fun versionCodeFor(versionName: String): Int {
     val cleaned = versionName.trim().removePrefix("v").removePrefix("V")
     val separator = cleaned.indexOfFirst { it == '-' || it == '+' }
@@ -133,15 +144,17 @@ val explicitVersionNameProvider = providers.gradleProperty("versionName")
     .orElse(providers.environmentVariable("VERSION_NAME"))
 val hasExplicitVersionName = explicitVersionNameProvider.isPresent
 /*
- * Las compilaciones locales se numeran por debajo de cualquier versión publicada.
+ * Hay tres peldaños —alpha, beta y definitiva— y ninguno de ellos es «lo que compilo yo ahora».
  *
- * Antes salían como `1.0.<yyMMddHH>`, es decir, un parche altísimo de la 1.0. Eso dejaba sin
- * sitio a la primera versión pública: etiquetar `1.0.0` habría quedado por detrás de lo que
- * tiene instalado quien prueba, y el actualizador diría «Al día». Con `0.0.0-dev.<sello>` la
- * numeración pública empieza donde tiene que empezar, en la 1.0.0.
+ * Una compilación sin `-PversionName` no es una versión: es un binario para comprobar que algo
+ * funciona, y no se distribuye. Se numera `0.0.0-sinpublicar.<sello>` para que quede por debajo
+ * de todo lo publicable y para que se note en pantalla que no es una versión de nadie.
+ *
+ * Antes esto era el peldaño «dev» y se enviaba por el bot, así que en la práctica existía una
+ * cuarta versión con su propio público. Ya no: al bot van las alphas.
  */
 val generatedVersionName = explicitVersionNameProvider
-    .orElse("0.0.0-dev.$fallbackVersionCode")
+    .orElse("0.0.0-sinpublicar.$fallbackVersionCode")
     .get()
 val generatedVersionCode = (
     providers.gradleProperty("versionCode").orNull
@@ -681,7 +694,6 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
     }
 }
 
-val sendDebugApkToTelegram = registerTelegramApkTask("debug")
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
@@ -881,12 +893,17 @@ afterEvaluate {
     tasks.findByName("assembleRelease")?.mustRunAfter(validateReleaseReady)
     tasks.findByName("assembleRelease")?.mustRunAfter(validateGitHubPublishReady)
 
+    /*
+     * Al bot solo van las alphas.
+     *
+     * Antes salía disparado con cualquier `assembleDebug` y con cualquier `assembleRelease`, así
+     * que por ahí llegaban compilaciones sueltas y también betas y definitivas, que tienen su
+     * propio camino: la app. La alpha es la única versión cuyo público es una persona a la que
+     * se le manda el archivo, y por eso es la única que se envía.
+     */
     if (!skipTelegramApk.get()) {
-        tasks.named("assembleDebug") {
-            finalizedBy(sendDebugApkToTelegram)
-        }
-
         tasks.named("assembleRelease") {
+            onlyIf { isAlphaVersion(generatedVersionName) }
             finalizedBy(sendReleaseApkToTelegram)
         }
     }

@@ -71,7 +71,7 @@ fun UpdateSettingsScreen(
     BackHandler(onBack = onBackClick)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val channel by viewModel.channel.collectAsStateWithLifecycle()
-    val unlockedChannel by viewModel.unlockedChannel.collectAsStateWithLifecycle()
+    val unlockedChannels by viewModel.unlockedChannels.collectAsStateWithLifecycle()
     var showCodeDialog by remember { mutableStateOf(false) }
     var codeInput by remember { mutableStateOf("") }
     var codeError by remember { mutableStateOf<String?>(null) }
@@ -114,7 +114,7 @@ fun UpdateSettingsScreen(
         item {
             UpdateChannelCard(
                 selected = channel,
-                unlocked = unlockedChannel,
+                unlocked = unlockedChannels,
                 onRequestCode = {
                     codeInput = ""
                     codeError = null
@@ -353,7 +353,7 @@ fun UpdateSettingsScreen(
 @Composable
 private fun UpdateChannelCard(
     selected: UpdateChannel,
-    unlocked: UpdateChannel,
+    unlocked: Set<UpdateChannel>,
     onRequestCode: () -> Unit,
     onSelect: (UpdateChannel) -> Unit
 ) {
@@ -384,7 +384,7 @@ private fun UpdateChannelCard(
                     val isSelected = option == selected
                     // Los canales por encima de lo desbloqueado se ven, pero piden el
                     // codigo. Ocultarlos dejaria sin explicar por que no estan.
-                    val isLocked = option.ordinal > unlocked.ordinal
+                    val isLocked = option !in unlocked
                     Surface(
                         onClick = { if (isLocked) onRequestCode() else onSelect(option) },
                         modifier = Modifier.weight(1f),

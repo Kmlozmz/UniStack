@@ -1,35 +1,37 @@
 package com.unistack.app.feature_updates.domain
 
 /**
- * Hasta qué punto de la escalera acepta actualizaciones quien usa la app.
+ * Qué versiones recibe quien usa la app.
  *
- * Sin esto, el actualizador ofrecía la publicación más reciente fuera cual fuera: alguien con
- * la versión estable instalada recibía la siguiente alpha como si fuera una actualización
- * normal. El canal es un suelo de estabilidad, no un filtro exclusivo: quien está en `ALPHA`
- * también recibe las betas y las definitivas, porque una definitiva posterior siempre es la
- * versión buena de lo que estaba probando.
+ * **Los tres canales son públicos distintos, no escalones de una escalera.** Alpha y beta se
+ * prueban con gente distinta y por motivos distintos: la alpha para ver si algo funciona, la
+ * beta para ver si algo aguanta el uso real. Tenerlos como escalera hacía que un solo código
+ * abriera los dos, que no es lo que se quiere de un permiso.
  *
- * **No es un candado.** Los APK están en un repositorio público y cualquiera puede descargar el
- * que quiera a mano. Esto decide qué te *ofrece* la app, que es de lo que se trata: nadie
- * debería acabar en una alpha sin haberlo pedido.
+ * Lo único que comparten es la versión definitiva: **todos los canales la reciben**. Quien está
+ * probando una alpha tiene que poder pasar a la versión buena cuando salga, o se queda anclado
+ * en un preestreno viejo para siempre.
+ *
+ * Esto decide qué ofrece la app. No impide instalar nada: los APK están publicados y quien tenga
+ * el enlace descarga el que quiera.
  */
 enum class UpdateChannel(
     val label: String,
     val description: String
 ) {
-    /** Solo versiones definitivas. Lo que recibe todo el mundo por defecto. */
+    /** Solo versiones definitivas. Lo que recibe todo el mundo, sin código. */
     STABLE(
         label = "Estable",
         description = "Solo versiones terminadas. Es lo recomendable si usas la app en serio."
     ),
 
-    /** Definitivas, candidatas y betas: probadas, pero todavía sin cerrar. */
+    /** Betas y definitivas. Para quien ayuda a probar antes de publicar. */
     BETA(
         label = "Beta",
         description = "Versiones casi listas, para ayudar a probarlas antes de que salgan."
     ),
 
-    /** Todo, incluidas las alphas, que pueden traer cosas a medias. */
+    /** Alphas y definitivas. Para quien prueba lo que se acaba de escribir. */
     ALPHA(
         label = "Alpha",
         description = "Lo más nuevo en cuanto existe. Puede fallar y perder datos."
@@ -38,22 +40,21 @@ enum class UpdateChannel(
     /** Si una versión con este nombre debe ofrecerse en este canal. */
     fun accepts(versionName: String): Boolean {
         val stage = Stage.of(versionName)
-        return stage.ordinal >= minimumStage.ordinal
+        // La definitiva llega a todos: es la salida de cualquier preestreno.
+        if (stage == Stage.FINAL) return true
+        return when (this) {
+            STABLE -> false
+            BETA -> stage == Stage.BETA
+            ALPHA -> stage == Stage.ALPHA
+        }
     }
 
-    private val minimumStage: Stage
-        get() = when (this) {
-            STABLE -> Stage.FINAL
-            BETA -> Stage.BETA
-            ALPHA -> Stage.ALPHA
-        }
-
     /**
-     * El peldaño al que pertenece un nombre de versión, ordenado de menos a más estable.
+     * El peldaño al que pertenece un nombre de versión.
      *
-     * Las candidatas (`rc`) van con las betas: quien acepta betas quiere probar lo que está a
-     * punto de salir, y una `rc` es exactamente eso. Un sufijo que no reconocemos —`dev` o
-     * cualquier invento— se trata como lo más inestable, para no colarlo en un canal tranquilo.
+     * Las candidatas (`rc`) cuentan como beta: son lo que está a punto de salir, que es
+     * exactamente lo que quien prueba betas quiere en las manos. Un sufijo que no reconocemos se
+     * trata como alpha, el círculo más pequeño, para no colarlo donde hay más gente.
      */
     private enum class Stage {
         ALPHA,

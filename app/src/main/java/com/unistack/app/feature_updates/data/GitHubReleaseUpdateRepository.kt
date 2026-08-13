@@ -37,8 +37,8 @@ private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
 private const val KEY_LAST_CHECKED_AT = "last_checked_at"
 private const val KEY_CHANNEL = "update_channel"
-private const val KEY_ACCESS_FINGERPRINT = "access_fingerprint"
-private const val KEY_ACCESS_CHANNEL = "access_channel"
+private const val KEY_ACCESS_FINGERPRINTS = "access_fingerprints"
+private const val KEY_ACCESS_CHANNELS = "access_channels"
 
 /** La lista de códigos vive junto a los APK, en el repositorio público de publicaciones. */
 private const val KEY_ACCESS_VERIFIED_AT = "access_verified_at"
@@ -82,22 +82,25 @@ class GitHubReleaseUpdateRepository(
         return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
     }
 
-    private val _unlockedChannel = MutableStateFlow(readStoredAccess())
-    override val unlockedChannel: StateFlow<UpdateChannel> = _unlockedChannel.asStateFlow()
+    // Un conjunto y no un nivel: se pueden tener varios codigos a la vez, y tener el de alpha
+    // no da el de beta.
+    private val _unlockedChannels = MutableStateFlow(readStoredChannels())
+    override val unlockedChannels: StateFlow<Set<UpdateChannel>> = _unlockedChannels.asStateFlow()
 
-    private fun readStoredAccess(): UpdateChannel {
-        val stored = prefs.getString(KEY_ACCESS_CHANNEL, null) ?: return UpdateChannel.STABLE
-        return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
+    private fun storedFingerprints(): Set<String> =
+        prefs.getStringSet(KEY_ACCESS_FINGERPRINTS, emptySet()).orEmpty()
+
+    private fun readStoredChannels(): Set<UpdateChannel> {
+        val stored = prefs.getString(KEY_ACCESS_CHANNELS, null) ?: return setOf(UpdateChannel.STABLE)
+        val channels = stored.split(",")
+            .mapNotNull { name -> runCatching { UpdateChannel.valueOf(name) }.getOrNull() }
+        return channels.toSet() + UpdateChannel.STABLE
     }
 
     override fun setChannel(channel: UpdateChannel) {
-        // Nunca por encima de lo desbloqueado: el selector ya no ofrece lo que no toca, pero
-        // esto es lo que lo impide de verdad si el estado llega por otro camino.
-        val allowed = if (channel.ordinal > _unlockedChannel.value.ordinal) {
-            _unlockedChannel.value
-        } else {
-            channel
-        }
+        // Solo lo concedido: el selector ya no ofrece lo demas, pero esto es lo que lo impide
+        // si el estado llegara por otro camino.
+        val allowed = if (channel in _unlockedChannels.value) channel else UpdateChannel.STABLE
         prefs.edit { putString(KEY_CHANNEL, allowed.name) }
         _channel.value = allowed
     }
@@ -106,11 +109,10 @@ class GitHubReleaseUpdateRepository(
         val fingerprint = ChannelAccess.fingerprint(code)
         val granted = ChannelAccess.channelFor(fingerprint, fetchAccessEntries()) ?: return@withContext null
         prefs.edit {
-            putString(KEY_ACCESS_FINGERPRINT, fingerprint)
-            putString(KEY_ACCESS_CHANNEL, granted.name)
+            putStringSet(KEY_ACCESS_FINGERPRINTS, storedFingerprints() + fingerprint)
             putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
         }
-        _unlockedChannel.value = granted
+        applyAccess(_unlockedChannels.value + granted)
         granted
     }
 
@@ -123,35 +125,39 @@ class GitHubReleaseUpdateRepository(
      * permiso.
      */
     private suspend fun refreshAccess() {
-        val stored = prefs.getString(KEY_ACCESS_FINGERPRINT, null) ?: return
+        val stored = storedFingerprints()
+        if (stored.isEmpty()) return
         val entries = runCatching { fetchAccessEntries() }.getOrNull()
 
         if (entries == null) {
             // No se pudo consultar. Un corte puntual no revoca nada, pero el permiso no puede
-            // sobrevivir indefinidamente sin confirmarse: si no, mantenerlo es tan fácil como
+            // sobrevivir indefinidamente sin confirmarse: si no, mantenerlo es tan facil como
             // impedir que la app llegue a la lista.
             val verifiedAt = prefs.getLong(KEY_ACCESS_VERIFIED_AT, 0L)
             if (verifiedAt > 0L && System.currentTimeMillis() - verifiedAt > ACCESS_GRACE_MILLIS) {
-                applyAccess(UpdateChannel.STABLE)
+                prefs.edit { remove(KEY_ACCESS_FINGERPRINTS) }
+                applyAccess(setOf(UpdateChannel.STABLE))
             }
             return
         }
 
-        prefs.edit { putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis()) }
-        applyAccess(ChannelAccess.channelFor(stored, entries) ?: UpdateChannel.STABLE)
+        // Se conservan solo las huellas que siguen en la lista: asi una revocacion se lleva su
+        // canal y deja intactos los demas codigos que tenga esa persona.
+        val alive = stored.filter { ChannelAccess.channelFor(it, entries) != null }.toSet()
+        val granted = alive.mapNotNull { ChannelAccess.channelFor(it, entries) }.toSet()
+        prefs.edit {
+            putStringSet(KEY_ACCESS_FINGERPRINTS, alive)
+            putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
+        }
+        applyAccess(granted + UpdateChannel.STABLE)
     }
 
-    private fun applyAccess(granted: UpdateChannel) {
-        if (granted == _unlockedChannel.value) return
-        prefs.edit {
-            putString(KEY_ACCESS_CHANNEL, granted.name)
-            if (granted == UpdateChannel.STABLE) {
-                remove(KEY_ACCESS_FINGERPRINT)
-                remove(KEY_ACCESS_VERIFIED_AT)
-            }
-        }
-        _unlockedChannel.value = granted
-        if (_channel.value.ordinal > granted.ordinal) setChannel(granted)
+    private fun applyAccess(granted: Set<UpdateChannel>) {
+        val channels = granted + UpdateChannel.STABLE
+        if (channels == _unlockedChannels.value) return
+        prefs.edit { putString(KEY_ACCESS_CHANNELS, channels.joinToString(",") { it.name }) }
+        _unlockedChannels.value = channels
+        if (_channel.value !in channels) setChannel(UpdateChannel.STABLE)
     }
 
     private fun fetchAccessEntries(): List<ChannelAccess.AccessEntry> {

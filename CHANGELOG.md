@@ -17,6 +17,13 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+### Cambiado
+
+- **Alpha y beta son ahora canales distintos, no escalones.** Cada uno tiene su propio código:
+  el de alpha ya no abre beta. La versión definitiva sigue llegando a los tres canales, para que
+  nadie se quede anclado en un preestreno.
+- Los códigos anteriores dejan de valer, porque abrían los dos canales a la vez.
+
 ### Corregido
 
 - Estar en el canal Estable sin ninguna versión estable publicada se anunciaba como un error

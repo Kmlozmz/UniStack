@@ -127,6 +127,10 @@ usuario—. Los cerrados salen del selector, porque cualquier peso nuevo ahí lo
 propio guardado, y bajan a un apartado «Completados». Se sigue entrando en ellos a consultar o
 a corregir sus notas.
 
+**Alpha y beta son públicos distintos, no escalones.** Cada uno con su código, y el de alpha
+**no** abre beta. Lo único que comparten es que la definitiva llega a los tres canales: sin eso,
+quien prueba una alpha se queda anclado en ella para siempre.
+
 **El corte activo lo elige el usuario, no la app.** `Subject.activePeriodId` **vacío** significa
 «sin elegir», y es como nace toda materia. Léelo por `chosenPeriodId` (null si no hay elección)
 o por `defaultPeriodId` (con qué rellenar un formulario). Mientras no haya elección, el detalle
@@ -234,10 +238,14 @@ porqué de las decisiones que hay detrás.
 Exige firma de release real y `GITHUB_TOKEN` con escritura sobre el repo de publicaciones. El
 nombre con sufijo (`-alpha.1`) marca la publicación como preestreno; `-Pprerelease` lo fuerza.
 
-**Las compilaciones locales van numeradas por debajo de todo:** `0.0.0-dev.<yyMMddHH>`. Así la
-numeración pública empieza donde tiene que empezar, en la `1.0.0`. Antes salían como
-`1.0.<yyMMddHH>` —un parche altísimo de la 1.0— y eso dejaba sin sitio a la primera versión
-pública: una etiqueta `1.0.0` quedaba *por detrás* de lo que tenía instalado quien prueba.
+**Hay tres peldaños y solo tres: `alpha`, `beta` y la definitiva.** Lo que se compila sin
+`-PversionName` no es un peldaño: se numera `0.0.0-sinpublicar.<yyMMddHH>`, queda por debajo de
+todo y no se distribuye. Antes eso era «dev» y salía por el bot, con lo que existía de hecho una
+cuarta versión con su propio público.
+
+**Al bot de Telegram solo van las alphas.** Beta y definitiva llegan por la app, a quien
+corresponda; la alpha es la única cuyo destinatario es una persona a la que se le manda el
+archivo.
 
 **El APK publicado no lleva el nombre del buildType**: `UniStack-1.0.0-alpha.1.apk`, no
 `…-alpha.1-release.apk`, que se contradecía consigo mismo.
