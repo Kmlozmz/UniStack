@@ -99,6 +99,7 @@ import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
+import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.utils.NO_DATA
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -229,6 +230,7 @@ fun SubjectFormScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .dismissKeyboardOnTapOutside()
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
@@ -716,11 +718,26 @@ private fun CustomSubjectColorDialog(
     onDismiss: () -> Unit,
     onApply: (Int) -> Unit
 ) {
-    var workingColor by remember(initialColor) { mutableStateOf(initialColor) }
-    val selected = Color(workingColor)
-    val hsv = remember(workingColor) {
-        FloatArray(3).also { android.graphics.Color.colorToHSV(workingColor, it) }
+    /*
+     * El tono, la saturación y el valor son el estado; el color se deriva de ellos.
+     *
+     * Antes el estado era el color y el HSV se recalculaba a partir de él en cada cambio. Ese
+     * viaje de ida y vuelta no es exacto —el color se guarda en enteros de 0 a 255—, así que
+     * arrastrar por el lienzo movía un poco el tono, y como el gesto estaba atado al tono, se
+     * cancelaba solo a mitad del arrastre: el selector se quedaba pegado. Con el HSV como
+     * fuente, arrastrar la saturación no puede tocar el tono.
+     */
+    val initialHsv = remember(initialColor) {
+        FloatArray(3).also { android.graphics.Color.colorToHSV(initialColor, it) }
     }
+    var hue by remember(initialColor) { mutableStateOf(initialHsv[0]) }
+    var saturation by remember(initialColor) { mutableStateOf(initialHsv[1]) }
+    var value by remember(initialColor) { mutableStateOf(initialHsv[2]) }
+
+    val workingColor = remember(hue, saturation, value) {
+        android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value))
+    }
+    val selected = Color(workingColor)
     var hexInput by remember(initialColor) { mutableStateOf(selected.toHexString()) }
 
     LaunchedEffect(workingColor) {
@@ -784,13 +801,12 @@ private fun CustomSubjectColorDialog(
                 }
 
                 SaturationValuePicker(
-                    hue = hsv[0],
-                    saturation = hsv[1],
-                    value = hsv[2],
-                    onSelected = { saturation, value ->
-                        workingColor = android.graphics.Color.HSVToColor(
-                            floatArrayOf(hsv[0], saturation, value)
-                        )
+                    hue = hue,
+                    saturation = saturation,
+                    value = value,
+                    onSelected = { newSaturation, newValue ->
+                        saturation = newSaturation
+                        value = newValue
                     }
                 )
 
@@ -802,12 +818,8 @@ private fun CustomSubjectColorDialog(
                         fontWeight = FontWeight.SemiBold
                     )
                     Slider(
-                        value = hsv[0],
-                        onValueChange = { hue ->
-                            workingColor = android.graphics.Color.HSVToColor(
-                                floatArrayOf(hue, hsv[1], hsv[2])
-                            )
-                        },
+                        value = hue,
+                        onValueChange = { hue = it },
                         valueRange = 0f..360f,
                         colors = SliderDefaults.colors(
                             thumbColor = selected,
@@ -824,7 +836,13 @@ private fun CustomSubjectColorDialog(
                             .filter { it == '#' || it in '0'..'9' || it in 'A'..'F' }
                             .take(7)
                         hexInput = normalized
-                        normalized.toColorIntOrNull()?.let { workingColor = it }
+                        normalized.toColorIntOrNull()?.let { typed ->
+                            val parsed = FloatArray(3)
+                            android.graphics.Color.colorToHSV(typed, parsed)
+                            hue = parsed[0]
+                            saturation = parsed[1]
+                            value = parsed[2]
+                        }
                     },
                     label = { Text("Hexadecimal") },
                     placeholder = { Text("#6750F5") },
@@ -873,7 +891,9 @@ private fun SaturationValuePicker(
             .fillMaxWidth()
             .height(150.dp)
             .clip(AppShapes.SmallCard)
-            .pointerInput(hue) {
+            // Sin el tono como clave: reiniciar el bloque a mitad de un arrastre cancela el
+            // gesto, y el lienzo dejaba de seguir el dedo.
+            .pointerInput(Unit) {
                 fun update(offset: Offset) {
                     onSelected(
                         (offset.x / size.width).coerceIn(0f, 1f),

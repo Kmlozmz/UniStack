@@ -58,6 +58,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
+import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
@@ -210,6 +211,7 @@ fun AddGradeScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .dismissKeyboardOnTapOutside()
             .background(UniStackColors.Background)
     ) {
         Column(
