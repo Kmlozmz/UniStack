@@ -2,7 +2,6 @@ package com.unistack.app.feature_schedule.presentation
 
 import com.unistack.app.core.utils.DayLabels
 
-import com.unistack.app.core.utils.NO_DATA
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -40,6 +39,7 @@ import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -153,15 +153,22 @@ internal fun ScheduleIdentityContent(
             IdentityScheduleView.TIMETABLE -> {
                 item {
                     TimetableMetrics(
+                        selectedDate = selectedDate,
+                        sessions = uiState.sessions,
+                        subjects = uiState.subjects,
+                        onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS }
+                    )
+                }
+                // La próxima clase va antes de la rejilla y el acceso al horario completo
+                // después: lo primero es lo que se viene a mirar, y lo segundo es una salida
+                // hacia otra pantalla, que se ofrece cuando ya has visto la semana.
+                item {
+                    NextClassPanel(
                         sessions = uiState.sessions,
                         subjects = uiState.subjects,
                         use24Hour = uiState.accessibility.use24HourTime,
-                        onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS },
                         onSessionClick = onSessionClick
                     )
-                }
-                item {
-                    FullScheduleLaunchCard(onClick = onOpenFullSchedule)
                 }
                 item {
                     IdentityWeeklyTimeline(
@@ -173,12 +180,7 @@ internal fun ScheduleIdentityContent(
                     )
                 }
                 item {
-                    NextClassPanel(
-                        sessions = uiState.sessions,
-                        subjects = uiState.subjects,
-                        use24Hour = uiState.accessibility.use24HourTime,
-                        onSessionClick = onSessionClick
-                    )
+                    FullScheduleLaunchCard(onClick = onOpenFullSchedule)
                 }
                 item {
                     IdentityPrimaryButton(label = "Agregar clase", onClick = onAddClass)
@@ -382,34 +384,39 @@ private fun IdentityModeSwitch(
     )
 }
 
+/**
+ * Las tres cifras de la cabecera del horario.
+ *
+ * Ninguna repite lo que ya hay debajo. Aquí estuvieron la hora de la próxima clase y su aula,
+ * que es exactamente lo que dice el panel de «Próxima clase» unos centímetros más abajo, y con
+ * más detalle: sobraban. En su sitio van dos cosas que la pantalla no cuenta en ninguna parte
+ * —cuántas clases hay hoy y cuánta clase tiene la semana—, que es lo que se mira de un vistazo
+ * antes de ponerse a leer la rejilla.
+ */
 @Composable
 private fun TimetableMetrics(
+    selectedDate: LocalDate,
     sessions: List<ClassSession>,
     subjects: List<Subject>,
-    use24Hour: Boolean,
-    onSubjectsClick: () -> Unit,
-    onSessionClick: (LocalDate, ClassSession) -> Unit
+    onSubjectsClick: () -> Unit
 ) {
-    val next = remember(sessions) { findUpcomingClass(LocalDate.now(), sessions) }
     val subjectCount = subjects.count { subject -> sessions.any { it.subjectId == subject.id } }
-    val room = next?.second?.identityPlace()?.room.orEmpty()
-    val openUpcoming = next?.let { upcoming ->
-        { onSessionClick(upcoming.first, upcoming.second) }
+    val today = LocalDate.now()
+    val todayCount = remember(sessions, today) {
+        sessions.count { it.occursOn(today.toEpochDay(), today.dayOfWeek.value) }
     }
-
-    /*
-     * La hora y el aula van en la misma tarjeta.
-     *
-     * Eran dos: «10:30 · Próxima» y «408D · Aula». Separadas parecían dos datos distintos
-     * cuando son el mismo —la hora de la próxima clase y dónde es—, y el aula suelta no
-     * significa nada: sin la hora al lado no se sabe de qué clase habla.
-     */
-    val upcomingValue = next?.second
-        ?.let { session ->
-            val time = formatIdentityMinute(session.startMinute, use24Hour)
-            if (room.isBlank()) time else "$time · $room"
+    // Se recorre la semana día a día en vez de sumar cada clase por sus días marcados: así
+    // una materia quincenal cuenta solo en la semana en que toca, que es lo que enseña la
+    // rejilla de abajo.
+    val weekMinutes = remember(sessions, selectedDate) {
+        val weekStart = selectedDate.weekStartIdentity()
+        (0L..6L).sumOf { offset ->
+            val date = weekStart.plusDays(offset)
+            sessions
+                .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                .sumOf { it.endMinute - it.startMinute }
         }
-        ?: NO_DATA
+    }
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MetricCard(
@@ -421,15 +428,30 @@ private fun TimetableMetrics(
             onClick = onSubjectsClick
         )
         MetricCard(
-            // Más ancha que la de materias: lleva dos datos, y un número de aula largo
-            // no cabe con el reparto a partes iguales.
-            modifier = Modifier.weight(1.6f),
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.Today,
+            iconColor = IdentityAccent,
+            value = todayCount.toString(),
+            label = if (todayCount == 1) "Clase hoy" else "Clases hoy"
+        )
+        MetricCard(
+            modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Schedule,
             iconColor = IdentityAccent,
-            value = upcomingValue,
-            label = "Próxima clase",
-            onClick = openUpcoming
+            value = weeklyHoursLabel(weekMinutes),
+            label = "Esta semana"
         )
+    }
+}
+
+/** Las horas de clase de la semana, con media hora de resolución: «18 h», «17,5 h». */
+private fun weeklyHoursLabel(minutes: Int): String {
+    if (minutes == 0) return "0 h"
+    val hours = minutes / 60f
+    return if (minutes % 60 == 0) {
+        "${minutes / 60} h"
+    } else {
+        String.format(IdentityLocale, "%.1f h", hours)
     }
 }
 

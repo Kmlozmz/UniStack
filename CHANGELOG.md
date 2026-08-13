@@ -38,9 +38,11 @@ número y la fecha, y se abre una nueva.
 
 ### Cambiado
 
-- **La hora de la próxima clase y su aula van en la misma tarjeta.** Estaban en dos tarjetas
-  seguidas, «10:30 · Próxima» y «408D · Aula», que parecían dos datos distintos siendo el
-  mismo; el aula suelta, además, no dice de qué clase habla.
+- **La cabecera del horario dice cuántas clases tienes hoy y cuántas horas de clase lleva la
+  semana.** En su sitio había dos tarjetas, «10:30 · Próxima» y «408D · Aula», que repetían lo
+  que el panel de «Próxima clase» ya cuenta entero unos centímetros más abajo.
+- **«Próxima clase» sube encima de la rejilla y «Horario completo» baja debajo.** Lo que se
+  viene a mirar, primero; la salida hacia otra pantalla, cuando ya has visto la semana.
 - **Las clases del horario ocupan menos.** Cada bloque se pintaba entero del color de la
   materia y apilaba la hora de inicio, la de fin, el nombre y el aula en una columna estrecha,
   repitiendo lo que el eje de horas ya decía. Ahora el color va en una franja y un fondo suave,
