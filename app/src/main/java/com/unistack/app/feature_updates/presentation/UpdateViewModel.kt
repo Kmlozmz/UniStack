@@ -3,6 +3,7 @@ package com.unistack.app.feature_updates.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.BuildConfig
+import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,16 @@ class UpdateViewModel @Inject constructor(
 ) : ViewModel() {
 
     val state: StateFlow<UpdateState> = updateRepository.state
+    val channel: StateFlow<UpdateChannel> = updateRepository.channel
+
+    /**
+     * Cambiar de canal vuelve a consultar en el acto: si bajas de alpha a estable, lo que la
+     * pantalla enseñaba puede haber dejado de ser una actualización para ti.
+     */
+    fun setChannel(channel: UpdateChannel) {
+        updateRepository.setChannel(channel)
+        viewModelScope.launch { updateRepository.checkForUpdates() }
+    }
 
     val currentVersionName: String = BuildConfig.VERSION_NAME
     val currentVersionCode: Int = BuildConfig.VERSION_CODE

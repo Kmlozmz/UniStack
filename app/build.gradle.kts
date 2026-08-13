@@ -632,9 +632,9 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
             throw GradleException("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in environment variables or .env")
         }
 
-        val currentSnapshot = currentProjectSnapshot()
         val sizeMb = apkPath.length().toDouble() / 1024.0 / 1024.0
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        val currentSnapshot = currentProjectSnapshot()
         val changelog = telegramChangelogBlock(telegramChangelogLinesForVariant(variant, currentSnapshot))
         val variantTitle = variant.replaceFirstChar { it.uppercase() }
         val sizeText = String.format(Locale.US, "%.2f", sizeMb)
@@ -720,35 +720,42 @@ val assembleReleaseAndSendToTelegram = tasks.register("assembleReleaseAndSendToT
 fun githubReleaseSnapshotFile(): File =
     rootProject.file(".gradle/github-release.snapshot.properties")
 
-fun readGithubReleaseSnapshot(): Map<String, String> {
-    val file = githubReleaseSnapshotFile()
-    if (!file.exists()) return emptyMap()
-    return Properties().apply {
-        file.inputStream().use(::load)
-    }.entries.associate { (key, value) -> key.toString() to value.toString() }
-}
-
-fun writeGithubReleaseSnapshot(snapshot: Map<String, String>) {
-    val file = githubReleaseSnapshotFile()
-    file.parentFile.mkdirs()
-    Properties().apply {
-        snapshot.forEach { (path, hash) -> setProperty(path, hash) }
-        file.outputStream().use { store(it, "Last UniStack GitHub Release snapshot") }
+/**
+ * Las notas de la publicación salen de `CHANGELOG.md`, de la sección de esa versión exacta.
+ *
+ * Antes se generaban comparando huellas de archivos contra una instantánea de la publicación
+ * anterior, así que decían qué archivos se tocaron —«cambios en la capa de datos»— y no qué
+ * nota quien usa la app. Y si no había con qué comparar, salía «Primera version publicada».
+ *
+ * Falta la sección: falla. Es a propósito. Una versión sin notas escritas no debería llegar a
+ * publicarse, y un texto de relleno generado automáticamente es peor que no publicar.
+ */
+fun changelogBodyFor(versionName: String): String {
+    val file = rootProject.file("CHANGELOG.md")
+    if (!file.exists()) {
+        throw GradleException("Falta CHANGELOG.md en la raiz del proyecto.")
     }
-}
-
-fun githubChangelogLines(currentSnapshot: Map<String, String>): List<String> {
-    val previousSnapshot = readGithubReleaseSnapshot()
-    if (previousSnapshot.isEmpty()) {
-        return listOf("Primera version publicada en GitHub Releases.")
+    val lines = file.readLines()
+    val heading = "## [$versionName]"
+    val start = lines.indexOfFirst { it.trimStart().startsWith(heading) }
+    if (start < 0) {
+        throw GradleException(
+            "CHANGELOG.md no tiene seccion para $versionName. Anade '$heading - <fecha>' con lo que " +
+                "cambia para quien usa la app, y vuelve a publicar."
+        )
     }
-    val changedFiles = changedFilesSinceSnapshot(previousSnapshot, currentSnapshot)
-    return summarizeChangeFiles(changedFiles)
-        .ifEmpty { listOf("Sin cambios de codigo desde la ultima version publicada.") }
+    val rest = lines.drop(start + 1)
+    val end = rest.indexOfFirst { it.trimStart().startsWith("## [") }
+    val body = (if (end < 0) rest else rest.take(end))
+        .joinToString(System.lineSeparator())
+        .trim()
+        .removeSuffix("---")
+        .trim()
+    if (body.isBlank()) {
+        throw GradleException("La seccion de $versionName en CHANGELOG.md esta vacia.")
+    }
+    return body
 }
-
-fun githubReleaseBody(lines: List<String>): String =
-    lines.joinToString("\n") { "- $it" }
 
 val validateGitHubPublishReady = tasks.register("validateGitHubPublishReady") {
     group = "verification"
@@ -789,8 +796,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
 
         val versionName = generatedVersionName
         val tagName = "v$versionName"
-        val currentSnapshot = currentProjectSnapshot()
-        val body = githubReleaseBody(githubChangelogLines(currentSnapshot))
+        val body = changelogBodyFor(versionName)
 
         /*
          * Una versión con sufijo (1.1.0-alpha.1) se publica como preestreno salvo que se diga
@@ -866,7 +872,6 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
             throw GradleException("APK upload failed (curl exit ${uploadResult.exitValue})")
         }
 
-        writeGithubReleaseSnapshot(currentSnapshot)
         println("✓ Published $tagName to https://github.com/$githubReleasesSlug/releases/tag/$tagName")
     }
 }

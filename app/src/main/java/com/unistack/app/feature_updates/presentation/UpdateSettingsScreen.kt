@@ -1,6 +1,7 @@
 package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
@@ -25,10 +26,12 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +62,7 @@ fun UpdateSettingsScreen(
 ) {
     BackHandler(onBack = onBackClick)
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val channel by viewModel.channel.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     var showSheet by remember { mutableStateOf(false) }
 
@@ -87,6 +92,12 @@ fun UpdateSettingsScreen(
             UpdateCheckCard(
                 state = state,
                 onCheckClick = viewModel::checkForUpdates
+            )
+        }
+        item {
+            UpdateChannelCard(
+                selected = channel,
+                onSelect = viewModel::setChannel
             )
         }
         item {
@@ -158,6 +169,71 @@ fun UpdateSettingsScreen(
                     viewModel.dismiss()
                 }
             )
+        }
+    }
+}
+
+/**
+ * Hasta dónde se aceptan actualizaciones.
+ *
+ * No es un candado: los APK están en un repositorio público y quien quiera puede descargar el
+ * que le apetezca. Decide qué te ofrece la app, para que nadie acabe en una alpha sin pedirlo.
+ */
+@Composable
+private fun UpdateChannelCard(
+    selected: UpdateChannel,
+    onSelect: (UpdateChannel) -> Unit
+) {
+    UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                UpdateIconTile(icon = Icons.Rounded.Layers)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Qué versiones recibes",
+                        color = UniStackColors.TextPrimary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        selected.description,
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                UpdateChannel.entries.forEach { option ->
+                    val isSelected = option == selected
+                    Surface(
+                        onClick = { onSelect(option) },
+                        modifier = Modifier.weight(1f),
+                        shape = AppShapes.Pill,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            UniStackColors.SurfaceVariant
+                        }
+                    ) {
+                        Text(
+                            option.label,
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            textAlign = TextAlign.Center,
+                            color = if (isSelected) {
+                                UniStackColors.OnPrimary
+                            } else {
+                                UniStackColors.TextSecondary
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
         }
     }
 }

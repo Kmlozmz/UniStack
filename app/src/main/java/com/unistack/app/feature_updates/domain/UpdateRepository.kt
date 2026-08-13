@@ -4,6 +4,11 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface UpdateRepository {
     val state: StateFlow<UpdateState>
+
+    /** Hasta qué punto de la escalera se aceptan actualizaciones. */
+    val channel: StateFlow<UpdateChannel>
+    fun setChannel(channel: UpdateChannel)
+
     suspend fun checkForUpdates()
     suspend fun checkForUpdatesIfDue()
     fun downloadUpdate()

@@ -98,9 +98,36 @@ sería `1.0.1-alpha.1` o `1.1.0-alpha.1`.
 preestreno en GitHub. Se puede forzar con `-Pprerelease=true|false`, pero entonces la etiqueta y
 la marca pueden contradecirse; mejor no.
 
-**Las notas de la versión se generan solas** a partir de qué archivos cambiaron desde la
-publicación anterior. Sirven de registro, no de texto para leer. Si quieres notas de verdad,
-pídemelas y las escribo antes de publicar.
+**Las notas salen de `CHANGELOG.md`,** de la sección de esa versión exacta. Si la sección no
+existe, **la publicación falla**: es a propósito, para que ninguna versión salga con notas de
+relleno. Cada entrada dice qué nota quien usa la app, no qué archivos se tocaron.
+
+Antes se generaban comparando huellas de archivos y decían cosas como «cambios en la capa de
+datos», que no le sirve a nadie.
+
+---
+
+## Quién recibe cada versión
+
+En Ajustes → Actualizaciones hay tres canales, y cada uno es **un suelo de estabilidad**, no un
+filtro exclusivo:
+
+| Canal | Recibe |
+|---|---|
+| **Estable** (por defecto) | Solo versiones sin sufijo: `1.0.0`, `1.0.1`, `1.1.0` |
+| **Beta** | Lo anterior, más `-beta.N` y `-rc.N` |
+| **Alpha** | Todo, incluidas las `-alpha.N` |
+
+Quien está en Alpha también recibe la definitiva cuando sale: es la versión buena de lo que
+estaba probando. Un sufijo que la app no reconozca se trata como lo más inestable, para que no
+se cuele en el canal tranquilo.
+
+**Las `dev` no entran en ningún canal**: no se publican en GitHub, salen por Telegram.
+
+**Esto no es un candado.** Los APK están en un repositorio público y cualquiera puede descargar
+el que quiera a mano. El canal decide qué te *ofrece* la app, que es el problema real: que nadie
+acabe en una alpha sin haberlo pedido. Para restringir de verdad quién puede instalar qué haría
+falta que las descargas pasaran por una identidad, y hoy no es así.
 
 ---
 

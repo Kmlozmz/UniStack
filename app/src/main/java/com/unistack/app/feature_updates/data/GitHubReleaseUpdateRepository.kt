@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
 import com.unistack.app.feature_updates.domain.ReleaseVersion
+import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
@@ -34,6 +35,7 @@ import org.json.JSONObject
 private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
 private const val KEY_LAST_CHECKED_AT = "last_checked_at"
+private const val KEY_CHANNEL = "update_channel"
 private const val AUTO_CHECK_INTERVAL_MILLIS = 12 * 60 * 60 * 1000L
 
 class GitHubReleaseUpdateRepository(
@@ -46,6 +48,20 @@ class GitHubReleaseUpdateRepository(
 
     private val notificationManager = UpdateNotificationManager(context)
     private var downloadId: Long = -1L
+
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val _channel = MutableStateFlow(readStoredChannel())
+    override val channel: StateFlow<UpdateChannel> = _channel.asStateFlow()
+
+    private fun readStoredChannel(): UpdateChannel {
+        val stored = prefs.getString(KEY_CHANNEL, null) ?: return UpdateChannel.STABLE
+        return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
+    }
+
+    override fun setChannel(channel: UpdateChannel) {
+        prefs.edit { putString(KEY_CHANNEL, channel.name) }
+        _channel.value = channel
+    }
 
     override suspend fun checkForUpdates() {
         _state.value = UpdateState.Checking
@@ -65,7 +81,6 @@ class GitHubReleaseUpdateRepository(
     }
 
     override suspend fun checkForUpdatesIfDue() {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val lastCheckedAt = prefs.getLong(KEY_LAST_CHECKED_AT, 0L)
         val now = System.currentTimeMillis()
         if (now - lastCheckedAt < AUTO_CHECK_INTERVAL_MILLIS) return
@@ -110,10 +125,16 @@ class GitHubReleaseUpdateRepository(
             if (releases.length() == 0) {
                 throw IOException("Todavía no hay ninguna publicación en ${BuildConfig.GITHUB_REPO}.")
             }
+            // La más reciente que acepte el canal, no la más reciente a secas: con el canal
+            // estable, una alpha publicada después de la definitiva no es una actualización.
+            val current = _channel.value
             val published = (0 until releases.length())
                 .mapNotNull(releases::optJSONObject)
-                .firstOrNull { !it.optBoolean("draft", false) }
-                ?: throw IOException("Todas las publicaciones están en borrador.")
+                .filterNot { it.optBoolean("draft", false) }
+                .firstOrNull { current.accepts(it.optString("tag_name").removePrefix("v").removePrefix("V")) }
+                ?: throw IOException(
+                    "No hay ninguna versión publicada para el canal ${current.label}."
+                )
             parseRelease(published)
                 ?: throw IOException(
                     "La última publicación no trae ningún APK adjunto, así que no hay nada que descargar."
