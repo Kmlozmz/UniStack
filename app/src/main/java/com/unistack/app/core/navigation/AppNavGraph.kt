@@ -147,8 +147,7 @@ fun MainNavGraph(
             }
         }
     }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+    val currentRoute = navController.currentRouteAsState() ?: resolvedInitialRoute
     var homeDrawerOpen by remember { mutableStateOf(false) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
@@ -715,13 +714,32 @@ fun MainNavGraph(
     }
 }
 
+/**
+ * La ruta en la que está la app ahora mismo.
+ *
+ * `currentBackStackEntryAsState` arranca en `null`: empieza a recoger el flujo de destinos
+ * *después* de componer, así que en el primer fotograma no hay entrada todavía. Quien caía de
+ * ahí directo a Inicio pintaba Inicio durante ese fotograma y saltaba a la pestaña de verdad en
+ * el siguiente, con la animación del indicador de por medio.
+ *
+ * Se notaba al salir de un formulario: esas rutas esconden la barra, así que al volver la barra
+ * se compone desde cero y su primer fotograma decía Inicio. El indicador cruzaba de Inicio a la
+ * sección delante del usuario, como si la app hubiera pasado por la pantalla de inicio.
+ *
+ * El destino del propio NavController sí se puede leer en el acto, y es el mismo dato.
+ */
+@Composable
+private fun NavHostController.currentRouteAsState(): String? {
+    val entry by currentBackStackEntryAsState()
+    return entry?.destination?.route ?: currentDestination?.route
+}
+
 @Composable
 private fun ModuleAccessGuard(
     navController: NavHostController,
     enabledModules: Set<AppModule>
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+    val currentRoute = navController.currentRouteAsState() ?: AppRoutes.Home
 
     LaunchedEffect(currentRoute, enabledModules) {
         val module = moduleForRoute(currentRoute)
@@ -992,8 +1010,7 @@ fun UniStackBottomBar(
     modifier: Modifier = Modifier,
     items: List<BottomNavItem> = BottomNavItem.items
 ) {
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: AppRoutes.Home
+    val currentRoute = navController.currentRouteAsState() ?: AppRoutes.Home
     val selectedBottomRoute = bottomRouteFor(currentRoute)
     val showBottomBar = selectedBottomRoute != null && items.any { it.route == selectedBottomRoute }
 

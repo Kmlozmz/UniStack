@@ -28,12 +28,19 @@ número y la fecha, y se abre una nueva.
   moverlo un poco más. Ahora sigue el dedo hasta que se levanta.
 - **El teclado no se quitaba al tocar fuera de un campo.** En los formularios de materia y de
   nota se quedaba puesto tapando media pantalla. Ahora se cierra al tocar fuera o al desplazar.
+- **Al salir de un formulario, el indicador de la barra inferior pasaba por Inicio.** Cruzaba
+  de Inicio a la sección en la que estabas, como si la app hubiera pasado por la pantalla de
+  inicio. No cambiaba de sección: era la barra pintando un primer fotograma sin saber todavía
+  dónde estaba.
 - **El detalle de una clase salía a media pantalla.** El panel abría por la mitad y las
   opciones de abajo —historial, editar, eliminar— quedaban fuera hasta que se arrastraba hacia
   arriba. Ahora abre entero, y rueda si no cabe.
 
 ### Cambiado
 
+- **La hora de la próxima clase y su aula van en la misma tarjeta.** Estaban en dos tarjetas
+  seguidas, «10:30 · Próxima» y «408D · Aula», que parecían dos datos distintos siendo el
+  mismo; el aula suelta, además, no dice de qué clase habla.
 - **Las clases del horario ocupan menos.** Cada bloque se pintaba entero del color de la
   materia y apilaba la hora de inicio, la de fin, el nombre y el aula en una columna estrecha,
   repitiendo lo que el eje de horas ya decía. Ahora el color va en una franja y un fondo suave,

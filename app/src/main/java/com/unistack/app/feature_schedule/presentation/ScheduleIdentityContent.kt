@@ -392,10 +392,25 @@ private fun TimetableMetrics(
 ) {
     val next = remember(sessions) { findUpcomingClass(LocalDate.now(), sessions) }
     val subjectCount = subjects.count { subject -> sessions.any { it.subjectId == subject.id } }
-    val room = next?.second?.identityPlace()?.room.orEmpty().ifBlank { NO_DATA }
+    val room = next?.second?.identityPlace()?.room.orEmpty()
     val openUpcoming = next?.let { upcoming ->
         { onSessionClick(upcoming.first, upcoming.second) }
     }
+
+    /*
+     * La hora y el aula van en la misma tarjeta.
+     *
+     * Eran dos: «10:30 · Próxima» y «408D · Aula». Separadas parecían dos datos distintos
+     * cuando son el mismo —la hora de la próxima clase y dónde es—, y el aula suelta no
+     * significa nada: sin la hora al lado no se sabe de qué clase habla.
+     */
+    val upcomingValue = next?.second
+        ?.let { session ->
+            val time = formatIdentityMinute(session.startMinute, use24Hour)
+            if (room.isBlank()) time else "$time · $room"
+        }
+        ?: NO_DATA
+
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         MetricCard(
             modifier = Modifier.weight(1f),
@@ -406,19 +421,13 @@ private fun TimetableMetrics(
             onClick = onSubjectsClick
         )
         MetricCard(
-            modifier = Modifier.weight(1f),
+            // Más ancha que la de materias: lleva dos datos, y un número de aula largo
+            // no cabe con el reparto a partes iguales.
+            modifier = Modifier.weight(1.6f),
             icon = Icons.Rounded.Schedule,
             iconColor = IdentityAccent,
-            value = next?.second?.let { formatIdentityMinute(it.startMinute, use24Hour) } ?: NO_DATA,
-            label = "Próxima",
-            onClick = openUpcoming
-        )
-        MetricCard(
-            modifier = Modifier.weight(1f),
-            icon = Icons.Rounded.Place,
-            iconColor = IdentityAccent,
-            value = room,
-            label = "Aula",
+            value = upcomingValue,
+            label = "Próxima clase",
             onClick = openUpcoming
         )
     }
