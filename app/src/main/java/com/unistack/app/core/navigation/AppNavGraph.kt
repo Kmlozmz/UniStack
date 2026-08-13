@@ -1001,9 +1001,18 @@ private fun UniStackBottomBarContent(
             .fillMaxWidth()
             .height(barHeight + if (floating) 0.dp else navigationBarBottom),
         shape = if (floating) RoundedCornerShape(percent = 50) else RectangleShape,
-        color = UniStackColors.BottomBar,
+        // Flotando hace falta más contraste y una sombra de verdad. El color de barra sale
+        // de una superficie elevada, apenas un par de tonos por encima del fondo: acoplada
+        // basta, porque el borde de la pantalla ya la separa, pero suspendida sobre el
+        // contenido se confundía con lo que pasaba por detrás y se veía sucia.
+        color = if (floating) UniStackColors.SurfaceVariant else UniStackColors.BottomBar,
         tonalElevation = if (floating) 3.dp else 2.dp,
-        shadowElevation = if (floating) 3.dp else 0.dp
+        shadowElevation = if (floating) 12.dp else 0.dp,
+        border = if (floating) {
+            BorderStroke(1.dp, UniStackColors.SoftOutline)
+        } else {
+            null
+        }
     ) {
         Row(
             modifier = Modifier

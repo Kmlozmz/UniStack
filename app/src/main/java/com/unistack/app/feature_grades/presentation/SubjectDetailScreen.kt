@@ -80,6 +80,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
@@ -202,7 +203,14 @@ fun SubjectDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 22.dp, top = 8.dp, end = 22.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(
+                start = 22.dp,
+                top = 8.dp,
+                end = 22.dp,
+                // 96dp para el botón pegado, más lo que tape la barra flotante encima
+                // de él. Sin lo segundo, la última tarjeta de cortes quedaba debajo.
+                bottom = 96.dp + LocalBottomBarOverlay.current
+            ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
@@ -353,6 +361,7 @@ fun SubjectDetailScreen(
                 // El degradado ya se dibuja hasta el borde porque va antes que el margen;
                 // lo que faltaba era apartarse del teclado.
                 .bottomActionInsets()
+                .padding(bottom = LocalBottomBarOverlay.current)
                 .padding(horizontal = 22.dp, vertical = 14.dp)
         ) {
             SquishyButton(
@@ -442,7 +451,12 @@ fun SubjectPeriodDetailScreen(
             .fillMaxSize()
             .background(UniStackColors.Background)
             .statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(
+            start = 20.dp,
+            top = 8.dp,
+            end = 20.dp,
+            bottom = 28.dp + LocalBottomBarOverlay.current
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
