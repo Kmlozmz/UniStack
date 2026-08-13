@@ -234,12 +234,28 @@ pública: una etiqueta `1.0.0` quedaba *por detrás* de lo que tenía instalado 
 `…-alpha.1-release.apk`, que se contradecía consigo mismo.
 
 **Debug y release comparten clave de firma** (`debug { signingConfig = localRelease }`), así que
-se instalan una encima de otra sin desinstalar ni perder datos. Lo único que Android exige es
-que el `versionCode` no baje; como se genera por fecha (`yyMMddHH`), basta con no instalar un
-APK compilado antes encima de uno compilado después.
+se instalan una encima de otra sin desinstalar ni perder datos. Y «alpha», «beta» y la definitiva
+son el mismo buildType: solo cambia el nombre de versión.
 
-**«alpha», «beta» y la definitiva son el mismo buildType.** Solo cambia el nombre de versión, así
-que entre ellas la actualización es directa.
+**Lo que decide qué se instala sobre qué es el `versionCode`, y sale del nombre de versión**
+(`versionCodeFor()` en `app/build.gradle.kts`):
+
+```
+0.0.0-dev.…            1
+1.0.0-alpha.1  1_000_011
+1.0.0-beta.1   1_000_031
+1.0.0-rc.1     1_000_061
+1.0.0          1_000_099
+1.0.1          1_000_199
+1.1.0          1_010_099
+```
+
+Salía del reloj (`yyMMddHH`) y eso ordenaba por hora de compilación, no por versión: una alpha
+compilada por la mañana no entraba sobre un debug compilado por la tarde, y recompilar una
+etiqueta antigua la adelantaba. `VersionCodeOrderTest` fija la escalera; **la fórmula está
+duplicada ahí** porque la de Gradle no es alcanzable desde los tests. Si cambia una, cambia la otra.
+
+Que una alpha no entre sobre la definitiva es correcto: es un paso atrás y se hace desinstalando.
 
 ---
 

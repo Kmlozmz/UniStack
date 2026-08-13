@@ -76,14 +76,59 @@ fun isUsingRealReleaseSigning(): Boolean =
 
 val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHH"))
 val debugBuildStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmm"))
-val generatedVersionCode = providers.gradleProperty("versionCode")
-    .orElse(providers.environmentVariable("VERSION_CODE"))
-    .orElse(fallbackVersionCode)
-    .get()
-    .filter(Char::isDigit)
-    .take(9)
-    .toIntOrNull()
-    ?: fallbackVersionCode.toInt()
+
+/**
+ * El `versionCode` que corresponde a un nombre de versión.
+ *
+ * Android solo deja instalar encima si el `versionCode` no baja, así que ese número es el que
+ * decide de verdad qué se puede poner sobre qué. Si sale del reloj —como salía, `yyMMddHH`—
+ * ordena por hora de compilación y no por versión: una alpha compilada por la mañana no entra
+ * sobre un debug compilado por la tarde, y basta con recompilar una etiqueta antigua para que
+ * adelante a la nueva. Derivándolo del nombre, el orden es el que se ve:
+ *
+ * ```
+ * 0.0.0-dev.…            1
+ * 1.0.0-alpha.1  1_000_011
+ * 1.0.0-beta.1   1_000_031
+ * 1.0.0-rc.1     1_000_061
+ * 1.0.0          1_000_099
+ * 1.0.1          1_000_199
+ * 1.1.0          1_010_099
+ * ```
+ *
+ * Cada tramo deja sitio para 19 iteraciones, y la versión sin sufijo va siempre por encima de
+ * sus preestrenos. Que una alpha no se instale sobre la definitiva es lo correcto: es un paso
+ * atrás, y para eso se desinstala a conciencia.
+ */
+fun versionCodeFor(versionName: String): Int {
+    val cleaned = versionName.trim().removePrefix("v").removePrefix("V")
+    val separator = cleaned.indexOfFirst { it == '-' || it == '+' }
+    val numeric = if (separator >= 0) cleaned.take(separator) else cleaned
+    val suffix = if (separator >= 0) cleaned.substring(separator + 1).lowercase() else null
+    val parts = numeric.split('.').map { part -> part.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+    val iteration = suffix
+        ?.dropWhile { !it.isDigit() }
+        ?.takeWhile(Char::isDigit)
+        ?.toIntOrNull()
+        ?.coerceIn(0, 19)
+        ?: 0
+    val stage = when {
+        suffix == null -> 99
+        suffix.startsWith("alpha") -> 10 + iteration
+        suffix.startsWith("beta") -> 30 + iteration
+        suffix.startsWith("rc") -> 60 + iteration
+        // «dev» y cualquier sufijo desconocido: por debajo de todo lo publicable. Todas las
+        // compilaciones locales comparten número, y reinstalar el mismo sí está permitido.
+        else -> 0
+    }.coerceIn(0, 99)
+    return (
+        parts.getOrElse(0) { 0 } * 1_000_000 +
+            parts.getOrElse(1) { 0 } * 10_000 +
+            parts.getOrElse(2) { 0 } * 100 +
+            stage
+        ).coerceAtLeast(1)
+}
+
 val explicitVersionNameProvider = providers.gradleProperty("versionName")
     .orElse(providers.environmentVariable("VERSION_NAME"))
 val hasExplicitVersionName = explicitVersionNameProvider.isPresent
@@ -93,12 +138,19 @@ val hasExplicitVersionName = explicitVersionNameProvider.isPresent
  * Antes salían como `1.0.<yyMMddHH>`, es decir, un parche altísimo de la 1.0. Eso dejaba sin
  * sitio a la primera versión pública: etiquetar `1.0.0` habría quedado por detrás de lo que
  * tiene instalado quien prueba, y el actualizador diría «Al día». Con `0.0.0-dev.<sello>` la
- * numeración pública empieza donde tiene que empezar, en la 1.0.0, y cualquier publicación
- * queda por encima de un build de escritorio.
+ * numeración pública empieza donde tiene que empezar, en la 1.0.0.
  */
 val generatedVersionName = explicitVersionNameProvider
-    .orElse("0.0.0-dev.$generatedVersionCode")
+    .orElse("0.0.0-dev.$fallbackVersionCode")
     .get()
+val generatedVersionCode = (
+    providers.gradleProperty("versionCode").orNull
+        ?: providers.environmentVariable("VERSION_CODE").orNull
+    )
+    ?.filter(Char::isDigit)
+    ?.take(9)
+    ?.toIntOrNull()
+    ?: versionCodeFor(generatedVersionName)
 
 /*
  * El código vive en un repositorio privado y las publicaciones en uno público aparte.
