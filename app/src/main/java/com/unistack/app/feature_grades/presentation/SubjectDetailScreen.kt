@@ -69,6 +69,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -91,6 +92,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -347,7 +349,8 @@ fun SubjectDetailScreen(
                                 scale = scale,
                                 isActive = false,
                                 needsHistory = false,
-                                onClick = { onPeriodClick(subject.id, summary.period.id) }
+                                onClick = { onPeriodClick(subject.id, summary.period.id) },
+                                dimmed = true
                             )
                         }
                     }
@@ -1349,7 +1352,8 @@ private fun PeriodCard(
     scale: GradingScale,
     isActive: Boolean,
     needsHistory: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    dimmed: Boolean = false
 ) {
     val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     val accent = when {
@@ -1357,9 +1361,15 @@ private fun PeriodCard(
         isActive -> UniStackColors.Primary
         else -> summary.status.color
     }
+    // Un corte cerrado se apaga un poco: sigue ahí para consultarlo, pero ya no compite por la
+    // atención con los que están en juego. Con contraste alto no se atenúa nada, que es lo que
+    // esa preferencia viene a pedir.
+    val highContrast = LocalAccessibilityPreferences.current.highContrastEnabled
+    val cardAlpha = if (dimmed && !highContrast) 0.62f else 1f
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(cardAlpha)
             .bounceClick(onClick),
         color = UniStackColors.Card,
         shape = LargeCardShape,
