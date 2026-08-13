@@ -1,5 +1,11 @@
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
@@ -7,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,16 +29,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ColorLens
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.School
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +50,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -53,6 +62,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,15 +71,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -77,30 +93,49 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
+import com.unistack.app.core.design.theme.LocalInterfaceSpacing
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
+import com.unistack.app.core.utils.NO_DATA
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlin.math.roundToInt
 
-private val SubjectFormCardShape
-    get() = AppShapes.MediumCard
+/**
+ * De dónde se entra al formulario de materia.
+ *
+ * Es la misma pantalla en los dos casos: lo único que cambia es qué bloque llega abierto y si
+ * el horario se puede apagar. Antes eran dos formularios distintos para la misma entidad
+ * —«Agregar materia» desde Académico y el diálogo «Nueva materia» desde Horario— y divergían
+ * en todo lo que nadie sincronizaba a mano: la paleta, las horas por defecto, el sitio del
+ * botón de guardar y el límite del plan gratis, que uno comprobaba y el otro no.
+ */
+enum class SubjectFormMode {
+    /** Desde Académico: la materia es el asunto, y el bloque académico llega abierto. */
+    ACADEMIC,
+
+    /** Desde Horario: la clase es el asunto. El bloque académico llega plegado. */
+    SCHEDULE
+}
 
 @Composable
-fun AddSubjectScreen(
+fun SubjectFormScreen(
     onBackClick: () -> Unit,
     onSubjectSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel(),
     subjectId: String? = null,
+    mode: SubjectFormMode = SubjectFormMode.ACADEMIC,
     onUpgradeClick: () -> Unit = {}
 ) {
     BackHandler(onBack = onBackClick)
@@ -117,6 +152,9 @@ fun AddSubjectScreen(
     val defaultPeriodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
     val userPlan = FeatureGate.planFor(isPro = false)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
+    // Desde Horario no tiene sentido guardar una materia sin clase: es justo lo que se venía
+    // a crear. El interruptor solo aparece en la ruta académica.
+    val scheduleIsOptional = mode == SubjectFormMode.ACADEMIC
 
     var name by remember { mutableStateOf("") }
     var targetAverage by remember { mutableStateOf("") }
@@ -126,14 +164,24 @@ fun AddSubjectScreen(
     var scheduleDraft by remember(subjectId) { mutableStateOf(defaultSubjectScheduleDraft()) }
     var scheduleInitialized by remember(subjectId) { mutableStateOf(false) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
+    var academicExpanded by rememberSaveable(mode) { mutableStateOf(mode == SubjectFormMode.ACADEMIC) }
     var error by remember { mutableStateOf<String?>(null) }
+    var saveBarHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val formScrollState = rememberScrollState()
+    val spacing = LocalInterfaceSpacing.current
     val targetValue = targetAverage.toDoubleOrNull()
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
     val canEditLoadedSubject = !isEditing || subject != null
+    val accent = customColor?.let(::Color) ?: subjectAccent(visualType)
+    // La meta bloquea el guardado, así que el bloque académico no puede quedarse plegado
+    // escondiéndola: el botón se apagaría sin que se vea por qué. Se condiciona a que el
+    // formulario ya esté cargado para que no se despliegue en el primer fotograma, cuando el
+    // campo todavía está vacío porque nadie lo ha rellenado aún.
+    val targetBlocksSave = initialized && (targetValue == null || targetValue !in 0.0..maxGrade)
     val isValid = canEditLoadedSubject &&
         !freeLimitReached &&
         nameValidation.isValid &&
@@ -166,7 +214,7 @@ fun AddSubjectScreen(
                 scheduleInitialized = true
             }
             !scheduleInitialized && isEditing && subject != null -> {
-                scheduleDraft = defaultSubjectScheduleDraft().copy(enabled = false)
+                scheduleDraft = defaultSubjectScheduleDraft().copy(enabled = !scheduleIsOptional)
                 scheduleInitialized = true
             }
             !scheduleInitialized && !isEditing -> {
@@ -186,21 +234,26 @@ fun AddSubjectScreen(
                 .fillMaxSize()
                 .verticalScroll(formScrollState)
                 .statusBarsPadding()
-                .padding(horizontal = 20.dp)
-                .padding(top = 10.dp, bottom = 112.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = spacing.screenHorizontal)
+                .padding(top = 10.dp, bottom = saveBarHeight + scrollBottomRoom),
+            verticalArrangement = Arrangement.spacedBy(spacing.section)
         ) {
             SubjectFormHeader(
                 title = if (isEditing) "Editar materia" else "Agregar materia",
-                subjectName = name,
-                accent = customColor?.let(::Color) ?: subjectAccent(visualType),
+                subtitle = when {
+                    name.isNotBlank() -> name
+                    mode == SubjectFormMode.SCHEDULE -> "Se añadirá a tu horario"
+                    else -> "Configura tu materia"
+                },
+                accent = accent,
+                initial = name.trim().firstOrNull()?.uppercaseChar(),
                 onBackClick = onBackClick
             )
             if (isEditing && subject == null) {
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    shape = SubjectFormCardShape,
+                    shape = AppShapes.MediumCard,
                     tonalElevation = 0.dp,
                     borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
                     borderWidth = 0.5.dp
@@ -215,39 +268,164 @@ fun AddSubjectScreen(
                     onUpgradeClick = onUpgradeClick
                 )
             }
-            SubjectBasicInfoCard(
-                name = name,
-                onNameChange = {
-                    name = it.take(40)
-                    error = null
-                },
-                nameIsValid = isNameValid,
-                nameError = nameValidation.errorMessage,
-                targetAverage = targetAverage,
-                targetLabel = maxGradeLabel,
-                targetHasError = targetAverage.isNotBlank() && (targetValue == null || targetValue !in 0.0..maxGrade),
-                onTargetChange = {
-                    targetAverage = it
-                    error = null
-                },
-                periodScheme = defaultPeriodScheme,
-                activePeriodId = activePeriodId,
-                onActivePeriodSelected = { activePeriodId = it }
-            )
-            SubjectColorPicker(
-                selectedColor = customColor ?: subjectAccent(visualType).toArgb(),
-                onSelected = { color ->
-                    customColor = color
-                    visualType = closestVisualType(Color(color))
+
+            SubjectFormBlock(
+                title = "Identidad",
+                icon = Icons.Rounded.School,
+                accent = accent,
+                // El único bloque teñido con el color de la materia: es el que lo elige, y
+                // así el acento se ve aplicado antes de guardar.
+                tinted = true
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it.take(40)
+                        error = null
+                    },
+                    label = { Text("Nombre") },
+                    placeholder = { Text("Ej: Estadística inferencial") },
+                    singleLine = true,
+                    shape = AppShapes.SmallCard,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = !isNameValid,
+                    supportingText = {
+                        if (!isNameValid) {
+                            Text(nameValidation.errorMessage ?: "Ingresa un nombre de materia válido")
+                        }
+                    }
+                )
+                SubjectColorField(
+                    selectedColor = customColor ?: subjectAccent(visualType).toArgb(),
+                    onSelected = { color ->
+                        customColor = color
+                        visualType = closestVisualType(Color(color))
+                    }
+                )
+                // El profesor se guarda dentro del bloque de clase, que es donde lo aloja el
+                // modelo: sin horario no hay dónde ponerlo. Se avisa en vez de perderlo en
+                // silencio.
+                val professorHint: (@Composable () -> Unit)? =
+                    if (!scheduleDraft.enabled && scheduleDraft.professor.isNotBlank()) {
+                        { Text("Sin clases en el horario no se guarda el profesor.") }
+                    } else {
+                        null
+                    }
+                OutlinedTextField(
+                    value = scheduleDraft.professor,
+                    onValueChange = { scheduleDraft = scheduleDraft.copy(professor = it.take(60)) },
+                    label = { Text("Profesor") },
+                    placeholder = { Text("Prof. Pérez") },
+                    leadingIcon = { Icon(Icons.Rounded.Person, null) },
+                    singleLine = true,
+                    shape = AppShapes.SmallCard,
+                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = professorHint
+                )
+            }
+
+            SubjectFormBlock(
+                title = "Cuándo",
+                icon = Icons.Rounded.CalendarMonth,
+                accent = accent,
+                summary = scheduleDraft.whenSummary(),
+                expanded = scheduleDraft.enabled,
+                trailing = if (scheduleIsOptional) {
+                    {
+                        Switch(
+                            checked = scheduleDraft.enabled,
+                            onCheckedChange = { scheduleDraft = scheduleDraft.copy(enabled = it) }
+                        )
+                    }
+                } else {
+                    null
                 }
-            )
-            SubjectScheduleSection(
-                draft = scheduleDraft,
-                onDraftChange = {
-                    scheduleDraft = it
-                    error = null
+            ) {
+                SubjectWhenFields(
+                    draft = scheduleDraft,
+                    onDraftChange = {
+                        scheduleDraft = it
+                        error = null
+                    }
+                )
+            }
+
+            SubjectFormBlock(
+                title = "Académico",
+                icon = Icons.Rounded.AutoAwesome,
+                accent = accent,
+                summary = academicSummary(
+                    targetAverage = targetAverage,
+                    periodScheme = defaultPeriodScheme,
+                    activePeriodId = activePeriodId,
+                    reminderMinutes = scheduleDraft.reminderMinutes
+                ),
+                expanded = academicExpanded || targetBlocksSave,
+                onHeaderClick = { academicExpanded = !academicExpanded }
+            ) {
+                OutlinedTextField(
+                    value = targetAverage,
+                    onValueChange = {
+                        targetAverage = it
+                        error = null
+                    },
+                    label = { Text("Meta de promedio (0 a $maxGradeLabel)") },
+                    singleLine = true,
+                    shape = AppShapes.SmallCard,
+                    modifier = Modifier.fillMaxWidth(),
+                    // También en blanco: sin meta no se puede guardar, y marcarlo solo cuando
+                    // hay algo escrito dejaba el campo vacío con aspecto de correcto.
+                    isError = targetBlocksSave
+                )
+                if (defaultPeriodScheme.periods.size > 1) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "Corte actual",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(defaultPeriodScheme.periods.sortedBy { it.order }, key = { it.id }) { period ->
+                                val selected = activePeriodId == period.id
+                                Surface(
+                                    onClick = { activePeriodId = period.id },
+                                    shape = AppShapes.Pill,
+                                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (selected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
+                                    )
+                                ) {
+                                    Text(
+                                        "Corte ${period.order}",
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                        if (activePeriodId != defaultPeriodScheme.periods.firstOrNull()?.id) {
+                            Text(
+                                "Las nuevas notas y tareas usarán este corte por defecto.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
+                    }
                 }
-            )
+                if (scheduleDraft.enabled) {
+                    SubjectReminderField(
+                        draft = scheduleDraft,
+                        onDraftChange = { scheduleDraft = it }
+                    )
+                }
+            }
+
             error?.let {
                 Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
             }
@@ -256,25 +434,26 @@ fun AddSubjectScreen(
         // por dentro. Con navigationBarsPadding() por fuera se levantaba entera y dejaba
         // una franja transparente debajo por la que se veía pasar el formulario al
         // desplazarse: eso era lo que se veía cortado.
-        //
-        // union() en vez de encadenar los dos márgenes: el hueco del teclado ya incluye el
-        // de la barra de gestos, así que sumarlos dejaría el botón flotando de más.
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                // El hueco que el formulario deja al final sale de medir la barra, no de un
+                // número a mano: la barra crece con el teclado y con la barra de gestos, y
+                // los 112dp fijos de antes se quedaban cortos o sobraban según el móvil.
+                .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
             // Opaca del todo. Al 98% el contenido se traslucía por debajo y parecía que la
             // barra estaba superpuesta sobre todo.
             color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
-            SaveSubjectButton(
+            UniStackButton(
                 text = if (isEditing) "Guardar cambios" else "Guardar materia",
                 enabled = isValid,
                 onClick = {
                     if (freeLimitReached) {
                         error = "Alcanzaste el límite gratis de ${userPlan.maxSubjects} materias."
-                        return@SaveSubjectButton
+                        return@UniStackButton
                     }
 
                     val editingSubjectId = subjectId
@@ -331,7 +510,7 @@ fun AddSubjectScreen(
                 },
                 modifier = Modifier
                     .bottomActionInsets()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .padding(horizontal = spacing.screenHorizontal, vertical = 12.dp)
                     .fillMaxWidth()
             )
         }
@@ -345,11 +524,145 @@ fun AddSubjectScreen(
     }
 }
 
+/**
+ * Uno de los tres bloques del formulario: identidad, cuándo y académico.
+ *
+ * La cabecera va dentro de la tarjeta y no fuera para que al plegarse quede una sola pieza y
+ * no un título huérfano sobre un hueco. Cuando está plegado, el resumen de la derecha dice
+ * qué guarda dentro: plegar esconde los controles, nunca la información.
+ */
+@Composable
+private fun SubjectFormBlock(
+    title: String,
+    icon: ImageVector,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    summary: String? = null,
+    expanded: Boolean = true,
+    tinted: Boolean = false,
+    onHeaderClick: (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val spacing = LocalInterfaceSpacing.current
+    val motionScale = LocalMotionDurationScale.current
+    val expandSpec = tween<IntSize>((200 * motionScale).roundToInt().coerceAtLeast(1))
+    val fadeSpec = tween<Float>((160 * motionScale).roundToInt().coerceAtLeast(1))
+
+    UniCard(
+        modifier = modifier.fillMaxWidth(),
+        color = if (tinted) {
+            accent.copy(alpha = 0.07f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+        },
+        shape = AppShapes.MediumCard,
+        tonalElevation = 0.dp,
+        borderColor = if (tinted) {
+            accent.copy(alpha = 0.28f)
+        } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)
+        },
+        borderWidth = 0.5.dp,
+        contentPadding = PaddingValues(spacing.cardPadding)
+    ) {
+        // El espaciado no se condiciona a [expanded]: mientras el bloque se pliega su
+        // contenido sigue en el árbol, y quitarle el hueco de golpe da un salto al empezar
+        // la animación. Plegado del todo, AnimatedVisibility no deja nodo y no hay hueco.
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (onHeaderClick != null) {
+                            Modifier.clickable(
+                                onClickLabel = if (expanded) "Plegar $title" else "Desplegar $title",
+                                onClick = onHeaderClick
+                            )
+                        } else {
+                            Modifier
+                        }
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(accent.copy(alpha = 0.16f), AppShapes.SmallCard),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                }
+                Text(
+                    text = title,
+                    modifier = Modifier.padding(start = 12.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                // El resumen se lleva el hueco sobrante en vez de medirse a su antojo: «L M X
+                // J V S D · 08:00» junto a «Académico» no cabe en una pantalla estrecha, y sin
+                // peso empujaría al resto fuera del borde en vez de recortarse.
+                if (summary != null && !expanded) {
+                    Text(
+                        text = summary,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.End,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                if (trailing != null) {
+                    Spacer(Modifier.width(8.dp))
+                    trailing()
+                }
+                if (onHeaderClick != null) {
+                    Icon(
+                        if (expanded) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 6.dp)
+                    )
+                }
+            }
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(animationSpec = expandSpec) + fadeIn(animationSpec = fadeSpec),
+                exit = shrinkVertically(animationSpec = expandSpec) + fadeOut(animationSpec = fadeSpec)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
+            }
+        }
+    }
+}
+
+/** Resumen del bloque académico, para leerlo de un vistazo cuando llega plegado. */
+private fun academicSummary(
+    targetAverage: String,
+    periodScheme: AcademicPeriodScheme,
+    activePeriodId: String,
+    reminderMinutes: Int
+): String {
+    val period = periodScheme.periods.firstOrNull { it.id == activePeriodId }
+    return buildList {
+        add("Meta ${targetAverage.ifBlank { NO_DATA }}")
+        if (periodScheme.periods.size > 1 && period != null) add("Corte ${period.order}")
+        if (reminderMinutes > 0) add("Aviso $reminderMinutes min")
+    }.joinToString("  ·  ")
+}
+
 @Composable
 private fun SubjectFormHeader(
     title: String,
-    subjectName: String,
+    subtitle: String,
     accent: Color,
+    initial: Char?,
     onBackClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -362,13 +675,28 @@ private fun SubjectFormHeader(
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Relleno con el color elegido y no teñido al 14%: es la muestra grande de cómo
+            // se verá la materia en el resto de la app.
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(accent.copy(alpha = 0.14f), AppShapes.SmallCard),
+                    .background(accent, AppShapes.SmallCard),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Rounded.School, contentDescription = null, tint = accent)
+                if (initial != null) {
+                    Text(
+                        initial.toString(),
+                        color = UniStackColors.contentColorOn(accent),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                } else {
+                    Icon(
+                        Icons.Rounded.School,
+                        contentDescription = null,
+                        tint = UniStackColors.contentColorOn(accent)
+                    )
+                }
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
@@ -378,7 +706,7 @@ private fun SubjectFormHeader(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = subjectName.ifBlank { "Configura tu materia" },
+                    text = subtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Normal,
@@ -401,7 +729,7 @@ private fun PlanBanner(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = SubjectFormCardShape,
+        shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
         borderColor = if (limitReached) UniStackColors.Coral.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
@@ -458,157 +786,65 @@ private fun PlanBanner(
     }
 }
 
+/**
+ * El color de la materia, dentro del bloque de identidad.
+ *
+ * Es lo que identifica la materia en toda la app —en la rejilla del horario, en las tarjetas
+ * de notas, en el calendario—, así que va con las muestras a la vista y no escondido en una
+ * fila diminuta al lado del profesor, que es donde estaba en la ruta de Horario.
+ */
 @Composable
-private fun SubjectBasicInfoCard(
-    name: String,
-    onNameChange: (String) -> Unit,
-    nameIsValid: Boolean,
-    nameError: String?,
-    targetAverage: String,
-    targetLabel: String,
-    targetHasError: Boolean,
-    onTargetChange: (String) -> Unit,
-    periodScheme: AcademicPeriodScheme,
-    activePeriodId: String,
-    onActivePeriodSelected: (String) -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = SubjectFormCardShape,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-        borderWidth = 0.5.dp,
-        contentPadding = PaddingValues(18.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("Información básica", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-            OutlinedTextField(
-                value = name,
-                onValueChange = onNameChange,
-                label = { Text("Nombre") },
-                placeholder = { Text("Ej: Estadística inferencial") },
-                singleLine = true,
-                shape = AppShapes.SmallCard,
-                modifier = Modifier.fillMaxWidth(),
-                isError = !nameIsValid,
-                supportingText = {
-                    if (!nameIsValid) {
-                        Text(nameError ?: "Ingresa un nombre de materia válido")
-                    }
-                }
-            )
-            OutlinedTextField(
-                value = targetAverage,
-                onValueChange = onTargetChange,
-                label = { Text("Meta de promedio (0 a $targetLabel)") },
-                singleLine = true,
-                shape = AppShapes.SmallCard,
-                modifier = Modifier.fillMaxWidth(),
-                isError = targetHasError
-            )
-            if (periodScheme.periods.size > 1) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Corte actual",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(periodScheme.periods.sortedBy { it.order }, key = { it.id }) { period ->
-                            val selected = activePeriodId == period.id
-                            Surface(
-                                onClick = { onActivePeriodSelected(period.id) },
-                                shape = AppShapes.Pill,
-                                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    1.dp,
-                                    if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
-                                )
-                            ) {
-                                Text(
-                                    "Corte ${period.order}",
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                    color = if (selected) MaterialTheme.colorScheme.onPrimary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                    if (activePeriodId != periodScheme.periods.firstOrNull()?.id) {
-                        Text(
-                            "Las nuevas notas y tareas usarán este corte por defecto.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SubjectColorPicker(
+private fun SubjectColorField(
     selectedColor: Int,
     onSelected: (Int) -> Unit
 ) {
     val selected = Color(selectedColor)
     var showEditor by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Apariencia", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.ExtraBold)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Color",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                selected.toHexString(),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(SubjectColorPalette, key = { it.toArgb() }) { color ->
                 ColorSwatch(
                     color = color,
-                    label = color.accessibilityLabel(),
+                    label = closestVisualType(color).accessibilityLabel(),
                     selected = color.toArgb() == selectedColor,
                     onClick = { onSelected(color.toArgb()) }
                 )
             }
-        }
-        Surface(
-            onClick = { showEditor = true },
-            modifier = Modifier.fillMaxWidth(),
-            shape = AppShapes.MediumCard,
-            color = MaterialTheme.colorScheme.surface,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
-            )
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            item {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .background(selected.copy(alpha = 0.16f), AppShapes.SmallCard),
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f), CircleShape)
+                        .clickable(
+                            onClickLabel = "Abrir editor de color",
+                            onClick = { showEditor = true }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.ColorLens, contentDescription = null, tint = selected)
-                }
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        "Color personalizado",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        selected.toHexString(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal
+                    Icon(
+                        Icons.Rounded.ColorLens,
+                        contentDescription = "Color personalizado",
+                        tint = selected,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir editor de color")
             }
         }
     }
@@ -839,21 +1075,6 @@ private fun String.toColorIntOrNull(): Int? {
 }
 
 @Composable
-private fun SaveSubjectButton(
-    text: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniStackButton(
-        text = text,
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier
-    )
-}
-
-@Composable
 private fun ColorSwatch(
     color: Color,
     label: String,
@@ -861,7 +1082,6 @@ private fun ColorSwatch(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
     Box(
         modifier = modifier
             .size(46.dp)
@@ -890,9 +1110,6 @@ private fun ColorSwatch(
     }
 }
 
-
-private fun Color.accessibilityLabel(): String = "#${toArgb().toUInt().toString(16).takeLast(6)}"
-
 private fun closestVisualType(color: Color): SubjectVisualType {
     return SubjectVisualType.entries.minBy { type ->
         val candidate = subjectAccent(type)
@@ -903,6 +1120,12 @@ private fun closestVisualType(color: Color): SubjectVisualType {
     }
 }
 
+/**
+ * Nombre en castellano del color más cercano de la paleta.
+ *
+ * El lector de pantalla decía «Color almohadilla 1 0 B 8 A C»: el hexadecimal es exacto y no
+ * significa nada en voz alta.
+ */
 private fun SubjectVisualType.accessibilityLabel(): String = when (this) {
     SubjectVisualType.TEAL -> "turquesa"
     SubjectVisualType.BLUE -> "azul"

@@ -55,6 +55,32 @@ el color del fondo de pantalla de cada usuario y no tenía identidad propia.
 
 ---
 
+## El formulario de materia
+
+Hay **una sola pantalla** para crear y editar materias, `SubjectFormScreen.kt`, con dos modos.
+Antes eran dos formularios distintos para la misma entidad y divergían en todo lo que nadie
+sincronizaba a mano.
+
+- `ACADEMIC` — desde Académico. El bloque académico llega abierto y el horario se puede apagar.
+- `SCHEDULE` — desde Horario. El bloque académico llega plegado y el horario no se puede apagar:
+  es justo lo que se venía a crear.
+
+Tres bloques, en este orden: **Identidad** (nombre, color, profesor), **Cuándo** (días, horas,
+aula, repetición) y **Académico** (meta, corte, recordatorio). Solo el de identidad va teñido
+con el color de la materia; los otros dos son neutros. Esa es la jerarquía: antes eran ocho
+tarjetas grises del mismo tono.
+
+**Plegar esconde los controles, nunca la información.** Cada bloque plegado resume su contenido
+en la cabecera. Y el bloque académico se despliega solo si la meta bloquea el guardado: un botón
+apagado sin motivo visible es peor que un bloque abierto de más.
+
+**Las rutas de Horario no dependen del módulo de notas.** `moduleForRoute()` mapea `add_subject`
+y `edit_subject` a `GRADES`, pero deja fuera a propósito `add_subject_from_schedule` y
+`edit_subject_from_schedule`. Horario es pestaña fija aunque Académico esté apagado; atarlas
+convertiría «Añadir clase» en un botón que lleva a Inicio. Hay un test que lo fija.
+
+---
+
 ## Reglas que hay que respetar al tocar UI
 
 **Márgenes inferiores.** Dos valores compartidos en `core/design/theme/AppearanceTheme.kt`:
@@ -97,7 +123,18 @@ palabras clave sigue ahí. Editar la redacción puede cambiar el rótulo sin que
 
 **El límite del plan gratis** (`FeatureGate.canCreateSubject`) hay que comprobarlo en **todas**
 las rutas que crean materias. Horario lo esquivaba. Hoy `PRO_FEATURES_ENABLED = false`, así que
-un fallo ahí es invisible hasta que se active la suscripción.
+un fallo ahí es invisible hasta que se active la suscripción. Ahora hay una sola ruta y la
+comprobación vive en el formulario, pero la regla sigue en pie para cualquier puerta nueva.
+
+**El profesor no es de la materia, es del bloque de clase.** `Subject` no tiene ese campo: se
+guarda dentro de `ClassSession.location`, con el formato `"aula•profesor"`. Por eso el formulario
+avisa cuando hay profesor escrito y el horario apagado — sin clase no hay dónde guardarlo. El
+campo aparece en *Identidad* porque es donde el usuario lo busca, no donde vive el dato. Para
+tener profesor sin horario habría que añadirlo a `Subject`.
+
+**Una materia tiene como mucho un bloque de clase.** `saveSubjectSchedule()` borra los sobrantes
+(`existing.drop(1)`). Ninguna ruta puede crear un segundo, así que hoy el invariante se cumple,
+pero un respaldo restaurado con dos sesiones para la misma materia perdería una al editarla.
 
 ---
 
@@ -124,26 +161,9 @@ antes cualquier fallo se convertía en «estás al día».
 
 ## Pendiente
 
-**Rediseñar la pantalla de materia y unificar las dos duplicadas.** Es lo siguiente y no está
-empezado. El usuario dijo «no me gusta como se ve».
-
-Hay dos pantallas para la misma entidad:
-- `AddSubjectScreen.kt` — «Agregar materia», desde Académico. Meta, corte, límite de plan,
-  paleta completa.
-- El diálogo en `CalendarScheduleScreen.kt` (~1130) — «Nueva materia», desde Horario. Solo el
-  bloque de clase.
-- Y una tercera puerta: «Clase recurrente» en la hoja de agenda.
-
-Ya se unificó lo que no tenía razón de divergir: paleta de colores, valores por defecto del
-horario, sitio del botón de guardar y el `FeatureGate` que faltaba. Queda el rediseño visual.
-
-Plan propuesto, sin aprobar:
-- Una sola pantalla con dos modos: desde Académico completa; desde Horario con la parte
-  académica plegada.
-- Tres bloques en vez de ocho tarjetas grises sin jerarquía: *Identidad* (nombre, color,
-  profesor), *Cuándo* (días, horas, aula, repetición), *Académico* (meta, corte, recordatorio).
-- Sacar el color de la fila diminuta junto a «Profesor»: es lo que identifica la materia en
-  toda la app.
+**Probar el formulario unificado en el móvil.** Está compilado y con los tests en verde, pero
+las tres puertas de Horario —«Agregar clase», «Añadir clase» del día vacío y «Clase recurrente»
+de la hoja de agenda— no se han recorrido a mano.
 
 **Otros hilos abiertos:** separar el token de Gastos del de error; `Configuración` aparece en el
 cajón y dentro de Perfil; `Sincronización` del cajón solapa con «Datos y respaldos»; los módulos

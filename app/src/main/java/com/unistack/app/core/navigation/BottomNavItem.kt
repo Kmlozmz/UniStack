@@ -39,6 +39,17 @@ object AppRoutes {
     const val AddSubject = "add_subject"
     const val AddSubjectFromTask = "add_subject_from_task"
     const val EditSubject = "edit_subject"
+
+    /**
+     * El mismo formulario de materia, abierto desde Horario.
+     *
+     * Tiene ruta propia y no un argumento de [AddSubject] porque de la ruta dependen tres
+     * cosas distintas: a dónde vuelve el botón atrás (Horario y no Académico), qué bloque
+     * llega desplegado, y que el módulo de notas pueda estar apagado sin que Horario se
+     * quede sin poder crear clases.
+     */
+    const val AddSubjectFromSchedule = "add_subject_from_schedule"
+    const val EditSubjectFromSchedule = "edit_subject_from_schedule"
     const val SubjectDetail = "subject_detail"
     const val SubjectPeriodDetail = "subject_period_detail"
     const val PriorHistory = "prior_history"
@@ -75,6 +86,7 @@ object AppRoutes {
     fun addGradeFromHistory(subjectId: String, periodId: String) =
         "$AddGradeFromHistory/$subjectId/$periodId"
     fun editSubject(subjectId: String) = "$EditSubject/$subjectId"
+    fun editSubjectFromSchedule(subjectId: String) = "$EditSubjectFromSchedule/$subjectId"
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"
     fun editTask(taskId: String) = "$EditTask/$taskId"
     fun editExpense(expenseId: String) = "$EditExpense/$expenseId"

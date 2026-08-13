@@ -78,11 +78,12 @@ import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
-import com.unistack.app.feature_grades.presentation.AddSubjectScreen
 import com.unistack.app.feature_grades.presentation.AcademicScreen
 import com.unistack.app.feature_grades.presentation.GradesScreen
 import com.unistack.app.feature_grades.presentation.PriorHistoryScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
+import com.unistack.app.feature_grades.presentation.SubjectFormMode
+import com.unistack.app.feature_grades.presentation.SubjectFormScreen
 import com.unistack.app.feature_grades.presentation.SubjectPeriodDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
@@ -430,6 +431,17 @@ fun MainNavGraph(
                 CalendarScheduleScreen(
                     onTaskClick = { taskId ->
                         navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
+                    },
+                    // Sin navigateIfModuleEnabled: crear una clase no depende del módulo de
+                    // notas. Horario es pestaña fija aunque Académico esté apagado, y con la
+                    // comprobación puesta el botón «Añadir clase» llevaría a Inicio.
+                    onAddClassClick = {
+                        navController.navigate(AppRoutes.AddSubjectFromSchedule) { launchSingleTop = true }
+                    },
+                    onEditSubjectClick = { subjectId ->
+                        navController.navigate(AppRoutes.editSubjectFromSchedule(subjectId)) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -489,7 +501,7 @@ fun MainNavGraph(
                 )
             }
             composable(AppRoutes.AddSubject) {
-                AddSubjectScreen(
+                SubjectFormScreen(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
@@ -503,8 +515,26 @@ fun MainNavGraph(
                     onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
                 )
             }
+            // Las dos rutas de Horario: el mismo formulario, con el bloque académico plegado
+            // y volviendo al calendario en vez de al detalle de la materia.
+            composable(AppRoutes.AddSubjectFromSchedule) {
+                SubjectFormScreen(
+                    mode = SubjectFormMode.SCHEDULE,
+                    onBackClick = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
+                    onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
+                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
+                )
+            }
+            composable("${AppRoutes.EditSubjectFromSchedule}/{subjectId}") { backStackEntry ->
+                SubjectFormScreen(
+                    subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty(),
+                    mode = SubjectFormMode.SCHEDULE,
+                    onBackClick = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
+                    onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) }
+                )
+            }
             composable(AppRoutes.AddSubjectFromTask) {
-                AddSubjectScreen(
+                SubjectFormScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
@@ -574,7 +604,7 @@ fun MainNavGraph(
             }
             composable("${AppRoutes.EditSubject}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
-                AddSubjectScreen(
+                SubjectFormScreen(
                     subjectId = subjectId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
@@ -720,7 +750,9 @@ private fun ModuleAccessGuard(
 private val ModalRoutes = setOf(
     AppRoutes.AddSubject,
     AppRoutes.AddSubjectFromTask,
+    AppRoutes.AddSubjectFromSchedule,
     AppRoutes.EditSubject,
+    AppRoutes.EditSubjectFromSchedule,
     AppRoutes.AddGrade,
     AppRoutes.AddGradeFromHistory,
     AppRoutes.EditGrade,
@@ -775,6 +807,11 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AppearanceSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AccessibilitySettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.Calendar) -> AppRoutes.Calendar
+        // El formulario de materia abierto desde Horario pertenece a Horario, que es a donde
+        // vuelve al guardar. Sin esto se quedaría sin pestaña y la transición entraría por el
+        // lado que no toca.
+        routeBelongsTo(route, AppRoutes.AddSubjectFromSchedule) -> AppRoutes.Calendar
+        routeBelongsTo(route, AppRoutes.EditSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Profile
@@ -786,6 +823,14 @@ internal fun bottomRouteFor(route: String?): String? {
     }
 }
 
+/**
+ * Módulo del que depende una ruta, para no dejar accesible lo que el usuario apagó.
+ *
+ * Las dos rutas de materia que salen de Horario quedan fuera a propósito. Crear una clase
+ * crea una materia por debajo, pero Horario es una pestaña fija que sigue estando cuando
+ * Académico está apagado: atarlas a [AppModule.GRADES] convertiría «Añadir clase» en un
+ * botón que lleva a Inicio.
+ */
 internal fun moduleForRoute(route: String?): AppModule? {
     return when {
         routeBelongsTo(route, AppRoutes.Grades) -> AppModule.GRADES

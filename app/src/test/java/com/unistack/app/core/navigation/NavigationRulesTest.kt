@@ -63,6 +63,8 @@ class NavigationRulesTest {
         // formulario a medio llenar de un solo toque.
         assertFalse(routeShowsBottomBar(AppRoutes.AddSubject))
         assertFalse(routeShowsBottomBar("${AppRoutes.EditSubject}/subject-1"))
+        assertFalse(routeShowsBottomBar(AppRoutes.AddSubjectFromSchedule))
+        assertFalse(routeShowsBottomBar("${AppRoutes.EditSubjectFromSchedule}/subject-1"))
         assertFalse(routeShowsBottomBar("${AppRoutes.AddGrade}/subject-1"))
         assertFalse(routeShowsBottomBar("${AppRoutes.AddGradeFromHistory}/subject-1"))
         assertFalse(routeShowsBottomBar("${AppRoutes.EditGrade}/subject-1/grade-1"))
@@ -92,6 +94,26 @@ class NavigationRulesTest {
             assertTrue("$route debería mostrar barra", routeShowsBottomBar(route))
             assertNotNull("$route debería tener pestaña", bottomRouteFor(route))
         }
+    }
+
+    @Test
+    fun theSubjectFormOpenedFromScheduleBelongsToSchedule() {
+        // Es el mismo formulario que el de Académico, pero se entra y se sale por Horario.
+        assertEquals(AppRoutes.Calendar, bottomRouteFor(AppRoutes.AddSubjectFromSchedule))
+        assertEquals(AppRoutes.Calendar, bottomRouteFor("${AppRoutes.EditSubjectFromSchedule}/subject-1"))
+        // Y las rutas de Académico no se lo quedan por parecido de nombre: «add_subject» es
+        // prefijo literal de «add_subject_from_schedule».
+        assertEquals(AppRoutes.Academic, bottomRouteFor(AppRoutes.AddSubject))
+    }
+
+    @Test
+    fun creatingAClassDoesNotDependOnTheGradesModule() {
+        // Crear una clase crea una materia por debajo, pero Horario sigue siendo pestaña con
+        // Académico apagado. Atarlas a GRADES convertiría «Añadir clase» en un botón que
+        // lleva a Inicio.
+        assertNull(moduleForRoute(AppRoutes.AddSubjectFromSchedule))
+        assertNull(moduleForRoute("${AppRoutes.EditSubjectFromSchedule}/subject-1"))
+        assertEquals(AppModule.GRADES, moduleForRoute(AppRoutes.AddSubject))
     }
 
     @Test

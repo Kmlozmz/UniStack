@@ -30,7 +30,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -38,7 +37,6 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
@@ -51,12 +49,9 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.ZoomIn
 import androidx.compose.material.icons.rounded.ZoomOut
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -72,8 +67,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,9 +77,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -96,10 +87,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
-import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -107,7 +96,6 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
-import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import com.unistack.app.feature_tasks.domain.StudentTask
 import java.time.DayOfWeek
 import java.time.Instant
@@ -148,14 +136,17 @@ private enum class ScheduleView {
 @Composable
 fun CalendarScheduleScreen(
     onTaskClick: (String) -> Unit,
+    // Crear y editar una clase abren el formulario de materia, que es la misma pantalla que
+    // usa Académico. Antes Horario tenía su propio diálogo para la misma entidad y los dos
+    // formularios divergían en todo lo que nadie sincronizaba a mano.
+    onAddClassClick: () -> Unit,
+    onEditSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ScheduleViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var identityView by rememberSaveable { mutableStateOf(IdentityScheduleView.TIMETABLE) }
     var selectedEpochDay by rememberSaveable { mutableStateOf(LocalDate.now().toEpochDay()) }
-    var editingSession by remember { mutableStateOf<ClassSession?>(null) }
-    var showEditor by rememberSaveable { mutableStateOf(false) }
     var selectedSession by remember { mutableStateOf<ClassSession?>(null) }
     var historySubjectId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFullSchedule by rememberSaveable { mutableStateOf(false) }
@@ -186,10 +177,7 @@ fun CalendarScheduleScreen(
                 com.unistack.app.feature_schedule.domain.AgendaEventKind.CUSTOM -> AgendaCreateKind.CUSTOM
             }
         },
-        onAddClass = {
-            editingSession = null
-            showEditor = true
-        },
+        onAddClass = onAddClassClick,
         onAddEvent = { showAgendaMenu = true },
         onOpenFullSchedule = { showFullSchedule = true },
         modifier = modifier
@@ -204,8 +192,7 @@ fun CalendarScheduleScreen(
             },
             onAddClass = {
                 showAgendaMenu = false
-                editingSession = null
-                showEditor = true
+                onAddClassClick()
             }
         )
     }
@@ -239,34 +226,6 @@ fun CalendarScheduleScreen(
             }
         )
     }
-    if (showEditor) {
-        ClassEditorDialog(
-            existing = editingSession,
-            subjects = state.subjects,
-            onDismiss = { showEditor = false },
-            anchorDate = selectedDate,
-            onSave = { name, professor, color, days, start, end, room, reminder, repeatEveryWeeks ->
-                val saved = viewModel.saveClassDraft(
-                    existing = editingSession,
-                    subjectName = name,
-                    professor = professor,
-                    colorArgb = color,
-                    days = days,
-                    startMinute = start,
-                    endMinute = end,
-                    room = room,
-                    reminderMinutes = reminder,
-                    repeatEveryWeeks = repeatEveryWeeks,
-                    recurrenceStartEpochDay = editingSession?.recurrenceStartEpochDay
-                        ?.takeIf { it > 0L }
-                        ?: selectedEpochDay
-                )
-                if (saved) showEditor = false
-                saved
-            }
-        )
-    }
-
     selectedSession?.let { session ->
         ClassDetailsSheet(
             session = session,
@@ -277,8 +236,7 @@ fun CalendarScheduleScreen(
             onDismiss = { selectedSession = null },
             onEdit = {
                 selectedSession = null
-                editingSession = session
-                showEditor = true
+                onEditSubjectClick(session.subjectId)
             },
             onHistory = {
                 historySubjectId = session.subjectId
@@ -940,289 +898,6 @@ private fun CalendarEmptyState(message: String) {
     Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
         Text(message, Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 12.sp)
     }
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun ClassEditorDialog(
-    existing: ClassSession?,
-    subjects: List<Subject>,
-    anchorDate: LocalDate,
-    onDismiss: () -> Unit,
-    onSave: (String, String, Int, Set<Int>, Int, Int, String, Int, Int) -> Boolean
-) {
-    val existingSubject = subjects.firstOrNull { it.id == existing?.subjectId }
-    val place = existing?.place ?: SessionPlace("", "")
-    var name by remember(existing) { mutableStateOf(existingSubject?.name.orEmpty()) }
-    var professor by remember(existing) { mutableStateOf(place.professor) }
-    var color by remember(existing) { mutableStateOf(existingSubject.scheduleColor()) }
-    // Los valores de partida salen de SubjectScheduleDraft, que es donde ya los define la
-    // ruta académica. Estaban escritos a mano aquí y no coincidían: esta pantalla abría en
-    // 06:30-09:30 y la otra en 08:00-10:00 para crear exactamente lo mismo.
-    val scheduleDefaults = remember { SubjectScheduleDraft() }
-    var days by remember(existing) { mutableStateOf(existing?.daysOfWeek ?: scheduleDefaults.daysOfWeek) }
-    var startMinute by remember(existing) { mutableStateOf(existing?.startMinute ?: scheduleDefaults.startMinute) }
-    var endMinute by remember(existing) { mutableStateOf(existing?.endMinute ?: scheduleDefaults.endMinute) }
-    var room by remember(existing) { mutableStateOf(place.room) }
-    var reminder by remember(existing) { mutableStateOf(existing?.reminderMinutes ?: scheduleDefaults.reminderMinutes) }
-    var repeatEveryWeeks by remember(existing) { mutableStateOf(existing?.repeatEveryWeeks ?: scheduleDefaults.repeatEveryWeeks) }
-    var showStartPicker by remember { mutableStateOf(false) }
-    var showEndPicker by remember { mutableStateOf(false) }
-    var reminderExpanded by remember { mutableStateOf(false) }
-    var recurrenceExpanded by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    // La misma paleta que ofrece la pantalla académica. Antes eran cinco alias del tema
-    // de los que dos —"Green" y "Purple"— apuntaban ambos a Primary, así que se pintaban
-    // dos muestras idénticas y elegir una u otra guardaba exactamente el mismo color.
-    val swatches = SubjectColorPalette.take(8)
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-    ) {
-        Surface(Modifier.fillMaxSize(), color = UniStackColors.Background) {
-            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                Row(
-                    Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.TextPrimary)
-                    }
-                    Text(
-                        if (existing == null) "Nueva materia" else "Editar materia",
-                        Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = UniStackColors.TextPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    FormTextField("Nombre de la materia", name, { name = it.take(80) }, "Fundamentos de Costos")
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        FormTextField("Profesor", professor, { professor = it.take(60) }, "Prof. P\u00e9rez", Modifier.weight(1f))
-                        Surface(
-                            modifier = Modifier.weight(1f),
-                            shape = ScheduleShape,
-                            color = UniStackColors.SurfaceVariant,
-                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
-                        ) {
-                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Color", color = UniStackColors.TextSecondary, fontSize = 11.sp)
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    swatches.forEach { swatch ->
-                                        Box(
-                                            Modifier.size(25.dp).clip(CircleShape).background(swatch).clickable { color = swatch },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (color == swatch) Icon(Icons.Rounded.Check, contentDescription = null, tint = UniStackColors.contentColorOn(swatch), modifier = Modifier.size(16.dp))
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    FormSurface("D\u00edas") {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                            (1..7).forEach { day ->
-                                val selected = day in days
-                                Box(
-                                    Modifier.weight(1f).height(36.dp).clip(ScheduleShape)
-                                        .background(if (selected) ScheduleAccent else UniStackColors.Background)
-                                        .border(1.dp, if (selected) ScheduleAccent else UniStackColors.SoftOutline, ScheduleShape)
-                                        .clickable { days = if (selected) days - day else days + day },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(dayLetter(DayOfWeek.of(day)), color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                }
-                            }
-                        }
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        TimeField("Hora inicio", startMinute, Modifier.weight(1f)) { showStartPicker = true }
-                        TimeField("Hora fin", endMinute, Modifier.weight(1f)) { showEndPicker = true }
-                    }
-                    FormTextField("Aula", room, { room = it.take(60) }, "Aula 301")
-                    Box {
-                        Surface(
-                            onClick = { recurrenceExpanded = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = ScheduleShape,
-                            color = UniStackColors.SurfaceVariant,
-                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
-                        ) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("Repetici\u00f3n", color = UniStackColors.TextSecondary, fontSize = 11.sp)
-                                    Text(
-                                        if (repeatEveryWeeks == 1) "Cada semana" else "Cada $repeatEveryWeeks semanas",
-                                        color = UniStackColors.TextPrimary,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    if (repeatEveryWeeks > 1) {
-                                        Text("Desde ${anchorDate.shortDate()}", color = UniStackColors.TextSecondary, fontSize = 9.sp)
-                                    }
-                                }
-                                Icon(Icons.Rounded.ExpandMore, contentDescription = null, tint = UniStackColors.TextSecondary)
-                            }
-                        }
-                        DropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
-                            listOf(1, 2, 3, 4).forEach { weeks ->
-                                DropdownMenuItem(
-                                    text = { Text(if (weeks == 1) "Cada semana" else "Cada $weeks semanas") },
-                                    onClick = {
-                                        repeatEveryWeeks = weeks
-                                        recurrenceExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    Box {
-                        Surface(
-                            onClick = { reminderExpanded = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = ScheduleShape,
-                            color = UniStackColors.SurfaceVariant,
-                            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
-                        ) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("Recordatorio", color = UniStackColors.TextSecondary, fontSize = 11.sp)
-                                    Text(if (reminder == 0) "Sin recordatorio" else "$reminder minutos antes", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Medium)
-                                }
-                                Icon(Icons.Rounded.Alarm, contentDescription = null, tint = UniStackColors.TextSecondary)
-                            }
-                        }
-                        DropdownMenu(expanded = reminderExpanded, onDismissRequest = { reminderExpanded = false }) {
-                            listOf(0, 5, 10, 15, 30, 60).forEach { minutes ->
-                                DropdownMenuItem(
-                                    text = { Text(if (minutes == 0) "Sin recordatorio" else "$minutes minutos antes") },
-                                    onClick = { reminder = minutes; reminderExpanded = false }
-                                )
-                            }
-                        }
-                    }
-                    error?.let { Text(it, color = UniStackColors.Coral, fontSize = 12.sp) }
-                    Spacer(Modifier.height(16.dp))
-                }
-                // Guardar vive abajo y a todo lo ancho, como en el resto de formularios
-                // de la app («Crear tarea», «Guardar gasto», «Guardar materia»). Antes
-                // era un enlace de texto en la barra superior, la única pantalla así.
-                UniStackButton(
-                    text = if (existing == null) "Guardar materia" else "Guardar cambios",
-                    onClick = {
-                        error = when {
-                            name.trim().length < 2 -> "Escribe el nombre de la materia."
-                            days.isEmpty() -> "Selecciona al menos un día."
-                            endMinute <= startMinute -> "La hora final debe ser posterior a la inicial."
-                            !onSave(name, professor, color.toArgb(), days, startMinute, endMinute, room, reminder, repeatEveryWeeks) -> "No se pudo guardar la materia."
-                            else -> null
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .fillMaxWidth()
-                )
-            }
-        }
-    }
-
-    if (showStartPicker) {
-        TimePickerAlert("Hora de inicio", startMinute, { showStartPicker = false }) {
-            startMinute = it
-            showStartPicker = false
-        }
-    }
-    if (showEndPicker) {
-        TimePickerAlert("Hora de fin", endMinute, { showEndPicker = false }) {
-            endMinute = it
-            showEndPicker = false
-        }
-    }
-}
-
-@Composable
-private fun FormTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String,
-    modifier: Modifier = Modifier.fillMaxWidth()
-) {
-    Surface(
-        modifier = modifier.height(64.dp),
-        shape = ScheduleShape,
-        color = UniStackColors.SurfaceVariant,
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.6f))
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(label, color = UniStackColors.TextSecondary, fontSize = 9.sp, lineHeight = 10.sp)
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                textStyle = TextStyle(
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 14.sp,
-                    lineHeight = 17.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                cursorBrush = SolidColor(ScheduleAccent),
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (value.isBlank()) {
-                            Text(placeholder, color = UniStackColors.TextSecondary.copy(alpha = 0.62f), fontSize = 14.sp)
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FormSurface(label: String, content: @Composable () -> Unit) {
-    Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp)
-            content()
-        }
-    }
-}
-
-@Composable
-private fun TimeField(label: String, minute: Int, modifier: Modifier, onClick: () -> Unit) {
-    Surface(onClick = onClick, modifier = modifier, shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp)
-                Text(formatMinute(minute, true), color = UniStackColors.TextPrimary, fontWeight = FontWeight.Medium)
-            }
-            Icon(Icons.Rounded.Schedule, contentDescription = null, tint = UniStackColors.TextSecondary)
-        }
-    }
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun TimePickerAlert(title: String, minute: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
-    val state = rememberTimePickerState(initialHour = minute / 60, initialMinute = minute % 60, is24Hour = true)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { TimePicker(state) },
-        confirmButton = { TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar", color = ScheduleAccent) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
 }
 
 @Composable

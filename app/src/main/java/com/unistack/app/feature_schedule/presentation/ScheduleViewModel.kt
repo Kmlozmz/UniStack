@@ -5,8 +5,6 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -70,104 +68,6 @@ class ScheduleViewModel @Inject constructor(
             accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ScheduleUiState())
-
-    fun save(
-        existing: ClassSession?,
-        subjectId: String,
-        days: Set<Int>,
-        startMinute: Int,
-        endMinute: Int,
-        location: String,
-        reminderMinutes: Int,
-        repeatEveryWeeks: Int = existing?.repeatEveryWeeks ?: 1,
-        recurrenceStartEpochDay: Long = existing?.recurrenceStartEpochDay ?: 0L
-    ): Boolean {
-        val now = System.currentTimeMillis()
-        val session = ClassSession(
-            id = existing?.id ?: UUID.randomUUID().toString(),
-            subjectId = subjectId,
-            daysOfWeek = days,
-            startMinute = startMinute,
-            endMinute = endMinute,
-            location = location.trim(),
-            reminderMinutes = reminderMinutes,
-            createdAt = existing?.createdAt ?: now,
-            updatedAt = now,
-            repeatEveryWeeks = repeatEveryWeeks,
-            recurrenceStartEpochDay = recurrenceStartEpochDay
-        )
-        if (!session.isValid) return false
-        repository.saveSession(session)
-        return true
-    }
-
-    fun saveClassDraft(
-        existing: ClassSession?,
-        subjectName: String,
-        professor: String,
-        colorArgb: Int,
-        days: Set<Int>,
-        startMinute: Int,
-        endMinute: Int,
-        room: String,
-        reminderMinutes: Int,
-        repeatEveryWeeks: Int,
-        recurrenceStartEpochDay: Long
-    ): Boolean {
-        val cleanName = subjectName.trim()
-        if (cleanName.length !in 2..80 || days.isEmpty() || days.any { it !in 1..7 }) return false
-        if (startMinute !in 0 until 24 * 60 || endMinute !in 1..24 * 60 || endMinute <= startMinute) return false
-        if (repeatEveryWeeks !in 1..12) return false
-
-        val currentSubject = existing?.let { session ->
-            gradesRepository.subjects.value.firstOrNull { it.id == session.subjectId }
-        }
-        // Crear una clase con un nombre nuevo crea también la materia, así que este
-        // camino tiene que respetar el mismo tope que la pantalla académica. Sin esta
-        // comprobación, Horario era una puerta abierta para saltarse el límite del plan
-        // gratis en cuanto se active PRO_FEATURES_ENABLED.
-        if (currentSubject == null &&
-            !FeatureGate.canCreateSubject(
-                plan = FeatureGate.planFor(isPro = false),
-                currentSubjectCount = gradesRepository.subjects.value.size
-            )
-        ) {
-            return false
-        }
-        val subject = if (currentSubject == null) {
-            val profile = userRepository.userProfile.value
-            val periodScheme = profile?.academicPeriodScheme
-                ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
-            Subject(
-                id = UUID.randomUUID().toString(),
-                name = cleanName,
-                targetAverage = profile?.targetAverage ?: 4.0,
-                grades = emptyList(),
-                visualType = SubjectVisualType.TEAL,
-                customColor = colorArgb,
-                periodScheme = periodScheme,
-                activePeriodId = periodScheme.periods.first().id
-            ).also(gradesRepository::addSubject)
-        } else {
-            currentSubject.copy(
-                name = cleanName,
-                customColor = colorArgb
-            ).also(gradesRepository::updateSubject)
-        }
-
-        val place = "${room.trim()}\u2022${professor.trim()}"
-        return save(
-            existing = existing,
-            subjectId = subject.id,
-            days = days,
-            startMinute = startMinute,
-            endMinute = endMinute,
-            location = place,
-            reminderMinutes = reminderMinutes,
-            repeatEveryWeeks = repeatEveryWeeks,
-            recurrenceStartEpochDay = recurrenceStartEpochDay
-        )
-    }
 
     fun delete(sessionId: String) = repository.deleteSession(sessionId)
 
