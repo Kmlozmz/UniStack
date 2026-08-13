@@ -17,9 +17,10 @@ import com.unistack.app.core.design.theme.AppShapes
 /**
  * Cuánto se ha evaluado ya de una materia o de un corte.
  *
- * Va en color neutro por defecto: la longitud mide avance y el color medía rendimiento, así
- * que una barra corta y roja decía dos cosas a la vez y no se entendía ninguna. El rendimiento
- * lo lleva la cifra, que es donde se mira.
+ * El relleno lleva un color de identidad —el acento de la app, o el de la propia materia si
+ * quien la dibuja lo tiene a mano—, nunca uno de rendimiento. Ese es el matiz: la longitud
+ * mide avance, así que pintarla de rojo por ir mal hacía que dijera dos cosas a la vez; pero
+ * en gris parecía apagada, como si no avanzara. El rendimiento lo lleva la cifra.
  *
  * No usa `LinearProgressIndicator` a propósito. Desde Material 3 1.3 dibuja un punto al final
  * de la pista, y con la barra a cero ese punto queda flotando solo al otro extremo: en las
@@ -47,7 +48,7 @@ fun EvaluationBar(
                 .fillMaxWidth(fraction.coerceIn(0.0, 1.0).toFloat())
                 .fillMaxHeight()
                 .clip(AppShapes.Pill)
-                .background(color ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f))
+                .background(color ?: MaterialTheme.colorScheme.primary)
         )
     }
 }

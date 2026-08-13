@@ -289,15 +289,6 @@ private fun SubjectListCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    if (classLine != null) {
-                        Text(
-                            "${String.format(Locale.US, "%.0f", evaluated)}%",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1
-                        )
-                    }
                     Text(
                         tone.label,
                         color = tone.color,
@@ -308,7 +299,10 @@ private fun SubjectListCard(
                 }
                 EvaluationBar(
                     fraction = calculation.evaluatedSemesterFraction,
-                    height = 4.dp
+                    height = 4.dp,
+                    // El color de la materia, el mismo de la franja y del avatar. En gris
+                    // parecía una barra apagada que no avanzaba.
+                    color = subjectColor
                 )
             }
             Icon(

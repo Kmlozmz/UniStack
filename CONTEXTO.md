@@ -130,10 +130,12 @@ apagado y **no se reclama el historial de los cortes anteriores** — reclamarlo
 ya pasaron, y eso solo lo sabe el usuario. El selector vive solo ahí: en el formulario de crear
 materia no hay con qué juzgarlo.
 
-**La longitud de una barra mide avance; el color, nunca rendimiento.** `EvaluationBar` va en
-gris a propósito: una barra corta y roja decía dos cosas a la vez. El rendimiento lo lleva la
-cifra. Y no se usa `LinearProgressIndicator` para esto: desde Material 3 1.3 dibuja un punto
-al final de la pista, y con la barra a cero ese punto queda flotando solo al otro extremo.
+**La longitud de una barra mide avance; el color, identidad y nunca rendimiento.**
+`EvaluationBar` se rellena con el acento de la app, o con el color de la materia cuando quien
+la dibuja lo tiene a mano. Pintarla de rojo por ir mal le hacía decir dos cosas a la vez; en
+gris parecía apagada, como si no avanzara. El rendimiento lo lleva la cifra. Y no se usa
+`LinearProgressIndicator` para esto: desde Material 3 1.3 dibuja un punto al final de la pista,
+y con la barra a cero ese punto queda flotando solo al otro extremo.
 
 ---
 
