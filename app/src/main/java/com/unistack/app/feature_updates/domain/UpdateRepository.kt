@@ -9,6 +9,17 @@ interface UpdateRepository {
     val channel: StateFlow<UpdateChannel>
     fun setChannel(channel: UpdateChannel)
 
+    /** El canal más alto que este móvil tiene permitido elegir. */
+    val unlockedChannel: StateFlow<UpdateChannel>
+
+    /**
+     * Canjea un código de acceso contra la lista publicada.
+     *
+     * Devuelve el canal que abre, o null si el código no está en la lista o no se pudo
+     * consultar. Se distingue un caso del otro por el mensaje del estado.
+     */
+    suspend fun redeemAccessCode(code: String): UpdateChannel?
+
     suspend fun checkForUpdates()
     suspend fun checkForUpdatesIfDue()
     fun downloadUpdate()

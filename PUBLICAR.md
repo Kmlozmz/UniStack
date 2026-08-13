@@ -124,10 +124,35 @@ se cuele en el canal tranquilo.
 
 **Las `dev` no entran en ningún canal**: no se publican en GitHub, salen por Telegram.
 
-**Esto no es un candado.** Los APK están en un repositorio público y cualquiera puede descargar
-el que quiera a mano. El canal decide qué te *ofrece* la app, que es el problema real: que nadie
-acabe en una alpha sin haberlo pedido. Para restringir de verdad quién puede instalar qué haría
-falta que las descargas pasaran por una identidad, y hoy no es así.
+**Beta y Alpha piden un código de acceso.** Aparecen con un candado y, al tocarlos, la app pide
+el código. Al canjearlo se guarda su huella, no el código.
+
+**La lista la gestionas tú**, en `canales.json` del repo de publicaciones:
+
+```json
+{ "canal": "ALPHA", "huella": "<sha256 del codigo>", "nota": "para quien sea" }
+```
+
+- **Dar acceso:** genera un código, añade su huella con el canal que abre. Pídemelo y lo hago.
+- **Revocar:** quita esa línea. La app contrasta su huella en cada comprobación de
+  actualizaciones, así que al siguiente intento vuelve a Estable sola.
+- Un código de `ALPHA` abre también beta: quien acepta lo más inestable no necesita otro permiso
+  para lo que está más rodado.
+- Si la lista no se puede consultar **no se revoca nada**: quedarse sin cobertura no es lo mismo
+  que perder el permiso.
+
+Solo se publican huellas, nunca códigos, así que la lista no sirve para colarse. Lo que sostiene
+el sistema es que **el código sea largo**: contra uno corto, la huella se rompe probando. Los que
+genero son de 20 caracteres sin letras que se confundan al dictarlas.
+
+**Aun así no es un candado sobre la instalación.** Los APK están en un repositorio público y
+cualquiera con el enlace descarga el que quiera a mano. Lo que esto controla es **qué ofrece la
+app**, que es el problema real: que nadie acabe en una alpha sin saber dónde se ha metido. Para
+restringir la descarga en sí harían falta cuentas y alojamiento privado.
+
+**Cambiar a un canal de preestreno avisa antes** de lo que implica: que puede fallar y perder
+datos, que conviene copia de seguridad, y que no se vuelve atrás sin desinstalar. Bajar a
+Estable no pregunta nada.
 
 ---
 

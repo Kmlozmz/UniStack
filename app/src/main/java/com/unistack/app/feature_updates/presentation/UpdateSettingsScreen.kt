@@ -28,8 +28,10 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
@@ -69,6 +71,11 @@ fun UpdateSettingsScreen(
     BackHandler(onBack = onBackClick)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val channel by viewModel.channel.collectAsStateWithLifecycle()
+    val unlockedChannel by viewModel.unlockedChannel.collectAsStateWithLifecycle()
+    var showCodeDialog by remember { mutableStateOf(false) }
+    var codeInput by remember { mutableStateOf("") }
+    var codeError by remember { mutableStateOf<String?>(null) }
+    var checkingCode by remember { mutableStateOf(false) }
     val spacing = LocalInterfaceSpacing.current
     var showSheet by remember { mutableStateOf(false) }
     var confirmClearDownload by remember { mutableStateOf(false) }
@@ -107,6 +114,12 @@ fun UpdateSettingsScreen(
         item {
             UpdateChannelCard(
                 selected = channel,
+                unlocked = unlockedChannel,
+                onRequestCode = {
+                    codeInput = ""
+                    codeError = null
+                    showCodeDialog = true
+                },
                 onSelect = { elegido ->
                     // Bajar a estable no necesita aviso: es el canal seguro. Subir sí, porque
                     // lo que se acepta es recibir versiones a medio hacer.
@@ -250,6 +263,64 @@ fun UpdateSettingsScreen(
         )
     }
 
+    if (showCodeDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!checkingCode) showCodeDialog = false },
+            title = { Text("Código de acceso", color = UniStackColors.TextPrimary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Los canales de preestreno se abren con un código. Si no tienes uno, " +
+                            "pídeselo a quien publica la app.",
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = codeInput,
+                        onValueChange = {
+                            codeInput = it.take(40)
+                            codeError = null
+                        },
+                        label = { Text("Código") },
+                        singleLine = true,
+                        enabled = !checkingCode,
+                        isError = codeError != null,
+                        shape = AppShapes.Small,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    codeError?.let {
+                        Text(it, color = UniStackColors.Coral, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = codeInput.isNotBlank() && !checkingCode,
+                    onClick = {
+                        checkingCode = true
+                        codeError = null
+                        scope.launch {
+                            val granted = viewModel.redeemAccessCode(codeInput)
+                            checkingCode = false
+                            if (granted == null) {
+                                codeError = "Ese código no vale, o no se pudo comprobar ahora mismo."
+                            } else {
+                                showCodeDialog = false
+                                snackbarHostState.showSnackbar("Canal ${granted.label} disponible")
+                            }
+                        }
+                    }
+                ) { Text(if (checkingCode) "Comprobando…" else "Canjear", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(enabled = !checkingCode, onClick = { showCodeDialog = false }) {
+                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+
     if (showSheet) {
         val info = when (val current = state) {
             is UpdateState.Available -> current.info
@@ -282,6 +353,8 @@ fun UpdateSettingsScreen(
 @Composable
 private fun UpdateChannelCard(
     selected: UpdateChannel,
+    unlocked: UpdateChannel,
+    onRequestCode: () -> Unit,
     onSelect: (UpdateChannel) -> Unit
 ) {
     UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card) {
@@ -309,8 +382,11 @@ private fun UpdateChannelCard(
             ) {
                 UpdateChannel.entries.forEach { option ->
                     val isSelected = option == selected
+                    // Los canales por encima de lo desbloqueado se ven, pero piden el
+                    // codigo. Ocultarlos dejaria sin explicar por que no estan.
+                    val isLocked = option.ordinal > unlocked.ordinal
                     Surface(
-                        onClick = { onSelect(option) },
+                        onClick = { if (isLocked) onRequestCode() else onSelect(option) },
                         modifier = Modifier.weight(1f),
                         shape = AppShapes.Pill,
                         color = if (isSelected) {
@@ -319,18 +395,32 @@ private fun UpdateChannelCard(
                             UniStackColors.SurfaceVariant
                         }
                     ) {
-                        Text(
-                            option.label,
-                            modifier = Modifier.padding(vertical = 10.dp),
-                            textAlign = TextAlign.Center,
-                            color = if (isSelected) {
-                                UniStackColors.OnPrimary
-                            } else {
-                                UniStackColors.TextSecondary
-                            },
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row(
+                            modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (isLocked) {
+                                Icon(
+                                    Icons.Rounded.Lock,
+                                    contentDescription = null,
+                                    tint = UniStackColors.TextSecondary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            Text(
+                                option.label,
+                                textAlign = TextAlign.Center,
+                                color = if (isSelected) {
+                                    UniStackColors.OnPrimary
+                                } else {
+                                    UniStackColors.TextSecondary
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }

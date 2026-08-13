@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
+import com.unistack.app.feature_updates.domain.ChannelAccess
 import com.unistack.app.feature_updates.domain.ReleaseVersion
 import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.feature_updates.domain.UpdateInfo
@@ -36,6 +37,11 @@ private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
 private const val KEY_LAST_CHECKED_AT = "last_checked_at"
 private const val KEY_CHANNEL = "update_channel"
+private const val KEY_ACCESS_FINGERPRINT = "access_fingerprint"
+private const val KEY_ACCESS_CHANNEL = "access_channel"
+
+/** La lista de códigos vive junto a los APK, en el repositorio público de publicaciones. */
+private const val ACCESS_LIST_PATH = "https://raw.githubusercontent.com/%s/main/canales.json"
 private const val AUTO_CHECK_INTERVAL_MILLIS = 12 * 60 * 60 * 1000L
 
 class GitHubReleaseUpdateRepository(
@@ -58,9 +64,82 @@ class GitHubReleaseUpdateRepository(
         return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
     }
 
+    private val _unlockedChannel = MutableStateFlow(readStoredAccess())
+    override val unlockedChannel: StateFlow<UpdateChannel> = _unlockedChannel.asStateFlow()
+
+    private fun readStoredAccess(): UpdateChannel {
+        val stored = prefs.getString(KEY_ACCESS_CHANNEL, null) ?: return UpdateChannel.STABLE
+        return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
+    }
+
     override fun setChannel(channel: UpdateChannel) {
-        prefs.edit { putString(KEY_CHANNEL, channel.name) }
-        _channel.value = channel
+        // Nunca por encima de lo desbloqueado: el selector ya no ofrece lo que no toca, pero
+        // esto es lo que lo impide de verdad si el estado llega por otro camino.
+        val allowed = if (channel.ordinal > _unlockedChannel.value.ordinal) {
+            _unlockedChannel.value
+        } else {
+            channel
+        }
+        prefs.edit { putString(KEY_CHANNEL, allowed.name) }
+        _channel.value = allowed
+    }
+
+    override suspend fun redeemAccessCode(code: String): UpdateChannel? = withContext(Dispatchers.IO) {
+        val fingerprint = ChannelAccess.fingerprint(code)
+        val granted = ChannelAccess.channelFor(fingerprint, fetchAccessEntries()) ?: return@withContext null
+        prefs.edit {
+            putString(KEY_ACCESS_FINGERPRINT, fingerprint)
+            putString(KEY_ACCESS_CHANNEL, granted.name)
+        }
+        _unlockedChannel.value = granted
+        granted
+    }
+
+    /**
+     * Vuelve a contrastar el código guardado con la lista publicada.
+     *
+     * Es lo que hace que retirar una línea de la lista revoque de verdad: sin esto, quien
+     * canjeó una vez se quedaba con el canal abierto para siempre. Si la lista no se puede
+     * consultar no se toca nada, porque quedarse sin cobertura no es lo mismo que perder el
+     * permiso.
+     */
+    private suspend fun refreshAccess() {
+        val stored = prefs.getString(KEY_ACCESS_FINGERPRINT, null) ?: return
+        val entries = runCatching { fetchAccessEntries() }.getOrNull() ?: return
+        val granted = ChannelAccess.channelFor(stored, entries) ?: UpdateChannel.STABLE
+        if (granted == _unlockedChannel.value) return
+
+        prefs.edit {
+            putString(KEY_ACCESS_CHANNEL, granted.name)
+            if (granted == UpdateChannel.STABLE) remove(KEY_ACCESS_FINGERPRINT)
+        }
+        _unlockedChannel.value = granted
+        if (_channel.value.ordinal > granted.ordinal) setChannel(granted)
+    }
+
+    private fun fetchAccessEntries(): List<ChannelAccess.AccessEntry> {
+        val url = URL(String.format(ACCESS_LIST_PATH, BuildConfig.GITHUB_REPO))
+        val connection = url.openConnection() as HttpURLConnection
+        connection.connectTimeout = 10_000
+        connection.readTimeout = 10_000
+        try {
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                throw IOException("No se pudo consultar la lista de códigos (${connection.responseCode}).")
+            }
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            val codes = JSONObject(body).optJSONArray("codigos") ?: return emptyList()
+            return (0 until codes.length()).mapNotNull { index ->
+                val entry = codes.optJSONObject(index) ?: return@mapNotNull null
+                val channel = runCatching {
+                    UpdateChannel.valueOf(entry.optString("canal").uppercase())
+                }.getOrNull() ?: return@mapNotNull null
+                val fingerprint = entry.optString("huella").takeIf { it.isNotBlank() }
+                    ?: return@mapNotNull null
+                ChannelAccess.AccessEntry(channel, fingerprint)
+            }
+        } finally {
+            connection.disconnect()
+        }
     }
 
     /**
@@ -84,6 +163,7 @@ class GitHubReleaseUpdateRepository(
 
     private suspend fun runCheck(notify: Boolean) {
         _state.value = UpdateState.Checking
+        refreshAccess()
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
                 if (ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {

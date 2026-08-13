@@ -26,6 +26,13 @@ número y la fecha, y se abre una nueva.
 - Cambiar a un canal de preestreno explica antes lo que implica: fallos posibles, copia de
   seguridad recomendada y que no se puede volver atrás sin desinstalar.
 
+### Añadido
+
+- **Puedes elegir qué versiones recibes.** En Ajustes → Actualizaciones: Estable, Beta o Alpha.
+  Estable solo recibe versiones terminadas, y es lo que viene puesto.
+- **Beta y Alpha se abren con un código** que entrega quien publica la app. Sin él, la app solo
+  ofrece versiones estables.
+
 ---
 
 ## [1.0.0-alpha.1] — 2026-08-13
