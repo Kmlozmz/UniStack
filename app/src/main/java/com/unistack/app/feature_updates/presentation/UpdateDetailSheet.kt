@@ -1,6 +1,7 @@
 package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -105,7 +106,7 @@ fun UpdateDetailSheet(
                 ) {
                     Text("Más tarde")
                 }
-                Button(
+                SquishyButton(
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
                     enabled = state !is UpdateState.Downloading,
                     modifier = Modifier.weight(1f).height(48.dp),

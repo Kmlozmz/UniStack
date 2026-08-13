@@ -96,6 +96,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.components.SquishyButton
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -430,13 +432,15 @@ fun TasksScreen(
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 20.dp)
+                // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
+                .padding(end = 20.dp, bottom = 20.dp + LocalBottomBarOverlay.current)
         )
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 20.dp, vertical = 92.dp)
+                .padding(bottom = LocalBottomBarOverlay.current)
         )
     }
 
@@ -601,7 +605,7 @@ private fun TaskGradeResultSheet(
             )
 
             if (!enteringGrade) {
-                Button(
+                SquishyButton(
                     onClick = { enteringGrade = true },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Sí, registrar nota") }
@@ -680,7 +684,7 @@ private fun TaskGradeResultSheet(
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
-                Button(
+                SquishyButton(
                     onClick = {
                         val value = valueInput.toDoubleOrNull()
                         val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
@@ -1290,7 +1294,7 @@ private fun TaskCard(
                 when (task.gradingStatus) {
                     TaskGradingStatus.AWAITING_GRADE -> {
                         if (awaitingGrade) {
-                            Button(
+                            SquishyButton(
                                 onClick = onRegisterGradeClick,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1916,7 +1920,7 @@ private fun SortRadioGroup(
 
 @Composable
 private fun FiltersSheetFooter(onDismiss: () -> Unit) {
-    Button(
+    SquishyButton(
         onClick = onDismiss,
         modifier = Modifier
             .fillMaxWidth()

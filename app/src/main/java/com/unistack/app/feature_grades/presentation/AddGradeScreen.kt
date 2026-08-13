@@ -1,6 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -475,7 +476,7 @@ fun AddGradeScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Save Button
-            Button(
+            SquishyButton(
                 onClick = {
                     val editingGradeId = gradeId
                     var shouldShowHistory = false

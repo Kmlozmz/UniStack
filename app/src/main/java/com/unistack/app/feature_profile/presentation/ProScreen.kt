@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_profile.domain.FeatureGate
@@ -163,7 +164,7 @@ private fun ProHeroCard(
                 fontSize = 14.sp,
                 lineHeight = 19.sp
             )
-            Button(
+            SquishyButton(
                 onClick = onUpgradeClick,
                 enabled = canBuy,
                 shape = AppShapes.Pill,
@@ -273,7 +274,7 @@ private fun BillingStatusCard(
                     )
                 }
             }
-            Button(
+            SquishyButton(
                 onClick = onRefreshClick,
                 enabled = !billingState.isLoading,
                 shape = AppShapes.Pill,

@@ -1,6 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -354,7 +355,7 @@ fun SubjectDetailScreen(
                 .bottomActionInsets()
                 .padding(horizontal = 22.dp, vertical = 14.dp)
         ) {
-            Button(
+            SquishyButton(
                 onClick = { onAddGradeClick(subject.id, subject.activePeriodId) },
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
@@ -1192,7 +1193,7 @@ private fun PeriodDetailPanel(
                 }
             }
 
-            Button(
+            SquishyButton(
                 onClick = onAddGradeClick,
                 shape = AppShapes.Small,
                 colors = ButtonDefaults.outlinedButtonColors(

@@ -92,7 +92,7 @@ fun UniEmptyStateCard(
             Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
             Text(body, color = UniStackColors.TextSecondary, fontSize = 13.sp, lineHeight = 18.sp)
             if (actionText != null && onActionClick != null) {
-                Button(
+                SquishyButton(
                     onClick = onActionClick,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = iconColor),

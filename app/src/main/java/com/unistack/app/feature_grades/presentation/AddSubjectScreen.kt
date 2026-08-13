@@ -76,6 +76,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.components.bottomActionInsets
@@ -444,7 +445,7 @@ private fun PlanBanner(
                 )
             }
             if (limitReached) {
-                Button(
+                SquishyButton(
                     onClick = onUpgradeClick,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
@@ -749,7 +750,7 @@ private fun CustomSubjectColorDialog(
 
                 Spacer(Modifier.weight(1f))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
+                    SquishyButton(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -759,7 +760,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text("Cancelar")
                     }
-                    Button(
+                    SquishyButton(
                         onClick = { onApply(workingColor) },
                         colors = ButtonDefaults.buttonColors(containerColor = selected),
                         modifier = Modifier.weight(1f)

@@ -98,6 +98,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
@@ -1323,7 +1324,7 @@ private fun SubjectHistoryDialog(
                         }
                     }
                 }
-                Button(
+                SquishyButton(
                     onClick = { pending?.let { onMarkAttendance(it.date, it.session) } },
                     enabled = pending != null,
                     modifier = Modifier.fillMaxWidth().padding(16.dp),

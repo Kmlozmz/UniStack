@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
@@ -312,7 +313,7 @@ internal fun AgendaComposerSheet(
                     TextButton(onClick = { onDeleteEvent(existingEvent.id); onDismiss() }) { Text("Eliminar", color = UniStackColors.Coral) }
                 }
                 Spacer(Modifier.weight(1f))
-                Button(
+                SquishyButton(
                     onClick = {
                         val start = parseAgendaMinute(startText)
                         val end = parseAgendaMinute(endText)

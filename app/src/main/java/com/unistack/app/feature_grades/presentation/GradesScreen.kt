@@ -49,6 +49,7 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_grades.domain.Subject
@@ -131,7 +132,8 @@ fun GradesScreen(
             onClick = onAddSubjectClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 20.dp)
+                // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
+                .padding(end = 20.dp, bottom = 20.dp + LocalBottomBarOverlay.current)
         )
     }
 }

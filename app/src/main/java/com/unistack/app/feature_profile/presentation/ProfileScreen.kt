@@ -79,6 +79,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
+import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -763,7 +764,7 @@ private fun DataManagementCard(
             fontSize = 12.sp
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
+            SquishyButton(
                 onClick = onCloudBackupClick,
                 enabled = cloudEnabled && !cloudBusy,
                 modifier = Modifier.weight(1f),
@@ -771,7 +772,7 @@ private fun DataManagementCard(
             ) {
                 Text(if (cloudBusy) "Procesando..." else "Respaldar")
             }
-            Button(
+            SquishyButton(
                 onClick = onCloudRestoreClick,
                 enabled = cloudEnabled && !cloudBusy,
                 modifier = Modifier.weight(1f),
@@ -786,7 +787,7 @@ private fun DataManagementCard(
         }
         DataStatusStrip(summary = dataSummary)
         Text("Exportaciones locales", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        Button(
+        SquishyButton(
             onClick = onCopyBackupClick,
             shape = AppShapes.Pill,
             colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
@@ -795,7 +796,7 @@ private fun DataManagementCard(
             Text("Copiar backup JSON")
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
+            SquishyButton(
                 onClick = onCopyAcademicReportClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
@@ -803,7 +804,7 @@ private fun DataManagementCard(
             ) {
                 Text("Notas")
             }
-            Button(
+            SquishyButton(
                 onClick = onCreateAcademicPdfClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
@@ -813,7 +814,7 @@ private fun DataManagementCard(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
+            SquishyButton(
                 onClick = onCopyTasksCsvClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
@@ -821,7 +822,7 @@ private fun DataManagementCard(
             ) {
                 Text("Tareas CSV")
             }
-            Button(
+            SquishyButton(
                 onClick = onCopyExpensesCsvClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
@@ -846,7 +847,7 @@ private fun DataManagementCard(
             Text(it, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
+            SquishyButton(
                 onClick = onPreviewBackupClick,
                 enabled = backupInput.isNotBlank(),
                 shape = AppShapes.Pill,
@@ -857,7 +858,7 @@ private fun DataManagementCard(
             ) {
                 Text("Vista previa")
             }
-            Button(
+            SquishyButton(
                 onClick = onRestoreBackupClick,
                 enabled = backupInput.isNotBlank(),
                 shape = AppShapes.Pill,
@@ -931,7 +932,7 @@ private fun AccountSyncCard(
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
-        Button(
+        SquishyButton(
             onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
             enabled = !isBusy,
             shape = AppShapes.Pill,
@@ -1028,7 +1029,7 @@ private fun PlanStatusCard(
                 if (plan.hasSubjectLimit) "${plan.maxSubjects} materias disponibles" else "Materias ilimitadas",
                 color = UniStackColors.TextSecondary
             )
-            Button(
+            SquishyButton(
                 onClick = onOpenProClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
@@ -1091,7 +1092,7 @@ private fun NameSettingsCard(
             shape = AppShapes.MediumCard,
             modifier = Modifier.fillMaxWidth()
         )
-        Button(
+        SquishyButton(
             onClick = onSaveClick,
             enabled = validation.isValid,
             shape = AppShapes.Pill,
@@ -1167,7 +1168,7 @@ private fun GradingSettingsCard(
             color = UniStackColors.TextSecondary,
             fontSize = 12.sp
         )
-        Button(
+        SquishyButton(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
@@ -1236,7 +1237,7 @@ private fun AcademicPeriodsSettingsCard(
             fontSize = 12.sp,
             fontWeight = FontWeight.ExtraBold
         )
-        Button(
+        SquishyButton(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
@@ -1354,7 +1355,7 @@ private fun NotificationSettingsCard(
                     modifier = Modifier.weight(1f),
                     shape = AppShapes.MediumCard
                 )
-                Button(
+                SquishyButton(
                     onClick = onSaveLead,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
@@ -1476,7 +1477,7 @@ private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
             Icon(Icons.Rounded.RestartAlt, contentDescription = null, tint = UniStackColors.Coral)
             Text("Onboarding", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
             Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = UniStackColors.TextSecondary)
-            Button(
+            SquishyButton(
                 onClick = onRestartClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
