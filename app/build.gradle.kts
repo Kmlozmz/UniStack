@@ -720,6 +720,14 @@ val validateReleaseReady = tasks.register("validateReleaseReady") {
 
 sendReleaseApkToTelegram.configure {
     dependsOn(validateReleaseReady)
+    /*
+     * La condición va aquí, en el envío, y no en `assembleRelease`.
+     *
+     * Puesta allí, un `onlyIf` no silencia el aviso: **cancela la compilación**. Con una beta o
+     * una definitiva, `assembleRelease` se saltaba entero y `publishReleaseToGitHub` se quedaba
+     * sin APK que subir, o subía el que hubiera quedado de una compilación anterior.
+     */
+    onlyIf { isAlphaVersion(generatedVersionName) }
 }
 
 val assembleReleaseAndSendToTelegram = tasks.register("assembleReleaseAndSendToTelegram") {
@@ -903,7 +911,6 @@ afterEvaluate {
      */
     if (!skipTelegramApk.get()) {
         tasks.named("assembleRelease") {
-            onlyIf { isAlphaVersion(generatedVersionName) }
             finalizedBy(sendReleaseApkToTelegram)
         }
     }
