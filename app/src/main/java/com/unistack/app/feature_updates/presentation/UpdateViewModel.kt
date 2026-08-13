@@ -20,9 +20,9 @@ class UpdateViewModel @Inject constructor(
     val channel: StateFlow<UpdateChannel> = updateRepository.channel
     val unlockedChannels: StateFlow<Set<UpdateChannel>> = updateRepository.unlockedChannels
 
-    /** Devuelve el canal que abrio el codigo, o null si no vale. */
-    suspend fun redeemAccessCode(code: String): UpdateChannel? =
-        updateRepository.redeemAccessCode(code)
+    /** Devuelve el canal si el codigo es el suyo, o null si no vale para ese canal. */
+    suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel? =
+        updateRepository.redeemAccessCode(code, channel)
 
     /**
      * Cambiar de canal vuelve a consultar en el acto: si bajas de alpha a estable, lo que la

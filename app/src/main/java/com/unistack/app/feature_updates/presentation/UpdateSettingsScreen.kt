@@ -72,7 +72,7 @@ fun UpdateSettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val channel by viewModel.channel.collectAsStateWithLifecycle()
     val unlockedChannels by viewModel.unlockedChannels.collectAsStateWithLifecycle()
-    var showCodeDialog by remember { mutableStateOf(false) }
+    var codeChannel by remember { mutableStateOf<UpdateChannel?>(null) }
     var codeInput by remember { mutableStateOf("") }
     var codeError by remember { mutableStateOf<String?>(null) }
     var checkingCode by remember { mutableStateOf(false) }
@@ -115,10 +115,10 @@ fun UpdateSettingsScreen(
             UpdateChannelCard(
                 selected = channel,
                 unlocked = unlockedChannels,
-                onRequestCode = {
+                onRequestCode = { canal ->
                     codeInput = ""
                     codeError = null
-                    showCodeDialog = true
+                    codeChannel = canal
                 },
                 onSelect = { elegido ->
                     // Bajar a estable no necesita aviso: es el canal seguro. Subir sí, porque
@@ -263,15 +263,15 @@ fun UpdateSettingsScreen(
         )
     }
 
-    if (showCodeDialog) {
+    codeChannel?.let { canal ->
         AlertDialog(
-            onDismissRequest = { if (!checkingCode) showCodeDialog = false },
-            title = { Text("Código de acceso", color = UniStackColors.TextPrimary) },
+            onDismissRequest = { if (!checkingCode) codeChannel = null },
+            title = { Text("Acceso a ${canal.label}", color = UniStackColors.TextPrimary) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Los canales de preestreno se abren con un código. Si no tienes uno, " +
-                            "pídeselo a quien publica la app.",
+                        "Este canal se abre con su propio código. Si no tienes uno, pídeselo a " +
+                            "quien publica la app.",
                         color = UniStackColors.TextSecondary,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -300,20 +300,23 @@ fun UpdateSettingsScreen(
                         checkingCode = true
                         codeError = null
                         scope.launch {
-                            val granted = viewModel.redeemAccessCode(codeInput)
+                            val granted = viewModel.redeemAccessCode(codeInput, canal)
                             checkingCode = false
                             if (granted == null) {
-                                codeError = "Ese código no vale, o no se pudo comprobar ahora mismo."
+                                // Mismo mensaje si el código no existe, si no se pudo comprobar
+                                // o si es el de otro canal: decir «ese es el de alpha» sería
+                                // contar de quién es un código que alguien está probando.
+                                codeError = "Ese código no vale para ${canal.label}."
                             } else {
-                                showCodeDialog = false
+                                codeChannel = null
                                 snackbarHostState.showSnackbar("Canal ${granted.label} disponible")
                             }
                         }
                     }
-                ) { Text(if (checkingCode) "Comprobando…" else "Canjear", fontWeight = FontWeight.Bold) }
+                ) { Text(if (checkingCode) "Comprobando…" else "Acceder", fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(enabled = !checkingCode, onClick = { showCodeDialog = false }) {
+                TextButton(enabled = !checkingCode, onClick = { codeChannel = null }) {
                     Text("Cancelar", color = UniStackColors.TextSecondary)
                 }
             },
@@ -354,7 +357,7 @@ fun UpdateSettingsScreen(
 private fun UpdateChannelCard(
     selected: UpdateChannel,
     unlocked: Set<UpdateChannel>,
-    onRequestCode: () -> Unit,
+    onRequestCode: (UpdateChannel) -> Unit,
     onSelect: (UpdateChannel) -> Unit
 ) {
     UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card) {
@@ -386,7 +389,7 @@ private fun UpdateChannelCard(
                     // codigo. Ocultarlos dejaria sin explicar por que no estan.
                     val isLocked = option !in unlocked
                     Surface(
-                        onClick = { if (isLocked) onRequestCode() else onSelect(option) },
+                        onClick = { if (isLocked) onRequestCode(option) else onSelect(option) },
                         modifier = Modifier.weight(1f),
                         shape = AppShapes.Pill,
                         color = if (isSelected) {

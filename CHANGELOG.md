@@ -19,6 +19,23 @@ número y la fecha, y se abre una nueva.
 
 ---
 
+## [1.0.0-alpha.4] — 2026-08-13
+
+Cuarta alpha, con arreglos de lo que salió en la tercera.
+
+### Corregido
+
+- **El código de un canal abría el canal al que perteneciera, sin importar dónde lo escribieras.**
+  Metías el de alpha en la casilla de beta y te abría alpha. Ahora cada casilla solo acepta su
+  código; si no es el suyo, no abre nada y no dice de quién era.
+
+### Cambiado
+
+- El botón para validar el código dice «Acceder» en lugar de «Canjear».
+- El aviso de versión nueva cambia de texto y se puede desplegar para leerlo entero.
+
+---
+
 ## [1.0.0-alpha.3] — 2026-08-13
 
 Tercera alpha. Casi todo es la pantalla de actualizaciones: cuándo avisa, qué te ofrece y quién puede recibir cada versión.

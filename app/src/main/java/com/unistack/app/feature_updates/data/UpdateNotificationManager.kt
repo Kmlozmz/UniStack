@@ -37,7 +37,7 @@ class UpdateNotificationManager(private val context: Context) {
         }
     }
 
-    fun showUpdateAvailableNotification(versionName: String) {
+    fun showUpdateAvailableNotification() {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("navigate_to", "updates")
@@ -50,9 +50,15 @@ class UpdateNotificationManager(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val message = "UniStack tiene una nueva versión lista para instalar. " +
+            "Actualiza ahora para disfrutar de mejoras y nuevas funciones."
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Nueva versión disponible")
-            .setContentText("UniStack $versionName está lista para descargar")
+            .setContentText(message)
+            // Con el texto largo, la notificación plegada lo corta a una línea. El estilo
+            // extendido deja leerlo entero al desplegarla.
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setSmallIcon(R.drawable.ic_stat_unistack)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

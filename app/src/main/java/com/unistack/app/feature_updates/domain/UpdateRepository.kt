@@ -16,12 +16,14 @@ interface UpdateRepository {
     val unlockedChannels: StateFlow<Set<UpdateChannel>>
 
     /**
-     * Canjea un código de acceso contra la lista publicada.
+     * Canjea un código para el canal que se está intentando abrir.
      *
-     * Devuelve el canal que abre, o null si el código no está en la lista o no se pudo
-     * consultar. Se distingue un caso del otro por el mensaje del estado.
+     * Devuelve el canal si el código es **el de ese canal**; null en cualquier otro caso: que no
+     * exista, que no se pudiera consultar la lista, o que sea el código de otro canal. Los tres
+     * se responden igual a propósito, para no ir diciendo a qué canal pertenece un código que
+     * alguien acaba de probar.
      */
-    suspend fun redeemAccessCode(code: String): UpdateChannel?
+    suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel?
 
     suspend fun checkForUpdates()
     suspend fun checkForUpdatesIfDue()

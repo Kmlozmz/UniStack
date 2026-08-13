@@ -105,9 +105,14 @@ class GitHubReleaseUpdateRepository(
         _channel.value = allowed
     }
 
-    override suspend fun redeemAccessCode(code: String): UpdateChannel? = withContext(Dispatchers.IO) {
+    override suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel? =
+        withContext(Dispatchers.IO) {
         val fingerprint = ChannelAccess.fingerprint(code)
-        val granted = ChannelAccess.channelFor(fingerprint, fetchAccessEntries()) ?: return@withContext null
+        // El código tiene que ser el del canal que se está abriendo. Antes valía cualquiera de
+        // la lista: metías el de alpha en la casilla de beta y te abría alpha, que no es lo que
+        // pediste ni lo que esperas al pulsar «Beta».
+        val granted = ChannelAccess.grantFor(fingerprint, channel, fetchAccessEntries())
+            ?: return@withContext null
         prefs.edit {
             putStringSet(KEY_ACCESS_FINGERPRINTS, storedFingerprints() + fingerprint)
             putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
@@ -211,7 +216,7 @@ class GitHubReleaseUpdateRepository(
             .onSuccess { info ->
                 if (info != null && ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
                     _state.value = UpdateState.Available(info)
-                    if (notify) notificationManager.showUpdateAvailableNotification(info.versionName)
+                    if (notify) notificationManager.showUpdateAvailableNotification()
                 } else {
                     _state.value = UpdateState.UpToDate
                     notificationManager.dismissNotification()

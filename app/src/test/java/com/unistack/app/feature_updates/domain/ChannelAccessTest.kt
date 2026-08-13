@@ -31,6 +31,25 @@ class ChannelAccessTest {
     }
 
     @Test
+    fun `un codigo solo abre la casilla de su propio canal`() {
+        // Era el fallo: daba igual en cuál lo metieras, abría el canal al que perteneciera. Al
+        // pulsar «Beta» y escribir el código de alpha, la respuesta tiene que ser que no.
+        val huellaAlpha = ChannelAccess.fingerprint("3KWVQ-B5LQ7-6W8RY-B7NRT")
+        assertEquals(
+            UpdateChannel.ALPHA,
+            ChannelAccess.grantFor(huellaAlpha, UpdateChannel.ALPHA, lista)
+        )
+        assertNull(ChannelAccess.grantFor(huellaAlpha, UpdateChannel.BETA, lista))
+
+        val huellaBeta = ChannelAccess.fingerprint("QTZBF-F9KMG-V54XW-EX2H2")
+        assertEquals(
+            UpdateChannel.BETA,
+            ChannelAccess.grantFor(huellaBeta, UpdateChannel.BETA, lista)
+        )
+        assertNull(ChannelAccess.grantFor(huellaBeta, UpdateChannel.ALPHA, lista))
+    }
+
+    @Test
     fun `un codigo abre el canal que le corresponde`() {
         assertEquals(
             UpdateChannel.ALPHA,

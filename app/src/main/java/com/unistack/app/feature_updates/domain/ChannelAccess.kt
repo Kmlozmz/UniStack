@@ -27,14 +27,21 @@ object ChannelAccess {
         return digest.joinToString("") { "%02x".format(it) }
     }
 
-    /**
-     * Hasta qué canal abre una huella, según la lista.
-     *
-     * Un código de alpha abre también beta: quien acepta lo más inestable no tiene por qué
-     * pedir otro permiso para lo que ya está más rodado.
-     */
+    /** A qué canal pertenece una huella, según la lista. Cada código abre uno y solo uno. */
     fun channelFor(fingerprint: String, entries: List<AccessEntry>): UpdateChannel? =
         entries.firstOrNull { it.fingerprint.equals(fingerprint, ignoreCase = true) }?.channel
+
+    /**
+     * El canal si la huella es la del código **de [requested]**; null en cualquier otro caso.
+     *
+     * La regla vive aquí y no en el repositorio para poder probarla: era el fallo de meter el
+     * código de alpha en la casilla de beta y que abriera alpha igual.
+     */
+    fun grantFor(
+        fingerprint: String,
+        requested: UpdateChannel,
+        entries: List<AccessEntry>
+    ): UpdateChannel? = channelFor(fingerprint, entries)?.takeIf { it == requested }
 
     data class AccessEntry(
         val channel: UpdateChannel,
