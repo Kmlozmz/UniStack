@@ -17,6 +17,12 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+---
+
+## [1.0.0-alpha.2] — 2026-08-13
+
+Segunda alpha. Sobre todo, el canal por el que recibes las actualizaciones.
+
 ### Corregido
 
 - El botón «Permitir instalación» de la ventana de actualización salía cortado.
