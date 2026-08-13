@@ -379,7 +379,7 @@ class FirebaseCloudBackupRepository(
                 customColor = customColor,
                 grades = grades,
                 periodScheme = parsePeriodScheme(map["periodScheme"]),
-                activePeriodId = map.string("activePeriodId") ?: "period-1",
+                activePeriodId = map.string("activePeriodId").orEmpty(),
                 historyPromptStatus = map.string("historyPromptStatus")
                     ?.let { runCatching { PriorHistoryPromptStatus.valueOf(it) }.getOrNull() }
                     ?: PriorHistoryPromptStatus.NOT_SHOWN,

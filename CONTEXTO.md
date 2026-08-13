@@ -109,6 +109,14 @@ tanto sin notas como con la materia terminada: una materia cerrada pedía regist
 en la escala de 0 a 5 es ese 10% pero en la de 0 a 100 es medio punto: el estado ámbar solo
 aparecía entre 79.5 y 80.
 
+**El corte activo lo elige el usuario, no la app.** `Subject.activePeriodId` **vacío** significa
+«sin elegir», y es como nace toda materia. Léelo por `chosenPeriodId` (null si no hay elección)
+o por `defaultPeriodId` (con qué rellenar un formulario). Mientras no haya elección, el detalle
+pregunta «¿En qué corte vas?», ningún corte se marca como actual, el botón de agregar nota está
+apagado y **no se reclama el historial de los cortes anteriores** — reclamarlo exige saber que
+ya pasaron, y eso solo lo sabe el usuario. El selector vive solo ahí: en el formulario de crear
+materia no hay con qué juzgarlo.
+
 **La longitud de una barra mide avance; el color, nunca rendimiento.** `EvaluationBar` va en
 gris a propósito: una barra corta y roja decía dos cosas a la vez. El rendimiento lo lleva la
 cifra. Y no se usa `LinearProgressIndicator` para esto: desde Material 3 1.3 dibuja un punto
@@ -118,9 +126,15 @@ al final de la pista, y con la barra a cero ese punto queda flotando solo al otr
 
 ## Reglas que hay que respetar al tocar UI
 
-**Márgenes inferiores.** Dos valores compartidos en `core/design/theme/AppearanceTheme.kt`:
+**Márgenes inferiores.** Tres valores compartidos en `core/design/theme/AppearanceTheme.kt`:
 - `scrollBottomRoom` — margen inferior mínimo de cualquier lista o columna desplazable.
 - `LocalBottomBarOverlay` — lo que tapa la barra flotante; 0 con la barra acoplada.
+- `anchoredButtonRoom` — lo que ocupa un botón flotante anclado (56dp + 20dp de margen).
+
+Una lista con un botón anclado encima reserva **los dos**: `scrollBottomRoom + anchoredButtonRoom`.
+Con un número a ojo la lista puede quedarse a unos pocos dp del umbral para desplazarse, y
+entonces no hay scroll y el botón tapa el último elemento sin salida posible. Pasó en Materias
+y en Tareas con 118dp escritos a mano.
 
 Todo elemento **anclado** (FAB, botón pegado abajo) suma `LocalBottomBarOverlay.current`, o la
 barra lo tapa para siempre. Todo contenedor **desplazable** usa `scrollBottomRoom` en su

@@ -571,7 +571,7 @@ class LocalJsonBackupRepository(
             grades = parseGrades(item.optJSONArray("grades")),
             periodScheme = item.optJSONObject("periodScheme").toAcademicPeriodSchemeOrNull()
                 ?: AcademicPeriodScheme.default(),
-            activePeriodId = item.optString("activePeriodId", "period-1"),
+            activePeriodId = item.optString("activePeriodId", ""),
             historyPromptStatus = item.optString("historyPromptStatus")
                 .toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
             unknownPeriodIds = item.optJSONArray("unknownPeriodIds").strings().toSet()

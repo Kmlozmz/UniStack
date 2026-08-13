@@ -44,6 +44,16 @@ val LocalBottomBarOverlay = staticCompositionLocalOf { 0.dp }
 val scrollBottomRoom: Dp
     @Composable get() = 28.dp + LocalBottomBarOverlay.current
 
+/**
+ * Lo que ocupa un botón flotante anclado al fondo: 56dp de alto y 20dp de margen.
+ *
+ * Se suma a [scrollBottomRoom] en la lista que ese botón tapa. Sin sumarlo, una lista con
+ * poco contenido se queda justo por debajo del umbral para desplazarse: no hay scroll y el
+ * botón cubre para siempre el último elemento, que es lo que pasaba en Materias y Tareas con
+ * los 118dp escritos a mano.
+ */
+val anchoredButtonRoom: Dp = 76.dp
+
 object AppearanceRuntime {
     var cornerStyle: CornerStyle = CornerStyle.BALANCED
         internal set

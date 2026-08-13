@@ -53,6 +53,8 @@ import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
+import com.unistack.app.core.design.theme.anchoredButtonRoom
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.SubjectGradeCalculation
@@ -90,7 +92,11 @@ fun GradesScreen(
                 start = 22.dp,
                 top = if (embedded) 10.dp else 58.dp,
                 end = 22.dp,
-                bottom = 118.dp
+                // El margen del final sale de la regla, no de un número a ojo: lo que tape la
+                // barra flotante más el hueco del botón anclado. Con los 118dp fijos de antes
+                // la lista se quedaba a unos pocos dp de poder desplazarse, así que no había
+                // scroll y el botón «Agregar materia» tapaba para siempre la última tarjeta.
+                bottom = scrollBottomRoom + anchoredButtonRoom
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -198,106 +204,98 @@ private fun SubjectListCard(
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
-        // Alto libre en vez de 112dp fijos. Con la altura clavada, dos de las cuatro líneas
-        // no cabían nunca y salían recortadas: «Agrega la primera n…», «0% evaluado de la
-        // mat…». La cifra también se ha traído a la columna de texto, que antes competía por
-        // el ancho con ella y con el chevron.
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        // Dos líneas y nada más. La lista es para recorrerla: lo que cabe en una tarjeta es
+        // el nombre, cómo va y cuánto lleva evaluado. El detalle de dónde puede acabar vive
+        // en la pantalla de la materia, que es donde hay sitio para explicarlo.
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
                     .background(subjectColor)
             )
+            Box(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(40.dp)
+                    .background(
+                        subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.School,
+                    contentDescription = null,
+                    tint = subjectColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 14.dp, end = 6.dp, top = 14.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(start = 12.dp, end = 8.dp, top = 12.dp, bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .background(
-                                subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.School,
-                            contentDescription = null,
-                            tint = subjectColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
                     Text(
                         subject.name,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    SubjectStatusPill(text = tone.label, color = tone.color)
-                }
-                Row(verticalAlignment = Alignment.Bottom) {
-                    if (calculation.currentAverage == null) {
-                        // Sin notas no se pinta una raya gigante donde va la nota: lo único
-                        // que hay que decir es a dónde se apunta.
-                        Text(
-                            "Meta $targetText",
-                            color = tone.color,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    } else {
-                        Text(
-                            GradingScaleUtils.formatGrade(calculation.currentAverage, gradingScale),
-                            color = tone.color,
-                            fontSize = 26.sp,
-                            lineHeight = 28.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            " / $targetText",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
                     Text(
-                        "${String.format(Locale.US, "%.0f", evaluated)}% evaluado",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        // Sin notas no hay nota que enseñar, así que el hueco lo ocupa la meta.
+                        calculation.currentAverage
+                            ?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
+                            ?: "Meta $targetText",
+                        color = tone.color,
+                        fontSize = if (calculation.currentAverage == null) 14.sp else 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1
                     )
                 }
-                EvaluationBar(fraction = calculation.evaluatedSemesterFraction, height = 5.dp)
-                Text(
-                    subjectRangeText(calculation, gradingScale),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    EvaluationBar(
+                        fraction = calculation.evaluatedSemesterFraction,
+                        modifier = Modifier.weight(1f),
+                        height = 4.dp
+                    )
+                    Text(
+                        "${String.format(Locale.US, "%.0f", evaluated)}%",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1
+                    )
+                    Text(
+                        tone.label,
+                        color = tone.color,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                }
             }
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
-                    .align(Alignment.CenterVertically)
                     .padding(end = 10.dp)
-                    .size(22.dp)
+                    .size(20.dp)
             )
         }
     }
@@ -344,47 +342,6 @@ private fun subjectTone(
             if (calculation.isFinished) "Bajo la meta" else "Fuera de alcance"
         )
     }
-}
-
-@Composable
-private fun SubjectStatusPill(text: String, color: Color) {
-    Box(
-        modifier = Modifier
-            .clip(AppShapes.Pill)
-            .background(color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.16f else 0.12f))
-            .padding(horizontal = 9.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = color,
-            fontSize = 10.sp,
-            lineHeight = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1
-        )
-    }
-}
-
-/**
- * Entre qué dos notas puede terminar la materia: sacando 0 en todo lo que falta y sacándolo
- * todo. Son dos números exactos, y por eso sustituyen al «terminarías con» de antes, que
- * suponía que lo que falta saldría como lo ya hecho sin decirlo en ninguna parte.
- */
-private fun subjectRangeText(
-    calculation: SubjectGradeCalculation,
-    gradingScale: GradingScale
-): String {
-    val floor = calculation.guaranteedMinimum
-    val ceiling = calculation.bestPossible
-    if (floor == null || ceiling == null) {
-        return "Agrega tu primera nota para saber dónde puedes acabar."
-    }
-    if (calculation.isFinished) {
-        return "Nota final ${GradingScaleUtils.formatGrade(floor, gradingScale)}."
-    }
-    return "Puedes acabar entre ${GradingScaleUtils.formatGrade(floor, gradingScale)} y " +
-        "${GradingScaleUtils.formatGrade(ceiling, gradingScale)}."
 }
 
 @Composable

@@ -143,7 +143,7 @@ class TasksViewModel @Inject constructor(
                 }
                 else -> {
                     val newSubject = subjects.value.first { it.id == resolvedSubjectId }
-                    val destinationPeriod = resolvedPeriodId ?: newSubject.activePeriodId
+                    val destinationPeriod = resolvedPeriodId ?: newSubject.defaultPeriodId
                     val destinationWeight = newSubject.grades
                         .filter {
                             it.periodId == destinationPeriod &&
@@ -424,7 +424,7 @@ class TasksViewModel @Inject constructor(
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return null
         return requestedPeriodId
             ?.takeIf { id -> subject.periodScheme.periods.any { it.id == id } }
-            ?: subject.activePeriodId
+            ?: subject.defaultPeriodId
     }
 
     private fun existingGradingStatus(taskId: String): TaskGradingStatus {

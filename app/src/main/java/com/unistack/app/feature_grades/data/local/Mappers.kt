@@ -24,7 +24,10 @@ fun SubjectEntity.toDomain(grades: List<GradeItem>): Subject {
         visualType = type,
         customColor = customColor,
         periodScheme = periodSchemeJson.toPeriodScheme(),
-        activePeriodId = activePeriodId.ifBlank { "period-1" },
+        // Sin `ifBlank`: el vacío es un valor con significado —«el usuario no ha elegido
+        // corte»— y convertirlo aquí en «period-1» era justo lo que hacía que la app diera
+        // por elegido el primer corte de toda materia nueva.
+        activePeriodId = activePeriodId,
         historyPromptStatus = historyPromptStatus.toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
         unknownPeriodIds = unknownPeriodIdsJson.toStringSet()
     )

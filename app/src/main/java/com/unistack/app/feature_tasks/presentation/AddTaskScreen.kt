@@ -279,7 +279,7 @@ fun AddTaskScreen(
         },
         onSubjectSelected = {
             selectedSubjectId = it
-            selectedPeriodId = subjects.firstOrNull { subject -> subject.id == it }?.activePeriodId
+            selectedPeriodId = subjects.firstOrNull { subject -> subject.id == it }?.defaultPeriodId
             error = null
         },
         onPeriodSelected = {
@@ -781,7 +781,7 @@ private fun BasicInfoCard(
             FormDivider()
             PeriodDropdown(
                 subject = selectedSubject,
-                selectedPeriodId = selectedPeriodId ?: selectedSubject.activePeriodId,
+                selectedPeriodId = selectedPeriodId ?: selectedSubject.defaultPeriodId,
                 onPeriodSelected = onPeriodSelected
             )
         }

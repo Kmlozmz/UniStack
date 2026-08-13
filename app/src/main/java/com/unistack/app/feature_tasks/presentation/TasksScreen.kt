@@ -98,6 +98,8 @@ import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
+import com.unistack.app.core.design.theme.anchoredButtonRoom
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -213,7 +215,10 @@ fun TasksScreen(
                 start = 20.dp,
                 top = if (embedded) 10.dp else 58.dp,
                 end = 20.dp,
-                bottom = 118.dp
+                // Misma regla que Materias: lo que tape la barra flotante más el hueco del
+                // botón anclado. Con los 118dp fijos la lista podía quedarse justo por debajo
+                // del umbral para desplazarse y el botón tapaba el último elemento sin salida.
+                bottom = scrollBottomRoom + anchoredButtonRoom
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -574,7 +579,7 @@ private fun TaskGradeResultSheet(
     var percentageInput by remember(task.id) { mutableStateOf("") }
     var weightUnknown by remember(task.id) { mutableStateOf(false) }
     var selectedPeriodId by remember(task.id, subject.activePeriodId) {
-        mutableStateOf(task.periodId ?: subject.activePeriodId)
+        mutableStateOf(task.periodId ?: subject.defaultPeriodId)
     }
     var error by remember(task.id) { mutableStateOf<String?>(null) }
 

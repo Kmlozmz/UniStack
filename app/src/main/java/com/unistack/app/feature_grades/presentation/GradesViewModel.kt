@@ -71,9 +71,11 @@ class GradesViewModel @Inject constructor(
             visualType = visualType,
             customColor = customColor,
             periodScheme = periodScheme,
+            // Vacío si no llega uno válido: una materia nueva no tiene corte elegido hasta
+            // que alguien lo elige.
             activePeriodId = activePeriodId
                 ?.takeIf { id -> periodScheme.periods.any { it.id == id } }
-                ?: periodScheme.periods.first().id
+                .orEmpty()
         )
         repository.addSubject(subject)
         return subject

@@ -132,11 +132,15 @@ fun SubjectDetailScreen(
         return
     }
 
-    val activePeriodOrder = periodScheme.periods
-        .firstOrNull { it.id == subject.activePeriodId }
-        ?.order
-        ?: 1
-    val hasIncompletePriorHistory = activePeriodOrder > 1 &&
+    // Mientras el usuario no diga en qué corte va, la pantalla no lo supone: no marca ningún
+    // corte como actual y no reclama el historial de los anteriores. Reclamarlo exige saber
+    // que esos cortes ya pasaron, y eso solo lo sabe él.
+    val chosenPeriod = subject.chosenPeriodId?.let { id ->
+        periodScheme.periods.firstOrNull { it.id == id }
+    }
+    val activePeriodOrder = chosenPeriod?.order ?: 1
+    val hasIncompletePriorHistory = chosenPeriod != null &&
+        activePeriodOrder > 1 &&
         periodScheme.periods
             .filter { it.order < activePeriodOrder }
             .any { period ->
@@ -150,8 +154,6 @@ fun SubjectDetailScreen(
             period.toSummary(grades)
         }
     }
-    val activePeriod = periodScheme.periods.firstOrNull { it.id == subject.activePeriodId }
-        ?: periodScheme.periods.first()
     val orderedPeriodSummaries = remember(periodSummaries, subject.activePeriodId) {
         periodSummaries.sortedWith(
             compareByDescending<PeriodSummary> { it.period.id == subject.activePeriodId }
@@ -259,7 +261,11 @@ fun SubjectDetailScreen(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            "${periodScheme.periods.size} cortes · ${periodDisplayName(activePeriod)} activo",
+                            if (chosenPeriod == null) {
+                                "${periodScheme.periods.size} cortes · sin elegir en cuál vas"
+                            } else {
+                                "${periodScheme.periods.size} cortes · ${periodDisplayName(chosenPeriod)} activo"
+                            },
                             color = UniStackColors.TextSecondary,
                             fontSize = 14.sp
                         )
@@ -267,57 +273,24 @@ fun SubjectDetailScreen(
                 }
             }
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Estos chips parecían un filtro de la lista de abajo y no filtran nada:
-                    // lo que hacen es guardar en la materia a qué corte van las notas nuevas.
-                    // El rótulo ahora dice eso.
-                    Text(
-                        "Las notas nuevas entran en",
-                        color = UniStackColors.TextSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                    periodScheme.periods.sortedBy { it.order }.forEach { period ->
-                            val selected = subject.activePeriodId == period.id
-                            Surface(
-                                modifier = Modifier.bounceClick {
-                                    viewModel.setActivePeriod(subject.id, period.id)
-                                },
-                                shape = AppShapes.Small,
-                                color = if (selected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            ) {
-                                Text(
-                                    periodDisplayName(period),
-                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                    color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
-                }
+                PeriodChooser(
+                    periods = periodScheme.periods,
+                    chosenPeriodId = subject.chosenPeriodId,
+                    onChoose = { viewModel.setActivePeriod(subject.id, it) }
+                )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     orderedPeriodSummaries.forEach { summary ->
-                        val needsHistory = summary.period.order < activePeriodOrder &&
+                        val needsHistory = chosenPeriod != null &&
+                            summary.period.order < activePeriodOrder &&
                             summary.grades.isEmpty() &&
                             summary.period.id !in subject.unknownPeriodIds
                         PeriodCard(
                             summary = summary,
                             maxGrade = maxGrade,
                             scale = scale,
-                            isActive = summary.period.id == subject.activePeriodId,
+                            isActive = summary.period.id == subject.chosenPeriodId,
                             needsHistory = needsHistory,
                             onClick = {
                                 if (needsHistory) {
@@ -352,12 +325,17 @@ fun SubjectDetailScreen(
                 .padding(bottom = LocalBottomBarOverlay.current)
                 .padding(horizontal = 22.dp, vertical = 14.dp)
         ) {
+            // Sin corte elegido el botón no lleva a ninguna parte: no hay a qué corte añadir
+            // la nota. Queda apagado y dice qué falta, en vez de mandar la nota al primero.
             SquishyButton(
-                onClick = { onAddGradeClick(subject.id, subject.activePeriodId) },
+                onClick = { chosenPeriod?.let { onAddGradeClick(subject.id, it.id) } },
+                enabled = chosenPeriod != null,
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = UniStackColors.Primary,
-                    contentColor = UniStackColors.OnPrimary
+                    contentColor = UniStackColors.OnPrimary,
+                    disabledContainerColor = UniStackColors.SurfaceVariant,
+                    disabledContentColor = UniStackColors.TextSecondary
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -368,13 +346,22 @@ fun SubjectDetailScreen(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = UniStackColors.OnPrimary)
+                    val buttonContent = if (chosenPeriod == null) {
+                        UniStackColors.TextSecondary
+                    } else {
+                        UniStackColors.OnPrimary
+                    }
+                    Icon(Icons.Rounded.Add, contentDescription = null, tint = buttonContent)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Agregar nota a ${periodDisplayName(activePeriod)}",
+                        if (chosenPeriod == null) {
+                            "Elige un corte para agregar notas"
+                        } else {
+                            "Agregar nota a ${periodDisplayName(chosenPeriod)}"
+                        },
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = UniStackColors.OnPrimary
+                        color = buttonContent
                     )
                 }
             }
@@ -656,6 +643,72 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
         }
         // Spacer to balance back button
         Box(modifier = Modifier.size(48.dp))
+    }
+}
+
+/**
+ * En qué corte va la materia.
+ *
+ * Mientras no haya elección, es una pregunta con todas las opciones apagadas y no un ajuste
+ * con una ya marcada. La app venía dando por hecho el primer corte y presentándolo como
+ * «Corte actual» en materias recién creadas; de ahí salía además que reclamara el historial
+ * de unos cortes anteriores que el usuario nunca dijo haber cursado.
+ */
+@Composable
+private fun PeriodChooser(
+    periods: List<AcademicPeriod>,
+    chosenPeriodId: String?,
+    onChoose: (String) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            if (chosenPeriodId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",
+            color = if (chosenPeriodId == null) UniStackColors.TextPrimary else UniStackColors.TextSecondary,
+            fontSize = if (chosenPeriodId == null) 15.sp else 13.sp,
+            fontWeight = if (chosenPeriodId == null) FontWeight.ExtraBold else FontWeight.SemiBold
+        )
+        if (chosenPeriodId == null) {
+            Text(
+                "Elígelo para saber dónde entran tus notas y qué cortes ya pasaron.",
+                color = UniStackColors.TextSecondary,
+                fontSize = 13.sp,
+                lineHeight = 17.sp
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            periods.sortedBy { it.order }.forEach { period ->
+                val selected = chosenPeriodId == period.id
+                Surface(
+                    modifier = Modifier.bounceClick { onChoose(period.id) },
+                    shape = AppShapes.Small,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    border = if (chosenPeriodId == null) {
+                        androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                        )
+                    } else {
+                        null
+                    }
+                ) {
+                    Text(
+                        periodDisplayName(period),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                        color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        }
     }
 }
 

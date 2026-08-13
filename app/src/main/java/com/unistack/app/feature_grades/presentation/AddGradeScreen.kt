@@ -20,14 +20,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +56,8 @@ import java.util.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
@@ -70,6 +74,41 @@ private val FormFieldColor: Color
 
 private val DisabledButtonColor: Color
     @Composable get() = UniStackColors.SurfaceVariant
+
+/**
+ * Los colores de los campos, en un sitio.
+ *
+ * Estaban copiados tres veces con catorce líneas cada uno, así que cualquier ajuste había que
+ * hacerlo tres veces y el del peso ya se había quedado sin el color de etiqueta.
+ */
+@Composable
+private fun formFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = FormFieldColor,
+    unfocusedContainerColor = FormFieldColor,
+    disabledContainerColor = FormFieldColor,
+    focusedBorderColor = UniStackColors.Primary,
+    unfocusedBorderColor = UniStackColors.SoftOutline,
+    errorBorderColor = UniStackColors.Coral,
+    focusedTextColor = UniStackColors.TextPrimary,
+    unfocusedTextColor = UniStackColors.TextPrimary,
+    errorTextColor = UniStackColors.TextPrimary,
+    focusedLabelColor = UniStackColors.Primary,
+    unfocusedLabelColor = UniStackColors.TextSecondary,
+    focusedPlaceholderColor = UniStackColors.TextSecondary,
+    unfocusedPlaceholderColor = UniStackColors.TextSecondary
+)
+
+/** Los tipos de actividad y su rótulo, para no repetir la lista en dos sitios. */
+private val ActivityTypeLabels = listOf(
+    "Taller" to GradeType.WORKSHOP,
+    "Exposición" to GradeType.PRESENTATION,
+    "Quiz" to GradeType.QUIZ,
+    "Parcial" to GradeType.EXAM,
+    "Proyecto" to GradeType.PROJECT,
+    "Investigación" to GradeType.RESEARCH,
+    "Práctica" to GradeType.PRACTICE,
+    "Otra" to GradeType.OTHER
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -154,10 +193,14 @@ fun AddGradeScreen(
             weightUnknown = grade.weightStatus == GradeWeightStatus.UNKNOWN
             initialized = true
         } else if (!isEditing) {
-            selectedPeriodId = lockedPeriod?.id ?: subject?.activePeriodId ?: periodScheme.periods.first().id
+            selectedPeriodId = lockedPeriod?.id ?: subject?.chosenPeriodId ?: periodScheme.periods.first().id
             initialized = true
         }
     }
+
+    val remainingWeight = ((1.0 - currentPercentage) * 100.0).coerceAtLeast(0.0)
+    var saveBarHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
 
     Box(
         modifier = modifier
@@ -167,53 +210,56 @@ fun AddGradeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 16.dp)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 10.dp, bottom = saveBarHeight + scrollBottomRoom),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .size(48.dp)
-                    .align(Alignment.Start)
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = UniStackColors.TextPrimary
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(UniStackColors.SurfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = UniStackColors.TextPrimary
+                    )
+                }
+                Text(
+                    text = if (isEditing) "Editar nota" else "Nueva nota",
+                    color = UniStackColors.TextPrimary,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    // En secundario y no en verde: aquel verde no significaba nada, era el
+                    // color que había a mano.
+                    text = listOfNotNull(
+                        subject?.name,
+                        periodDisplayName(selectedPeriod),
+                        "${formatPercent(selectedPeriod.weight * 100)}% de la materia"
+                    ).joinToString("  ·  "),
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 14.sp
                 )
             }
 
-            Text(
-                text = if (isEditing) "Editar nota" else "Nueva nota",
-                color = UniStackColors.TextPrimary,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-
-            Text(
-                text = "${periodDisplayName(selectedPeriod)} · ${formatPercent(selectedPeriod.weight * 100)}% de la materia",
-                color = UniStackColors.Green,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(top = 2.dp)
-            )
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "¿Qué quieres registrar?",
-                    color = UniStackColors.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+            FormBlock(
+                title = "Qué registras",
+                icon = Icons.AutoMirrored.Rounded.Assignment,
+                accent = UniStackColors.Primary,
+                tinted = true
+            ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActivityChip(
-                        label = "Actividad",
+                        label = "Una actividad",
                         isSelected = selectedSource == GradeSource.ACTIVITY,
                         onClick = {
                             selectedSource = GradeSource.ACTIVITY
@@ -221,23 +267,33 @@ fun AddGradeScreen(
                         }
                     )
                     ActivityChip(
-                        label = "Nota final del corte",
+                        label = "La nota final del corte",
                         isSelected = selectedSource == GradeSource.PERIOD_FINAL,
                         onClick = {
                             selectedSource = GradeSource.PERIOD_FINAL
                             weightUnknown = false
                             percentage = "100"
-                            name = "Resultado final ${periodDisplayName(selectedPeriod)}"
+                            if (name.isBlank()) name = "Resultado final ${periodDisplayName(selectedPeriod)}"
                             error = null
                         }
                     )
                 }
+                Text(
+                    if (selectedSource == GradeSource.PERIOD_FINAL) {
+                        "Sustituye el cálculo del corte por la nota que puso el profesor."
+                    } else {
+                        "Se combina con las demás según el peso que tenga dentro del corte."
+                    },
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
                 if (!isEditing && lockedPeriod == null) {
                     Text(
                         text = "Corte",
-                        color = UniStackColors.TextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -249,9 +305,58 @@ fun AddGradeScreen(
                                 isSelected = selectedPeriod.id == period.id,
                                 onClick = {
                                     selectedPeriodId = period.id
-                                    if (selectedSource == GradeSource.PERIOD_FINAL) {
-                                        name = "Resultado final ${periodDisplayName(period)}"
+                                    error = null
+                                }
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = {
+                        name = it.take(50)
+                        error = null
+                    },
+                    label = { Text("Nombre") },
+                    placeholder = { Text("Ej. Taller 2, Parcial de mitad…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = FormCardShape,
+                    isError = !isNameValid,
+                    colors = formFieldColors(),
+                    supportingText = {
+                        if (!isNameValid) {
+                            Text(
+                                nameValidation.errorMessage ?: "Ingresa un nombre de actividad válido",
+                                color = UniStackColors.Coral
+                            )
+                        }
+                    }
+                )
+                if (selectedSource == GradeSource.ACTIVITY) {
+                    Text(
+                        text = "Tipo (opcional)",
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        ActivityTypeLabels.forEach { (label, type) ->
+                            ActivityChip(
+                                label = label,
+                                isSelected = selectedType == type,
+                                onClick = {
+                                    // El tipo ya no pisa el nombre escrito. Antes lo
+                                    // sobreescribía siempre: escribías «Parcial 2», tocabas
+                                    // «Quiz» y la actividad pasaba a llamarse «Quiz».
+                                    if (name.isBlank() || ActivityTypeLabels.any { it.first == name }) {
+                                        name = label
                                     }
+                                    selectedType = type
                                     error = null
                                 }
                             )
@@ -260,63 +365,19 @@ fun AddGradeScreen(
                 }
             }
 
-            // Activity Input
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Actividad",
-                    color = UniStackColors.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = {
-                        name = it.take(50)
-                        error = null
-                    },
-                    placeholder = { Text("Ej. Taller, Exposición, Parcial...", color = UniStackColors.TextSecondary) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = FormCardShape,
-                    isError = !isNameValid,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FormFieldColor,
-                        unfocusedContainerColor = FormFieldColor,
-                        disabledContainerColor = FormFieldColor,
-                        focusedBorderColor = UniStackColors.Primary,
-                        unfocusedBorderColor = UniStackColors.SoftOutline,
-                        errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = UniStackColors.TextPrimary,
-                        unfocusedTextColor = UniStackColors.TextPrimary,
-                        errorTextColor = UniStackColors.TextPrimary,
-                        focusedLabelColor = UniStackColors.Primary,
-                        unfocusedLabelColor = UniStackColors.TextSecondary,
-                        focusedPlaceholderColor = UniStackColors.TextSecondary,
-                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
-                    ),
-                    supportingText = {
-                        if (!isNameValid) {
-                            Text(nameValidation.errorMessage ?: "Ingresa un nombre de actividad válido", color = UniStackColors.Coral)
-                        }
-                    }
-                )
-            }
-
-            // Grade Input
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Nota obtenida",
-                    color = UniStackColors.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+            FormBlock(
+                title = "Cuánto vale",
+                icon = Icons.Rounded.BarChart,
+                accent = UniStackColors.Primary
+            ) {
                 OutlinedTextField(
                     value = value,
                     onValueChange = {
                         value = it
                         error = null
                     },
-                    placeholder = { Text("0.0", color = UniStackColors.TextSecondary) },
+                    label = { Text("Nota obtenida") },
+                    placeholder = { Text("0") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = FormCardShape,
@@ -329,139 +390,85 @@ fun AddGradeScreen(
                             modifier = Modifier.padding(end = 12.dp)
                         )
                     },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FormFieldColor,
-                        unfocusedContainerColor = FormFieldColor,
-                        disabledContainerColor = FormFieldColor,
-                        focusedBorderColor = UniStackColors.Primary,
-                        unfocusedBorderColor = UniStackColors.SoftOutline,
-                        errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = UniStackColors.TextPrimary,
-                        unfocusedTextColor = UniStackColors.TextPrimary,
-                        errorTextColor = UniStackColors.TextPrimary,
-                        focusedPlaceholderColor = UniStackColors.TextSecondary,
-                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
-                    )
+                    colors = formFieldColors()
                 )
-            }
 
-            if (selectedSource == GradeSource.ACTIVITY) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "No conozco el porcentaje",
-                            color = UniStackColors.TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = "Se guardará sin alterar la proyección hasta completar el peso.",
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Switch(
-                        checked = weightUnknown,
-                        onCheckedChange = {
-                            weightUnknown = it
-                            error = null
+                if (selectedSource == GradeSource.ACTIVITY) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "No conozco el peso",
+                                color = UniStackColors.TextPrimary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = "La nota queda registrada y no entra en el cálculo hasta que le pongas peso.",
+                                color = UniStackColors.TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
                         }
-                    )
-                }
-            }
-
-            if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Peso dentro del corte (%)",
-                    color = UniStackColors.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                OutlinedTextField(
-                    value = percentage,
-                    onValueChange = {
-                        percentage = it
-                        error = null
-                    },
-                    placeholder = { Text("0", color = UniStackColors.TextSecondary) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = FormCardShape,
-                    isError = percentage.isNotBlank() && !isPercentageValid,
-                    trailingIcon = {
-                        Text(
-                            text = "%",
-                            color = UniStackColors.TextSecondary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                    },
-                    supportingText = {
-                        Text(
-                            text = "La suma de pesos debe ser 100%.",
-                            color = if (percentage.isNotBlank() && !isPercentageValid) UniStackColors.Coral else UniStackColors.TextSecondary
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FormFieldColor,
-                        unfocusedContainerColor = FormFieldColor,
-                        disabledContainerColor = FormFieldColor,
-                        focusedBorderColor = UniStackColors.Primary,
-                        unfocusedBorderColor = UniStackColors.SoftOutline,
-                        errorBorderColor = UniStackColors.Coral,
-                        focusedTextColor = UniStackColors.TextPrimary,
-                        unfocusedTextColor = UniStackColors.TextPrimary,
-                        errorTextColor = UniStackColors.TextPrimary,
-                        focusedPlaceholderColor = UniStackColors.TextSecondary,
-                        unfocusedPlaceholderColor = UniStackColors.TextSecondary
-                    )
-                )
-            }
-            }
-
-            // Activity type chips
-            if (selectedSource == GradeSource.ACTIVITY) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Tipo de actividad (opcional)",
-                    color = UniStackColors.TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-
-                val chips = listOf(
-                    "Taller" to GradeType.WORKSHOP,
-                    "Exposición" to GradeType.PRESENTATION,
-                    "Quiz" to GradeType.QUIZ,
-                    "Parcial" to GradeType.EXAM,
-                    "Proyecto" to GradeType.PROJECT,
-                    "Investigación" to GradeType.RESEARCH,
-                    "Práctica" to GradeType.PRACTICE,
-                    "Otra" to GradeType.OTHER
-                )
-
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    chips.forEach { (label, type) ->
-                        ActivityChip(
-                            label = label,
-                            isSelected = selectedType == type,
-                            onClick = {
-                                selectedType = type
-                                name = label
+                        Spacer(Modifier.width(8.dp))
+                        Switch(
+                            checked = weightUnknown,
+                            onCheckedChange = {
+                                weightUnknown = it
                                 error = null
                             }
                         )
                     }
                 }
-            }
+
+                if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
+                    OutlinedTextField(
+                        value = percentage,
+                        onValueChange = {
+                            percentage = it
+                            error = null
+                        },
+                        label = { Text("Peso dentro de ${periodDisplayName(selectedPeriod)}") },
+                        placeholder = { Text("0") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = FormCardShape,
+                        isError = percentage.isNotBlank() && !isPercentageValid,
+                        trailingIcon = {
+                            Text(
+                                text = "%",
+                                color = UniStackColors.TextSecondary,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(end = 12.dp)
+                            )
+                        },
+                        supportingText = {
+                            // Antes decía «la suma de pesos debe ser 100%», que es la regla
+                            // pero no el dato: la pantalla sabe cuánto queda libre y no lo
+                            // decía, así que había que ir a mirarlo a otra parte.
+                            Text(
+                                text = when {
+                                    percentage.isNotBlank() && !isPercentageValid ->
+                                        "Te pasas del 100%: en ${periodDisplayName(selectedPeriod)} solo queda " +
+                                            "${formatPercent(remainingWeight)}% por repartir."
+                                    remainingWeight <= 0.05 ->
+                                        "${periodDisplayName(selectedPeriod)} ya tiene repartido el 100%."
+                                    else ->
+                                        "Queda ${formatPercent(remainingWeight)}% por repartir en " +
+                                            "${periodDisplayName(selectedPeriod)}."
+                                },
+                                color = if (percentage.isNotBlank() && !isPercentageValid) {
+                                    UniStackColors.Coral
+                                } else {
+                                    UniStackColors.TextSecondary
+                                }
+                            )
+                        },
+                        colors = formFieldColors()
+                    )
+                }
             }
 
             error?.let {
@@ -472,10 +479,19 @@ fun AddGradeScreen(
                     fontSize = 13.sp
                 )
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Save Button
+        // Anclada, como en el resto de formularios de la app. Antes se desplazaba con el
+        // contenido y sin margen de teclado: con targetSdk 36 la ventana ya no se
+        // redimensiona, así que al escribir el peso el botón quedaba debajo del teclado.
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
+            color = UniStackColors.Background,
+            shadowElevation = 8.dp
+        ) {
             SquishyButton(
                 onClick = {
                     val editingGradeId = gradeId
@@ -523,7 +539,7 @@ fun AddGradeScreen(
                             onBackClick()
                         }
                     } else {
-                        error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el porcentaje acumulado no supere 100% en ${periodDisplayName(selectedPeriod)}."
+                        error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el peso acumulado no supere 100% en ${periodDisplayName(selectedPeriod)}."
                     }
                 },
                 enabled = isValid,
@@ -536,6 +552,8 @@ fun AddGradeScreen(
                 ),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
+                    .bottomActionInsets()
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
@@ -548,6 +566,7 @@ fun AddGradeScreen(
             }
         }
     }
+
 
     if (showHistorySuggestion) {
         AlertDialog(
