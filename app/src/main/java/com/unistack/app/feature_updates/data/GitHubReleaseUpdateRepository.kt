@@ -166,7 +166,7 @@ class GitHubReleaseUpdateRepository(
         refreshAccess()
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
-                if (ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
+                if (info != null && ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
                     _state.value = UpdateState.Available(info)
                     if (notify) notificationManager.showUpdateAvailableNotification(info.versionName)
                 } else {
@@ -186,7 +186,7 @@ class GitHubReleaseUpdateRepository(
      * alpha publicada, ese endpoint devolvía 404 y la app decía que no había ninguna
      * publicación. Se toma la primera que no sea borrador, que es la más reciente.
      */
-    private suspend fun fetchLatestRelease(): UpdateInfo = withContext(Dispatchers.IO) {
+    private suspend fun fetchLatestRelease(): UpdateInfo? = withContext(Dispatchers.IO) {
         val url = URL("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases?per_page=10")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -213,9 +213,6 @@ class GitHubReleaseUpdateRepository(
             }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             val releases = JSONArray(body)
-            if (releases.length() == 0) {
-                throw IOException("Todavía no hay ninguna publicación en ${BuildConfig.GITHUB_REPO}.")
-            }
             // La más reciente que acepte el canal, no la más reciente a secas: con el canal
             // estable, una alpha publicada después de la definitiva no es una actualización.
             val current = _channel.value
@@ -223,9 +220,11 @@ class GitHubReleaseUpdateRepository(
                 .mapNotNull(releases::optJSONObject)
                 .filterNot { it.optBoolean("draft", false) }
                 .firstOrNull { current.accepts(it.optString("tag_name").removePrefix("v").removePrefix("V")) }
-                ?: throw IOException(
-                    "No hay ninguna versión publicada para el canal ${current.label}."
-                )
+                // Sin publicaciones para tu canal no hay error que dar: no tienes nada que
+                // instalar, que es justo lo que significa estar al día. Decir «no se encontró
+                // ninguna publicación» sonaba a avería, y con solo alphas publicadas era lo
+                // que veía todo el que estuviera en el canal estable, o sea todo el mundo.
+                ?: return@withContext null
             parseRelease(published)
                 ?: throw IOException(
                     "La última publicación no trae ningún APK adjunto, así que no hay nada que descargar."

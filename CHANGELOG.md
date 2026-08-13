@@ -17,6 +17,11 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+### Corregido
+
+- Estar en el canal Estable sin ninguna versión estable publicada se anunciaba como un error
+  («no se encontró ninguna publicación»), cuando lo que pasa es que no hay nada que instalar.
+
 ---
 
 ## [1.0.0-alpha.2] — 2026-08-13
