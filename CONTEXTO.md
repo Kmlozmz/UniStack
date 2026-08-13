@@ -218,8 +218,12 @@ Queda cambiar el enlace de descarga de la landing, que sigue apuntando al repo p
 
 ## Cómo se publica
 
+El manual está en **[PUBLICAR.md](PUBLICAR.md)**: la escalera de versiones, cuándo toca cada
+peldaño, qué deja instalar Android y cómo pedir cada publicación. Lo de aquí abajo es solo el
+porqué de las decisiones que hay detrás.
+
 ```
-./gradlew publishReleaseToGitHub -PversionName=1.1.0-alpha.1
+./gradlew publishReleaseToGitHub -PversionName=1.0.0-alpha.1
 ```
 
 Exige firma de release real y `GITHUB_TOKEN` con escritura sobre el repo de publicaciones. El
