@@ -10,6 +10,7 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
+import com.unistack.app.feature_updates.domain.ReleaseVersion
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 
 private const val APK_FILE_NAME = "unistack-update.apk"
@@ -49,7 +51,7 @@ class GitHubReleaseUpdateRepository(
         _state.value = UpdateState.Checking
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
-                if (isNewerVersion(info.versionName, BuildConfig.VERSION_NAME)) {
+                if (ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
                     _state.value = UpdateState.Available(info)
                     notificationManager.showUpdateAvailableNotification(info.versionName)
                 } else {
@@ -71,9 +73,15 @@ class GitHubReleaseUpdateRepository(
         checkForUpdates()
     }
 
-    /** Devuelve la última versión publicada, o lanza explicando por qué no pudo saberlo. */
+    /**
+     * Devuelve la última versión publicada, o lanza explicando por qué no pudo saberlo.
+     *
+     * Se consulta la lista y no `/releases/latest`, que **excluye los preestrenos**: con una
+     * alpha publicada, ese endpoint devolvía 404 y la app decía que no había ninguna
+     * publicación. Se toma la primera que no sea borrador, que es la más reciente.
+     */
     private suspend fun fetchLatestRelease(): UpdateInfo = withContext(Dispatchers.IO) {
-        val url = URL("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases/latest")
+        val url = URL("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases?per_page=10")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
         connection.connectTimeout = 10_000
@@ -98,7 +106,15 @@ class GitHubReleaseUpdateRepository(
                 else -> throw IOException("GitHub respondió $code al consultar la última versión.")
             }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
-            parseRelease(JSONObject(body))
+            val releases = JSONArray(body)
+            if (releases.length() == 0) {
+                throw IOException("Todavía no hay ninguna publicación en ${BuildConfig.GITHUB_REPO}.")
+            }
+            val published = (0 until releases.length())
+                .mapNotNull(releases::optJSONObject)
+                .firstOrNull { !it.optBoolean("draft", false) }
+                ?: throw IOException("Todas las publicaciones están en borrador.")
+            parseRelease(published)
                 ?: throw IOException(
                     "La última publicación no trae ningún APK adjunto, así que no hay nada que descargar."
                 )
@@ -131,18 +147,6 @@ class GitHubReleaseUpdateRepository(
             downloadUrl = downloadUrl,
             sizeMb = sizeBytes / 1024.0 / 1024.0
         )
-    }
-
-    private fun isNewerVersion(remote: String, current: String): Boolean {
-        val remoteParts = remote.split(".").mapNotNull { it.toIntOrNull() }
-        val currentParts = current.split(".").mapNotNull { it.toIntOrNull() }
-        val length = maxOf(remoteParts.size, currentParts.size)
-        for (index in 0 until length) {
-            val remoteValue = remoteParts.getOrElse(index) { 0 }
-            val currentValue = currentParts.getOrElse(index) { 0 }
-            if (remoteValue != currentValue) return remoteValue > currentValue
-        }
-        return false
     }
 
     override fun downloadUpdate() {

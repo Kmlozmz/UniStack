@@ -727,12 +727,21 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
         val currentSnapshot = currentProjectSnapshot()
         val body = githubReleaseBody(githubChangelogLines(currentSnapshot))
 
+        /*
+         * Una versión con sufijo (1.1.0-alpha.1) se publica como preestreno salvo que se diga
+         * lo contrario con -Pprerelease=false. Va por el nombre y no por una bandera suelta
+         * para que no puedan contradecirse: lo que dice la etiqueta es lo que se publica.
+         */
+        val isPreRelease = providers.gradleProperty("prerelease")
+            .map { it.toBoolean() }
+            .getOrElse(versionName.contains('-'))
+
         val createPayload = mapOf(
             "tag_name" to tagName,
             "name" to versionName,
             "body" to body,
             "draft" to false,
-            "prerelease" to false
+            "prerelease" to isPreRelease
         )
 
         val tempDir = File(buildDir, "github-release").apply { mkdirs() }
@@ -741,7 +750,7 @@ val publishReleaseToGitHub = tasks.register("publishReleaseToGitHub") {
 
         payloadFile.writeText(JsonOutput.toJson(createPayload))
 
-        println("Creating GitHub Release $tagName...")
+        println("Creating GitHub Release $tagName${if (isPreRelease) " (preestreno)" else ""}...")
         val createResult = project.exec {
             commandLine = listOf(
                 "curl", "-s", "-X", "POST",
