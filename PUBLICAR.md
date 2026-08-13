@@ -147,16 +147,18 @@ Basta con el peldaño; yo pongo el comando.
 **Lo que necesito saber si no está claro por el contexto:**
 
 - Sobre qué base va: ¿seguimos en la `1.0.0` o esto ya es `1.1.0`?
-- Si quieres notas escritas a mano en vez de las automáticas.
+- Si algo de lo que va dentro merece decirse de otra forma en las notas.
 - Si es la definitiva y hay que avisar de algo (una migración de datos, por ejemplo).
 
 **Lo que hago siempre sin que me lo digas:**
 
-1. Tests y `verifyDesignTokens` antes de publicar.
-2. Compruebo que la firma de release es real y que hay `GITHUB_TOKEN`.
-3. Publico, y después **verifico contra la API pública** —sin token, como lo vería un usuario—
+1. Paso lo de `[Sin publicar]` del CHANGELOG a la sección de esa versión, con su fecha, y lo
+   reescribo en términos de qué se nota en la app.
+2. Tests y `verifyDesignTokens` antes de publicar.
+3. Compruebo que la firma de release es real y que hay `GITHUB_TOKEN`.
+4. Publico, y después **verifico contra la API pública** —sin token, como lo vería un usuario—
    que la publicación aparece, que trae su `.apk` y que el actualizador la encontraría.
-4. Te digo el `versionCode` que salió y sobre qué se puede instalar.
+5. Te digo el `versionCode` que salió y sobre qué se puede instalar.
 
 ---
 
