@@ -238,14 +238,16 @@ porqué de las decisiones que hay detrás.
 Exige firma de release real y `GITHUB_TOKEN` con escritura sobre el repo de publicaciones. El
 nombre con sufijo (`-alpha.1`) marca la publicación como preestreno; `-Pprerelease` lo fuerza.
 
-**Hay tres peldaños y solo tres: `alpha`, `beta` y la definitiva.** Lo que se compila sin
-`-PversionName` no es un peldaño: se numera `0.0.0-sinpublicar.<yyMMddHH>`, queda por debajo de
-todo y no se distribuye. Antes eso era «dev» y salía por el bot, con lo que existía de hecho una
-cuarta versión con su propio público.
+**`dev` es el peldaño de trabajo y no se publica.** Se numera `0.0.0-dev.<yyMMddHH>`, queda por
+debajo de todo lo publicable y no existe como canal en la app. Es lo que permite iterar en
+cuarenta segundos sin quemar un número de versión pública por cada arreglo.
 
-**Al bot de Telegram solo van las alphas.** Beta y definitiva llegan por la app, a quien
-corresponda; la alpha es la única cuyo destinatario es una persona a la que se le manda el
-archivo.
+**El bot lleva lo que no llega por la app: los `dev` y las alphas.** Beta y definitiva se quedan
+fuera a propósito —tienen su camino por la app, a quien corresponda por su canal—; mandarlas
+también por el bot lo convertía en una vía paralela que no respeta ningún permiso.
+
+**Cuándo toca cada peldaño está en [PUBLICAR.md](PUBLICAR.md)**, con el criterio de fondo: no es
+«qué peldaño es esto» sino a cuánta gente le puede estallar.
 
 **El APK publicado no lleva el nombre del buildType**: `UniStack-1.0.0-alpha.1.apk`, no
 `…-alpha.1-release.apk`, que se contradecía consigo mismo.

@@ -144,17 +144,17 @@ val explicitVersionNameProvider = providers.gradleProperty("versionName")
     .orElse(providers.environmentVariable("VERSION_NAME"))
 val hasExplicitVersionName = explicitVersionNameProvider.isPresent
 /*
- * Hay tres peldaños —alpha, beta y definitiva— y ninguno de ellos es «lo que compilo yo ahora».
+ * `dev` es el peldaño de trabajo: lo que se compila sin `-PversionName`.
  *
- * Una compilación sin `-PversionName` no es una versión: es un binario para comprobar que algo
- * funciona, y no se distribuye. Se numera `0.0.0-sinpublicar.<sello>` para que quede por debajo
- * de todo lo publicable y para que se note en pantalla que no es una versión de nadie.
+ * No se publica en GitHub y no existe como canal en la app, así que no llega a nadie por su
+ * cuenta; sale solo por el bot, hacia quien desarrolla. Es lo que permite iterar en cuarenta
+ * segundos sin quemar un número de versión pública por cada arreglo.
  *
- * Antes esto era el peldaño «dev» y se enviaba por el bot, así que en la práctica existía una
- * cuarta versión con su propio público. Ya no: al bot van las alphas.
+ * Se numera por debajo de todo lo publicable para que cualquier alpha, beta o definitiva pueda
+ * instalarse encima, y para que en pantalla se vea que no es una versión de nadie.
  */
 val generatedVersionName = explicitVersionNameProvider
-    .orElse("0.0.0-sinpublicar.$fallbackVersionCode")
+    .orElse("0.0.0-dev.$fallbackVersionCode")
     .get()
 val generatedVersionCode = (
     providers.gradleProperty("versionCode").orNull
@@ -694,6 +694,7 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
     }
 }
 
+val sendDebugApkToTelegram = registerTelegramApkTask("debug")
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
@@ -902,14 +903,17 @@ afterEvaluate {
     tasks.findByName("assembleRelease")?.mustRunAfter(validateGitHubPublishReady)
 
     /*
-     * Al bot solo van las alphas.
+     * El bot lleva lo que no llega por la app: los `dev`, que no se publican en ninguna parte, y
+     * las alphas.
      *
-     * Antes salía disparado con cualquier `assembleDebug` y con cualquier `assembleRelease`, así
-     * que por ahí llegaban compilaciones sueltas y también betas y definitivas, que tienen su
-     * propio camino: la app. La alpha es la única versión cuyo público es una persona a la que
-     * se le manda el archivo, y por eso es la única que se envía.
+     * Beta y definitiva se quedan fuera a propósito: tienen su propio camino —la app, a quien
+     * corresponda por su canal— y mandarlas también por aquí convertía el bot en una vía de
+     * distribución paralela que no respeta ningún permiso.
      */
     if (!skipTelegramApk.get()) {
+        tasks.named("assembleDebug") {
+            finalizedBy(sendDebugApkToTelegram)
+        }
         tasks.named("assembleRelease") {
             finalizedBy(sendReleaseApkToTelegram)
         }

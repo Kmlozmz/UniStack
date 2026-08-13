@@ -14,7 +14,7 @@ el número que Android mira para decidir qué APK se puede instalar encima de cu
 
 | Nombre de versión | `versionCode` | Qué es |
 |---|---:|---|
-| `0.0.0-sinpublicar.<yyMMddHH>` | `1` | Compilación de trabajo. No es una versión ni se distribuye. |
+| `0.0.0-dev.<yyMMddHH>` | `1` | Compilación de trabajo. No se publica; sale por el bot. |
 | `1.0.0-alpha.N` | `1_000_010 + N` | Preestreno temprano. |
 | `1.0.0-beta.N` | `1_000_030 + N` | Preestreno estable. |
 | `1.0.0-rc.N` | `1_000_060 + N` | Candidata a publicación. |
@@ -32,28 +32,81 @@ parche. Pasar de ahí rompe el orden, y ningún test lo va a avisar.
 
 ## Cuándo se usa cada peldaño
 
-**Hay tres peldaños y nada más: `alpha`, `beta` y la definitiva.** Lo que se compila sin
-`-PversionName` no es un peldaño: es un binario de trabajo, no se distribuye y no llega a nadie.
+La pregunta no es «qué peldaño es esto» sino **a cuánta gente le puede estallar**. Cada peldaño
+amplía el círculo, y solo se sube cuando el anterior aguantó.
 
-**`alpha`** — para quien tenga el código de alpha. Se espera que algo se rompa. Es también **la
-única versión que sale por el bot de Telegram**: beta y definitiva llegan por la app, a quien
-corresponda.
+### `dev` — mientras se trabaja
 
-**`beta`** — cuando lo que entra en esa versión ya está cerrado y quieres que gente de fuera la
-use de verdad, con sus datos. De aquí en adelante **no entran funciones nuevas**: solo arreglos.
-Si se te cuela una función, sube a la siguiente `beta` y dilo en las notas.
+Cada compilación. `./gradlew assembleDebug` y te llega por el bot en menos de un minuto.
 
-**`rc`** — cuando la publicarías tal cual. Solo se toca por un fallo que impida publicarla. Si
-una `rc` sobrevive unos días sin quejas, se convierte en la definitiva **con el mismo código**.
+**Se usa para:** ver si lo que acabo de escribir hace lo que dijimos. Es el peldaño por defecto:
+mientras no haya razón para subir, esto es lo que hay.
 
-**Definitiva (`1.0.0`)** — lo que recibe todo el mundo.
+**No se publica en GitHub ni existe como canal en la app.** No llega a nadie por su cuenta.
 
-**Parche (`1.0.1`)** — solo arreglos sobre la publicada. Nada nuevo.
+**Subir a alpha cuando:** ya no basta con verlo en tu móvil —hay que probarlo en el ciclo real de
+actualización— o hay alguien más que debería tocarlo.
 
-**Menor (`1.1.0`)** — funciones nuevas que no rompen nada de lo que ya había.
+### `alpha` — el círculo pequeño
 
-**Mayor (`2.0.0`)** — algo que rompe. En una app como esta, en la práctica: una migración de
-datos que no se puede deshacer, o quitar algo con lo que la gente ya contaba.
+Tú y dos o tres personas con el código de alpha. Sale por el bot **y** por la app a quien esté en
+ese canal.
+
+**Se usa para:** algo que ya funciona pero que nadie ha usado en serio. Se espera que falle.
+
+**No se usa para:** un arreglo suelto que puedes ver en un `dev`. Cada alpha quema un número y
+crea una publicación pública; si iteras cinco veces, son cinco alphas.
+
+**Subir a beta cuando:** lo que entra en esa versión **ya está decidido** y quieres que gente de
+fuera la use con sus datos de verdad.
+
+### `beta` — gente de fuera, datos de verdad
+
+Quien tenga el código de beta. Llega solo por la app.
+
+**Se usa para:** comprobar que aguanta el uso real, con datos que a alguien le importan. Aquí ya
+no se prueba si algo funciona; eso se dio por hecho en la alpha.
+
+**Regla dura: de aquí en adelante no entran funciones nuevas, solo arreglos.** Si se cuela una,
+no es una beta más: vuelve a alpha o abre otra versión.
+
+**Subir a rc cuando:** llevas unos días sin quejas y la publicarías tal cual.
+
+### `rc` — la que se publicaría hoy
+
+Mismo público que la beta.
+
+**Se usa para:** dar un margen antes de abrir la puerta. Solo se toca por un fallo que impida
+publicar.
+
+**Subir a definitiva cuando:** la `rc` sobrevive unos días sin nada grave. Se publica **el mismo
+código**, solo cambia el número.
+
+### Definitiva — todo el mundo
+
+Sin código, canal Estable, que es donde está todo el mundo por defecto.
+
+**Antes de publicarla:** mira el repaso del final de esta guía.
+
+**Y después:** lo siguiente que se publique tiene que ser mayor que ella. No se puede sacar una
+`1.0.0-beta.2` después de la `1.0.0`; sería `1.0.1-alpha.1` o `1.1.0-alpha.1`.
+
+### Qué número le toca a la siguiente
+
+- **Parche (`1.0.1`)** — solo arreglos sobre lo publicado. Nada nuevo.
+- **Menor (`1.1.0`)** — funciones nuevas que no rompen lo que ya había.
+- **Mayor (`2.0.0`)** — algo que rompe. Aquí, en la práctica: una migración de datos que no se
+  puede deshacer, o quitar algo con lo que la gente ya contaba.
+
+### En corto
+
+| Si… | Publica |
+|---|---|
+| Estoy viendo si esto funciona | `dev` (no se publica) |
+| Funciona y quiero probarlo en el ciclo real, o que alguien más lo toque | `alpha` |
+| Ya no entran funciones y quiero que se use con datos reales | `beta` |
+| La publicaría hoy y quiero un margen | `rc` |
+| Aguantó unos días sin quejas | definitiva |
 
 ---
 
@@ -70,10 +123,10 @@ De ahí sale todo lo demás:
 
 | De → a | ¿Entra? | Por qué |
 |---|:--:|---|
-| Compilación de trabajo → cualquier publicada | ✅ | 1 → 1.000.011 o más |
+| `dev` → cualquier publicada | ✅ | 1 → 1.000.011 o más |
 | `alpha.1` → `alpha.2` → `beta.1` → `rc.1` → `1.0.0` | ✅ | Sube en cada paso |
 | `1.0.0` → `1.0.1` → `1.1.0` | ✅ | Sube |
-| Publicada → compilación de trabajo | ❌ | 1.000.099 → 1, es bajar |
+| Publicada → `dev` | ❌ | 1.000.099 → 1, es bajar |
 | `1.0.0` → `1.0.0-alpha.2` | ❌ | La alpha va por debajo de su definitiva |
 | `1.0.0-alpha.1` reetiquetada | ❌ | Mismo número: quien ya la tenga no la ve como nueva |
 
@@ -179,6 +232,7 @@ Basta con el peldaño; yo pongo el comando.
 
 | Lo que dices | Lo que ejecuto |
 |---|---|
+| «sácame un APK de pruebas» | `./gradlew assembleDebug` → `dev`, va al bot y a ningún sitio más |
 | «publica la alpha 2» | `publishReleaseToGitHub -PversionName=1.0.0-alpha.2` → publica **y** te la manda por Telegram |
 | «pasamos a beta» | `-PversionName=1.0.0-beta.1` |
 | «publica la rc» | `-PversionName=1.0.0-rc.1` |
