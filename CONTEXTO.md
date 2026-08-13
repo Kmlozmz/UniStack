@@ -109,6 +109,12 @@ tanto sin notas como con la materia terminada: una materia cerrada pedía regist
 en la escala de 0 a 5 es ese 10% pero en la de 0 a 100 es medio punto: el estado ámbar solo
 aparecía entre 79.5 y 80.
 
+**Profesor, aula y horario se enseñan en Académico, no solo en Horario.** Se piden al crear la
+materia, así que quien los escribe los busca en la materia. Salen de `ClassSession`: el aula y
+el profesor por `place` (el modelo parte `"aula•profesor"`, y esa división vive ahí porque el
+formato lo define él) y los días y la hora por `daysAndTimeLabel()`. Lo que esté vacío se omite,
+y sin clase no aparece nada.
+
 **El corte activo lo elige el usuario, no la app.** `Subject.activePeriodId` **vacío** significa
 «sin elegir», y es como nace toda materia. Léelo por `chosenPeriodId` (null si no hay elección)
 o por `defaultPeriodId` (con qué rellenar un formulario). Mientras no haya elección, el detalle

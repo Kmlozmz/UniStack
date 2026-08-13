@@ -238,14 +238,13 @@ private fun SubjectTimePicker(
 }
 
 internal fun ClassSession.toSubjectScheduleDraft(): SubjectScheduleDraft {
-    val place = location.split('•', limit = 2).map(String::trim)
     return SubjectScheduleDraft(
         enabled = true,
-        professor = place.getOrElse(1) { "" },
+        professor = place.professor,
         daysOfWeek = daysOfWeek,
         startMinute = startMinute,
         endMinute = endMinute,
-        room = place.getOrElse(0) { "" },
+        room = place.room,
         reminderMinutes = reminderMinutes,
         repeatEveryWeeks = repeatEveryWeeks,
         recurrenceStartEpochDay = recurrenceStartEpochDay

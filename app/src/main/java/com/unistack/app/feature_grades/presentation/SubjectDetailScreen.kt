@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,9 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
@@ -68,6 +73,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +89,7 @@ import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
+import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.GradeCalculator
@@ -93,6 +101,7 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradeType
+import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
@@ -119,6 +128,8 @@ fun SubjectDetailScreen(
     BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
+    val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
+    val classSession = classSessions.firstOrNull { it.subjectId == subjectId }
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
@@ -225,6 +236,9 @@ fun SubjectDetailScreen(
                     }
                 )
             }
+            classSession?.let { session ->
+                item { SubjectClassFacts(session) }
+            }
             item {
                 SubjectOverviewCard(
                     calculation = calculation,
@@ -243,13 +257,17 @@ fun SubjectDetailScreen(
                     scale = scale
                 )
             }
-            item {
-                SubjectInsightCard(
-                    calculation = calculation,
-                    targetGrade = subject.targetAverage,
-                    maxGrade = maxGrade,
-                    scale = scale
-                )
+            // Sin notas, la tarjeta de resumen ya dice que hay que registrar la primera. Esta
+            // repetía el mismo encargo con otras palabras dos tarjetas más abajo.
+            if (calculation.outlook != TargetOutlook.NO_DATA) {
+                item {
+                    SubjectInsightCard(
+                        calculation = calculation,
+                        targetGrade = subject.targetAverage,
+                        maxGrade = maxGrade,
+                        scale = scale
+                    )
+                }
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -259,17 +277,14 @@ fun SubjectDetailScreen(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            if (chosenPeriod == null) {
-                                "${periodScheme.periods.size} cortes · sin elegir en cuál vas"
-                            } else {
-                                "${periodScheme.periods.size} cortes · ${periodDisplayName(chosenPeriod)} activo"
-                            },
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 14.sp
-                        )
-                    }
+                    // Sin «Corte N activo»: el selector de justo debajo ya lo marca y la
+                    // tarjeta del corte lo repite otra vez. Eran tres formas de decir lo mismo
+                    // seguidas.
+                    Text(
+                        "${periodScheme.periods.size} cortes",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 14.sp
+                    )
                 }
             }
             item {
@@ -420,39 +435,113 @@ fun SubjectPeriodDetailScreen(
 
     val grades = subject.grades.filter { it.periodId == period.id }
     val summary = period.toSummary(grades)
+    var saveBarHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
 
-    LazyColumn(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = 20.dp,
-            top = 8.dp,
-            end = 20.dp,
-            bottom = 28.dp + LocalBottomBarOverlay.current
-        ),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            PeriodHeader(
-                title = periodDisplayName(period),
-                subtitle = "${formatPercent(period.weight * 100)}% de la materia",
-                onBackClick = onBackClick
-            )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                top = 8.dp,
+                end = 20.dp,
+                bottom = saveBarHeight + scrollBottomRoom
+            ),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            item {
+                PeriodHeader(
+                    title = periodDisplayName(period),
+                    subtitle = "${subject.name}  ·  ${formatPercent(period.weight * 100)}% de la materia",
+                    onBackClick = onBackClick
+                )
+            }
+            item {
+                PeriodSummaryCard(summary = summary, maxGrade = maxGrade, scale = scale)
+            }
+            if (grades.isEmpty()) {
+                item {
+                    // Una sola tarjeta de estado vacío. Antes había tres bloques seguidos
+                    // diciendo casi lo mismo: «Aún no hay notas», el botón, y una tarjeta de
+                    // «Información» con una frase fija que nunca cambiaba y ocupaba tanto como
+                    // el contenido. La frase explica algo útil solo aquí, así que vive aquí.
+                    EmptyPeriodNotesInline()
+                }
+            } else {
+                item {
+                    Text(
+                        "Notas del corte",
+                        color = UniStackColors.TextPrimary,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(LargeCardShape)
+                            .background(UniStackColors.Card)
+                            .border(1.dp, UniStackColors.SoftOutline, LargeCardShape)
+                    ) {
+                        grades.forEachIndexed { index, grade ->
+                            GradeRowItem(
+                                grade = grade,
+                                scale = scale,
+                                onEditClick = { onEditGradeClick(subject.id, grade.id) },
+                                onDeleteClick = { gradeIdPendingDelete = grade.id }
+                            )
+                            if (index < grades.lastIndex) {
+                                HorizontalDivider(color = UniStackColors.SoftOutline, thickness = 1.dp)
+                            }
+                        }
+                    }
+                }
+            }
         }
-        item {
-            PeriodDetailPanel(
-                summary = summary,
-                grades = grades,
-                maxGrade = maxGrade,
-                scale = scale,
-                onAddGradeClick = { onAddGradeClick(subject.id, period.id) },
-                onEditGradeClick = { grade -> onEditGradeClick(subject.id, grade.id) },
-                onDeleteGradeClick = { grade -> gradeIdPendingDelete = grade.id }
-            )
+
+        // Anclado, igual que en el detalle de materia. Antes iba dentro del contenido, entre
+        // el estado vacío y una tarjeta informativa, y había que desplazarse para encontrarlo.
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
+            color = UniStackColors.Background,
+            shadowElevation = 8.dp
+        ) {
+            SquishyButton(
+                onClick = { onAddGradeClick(subject.id, period.id) },
+                shape = AppShapes.LargeCard,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = UniStackColors.Primary,
+                    contentColor = UniStackColors.OnPrimary
+                ),
+                modifier = Modifier
+                    .bottomActionInsets()
+                    .padding(bottom = LocalBottomBarOverlay.current)
+                    .padding(horizontal = 20.dp, vertical = 12.dp)
+                    .fillMaxWidth()
+                    .height(56.dp)
+            ) {
+                Icon(Icons.Rounded.Add, contentDescription = null, tint = UniStackColors.OnPrimary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Agregar nota a ${periodDisplayName(period)}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = UniStackColors.OnPrimary
+                )
+            }
         }
     }
+
 
     gradeIdPendingDelete?.let { gradeId ->
         AlertDialog(
@@ -643,6 +732,55 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
         }
         // Spacer to balance back button
         Box(modifier = Modifier.size(48.dp))
+    }
+}
+
+
+/**
+ * Profesor, aula y horario de la materia.
+ *
+ * Se piden al crear la materia y hasta ahora solo se veían en Horario, así que quien los
+ * escribía no volvía a encontrarlos donde los busca: en la propia materia. Se omite lo que
+ * esté vacío y la fila entera desaparece si no hay clase.
+ */
+@Composable
+private fun SubjectClassFacts(session: ClassSession) {
+    val facts = listOfNotNull(
+        session.place.professor.takeIf { it.isNotBlank() }?.let { Icons.Rounded.Person to it },
+        session.place.room.takeIf { it.isNotBlank() }?.let { Icons.Rounded.Place to it },
+        session.daysAndTimeLabel().takeIf { it.isNotBlank() }?.let { Icons.Rounded.CalendarMonth to it }
+    )
+    if (facts.isEmpty()) return
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = AppShapes.SmallCard,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+        )
+    ) {
+        FlowRow(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            facts.forEach { (icon, text) ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = UniStackColors.TextSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(text, color = UniStackColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
     }
 }
 
@@ -1314,192 +1452,21 @@ private fun PeriodCard(
     }
 }
 
+
+
+/**
+ * El resumen del corte: qué nota lleva, en qué estado está y cuánto de su peso está repartido.
+ *
+ * Sin envoltorio teñido. La pantalla entera iba dentro de una tarjeta pintada con el color del
+ * estado, así que un corte pendiente teñía de ámbar todo lo que había debajo y parecía un aviso.
+ * El color del estado se queda donde significa algo: la insignia y la cifra.
+ */
 @Composable
-private fun PeriodDetailPanel(
+private fun PeriodSummaryCard(
     summary: PeriodSummary,
-    grades: List<GradeItem>,
     maxGrade: Double,
-    scale: GradingScale,
-    onAddGradeClick: () -> Unit,
-    onEditGradeClick: (GradeItem) -> Unit,
-    onDeleteGradeClick: (GradeItem) -> Unit
+    scale: GradingScale
 ) {
-    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = summary.status.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.10f else 0.07f),
-        shape = LargeCardShape,
-        tonalElevation = 0.dp,
-        borderColor = summary.status.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.18f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Nota del corte",
-                        color = UniStackColors.TextPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            GradingScaleUtils.formatGrade(summary.average, scale),
-                            color = summary.status.color,
-                            fontSize = 42.sp,
-                            lineHeight = 46.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
-                        )
-                    }
-                }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        "Estado",
-                        color = UniStackColors.TextPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            summary.status.label,
-                            color = summary.status.color,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Icon(
-                            summary.status.icon(),
-                            contentDescription = null,
-                            tint = summary.status.color,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    "${formatPercent(summary.evaluated)}% evaluado",
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                EvaluationBar(fraction = progress)
-            }
-
-            val notesText = if (grades.isEmpty()) {
-                "0 notas registradas"
-            } else {
-                "${grades.size} de ${grades.size} notas registradas"
-            }
-            Text(notesText, color = UniStackColors.TextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-
-            if (grades.isEmpty()) {
-                EmptyPeriodNotesInline()
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(LargeCardShape)
-                        .background(UniStackColors.Card)
-                        .border(1.dp, UniStackColors.SoftOutline, LargeCardShape)
-                ) {
-                    grades.forEachIndexed { index, grade ->
-                        GradeRowItem(
-                            grade = grade,
-                            scale = scale,
-                            onEditClick = { onEditGradeClick(grade) },
-                            onDeleteClick = { onDeleteGradeClick(grade) }
-                        )
-                        if (index < grades.lastIndex) {
-                            HorizontalDivider(color = UniStackColors.SoftOutline, thickness = 1.dp)
-                        }
-                    }
-                }
-            }
-
-            SquishyButton(
-                onClick = onAddGradeClick,
-                shape = AppShapes.Small,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.92f),
-                    contentColor = UniStackColors.Primary
-                ),
-                border = androidx.compose.foundation.BorderStroke(1.3.dp, UniStackColors.Primary.copy(alpha = 0.65f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp)
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Agregar nota a este corte", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = UniStackColors.Primary)
-            }
-
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.13f else 0.08f),
-                shape = AppShapes.Small,
-                tonalElevation = 0.dp,
-                borderColor = UniStackColors.Primary.copy(alpha = 0.12f),
-                borderWidth = 1.dp,
-                contentPadding = PaddingValues(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Icon(
-                        Icons.Rounded.Lightbulb,
-                        contentDescription = null,
-                        tint = UniStackColors.Primary,
-                        modifier = Modifier.size(30.dp)
-                    )
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            "Información",
-                            color = UniStackColors.TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            "Las notas de este corte se combinan según su peso porcentual para obtener la nota final.",
-                            color = UniStackColors.TextSecondary,
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: GradingScale) {
-    val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.Card,
@@ -1507,7 +1474,7 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
         tonalElevation = 0.dp,
         borderColor = UniStackColors.SoftOutline,
         borderWidth = 1.dp,
-        contentPadding = PaddingValues(24.dp)
+        contentPadding = PaddingValues(20.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -1515,7 +1482,7 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "Nota del corte",
                         color = UniStackColors.TextSecondary,
@@ -1523,7 +1490,7 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                         fontWeight = FontWeight.SemiBold
                     )
                     if (summary.average == null) {
-                        // Sin notas se escribía la raya de «sin dato» a 44sp y en el color del
+                        // Sin notas se escribía la raya de «sin dato» a 42sp y en el color del
                         // estado: una mancha ámbar del tamaño de una nota, que se leía como un
                         // valor y no como una ausencia.
                         Text(
@@ -1537,70 +1504,36 @@ private fun PeriodOverviewCard(summary: PeriodSummary, maxGrade: Double, scale: 
                             Text(
                                 GradingScaleUtils.formatGrade(summary.average, scale),
                                 color = summary.status.color,
-                                fontSize = 44.sp,
+                                fontSize = 42.sp,
+                                lineHeight = 46.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
                                 color = UniStackColors.TextSecondary,
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
                             )
                         }
                     }
                 }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        "Estado",
-                        color = UniStackColors.TextSecondary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            summary.status.label,
-                            color = summary.status.color,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Icon(
-                            summary.status.icon(),
-                            contentDescription = null,
-                            tint = summary.status.color,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
+                StatusBadge(status = summary.status)
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "${formatPercent(summary.evaluated)}% evaluado",
-                    color = UniStackColors.TextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
-
-                EvaluationBar(fraction = progress)
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                // Decía «3 de 3 notas registradas» comparando un número consigo mismo. Lo que
-                // falta por decir cuando el corte no está cerrado es cuánto peso queda libre.
-                val remainingWeight = (100.0 - summary.evaluated).coerceAtLeast(0.0)
+                EvaluationBar(fraction = (summary.evaluated / 100.0).coerceIn(0.0, 1.0))
+                // Antes decía «3 de 3 notas registradas», comparando un número consigo mismo.
+                // Lo que falta por saber cuando el corte no está cerrado es cuánto peso queda
+                // libre, que es justo lo que hay que repartir en la siguiente nota.
+                val remaining = (100.0 - summary.evaluated).coerceAtLeast(0.0)
                 Text(
                     buildString {
+                        append("${formatPercent(summary.evaluated)}% evaluado")
+                        append("  ·  ")
                         append(gradeCountLabel(summary.grades.size))
-                        append(if (summary.grades.size == 1) " registrada" else " registradas")
-                        if (remainingWeight > 0.05) {
-                            append("  ·  queda ${formatPercent(remainingWeight)}% del corte por repartir")
+                        if (remaining > 0.05) {
+                            append("  ·  queda ${formatPercent(remaining)}% por repartir")
                         }
                     },
                     color = UniStackColors.TextSecondary,

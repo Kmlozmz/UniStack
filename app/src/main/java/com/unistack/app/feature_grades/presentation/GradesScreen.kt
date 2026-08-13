@@ -61,6 +61,7 @@ import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
@@ -74,6 +75,7 @@ fun GradesScreen(
     embedded: Boolean = false
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
@@ -133,6 +135,7 @@ fun GradesScreen(
                     SubjectListCard(
                         subject = subject,
                         calculation = viewModel.calculationFor(subject),
+                        classSession = classSessions.firstOrNull { it.subjectId == subject.id },
                         gradingScale = scale,
                         maxGrade = maxGrade,
                         onClick = { onSubjectClick(subject.id) }
@@ -187,6 +190,7 @@ private fun SubjectsStatsRow(
 private fun SubjectListCard(
     subject: Subject,
     calculation: SubjectGradeCalculation,
+    classSession: ClassSession?,
     gradingScale: GradingScale,
     maxGrade: Double,
     onClick: () -> Unit
@@ -262,6 +266,24 @@ private fun SubjectListCard(
                         fontSize = if (calculation.currentAverage == null) 14.sp else 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1
+                    )
+                }
+                // Profesor y horario, que se piden al crear la materia y hasta ahora solo se
+                // veían en Horario. La línea solo aparece si hay algo que poner en ella.
+                val classLine = classSession?.let { session ->
+                    listOfNotNull(
+                        session.place.professor.takeIf { it.isNotBlank() },
+                        session.daysAndTimeLabel().takeIf { it.isNotBlank() }
+                    ).joinToString("  ·  ")
+                }?.takeIf { it.isNotBlank() }
+                if (classLine != null) {
+                    Text(
+                        classLine,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Row(

@@ -96,6 +96,7 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.SessionPlace
 import com.unistack.app.feature_tasks.domain.StudentTask
 import java.time.DayOfWeek
 import java.time.Instant
@@ -1136,19 +1137,11 @@ private fun OptionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     }
 }
 
-private data class SessionPlace(val room: String, val professor: String)
-
 private data class HistoryEntry(
     val date: LocalDate,
     val session: ClassSession,
     val status: ClassAttendanceStatus
 )
-
-private val ClassSession.place: SessionPlace
-    get() {
-        val parts = location.split('\u2022', limit = 2).map(String::trim)
-        return SessionPlace(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" })
-    }
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 

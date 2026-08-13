@@ -129,7 +129,9 @@ fun AddGradeScreen(
     var name by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
     var percentage by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(GradeType.WORKSHOP) }
+    // Nulo de entrada: el bloque se titula «(opcional)» y llegaba con «Taller» marcado, así
+    // que quien no tocaba nada guardaba un taller sin haberlo dicho.
+    var selectedType by remember { mutableStateOf<GradeType?>(null) }
     var selectedPeriodId by remember { mutableStateOf(initialPeriodId.orEmpty()) }
     var selectedSource by remember { mutableStateOf(GradeSource.ACTIVITY) }
     var weightUnknown by remember { mutableStateOf(false) }
@@ -251,8 +253,7 @@ fun AddGradeScreen(
             FormBlock(
                 title = "Qué registras",
                 icon = Icons.AutoMirrored.Rounded.Assignment,
-                accent = UniStackColors.Primary,
-                tinted = true
+                accent = UniStackColors.Primary
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -503,7 +504,7 @@ fun AddGradeScreen(
                             name = TextValidators.normalizeText(name),
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
-                            type = selectedType,
+                            type = selectedType ?: GradeType.OTHER,
                             periodId = selectedPeriod.id,
                             source = selectedSource,
                             weightStatus = if (weightUnknown) {
@@ -518,7 +519,7 @@ fun AddGradeScreen(
                             name = TextValidators.normalizeText(name),
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
-                            type = selectedType,
+                            type = selectedType ?: GradeType.OTHER,
                             periodId = selectedPeriod.id,
                             source = selectedSource,
                             weightStatus = if (weightUnknown) {
