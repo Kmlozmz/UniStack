@@ -17,12 +17,20 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+---
+
+## [1.0.0-alpha.3] — 2026-08-13
+
+Tercera alpha. Casi todo es la pantalla de actualizaciones: cuándo avisa, qué te ofrece y quién puede recibir cada versión.
+
 ### Cambiado
 
 - **Alpha y beta son ahora canales distintos, no escalones.** Cada uno tiene su propio código:
   el de alpha ya no abre beta. La versión definitiva sigue llegando a los tres canales, para que
   nadie se quede anclado en un preestreno.
 - Los códigos anteriores dejan de valer, porque abrían los dos canales a la vez.
+- **Un acceso que no se puede confirmar durante una semana caduca.** Antes, quedarse sin conexión
+  conservaba el canal indefinidamente. Un corte normal no revoca nada.
 
 ### Corregido
 
