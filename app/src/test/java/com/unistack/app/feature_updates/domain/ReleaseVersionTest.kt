@@ -26,11 +26,17 @@ class ReleaseVersionTest {
     }
 
     @Test
-    fun `una version de desarrollo con fecha sigue siendo comparable`() {
-        // Las compilaciones locales se numeran 1.0.<yyMMddHH>, así que un 1.0.0 escrito a mano
-        // queda por detrás y solo una minor por encima cuenta como actualización.
-        assertFalse(ReleaseVersion.isNewer("1.0.0", "1.0.26081310"))
-        assertTrue(ReleaseVersion.isNewer("1.1.0-alpha.1", "1.0.26081310"))
+    fun `cualquier publicacion supera a una compilacion local`() {
+        // Las locales se numeran 0.0.0-dev.<yyMMddHH> justamente para esto: para que la
+        // primera versión pública pueda ser la 1.0.0 y no una inventada más arriba.
+        assertTrue(ReleaseVersion.isNewer("1.0.0-alpha.1", "0.0.0-dev.26081310"))
+        assertTrue(ReleaseVersion.isNewer("1.0.0", "0.0.0-dev.26081310"))
+        assertFalse(ReleaseVersion.isNewer("0.0.0-dev.26081310", "1.0.0-alpha.1"))
+    }
+
+    @Test
+    fun `entre compilaciones locales manda el sello`() {
+        assertTrue(ReleaseVersion.isNewer("0.0.0-dev.26081410", "0.0.0-dev.26081310"))
     }
 
     @Test

@@ -225,13 +225,21 @@ Queda cambiar el enlace de descarga de la landing, que sigue apuntando al repo p
 Exige firma de release real y `GITHUB_TOKEN` con escritura sobre el repo de publicaciones. El
 nombre con sufijo (`-alpha.1`) marca la publicación como preestreno; `-Pprerelease` lo fuerza.
 
-**El número tiene que superar al de la compilación instalada.** Las locales se numeran
-`1.0.<yyMMddHH>` —hoy `1.0.26081310`—, así que una etiqueta `1.0.0` se lee como *anterior* y el
-actualizador diría «Al día». Por eso la primera alpha es `1.1.0-alpha.1` y no `1.0.0-alpha.1`.
+**Las compilaciones locales van numeradas por debajo de todo:** `0.0.0-dev.<yyMMddHH>`. Así la
+numeración pública empieza donde tiene que empezar, en la `1.0.0`. Antes salían como
+`1.0.<yyMMddHH>` —un parche altísimo de la 1.0— y eso dejaba sin sitio a la primera versión
+pública: una etiqueta `1.0.0` quedaba *por detrás* de lo que tenía instalado quien prueba.
 
-**Un APK de release no se instala encima de uno de debug.** Están firmados con claves distintas
-y Android lo rechaza; hay que desinstalar antes, y eso borra los datos locales. De release a
-release sí actualiza sin tocar nada.
+**El APK publicado no lleva el nombre del buildType**: `UniStack-1.0.0-alpha.1.apk`, no
+`…-alpha.1-release.apk`, que se contradecía consigo mismo.
+
+**Debug y release comparten clave de firma** (`debug { signingConfig = localRelease }`), así que
+se instalan una encima de otra sin desinstalar ni perder datos. Lo único que Android exige es
+que el `versionCode` no baje; como se genera por fecha (`yyMMddHH`), basta con no instalar un
+APK compilado antes encima de uno compilado después.
+
+**«alpha», «beta» y la definitiva son el mismo buildType.** Solo cambia el nombre de versión, así
+que entre ellas la actualización es directa.
 
 ---
 

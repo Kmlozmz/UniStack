@@ -87,8 +87,17 @@ val generatedVersionCode = providers.gradleProperty("versionCode")
 val explicitVersionNameProvider = providers.gradleProperty("versionName")
     .orElse(providers.environmentVariable("VERSION_NAME"))
 val hasExplicitVersionName = explicitVersionNameProvider.isPresent
+/*
+ * Las compilaciones locales se numeran por debajo de cualquier versión publicada.
+ *
+ * Antes salían como `1.0.<yyMMddHH>`, es decir, un parche altísimo de la 1.0. Eso dejaba sin
+ * sitio a la primera versión pública: etiquetar `1.0.0` habría quedado por detrás de lo que
+ * tiene instalado quien prueba, y el actualizador diría «Al día». Con `0.0.0-dev.<sello>` la
+ * numeración pública empieza donde tiene que empezar, en la 1.0.0, y cualquier publicación
+ * queda por encima de un build de escritorio.
+ */
 val generatedVersionName = explicitVersionNameProvider
-    .orElse("1.0.$generatedVersionCode")
+    .orElse("0.0.0-dev.$generatedVersionCode")
     .get()
 
 /*
@@ -176,10 +185,14 @@ android {
                 // una vez enviados. Al de debug se le añade la hora y el minuto reales del
                 // build. El de release conserva el nombre limpio: ahí el nombre es el de la
                 // versión publicada y no debe llevar ruido.
+                // El de publicación no lleva el nombre del buildType: se llamaba
+                // «UniStack-1.0.0-alpha.1-release.apk», que se contradice consigo mismo. Si
+                // es alpha no es la versión definitiva, y quien la publica ya lo dice en el
+                // número. El de debug sí lo lleva, porque ahí sí distingue de qué es.
                 this.outputFileName = if (buildType.name == "debug") {
                     "UniStack-${versionName}-debug-$debugBuildStamp.apk"
                 } else {
-                    "UniStack-${versionName}-${buildType.name}.apk"
+                    "UniStack-${versionName}.apk"
                 }
             }
         }
