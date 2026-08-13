@@ -21,6 +21,16 @@ número y la fecha, y se abre una nueva.
 
 - Estar en el canal Estable sin ninguna versión estable publicada se anunciaba como un error
   («no se encontró ninguna publicación»), cuando lo que pasa es que no hay nada que instalar.
+- **Las notas de la versión se leen como texto, no como código.** Salían con los `###` y los
+  asteriscos a la vista, y cada línea del archivo se convertía en una viñeta suelta.
+- Los botones «Más tarde» y «Descargar» de esa misma ventana se quedaban sin ancho y se
+  recortaban a puntos suspensivos cuando las notas eran largas.
+
+### Añadido
+
+- **La app mira si hay versión nueva cada dos horas aunque esté cerrada**, y al abrirla si han
+  pasado 45 minutos. Antes solo miraba al arrancar el proceso y como mucho una vez cada 12 horas,
+  así que quien la dejaba en segundo plano no se enteraba nunca.
 
 ---
 

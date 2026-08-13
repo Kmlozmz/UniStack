@@ -41,8 +41,26 @@ private const val KEY_ACCESS_FINGERPRINT = "access_fingerprint"
 private const val KEY_ACCESS_CHANNEL = "access_channel"
 
 /** La lista de códigos vive junto a los APK, en el repositorio público de publicaciones. */
+private const val KEY_ACCESS_VERIFIED_AT = "access_verified_at"
+
+/**
+ * Cuánto puede vivir un acceso sin poder confirmarse contra la lista.
+ *
+ * Sin este tope, quedarse sin conexión conservaba el canal para siempre, y basta con cortarle
+ * el paso a un dominio para no perderlo nunca: la revocación se esquivaba sola. Con él, un
+ * corte normal no molesta a nadie y un bloqueo deliberado caduca.
+ */
+private const val ACCESS_GRACE_MILLIS = 7L * 24 * 60 * 60 * 1000
+
 private const val ACCESS_LIST_PATH = "https://raw.githubusercontent.com/%s/main/canales.json"
-private const val AUTO_CHECK_INTERVAL_MILLIS = 12 * 60 * 60 * 1000L
+/**
+ * Cada cuánto se deja consultar por su cuenta.
+ *
+ * Eran doce horas, que con la comprobación atada al arranque del proceso significaba enterarse
+ * al día siguiente. Consultar es una petición diminuta; lo que hay que evitar es repetirla en
+ * cada vuelta a la app, no espaciarla medio día.
+ */
+private const val AUTO_CHECK_INTERVAL_MILLIS = 45 * 60 * 1000L
 
 class GitHubReleaseUpdateRepository(
     private val context: Context
@@ -90,6 +108,7 @@ class GitHubReleaseUpdateRepository(
         prefs.edit {
             putString(KEY_ACCESS_FINGERPRINT, fingerprint)
             putString(KEY_ACCESS_CHANNEL, granted.name)
+            putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
         }
         _unlockedChannel.value = granted
         granted
@@ -105,13 +124,31 @@ class GitHubReleaseUpdateRepository(
      */
     private suspend fun refreshAccess() {
         val stored = prefs.getString(KEY_ACCESS_FINGERPRINT, null) ?: return
-        val entries = runCatching { fetchAccessEntries() }.getOrNull() ?: return
-        val granted = ChannelAccess.channelFor(stored, entries) ?: UpdateChannel.STABLE
-        if (granted == _unlockedChannel.value) return
+        val entries = runCatching { fetchAccessEntries() }.getOrNull()
 
+        if (entries == null) {
+            // No se pudo consultar. Un corte puntual no revoca nada, pero el permiso no puede
+            // sobrevivir indefinidamente sin confirmarse: si no, mantenerlo es tan fácil como
+            // impedir que la app llegue a la lista.
+            val verifiedAt = prefs.getLong(KEY_ACCESS_VERIFIED_AT, 0L)
+            if (verifiedAt > 0L && System.currentTimeMillis() - verifiedAt > ACCESS_GRACE_MILLIS) {
+                applyAccess(UpdateChannel.STABLE)
+            }
+            return
+        }
+
+        prefs.edit { putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis()) }
+        applyAccess(ChannelAccess.channelFor(stored, entries) ?: UpdateChannel.STABLE)
+    }
+
+    private fun applyAccess(granted: UpdateChannel) {
+        if (granted == _unlockedChannel.value) return
         prefs.edit {
             putString(KEY_ACCESS_CHANNEL, granted.name)
-            if (granted == UpdateChannel.STABLE) remove(KEY_ACCESS_FINGERPRINT)
+            if (granted == UpdateChannel.STABLE) {
+                remove(KEY_ACCESS_FINGERPRINT)
+                remove(KEY_ACCESS_VERIFIED_AT)
+            }
         }
         _unlockedChannel.value = granted
         if (_channel.value.ordinal > granted.ordinal) setChannel(granted)

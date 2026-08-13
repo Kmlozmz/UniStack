@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -66,18 +70,17 @@ fun UpdateDetailSheet(
                 style = MaterialTheme.typography.bodySmall,
                 color = UniStackColors.TextSecondary
             )
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                info.releaseNotes.lineSequence()
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() }
-                    .forEach { line ->
-                        Text(
-                            "- ${line.removePrefix("-").trim()}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = UniStackColors.TextSecondary
-                        )
-                    }
-            }
+            // Las notas se desplazan dentro de su propio hueco y con tope de alto. Sin eso,
+            // una lista larga empujaba los botones fuera de la hoja: se veían recortados por
+            // abajo y su texto se quedaba sin ancho, reducido a puntos suspensivos.
+            ReleaseNotes(
+                markdown = info.releaseNotes,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .heightIn(max = 340.dp)
+                    .verticalScroll(rememberScrollState())
+            )
 
             if (state is UpdateState.Downloading) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -103,9 +106,12 @@ fun UpdateDetailSheet(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = AppShapes.Small
+                    shape = AppShapes.Small,
+                    // Sin este relleno, Material reserva 24dp a cada lado y en media pantalla
+                    // el texto se queda sin sitio y se recorta a puntos.
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    Text("Más tarde")
+                    Text("Más tarde", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 SquishyButton(
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
@@ -115,7 +121,8 @@ fun UpdateDetailSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = UniStackColors.Primary,
                         contentColor = UniStackColors.OnPrimary
-                    )
+                    ),
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Text(
                         when (state) {
@@ -130,7 +137,6 @@ fun UpdateDetailSheet(
                         // instalación» partía en dos líneas y la segunda se salía por abajo.
                         // El texto se encoge antes que cortarse.
                         maxLines = 1,
-                        softWrap = false,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
