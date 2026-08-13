@@ -124,6 +124,11 @@ se cuele en el canal tranquilo.
 
 **Las `dev` no entran en ningún canal**: no se publican en GitHub, salen por Telegram.
 
+**Cuándo se entera la gente.** Un trabajo en segundo plano mira cada 2 horas con la app cerrada,
+y al abrirla se consulta si han pasado 45 minutos. **No es instantáneo y se decidió que basta**
+(13 ago 2026): avisar en el momento de publicar exige una notificación push, y eso exige Firebase
+configurado.
+
 **Beta y Alpha piden un código de acceso.** Aparecen con un candado y, al tocarlos, la app pide
 el código. Al canjearlo se guarda su huella, no el código.
 
@@ -145,10 +150,17 @@ Solo se publican huellas, nunca códigos, así que la lista no sirve para colars
 el sistema es que **el código sea largo**: contra uno corto, la huella se rompe probando. Los que
 genero son de 20 caracteres sin letras que se confundan al dictarlas.
 
-**Aun así no es un candado sobre la instalación.** Los APK están en un repositorio público y
-cualquiera con el enlace descarga el que quiera a mano. Lo que esto controla es **qué ofrece la
-app**, que es el problema real: que nadie acabe en una alpha sin saber dónde se ha metido. Para
-restringir la descarga en sí harían falta cuentas y alojamiento privado.
+**Un acceso que no se puede confirmar caduca a la semana.** Sin ese plazo, quedarse sin conexión
+conservaba el canal para siempre y bloquearle el paso a la lista era suficiente para no perderlo
+nunca. Un corte normal no revoca nada.
+
+**Aun así no es un candado sobre la instalación, y se decidió que está bien** (13 ago 2026). Los
+APK están en un repositorio público y cualquiera con el enlace descarga el que quiera a mano. Lo
+que esto controla es **qué ofrece la app**: que nadie acabe en una alpha sin saber dónde se ha
+metido. Cerrar la descarga en sí exigiría Firebase App Distribution o un servicio propio que
+entregue el archivo contra el código, y se prefirió no montar esa infraestructura. Tampoco hay
+defensa contra quien modifique el APK para saltarse la comprobación: eso no se puede resolver
+desde dentro de la app.
 
 **Cambiar a un canal de preestreno avisa antes** de lo que implica: que puede fallar y perder
 datos, que conviene copia de seguridad, y que no se vuelve atrás sin desinstalar. Bajar a

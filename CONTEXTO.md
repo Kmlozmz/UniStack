@@ -79,6 +79,11 @@ y `edit_subject` a `GRADES`, pero deja fuera a propósito `add_subject_from_sche
 `edit_subject_from_schedule`. Horario es pestaña fija aunque Académico esté apagado; atarlas
 convertiría «Añadir clase» en un botón que lleva a Inicio. Hay un test que lo fija.
 
+**Los APK de preestreno son públicos y no se van a cerrar.** Decidido el 13 ago 2026: el código
+de acceso decide qué ofrece la app, no quién puede descargar. Cerrar la descarga exigiría Firebase
+App Distribution o un servicio propio, y se prefirió no montarlo. Por lo mismo, el aviso de versión
+nueva se queda en consultar cada dos horas en vez de push. No es que falte por hacer.
+
 ---
 
 ## Cómo se cuentan las notas
