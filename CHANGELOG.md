@@ -38,6 +38,18 @@ número y la fecha, y se abre una nueva.
 
 ### Cambiado
 
+- **El panel lateral ya no ofrece lo que no existe.** «UniStack AI», «Novedades», «Labs»,
+  «Recursos», «Ayuda» y «Enviar sugerencia» cerraban el panel sin ir a ninguna parte, como si
+  la app hubiera fallado; ahora salen apagadas y marcadas como «Pronto». «Calculadora GPA»
+  abría la lista de materias y «Notas rápidas» abría Tareas: cada entrada dice a dónde lleva.
+  Los cuatro destinos reales pasan a una cuadrícula, y «Cerrar sesión» desaparece porque no
+  cerraba ninguna sesión.
+- **El perfil dice cómo va el semestre**, no solo cuál es tu meta: materias, promedio de lo
+  evaluado, cuántas van por debajo de la nota mínima y cuánto te falta para la meta. El nombre
+  se edita con el lápiz de la cabecera, en vez de un formulario permanente ocupando la pantalla.
+- **Las tarjetas del horario se pueden tocar y cuentan el resto.** Los rótulos salían cortados
+  («Clases h…», «Esta se…»); ahora son de una palabra y al tocarlas se abre el detalle: las
+  clases de hoy una por una, o las horas de la semana repartidas por día.
 - **La cabecera del horario dice cuántas clases tienes hoy y cuántas horas de clase lleva la
   semana.** En su sitio había dos tarjetas, «10:30 · Próxima» y «408D · Aula», que repetían lo
   que el panel de «Próxima clase» ya cuenta entero unos centímetros más abajo.

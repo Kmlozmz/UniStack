@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Settings
@@ -111,6 +112,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     onOpenProClick: () -> Unit = {},
     onOpenSettingsClick: () -> Unit = {},
+    onOpenAcademicClick: () -> Unit = {},
     mode: ProfileScreenMode = ProfileScreenMode.PROFILE,
     onBackClick: () -> Unit = {}
 ) {
@@ -158,6 +160,8 @@ fun ProfileScreen(
         mutableStateOf(currentProfile?.academicPeriodScheme?.periods?.map { percentInput(it.weight) } ?: listOf("30", "40", "30"))
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    var editingName by rememberSaveable { mutableStateOf(false) }
+    val academicSnapshot by viewModel.academicSnapshot.collectAsStateWithLifecycle()
     var localBackupInput by rememberSaveable { mutableStateOf("") }
     var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
@@ -301,29 +305,28 @@ fun ProfileScreen(
         } else {
             val current = loadedProfile
             if (mode == ProfileScreenMode.PROFILE) {
-                item { ProfileHeaderCard(profile = current) }
+                item {
+                    ProfileHeaderCard(
+                        profile = current,
+                        onEditNameClick = {
+                            nameInput = current.preferredName
+                            editingName = true
+                        }
+                    )
+                }
+                item {
+                    AcademicSnapshotCard(
+                        snapshot = academicSnapshot,
+                        profile = current,
+                        onOpenAcademicClick = onOpenAcademicClick
+                    )
+                }
                 item {
                     AccountSyncCard(
                         currentUser = currentUser,
                         isBusy = actionState.isAccountBusy,
                         onGoogleClick = { viewModel.connectGoogle(context) },
                         onUnlinkClick = { showUnlinkDialog = true }
-                    )
-                }
-                item {
-                    NameSettingsCard(
-                        nameInput = nameInput,
-                        onNameChange = {
-                            nameInput = it.take(30)
-                            feedback = null
-                        },
-                        onSaveClick = {
-                            feedback = if (viewModel.updatePreferredName(nameInput)) {
-                                "Nombre actualizado."
-                            } else {
-                                "Revisa el nombre antes de guardar."
-                            }
-                        }
                     )
                 }
                 if (FeatureGate.PRO_FEATURES_ENABLED) {
@@ -708,6 +711,56 @@ fun ProfileScreen(
         )
     }
 
+    if (editingName) {
+        val validation = TextValidators.validateDisplayName(nameInput)
+        AlertDialog(
+            onDismissRequest = { editingName = false },
+            title = { Text("Tu nombre") },
+            text = {
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { nameInput = it.take(30) },
+                    label = { Text("Nombre preferido") },
+                    singleLine = true,
+                    isError = nameInput.isNotBlank() && !validation.isValid,
+                    supportingText = {
+                        if (nameInput.isNotBlank() && !validation.isValid) {
+                            Text(validation.errorMessage ?: "Ingresa un nombre válido")
+                        }
+                    },
+                    shape = AppShapes.MediumCard,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = validation.isValid,
+                    onClick = {
+                        feedback = if (viewModel.updatePreferredName(nameInput)) {
+                            editingName = false
+                            "Nombre actualizado."
+                        } else {
+                            "Revisa el nombre antes de guardar."
+                        }
+                    }
+                ) {
+                    Text("Guardar", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        nameInput = currentProfile?.preferredName.orEmpty()
+                        editingName = false
+                    }
+                ) {
+                    Text("Cancelar")
+                }
+            },
+            containerColor = UniStackColors.Background
+        )
+    }
+
     if (showUnlinkDialog) {
         AlertDialog(
             onDismissRequest = { showUnlinkDialog = false },
@@ -1042,66 +1095,161 @@ private fun PlanStatusCard(
 }
 
 @Composable
-private fun ProfileHeaderCard(profile: UserProfile) {
+private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit) {
     val name = profile.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante"
+    val scheme = profile.academicPeriodScheme
+    val count = scheme.periods.size
+    val periodLabel = if (count == 1) scheme.label.singular else scheme.label.plural
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = UniStackColors.PrimaryLight,
         shape = AppShapes.LargeCard
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AccountAvatar(
-                photoUrl = profile.accountPhotoUrl,
-                contentDescription = "Foto de perfil",
-                modifier = Modifier.size(54.dp)
-            )
-            Column(modifier = Modifier.padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(name, color = UniStackColors.TextPrimary, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
-                Text(profile.educationSummary(), color = UniStackColors.TextSecondary)
-                Text(
-                    "Meta ${GradingScaleUtils.formatGrade(profile.targetAverage, profile.gradingScale)}",
-                    color = UniStackColors.Primary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AccountAvatar(
+                    photoUrl = profile.accountPhotoUrl,
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier.size(58.dp)
                 )
+                Column(
+                    modifier = Modifier.padding(start = 14.dp).weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        name,
+                        color = UniStackColors.TextPrimary,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 1
+                    )
+                    Text(profile.educationSummary(), color = UniStackColors.TextSecondary, fontSize = 13.sp)
+                    profile.institutionName?.takeIf(String::isNotBlank)?.let { institution ->
+                        Text(institution, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    }
+                }
+                // El nombre se edita desde aquí. Antes vivía en una tarjeta aparte con su campo
+                // y su botón de guardar siempre a la vista: un formulario permanente para un dato
+                // que se cambia una vez al año, ocupando un tercio de la pantalla.
+                IconButton(onClick = onEditNameClick) {
+                    Icon(
+                        Icons.Rounded.Edit,
+                        contentDescription = "Editar nombre",
+                        tint = UniStackColors.Primary
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                ProfileChip("Meta " + GradingScaleUtils.formatGrade(profile.targetAverage, profile.gradingScale))
+                ProfileChip(profileScaleLabel(profile))
+                ProfileChip("$count $periodLabel")
             }
         }
     }
 }
 
 @Composable
-private fun NameSettingsCard(
-    nameInput: String,
-    onNameChange: (String) -> Unit,
-    onSaveClick: () -> Unit
+private fun ProfileChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(AppShapes.Pill)
+            .background(UniStackColors.Background.copy(alpha = 0.55f))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(text, color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+/**
+ * Cómo va el semestre.
+ *
+ * El perfil decía cuál era tu meta y nada de si la estás cumpliendo, que es lo único que
+ * convierte ese número en información. Aquí están las materias, el promedio de lo que ya
+ * tienes evaluado y cuántas van por debajo de la nota mínima.
+ */
+@Composable
+private fun AcademicSnapshotCard(
+    snapshot: AcademicSnapshot,
+    profile: UserProfile,
+    onOpenAcademicClick: () -> Unit
 ) {
-    val validation = TextValidators.validateDisplayName(nameInput)
-    SettingsCard(title = "Datos personales") {
-        OutlinedTextField(
-            value = nameInput,
-            onValueChange = onNameChange,
-            label = { Text("Nombre preferido") },
-            singleLine = true,
-            isError = nameInput.isNotBlank() && !validation.isValid,
-            supportingText = {
-                if (nameInput.isNotBlank() && !validation.isValid) {
-                    Text(validation.errorMessage ?: "Ingresa un nombre válido")
+    val scale = profile.gradingScale
+    val averageText = snapshot.average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—"
+    val distance = snapshot.average?.minus(profile.targetAverage)
+    val footer = when {
+        snapshot.subjectCount == 0 -> "Todavía no has creado materias."
+        distance == null -> "Aún no hay notas registradas."
+        distance >= 0 -> "Vas por encima de tu meta."
+        else -> "Te faltan " + GradingScaleUtils.formatGrade(-distance, scale) + " para tu meta."
+    }
+
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.LargeCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
+                Text(
+                    "Tu semestre",
+                    color = UniStackColors.TextPrimary,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(start = 10.dp).weight(1f)
+                )
+                TextButton(onClick = onOpenAcademicClick) {
+                    Text("Ajustar", color = UniStackColors.Primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
-            },
-            shape = AppShapes.MediumCard,
-            modifier = Modifier.fillMaxWidth()
-        )
-        SquishyButton(
-            onClick = onSaveClick,
-            enabled = validation.isValid,
-            shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Guardar nombre")
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                SnapshotCell(
+                    modifier = Modifier.weight(1f),
+                    value = snapshot.subjectCount.toString(),
+                    label = if (snapshot.subjectCount == 1) "Materia" else "Materias"
+                )
+                SnapshotCell(
+                    modifier = Modifier.weight(1f),
+                    value = averageText,
+                    label = "Promedio"
+                )
+                SnapshotCell(
+                    modifier = Modifier.weight(1f),
+                    value = snapshot.atRisk.toString(),
+                    label = "En riesgo",
+                    valueColor = if (snapshot.atRisk > 0) UniStackColors.Coral else UniStackColors.TextPrimary
+                )
+            }
+            Text(footer, color = UniStackColors.TextSecondary, fontSize = 12.sp)
         }
     }
+}
+
+@Composable
+private fun SnapshotCell(
+    modifier: Modifier,
+    value: String,
+    label: String,
+    valueColor: Color = UniStackColors.TextPrimary
+) {
+    Column(
+        modifier = modifier
+            .clip(AppShapes.MediumCard)
+            .background(UniStackColors.SurfaceVariant)
+            .padding(vertical = 11.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(value, color = valueColor, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Text(label, color = UniStackColors.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+    }
+}
+
+/** La escala en corto: «0 a 5», «0 a 100», o el máximo que se haya puesto a mano. */
+private fun profileScaleLabel(profile: UserProfile): String = when (profile.gradingScale) {
+    GradingScale.ZERO_TO_FIVE -> "Escala 0 a 5"
+    GradingScale.ZERO_TO_HUNDRED -> "Escala 0 a 100"
+    GradingScale.CUSTOM -> "Escala 0 a " + GradingScaleUtils.formatGrade(profile.customGradeMax, profile.gradingScale)
 }
 
 @Composable

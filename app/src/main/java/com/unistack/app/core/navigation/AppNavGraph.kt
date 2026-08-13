@@ -346,7 +346,8 @@ fun MainNavGraph(
             composable(AppRoutes.Profile) {
                 ProfileScreen(
                     onOpenProClick = { navController.navigate(AppRoutes.Pro) },
-                    onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) }
+                    onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) },
+                    onOpenAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) }
                 )
             }
             composable(

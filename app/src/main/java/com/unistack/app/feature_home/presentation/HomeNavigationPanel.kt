@@ -22,12 +22,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ExitToApp
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
-import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.EditNote
@@ -68,6 +66,13 @@ internal data class DrawerPanelAction(
     val onClick: () -> Unit
 )
 
+/** Un destino del panel, en cuadrícula: icono grande y una palabra. */
+private data class DrawerShortcut(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit
+)
+
 @Composable
 internal fun HomeNavigationPanel(
     displayName: String,
@@ -92,109 +97,88 @@ internal fun HomeNavigationPanel(
         1 -> "1 materia"
         else -> "$subjectsCount materias"
     }
-    val mutedAction = onClose
 
-    val productivity = listOf(
-        DrawerPanelAction(
-            icon = Icons.Rounded.Description,
-            title = "Trabajos",
-            subtitle = "Plantillas, entregas y exportaciones",
-            accent = UniStackColors.Primary,
-            onClick = onWorksClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.Calculate,
-            title = "Calculadora GPA",
-            subtitle = "Simula y calcula tu promedio",
-            accent = UniStackColors.Primary,
-            onClick = onSemesterClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.EditNote,
-            title = "Notas rápidas",
-            subtitle = "Bloc de notas temporal",
-            accent = UniStackColors.Primary,
-            onClick = onTasksClick
-        )
+    /*
+     * Los cuatro sitios a los que este panel lleva de verdad, en cuadrícula.
+     *
+     * Iban en filas de sesenta y cuatro dp con un subtítulo cada una, y el subtítulo era lo
+     * primero que se cortaba. Además, dos mentían sobre su destino: «Calculadora GPA» abría la
+     * lista de materias y «Notas rápidas» abría Tareas. Aquí el rótulo es el destino.
+     */
+    val shortcuts = listOf(
+        DrawerShortcut(Icons.AutoMirrored.Rounded.MenuBook, "Materias", onSemesterClick),
+        DrawerShortcut(Icons.Rounded.EditNote, "Tareas", onTasksClick),
+        DrawerShortcut(Icons.Rounded.Description, "Plantillas", onWorksClick),
+        DrawerShortcut(Icons.Rounded.History, "Notificaciones", onNotificationsClick)
     )
-    val preferences = listOf(
+
+    val settings = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Settings,
             title = "Configuración",
-            subtitle = "Apariencia, recordatorios y preferencias",
+            subtitle = "Apariencia, recordatorios y módulos",
             accent = UniStackColors.Blue,
             onClick = onSettingsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Backup,
-            title = "Sincronización",
-            subtitle = "Respaldos, importar, exportar y más",
+            title = "Datos y respaldos",
+            subtitle = "Copia, importa y exporta",
             accent = UniStackColors.Blue,
             onClick = onDataClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.School,
+            title = "Tu perfil",
+            subtitle = "Nombre, cuenta y meta",
+            accent = UniStackColors.Primary,
+            onClick = onProfileClick
         )
     )
-    val uniPlus = listOf(
+
+    /*
+     * Lo que todavía no existe, dicho como lo que es.
+     *
+     * Estas seis entradas estaban entre las de verdad, con su flecha y su color, y al tocarlas
+     * el panel se cerraba sin ir a ninguna parte: quien las tocaba entendía que la app había
+     * fallado. Siguen aquí porque marcan el camino, pero apagadas, con su etiqueta y sin
+     * respuesta al toque, que es lo que de verdad hacen.
+     */
+    val comingSoon = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
-            subtitle = "Tu asistente académico potenciado con IA",
+            subtitle = "Asistente académico",
             accent = UniStackColors.Primary,
-            badge = "NUEVO",
-            onClick = mutedAction
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.History,
-            title = "Historial",
-            subtitle = "Actividad reciente y cambios realizados",
-            accent = UniStackColors.Green,
-            onClick = onNotificationsClick
+            onClick = {}
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
-            subtitle = "Descubre qué hay de nuevo",
+            subtitle = "Qué hay de nuevo",
             accent = UniStackColors.Blue,
-            onClick = mutedAction
-        )
-    )
-    val extras = listOf(
-        DrawerPanelAction(
-            icon = Icons.AutoMirrored.Rounded.MenuBook,
-            title = "Recursos",
-            subtitle = "Biblioteca y enlaces útiles",
-            accent = UniStackColors.Green,
-            onClick = mutedAction
+            onClick = {}
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
-            subtitle = "Funciones experimentales y beta features",
+            subtitle = "Funciones experimentales",
             accent = UniStackColors.Yellow,
-            badge = "BETA",
-            onClick = mutedAction
-        )
-    )
-    val support = listOf(
+            onClick = {}
+        ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
             subtitle = "Centro de ayuda y contacto",
             accent = UniStackColors.Blue,
-            onClick = mutedAction
+            onClick = {}
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Lightbulb,
             title = "Enviar sugerencia",
-            subtitle = "Cuéntanos cómo podemos mejorar",
+            subtitle = "Cuéntanos cómo mejorar",
             accent = UniStackColors.Yellow,
-            onClick = mutedAction
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.Info,
-            title = "Acerca de",
-            subtitle = "Versión, novedades y políticas",
-            accent = UniStackColors.Primary,
-            onClick = onProfileClick
+            onClick = {}
         )
     )
 
@@ -229,20 +213,21 @@ internal fun HomeNavigationPanel(
                     )
                 }
                 item { DrawerPanelDivider() }
-                drawerSection("Productividad", productivity)
-                drawerSection("Preferencias y datos", preferences)
-                drawerSection("UNI+", uniPlus)
-                drawerSection("Extras", extras)
-                drawerSection("Soporte", support)
-                item {
-                    DrawerLogoutButton(onClick = onClose)
+                item { DrawerShortcutGrid(shortcuts) }
+                item { DrawerPanelSection("Ajustes") }
+                settings.forEach { action ->
+                    item { DrawerPanelItem(action = action) }
+                }
+                item { DrawerPanelSection("Pronto") }
+                comingSoon.forEach { action ->
+                    item { DrawerPanelItem(action = action, enabled = false) }
                 }
                 item {
                     Text(
                         text = "v${BuildConfig.VERSION_NAME}",
                         color = UniStackColors.TextSecondary.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(start = 2.dp, top = 1.dp)
+                        modifier = Modifier.padding(start = 2.dp, top = 6.dp)
                     )
                 }
             }
@@ -250,14 +235,45 @@ internal fun HomeNavigationPanel(
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.drawerSection(
-    title: String,
-    actions: List<DrawerPanelAction>
+@Composable
+private fun DrawerShortcutGrid(shortcuts: List<DrawerShortcut>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        shortcuts.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { shortcut ->
+                    DrawerShortcutTile(shortcut = shortcut, modifier = Modifier.weight(1f))
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerShortcutTile(
+    shortcut: DrawerShortcut,
+    modifier: Modifier = Modifier
 ) {
-    item { DrawerPanelSection(title) }
-    actions.forEach { action ->
-        item {
-            DrawerPanelItem(action = action)
+    Surface(
+        onClick = shortcut.onClick,
+        modifier = modifier.height(84.dp),
+        shape = AppShapes.MediumCard,
+        color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.82f),
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.20f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            DrawerIconTile(icon = shortcut.icon, accent = UniStackColors.Primary)
+            Text(
+                shortcut.label,
+                color = UniStackColors.TextPrimary,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -360,15 +376,22 @@ private fun DrawerPanelSection(text: String) {
 }
 
 @Composable
-private fun DrawerPanelItem(action: DrawerPanelAction) {
+private fun DrawerPanelItem(action: DrawerPanelAction, enabled: Boolean = true) {
     Surface(
         onClick = action.onClick,
+        enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp),
+            .height(58.dp),
         shape = AppShapes.MediumCard,
-        color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.82f),
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.20f))
+        color = UniStackColors.SurfaceVariant.copy(
+            alpha = when {
+                !enabled -> if (UniStackColors.IsDarkTheme) 0.28f else 0.45f
+                UniStackColors.IsDarkTheme -> 0.58f
+                else -> 0.82f
+            }
+        ),
+        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = if (enabled) 0.20f else 0.10f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
@@ -389,27 +412,30 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    action.badge?.let { badge ->
+                    val badge = action.badge ?: "Pronto".takeIf { !enabled }
+                    badge?.let {
                         Spacer(Modifier.width(6.dp))
-                        DrawerBadge(text = badge, accent = action.accent)
+                        DrawerBadge(text = it, accent = action.accent)
                     }
                 }
                 Text(
                     action.subtitle,
                     color = UniStackColors.TextSecondary,
                     style = MaterialTheme.typography.bodySmall,
-                    lineHeight = 16.sp,
-                    maxLines = 2,
+                    lineHeight = 14.sp,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Spacer(Modifier.width(6.dp))
-            Icon(
-                Icons.Rounded.ChevronRight,
-                contentDescription = null,
-                tint = UniStackColors.TextSecondary.copy(alpha = 0.76f),
-                modifier = Modifier.size(20.dp)
-            )
+            if (enabled) {
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    Icons.Rounded.ChevronRight,
+                    contentDescription = null,
+                    tint = UniStackColors.TextSecondary.copy(alpha = 0.76f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -454,38 +480,5 @@ private fun DrawerBadge(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             maxLines = 1
         )
-    }
-}
-
-@Composable
-internal fun DrawerLogoutButton(onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(46.dp)
-            .padding(top = 4.dp),
-        shape = AppShapes.MediumCard,
-        color = UniStackColors.Coral.copy(alpha = if (UniStackColors.IsDarkTheme) 0.08f else 0.06f),
-        border = BorderStroke(1.dp, UniStackColors.Coral.copy(alpha = 0.58f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ExitToApp,
-                contentDescription = null,
-                tint = UniStackColors.Coral,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(14.dp))
-            Text(
-                "Cerrar sesión",
-                color = UniStackColors.Coral,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-        }
     }
 }

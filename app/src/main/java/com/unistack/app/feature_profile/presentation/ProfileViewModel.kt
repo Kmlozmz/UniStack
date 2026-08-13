@@ -26,8 +26,13 @@ import com.unistack.app.feature_user.domain.AccountAuthService
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.VisualPreset
 import com.unistack.app.feature_user.domain.VisualPreference
+import com.unistack.app.core.utils.GradeCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -52,6 +57,19 @@ data class GradingScaleChangeImpact(
     }
 }
 
+/**
+ * Cómo va el semestre, para la portada del perfil.
+ *
+ * El perfil enseñaba el nombre, la carrera y la meta, y nada de si esa meta se está
+ * cumpliendo. Los tres datos salen de lo que ya hay registrado; ninguno se inventa cuando no
+ * hay notas: [average] en nulo significa «todavía no hay nada evaluado», no un cero.
+ */
+data class AcademicSnapshot(
+    val subjectCount: Int = 0,
+    val average: Double? = null,
+    val atRisk: Int = 0
+)
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
@@ -65,6 +83,25 @@ class ProfileViewModel @Inject constructor(
     val currentUser = userRepository.currentUser
     val billingState = billingRepository.state
     val cloudBackupState = cloudBackupRepository.state
+
+    val academicSnapshot: StateFlow<AcademicSnapshot> = combine(
+        gradesRepository.subjects,
+        userRepository.userProfile
+    ) { subjects, profile ->
+        val periods = profile?.academicPeriodScheme?.periods.orEmpty()
+        val passing = profile?.passingGrade
+        val averages = subjects.map { subject ->
+            GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
+        }
+        val evaluated = averages.filterNotNull()
+        AcademicSnapshot(
+            subjectCount = subjects.size,
+            average = evaluated.takeIf { it.isNotEmpty() }?.let { list ->
+                Math.round(list.average() * 10.0) / 10.0
+            },
+            atRisk = if (passing == null) 0 else evaluated.count { it < passing }
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AcademicSnapshot())
 
     private val _actionState = MutableStateFlow(ProfileActionState())
     val actionState: StateFlow<ProfileActionState> = _actionState

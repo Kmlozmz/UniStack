@@ -101,6 +101,8 @@ internal enum class IdentityScheduleView {
 
 private enum class IdentityMetricDetail {
     SUBJECTS,
+    TODAY,
+    WEEK,
     EVENTS,
     DELIVERIES,
     EXAMS
@@ -156,7 +158,9 @@ internal fun ScheduleIdentityContent(
                         selectedDate = selectedDate,
                         sessions = uiState.sessions,
                         subjects = uiState.subjects,
-                        onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS }
+                        onSubjectsClick = { metricDetail = IdentityMetricDetail.SUBJECTS },
+                        onTodayClick = { metricDetail = IdentityMetricDetail.TODAY },
+                        onWeekClick = { metricDetail = IdentityMetricDetail.WEEK }
                     )
                 }
                 // La próxima clase va antes de la rejilla y el acceso al horario completo
@@ -398,7 +402,9 @@ private fun TimetableMetrics(
     selectedDate: LocalDate,
     sessions: List<ClassSession>,
     subjects: List<Subject>,
-    onSubjectsClick: () -> Unit
+    onSubjectsClick: () -> Unit,
+    onTodayClick: () -> Unit,
+    onWeekClick: () -> Unit
 ) {
     val subjectCount = subjects.count { subject -> sessions.any { it.subjectId == subject.id } }
     val today = LocalDate.now()
@@ -427,19 +433,23 @@ private fun TimetableMetrics(
             label = if (subjectCount == 1) "Materia" else "Materias",
             onClick = onSubjectsClick
         )
+        // Etiquetas de una palabra: en tres columnas, «Clases hoy» y «Esta semana» salían
+        // cortadas con puntos suspensivos. Lo que no cabe aquí lo cuenta el detalle.
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Today,
             iconColor = IdentityAccent,
             value = todayCount.toString(),
-            label = if (todayCount == 1) "Clase hoy" else "Clases hoy"
+            label = "Hoy",
+            onClick = onTodayClick
         )
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Schedule,
             iconColor = IdentityAccent,
             value = weeklyHoursLabel(weekMinutes),
-            label = "Esta semana"
+            label = "Semana",
+            onClick = onWeekClick
         )
     }
 }
@@ -543,22 +553,72 @@ private fun IdentityMetricDetailsSheet(
             }
             .sortedBy(StudentTask::dueDateMillis)
     }
+    val today = LocalDate.now()
+    val todaySessions = remember(uiState.sessions, today) {
+        uiState.sessions
+            .filter { it.occursOn(today.toEpochDay(), today.dayOfWeek.value) }
+            .sortedBy(ClassSession::startMinute)
+    }
+    // Los siete días con lo que tiene cada uno, para que la cifra de la tarjeta se pueda
+    // desglosar: «24 h» no dice si son cuatro días de seis o seis de cuatro.
+    val weekDays = remember(uiState.sessions, selectedDate) {
+        val weekStart = selectedDate.weekStartIdentity()
+        (0L..6L).map { offset ->
+            val date = weekStart.plusDays(offset)
+            date to uiState.sessions
+                .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                .sortedBy(ClassSession::startMinute)
+        }
+    }
+    val weekMinutes = weekDays.sumOf { (_, daySessions) ->
+        daySessions.sumOf { it.endMinute - it.startMinute }
+    }
+
     val title = when (detail) {
         IdentityMetricDetail.SUBJECTS -> "Materias del horario"
+        IdentityMetricDetail.TODAY -> "Clases de hoy"
+        IdentityMetricDetail.WEEK -> "Horas de clase"
         IdentityMetricDetail.EVENTS -> "Eventos de ${month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized()}"
         IdentityMetricDetail.DELIVERIES -> "Entregas pendientes"
         IdentityMetricDetail.EXAMS -> "Exámenes pendientes"
     }
     val icon = when (detail) {
         IdentityMetricDetail.SUBJECTS -> Icons.AutoMirrored.Rounded.MenuBook
+        IdentityMetricDetail.TODAY -> Icons.Rounded.Today
+        IdentityMetricDetail.WEEK -> Icons.Rounded.Schedule
         IdentityMetricDetail.EVENTS -> Icons.Rounded.CalendarMonth
         IdentityMetricDetail.DELIVERIES -> Icons.AutoMirrored.Rounded.Assignment
         IdentityMetricDetail.EXAMS -> Icons.Rounded.School
     }
     val count = when (detail) {
         IdentityMetricDetail.SUBJECTS -> groupedSubjects.size
+        IdentityMetricDetail.TODAY -> todaySessions.size
+        IdentityMetricDetail.WEEK -> weekDays.count { (_, daySessions) -> daySessions.isNotEmpty() }
         IdentityMetricDetail.EVENTS -> monthAgendaEvents.size
         IdentityMetricDetail.DELIVERIES, IdentityMetricDetail.EXAMS -> pendingTasks.size
+    }
+
+    /*
+     * Cada detalle dice lo suyo debajo del título.
+     *
+     * «N elementos» valía mientras todos fueran listas de cosas; para las horas de la semana
+     * no dice nada, y es justo el dato que la tarjeta no puede enseñar entero.
+     */
+    val subtitle = when (detail) {
+        IdentityMetricDetail.TODAY ->
+            today.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized()
+        IdentityMetricDetail.WEEK -> {
+            val weekStart = selectedDate.weekStartIdentity()
+            val range = "${weekStart.format(DateTimeFormatter.ofPattern("d MMM", IdentityLocale))} - " +
+                weekStart.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM", IdentityLocale))
+            "${weeklyHoursLabel(weekMinutes)} en total  •  $range"
+        }
+        else -> "$count ${if (count == 1) "elemento" else "elementos"}"
+    }
+    val emptyMessage = when (detail) {
+        IdentityMetricDetail.TODAY -> "Hoy no tienes clases."
+        IdentityMetricDetail.WEEK -> "Esta semana no tienes clases."
+        else -> "No hay información para mostrar."
     }
 
     ModalBottomSheet(
@@ -590,7 +650,7 @@ private fun IdentityMetricDetailsSheet(
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "$count ${if (count == 1) "elemento" else "elementos"}",
+                        subtitle,
                         color = UniStackColors.TextSecondary,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -600,7 +660,7 @@ private fun IdentityMetricDetailsSheet(
             if (count == 0) {
                 IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
                     Text(
-                        "No hay información para mostrar.",
+                        emptyMessage,
                         modifier = Modifier.padding(18.dp),
                         color = UniStackColors.TextSecondary,
                         style = MaterialTheme.typography.bodyMedium
@@ -627,6 +687,36 @@ private fun IdentityMetricDetailsSheet(
                                     title = subject?.name ?: "Materia",
                                     detail = "$days  \u2022  ${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  \u2022  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
                                     onClick = { onSessionClick(occurrenceDate, session) }
+                                )
+                            }
+                        }
+
+                        IdentityMetricDetail.TODAY -> items(
+                            items = todaySessions,
+                            key = ClassSession::id
+                        ) { session ->
+                            val subject = uiState.subjects.firstOrNull { it.id == session.subjectId }
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                                IdentityEventRow(
+                                    color = subject.identityColor(),
+                                    title = subject?.name ?: "Clase",
+                                    detail = "${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  •  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
+                                    onClick = { onSessionClick(today, session) }
+                                )
+                            }
+                        }
+
+                        IdentityMetricDetail.WEEK -> items(
+                            items = weekDays.filter { (_, daySessions) -> daySessions.isNotEmpty() },
+                            key = { (date, _) -> date.toEpochDay() }
+                        ) { (date, daySessions) ->
+                            val dayMinutes = daySessions.sumOf { it.endMinute - it.startMinute }
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                                IdentityEventRow(
+                                    color = IdentityAccent,
+                                    title = date.format(DateTimeFormatter.ofPattern("EEEE d", IdentityLocale)).identityCapitalized(),
+                                    detail = "${weeklyHoursLabel(dayMinutes)}  •  ${daySessions.size} ${if (daySessions.size == 1) "clase" else "clases"}  •  ${formatIdentityMinute(daySessions.first().startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(daySessions.maxOf { it.endMinute }, uiState.accessibility.use24HourTime)}",
+                                    onClick = { onSessionClick(date, daySessions.first()) }
                                 )
                             }
                         }
