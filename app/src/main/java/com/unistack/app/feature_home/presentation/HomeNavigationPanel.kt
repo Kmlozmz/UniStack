@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.EditNote
@@ -63,14 +64,8 @@ internal data class DrawerPanelAction(
     val subtitle: String,
     val accent: Color,
     val badge: String? = null,
-    val onClick: () -> Unit
-)
-
-/** Un destino del panel, en cuadrícula: icono grande y una palabra. */
-private data class DrawerShortcut(
-    val icon: ImageVector,
-    val label: String,
-    val onClick: () -> Unit
+    /** Nulo cuando la función todavía no existe: la fila se pinta apagada y no responde. */
+    val onClick: (() -> Unit)? = null
 )
 
 @Composable
@@ -84,7 +79,11 @@ internal fun HomeNavigationPanel(
     onNotificationsClick: () -> Unit,
     onDataClick: () -> Unit,
     onSettingsClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onWhatsNewClick: () -> Unit,
+    onResourcesClick: () -> Unit,
+    onHelpClick: () -> Unit,
+    onAboutClick: () -> Unit
 ) {
     val panelShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
     val drawerSurface = if (UniStackColors.IsDarkTheme) {
@@ -99,20 +98,44 @@ internal fun HomeNavigationPanel(
     }
 
     /*
-     * Los cuatro sitios a los que este panel lleva de verdad, en cuadrícula.
+     * Cada fila lleva a donde dice.
      *
-     * Iban en filas de sesenta y cuatro dp con un subtítulo cada una, y el subtítulo era lo
-     * primero que se cortaba. Además, dos mentían sobre su destino: «Calculadora GPA» abría la
-     * lista de materias y «Notas rápidas» abría Tareas. Aquí el rótulo es el destino.
+     * Dos mentían sobre su destino —«Calculadora GPA» abría la lista de materias y «Notas
+     * rápidas» abría Tareas—, así que esas dos pasan a la lista de lo que aún no existe, y
+     * Materias y Tareas aparecen con su nombre, que es lo que de verdad se abría. Las que no
+     * tienen pantalla detrás llegan sin `onClick`: apagadas, sin flecha y sin responder, en vez
+     * de cerrar el panel como si la app hubiera fallado.
      */
-    val shortcuts = listOf(
-        DrawerShortcut(Icons.AutoMirrored.Rounded.MenuBook, "Materias", onSemesterClick),
-        DrawerShortcut(Icons.Rounded.EditNote, "Tareas", onTasksClick),
-        DrawerShortcut(Icons.Rounded.Description, "Plantillas", onWorksClick),
-        DrawerShortcut(Icons.Rounded.History, "Notificaciones", onNotificationsClick)
+    val productivity = listOf(
+        DrawerPanelAction(
+            icon = Icons.AutoMirrored.Rounded.MenuBook,
+            title = "Materias",
+            subtitle = "Notas, cortes y promedios",
+            accent = UniStackColors.Primary,
+            onClick = onSemesterClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.EditNote,
+            title = "Tareas",
+            subtitle = "Entregas y pendientes",
+            accent = UniStackColors.Primary,
+            onClick = onTasksClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.Description,
+            title = "Trabajos",
+            subtitle = "Plantillas y exportaciones",
+            accent = UniStackColors.Primary,
+            onClick = onWorksClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.Calculate,
+            title = "Calculadora GPA",
+            subtitle = "Simula y calcula tu promedio",
+            accent = UniStackColors.Primary
+        )
     )
-
-    val settings = listOf(
+    val preferences = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Settings,
             title = "Configuración",
@@ -122,8 +145,8 @@ internal fun HomeNavigationPanel(
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Backup,
-            title = "Datos y respaldos",
-            subtitle = "Copia, importa y exporta",
+            title = "Sincronización",
+            subtitle = "Respaldos, importar y exportar",
             accent = UniStackColors.Blue,
             onClick = onDataClick
         ),
@@ -131,54 +154,75 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.School,
             title = "Tu perfil",
             subtitle = "Nombre, cuenta y meta",
-            accent = UniStackColors.Primary,
+            accent = UniStackColors.Blue,
             onClick = onProfileClick
         )
     )
-
-    /*
-     * Lo que todavía no existe, dicho como lo que es.
-     *
-     * Estas seis entradas estaban entre las de verdad, con su flecha y su color, y al tocarlas
-     * el panel se cerraba sin ir a ninguna parte: quien las tocaba entendía que la app había
-     * fallado. Siguen aquí porque marcan el camino, pero apagadas, con su etiqueta y sin
-     * respuesta al toque, que es lo que de verdad hacen.
-     */
-    val comingSoon = listOf(
+    val uniPlus = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
-            subtitle = "Asistente académico",
-            accent = UniStackColors.Primary,
-            onClick = {}
+            subtitle = "Tu asistente académico",
+            accent = UniStackColors.Primary
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.History,
+            title = "Historial",
+            subtitle = "Avisos y actividad reciente",
+            accent = UniStackColors.Green,
+            onClick = onNotificationsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
-            subtitle = "Qué hay de nuevo",
+            subtitle = "Qué trae cada versión",
             accent = UniStackColors.Blue,
-            onClick = {}
+            onClick = onWhatsNewClick
+        )
+    )
+    val extras = listOf(
+        DrawerPanelAction(
+            icon = Icons.AutoMirrored.Rounded.MenuBook,
+            title = "Recursos",
+            subtitle = "Biblioteca y enlaces útiles",
+            accent = UniStackColors.Green,
+            onClick = onResourcesClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.EditNote,
+            title = "Notas rápidas",
+            subtitle = "Bloc de notas temporal",
+            accent = UniStackColors.Green
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
             subtitle = "Funciones experimentales",
             accent = UniStackColors.Yellow,
-            onClick = {}
-        ),
+            badge = "BETA"
+        )
+    )
+    val support = listOf(
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
-            subtitle = "Centro de ayuda y contacto",
+            subtitle = "Preguntas frecuentes y contacto",
             accent = UniStackColors.Blue,
-            onClick = {}
+            onClick = onHelpClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Lightbulb,
             title = "Enviar sugerencia",
-            subtitle = "Cuéntanos cómo mejorar",
+            subtitle = "Cuéntanos cómo podemos mejorar",
             accent = UniStackColors.Yellow,
-            onClick = {}
+            onClick = onHelpClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.Info,
+            title = "Acerca de",
+            subtitle = "Versión, datos y políticas",
+            accent = UniStackColors.Primary,
+            onClick = onAboutClick
         )
     )
 
@@ -203,7 +247,7 @@ internal fun HomeNavigationPanel(
                     .statusBarsPadding()
                     .navigationBarsPadding(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 item {
                     DrawerPanelHeader(
@@ -213,21 +257,17 @@ internal fun HomeNavigationPanel(
                     )
                 }
                 item { DrawerPanelDivider() }
-                item { DrawerShortcutGrid(shortcuts) }
-                item { DrawerPanelSection("Ajustes") }
-                settings.forEach { action ->
-                    item { DrawerPanelItem(action = action) }
-                }
-                item { DrawerPanelSection("Pronto") }
-                comingSoon.forEach { action ->
-                    item { DrawerPanelItem(action = action, enabled = false) }
-                }
+                drawerSection("Productividad", productivity)
+                drawerSection("Preferencias y datos", preferences)
+                drawerSection("UNI+", uniPlus)
+                drawerSection("Extras", extras)
+                drawerSection("Soporte", support)
                 item {
                     Text(
                         text = "v${BuildConfig.VERSION_NAME}",
                         color = UniStackColors.TextSecondary.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(start = 2.dp, top = 6.dp)
+                        modifier = Modifier.padding(start = 2.dp, top = 8.dp)
                     )
                 }
             }
@@ -235,46 +275,13 @@ internal fun HomeNavigationPanel(
     }
 }
 
-@Composable
-private fun DrawerShortcutGrid(shortcuts: List<DrawerShortcut>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        shortcuts.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { shortcut ->
-                    DrawerShortcutTile(shortcut = shortcut, modifier = Modifier.weight(1f))
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun DrawerShortcutTile(
-    shortcut: DrawerShortcut,
-    modifier: Modifier = Modifier
+private fun androidx.compose.foundation.lazy.LazyListScope.drawerSection(
+    title: String,
+    actions: List<DrawerPanelAction>
 ) {
-    Surface(
-        onClick = shortcut.onClick,
-        modifier = modifier.height(84.dp),
-        shape = AppShapes.MediumCard,
-        color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.82f),
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.20f))
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            DrawerIconTile(icon = shortcut.icon, accent = UniStackColors.Primary)
-            Text(
-                shortcut.label,
-                color = UniStackColors.TextPrimary,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+    item { DrawerPanelSection(title) }
+    actions.forEach { action ->
+        item { DrawerPanelItem(action = action) }
     }
 }
 
@@ -376,9 +383,10 @@ private fun DrawerPanelSection(text: String) {
 }
 
 @Composable
-private fun DrawerPanelItem(action: DrawerPanelAction, enabled: Boolean = true) {
+private fun DrawerPanelItem(action: DrawerPanelAction) {
+    val enabled = action.onClick != null
     Surface(
-        onClick = action.onClick,
+        onClick = action.onClick ?: {},
         enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()

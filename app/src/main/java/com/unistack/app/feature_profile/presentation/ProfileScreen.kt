@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,8 +28,15 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material.icons.rounded.Widgets
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Settings
@@ -113,6 +121,11 @@ fun ProfileScreen(
     onOpenProClick: () -> Unit = {},
     onOpenSettingsClick: () -> Unit = {},
     onOpenAcademicClick: () -> Unit = {},
+    onOpenNotificationsClick: () -> Unit = {},
+    onOpenModulesClick: () -> Unit = {},
+    onOpenAppearanceClick: () -> Unit = {},
+    onOpenDataClick: () -> Unit = {},
+    onOpenUpdatesClick: () -> Unit = {},
     mode: ProfileScreenMode = ProfileScreenMode.PROFILE,
     onBackClick: () -> Unit = {}
 ) {
@@ -319,6 +332,16 @@ fun ProfileScreen(
                         snapshot = academicSnapshot,
                         profile = current,
                         onOpenAcademicClick = onOpenAcademicClick
+                    )
+                }
+                item {
+                    ProfileShortcutsCard(
+                        onAcademicClick = onOpenAcademicClick,
+                        onNotificationsClick = onOpenNotificationsClick,
+                        onModulesClick = onOpenModulesClick,
+                        onAppearanceClick = onOpenAppearanceClick,
+                        onDataClick = onOpenDataClick,
+                        onUpdatesClick = onOpenUpdatesClick
                     )
                 }
                 item {
@@ -1165,8 +1188,9 @@ private fun ProfileChip(text: String) {
  * Cómo va el semestre.
  *
  * El perfil decía cuál era tu meta y nada de si la estás cumpliendo, que es lo único que
- * convierte ese número en información. Aquí están las materias, el promedio de lo que ya
- * tienes evaluado y cuántas van por debajo de la nota mínima.
+ * convierte ese número en información. La barra compara el promedio de lo evaluado con la meta,
+ * y debajo están las cifras que la explican: cuántas materias hay, cuántas van aprobando,
+ * cuántas por debajo del mínimo y cuántas notas llevas registradas.
  */
 @Composable
 private fun AcademicSnapshotCard(
@@ -1175,8 +1199,12 @@ private fun AcademicSnapshotCard(
     onOpenAcademicClick: () -> Unit
 ) {
     val scale = profile.gradingScale
+    val target = profile.targetAverage
     val averageText = snapshot.average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—"
-    val distance = snapshot.average?.minus(profile.targetAverage)
+    val distance = snapshot.average?.minus(target)
+    val progress = snapshot.average
+        ?.let { (it / target).coerceIn(0.0, 1.0).toFloat() }
+        ?: 0f
     val footer = when {
         snapshot.subjectCount == 0 -> "Todavía no has creado materias."
         distance == null -> "Aún no hay notas registradas."
@@ -1189,7 +1217,7 @@ private fun AcademicSnapshotCard(
         color = UniStackColors.Card,
         shape = AppShapes.LargeCard
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
                 Text(
@@ -1202,6 +1230,42 @@ private fun AcademicSnapshotCard(
                     Text("Ajustar", color = UniStackColors.Primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
+
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    averageText,
+                    color = UniStackColors.TextPrimary,
+                    fontSize = 34.sp,
+                    lineHeight = 36.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    "  de meta " + GradingScaleUtils.formatGrade(target, scale),
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            // La barra se llena al llegar a la meta, no al llegar al máximo de la escala: la
+            // referencia que importa es la que tú te pusiste.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(AppShapes.Pill)
+                    .background(UniStackColors.SurfaceVariant)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .height(8.dp)
+                        .clip(AppShapes.Pill)
+                        .background(if (progress >= 1f) UniStackColors.Green else UniStackColors.Primary)
+                )
+            }
+            Text(footer, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SnapshotCell(
                     modifier = Modifier.weight(1f),
@@ -1210,8 +1274,8 @@ private fun AcademicSnapshotCard(
                 )
                 SnapshotCell(
                     modifier = Modifier.weight(1f),
-                    value = averageText,
-                    label = "Promedio"
+                    value = snapshot.passing.toString(),
+                    label = "Aprobando"
                 )
                 SnapshotCell(
                     modifier = Modifier.weight(1f),
@@ -1219,8 +1283,12 @@ private fun AcademicSnapshotCard(
                     label = "En riesgo",
                     valueColor = if (snapshot.atRisk > 0) UniStackColors.Coral else UniStackColors.TextPrimary
                 )
+                SnapshotCell(
+                    modifier = Modifier.weight(1f),
+                    value = snapshot.gradeCount.toString(),
+                    label = "Notas"
+                )
             }
-            Text(footer, color = UniStackColors.TextSecondary, fontSize = 12.sp)
         }
     }
 }
@@ -1236,12 +1304,95 @@ private fun SnapshotCell(
         modifier = modifier
             .clip(AppShapes.MediumCard)
             .background(UniStackColors.SurfaceVariant)
-            .padding(vertical = 11.dp),
+            .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(value, color = valueColor, fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(value, color = valueColor, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Text(
+            label,
+            color = UniStackColors.TextSecondary,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Todo lo tuyo, desde tu perfil.
+ *
+ * Estos seis destinos solo se alcanzaban por el engranaje de la esquina, y el perfil se quedaba
+ * en tres tarjetas y media pantalla vacía. Son los ajustes que hablan de ti —tu escala, tus
+ * avisos, tus módulos, tus datos—, así que su sitio es este.
+ */
+@Composable
+private fun ProfileShortcutsCard(
+    onAcademicClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onModulesClick: () -> Unit,
+    onAppearanceClick: () -> Unit,
+    onDataClick: () -> Unit,
+    onUpdatesClick: () -> Unit
+) {
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = UniStackColors.Card,
+        shape = AppShapes.LargeCard
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                "Ajustes",
+                color = UniStackColors.TextPrimary,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(bottom = 6.dp)
+            )
+            ProfileShortcutRow(Icons.Rounded.School, "Académico", "Escala, meta y cortes", onAcademicClick)
+            ProfileShortcutRow(Icons.Rounded.Notifications, "Notificaciones", "Recordatorios y silencio", onNotificationsClick)
+            ProfileShortcutRow(Icons.Rounded.Widgets, "Módulos", "Qué áreas usas", onModulesClick)
+            ProfileShortcutRow(Icons.Rounded.Palette, "Apariencia", "Tema, barra y tipografía", onAppearanceClick)
+            ProfileShortcutRow(Icons.Rounded.Backup, "Datos y respaldos", "Exportar e importar", onDataClick)
+            ProfileShortcutRow(Icons.Rounded.SystemUpdate, "Actualizaciones", "Canal y versiones", onUpdatesClick)
+        }
+    }
+}
+
+@Composable
+private fun ProfileShortcutRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(AppShapes.MediumCard)
+            .bounceClick(onClick)
+            .padding(vertical = 9.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(34.dp)
+                .clip(AppShapes.Small)
+                .background(UniStackColors.Primary.copy(alpha = 0.13f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(18.dp))
+        }
+        Spacer(Modifier.width(11.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+        }
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = UniStackColors.TextSecondary,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

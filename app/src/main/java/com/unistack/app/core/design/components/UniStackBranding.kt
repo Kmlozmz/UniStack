@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
@@ -46,6 +46,34 @@ fun UniStackLogoMarkWhite(
     )
 }
 
+/**
+ * El nombre de la marca: «Uni» en el color del texto y «Stack» en el morado de la app.
+ *
+ * Vive aquí y no en cada pantalla para que el reparto de colores sea uno solo. El primer
+ * tramo usa `TextPrimary` y no blanco fijo: en el tema claro, blanco sobre fondo claro no se
+ * lee, y la marca tiene que verse en los dos.
+ */
+@Composable
+fun UniStackWordmark(
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 18.sp,
+    fontWeight: FontWeight = FontWeight.ExtraBold
+) {
+    Text(
+        text = buildAnnotatedString {
+            withStyle(SpanStyle(color = UniStackColors.TextPrimary)) { append("Uni") }
+            withStyle(SpanStyle(color = UniStackColors.Primary)) { append("Stack") }
+        },
+        modifier = modifier,
+        fontSize = fontSize,
+        lineHeight = fontSize * 1.22f,
+        fontWeight = fontWeight,
+        letterSpacing = 0.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
 @Composable
 fun UniStackBrandHeader(
     modifier: Modifier = Modifier,
@@ -59,24 +87,7 @@ fun UniStackBrandHeader(
         UniStackLogoMark(size = symbolSize)
         if (showText) {
             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = UniStackColors.TextPrimary)) {
-                        append("Uni")
-                    }
-                    withStyle(SpanStyle(color = UniStackColors.Primary)) {
-                        append("Stack")
-                    }
-                },
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontSize = 23.sp,
-                    lineHeight = 27.sp,
-                    letterSpacing = 0.sp
-                ),
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            UniStackWordmark(fontSize = 23.sp)
         }
     }
 }

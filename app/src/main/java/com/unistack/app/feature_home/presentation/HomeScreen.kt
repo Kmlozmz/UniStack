@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.theme.UniStackColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -95,6 +96,10 @@ fun HomeScreen(
     onNotificationsClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     onDataClick: () -> Unit = {},
+    onWhatsNewClick: () -> Unit = {},
+    onResourcesClick: () -> Unit = {},
+    onHelpClick: () -> Unit = {},
+    onAboutClick: () -> Unit = {},
     onDrawerOpenChange: (Boolean) -> Unit = {}
 ) {
     val summary = uiState.summary
@@ -151,7 +156,11 @@ fun HomeScreen(
                 onNotificationsClick = { closeDrawerAndRun(onNotificationsClick) },
                 onDataClick = { closeDrawerAndRun(onDataClick) },
                 onSettingsClick = { closeDrawerAndRun(onSettingsClick) },
-                onProfileClick = { closeDrawerAndRun(onProfileClick) }
+                onProfileClick = { closeDrawerAndRun(onProfileClick) },
+                onWhatsNewClick = { closeDrawerAndRun(onWhatsNewClick) },
+                onResourcesClick = { closeDrawerAndRun(onResourcesClick) },
+                onHelpClick = { closeDrawerAndRun(onHelpClick) },
+                onAboutClick = { closeDrawerAndRun(onAboutClick) }
             )
         }
     ) {
@@ -285,15 +294,7 @@ private fun HomeHeader(
             contentDescription = "Menú",
             modifier = Modifier.align(Alignment.CenterStart)
         )
-        Text(
-            text = "UniStack",
-            color = HomePurple,
-            fontSize = 18.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.sp,
-            modifier = Modifier.align(Alignment.Center)
-        )
+        UniStackWordmark(modifier = Modifier.align(Alignment.Center))
         Row(
             modifier = Modifier.align(Alignment.CenterEnd),
             verticalAlignment = Alignment.CenterVertically

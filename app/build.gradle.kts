@@ -208,6 +208,9 @@ android {
         }
     }
 
+    sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/changelogAssets"))
+
+
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("localRelease")
@@ -350,6 +353,23 @@ dependencies {
  *  - Bloque: `design-tokens-ok-begin: <motivo>` ... `design-tokens-ok-end`, para literales
  *    que ocupan varias líneas (listas de muestras de color, lienzos de selector).
  */
+/**
+ * El registro de cambios viaja dentro del APK.
+ *
+ * La pantalla de Novedades lo lee de los assets, y el archivo vive en la raíz del repositorio
+ * porque es también lo que se publica en GitHub. Copiarlo aquí evita mantener dos copias que
+ * se desincronizan a la primera.
+ */
+val copyChangelogAsset = tasks.register<Copy>("copyChangelogAsset") {
+    from(rootProject.file("CHANGELOG.md"))
+    into(layout.buildDirectory.dir("generated/changelogAssets"))
+    rename { "changelog.md" }
+}
+
+tasks.withType<com.android.build.gradle.tasks.MergeSourceSetFolders>().configureEach {
+    dependsOn(copyChangelogAsset)
+}
+
 val verifyDesignTokens = tasks.register("verifyDesignTokens") {
     group = "verification"
     description = "Falla si hay colores hardcodeados fuera del sistema de diseño."

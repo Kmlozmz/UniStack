@@ -67,7 +67,9 @@ data class GradingScaleChangeImpact(
 data class AcademicSnapshot(
     val subjectCount: Int = 0,
     val average: Double? = null,
-    val atRisk: Int = 0
+    val atRisk: Int = 0,
+    val passing: Int = 0,
+    val gradeCount: Int = 0
 )
 
 @HiltViewModel
@@ -99,7 +101,9 @@ class ProfileViewModel @Inject constructor(
             average = evaluated.takeIf { it.isNotEmpty() }?.let { list ->
                 Math.round(list.average() * 10.0) / 10.0
             },
-            atRisk = if (passing == null) 0 else evaluated.count { it < passing }
+            atRisk = if (passing == null) 0 else evaluated.count { it < passing },
+            passing = if (passing == null) 0 else evaluated.count { it >= passing },
+            gradeCount = subjects.sumOf { it.grades.size }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AcademicSnapshot())
 

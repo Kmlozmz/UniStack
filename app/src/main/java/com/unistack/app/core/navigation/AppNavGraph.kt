@@ -96,6 +96,10 @@ import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
 import com.unistack.app.feature_profile.presentation.AccessibilitySettingsScreen
 import com.unistack.app.feature_profile.presentation.SettingsHubScreen
 import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
+import com.unistack.app.feature_support.presentation.AboutScreen
+import com.unistack.app.feature_support.presentation.HelpScreen
+import com.unistack.app.feature_support.presentation.ResourcesScreen
+import com.unistack.app.feature_support.presentation.WhatsNewScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
@@ -276,6 +280,10 @@ fun MainNavGraph(
                                     launchSingleTop = true
                                 }
                             },
+                            onWhatsNewClick = { navController.navigate(AppRoutes.WhatsNew) },
+                            onResourcesClick = { navController.navigate(AppRoutes.Resources) },
+                            onHelpClick = { navController.navigate(AppRoutes.Help) },
+                            onAboutClick = { navController.navigate(AppRoutes.About) },
                             onProfileClick = {
                                 navController.navigate(AppRoutes.Profile) {
                                     launchSingleTop = true
@@ -347,7 +355,12 @@ fun MainNavGraph(
                 ProfileScreen(
                     onOpenProClick = { navController.navigate(AppRoutes.Pro) },
                     onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) },
-                    onOpenAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) }
+                    onOpenAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) },
+                    onOpenNotificationsClick = { navController.navigate(AppRoutes.NotificationSettings) },
+                    onOpenModulesClick = { navController.navigate(AppRoutes.ModuleSettings) },
+                    onOpenAppearanceClick = { navController.navigate(AppRoutes.AppearanceSettings) },
+                    onOpenDataClick = { navController.navigate(AppRoutes.DataSettings) },
+                    onOpenUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
                 )
             }
             composable(
@@ -483,6 +496,22 @@ fun MainNavGraph(
                             navController.navigate(AppRoutes.Settings)
                         }
                     }
+                )
+            }
+            composable(AppRoutes.WhatsNew) {
+                WhatsNewScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.Resources) {
+                ResourcesScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.Help) {
+                HelpScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.About) {
+                AboutScreen(
+                    onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) },
+                    onWhatsNewClick = { navController.navigate(AppRoutes.WhatsNew) },
+                    onUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
                 )
             }
             composable(AppRoutes.Pro) {
@@ -836,6 +865,10 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.UpdateSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.WhatsNew) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Resources) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Help) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.About) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null

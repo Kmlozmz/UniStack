@@ -36,17 +36,14 @@ número y la fecha, y se abre una nueva.
   opciones de abajo —historial, editar, eliminar— quedaban fuera hasta que se arrastraba hacia
   arriba. Ahora abre entero, y rueda si no cabe.
 
-### Cambiado
-
-- **El panel lateral ya no ofrece lo que no existe.** «UniStack AI», «Novedades», «Labs»,
-  «Recursos», «Ayuda» y «Enviar sugerencia» cerraban el panel sin ir a ninguna parte, como si
-  la app hubiera fallado; ahora salen apagadas y marcadas como «Pronto». «Calculadora GPA»
-  abría la lista de materias y «Notas rápidas» abría Tareas: cada entrada dice a dónde lleva.
-  Los cuatro destinos reales pasan a una cuadrícula, y «Cerrar sesión» desaparece porque no
-  cerraba ninguna sesión.
-- **El perfil dice cómo va el semestre**, no solo cuál es tu meta: materias, promedio de lo
-  evaluado, cuántas van por debajo de la nota mínima y cuánto te falta para la meta. El nombre
-  se edita con el lápiz de la cabecera, en vez de un formulario permanente ocupando la pantalla.
+- **El panel lateral lleva a donde dice.** «Calculadora GPA» abría la lista de materias y
+  «Notas rápidas» abría Tareas; esas dos pasan a la lista de lo que aún no existe, junto a
+  UniStack AI y Labs, y salen apagadas en vez de cerrar el panel como si algo hubiera fallado.
+  «Cerrar sesión» desaparece: no cerraba ninguna sesión (la cuenta se desvincula desde Perfil).
+- **El perfil dice cómo va el semestre**, no solo cuál es tu meta: el promedio de lo evaluado
+  con una barra hasta la meta, cuántas materias van aprobando, cuántas en riesgo y cuántas notas
+  llevas. Debajo, acceso directo a lo tuyo: académico, notificaciones, módulos, apariencia,
+  datos y actualizaciones. El nombre se edita con el lápiz, sin formulario permanente.
 - **Las tarjetas del horario se pueden tocar y cuentan el resto.** Los rótulos salían cortados
   («Clases h…», «Esta se…»); ahora son de una palabra y al tocarlas se abre el detalle: las
   clases de hoy una por una, o las horas de la semana repartidas por día.
@@ -69,6 +66,13 @@ número y la fecha, y se abre una nueva.
 
 ### Añadido
 
+- **Novedades, Recursos, Ayuda y Acerca de existen de verdad.** Eran filas del panel lateral que
+  no llevaban a ninguna parte. Novedades trae el registro de cambios dentro de la app, sin
+  conexión; Recursos, enlaces útiles para estudiar; Ayuda, preguntas frecuentes y un formulario
+  de sugerencia que se envía por donde tú elijas; Acerca de, la versión y qué hace la app con
+  tus datos.
+- **El nombre de la app se lee «UniStack»**, con «Uni» del color del texto y «Stack» en morado,
+  igual que en la pantalla de bienvenida.
 - **Al poner una hora de inicio de madrugada, la app pregunta si es correcta.** Casi siempre es
   un error al girar la rueda —querías las 13:00 y pusiste la 1:00—, así que lo dice y ofrece
   volver. Si la clase es de verdad a esa hora, se confirma y ya.
