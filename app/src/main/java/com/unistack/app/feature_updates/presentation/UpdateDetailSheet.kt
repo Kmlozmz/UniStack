@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -121,10 +122,16 @@ fun UpdateDetailSheet(
                             // Si falta autorizar el origen, el botón lleva a Ajustes y no
                             // al instalador. Decirlo evita que el desvío parezca un fallo.
                             is UpdateState.ReadyToInstall ->
-                                if (canInstall) "Instalar" else "Permitir instalación"
+                                if (canInstall) "Instalar" else "Autorizar"
                             is UpdateState.Downloading -> "Descargando..."
                             else -> "Descargar"
-                        }
+                        },
+                        // El botón mide la mitad del ancho y tiene alto fijo: «Permitir
+                        // instalación» partía en dos líneas y la segunda se salía por abajo.
+                        // El texto se encoge antes que cortarse.
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

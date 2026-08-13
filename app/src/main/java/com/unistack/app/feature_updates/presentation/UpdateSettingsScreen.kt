@@ -2,6 +2,7 @@ package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_updates.domain.UpdateChannel
+import kotlinx.coroutines.launch
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
@@ -29,6 +30,10 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -38,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +71,10 @@ fun UpdateSettingsScreen(
     val channel by viewModel.channel.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     var showSheet by remember { mutableStateOf(false) }
+    var confirmClearDownload by remember { mutableStateOf(false) }
+    var pendingChannel by remember { mutableStateOf<UpdateChannel?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state) {
         showSheet = state is UpdateState.Available ||
@@ -72,10 +82,10 @@ fun UpdateSettingsScreen(
             state is UpdateState.ReadyToInstall
     }
 
+    Box(modifier = modifier.fillMaxSize().background(UniStackColors.Background)) {
     LazyColumn(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
@@ -97,7 +107,15 @@ fun UpdateSettingsScreen(
         item {
             UpdateChannelCard(
                 selected = channel,
-                onSelect = viewModel::setChannel
+                onSelect = { elegido ->
+                    // Bajar a estable no necesita aviso: es el canal seguro. Subir sí, porque
+                    // lo que se acepta es recibir versiones a medio hacer.
+                    if (elegido == UpdateChannel.STABLE) {
+                        viewModel.setChannel(elegido)
+                    } else {
+                        pendingChannel = elegido
+                    }
+                }
             )
         }
         item {
@@ -126,7 +144,7 @@ fun UpdateSettingsScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = UniStackColors.Card,
-                    onClick = viewModel::clearDownload
+                    onClick = { confirmClearDownload = true }
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         UpdateIconTile(icon = Icons.Rounded.DeleteOutline, accent = UniStackColors.Coral)
@@ -148,6 +166,88 @@ fun UpdateSettingsScreen(
                 }
             }
         }
+    }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = scrollBottomRoom)
+        )
+    }
+
+    if (confirmClearDownload) {
+        AlertDialog(
+            onDismissRequest = { confirmClearDownload = false },
+            title = { Text("¿Eliminar el APK descargado?", color = UniStackColors.TextPrimary) },
+            text = {
+                Text(
+                    "Libera espacio. Si luego quieres instalar esa versión, habrá que descargarla otra vez.",
+                    color = UniStackColors.TextSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmClearDownload = false
+                        viewModel.clearDownload()
+                        // Borrar un archivo no se ve por ninguna parte: sin este aviso, la
+                        // tarjeta desaparecía y no quedaba claro si había pasado algo.
+                        scope.launch { snackbarHostState.showSnackbar("Descarga eliminada") }
+                    }
+                ) { Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClearDownload = false }) {
+                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
+    }
+
+    pendingChannel?.let { elegido ->
+        AlertDialog(
+            onDismissRequest = { pendingChannel = null },
+            title = { Text("Recibir versiones ${elegido.label.lowercase()}", color = UniStackColors.TextPrimary) },
+            text = {
+                Text(
+                    buildString {
+                        append(elegido.description)
+                        appendLine()
+                        appendLine()
+                        append(
+                            if (elegido == UpdateChannel.ALPHA) {
+                                "Una alpha puede tener funciones a medias, fallar al abrir o " +
+                                    "corromper lo que tengas guardado. Haz una copia de seguridad antes."
+                            } else {
+                                "Una beta está casi lista, pero todavía puede traer fallos. " +
+                                    "Conviene tener una copia de seguridad al día."
+                            }
+                        )
+                        appendLine()
+                        appendLine()
+                        append(
+                            "Y no se puede volver atrás sin desinstalar: una versión anterior no " +
+                                "se instala encima de una posterior, y desinstalar borra tus datos."
+                        )
+                    },
+                    color = UniStackColors.TextSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.setChannel(elegido)
+                        pendingChannel = null
+                    }
+                ) { Text("Entiendo, activar", fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingChannel = null }) {
+                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                }
+            },
+            containerColor = UniStackColors.Card
+        )
     }
 
     if (showSheet) {

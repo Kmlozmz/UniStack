@@ -17,6 +17,15 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+### Corregido
+
+- El botón «Permitir instalación» de la ventana de actualización salía cortado.
+- La app ya no te manda una notificación de actualización cuando eres tú quien acaba de pulsar
+  «Verificar» o de cambiar de canal: solo avisa cuando la comprobación pasa por su cuenta.
+- Borrar el APK descargado pide confirmación y avisa cuando ha terminado.
+- Cambiar a un canal de preestreno explica antes lo que implica: fallos posibles, copia de
+  seguridad recomendada y que no se puede volver atrás sin desinstalar.
+
 ---
 
 ## [1.0.0-alpha.1] — 2026-08-13

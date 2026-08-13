@@ -63,13 +63,32 @@ class GitHubReleaseUpdateRepository(
         _channel.value = channel
     }
 
-    override suspend fun checkForUpdates() {
+    /**
+     * Comprobación pedida por el usuario: **no notifica**.
+     *
+     * La notificación existe para enterarte de algo que no estabas mirando. Al pulsar
+     * «Verificar» o cambiar de canal ya estás delante de la pantalla, y aun así te llegaba el
+     * aviso a la barra de estado contando lo que tenías en la mano.
+     */
+    override suspend fun checkForUpdates() = runCheck(notify = false)
+
+    override suspend fun checkForUpdatesIfDue() {
+        val lastCheckedAt = prefs.getLong(KEY_LAST_CHECKED_AT, 0L)
+        val now = System.currentTimeMillis()
+        if (now - lastCheckedAt < AUTO_CHECK_INTERVAL_MILLIS) return
+        prefs.edit { putLong(KEY_LAST_CHECKED_AT, now) }
+        // Esta sí: pasa por su cuenta y en segundo plano, así que es la única que tiene algo
+        // que contar.
+        runCheck(notify = true)
+    }
+
+    private suspend fun runCheck(notify: Boolean) {
         _state.value = UpdateState.Checking
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
                 if (ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
                     _state.value = UpdateState.Available(info)
-                    notificationManager.showUpdateAvailableNotification(info.versionName)
+                    if (notify) notificationManager.showUpdateAvailableNotification(info.versionName)
                 } else {
                     _state.value = UpdateState.UpToDate
                     notificationManager.dismissNotification()
@@ -78,14 +97,6 @@ class GitHubReleaseUpdateRepository(
             .onFailure { error ->
                 _state.value = UpdateState.Error(error.message ?: "No se pudo verificar actualizaciones.")
             }
-    }
-
-    override suspend fun checkForUpdatesIfDue() {
-        val lastCheckedAt = prefs.getLong(KEY_LAST_CHECKED_AT, 0L)
-        val now = System.currentTimeMillis()
-        if (now - lastCheckedAt < AUTO_CHECK_INTERVAL_MILLIS) return
-        prefs.edit { putLong(KEY_LAST_CHECKED_AT, now) }
-        checkForUpdates()
     }
 
     /**
