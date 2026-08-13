@@ -208,18 +208,30 @@ pero un respaldo restaurado con dos sesiones para la misma materia perdería una
 |---|---|
 | `Kmlozmz/UniStack` | Código. **Privado.** |
 | `Kmlozmz/UniStack-landing_page` | Web. **Privado.** |
-| `Kmlozmz/UniStack-releases` | Etiquetas y APK. **Público — falta crearlo.** |
+| `Kmlozmz/UniStack-releases` | Etiquetas y APK. **Público.** Creado el 13 ago 2026. |
 
 Las publicaciones de un repo privado devuelven 404 a quien no ha iniciado sesión, así que ni el
 actualizador ni el botón de descarga de la web pueden llegar a ellas. Se descartó incrustar un
 token en el APK: se extrae del paquete trivialmente y daría escritura sobre el código.
 
-El código ya apunta al repo nuevo (`githubReleasesSlug` en `app/build.gradle.kts`). Falta:
-crear el repo como público, comprobar que el token de `publishReleaseToGitHub` tiene escritura
-sobre él, y cambiar el enlace de descarga de la landing.
+Queda cambiar el enlace de descarga de la landing, que sigue apuntando al repo privado.
 
-Hasta que exista, el actualizador mostrará el mensaje del 404 en vez de «Al día». Es correcto:
-antes cualquier fallo se convertía en «estás al día».
+## Cómo se publica
+
+```
+./gradlew publishReleaseToGitHub -PversionName=1.1.0-alpha.1
+```
+
+Exige firma de release real y `GITHUB_TOKEN` con escritura sobre el repo de publicaciones. El
+nombre con sufijo (`-alpha.1`) marca la publicación como preestreno; `-Pprerelease` lo fuerza.
+
+**El número tiene que superar al de la compilación instalada.** Las locales se numeran
+`1.0.<yyMMddHH>` —hoy `1.0.26081310`—, así que una etiqueta `1.0.0` se lee como *anterior* y el
+actualizador diría «Al día». Por eso la primera alpha es `1.1.0-alpha.1` y no `1.0.0-alpha.1`.
+
+**Un APK de release no se instala encima de uno de debug.** Están firmados con claves distintas
+y Android lo rechaza; hay que desinstalar antes, y eso borra los datos locales. De release a
+release sí actualiza sin tocar nada.
 
 ---
 
