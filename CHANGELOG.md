@@ -38,8 +38,17 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente._
+
+---
+
+## [1.1.0-alpha.2] — 2026-08-14
+
+**Lo importante:** reportar un fallo y sugerir algo se leen como dos caminos, y ninguno viene
+marcado de antemano.
+
 #### Ayuda y soporte
-- Reportar y sugerir son dos filas con su icono y su descripción, en vez de dos botones donde uno parecía la opción ya elegida.
+- Las dos opciones son filas con su icono y su descripción, no dos botones donde uno parecía ya elegido.
 - El aviso de que el grupo es público sale al escribir, que es cuando importa.
 
 ---
