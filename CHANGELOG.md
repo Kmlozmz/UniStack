@@ -21,8 +21,12 @@ número y la fecha, y se abre una nueva.
 
 - **Los avisos que apagabas sin permiso no se podían volver a encender.** Encender uno pedía el
   permiso y solo guardaba si lo aceptabas, así que quien lo hubiera denegado podía apagarlos
-  todos y ninguno volvía a marcarse. Ahora lo que eliges se guarda siempre; que el sistema deje
-  avisar es otra pregunta, y tiene su propio botón arriba.
+  todos y ninguno volvía a marcarse. Ahora, sin permiso, no se toca nada: los interruptores
+  llegan apagados y lo único que se puede pulsar es el botón de arriba, que es lo que hay que
+  resolver primero.
+- **Los botones de anticipación no hacían nada.** «1h», «3h», «24h»… se veían y se podían tocar,
+  pero ninguno cambiaba la anticipación: al rehacer la pantalla se quedaron sin la parte que
+  responde al toque.
 - **El botón para activar los avisos no hacía nada.** Cuando Android ya ha dejado de enseñar el
   diálogo del permiso, pedirlo otra vez vuelve con un «no» sin que se vea nada. Ahora, llegado
   ese punto, el botón dice «Ajustes» y abre los del sistema.

@@ -2,6 +2,7 @@ package com.unistack.app.feature_profile.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,11 +86,16 @@ internal fun NotificationSection(
             onRequestPermission = onRequestPermission
         )
 
-        // Los avisos se apagan visualmente sin el permiso: los interruptores siguen ahí y se
-        // pueden dejar preparados, pero no llega nada hasta que el sistema lo permita.
+        /*
+         * Sin permiso no se toca nada de aquí abajo.
+         *
+         * Se probó dejarlo editable «para poder dejarlo preparado», y lo que se entiende al
+         * verlo es que los avisos están configurados y van a llegar. No van a llegar. Mientras
+         * el sistema no lo permita, lo único accionable de esta pantalla es el botón de arriba.
+         */
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.alpha(if (permissionGranted) 1f else 0.55f)
+            modifier = Modifier.alpha(if (permissionGranted) 1f else 0.45f)
         ) {
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -99,6 +105,7 @@ internal fun NotificationSection(
                         title = "Tareas",
                         description = "Antes de que venza una tarea",
                         checked = profile.taskRemindersEnabled,
+                        enabled = permissionGranted,
                         onToggle = {
                             onReminderToggle(
                                 !profile.taskRemindersEnabled,
@@ -115,6 +122,7 @@ internal fun NotificationSection(
                             title = "Trabajos",
                             description = "Antes de una entrega académica",
                             checked = profile.academicWorkRemindersEnabled,
+                            enabled = permissionGranted,
                             onToggle = {
                                 onReminderToggle(
                                     profile.taskRemindersEnabled,
@@ -130,6 +138,7 @@ internal fun NotificationSection(
                         title = "Vencidos",
                         description = "Cuando algo pasó de fecha sin entregar",
                         checked = profile.overdueRemindersEnabled,
+                        enabled = permissionGranted,
                         onToggle = {
                             onReminderToggle(
                                 profile.taskRemindersEnabled,
@@ -144,6 +153,7 @@ internal fun NotificationSection(
                         title = "Notas y cortes",
                         description = "Si una meta deja de estar a tu alcance",
                         checked = profile.gradeInsightRemindersEnabled,
+                        enabled = permissionGranted,
                         onToggle = {
                             onAcademicToggle(
                                 !profile.gradeInsightRemindersEnabled,
@@ -156,6 +166,7 @@ internal fun NotificationSection(
                         title = "Resultados pendientes",
                         description = "Para registrar la nota de lo ya entregado",
                         checked = profile.pendingGradeRemindersEnabled,
+                        enabled = permissionGranted,
                         onToggle = {
                             onAcademicToggle(
                                 profile.gradeInsightRemindersEnabled,
@@ -182,6 +193,7 @@ internal fun NotificationSection(
                             LeadChip(
                                 hours = hours,
                                 selected = hours == lead,
+                                enabled = permissionGranted,
                                 modifier = Modifier.weight(1f),
                                 onClick = {
                                     onReminderToggle(
@@ -205,6 +217,7 @@ internal fun NotificationSection(
                         }
                         Switch(
                             checked = profile.quietHoursEnabled,
+                            enabled = permissionGranted,
                             onCheckedChange = {
                                 onQuietHoursChange(!profile.quietHoursEnabled, quietStart, quietEnd)
                             },
@@ -231,14 +244,14 @@ internal fun NotificationSection(
                         HourStepper(
                             label = "Desde",
                             hour = quietStart,
-                            enabled = profile.quietHoursEnabled,
+                            enabled = permissionGranted && profile.quietHoursEnabled,
                             modifier = Modifier.weight(1f),
                             onChange = { onQuietHoursChange(true, it, quietEnd) }
                         )
                         HourStepper(
                             label = "Hasta",
                             hour = quietEnd,
-                            enabled = profile.quietHoursEnabled,
+                            enabled = permissionGranted && profile.quietHoursEnabled,
                             modifier = Modifier.weight(1f),
                             onChange = { onQuietHoursChange(true, quietStart, it) }
                         )
@@ -323,6 +336,7 @@ private fun ReminderRow(
     title: String,
     description: String,
     checked: Boolean,
+    enabled: Boolean,
     onToggle: () -> Unit
 ) {
     Row(
@@ -337,11 +351,16 @@ private fun ReminderRow(
         }
         Switch(
             checked = checked,
+            enabled = enabled,
             onCheckedChange = { onToggle() },
             colors = switchColors(),
             modifier = Modifier.semantics {
                 contentDescription = title
-                stateDescription = if (checked) "Activo" else "Inactivo"
+                stateDescription = when {
+                    !enabled -> "No disponible"
+                    checked -> "Activo"
+                    else -> "Inactivo"
+                }
                 role = Role.Switch
             }
         )
@@ -352,6 +371,7 @@ private fun ReminderRow(
 private fun LeadChip(
     hours: Int,
     selected: Boolean,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -364,6 +384,7 @@ private fun LeadChip(
                 color = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
                 shape = AppShapes.Pill
             )
+            .clickable(enabled = enabled, onClick = onClick)
             .semantics {
                 contentDescription = "Anticipación " + leadLabel(hours)
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"

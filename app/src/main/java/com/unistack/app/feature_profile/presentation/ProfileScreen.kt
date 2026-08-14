@@ -211,25 +211,16 @@ fun ProfileScreen(
         }
     }
     /*
-     * El interruptor guarda siempre, tenga permiso o no.
+     * Guardar y ya: los interruptores solo se pueden tocar con el permiso concedido.
      *
-     * Antes, encender uno sin permiso lanzaba la petición y **solo guardaba si la aceptabas**:
-     * si la rechazabas —o si Android ya no enseñaba el diálogo— la preferencia no se guardaba y
-     * el interruptor volvía atrás solo. Apagar sí funcionaba, así que se podían apagar todos y
-     * no volver a encender ninguno. Lo que el usuario marca es lo que quiere recibir; que el
-     * sistema lo deje o no es otra pregunta, y tiene su propio botón arriba.
+     * Antes esto lanzaba la petición al encender uno, y **solo guardaba si la aceptabas**: si
+     * la rechazabas —o si Android ya no enseñaba el diálogo— el interruptor volvía atrás solo,
+     * y como apagar sí funcionaba se podían apagar todos sin poder encender ninguno. Ahora la
+     * pantalla no deja tocarlos sin permiso, así que aquí no hay nada que pedir.
      */
-    val runReminderUpdate: (Boolean, () -> Boolean) -> Unit = { enablingReminder, update ->
-        val saved = update()
+    val runReminderUpdate: (Boolean, () -> Boolean) -> Unit = { _, update ->
         notificationPermissionGranted = context.hasNotificationPermission()
-        feedback = when {
-            !saved -> "Revisa las horas de anticipación."
-            enablingReminder && !notificationPermissionGranted -> {
-                askForNotificationPermission()
-                null
-            }
-            else -> null
-        }
+        feedback = if (update()) null else "Revisa las horas de anticipación."
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, context) {
