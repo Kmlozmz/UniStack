@@ -57,6 +57,12 @@ class FirebaseCloudBackupRepository(
     private val _state = MutableStateFlow(CloudBackupState())
     override val state: StateFlow<CloudBackupState> = _state
 
+    override val isConfigured: Boolean
+        get() = runCatching {
+            if (FirebaseApp.getApps(context).isEmpty()) FirebaseApp.initializeApp(context)
+            FirebaseApp.getApps(context).isNotEmpty()
+        }.getOrDefault(false)
+
     override suspend fun backupNow(): Result<Unit> = runCatching {
         _state.update { it.copy(inProgress = true, message = null, errorMessage = null) }
         val userId = linkedUserId()

@@ -336,35 +336,20 @@ class UniStackDeviceFlowTest {
         composeRule.tapContentDescription("Perfil")
         composeRule.waitForText("Perfil")
 
-        composeRule.scrollToText("Datos y exportación")
-        composeRule.tapText("Copiar backup JSON")
-        composeRule.waitForClipboardContaining("\"schemaVersion\"")
-        val backupJson = clipboardText()
-        val restoreJson = """{"schemaVersion":1,"profile":{"preferredName":"QA Restored","weeklyBudget":120000,"monthlyBudget":400000,"expenseAlertThresholdPercent":70,"enabledExpenseCategories":["TRANSPORT","FOOD","OTHER"],"enabledModules":["GRADES","TASKS","EXPENSES","ACADEMIC_TEMPLATES"]},"subjects":[{"id":"qa-restored-subject","name":"Materia restaurada","targetAverage":4.5,"visualType":"TEAL","grades":[{"id":"qa-restored-grade","name":"Parcial restaurado","value":4.8,"percentage":0.5}]}],"tasks":[],"expenses":[],"academicWorks":[]}"""
-        assertTrue(backupJson.contains("\"schemaVersion\""))
-        assertTrue(backupJson.contains("Ensayo carbono revisado"))
-        composeRule.tapText("Notas")
-        composeRule.waitForClipboardContaining("Fisica")
-        composeRule.tapText("Tareas CSV")
-        composeRule.waitForClipboardContaining("Ensayo final")
-        composeRule.tapText("Gastos CSV")
-        composeRule.waitForClipboardContaining("10000")
-        composeRule.tapText("PDF")
-        composeRule.scrollToText("Pegar backup JSON")
-        composeRule.inputTaggedTextField(tag = "profile-backup-json-input", value = "{bad json", clear = true)
-        composeRule.waitForIdle()
-        composeRule.tapTag("profile-backup-preview")
-        composeRule.waitForTextContaining("Expected")
-        composeRule.scrollToText("Pegar backup JSON")
-        composeRule.inputTaggedTextField(tag = "profile-backup-json-input", value = restoreJson, clear = true)
-        composeRule.waitForIdle()
-        composeRule.swipeUpOnFirstScrollContainer()
-        composeRule.tapTag("profile-backup-preview")
-        composeRule.waitForTextContaining("1 materias")
-        composeRule.waitForTextContaining("1 notas")
-        composeRule.swipeUpOnFirstScrollContainer()
-        composeRule.tapTag("profile-backup-restore")
-        composeRule.waitForText("Backup local restaurado.")
+        // La copia dejó de pasar por el portapapeles: ahora se guarda y se restaura con el
+        // selector de archivos del sistema, que es una pantalla de fuera de la app y no se
+        // puede conducir desde aquí. Lo que sí se comprueba es que la sección esté completa;
+        // el ida y vuelta del JSON lo cubre LocalJsonBackupRepositoryTest.
+        composeRule.tapText("Configuración")
+        composeRule.waitForText("Datos y respaldos")
+        composeRule.tapText("Datos y respaldos")
+        composeRule.waitForText("Copia de seguridad")
+        composeRule.waitForText("Esto es temporal")
+        composeRule.scrollToText("Exportar para leer fuera")
+        composeRule.tapContentDescription("Volver")
+        composeRule.waitForText("Configuración")
+        composeRule.tapContentDescription("Volver")
+        composeRule.waitForText("Perfil")
 
         composeRule.scrollToText("Preferencia visual")
         composeRule.waitForSelectedText("Sistema")
@@ -375,9 +360,10 @@ class UniStackDeviceFlowTest {
         composeRule.tapText("Sistema")
         composeRule.waitForSelectedText("Sistema")
 
-        composeRule.scrollToText("Nombre preferido")
+        // El nombre se edita desde el lápiz de la cabecera, no en un formulario fijo.
+        composeRule.tapContentDescription("Editar nombre")
         composeRule.inputTextField(index = 0, value = "QA Tester", clear = true)
-        composeRule.tapText("Guardar nombre")
+        composeRule.tapText("Guardar")
         composeRule.waitForText("QA Tester")
 
         composeRule.tapText("Inicio")

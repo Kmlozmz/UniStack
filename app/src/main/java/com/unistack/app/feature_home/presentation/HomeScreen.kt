@@ -100,6 +100,10 @@ fun HomeScreen(
     onResourcesClick: () -> Unit = {},
     onHelpClick: () -> Unit = {},
     onAboutClick: () -> Unit = {},
+    onGpaClick: () -> Unit = {},
+    onQuickNotesClick: () -> Unit = {},
+    onAiClick: () -> Unit = {},
+    onLabsClick: () -> Unit = {},
     onDrawerOpenChange: (Boolean) -> Unit = {}
 ) {
     val summary = uiState.summary
@@ -160,7 +164,11 @@ fun HomeScreen(
                 onWhatsNewClick = { closeDrawerAndRun(onWhatsNewClick) },
                 onResourcesClick = { closeDrawerAndRun(onResourcesClick) },
                 onHelpClick = { closeDrawerAndRun(onHelpClick) },
-                onAboutClick = { closeDrawerAndRun(onAboutClick) }
+                onAboutClick = { closeDrawerAndRun(onAboutClick) },
+                onGpaClick = { closeDrawerAndRun(onGpaClick) },
+                onQuickNotesClick = { closeDrawerAndRun(onQuickNotesClick) },
+                onAiClick = { closeDrawerAndRun(onAiClick) },
+                onLabsClick = { closeDrawerAndRun(onLabsClick) }
             )
         }
     ) {

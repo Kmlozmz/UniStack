@@ -83,7 +83,11 @@ internal fun HomeNavigationPanel(
     onWhatsNewClick: () -> Unit,
     onResourcesClick: () -> Unit,
     onHelpClick: () -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onGpaClick: () -> Unit,
+    onQuickNotesClick: () -> Unit,
+    onAiClick: () -> Unit,
+    onLabsClick: () -> Unit
 ) {
     val panelShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
     val drawerSurface = if (UniStackColors.IsDarkTheme) {
@@ -98,13 +102,12 @@ internal fun HomeNavigationPanel(
     }
 
     /*
-     * Cada fila lleva a donde dice.
+     * Cada fila abre una pantalla, sin excepción.
      *
      * Dos mentían sobre su destino —«Calculadora GPA» abría la lista de materias y «Notas
-     * rápidas» abría Tareas—, así que esas dos pasan a la lista de lo que aún no existe, y
-     * Materias y Tareas aparecen con su nombre, que es lo que de verdad se abría. Las que no
-     * tienen pantalla detrás llegan sin `onClick`: apagadas, sin flecha y sin responder, en vez
-     * de cerrar el panel como si la app hubiera fallado.
+     * rápidas» abría Tareas—, y seis cerraban el panel sin ir a ninguna parte. Ahora cada una
+     * tiene la suya: las que aún no funcionan la usan para contar qué van a hacer, que sigue
+     * siendo un destino y no un botón que no responde.
      */
     val productivity = listOf(
         DrawerPanelAction(
@@ -132,7 +135,8 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.Calculate,
             title = "Calculadora GPA",
             subtitle = "Simula y calcula tu promedio",
-            accent = UniStackColors.Primary
+            accent = UniStackColors.Primary,
+            onClick = onGpaClick
         )
     )
     val preferences = listOf(
@@ -163,7 +167,8 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
             subtitle = "Tu asistente académico",
-            accent = UniStackColors.Primary
+            accent = UniStackColors.Primary,
+            onClick = onAiClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.History,
@@ -192,14 +197,15 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
             subtitle = "Bloc de notas temporal",
-            accent = UniStackColors.Green
+            accent = UniStackColors.Green,
+            onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
             subtitle = "Funciones experimentales",
             accent = UniStackColors.Yellow,
-            badge = "BETA"
+            onClick = onLabsClick
         )
     )
     val support = listOf(

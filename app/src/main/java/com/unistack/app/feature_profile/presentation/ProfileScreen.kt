@@ -175,8 +175,6 @@ fun ProfileScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var editingName by rememberSaveable { mutableStateOf(false) }
     val academicSnapshot by viewModel.academicSnapshot.collectAsStateWithLifecycle()
-    var localBackupInput by rememberSaveable { mutableStateOf("") }
-    var localBackupPreview by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
     var showUnlinkDialog by remember { mutableStateOf(false) }
     var pendingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
@@ -286,18 +284,29 @@ fun ProfileScreen(
                     modifier = Modifier.weight(1f)
                 )
                 if (mode == ProfileScreenMode.PROFILE) {
-                    Box(
+                    // Con rótulo. Un engranaje suelto obliga a deducir a dónde lleva, y la
+                    // deducción falla: el mismo icono abre ajustes, preferencias o edición
+                    // según la app.
+                    Row(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
+                            .clip(AppShapes.Pill)
                             .background(UniStackColors.SurfaceVariant)
-                            .bounceClick(onOpenSettingsClick),
-                        contentAlignment = Alignment.Center
+                            .bounceClick(onOpenSettingsClick)
+                            .padding(start = 12.dp, end = 14.dp, top = 9.dp, bottom = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Rounded.Settings,
-                            contentDescription = "Abrir configuración",
-                            tint = UniStackColors.Primary
+                            contentDescription = null,
+                            tint = UniStackColors.Primary,
+                            modifier = Modifier.size(19.dp)
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            "Configuración",
+                            color = UniStackColors.Primary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -332,16 +341,6 @@ fun ProfileScreen(
                         snapshot = academicSnapshot,
                         profile = current,
                         onOpenAcademicClick = onOpenAcademicClick
-                    )
-                }
-                item {
-                    ProfileShortcutsCard(
-                        onAcademicClick = onOpenAcademicClick,
-                        onNotificationsClick = onOpenNotificationsClick,
-                        onModulesClick = onOpenModulesClick,
-                        onAppearanceClick = onOpenAppearanceClick,
-                        onDataClick = onOpenDataClick,
-                        onUpdatesClick = onOpenUpdatesClick
                     )
                 }
                 item {
@@ -566,54 +565,14 @@ fun ProfileScreen(
 
             if (mode == ProfileScreenMode.DATA) {
                 item {
-                    DataManagementCard(
-                        cloudEnabled = currentUser.isLinked,
-                        cloudStatus = cloudBackupState.message ?: cloudBackupState.errorMessage,
+                    BackupSection(
+                        viewModel = viewModel,
+                        cloudLinked = currentUser.isLinked,
+                        cloudAvailable = viewModel.cloudAvailable,
                         cloudBusy = cloudBackupState.inProgress,
-                        onCloudBackupClick = viewModel::backupToCloud,
-                        onCloudRestoreClick = viewModel::restoreFromCloud,
+                        cloudStatus = cloudBackupState.message ?: cloudBackupState.errorMessage,
                         dataSummary = viewModel.localDataSummary(),
-                        backupInput = localBackupInput,
-                        backupPreview = localBackupPreview,
-                        onBackupInputChange = {
-                            localBackupInput = it
-                            localBackupPreview = null
-                        },
-                        onCopyBackupClick = {
-                            copyToClipboard(viewModel.exportLocalBackup())
-                            feedback = "Backup JSON copiado."
-                        },
-                        onPreviewBackupClick = {
-                            localBackupPreview = viewModel.previewLocalBackup(localBackupInput)
-                        },
-                        onRestoreBackupClick = {
-                            feedback = if (viewModel.restoreLocalBackup(localBackupInput)) {
-                                localBackupInput = ""
-                                localBackupPreview = null
-                                "Backup local restaurado."
-                            } else {
-                                "Revisa el JSON del backup."
-                            }
-                        },
-                        onCopyAcademicReportClick = {
-                            copyToClipboard(viewModel.exportAcademicReport())
-                            feedback = "Reporte académico copiado."
-                        },
-                        onCreateAcademicPdfClick = {
-                            feedback = if (viewModel.exportAcademicPdf(context)) {
-                                "PDF académico creado."
-                            } else {
-                                "No se pudo crear el PDF."
-                            }
-                        },
-                        onCopyTasksCsvClick = {
-                            copyToClipboard(viewModel.exportTasksCsv())
-                            feedback = "CSV de tareas copiado."
-                        },
-                        onCopyExpensesCsvClick = {
-                            copyToClipboard(viewModel.exportExpensesCsv())
-                            feedback = "CSV de gastos copiado."
-                        }
+                        onFeedback = { feedback = it }
                     )
                 }
                 item {
@@ -806,146 +765,6 @@ fun ProfileScreen(
             },
             containerColor = UniStackColors.Background
         )
-    }
-}
-
-@Composable
-private fun DataManagementCard(
-    cloudEnabled: Boolean,
-    cloudStatus: String?,
-    cloudBusy: Boolean,
-    onCloudBackupClick: () -> Unit,
-    onCloudRestoreClick: () -> Unit,
-    dataSummary: String,
-    backupInput: String,
-    backupPreview: String?,
-    onBackupInputChange: (String) -> Unit,
-    onCopyBackupClick: () -> Unit,
-    onPreviewBackupClick: () -> Unit,
-    onRestoreBackupClick: () -> Unit,
-    onCopyAcademicReportClick: () -> Unit,
-    onCreateAcademicPdfClick: () -> Unit,
-    onCopyTasksCsvClick: () -> Unit,
-    onCopyExpensesCsvClick: () -> Unit
-) {
-    SettingsCard(title = "Datos y exportación") {
-        Text("Sincronización con Google", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        Text(
-            if (cloudEnabled) {
-                cloudStatus ?: "Cuenta lista para respaldar o recuperar tus datos."
-            } else {
-                "Conecta una cuenta de Google desde Perfil para activar la nube."
-            },
-            color = UniStackColors.TextSecondary,
-            fontSize = 12.sp
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SquishyButton(
-                onClick = onCloudBackupClick,
-                enabled = cloudEnabled && !cloudBusy,
-                modifier = Modifier.weight(1f),
-                shape = AppShapes.Pill
-            ) {
-                Text(if (cloudBusy) "Procesando..." else "Respaldar")
-            }
-            SquishyButton(
-                onClick = onCloudRestoreClick,
-                enabled = cloudEnabled && !cloudBusy,
-                modifier = Modifier.weight(1f),
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = UniStackColors.SurfaceVariant,
-                    contentColor = UniStackColors.TextPrimary
-                )
-            ) {
-                Text("Recuperar")
-            }
-        }
-        DataStatusStrip(summary = dataSummary)
-        Text("Exportaciones locales", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        SquishyButton(
-            onClick = onCopyBackupClick,
-            shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Copiar backup JSON")
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SquishyButton(
-                onClick = onCopyAcademicReportClick,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Notas")
-            }
-            SquishyButton(
-                onClick = onCreateAcademicPdfClick,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("PDF")
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SquishyButton(
-                onClick = onCopyTasksCsvClick,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Tareas CSV")
-            }
-            SquishyButton(
-                onClick = onCopyExpensesCsvClick,
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Gastos CSV")
-            }
-        }
-        Text("Restauración", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-        OutlinedTextField(
-            value = backupInput,
-            onValueChange = onBackupInputChange,
-            label = { Text("Pegar backup JSON") },
-            minLines = 3,
-            maxLines = 5,
-            shape = AppShapes.MediumCard,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("profile-backup-json-input")
-        )
-        backupPreview?.let {
-            Text(it, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SquishyButton(
-                onClick = onPreviewBackupClick,
-                enabled = backupInput.isNotBlank(),
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.PrimaryLight, contentColor = UniStackColors.Primary),
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("profile-backup-preview")
-            ) {
-                Text("Vista previa")
-            }
-            SquishyButton(
-                onClick = onRestoreBackupClick,
-                enabled = backupInput.isNotBlank(),
-                shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag("profile-backup-restore")
-            ) {
-                Text("Restaurar")
-            }
-        }
     }
 }
 
@@ -1316,82 +1135,6 @@ private fun SnapshotCell(
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             textAlign = TextAlign.Center
-        )
-    }
-}
-
-/**
- * Todo lo tuyo, desde tu perfil.
- *
- * Estos seis destinos solo se alcanzaban por el engranaje de la esquina, y el perfil se quedaba
- * en tres tarjetas y media pantalla vacía. Son los ajustes que hablan de ti —tu escala, tus
- * avisos, tus módulos, tus datos—, así que su sitio es este.
- */
-@Composable
-private fun ProfileShortcutsCard(
-    onAcademicClick: () -> Unit,
-    onNotificationsClick: () -> Unit,
-    onModulesClick: () -> Unit,
-    onAppearanceClick: () -> Unit,
-    onDataClick: () -> Unit,
-    onUpdatesClick: () -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        shape = AppShapes.LargeCard
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                "Ajustes",
-                color = UniStackColors.TextPrimary,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(bottom = 6.dp)
-            )
-            ProfileShortcutRow(Icons.Rounded.School, "Académico", "Escala, meta y cortes", onAcademicClick)
-            ProfileShortcutRow(Icons.Rounded.Notifications, "Notificaciones", "Recordatorios y silencio", onNotificationsClick)
-            ProfileShortcutRow(Icons.Rounded.Widgets, "Módulos", "Qué áreas usas", onModulesClick)
-            ProfileShortcutRow(Icons.Rounded.Palette, "Apariencia", "Tema, barra y tipografía", onAppearanceClick)
-            ProfileShortcutRow(Icons.Rounded.Backup, "Datos y respaldos", "Exportar e importar", onDataClick)
-            ProfileShortcutRow(Icons.Rounded.SystemUpdate, "Actualizaciones", "Canal y versiones", onUpdatesClick)
-        }
-    }
-}
-
-@Composable
-private fun ProfileShortcutRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(AppShapes.MediumCard)
-            .bounceClick(onClick)
-            .padding(vertical = 9.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(34.dp)
-                .clip(AppShapes.Small)
-                .background(UniStackColors.Primary.copy(alpha = 0.13f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(11.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 11.sp)
-        }
-        Icon(
-            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-            contentDescription = null,
-            tint = UniStackColors.TextSecondary,
-            modifier = Modifier.size(20.dp)
         )
     }
 }

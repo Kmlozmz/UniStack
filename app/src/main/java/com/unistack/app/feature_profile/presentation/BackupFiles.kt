@@ -1,0 +1,75 @@
+package com.unistack.app.feature_profile.presentation
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
+import androidx.core.content.edit
+import java.io.File
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+private const val BACKUP_PREFS = "unistack_backup_history"
+private const val LAST_BACKUP_AT = "last_backup_at"
+
+/**
+ * Guardar y leer copias como archivos.
+ *
+ * La copia se sacaba copiando un JSON al portapapeles y se restauraba pegándolo en un campo de
+ * texto. Eso no es una copia de seguridad: el portapapeles se pierde al copiar cualquier otra
+ * cosa, tiene un tope de tamaño que nadie anuncia —y una base entera lo pasa— y no hay dónde
+ * dejar el archivo. Con el selector del sistema, la copia acaba donde el usuario quiera y se
+ * restaura eligiéndola.
+ */
+object BackupFiles {
+
+    fun suggestedName(prefix: String, extension: String): String {
+        val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm"))
+        return "$prefix-$stamp.$extension"
+    }
+
+    fun writeText(context: Context, uri: Uri, text: String): Result<Unit> = runCatching {
+        // «wt» trunca lo que hubiera: sin la t, sobrescribir un archivo más largo deja la cola
+        // del anterior pegada al final y el JSON queda ilegible.
+        context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+            output.write(text.toByteArray())
+        } ?: error("No se pudo escribir en el archivo elegido.")
+    }
+
+    fun readText(context: Context, uri: Uri): Result<String> = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            input.bufferedReader().readText()
+        } ?: error("No se pudo leer el archivo elegido.")
+    }
+
+    /** Deja el texto en un archivo de la caché y abre el selector para compartirlo. */
+    fun shareText(context: Context, fileName: String, mimeType: String, text: String): Result<Unit> =
+        runCatching {
+            val file = File(context.cacheDir, fileName)
+            file.writeText(text)
+            shareFile(context, file, mimeType).getOrThrow()
+        }
+
+    fun shareFile(context: Context, file: File, mimeType: String): Result<Unit> = runCatching {
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = mimeType
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Compartir"))
+    }
+
+    fun rememberBackupDone(context: Context) {
+        context.applicationContext
+            .getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+            .edit { putLong(LAST_BACKUP_AT, System.currentTimeMillis()) }
+    }
+
+    fun lastBackupAt(context: Context): Long? {
+        val stored = context.applicationContext
+            .getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)
+            .getLong(LAST_BACKUP_AT, 0L)
+        return stored.takeIf { it > 0L }
+    }
+}

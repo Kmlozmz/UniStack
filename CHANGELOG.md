@@ -27,7 +27,9 @@ número y la fecha, y se abre una nueva.
   el gesto se cancelaba solo a mitad del arrastre y había que soltar y volver a tocar para
   moverlo un poco más. Ahora sigue el dedo hasta que se levanta.
 - **El teclado no se quitaba al tocar fuera de un campo.** En los formularios de materia y de
-  nota se quedaba puesto tapando media pantalla. Ahora se cierra al tocar fuera o al desplazar.
+  nota se quedaba puesto tapando media pantalla. Ahora se cierra al tocar fuera o al desplazar
+  con el dedo. Y solo con el dedo: al enfocar un campo del final de una lista, el ajuste que
+  hace la app para dejarlo por encima del teclado lo cerraba al instante.
 - **Al salir de un formulario, el indicador de la barra inferior pasaba por Inicio.** Cruzaba
   de Inicio a la sección en la que estabas, como si la app hubiera pasado por la pantalla de
   inicio. No cambiaba de sección: era la barra pintando un primer fotograma sin saber todavía
@@ -36,10 +38,23 @@ número y la fecha, y se abre una nueva.
   opciones de abajo —historial, editar, eliminar— quedaban fuera hasta que se arrastraba hacia
   arriba. Ahora abre entero, y rueda si no cabe.
 
+### Cambiado
+
+- **Las copias de seguridad son archivos.** Antes la copia se sacaba copiando un JSON al
+  portapapeles y se restauraba pegándolo en un campo de texto: se perdía al copiar cualquier
+  otra cosa, no cabía entera y no había dónde guardarla. Ahora la copia se guarda con el
+  selector del sistema —donde tú quieras—, se puede compartir, y para restaurar se elige el
+  archivo. Antes de restaurar, la app dice qué trae y avisa de que reemplaza lo que tengas.
+  Los CSV de tareas y gastos y el PDF de notas también son archivos.
+- **La sección de respaldos avisa de que esto es temporal**: por ahora la copia la guardas tú,
+  y pronto se podrá vincular la cuenta de Google para que se haga sola. La copia en la nube
+  aparece marcada como «Pronto» mientras no esté activa, en vez de fallar al pulsarla.
+- **El botón de configuración del perfil dice «Configuración»** en lugar de ser un engranaje
+  suelto, y desaparece de Perfil la lista de ajustes que repetía lo que ese botón ya abre.
 - **El panel lateral lleva a donde dice.** «Calculadora GPA» abría la lista de materias y
-  «Notas rápidas» abría Tareas; esas dos pasan a la lista de lo que aún no existe, junto a
-  UniStack AI y Labs, y salen apagadas en vez de cerrar el panel como si algo hubiera fallado.
-  «Cerrar sesión» desaparece: no cerraba ninguna sesión (la cuenta se desvincula desde Perfil).
+  «Notas rápidas» abría Tareas; ahora cada una abre lo suyo, y Materias y Tareas aparecen con su
+  nombre. «Cerrar sesión» desaparece: no cerraba ninguna sesión (la cuenta se desvincula desde
+  Perfil).
 - **El perfil dice cómo va el semestre**, no solo cuál es tu meta: el promedio de lo evaluado
   con una barra hasta la meta, cuántas materias van aprobando, cuántas en riesgo y cuántas notas
   llevas. Debajo, acceso directo a lo tuyo: académico, notificaciones, módulos, apariencia,
@@ -66,6 +81,15 @@ número y la fecha, y se abre una nueva.
 
 ### Añadido
 
+- **Cada entrada del panel lateral abre su propia pantalla, a pantalla completa.** La barra
+  inferior se aparta mientras estás en ellas, para que se lean como un sitio propio y no como
+  una capa encima de Inicio.
+- **Calculadora GPA.** Escribe notas con sus créditos y sale el promedio ponderado, sin tocar
+  nada de lo registrado. Un botón trae tus materias con lo que llevas evaluado.
+- **Notas rápidas.** Un bloc que se guarda solo en este teléfono, para lo que no merece ser una
+  tarea: el aula que cambió, el tema del parcial.
+- **UniStack AI y Labs tienen pantalla propia** donde se cuenta qué van a hacer y en qué punto
+  están, en vez de una fila que no responde.
 - **Novedades, Recursos, Ayuda y Acerca de existen de verdad.** Eran filas del panel lateral que
   no llevaban a ninguna parte. Novedades trae el registro de cambios dentro de la app, sin
   conexión; Recursos, enlaces útiles para estudiar; Ayuda, preguntas frecuentes y un formulario

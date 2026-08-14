@@ -1,6 +1,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import android.content.Context
+import java.io.File
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -430,7 +431,19 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    /** Si la copia en la nube está disponible en esta compilación. */
+    val cloudAvailable: Boolean get() = cloudBackupRepository.isConfigured
+
     fun exportLocalBackup(): String = localBackupRepository.exportBackupJson()
+
+    /** El PDF del reporte, ya escrito, listo para compartir. Nulo si no se pudo crear. */
+    fun academicPdfFile(context: Context): File? =
+        localBackupRepository.exportAcademicPdf(context)
+            .map { path -> File(path) }
+            .onFailure { throwable ->
+                _actionState.update { it.copy(message = null, errorMessage = throwable.message ?: "No se pudo crear el PDF.") }
+            }
+            .getOrNull()
 
     fun exportAcademicReport(): String = localBackupRepository.exportAcademicReport()
 

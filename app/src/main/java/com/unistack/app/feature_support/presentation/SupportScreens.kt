@@ -69,7 +69,7 @@ import com.unistack.app.feature_updates.presentation.ReleaseNotes
  */
 
 @Composable
-private fun SupportScaffold(
+internal fun SupportScaffold(
     title: String,
     subtitle: String,
     onBackClick: () -> Unit,

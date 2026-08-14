@@ -97,6 +97,10 @@ import com.unistack.app.feature_profile.presentation.AccessibilitySettingsScreen
 import com.unistack.app.feature_profile.presentation.SettingsHubScreen
 import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
 import com.unistack.app.feature_support.presentation.AboutScreen
+import com.unistack.app.feature_support.presentation.AiAssistantScreen
+import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
+import com.unistack.app.feature_support.presentation.LabsScreen
+import com.unistack.app.feature_support.presentation.QuickNotesScreen
 import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
 import com.unistack.app.feature_support.presentation.WhatsNewScreen
@@ -284,6 +288,10 @@ fun MainNavGraph(
                             onResourcesClick = { navController.navigate(AppRoutes.Resources) },
                             onHelpClick = { navController.navigate(AppRoutes.Help) },
                             onAboutClick = { navController.navigate(AppRoutes.About) },
+                            onGpaClick = { navController.navigate(AppRoutes.GpaCalculator) },
+                            onQuickNotesClick = { navController.navigate(AppRoutes.QuickNotes) },
+                            onAiClick = { navController.navigate(AppRoutes.AiAssistant) },
+                            onLabsClick = { navController.navigate(AppRoutes.Labs) },
                             onProfileClick = {
                                 navController.navigate(AppRoutes.Profile) {
                                     launchSingleTop = true
@@ -513,6 +521,18 @@ fun MainNavGraph(
                     onWhatsNewClick = { navController.navigate(AppRoutes.WhatsNew) },
                     onUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
                 )
+            }
+            composable(AppRoutes.GpaCalculator) {
+                GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.QuickNotes) {
+                QuickNotesScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.AiAssistant) {
+                AiAssistantScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+            }
+            composable(AppRoutes.Labs) {
+                LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
             }
             composable(AppRoutes.Pro) {
                 ProScreen(
@@ -795,6 +815,25 @@ private fun ModuleAccessGuard(
  * pestaña abandona un formulario a medio llenar sin decir nada. Mientras no haya un aviso
  * antes de descartar, la salida de un formulario se queda en atrás o guardar.
  */
+/**
+ * Las pantallas que se abren desde el panel lateral.
+ *
+ * Van a pantalla completa, sin barra inferior. No son secciones de la app sino sitios a los que
+ * se entra y de los que se sale por donde se vino: dejarles la barra invita a saltar a otra
+ * pestaña a medio leer, y sobre todo las achata —una pantalla que ocupa todo se lee como un
+ * sitio propio y no como una capa encima de Inicio.
+ */
+private val ImmersiveRoutes = setOf(
+    AppRoutes.WhatsNew,
+    AppRoutes.Resources,
+    AppRoutes.Help,
+    AppRoutes.About,
+    AppRoutes.GpaCalculator,
+    AppRoutes.QuickNotes,
+    AppRoutes.AiAssistant,
+    AppRoutes.Labs
+)
+
 private val ModalRoutes = setOf(
     AppRoutes.AddSubject,
     AppRoutes.AddSubjectFromTask,
@@ -823,6 +862,7 @@ private val ModalRoutes = setOf(
  */
 internal fun routeShowsBottomBar(route: String?): Boolean {
     if (ModalRoutes.any { routeBelongsTo(route, it) }) return false
+    if (ImmersiveRoutes.any { routeBelongsTo(route, it) }) return false
     return bottomRouteFor(route) != null
 }
 
@@ -869,6 +909,10 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Resources) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Help) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.About) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.GpaCalculator) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.QuickNotes) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.AiAssistant) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.Labs) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null

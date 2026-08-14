@@ -27,11 +27,21 @@ fun Modifier.dismissKeyboardOnTapOutside(): Modifier = composed {
     val focusManager = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
 
+    /*
+     * Solo el desplazamiento que hace el dedo cierra el teclado.
+     *
+     * Sin la comprobación de origen valía cualquiera, y al enfocar un campo Compose desplaza la
+     * lista él solo para dejarlo por encima del teclado: ese desplazamiento llegaba aquí y
+     * cerraba el teclado recién abierto. Se veía en la caja de sugerencia, que está al final de
+     * una lista larga y siempre necesita ese ajuste.
+     */
     val clearOnScroll = remember(focusManager, keyboard) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                focusManager.clearFocus()
-                keyboard?.hide()
+                if (source == NestedScrollSource.UserInput) {
+                    focusManager.clearFocus()
+                    keyboard?.hide()
+                }
                 return Offset.Zero
             }
         }
