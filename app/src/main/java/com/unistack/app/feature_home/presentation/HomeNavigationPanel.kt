@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.utils.BuildStage
 
 internal data class DrawerPanelAction(
     val icon: ImageVector,
@@ -102,13 +103,16 @@ internal fun HomeNavigationPanel(
     }
 
     /*
-     * Cada fila abre una pantalla, sin excepción.
+     * Lo que no está terminado solo se abre en dev y alpha.
      *
-     * Dos mentían sobre su destino —«Calculadora GPA» abría la lista de materias y «Notas
-     * rápidas» abría Tareas—, y seis cerraban el panel sin ir a ninguna parte. Ahora cada una
-     * tiene la suya: las que aún no funcionan la usan para contar qué van a hacer, que sigue
-     * siendo un destino y no un botón que no responde.
+     * En una beta, las pantallas a medio hacer llegan apagadas y con su etiqueta: quien la usa
+     * para su semestre no tiene por qué toparse con algo incompleto, y así las pruebas de
+     * verdad se hacen donde toca. En dev y alpha se abre todo, que es para lo que están.
+     *
+     * Se marcan sin `onClick`: la fila se pinta apagada, sin flecha y sin responder al toque,
+     * en vez de cerrar el panel como si la app hubiera fallado.
      */
+    val unfinished = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
     val productivity = listOf(
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
@@ -129,7 +133,8 @@ internal fun HomeNavigationPanel(
             title = "Trabajos",
             subtitle = "Plantillas y exportaciones",
             accent = UniStackColors.Primary,
-            onClick = onWorksClick
+            badge = if (unfinished) null else "Pronto",
+            onClick = onWorksClick.takeIf { unfinished }
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Calculate,
@@ -168,7 +173,8 @@ internal fun HomeNavigationPanel(
             title = "UniStack AI",
             subtitle = "Tu asistente académico",
             accent = UniStackColors.Primary,
-            onClick = onAiClick
+            badge = if (unfinished) null else "Pronto",
+            onClick = onAiClick.takeIf { unfinished }
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.History,
@@ -205,7 +211,8 @@ internal fun HomeNavigationPanel(
             title = "Labs",
             subtitle = "Funciones experimentales",
             accent = UniStackColors.Yellow,
-            onClick = onLabsClick
+            badge = if (unfinished) null else "Pronto",
+            onClick = onLabsClick.takeIf { unfinished }
         )
     )
     val support = listOf(

@@ -73,6 +73,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.utils.BuildStage
+import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
@@ -1042,9 +1044,28 @@ private fun NavHostController.navigateIfModuleEnabled(
     enabledModules: Set<AppModule>
 ) {
     val module = moduleForRoute(route)
-    navigate(if (module == null || module in enabledModules) route else AppRoutes.Home) {
+    val blocked = (module != null && module !in enabledModules) || !routeIsBuilt(route)
+    navigate(if (blocked) AppRoutes.Home else route) {
         launchSingleTop = true
     }
+}
+
+/**
+ * Rutas que todavía no están terminadas.
+ *
+ * Fuera de dev y alpha no se entra a ninguna, venga el toque de donde venga: el panel las pinta
+ * apagadas, pero una notificación con ruta guardada o un enlace de arranque también llegan
+ * aquí. La puerta se cierra en un solo sitio.
+ */
+private val UnfinishedRoutes = setOf(
+    AppRoutes.AcademicTemplates,
+    AppRoutes.AiAssistant,
+    AppRoutes.Labs
+)
+
+internal fun routeIsBuilt(route: String?): Boolean {
+    if (BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) return true
+    return UnfinishedRoutes.none { routeBelongsTo(route, it) }
 }
 
 private fun NavHostController.navigateBackOr(

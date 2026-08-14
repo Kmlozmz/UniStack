@@ -453,110 +453,35 @@ fun ProfileScreen(
 
             if (mode == ProfileScreenMode.NOTIFICATIONS) {
                 item {
-                    NotificationSettingsCard(
-                        taskRemindersEnabled = current.taskRemindersEnabled,
-                        academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                        overdueRemindersEnabled = current.overdueRemindersEnabled,
-                        gradeInsightRemindersEnabled = current.gradeInsightRemindersEnabled,
-                        pendingGradeRemindersEnabled = current.pendingGradeRemindersEnabled,
-                        reminderLeadInput = reminderLeadInput,
-                        quietHoursEnabled = current.quietHoursEnabled,
-                        quietHoursStartInput = quietHoursStartInput,
-                        quietHoursEndInput = quietHoursEndInput,
-                        notificationPermissionGranted = notificationPermissionGranted,
-                        onTaskToggle = {
-                            runReminderUpdate(!current.taskRemindersEnabled) {
-                                viewModel.updateReminderSettings(
-                                    taskRemindersEnabled = !current.taskRemindersEnabled,
-                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                                )
+                    NotificationSection(
+                        profile = current,
+                        permissionGranted = notificationPermissionGranted,
+                        onRequestPermission = {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        },
+                        onReminderToggle = { tasks, works, overdue, leadHours ->
+                            // El permiso se pide solo cuando se enciende algo, no al entrar:
+                            // preguntar antes de que haya nada que avisar es lo que enseña a
+                            // decir que no.
+                            val turningOn = (tasks && !current.taskRemindersEnabled) ||
+                                (works && !current.academicWorkRemindersEnabled) ||
+                                (overdue && !current.overdueRemindersEnabled)
+                            runReminderUpdate(turningOn) {
+                                viewModel.updateReminderSettings(tasks, works, overdue, leadHours)
                             }
                         },
-                        onAcademicWorkToggle = {
-                            runReminderUpdate(!current.academicWorkRemindersEnabled) {
-                                viewModel.updateReminderSettings(
-                                    taskRemindersEnabled = current.taskRemindersEnabled,
-                                    academicWorkRemindersEnabled = !current.academicWorkRemindersEnabled,
-                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                                )
+                        onAcademicToggle = { insights, pending ->
+                            val turningOn = (insights && !current.gradeInsightRemindersEnabled) ||
+                                (pending && !current.pendingGradeRemindersEnabled)
+                            runReminderUpdate(turningOn) {
+                                viewModel.updateAcademicReminderSettings(insights, pending)
                             }
                         },
-                        onOverdueToggle = {
-                            runReminderUpdate(!current.overdueRemindersEnabled) {
-                                viewModel.updateReminderSettings(
-                                    taskRemindersEnabled = current.taskRemindersEnabled,
-                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                    overdueRemindersEnabled = !current.overdueRemindersEnabled,
-                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: current.reminderLeadHours
-                                )
-                            }
-                        },
-                        onGradeInsightsToggle = {
-                            runReminderUpdate(!current.gradeInsightRemindersEnabled) {
-                                viewModel.updateAcademicReminderSettings(
-                                    gradeInsightRemindersEnabled = !current.gradeInsightRemindersEnabled,
-                                    pendingGradeRemindersEnabled = current.pendingGradeRemindersEnabled
-                                )
-                            }
-                        },
-                        onPendingGradesToggle = {
-                            runReminderUpdate(!current.pendingGradeRemindersEnabled) {
-                                viewModel.updateAcademicReminderSettings(
-                                    gradeInsightRemindersEnabled = current.gradeInsightRemindersEnabled,
-                                    pendingGradeRemindersEnabled = !current.pendingGradeRemindersEnabled
-                                )
-                            }
-                        },
-                        onLeadChange = {
-                            reminderLeadInput = it.filter(Char::isDigit).take(3)
-                            feedback = null
-                        },
-                        onSaveLead = {
-                            feedback = if (viewModel.updateReminderSettings(
-                                    taskRemindersEnabled = current.taskRemindersEnabled,
-                                    academicWorkRemindersEnabled = current.academicWorkRemindersEnabled,
-                                    overdueRemindersEnabled = current.overdueRemindersEnabled,
-                                    reminderLeadHours = reminderLeadInput.toIntOrNull() ?: -1
-                                )
-                            ) {
-                                "Recordatorios actualizados."
+                        onQuietHoursChange = { enabled, start, end ->
+                            feedback = if (viewModel.updateQuietHours(enabled, start, end)) {
+                                null
                             } else {
-                                "Revisa las horas de anticipación."
-                            }
-                        },
-                        onQuietHoursToggle = {
-                            feedback = if (viewModel.updateQuietHours(
-                                    enabled = !current.quietHoursEnabled,
-                                    startHour = quietHoursStartInput.toIntOrNull(),
-                                    endHour = quietHoursEndInput.toIntOrNull()
-                                )
-                            ) {
-                                "Horario silencioso actualizado."
-                            } else {
-                                "Define dos horas distintas entre 0 y 23."
-                            }
-                        },
-                        onQuietHoursStartChange = {
-                            quietHoursStartInput = it.filter(Char::isDigit).take(2)
-                            feedback = null
-                        },
-                        onQuietHoursEndChange = {
-                            quietHoursEndInput = it.filter(Char::isDigit).take(2)
-                            feedback = null
-                        },
-                        onSaveQuietHours = {
-                            feedback = if (viewModel.updateQuietHours(
-                                    enabled = current.quietHoursEnabled,
-                                    startHour = quietHoursStartInput.toIntOrNull(),
-                                    endHour = quietHoursEndInput.toIntOrNull()
-                                )
-                            ) {
-                                "Horario silencioso guardado."
-                            } else {
-                                "Define dos horas distintas entre 0 y 23."
+                                "El horario silencioso necesita dos horas distintas."
                             }
                         }
                     )
@@ -1323,159 +1248,6 @@ private fun ModulesSettingsCard(
                     modifier = Modifier.clearAndSetSemantics {}
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun NotificationSettingsCard(
-    taskRemindersEnabled: Boolean,
-    academicWorkRemindersEnabled: Boolean,
-    overdueRemindersEnabled: Boolean,
-    gradeInsightRemindersEnabled: Boolean,
-    pendingGradeRemindersEnabled: Boolean,
-    reminderLeadInput: String,
-    quietHoursEnabled: Boolean,
-    quietHoursStartInput: String,
-    quietHoursEndInput: String,
-    notificationPermissionGranted: Boolean,
-    onTaskToggle: () -> Unit,
-    onAcademicWorkToggle: () -> Unit,
-    onOverdueToggle: () -> Unit,
-    onGradeInsightsToggle: () -> Unit,
-    onPendingGradesToggle: () -> Unit,
-    onLeadChange: (String) -> Unit,
-    onSaveLead: () -> Unit,
-    onQuietHoursToggle: () -> Unit,
-    onQuietHoursStartChange: (String) -> Unit,
-    onQuietHoursEndChange: (String) -> Unit,
-    onSaveQuietHours: () -> Unit
-) {
-    SettingsCard(title = "Recordatorios") {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            NotificationPermissionStatus(notificationPermissionGranted)
-            ReminderToggleRow(
-                title = "Tareas",
-                description = "Avisos antes de tareas pendientes.",
-                checked = taskRemindersEnabled,
-                onToggle = onTaskToggle
-            )
-            ReminderToggleRow(
-                title = "Trabajos",
-                description = "Avisos antes de entregas académicas.",
-                checked = academicWorkRemindersEnabled,
-                onToggle = onAcademicWorkToggle
-            )
-            ReminderToggleRow(
-                title = "Vencidos",
-                description = "Avisos cuando una tarea o trabajo vence.",
-                checked = overdueRemindersEnabled,
-                onToggle = onOverdueToggle
-            )
-            ReminderToggleRow(
-                title = "Notas y cortes",
-                description = "Alertas sobre metas, proyecciones e historial incompleto.",
-                checked = gradeInsightRemindersEnabled,
-                onToggle = onGradeInsightsToggle
-            )
-            ReminderToggleRow(
-                title = "Resultados pendientes",
-                description = "Recuerda registrar la nota de tareas ya completadas.",
-                checked = pendingGradeRemindersEnabled,
-                onToggle = onPendingGradesToggle
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                OutlinedTextField(
-                    value = reminderLeadInput,
-                    onValueChange = onLeadChange,
-                    label = { Text("Horas antes") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    shape = AppShapes.MediumCard
-                )
-                SquishyButton(
-                    onClick = onSaveLead,
-                    shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
-                ) {
-                    Text("Guardar")
-                }
-            }
-            ReminderToggleRow(
-                title = "Horario silencioso",
-                description = "Mueve los avisos fuera del intervalo que elijas.",
-                checked = quietHoursEnabled,
-                onToggle = onQuietHoursToggle
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = quietHoursStartInput,
-                    onValueChange = onQuietHoursStartChange,
-                    label = { Text("Desde") },
-                    supportingText = { Text("0-23") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    shape = AppShapes.MediumCard
-                )
-                OutlinedTextField(
-                    value = quietHoursEndInput,
-                    onValueChange = onQuietHoursEndChange,
-                    label = { Text("Hasta") },
-                    supportingText = { Text("0-23") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                    shape = AppShapes.MediumCard
-                )
-            }
-            TextButton(
-                onClick = onSaveQuietHours,
-                modifier = Modifier.align(Alignment.End)
-            ) {
-                Text("Guardar horario", fontWeight = FontWeight.SemiBold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun NotificationPermissionStatus(granted: Boolean) {
-    val statusColor = if (granted) UniStackColors.Green else UniStackColors.Coral
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(AppShapes.MediumCard)
-            .background(statusColor.copy(alpha = 0.12f))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = if (granted) {
-                    "Permiso de notificaciones activo"
-                } else {
-                    "Permiso de notificaciones pendiente"
-                },
-                color = statusColor,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (granted) {
-                    "UniStack puede enviarte avisos inteligentes según tus tareas, trabajos y materias."
-                } else {
-                    "Actívalo para recibir recordatorios y alertas académicas basadas en tu información."
-                },
-                color = UniStackColors.TextSecondary,
-                fontSize = 12.sp,
-                lineHeight = 16.sp
-            )
         }
     }
 }

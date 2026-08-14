@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.CloudUpload
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.AlertDialog
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -120,25 +123,35 @@ internal fun BackupSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // El aviso va arriba del todo y no al pie: quien entra aquí viene a poner sus datos a
-        // salvo, y tiene que saber antes de empezar que por ahora la copia la guarda él.
-        Box(
-            Modifier
+        // salvo, y tiene que saber antes de empezar que por ahora la copia la guarda él. Con
+        // icono, borde y fondo propios, porque como párrafo suelto se leía como decoración.
+        Row(
+            modifier = Modifier
                 .fillMaxWidth()
                 .clip(AppShapes.MediumCard)
-                .background(UniStackColors.Primary.copy(alpha = 0.12f))
-                .padding(13.dp)
+                .background(UniStackColors.Yellow.copy(alpha = 0.16f))
+                .border(1.dp, UniStackColors.Yellow.copy(alpha = 0.55f), AppShapes.MediumCard)
+                .padding(14.dp)
         ) {
+            Icon(
+                Icons.Rounded.Info,
+                contentDescription = null,
+                tint = UniStackColors.Yellow,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(11.dp))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     "Esto es temporal",
-                    color = UniStackColors.Primary,
-                    fontSize = 12.sp,
+                    color = UniStackColors.Yellow,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    "Por ahora las copias las guardas tú, en un archivo. Pronto vas a poder " +
-                        "vincular tu cuenta de Google y que se hagan solas.",
-                    color = UniStackColors.TextSecondary,
+                    "Por ahora la copia la guardas tú, en un archivo. Pronto vas a poder " +
+                        "vincular tu cuenta de Google y que se haga sola, sin que tengas que " +
+                        "acordarte.",
+                    color = UniStackColors.TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -214,7 +227,15 @@ internal fun BackupSection(
             }
         }
 
-        UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+        // Apagada al 45% mientras no se pueda usar: un bloque a plena luz con los botones
+        // desactivados parece un fallo, y bajarle la opacidad entera lo lee como lo que es,
+        // algo que todavía no está.
+        UniCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(if (cloudAvailable) 1f else 0.45f),
+            shape = AppShapes.LargeCard
+        ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BackupBlockTitle(Icons.Rounded.CloudUpload, "Copia en la nube")
@@ -223,10 +244,10 @@ internal fun BackupSection(
                         Box(
                             Modifier
                                 .clip(AppShapes.Pill)
-                                .background(UniStackColors.Primary.copy(alpha = 0.15f))
+                                .background(UniStackColors.Yellow.copy(alpha = 0.22f))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
-                            Text("Pronto", color = UniStackColors.Primary, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("Pronto", color = UniStackColors.Yellow, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }

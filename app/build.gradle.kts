@@ -606,17 +606,81 @@ fun changedFilesSinceSnapshot(previous: Map<String, String>, current: Map<String
         .sorted()
 }
 
+/**
+ * Los titulares del registro de cambios, para el mensaje del bot.
+ *
+ * El mensaje se armaba con los archivos que habían cambiado desde el APK anterior —«Build:
+ * feature_profile, core/design»—, que no dice nada de lo que hay que probar. Esto lee la sección
+ * que corresponde de `CHANGELOG.md` y se queda con la primera frase en negrita de cada viñeta,
+ * que es justo el titular escrito para quien usa la app.
+ *
+ * Un APK de trabajo se compila muchas veces sobre la misma sección, así que debajo van también
+ * los commits nuevos desde el envío anterior: eso sí cambia en cada build.
+ */
+fun changelogHighlights(section: String, maxItems: Int = 10): List<String> {
+    val headline = Regex("""^\s*-\s+\*\*(.+?)\*\*""")
+    val heading = Regex("""^###\s+(.+)$""")
+    val result = mutableListOf<String>()
+    var currentHeading: String? = null
+
+    section.lines().forEach { line ->
+        heading.find(line)?.let { match ->
+            currentHeading = match.groupValues[1].trim()
+            return@forEach
+        }
+        val title = headline.find(line)?.groupValues?.get(1)?.trim()?.trimEnd('.', ':')
+        if (title != null && result.size < maxItems) {
+            result += currentHeading?.let { "$it: $title" } ?: title
+        }
+    }
+    return result
+}
+
+/** El texto de la sección que le toca a esta compilación, o null si no hay ninguna. */
+fun changelogSectionForBuild(versionName: String): String? {
+    val file = rootProject.file("CHANGELOG.md")
+    if (!file.exists()) return null
+    val lines = file.readLines()
+    // Una versión publicada tiene su propia sección; un dev todavía no, y lo suyo está en
+    // «Sin publicar», que es lo que ese APK lleva dentro.
+    val heading = listOf("## [$versionName]", "## [Sin publicar]")
+        .firstOrNull { candidate -> lines.any { it.trimStart().startsWith(candidate) } }
+        ?: return null
+    val start = lines.indexOfFirst { it.trimStart().startsWith(heading) }
+    val rest = lines.drop(start + 1)
+    val end = rest.indexOfFirst { it.trimStart().startsWith("## [") }
+    return (if (end < 0) rest else rest.take(end)).joinToString("\n").trim()
+}
+
+fun gitOutput(vararg args: String): String = runCatching {
+    providers.exec {
+        workingDir = rootProject.rootDir
+        commandLine(*args)
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("")
+
+fun currentGitHead(): String = gitOutput("git", "rev-parse", "HEAD")
+
+/** Los asuntos de los commits nuevos desde el APK anterior. */
+fun commitsSince(previousHead: String?, maxItems: Int = 5): List<String> {
+    if (previousHead.isNullOrBlank()) return emptyList()
+    val log = gitOutput("git", "log", "--format=%s", "$previousHead..HEAD")
+    if (log.isBlank()) return emptyList()
+    return log.lines().filter { it.isNotBlank() }.take(maxItems)
+}
+
 fun telegramChangelogLinesForVariant(
     variant: String,
     currentSnapshot: Map<String, String> = currentProjectSnapshot()
 ): List<String> {
-    val previousSnapshot = readTelegramSnapshot(variant)
-    if (previousSnapshot.isEmpty()) {
-        return listOf("Build: historial de cambios por APK activado desde este envio.")
-    }
+    val section = changelogSectionForBuild(generatedVersionName)
+    val highlights = section?.let { changelogHighlights(it) }.orEmpty()
+    if (highlights.isNotEmpty()) return highlights
 
-    val changedFiles = changedFilesSinceSnapshot(previousSnapshot, currentSnapshot)
-    return summarizeChangeFiles(changedFiles)
+    // Sin sección utilizable se cae a lo de antes, que al menos dice que algo cambió.
+    val previousSnapshot = readTelegramSnapshot(variant)
+    if (previousSnapshot.isEmpty()) return listOf("Primer envio de este canal.")
+    return summarizeChangeFiles(changedFilesSinceSnapshot(previousSnapshot, currentSnapshot))
         .ifEmpty { listOf("Sin cambios de codigo desde el APK anterior.") }
 }
 
@@ -669,7 +733,18 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
         val sizeMb = apkPath.length().toDouble() / 1024.0 / 1024.0
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
         val currentSnapshot = currentProjectSnapshot()
-        val changelog = telegramChangelogBlock(telegramChangelogLinesForVariant(variant, currentSnapshot))
+        val previousSnapshot = readTelegramSnapshot(variant)
+        val changelog = telegramChangelogBlock(
+            lines = telegramChangelogLinesForVariant(variant, currentSnapshot),
+            maxChars = 620
+        )
+        val commits = commitsSince(previousSnapshot["git.head"])
+        val commitBlock = if (commits.isEmpty()) {
+            ""
+        } else {
+            val text = telegramChangelogBlock(commits, maxChars = 240)
+            "\n<b>Commits nuevos</b>\n<blockquote>$text</blockquote>"
+        }
         val variantTitle = variant.replaceFirstChar { it.uppercase() }
         val sizeText = String.format(Locale.US, "%.2f", sizeMb)
         val caption = """
@@ -677,8 +752,8 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
             <blockquote>$variantTitle - ${apkPath.name.htmlEscape()} - $sizeText MB
             v${generatedVersionName.htmlEscape()} ($generatedVersionCode)
             $timestamp</blockquote>
-            <b>Cambios</b>
-            <blockquote>$changelog</blockquote>
+            <b>Que probar</b>
+            <blockquote>$changelog</blockquote>$commitBlock
         """.trimIndent()
 
         println("Sending ${apkPath.name} to Telegram...")
@@ -709,7 +784,7 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
                 "https://api.telegram.org/bot$botToken/sendDocument"
             )
         }.result.get().assertNormalExitValue()
-        writeTelegramSnapshot(variant, currentSnapshot)
+        writeTelegramSnapshot(variant, currentSnapshot + ("git.head" to currentGitHead()))
         println("Telegram upload completed.")
     }
 }
