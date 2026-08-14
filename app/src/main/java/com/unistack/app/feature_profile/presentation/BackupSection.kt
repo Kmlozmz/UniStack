@@ -39,12 +39,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -53,7 +56,12 @@ import java.util.Locale
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
-private data class PendingRestore(val uri: Uri, val json: String, val preview: String)
+private data class PendingRestore(
+    val name: String,
+    val json: String,
+    val incoming: LocalBackupPreview?,
+    val current: LocalBackupPreview?
+)
 
 /**
  * Datos y respaldos.
@@ -98,7 +106,12 @@ internal fun BackupSection(
             .onSuccess { json ->
                 // Se lee y se enseña qué trae antes de tocar nada: restaurar reemplaza lo que
                 // hay, y esa es una puerta de una sola dirección.
-                pendingRestore = PendingRestore(uri, json, viewModel.previewLocalBackup(json))
+                pendingRestore = PendingRestore(
+                    name = BackupFiles.displayName(context, uri),
+                    json = json,
+                    incoming = viewModel.inspectLocalBackup(json),
+                    current = viewModel.currentContents()
+                )
             }
             .onFailure { onFeedback("No se pudo leer el archivo.") }
     }
@@ -328,37 +341,128 @@ internal fun BackupSection(
     }
 
     pendingRestore?.let { pending ->
+        val incoming = pending.incoming
         AlertDialog(
             onDismissRequest = { pendingRestore = null },
-            title = { Text("¿Restaurar esta copia?") },
+            title = { Text(if (incoming == null) "Ese archivo no sirve" else "¿Restaurar esta copia?") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("El archivo contiene:", color = UniStackColors.TextSecondary, fontSize = 13.sp)
-                    Text(pending.preview, color = UniStackColors.TextPrimary, fontSize = 13.sp)
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Lo que tengas ahora en la app se reemplaza por esto y no se puede " +
-                            "deshacer. Si dudas, guarda antes una copia de lo actual.",
-                        color = UniStackColors.Coral,
+                        pending.name,
+                        color = UniStackColors.TextSecondary,
                         fontSize = 12.sp,
-                        lineHeight = 16.sp
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    if (incoming == null) {
+                        Text(
+                            "No es una copia de UniStack, o está incompleto. Elige el archivo " +
+                                "que guardaste desde «Guardar».",
+                            color = UniStackColors.TextPrimary,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
+                        )
+                    } else {
+                        /*
+                         * Antes decía «v10 · 1 materias · 0 notas…» en una línea.
+                         *
+                         * Ese «v10» es el número de esquema de la base, que no significa nada
+                         * fuera del código, y una lista de cifras sin contra qué compararlas no
+                         * responde la única pregunta que importa aquí: qué pierdo y qué gano.
+                         * Ahora cada fila enseña lo que hay ahora y lo que quedaría.
+                         */
+                        Text(
+                            "Esto es lo que cambiaría:",
+                            color = UniStackColors.TextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            RestoreComparisonHeader()
+                            RestoreComparisonRow("Materias", pending.current?.subjects, incoming.subjects)
+                            RestoreComparisonRow("Notas", pending.current?.grades, incoming.grades)
+                            RestoreComparisonRow("Tareas", pending.current?.tasks, incoming.tasks)
+                            RestoreComparisonRow("Gastos", pending.current?.expenses, incoming.expenses)
+                            RestoreComparisonRow("Trabajos", pending.current?.academicWorks, incoming.academicWorks)
+                            RestoreComparisonRow("Eventos", pending.current?.agendaEvents, incoming.agendaEvents)
+                        }
+                        Text(
+                            "Se reemplaza todo, no se mezcla, y no se puede deshacer. Si dudas, " +
+                                "guarda antes una copia de lo que tienes ahora.",
+                            color = UniStackColors.Coral,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        val restored = viewModel.restoreLocalBackup(pending.json)
-                        pendingRestore = null
-                        onFeedback(if (restored) "Copia restaurada." else "Revisa el archivo: no es una copia válida.")
+                if (incoming != null) {
+                    TextButton(
+                        onClick = {
+                            val restored = viewModel.restoreLocalBackup(pending.json)
+                            pendingRestore = null
+                            onFeedback(if (restored) "Copia restaurada." else "No se pudo restaurar el archivo.")
+                        }
+                    ) {
+                        Text("Restaurar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
                     }
-                ) {
-                    Text("Restaurar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRestore = null }) { Text("Cancelar") }
+                TextButton(onClick = { pendingRestore = null }) {
+                    Text(if (incoming == null) "Entendido" else "Cancelar")
+                }
             },
             containerColor = UniStackColors.Background
+        )
+    }
+}
+
+@Composable
+private fun RestoreComparisonHeader() {
+    Row {
+        Spacer(Modifier.weight(1f))
+        Text(
+            "Ahora",
+            modifier = Modifier.width(58.dp),
+            color = UniStackColors.TextSecondary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.End
+        )
+        Text(
+            "Quedaría",
+            modifier = Modifier.width(72.dp),
+            color = UniStackColors.TextSecondary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+@Composable
+private fun RestoreComparisonRow(label: String, current: Int?, incoming: Int) {
+    // Lo que baja se marca: perder notas es distinto de ganarlas, y el color lo dice antes de
+    // que nadie compare los dos números.
+    val losing = current != null && incoming < current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(label, modifier = Modifier.weight(1f), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+        Text(
+            current?.toString() ?: "—",
+            modifier = Modifier.width(58.dp),
+            color = UniStackColors.TextSecondary,
+            fontSize = 13.sp,
+            textAlign = TextAlign.End
+        )
+        Text(
+            incoming.toString(),
+            modifier = Modifier.width(72.dp),
+            color = if (losing) UniStackColors.Coral else UniStackColors.TextPrimary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.End
         )
     }
 }

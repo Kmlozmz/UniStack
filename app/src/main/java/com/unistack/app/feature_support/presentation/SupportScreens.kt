@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -57,6 +58,7 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.feature_support.domain.changelogFor
 import com.unistack.app.feature_updates.presentation.ReleaseNotes
 
 /**
@@ -83,7 +85,11 @@ internal fun SupportScaffold(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background)
-            .statusBarsPadding(),
+            .statusBarsPadding()
+            // Con `enableEdgeToEdge` la ventana no se encoge sola al abrir el teclado, así que
+            // lo que se escribía al final de la lista quedaba debajo y había que desplazar a
+            // mano para leerlo. Esto le añade al final el alto del teclado.
+            .imePadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
             end = spacing.screenHorizontal,
@@ -116,27 +122,29 @@ internal fun SupportScaffold(
     }
 }
 
-/** Novedades: el registro de cambios que viaja dentro de la app, sin pedir red. */
+/**
+ * Novedades: lo que trae la versión que tienes puesta.
+ *
+ * Solo versiones publicadas, y solo las de tu canal: quien va por betas nunca instaló las
+ * alphas de en medio, y a quien tiene la definitiva le da igual qué se arregló en una beta que
+ * no tuvo. El reparto vive en [changelogFor], con sus pruebas.
+ */
 @Composable
 fun WhatsNewScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val changelog = remember {
-        runCatching {
+    val sections = remember {
+        val markdown = runCatching {
             context.assets.open("changelog.md").bufferedReader().use { it.readText() }
-        }.getOrNull()
-    }
-    // Del archivo entero se enseña de la primera versión publicada en adelante: la cabecera
-    // explica cómo se escribe el archivo, que es cosa de quien lo edita y no de quien lo lee.
-    val notes = remember(changelog) {
-        changelog?.substringAfter("## [", "")?.let { "## [$it" }?.takeIf { it.length > 4 }
+        }.getOrNull().orEmpty()
+        changelogFor(markdown, BuildConfig.VERSION_NAME)
     }
 
     SupportScaffold(
         title = "Novedades",
-        subtitle = "Lo que ha cambiado en cada versión",
+        subtitle = "Lo que trae tu versión",
         onBackClick = onBackClick,
         modifier = modifier
     ) {
@@ -145,22 +153,40 @@ fun WhatsNewScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     UniStackWordmark(fontSize = 20.sp)
                     Text(
-                        "Versión instalada: ${BuildConfig.VERSION_NAME}",
+                        "Tienes la ${BuildConfig.VERSION_NAME}",
                         color = UniStackColors.TextSecondary,
                         fontSize = 12.sp
                     )
                 }
             }
         }
-        item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
-                if (notes.isNullOrBlank()) {
+        if (sections.isEmpty()) {
+            item {
+                UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                     Text(
-                        "No se pudo leer el registro de cambios de esta versión.",
+                        "Todavía no hay nada publicado para esta versión.",
                         color = UniStackColors.TextSecondary
                     )
-                } else {
-                    ReleaseNotes(markdown = notes, modifier = Modifier.fillMaxWidth())
+                }
+            }
+        } else {
+            items(sections, key = { it.version }) { section ->
+                UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                section.version,
+                                color = UniStackColors.TextPrimary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            section.date?.let { date ->
+                                Spacer(Modifier.width(8.dp))
+                                Text(date, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                            }
+                        }
+                        ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         }
@@ -331,57 +357,44 @@ fun HelpScreen(
             }
         }
         item {
+            /*
+             * La caja de escribir está apagada a propósito.
+             *
+             * Enviaba abriendo el selector del teléfono, así que la sugerencia salía hacia
+             * donde el usuario eligiera y a nosotros no nos llegaba nada: pedirle a alguien que
+             * escriba y que su mensaje no llegue a ninguna parte es peor que no ofrecerlo.
+             * Vuelve cuando haya un sitio donde se lean de verdad.
+             */
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Enviar sugerencia",
+                            color = UniStackColors.TextPrimary,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            Modifier
+                                .clip(AppShapes.Pill)
+                                .background(UniStackColors.Yellow.copy(alpha = 0.22f))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                "Pronto",
+                                color = UniStackColors.Yellow,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                    }
                     Text(
-                        "Enviar sugerencia",
-                        color = UniStackColors.TextPrimary,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        "Cuéntanos qué te falta o qué se rompió. Elige después por dónde enviarlo.",
+                        "Estamos preparando dónde recibirlas para poder leerlas y responder. " +
+                            "Mientras tanto, si algo falla, escríbenos por donde ya nos hablas.",
                         color = UniStackColors.TextSecondary,
                         fontSize = 12.sp,
-                        lineHeight = 16.sp
+                        lineHeight = 17.sp
                     )
-                    OutlinedTextField(
-                        value = suggestion,
-                        onValueChange = { suggestion = it.take(600) },
-                        label = { Text("Tu sugerencia") },
-                        minLines = 3,
-                        shape = AppShapes.MediumCard,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    SquishyButton(
-                        onClick = {
-                            val body = buildString {
-                                appendLine(suggestion.trim())
-                                appendLine()
-                                appendLine("---")
-                                appendLine("UniStack ${BuildConfig.VERSION_NAME}")
-                                appendLine("Android ${android.os.Build.VERSION.RELEASE} · ${android.os.Build.MODEL}")
-                            }
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "Sugerencia para UniStack")
-                                putExtra(Intent.EXTRA_TEXT, body)
-                            }
-                            try {
-                                context.startActivity(Intent.createChooser(intent, "Enviar sugerencia"))
-                            } catch (_: ActivityNotFoundException) {
-                                // Sin nada instalado que sepa enviar texto no hay nada que hacer,
-                                // y tampoco hay por qué tirar la pantalla abajo.
-                            }
-                        },
-                        enabled = suggestion.isNotBlank(),
-                        shape = AppShapes.Pill,
-                        colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(17.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Enviar")
-                    }
                 }
             }
         }

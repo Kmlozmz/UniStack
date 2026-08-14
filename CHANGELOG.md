@@ -17,7 +17,38 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente: lo último salió en la 1.0.0-alpha.5._
+### Corregido
+
+- **Los avisos que apagabas sin permiso no se podían volver a encender.** Encender uno pedía el
+  permiso y solo guardaba si lo aceptabas, así que quien lo hubiera denegado podía apagarlos
+  todos y ninguno volvía a marcarse. Ahora lo que eliges se guarda siempre; que el sistema deje
+  avisar es otra pregunta, y tiene su propio botón arriba.
+- **El botón para activar los avisos no hacía nada.** Cuando Android ya ha dejado de enseñar el
+  diálogo del permiso, pedirlo otra vez vuelve con un «no» sin que se vea nada. Ahora, llegado
+  ese punto, el botón dice «Ajustes» y abre los del sistema.
+- **La app daba por hecho que podía avisar en teléfonos anteriores a Android 13**, aunque
+  tuvieras sus notificaciones apagadas en ajustes. Ahora lo comprueba de verdad.
+- **Lo que escribías al final de una lista quedaba debajo del teclado.** Pasaba en la caja de
+  sugerencia y en las notas rápidas: el contenido ahora sube por encima del teclado.
+
+### Cambiado
+
+- **Novedades enseña solo versiones publicadas, y solo las de tu canal.** Estaba sacando también
+  lo que aún no había salido. Cada versión reúne lo suyo desde la anterior de su mismo canal:
+  una definitiva recoge todo lo que pasó desde la definitiva anterior —preestrenos incluidos— y
+  una beta, desde la beta anterior. Lo no publicado tampoco viaja ya dentro del APK.
+- **Antes de restaurar una copia se ve qué cambia.** Decía «v10 · 1 materias · 0 notas» en una
+  línea; ese «v10» no significa nada fuera del código y las cifras no decían contra qué se
+  comparaban. Ahora salen el nombre del archivo y una tabla de lo que tienes ahora frente a lo
+  que quedaría, con lo que baja marcado en rojo. Un archivo que no es una copia lo dice y no
+  ofrece restaurar.
+- **La pantalla de notificaciones deja de repetirse.** Con la bandeja vacía había tres capas
+  diciendo lo mismo; ahora el resumen y los filtros solo salen si hay avisos, y el vacío
+  distingue entre «no ha llegado nada» y «este filtro no tiene nada», con acceso directo a
+  elegir qué quieres recibir.
+- **La caja para enviar sugerencias queda apagada por ahora.** Enviaba abriendo el selector del
+  teléfono, así que el mensaje salía hacia donde tú eligieras y a nosotros no nos llegaba nada.
+  Vuelve cuando haya un sitio donde se lean. Las preguntas frecuentes siguen igual.
 
 ---
 

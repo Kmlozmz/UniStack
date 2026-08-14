@@ -165,20 +165,36 @@ fun NotificationHistoryScreen(
                 onSettingsClick = onSettingsClick
             )
         }
-        item {
-            NotificationInboxSummary(
-                unreadCount = notifications.count { !it.read },
-                actionCount = notifications.count { it.category().requiresAction }
-            )
-        }
-        item {
-            NotificationFilterBar(
-                selected = selectedFilter,
-                onSelected = { selectedFilter = it }
-            )
+        /*
+         * El resumen y los filtros solo salen si hay algo que resumir o filtrar.
+         *
+         * Con la bandeja vacía había tres capas diciendo lo mismo: la cabecera («Historial de
+         * avisos recibidos»), una tarjeta repitiéndolo («Historial de avisos · Todo está
+         * revisado») y un vacío debajo. Y unos filtros para elegir entre ninguna cosa y
+         * ninguna otra.
+         */
+        if (notifications.isNotEmpty()) {
+            item {
+                NotificationInboxSummary(
+                    unreadCount = notifications.count { !it.read },
+                    actionCount = notifications.count { it.category().requiresAction }
+                )
+            }
+            item {
+                NotificationFilterBar(
+                    selected = selectedFilter,
+                    onSelected = { selectedFilter = it }
+                )
+            }
         }
         if (grouped.isEmpty()) {
-            item { EmptyNotifications(filter = selectedFilter) }
+            item {
+                EmptyNotifications(
+                    filter = selectedFilter,
+                    inboxIsEmpty = notifications.isEmpty(),
+                    onSettingsClick = onSettingsClick
+                )
+            }
         } else {
             grouped.forEach { (section, items) ->
                 item {
@@ -315,9 +331,18 @@ private fun NotificationInboxSummary(
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Historial de avisos", color = NotificationText, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
                 Text(
-                    if (unreadCount == 0) "Todo está revisado" else "$unreadCount sin revisar",
+                    if (unreadCount == 0) "Todo revisado" else "$unreadCount sin revisar",
+                    color = NotificationText,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    if (unreadCount == 0) {
+                        "Aquí queda lo que te ha llegado."
+                    } else {
+                        "Toca uno para abrir lo que lo provocó."
+                    },
                     color = NotificationMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
@@ -903,11 +928,15 @@ private fun NotificationStatusPill(
 }
 
 @Composable
-private fun EmptyNotifications(filter: NotificationFilter) {
+private fun EmptyNotifications(
+    filter: NotificationFilter,
+    inboxIsEmpty: Boolean,
+    onSettingsClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 72.dp),
+            .padding(top = 56.dp, bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -925,21 +954,52 @@ private fun EmptyNotifications(filter: NotificationFilter) {
                 modifier = Modifier.size(28.dp)
             )
         }
-        Text("Todo tranquilo", color = NotificationText, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Text(
-            text = when (filter) {
-                NotificationFilter.ALL -> "Las notificaciones que recibas quedaran guardadas aqui."
-                NotificationFilter.ACTIONS -> "No hay avisos que necesiten accion ahora."
-                NotificationFilter.ACADEMIC -> "Todavia no hay avisos academicos."
-                NotificationFilter.TASKS -> "No hay avisos de tareas o entregas."
-                NotificationFilter.CLASSES -> "No hay avisos de clases o asistencia."
-                NotificationFilter.UNREAD -> "No tienes avisos pendientes por revisar."
-                NotificationFilter.READ -> "Todavia no has revisado ningun aviso."
+            if (inboxIsEmpty) "Todavía no te ha llegado nada" else "Nada con este filtro",
+            color = NotificationText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = if (inboxIsEmpty) {
+                "Cuando la app te avise de una entrega, una clase o una nota, el aviso queda " +
+                    "guardado aquí para que puedas volver a leerlo."
+            } else {
+                when (filter) {
+                    NotificationFilter.ACTIONS -> "Ningún aviso pide que hagas algo ahora mismo."
+                    NotificationFilter.ACADEMIC -> "No hay avisos de notas ni de cortes."
+                    NotificationFilter.TASKS -> "No hay avisos de tareas ni de entregas."
+                    NotificationFilter.CLASSES -> "No hay avisos de clases ni de asistencia."
+                    NotificationFilter.UNREAD -> "No te queda ninguno por revisar."
+                    NotificationFilter.READ -> "Todavía no has revisado ninguno."
+                    NotificationFilter.ALL -> "No hay avisos guardados."
+                }
             },
             color = NotificationMuted,
             fontSize = 12.sp,
-            textAlign = TextAlign.Center
+            lineHeight = 17.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
         )
+        // Desde el vacío se llega a lo único que se puede hacer aquí: decidir qué quieres que
+        // te avise. Antes era una pantalla en blanco sin salida.
+        if (inboxIsEmpty) {
+            Spacer(Modifier.height(4.dp))
+            Surface(
+                onClick = onSettingsClick,
+                shape = AppShapes.Pill,
+                color = NotificationPrimary.copy(alpha = 0.14f)
+            ) {
+                Text(
+                    "Elegir qué te avisa",
+                    color = NotificationPrimary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
+                )
+            }
+        }
     }
 }
 

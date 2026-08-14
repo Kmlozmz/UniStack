@@ -69,6 +69,7 @@ internal fun NotificationSection(
     profile: UserProfile,
     permissionGranted: Boolean,
     onRequestPermission: () -> Unit,
+    permissionActionLabel: String,
     onReminderToggle: (taskReminders: Boolean, works: Boolean, overdue: Boolean, leadHours: Int) -> Unit,
     onAcademicToggle: (gradeInsights: Boolean, pendingGrades: Boolean) -> Unit,
     onQuietHoursChange: (enabled: Boolean, startHour: Int?, endHour: Int?) -> Unit
@@ -78,7 +79,11 @@ internal fun NotificationSection(
     val quietEnd = profile.quietHoursEndHour ?: 7
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        PermissionCard(granted = permissionGranted, onRequestPermission = onRequestPermission)
+        PermissionCard(
+            granted = permissionGranted,
+            actionLabel = permissionActionLabel,
+            onRequestPermission = onRequestPermission
+        )
 
         // Los avisos se apagan visualmente sin el permiso: los interruptores siguen ahí y se
         // pueden dejar preparados, pero no llega nada hasta que el sistema lo permita.
@@ -245,7 +250,11 @@ internal fun NotificationSection(
 }
 
 @Composable
-private fun PermissionCard(granted: Boolean, onRequestPermission: () -> Unit) {
+private fun PermissionCard(
+    granted: Boolean,
+    actionLabel: String,
+    onRequestPermission: () -> Unit
+) {
     val accent = if (granted) UniStackColors.Green else UniStackColors.Coral
     UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -275,7 +284,10 @@ private fun PermissionCard(granted: Boolean, onRequestPermission: () -> Unit) {
                     if (granted) {
                         "Lo que enciendas abajo te va a llegar."
                     } else {
-                        "Sin el permiso, nada de lo de abajo llega."
+                        // Se puede dejar todo marcado sin permiso: lo que se elige aquí es qué
+                        // quieres recibir, y eso se guarda igual.
+                        "Puedes dejar elegido qué quieres recibir, pero no llegará nada hasta " +
+                            "que el sistema lo permita."
                     },
                     color = UniStackColors.TextSecondary,
                     fontSize = 12.sp,
@@ -289,7 +301,7 @@ private fun PermissionCard(granted: Boolean, onRequestPermission: () -> Unit) {
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
                 ) {
-                    Text("Activar", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(actionLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

@@ -375,7 +375,21 @@ abstract class CopyChangelogAsset : DefaultTask() {
     fun copyChangelog() {
         val target = outputDirectory.get().asFile
         target.mkdirs()
-        changelog.get().asFile.copyTo(File(target, "changelog.md"), overwrite = true)
+        /*
+         * La sección «Sin publicar» se queda fuera del APK.
+         *
+         * La app ya no la enseña, pero el archivo viaja dentro y cualquiera puede abrirlo: lo
+         * que todavía no ha salido no tiene por qué ir dentro de algo que se publica.
+         */
+        val lines = changelog.get().asFile.readLines()
+        val start = lines.indexOfFirst { it.trimStart().startsWith("## [Sin publicar]") }
+        val filtered = if (start < 0) {
+            lines
+        } else {
+            val end = lines.drop(start + 1).indexOfFirst { it.trimStart().startsWith("## [") }
+            if (end < 0) lines.take(start) else lines.take(start) + lines.drop(start + 1 + end)
+        }
+        File(target, "changelog.md").writeText(filtered.joinToString(System.lineSeparator()))
     }
 }
 

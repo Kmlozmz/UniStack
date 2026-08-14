@@ -223,12 +223,14 @@ internal fun HomeNavigationPanel(
             accent = UniStackColors.Blue,
             onClick = onHelpClick
         ),
+        // Sin un sitio donde recibirlas, mandar a escribir una sugerencia es mandar a escribir
+        // al vacío. Vuelve cuando haya buzón.
         DrawerPanelAction(
             icon = Icons.Rounded.Lightbulb,
             title = "Enviar sugerencia",
             subtitle = "Cuéntanos cómo podemos mejorar",
             accent = UniStackColors.Yellow,
-            onClick = onHelpClick
+            badge = "Pronto"
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Info,

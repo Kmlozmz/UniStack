@@ -3,8 +3,11 @@ package com.unistack.app.feature_profile.presentation
 import android.Manifest
 import android.content.ClipData
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -81,6 +84,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -181,34 +186,49 @@ fun ProfileScreen(
     var showUnlinkDialog by remember { mutableStateOf(false) }
     var pendingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var confirmingScaleChange by remember { mutableStateOf<GradingScaleChangeImpact?>(null) }
-    var pendingReminderUpdate by remember { mutableStateOf<(() -> Boolean)?>(null) }
     var notificationPermissionGranted by remember {
         mutableStateOf(context.hasNotificationPermission())
     }
+    var notificationPermissionAsked by rememberSaveable { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         notificationPermissionGranted = granted || context.hasNotificationPermission()
-        val update = pendingReminderUpdate
-        pendingReminderUpdate = null
-        feedback = when {
-            notificationPermissionGranted && update?.invoke() == true -> "Recordatorios activados."
-            notificationPermissionGranted -> "Revisa las horas de anticipación."
-            else -> "Activa el permiso de notificaciones para recibir recordatorios."
+        feedback = if (notificationPermissionGranted) {
+            "Ya puedes recibir avisos."
+        } else {
+            "Sin el permiso, los avisos que enciendas no van a llegar."
         }
     }
-    val runReminderUpdate: (Boolean, () -> Boolean) -> Unit = { enablingReminder, update ->
-        val requiresPermission = enablingReminder && !context.hasNotificationPermission()
-        if (requiresPermission) {
-            pendingReminderUpdate = update
+    val askForNotificationPermission: () -> Unit = {
+        if (context.canAskForNotificationPermission(notificationPermissionAsked)) {
+            notificationPermissionAsked = true
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            feedback = if (update()) {
-                notificationPermissionGranted = context.hasNotificationPermission()
-                "Recordatorios actualizados."
-            } else {
-                "Revisa las horas de anticipación."
+            // Ya no hay diálogo que enseñar: al volver de ajustes, el observador del ciclo de
+            // vida vuelve a mirar si quedó activado.
+            context.openNotificationSettings()
+        }
+    }
+    /*
+     * El interruptor guarda siempre, tenga permiso o no.
+     *
+     * Antes, encender uno sin permiso lanzaba la petición y **solo guardaba si la aceptabas**:
+     * si la rechazabas —o si Android ya no enseñaba el diálogo— la preferencia no se guardaba y
+     * el interruptor volvía atrás solo. Apagar sí funcionaba, así que se podían apagar todos y
+     * no volver a encender ninguno. Lo que el usuario marca es lo que quiere recibir; que el
+     * sistema lo deje o no es otra pregunta, y tiene su propio botón arriba.
+     */
+    val runReminderUpdate: (Boolean, () -> Boolean) -> Unit = { enablingReminder, update ->
+        val saved = update()
+        notificationPermissionGranted = context.hasNotificationPermission()
+        feedback = when {
+            !saved -> "Revisa las horas de anticipación."
+            enablingReminder && !notificationPermissionGranted -> {
+                askForNotificationPermission()
+                null
             }
+            else -> null
         }
     }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -458,8 +478,11 @@ fun ProfileScreen(
                     NotificationSection(
                         profile = current,
                         permissionGranted = notificationPermissionGranted,
-                        onRequestPermission = {
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        onRequestPermission = askForNotificationPermission,
+                        permissionActionLabel = if (context.canAskForNotificationPermission(notificationPermissionAsked)) {
+                            "Activar"
+                        } else {
+                            "Ajustes"
                         },
                         onReminderToggle = { tasks, works, overdue, leadHours ->
                             // El permiso se pide solo cuando se enciende algo, no al entrar:
@@ -1456,7 +1479,39 @@ private fun SyncStatus.label(): String {
     }
 }
 
-private fun Context.hasNotificationPermission(): Boolean {
-    return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+/**
+ * Si el sistema deja que la app avise.
+ *
+ * Antes solo miraba el permiso de Android 13, así que en un teléfono más antiguo respondía
+ * siempre que sí —aunque el usuario hubiera apagado las notificaciones de la app en ajustes—.
+ * `areNotificationsEnabled` responde lo que de verdad importa en todas las versiones.
+ */
+private fun Context.hasNotificationPermission(): Boolean =
+    NotificationManagerCompat.from(this).areNotificationsEnabled()
+
+/**
+ * Si todavía tiene sentido pedirle el permiso al sistema.
+ *
+ * Android deja de enseñar el diálogo cuando ya se ha denegado, y `launch` vuelve al instante
+ * con un «no» sin que se vea nada: el botón parecía roto. Cuando se llega a ese punto, el único
+ * camino son los ajustes del sistema.
+ */
+private fun Context.canAskForNotificationPermission(alreadyAsked: Boolean): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+    if (!alreadyAsked) return true
+    val activity = this as? android.app.Activity ?: return false
+    return ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
+}
+
+/** Abre los ajustes de notificaciones de la app, con el detalle de la app como respaldo. */
+private fun Context.openNotificationSettings() {
+    val direct = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    if (runCatching { startActivity(direct) }.isSuccess) return
+    val fallback = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { startActivity(fallback) }
 }

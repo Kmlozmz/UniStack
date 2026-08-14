@@ -60,6 +60,17 @@ object BackupFiles {
         context.startActivity(Intent.createChooser(intent, "Compartir"))
     }
 
+    /** El nombre del archivo elegido, para que se vea cuál se va a restaurar. */
+    fun displayName(context: Context, uri: Uri): String {
+        val fromProvider = runCatching {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val index = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
+            }
+        }.getOrNull()
+        return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: "Archivo elegido"
+    }
+
     fun rememberBackupDone(context: Context) {
         context.applicationContext
             .getSharedPreferences(BACKUP_PREFS, Context.MODE_PRIVATE)

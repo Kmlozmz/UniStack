@@ -22,6 +22,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_billing.domain.BillingRepository
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
+import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_user.domain.AccountAuthService
 import com.unistack.app.feature_user.domain.UserRepository
@@ -463,6 +464,13 @@ class ProfileViewModel @Inject constructor(
     fun exportExpensesCsv(): String = localBackupRepository.exportExpensesCsv()
 
     fun localDataSummary(): String = previewLocalBackup(exportLocalBackup())
+
+    /** Lo que trae un archivo, campo por campo. Nulo si no es una copia válida. */
+    fun inspectLocalBackup(json: String): LocalBackupPreview? =
+        localBackupRepository.previewBackupJson(json).getOrNull()
+
+    /** Lo que hay ahora mismo en la app, para poder comparar antes de reemplazarlo. */
+    fun currentContents(): LocalBackupPreview? = inspectLocalBackup(exportLocalBackup())
 
     fun previewLocalBackup(json: String): String {
         return localBackupRepository.previewBackupJson(json)
