@@ -43,7 +43,9 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.components.SquishyButton
+import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
@@ -101,20 +103,23 @@ internal fun NotificationSection(
                             )
                         }
                     )
-                    ReminderRow(
-                        icon = Icons.Rounded.Description,
-                        title = "Trabajos",
-                        description = "Antes de una entrega académica",
-                        checked = profile.academicWorkRemindersEnabled,
-                        onToggle = {
-                            onReminderToggle(
-                                profile.taskRemindersEnabled,
-                                !profile.academicWorkRemindersEnabled,
-                                profile.overdueRemindersEnabled,
-                                lead
-                            )
-                        }
-                    )
+                    // El aviso de Trabajos solo se ofrece donde Trabajos se puede abrir.
+                    if (BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) {
+                        ReminderRow(
+                            icon = Icons.Rounded.Description,
+                            title = "Trabajos",
+                            description = "Antes de una entrega académica",
+                            checked = profile.academicWorkRemindersEnabled,
+                            onToggle = {
+                                onReminderToggle(
+                                    profile.taskRemindersEnabled,
+                                    !profile.academicWorkRemindersEnabled,
+                                    profile.overdueRemindersEnabled,
+                                    lead
+                                )
+                            }
+                        )
+                    }
                     ReminderRow(
                         icon = Icons.Rounded.WarningAmber,
                         title = "Vencidos",

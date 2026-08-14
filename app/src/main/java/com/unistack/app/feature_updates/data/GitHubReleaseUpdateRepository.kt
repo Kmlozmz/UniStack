@@ -324,6 +324,14 @@ class GitHubReleaseUpdateRepository(
         observeDownload(downloadManager, info)
     }
 
+    /** El entero de una columna, o nulo si esa columna no viene en el cursor. */
+    private fun android.database.Cursor.intOrNull(column: String): Int? =
+        getColumnIndex(column).takeIf { it >= 0 }?.let(::getInt)
+
+    /** El largo de una columna, o cero si esa columna no viene en el cursor. */
+    private fun android.database.Cursor.longOrZero(column: String): Long =
+        getColumnIndex(column).takeIf { it >= 0 }?.let(::getLong) ?: 0L
+
     private fun observeDownload(downloadManager: DownloadManager, info: UpdateInfo) {
         scope.launch {
             while (isActive) {
@@ -332,7 +340,10 @@ class GitHubReleaseUpdateRepository(
                 var shouldStop = false
                 cursor.use {
                     if (!it.moveToFirst()) return@use
-                    val status = it.getInt(it.getColumnIndex(DownloadManager.COLUMN_STATUS))
+                    // `getColumnIndex` devuelve -1 si la columna no está, y leer por -1 no
+                    // devuelve un cero: revienta. Aquí eso sería un cierre de la app en mitad
+                    // de la descarga de una actualización, que es de lo peor que puede pasar.
+                    val status = it.intOrNull(DownloadManager.COLUMN_STATUS) ?: return@use
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             _state.value = UpdateState.ReadyToInstall(info, apkUri())
@@ -343,8 +354,8 @@ class GitHubReleaseUpdateRepository(
                             shouldStop = true
                         }
                         else -> {
-                            val downloaded = it.getLong(it.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-                            val total = it.getLong(it.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)).coerceAtLeast(1)
+                            val downloaded = it.longOrZero(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                            val total = it.longOrZero(DownloadManager.COLUMN_TOTAL_SIZE_BYTES).coerceAtLeast(1)
                             val progress = ((downloaded * 100) / total).toInt().coerceIn(0, 100)
                             _state.value = UpdateState.Downloading(info, progress)
                         }

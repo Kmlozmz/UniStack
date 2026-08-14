@@ -208,8 +208,6 @@ android {
         }
     }
 
-    sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/changelogAssets"))
-
 
     buildTypes {
         debug {
@@ -357,17 +355,42 @@ dependencies {
  * El registro de cambios viaja dentro del APK.
  *
  * La pantalla de Novedades lo lee de los assets, y el archivo vive en la raíz del repositorio
- * porque es también lo que se publica en GitHub. Copiarlo aquí evita mantener dos copias que
- * se desincronizan a la primera.
+ * porque es también lo que se publica en GitHub. Copiarlo al compilar evita mantener dos copias
+ * que se desincronizan a la primera.
+ *
+ * Se registra por variante con `addGeneratedSourceDirectory` y no añadiendo un directorio a
+ * mano: así el propio AGP encadena la tarea con todo lo que lee assets. Puesto a mano, `lint`
+ * leía ese directorio sin declarar que dependía de esta tarea y Gradle abortaba la
+ * comprobación —el orden entre las dos no estaba garantizado—.
  */
-val copyChangelogAsset = tasks.register<Copy>("copyChangelogAsset") {
-    from(rootProject.file("CHANGELOG.md"))
-    into(layout.buildDirectory.dir("generated/changelogAssets"))
-    rename { "changelog.md" }
+abstract class CopyChangelogAsset : DefaultTask() {
+
+    @get:InputFile
+    abstract val changelog: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun copyChangelog() {
+        val target = outputDirectory.get().asFile
+        target.mkdirs()
+        changelog.get().asFile.copyTo(File(target, "changelog.md"), overwrite = true)
+    }
 }
 
-tasks.withType<com.android.build.gradle.tasks.MergeSourceSetFolders>().configureEach {
-    dependsOn(copyChangelogAsset)
+androidComponents {
+    onVariants { variant ->
+        val copyTask = tasks.register<CopyChangelogAsset>(
+            "copyChangelogAsset${variant.name.replaceFirstChar { it.uppercase() }}"
+        ) {
+            changelog.set(rootProject.file("CHANGELOG.md"))
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            copyTask,
+            CopyChangelogAsset::outputDirectory
+        )
+    }
 }
 
 val verifyDesignTokens = tasks.register("verifyDesignTokens") {

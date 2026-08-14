@@ -91,6 +91,8 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.LocalBottomBarOverlay
+import com.unistack.app.BuildConfig
+import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.bounceClick
@@ -1221,8 +1223,14 @@ private fun ModulesSettingsCard(
     enabledModules: Set<AppModule>,
     onToggleModule: (AppModule) -> Unit
 ) {
+    // Trabajos no se puede abrir fuera de dev y alpha, así que tampoco se ofrece encender:
+    // un interruptor que enciende una sección a la que no se entra es peor que no tenerlo.
+    val visibleModules = AppModule.entries.filter { module ->
+        module != AppModule.ACADEMIC_TEMPLATES ||
+            BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
+    }
     SettingsCard(title = "Módulos activos") {
-        AppModule.entries.forEach { module: AppModule ->
+        visibleModules.forEach { module: AppModule ->
             val enabled = module in enabledModules
             Row(
                 modifier = Modifier
