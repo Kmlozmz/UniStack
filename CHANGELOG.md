@@ -38,7 +38,9 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+#### Ayuda y soporte
+- Reportar y sugerir son dos filas con su icono y su descripción, en vez de dos botones donde uno parecía la opción ya elegida.
+- El aviso de que el grupo es público sale al escribir, que es cuando importa.
 
 ---
 

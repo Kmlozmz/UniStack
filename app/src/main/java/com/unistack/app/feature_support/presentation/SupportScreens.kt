@@ -27,8 +27,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
@@ -370,6 +373,14 @@ fun HelpScreen(
             }
         }
         item {
+            /*
+             * Dos filas, no dos botones.
+             *
+             * Iban como un botón relleno y otro vacío, y eso en una app se lee como «esta es la
+             * opción elegida»: parecía un selector con una respuesta ya marcada, no dos caminos
+             * que llevan a sitios distintos. Con icono, descripción y flecha, cada uno dice lo
+             * que hace y ninguno pesa más que el otro.
+             */
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -378,37 +389,25 @@ fun HelpScreen(
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "Escríbelo en el grupo de soporte. Se abre en Telegram, en el tema que " +
-                            "corresponda, con tu versión y tu teléfono ya apuntados.",
+                        "Escríbelo y se abre Telegram en el tema que corresponda, con tu versión " +
+                            "y tu teléfono ya apuntados.",
                         color = UniStackColors.TextSecondary,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SquishyButton(
-                            onClick = { composing = TicketKind.BUG },
-                            modifier = Modifier.weight(1f),
-                            shape = AppShapes.Pill,
-                            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
-                        ) {
-                            Text("Reportar un fallo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                        SquishyButton(
-                            onClick = { composing = TicketKind.IDEA },
-                            modifier = Modifier.weight(1f),
-                            shape = AppShapes.Pill,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = UniStackColors.SurfaceVariant,
-                                contentColor = UniStackColors.TextPrimary
-                            )
-                        ) {
-                            Text("Sugerir algo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                    Text(
-                        "El grupo es público: lo que escribas ahí lo puede leer cualquiera.",
-                        color = UniStackColors.TextSecondary,
-                        fontSize = 11.sp
+                    SupportOptionRow(
+                        icon = Icons.Rounded.BugReport,
+                        accent = UniStackColors.Coral,
+                        title = "Reportar un fallo",
+                        subtitle = "Algo no funciona como debería",
+                        onClick = { composing = TicketKind.BUG }
+                    )
+                    SupportOptionRow(
+                        icon = Icons.Rounded.Lightbulb,
+                        accent = UniStackColors.Yellow,
+                        title = "Sugerir algo",
+                        subtitle = "Algo que te falta o mejorarías",
+                        onClick = { composing = TicketKind.IDEA }
                     )
                 }
             }
@@ -439,6 +438,46 @@ fun HelpScreen(
                 }
                 composing = null
             }
+        )
+    }
+}
+
+@Composable
+private fun SupportOptionRow(
+    icon: ImageVector,
+    accent: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(AppShapes.MediumCard)
+            .background(UniStackColors.SurfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(AppShapes.Small)
+                .background(accent.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(19.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(title, color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
+        }
+        Icon(
+            Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = UniStackColors.TextSecondary,
+            modifier = Modifier.size(20.dp)
         )
     }
 }
@@ -494,7 +533,8 @@ private fun TicketComposer(
                     fontSize = 11.sp
                 )
                 Text(
-                    "Al enviar se copia el mensaje y se abre el grupo: solo tienes que pegarlo.",
+                    "Al enviar se copia el mensaje y se abre el grupo: solo tienes que pegarlo. " +
+                        "El grupo es público, así que no escribas nada que no quieras que se lea.",
                     color = UniStackColors.TextSecondary,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
