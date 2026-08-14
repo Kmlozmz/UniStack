@@ -38,8 +38,19 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-**Lo importante:** el registro de cambios pasa a leerse en una pasada — destacados arriba y una
-línea por cambio.
+_Nada pendiente._
+
+---
+
+## [1.1.0-alpha.1] — 2026-08-14
+
+**Lo importante:** ya se puede reportar un fallo o sugerir algo desde la app, y llega al grupo
+de soporte con tu versión y tu teléfono apuntados.
+
+#### Ayuda y soporte
+- Dos botones, «Reportar un fallo» y «Sugerir algo», cada uno abre su tema del grupo.
+- El mensaje se copia solo: al abrirse Telegram solo hay que pegarlo.
+- Se apuntan la versión, el modelo y la versión de Android, que es lo primero que haría falta preguntar.
 
 #### Novedades
 - Cada versión se presenta con lo importante primero y viñetas cortas por área.

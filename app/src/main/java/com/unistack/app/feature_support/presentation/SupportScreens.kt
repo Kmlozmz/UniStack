@@ -1,6 +1,7 @@
 package com.unistack.app.feature_support.presentation
 
 import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -30,15 +31,18 @@ import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +50,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,7 +65,12 @@ import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_support.domain.changelogFor
+import com.unistack.app.feature_support.domain.SupportChannel
+import com.unistack.app.feature_support.domain.TicketContext
+import com.unistack.app.feature_support.domain.TicketKind
+import com.unistack.app.feature_support.domain.buildTicket
 import com.unistack.app.feature_updates.presentation.ReleaseNotes
+import kotlinx.coroutines.launch
 
 /**
  * Las pantallas que el panel lateral prometía y no existían.
@@ -312,8 +323,10 @@ fun HelpScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<Int?>(null) }
-    var suggestion by rememberSaveable { mutableStateOf("") }
+    var composing by rememberSaveable { mutableStateOf<TicketKind?>(null) }
 
     SupportScaffold(
         title = "Ayuda y soporte",
@@ -357,48 +370,150 @@ fun HelpScreen(
             }
         }
         item {
-            /*
-             * La caja de escribir está apagada a propósito.
-             *
-             * Enviaba abriendo el selector del teléfono, así que la sugerencia salía hacia
-             * donde el usuario eligiera y a nosotros no nos llegaba nada: pedirle a alguien que
-             * escriba y que su mensaje no llegue a ninguna parte es peor que no ofrecerlo.
-             * Vuelve cuando haya un sitio donde se lean de verdad.
-             */
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Enviar sugerencia",
-                            color = UniStackColors.TextPrimary,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Box(
-                            Modifier
-                                .clip(AppShapes.Pill)
-                                .background(UniStackColors.Yellow.copy(alpha = 0.22f))
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                "Pronto",
-                                color = UniStackColors.Yellow,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Estamos preparando dónde recibirlas para poder leerlas y responder. " +
-                            "Mientras tanto, si algo falla, escríbenos por donde ya nos hablas.",
+                        "¿No está aquí lo tuyo?",
+                        color = UniStackColors.TextPrimary,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        "Escríbelo en el grupo de soporte. Se abre en Telegram, en el tema que " +
+                            "corresponda, con tu versión y tu teléfono ya apuntados.",
                         color = UniStackColors.TextSecondary,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SquishyButton(
+                            onClick = { composing = TicketKind.BUG },
+                            modifier = Modifier.weight(1f),
+                            shape = AppShapes.Pill,
+                            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
+                        ) {
+                            Text("Reportar un fallo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        SquishyButton(
+                            onClick = { composing = TicketKind.IDEA },
+                            modifier = Modifier.weight(1f),
+                            shape = AppShapes.Pill,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = UniStackColors.SurfaceVariant,
+                                contentColor = UniStackColors.TextPrimary
+                            )
+                        ) {
+                            Text("Sugerir algo", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    Text(
+                        "El grupo es público: lo que escribas ahí lo puede leer cualquiera.",
+                        color = UniStackColors.TextSecondary,
+                        fontSize = 11.sp
                     )
                 }
             }
         }
     }
+
+    composing?.let { kind ->
+        TicketComposer(
+            kind = kind,
+            onDismiss = { composing = null },
+            onSend = { text ->
+                val ticket = buildTicket(
+                    kind = kind,
+                    text = text,
+                    context = TicketContext(
+                        appVersion = BuildConfig.VERSION_NAME,
+                        androidVersion = android.os.Build.VERSION.RELEASE,
+                        device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+                    )
+                )
+                scope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", ticket)))
+                }
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(SupportChannel.topicFor(kind)))
+                    )
+                }
+                composing = null
+            }
+        )
+    }
+}
+
+/**
+ * La caja de escribir el ticket.
+ *
+ * Sale en un diálogo y no dentro de la lista a propósito: un diálogo se aparta solo del
+ * teclado, que es lo que hacía que en la lista se perdiera lo escrito por debajo.
+ *
+ * El botón copia y abre el tema. Telegram no deja rellenar el mensaje de un grupo desde un
+ * enlace —solo funciona con bots—, así que el último paso lo da quien reporta: pegar. Se dice
+ * antes de pulsar, para que no parezca que la app se quedó a medias.
+ */
+@Composable
+private fun TicketComposer(
+    kind: TicketKind,
+    onDismiss: () -> Unit,
+    onSend: (String) -> Unit
+) {
+    var text by rememberSaveable(kind) { mutableStateOf("") }
+    val minimumLength = 15
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(if (kind == TicketKind.BUG) "Reportar un fallo" else "Sugerir algo")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    if (kind == TicketKind.BUG) {
+                        "Cuenta qué hacías, qué esperabas y qué pasó."
+                    } else {
+                        "Cuenta qué te falta y para qué lo usarías."
+                    },
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp
+                )
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it.take(1500) },
+                    label = { Text("Tu mensaje") },
+                    minLines = 4,
+                    maxLines = 8,
+                    shape = AppShapes.MediumCard,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "${text.length} de 1500",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 11.sp
+                )
+                Text(
+                    "Al enviar se copia el mensaje y se abre el grupo: solo tienes que pegarlo.",
+                    color = UniStackColors.TextSecondary,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = text.trim().length >= minimumLength,
+                onClick = { onSend(text) }
+            ) {
+                Text("Copiar y abrir", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        },
+        containerColor = UniStackColors.Background
+    )
 }
 
 /** Acerca de: qué versión llevas, de dónde salió y qué hace con tus datos. */
