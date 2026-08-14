@@ -655,23 +655,32 @@ fun changedFilesSinceSnapshot(previous: Map<String, String>, current: Map<String
  * los commits nuevos desde el envío anterior: eso sí cambia en cada build.
  */
 fun changelogHighlights(section: String, maxItems: Int = 10): List<String> {
-    val headline = Regex("""^\s*-\s+\*\*(.+?)\*\*""")
-    val heading = Regex("""^###\s+(.+)$""")
+    val heading = Regex("""^#{3,4}\s+(.+)$""")
+    val bullet = Regex("""^\s*[-*]\s+(.+)$""")
     val result = mutableListOf<String>()
     var currentHeading: String? = null
 
     section.lines().forEach { line ->
-        heading.find(line)?.let { match ->
+        val trimmed = line.trim()
+        heading.find(trimmed)?.let { match ->
             currentHeading = match.groupValues[1].trim()
             return@forEach
         }
-        val title = headline.find(line)?.groupValues?.get(1)?.trim()?.trimEnd('.', ':')
-        if (title != null && result.size < maxItems) {
-            result += currentHeading?.let { "$it: $title" } ?: title
+        // Los destacados abren la lista: son la frase que resume la versión entera.
+        if (trimmed.startsWith("**Lo importante:**")) {
+            if (result.size < maxItems) result += trimmed.plainText().removePrefix("Lo importante:").trim()
+            return@forEach
+        }
+        val item = bullet.find(trimmed)?.groupValues?.get(1)?.trim()?.plainText()?.trimEnd('.')
+        if (!item.isNullOrBlank() && result.size < maxItems) {
+            result += currentHeading?.let { "$it: $item" } ?: item
         }
     }
     return result
 }
+
+/** Quita las negritas de Markdown: en el mensaje del bot no pintan nada. */
+fun String.plainText(): String = replace("**", "")
 
 /** El texto de la sección que le toca a esta compilación, o null si no hay ninguna. */
 fun changelogSectionForBuild(versionName: String): String? {

@@ -6,6 +6,27 @@ Cada entrada tiene que decir **qué nota el usuario**, no qué archivos se tocar
 el cálculo del promedio» sirve; «cambios en la capa de datos» no. Si algo no se nota en la app,
 no va aquí: para eso está el historial de git.
 
+## Cómo se escribe una versión
+
+```
+## [1.2.0] — 2026-09-01
+
+**Lo importante:** una o dos frases con lo que de verdad cambia esta versión.
+
+#### Área que se toca
+- Una línea por cambio, en presente y desde fuera.
+- Otra línea. Sin párrafos y sin contar por qué estaba mal.
+```
+
+- **Los destacados van primero.** Quien lee tres líneas se lleva lo que importa; el resto está
+  ahí para quien quiera bajar.
+- **Se agrupa por área** —Respaldos, Notificaciones, Horario, Notas—, no por «Corregido» y
+  «Añadido»: al usuario le importa dónde va a notarlo, no en qué categoría lo clasificamos.
+- **Una línea por viñeta.** El motivo, la historia del fallo y lo que se probó viven en el
+  mensaje del commit, que es donde alguien los va a buscar de verdad.
+- **El encabezado lleva corchetes** (`## [1.2.0] — fecha`): de ahí sacan la sección la
+  publicación en GitHub, el aviso de actualización y la pantalla de Novedades.
+
 Al publicar, `publishReleaseToGitHub` copia la sección de esa versión tal cual como notas de la
 publicación en GitHub. **Si la sección no existe, la publicación falla**: es a propósito, para
 que ninguna versión salga con notas vacías o inventadas.
@@ -17,7 +38,11 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+**Lo importante:** el registro de cambios pasa a leerse en una pasada — destacados arriba y una
+línea por cambio.
+
+#### Novedades
+- Cada versión se presenta con lo importante primero y viñetas cortas por área.
 
 ---
 
