@@ -42,6 +42,19 @@ _Nada pendiente._
 
 ---
 
+## [1.1.0-beta.1] — 2026-08-14
+
+**Lo importante:** ya puedes reportar un fallo o sugerir algo desde la app, y llega al grupo de
+soporte con tu versión y tu teléfono apuntados.
+
+#### Ayuda y soporte
+- «Reportar un fallo» y «Sugerir algo» abren cada uno su tema del grupo de soporte.
+- El mensaje se copia solo: al abrirse Telegram solo hay que pegarlo.
+- Se apuntan la versión, el modelo y la versión de Android, que es lo primero que haría falta preguntar.
+- El grupo es público, y la app lo avisa antes de que escribas.
+
+---
+
 ## [1.1.0-alpha.2] — 2026-08-14
 
 **Lo importante:** reportar un fallo y sugerir algo se leen como dos caminos, y ninguno viene
