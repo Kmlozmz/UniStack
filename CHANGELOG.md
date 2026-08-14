@@ -17,6 +17,15 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente: lo último salió en la 1.0.0-alpha.5._
+
+---
+
+## [1.0.0-alpha.5] — 2026-08-13
+
+Quinta alpha. La más grande hasta ahora: respaldos que son archivos de verdad, seis pantallas
+nuevas y las notificaciones rehechas.
+
 ### Corregido
 
 - **La vista previa del horario esconde clases si el día está repartido.** Enseñaba una ventana
