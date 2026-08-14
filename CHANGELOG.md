@@ -17,6 +17,15 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente._
+
+---
+
+## [1.0.0-beta.1] — 2026-08-13
+
+Primera beta. La lista de lo que lleva la 1.0.0 queda cerrada: a partir de aquí solo entran
+arreglos de lo que ya está dentro.
+
 ### Corregido
 
 - **Los avisos que apagabas sin permiso no se podían volver a encender.** Encender uno pedía el
