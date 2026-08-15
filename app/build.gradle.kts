@@ -835,7 +835,6 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
     }
 }
 
-val sendDebugApkToTelegram = registerTelegramApkTask("debug")
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
@@ -872,12 +871,26 @@ sendReleaseApkToTelegram.configure {
     onlyIf { isAlphaVersion(generatedVersionName) }
 }
 
-val assembleReleaseAndSendToTelegram = tasks.register("assembleReleaseAndSendToTelegram") {
+/**
+ * La compilación de trabajo: se arma y se manda por el bot, sin publicarse en ninguna parte.
+ *
+ * `./gradlew sendAlpha -PversionName=1.1.0-alpha.5`
+ */
+val sendAlpha = tasks.register("sendAlpha") {
     group = "distribution"
-    description = "Builds the release APK and sends it to Telegram on explicit request."
+    description = "Builds the alpha APK and sends it to Telegram. Does not publish anything."
     dependsOn(validateReleaseReady)
     dependsOn("assembleRelease")
     finalizedBy(sendReleaseApkToTelegram)
+
+    doFirst {
+        if (!isAlphaVersion(generatedVersionName)) {
+            throw GradleException(
+                "sendAlpha solo manda alphas, y $generatedVersionName no lo es. " +
+                    "Usa -PversionName=X.Y.Z-alpha.N, o publishReleaseToGitHub si va a salir."
+            )
+        }
+    }
 }
 
 fun githubReleaseSnapshotFile(): File =
@@ -1044,17 +1057,19 @@ afterEvaluate {
     tasks.findByName("assembleRelease")?.mustRunAfter(validateGitHubPublishReady)
 
     /*
-     * El bot lleva lo que no llega por la app: los `dev`, que no se publican en ninguna parte, y
-     * las alphas.
+     * Por el bot solo van las alphas.
      *
-     * Beta y definitiva se quedan fuera a propósito: tienen su propio camino —la app, a quien
-     * corresponda por su canal— y mandarlas también por aquí convertía el bot en una vía de
+     * Antes iban también los `dev`, y eso obligaba a desinstalar para pasar de uno a otro: un
+     * `dev` lleva el `versionCode` más bajo que existe, así que no entra encima de nada
+     * publicado y se lleva los datos por delante al reinstalar. Una alpha es una compilación
+     * firmada con su número en la escalera, así que se instala encima sin perder nada.
+     *
+     * Y las alphas ya no se publican en GitHub: son la compilación de trabajo, y su único
+     * camino es este. Beta y definitiva, al revés: se publican y no pasan por aquí, porque
+     * tienen quien las reciba por la app y mandarlas también por el bot sería una vía de
      * distribución paralela que no respeta ningún permiso.
      */
     if (!skipTelegramApk.get()) {
-        tasks.named("assembleDebug") {
-            finalizedBy(sendDebugApkToTelegram)
-        }
         tasks.named("assembleRelease") {
             finalizedBy(sendReleaseApkToTelegram)
         }
