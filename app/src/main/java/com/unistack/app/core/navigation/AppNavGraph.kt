@@ -149,10 +149,20 @@ fun MainNavGraph(
         if (initialRoute != AppRoutes.Home) {
             initialRoute
         } else {
+            // Con la pestaña en la ruta: «Académico» a secas abre la primera, que es Materias,
+            // así que elegir Tareas como pantalla de arranque abría Materias.
             when (appearance.initialTab) {
                 InitialTab.HOME -> AppRoutes.Home
-                InitialTab.GRADES -> if (AppModule.GRADES in enabledModules) AppRoutes.Academic else AppRoutes.Home
-                InitialTab.TASKS -> if (AppModule.TASKS in enabledModules) AppRoutes.Academic else AppRoutes.Home
+                InitialTab.GRADES -> if (AppModule.GRADES in enabledModules) {
+                    AppRoutes.academic(AppRoutes.AcademicTabSubjects)
+                } else {
+                    AppRoutes.Home
+                }
+                InitialTab.TASKS -> if (AppModule.TASKS in enabledModules) {
+                    AppRoutes.academic(AppRoutes.AcademicTabTasks)
+                } else {
+                    AppRoutes.Home
+                }
                 InitialTab.EXPENSES -> if (AppModule.EXPENSES in enabledModules) AppRoutes.Expenses else AppRoutes.Home
             }
         }
@@ -299,7 +309,9 @@ fun MainNavGraph(
                                     launchSingleTop = true
                                 }
                             },
-                            onAddGradeClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules) },
+                            onAddGradeClick = { subjectId ->
+                                navController.navigateIfModuleEnabled(AppRoutes.addGrade(subjectId), enabledModules)
+                            },
                             onAddTaskClick = { navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules) },
                             onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
                             onDrawerOpenChange = { open -> homeDrawerOpen = open },

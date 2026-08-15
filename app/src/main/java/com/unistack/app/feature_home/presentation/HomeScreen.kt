@@ -88,7 +88,7 @@ fun HomeScreen(
     onOpenTemplatesClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     onProfileClick: () -> Unit,
-    onAddGradeClick: () -> Unit,
+    onAddGradeClick: (String) -> Unit,
     onAddTaskClick: () -> Unit,
     onAddExpenseClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -114,6 +114,7 @@ fun HomeScreen(
     }.collectAsStateWithLifecycle()
     val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
     var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
+    var pickingSubjectForGrade by rememberSaveable { mutableStateOf(false) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val drawerScope = rememberCoroutineScope()
     val closeDrawer: () -> Unit = {
@@ -254,7 +255,22 @@ fun HomeScreen(
             }
 
             UniStackFabMenu(
-                onAddGradeClick = onAddGradeClick,
+                /*
+                 * «Agregar nota» abría la lista de materias.
+                 *
+                 * Una nota necesita una materia, y como el botón no sabía cuál, dejaba al
+                 * usuario en la lista a que se buscara la vida. Ahora decide: sin materias
+                 * manda a crear la primera, con una sola va directo a su formulario, y con
+                 * varias pregunta cuál —que es lo único que faltaba por saber—.
+                 */
+                onAddGradeClick = {
+                    val subjects = summary.subjects
+                    when {
+                        subjects.isEmpty() -> onAddSubjectClick()
+                        subjects.size == 1 -> onAddGradeClick(subjects.first().id)
+                        else -> pickingSubjectForGrade = true
+                    }
+                },
                 onAddTaskClick = onAddTaskClick,
                 onAddExpenseClick = onAddExpenseClick,
                 onAddSubjectClick = onAddSubjectClick,
@@ -265,6 +281,17 @@ fun HomeScreen(
                 expandedEndPadding = 24.dp,
                 expandedBottomPadding = 12.dp
             )
+
+            if (pickingSubjectForGrade) {
+                SubjectPickerSheet(
+                    subjects = summary.subjects,
+                    onDismiss = { pickingSubjectForGrade = false },
+                    onSelected = { subjectId ->
+                        pickingSubjectForGrade = false
+                        onAddGradeClick(subjectId)
+                    }
+                )
+            }
 
             if (showPriorityDetails) {
                 PriorityContextSheet(
@@ -437,7 +464,7 @@ private fun HomePreview412() {
             onOpenTemplatesClick = {},
             onSubjectClick = {},
             onProfileClick = {},
-            onAddGradeClick = {},
+            onAddGradeClick = { _ -> },
             onAddTaskClick = {},
             onAddExpenseClick = {}
         )

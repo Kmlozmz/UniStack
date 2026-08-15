@@ -38,7 +38,11 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+#### Inicio
+- «Agregar nota» lleva a registrar la nota: pregunta la materia si tienes varias, va directo si solo tienes una y manda a crear la primera si no tienes ninguna. Antes dejaba en la lista de materias.
+
+#### Ajustes
+- Elegir «Tareas» como pantalla de arranque abre Tareas. Abría Materias.
 
 ---
 
