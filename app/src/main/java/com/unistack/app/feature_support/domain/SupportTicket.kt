@@ -20,14 +20,31 @@ data class TicketContext(
 
 /** El destino de los tickets: el grupo público y el tema de cada motivo. */
 object SupportChannel {
-    const val GROUP = "https://t.me/unistacksoporte"
-    private const val BUGS_TOPIC = "https://t.me/unistacksoporte/2"
-    private const val IDEAS_TOPIC = "https://t.me/unistacksoporte/3"
+    const val HANDLE = "unistacksoporte"
+    const val GROUP = "https://t.me/$HANDLE"
 
-    fun topicFor(kind: TicketKind): String = when (kind) {
+    private const val BUGS_TOPIC = 2
+    private const val IDEAS_TOPIC = 3
+
+    fun topicFor(kind: TicketKind): Int = when (kind) {
         TicketKind.BUG -> BUGS_TOPIC
         TicketKind.IDEA -> IDEAS_TOPIC
     }
+
+    /**
+     * El enlace web del tema. Es el que entiende cualquiera, y el que falla si no hay red.
+     */
+    fun webUrlFor(kind: TicketKind): String = "$GROUP/${topicFor(kind)}"
+
+    /**
+     * El enlace interno de Telegram para el mismo sitio.
+     *
+     * Se intenta primero porque no pasa por el navegador ni por el dominio: `t.me` es una
+     * página web, y abrirla exige resolver el dominio y cargarla para que ella reenvíe a la
+     * app. Con una VPN de por medio —o sin datos— eso termina en un error de DNS y el ticket
+     * se queda a medio camino. `tg://` va directo a la app instalada.
+     */
+    fun appUriFor(kind: TicketKind): String = "tg://resolve?domain=$HANDLE&thread=${topicFor(kind)}"
 }
 
 /**

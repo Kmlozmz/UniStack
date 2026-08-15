@@ -38,6 +38,12 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente._
+
+---
+
+## [1.1.0-alpha.3] — 2026-08-14
+
 **Lo importante:** salir de un formulario a medio llenar avisa antes de perder lo escrito, y la
 barra inferior responde al tacto.
 
@@ -54,6 +60,14 @@ barra inferior responde al tacto.
 
 #### Trabajos
 - Inicio deja de proponer «avanza un trabajo» donde esa pantalla está cerrada.
+
+#### Soporte
+- Reportar abre Telegram directamente, sin pasar por el navegador: con una VPN puesta, abrir el enlace web terminaba en un error de DNS y el ticket se quedaba a medio camino.
+- Si aun así no se puede abrir, la app lo dice y recuerda que el mensaje quedó copiado.
+
+#### Actualizaciones
+- Al terminar la descarga se abre solo el instalador de Android. Antes había que volver a pulsar «Instalar» sobre algo que ya estaba descargado.
+- La barra de descarga se mueve: cuando el servidor no dice cuánto pesa el archivo, en vez de quedarse clavada en 0% avanza sola.
 
 ---
 

@@ -32,8 +32,19 @@ class SupportTicketTest {
 
     @Test
     fun `cada motivo abre su propio tema`() {
-        assertEquals("https://t.me/unistacksoporte/2", SupportChannel.topicFor(TicketKind.BUG))
-        assertEquals("https://t.me/unistacksoporte/3", SupportChannel.topicFor(TicketKind.IDEA))
+        assertEquals("https://t.me/unistacksoporte/2", SupportChannel.webUrlFor(TicketKind.BUG))
+        assertEquals("https://t.me/unistacksoporte/3", SupportChannel.webUrlFor(TicketKind.IDEA))
+    }
+
+    @Test
+    fun `el enlace de la app no pasa por el dominio`() {
+        // Es lo que evita el error de DNS con una VPN de por medio: tg:// va a la app
+        // instalada sin resolver t.me ni abrir el navegador.
+        val uri = SupportChannel.appUriFor(TicketKind.BUG)
+
+        assertTrue(uri.startsWith("tg://"))
+        assertTrue(uri.contains("domain=unistacksoporte"))
+        assertTrue(uri.contains("thread=2"))
     }
 
     @Test

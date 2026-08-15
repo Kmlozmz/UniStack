@@ -348,6 +348,17 @@ class GitHubReleaseUpdateRepository(
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             _state.value = UpdateState.ReadyToInstall(info, apkUri())
                             shouldStop = true
+                            /*
+                             * En cuanto está descargada se abre el instalador de Android.
+                             * Antes había que volver a pulsar «Instalar» sobre una descarga
+                             * que ya estaba lista: un paso que no decide nada, porque quien
+                             * pulsó descargar ya dijo que sí.
+                             *
+                             * Si falta el permiso de instalar, no se lanza: [installUpdate]
+                             * llevaría a los ajustes del sistema por su cuenta, y eso sí es
+                             * un desvío que conviene que el usuario empiece a propósito.
+                             */
+                            if (canInstallPackages()) installUpdate()
                         }
                         DownloadManager.STATUS_FAILED -> {
                             _state.value = UpdateState.Error("La descarga falló. Intenta de nuevo.")
@@ -355,14 +366,24 @@ class GitHubReleaseUpdateRepository(
                         }
                         else -> {
                             val downloaded = it.longOrZero(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-                            val total = it.longOrZero(DownloadManager.COLUMN_TOTAL_SIZE_BYTES).coerceAtLeast(1)
-                            val progress = ((downloaded * 100) / total).toInt().coerceIn(0, 100)
+                            val total = it.longOrZero(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                            /*
+                             * Mientras el servidor no diga cuánto pesa, la columna vale -1.
+                             * Dividiendo por eso salía un porcentaje inventado; ahora se
+                             * manda [UNKNOWN_PROGRESS] y la barra se mueve sola en vez de
+                             * quedarse clavada en un número que no significa nada.
+                             */
+                            val progress = if (total <= 0L) {
+                                UpdateState.UNKNOWN_PROGRESS
+                            } else {
+                                ((downloaded * 100) / total).toInt().coerceIn(0, 100)
+                            }
                             _state.value = UpdateState.Downloading(info, progress)
                         }
                     }
                 }
                 if (shouldStop) return@launch
-                delay(500)
+                delay(200)
             }
         }
     }

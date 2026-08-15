@@ -84,15 +84,25 @@ fun UpdateDetailSheet(
 
             if (state is UpdateState.Downloading) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    LinearProgressIndicator(
-                        progress = { state.progress / 100f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                    )
+                    val unknown = state.progress == UpdateState.UNKNOWN_PROGRESS
+                    if (unknown) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                    } else {
+                        LinearProgressIndicator(
+                            progress = { state.progress / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+                    }
                     Text(
-                        "${state.progress}%",
+                        if (unknown) "Descargando..." else "${state.progress}%",
                         style = MaterialTheme.typography.labelMedium,
                         color = UniStackColors.TextSecondary
                     )

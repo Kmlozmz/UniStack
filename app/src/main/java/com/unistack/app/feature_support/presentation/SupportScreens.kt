@@ -330,6 +330,7 @@ fun HelpScreen(
     val scope = rememberCoroutineScope()
     var expanded by rememberSaveable { mutableStateOf<Int?>(null) }
     var composing by rememberSaveable { mutableStateOf<TicketKind?>(null) }
+    var opened by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     SupportScaffold(
         title = "Ayuda y soporte",
@@ -414,6 +415,29 @@ fun HelpScreen(
         }
     }
 
+    opened?.let { wasOpened ->
+        AlertDialog(
+            onDismissRequest = { opened = null },
+            title = { Text(if (wasOpened) "Ya está copiado" else "No se pudo abrir Telegram") },
+            text = {
+                Text(
+                    if (wasOpened) {
+                        "Pega el mensaje en el tema que se abrió y envíalo."
+                    } else {
+                        // El ticket ya está en el portapapeles, así que el trabajo no se
+                        // pierde aunque no haya podido abrirse nada.
+                        "El mensaje quedó copiado. Busca el grupo @${SupportChannel.HANDLE} en " +
+                            "Telegram y pégalo ahí."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { opened = null }) { Text("Entendido") }
+            },
+            containerColor = UniStackColors.Background
+        )
+    }
+
     composing?.let { kind ->
         TicketComposer(
             kind = kind,
@@ -431,11 +455,7 @@ fun HelpScreen(
                 scope.launch {
                     clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", ticket)))
                 }
-                runCatching {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse(SupportChannel.topicFor(kind)))
-                    )
-                }
+                opened = openSupportTopic(context, kind)
                 composing = null
             }
         )
@@ -480,6 +500,24 @@ private fun SupportOptionRow(
             modifier = Modifier.size(20.dp)
         )
     }
+}
+
+/**
+ * Abre el tema del grupo, primero por la app y luego por la web.
+ *
+ * Devuelve si algo llegó a abrirse, para poder decirlo en pantalla: antes, cuando el enlace
+ * fallaba, la app se quedaba callada y el ticket parecía enviado.
+ */
+private fun openSupportTopic(context: android.content.Context, kind: TicketKind): Boolean {
+    val intents = listOf(
+        Intent(Intent.ACTION_VIEW, Uri.parse(SupportChannel.appUriFor(kind))),
+        Intent(Intent.ACTION_VIEW, Uri.parse(SupportChannel.webUrlFor(kind)))
+    )
+    intents.forEach { intent ->
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { context.startActivity(intent) }.isSuccess) return true
+    }
+    return false
 }
 
 /**
