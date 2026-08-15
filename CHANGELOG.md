@@ -39,11 +39,11 @@ número y la fecha, y se abre una nueva.
 ## [Sin publicar]
 
 #### Movimiento
-- **Cambiar de pestaña a golpes ya no encima tres pantallas.** Entre secciones se funde en vez de deslizar: un deslizamiento tarda lo suyo, y tres seguidos se solapaban a medio camino.
-- El empuje al abrir un detalle es algo más corto.
+- **Cambiar de pestaña a golpes ya no encima tres pantallas.** El empuje llevaba un fundido, y apagarse es volverse transparente: tres pantallas a medio camino se veían unas a través de otras. Ahora son opacas, y el empuje se queda igual en todas partes.
+- El empuje es algo más corto.
 
 #### Inicio
-- **La tarjeta de «próximo paso» tiene color propio y deja de vestirse del acento.** Se pintaba del color del tema a toda saturación, así que con uno claro gritaba más que el resto y con uno oscuro el texto no se leía. El acento se queda en el botón y en el rótulo.
+- **La tarjeta de «próximo paso» tiene color propio y deja de vestirse del acento.** Se pintaba del color del tema a toda saturación, así que con uno claro gritaba más que el resto y con uno oscuro el texto no se leía. El acento se queda en el botón, que es donde tiene que verse.
 
 ---
 

@@ -211,14 +211,15 @@ internal fun PriorityHero(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.cleanClickable(onDetailsClick)
                     )
-                    // Píldora, como pide el lenguaje expresivo para una acción principal. El
-                    // relleno es el contenedor del acento y no el acento: sobre una tarjeta
-                    // que ya es del color de marca, un botón del mismo color desaparecería.
+                    // Píldora rellena del acento. Mientras la tarjeta era del color de marca
+                    // el botón usaba el contenedor —el mismo color habría desaparecido—, pero
+                    // sobre el grafito del hero el acento a plena saturación es justo lo que
+                    // hace que la acción se vea antes que nada.
                     Box(
                         modifier = Modifier
                             .height(if (compact) 36.dp else 38.dp)
                             .clip(CircleShape)
-                            .background(UniStackColors.PrimaryLight)
+                            .background(UniStackColors.Primary)
                             .cleanClickable(onOpenClick)
                             .padding(horizontal = if (compact) 16.dp else 18.dp),
                         contentAlignment = Alignment.Center
@@ -231,14 +232,14 @@ internal fun PriorityHero(
                                 actionLabel,
                                 fontSize = if (compact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = HeroContent,
+                                color = UniStackColors.OnPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Icon(
                                 Icons.Rounded.ChevronRight,
                                 contentDescription = null,
-                                tint = HeroContent,
+                                tint = UniStackColors.OnPrimary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }

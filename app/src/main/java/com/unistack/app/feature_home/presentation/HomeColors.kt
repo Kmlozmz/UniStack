@@ -112,16 +112,24 @@ internal val HomeHeroLightViolet: Color
 
 // Todo lo que va encima del hero se deriva de OnPrimary, nunca de los textos de la pantalla:
 // el fondo ya no es el de la pantalla, así que TextPrimary podía quedar ilegible encima.
+/*
+ * Todo lo que va encima del hero se calcula sobre el hero.
+ *
+ * Salía de `OnPrimary`, que es el color que contrasta con el **acento**: mientras el hero se
+ * pintaba del acento eso era correcto, y dejó de serlo en cuanto el hero tuvo superficie propia.
+ * Con un acento claro, `OnPrimary` es tinta oscura, así que quedaba texto oscuro sobre un
+ * grafito oscuro: ilegible en los dos temas.
+ */
 internal val HomeHeroTitle: Color
-    @Composable get() = UniStackColors.OnPrimary
+    @Composable get() = HeroContent
 internal val HomeHeroSecondary: Color
-    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.78f)
+    @Composable get() = HeroContent.copy(alpha = 0.76f)
 internal val HomeHeroLabel: Color
-    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.86f)
+    @Composable get() = HeroContent.copy(alpha = 0.84f)
 internal val HomeHeroStar: Color
-    @Composable get() = UniStackColors.OnPrimary
+    @Composable get() = HeroContent
 internal val HomeHeroStarSoft: Color
-    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.68f)
+    @Composable get() = HeroContent.copy(alpha = 0.66f)
 
 /** Los círculos decorativos: la misma tinta del contenido, apenas insinuada. */
 internal val HomeHeroOrnament: Color

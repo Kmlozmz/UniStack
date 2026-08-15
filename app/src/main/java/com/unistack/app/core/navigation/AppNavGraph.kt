@@ -226,8 +226,7 @@ fun MainNavGraph(
                     screenEnter(
                         style = appearance.screenTransition,
                         motionScale = motionScale,
-                        fromRight = isForwardNavigation(from, to),
-                        lateral = isLateralNavigation(from, to)
+                        fromRight = isForwardNavigation(from, to)
                     )
                 },
                 exitTransition = {
@@ -236,8 +235,7 @@ fun MainNavGraph(
                     screenExit(
                         style = appearance.screenTransition,
                         motionScale = motionScale,
-                        toLeft = isForwardNavigation(from, to),
-                        lateral = isLateralNavigation(from, to)
+                        toLeft = isForwardNavigation(from, to)
                     )
                 },
                 popEnterTransition = {

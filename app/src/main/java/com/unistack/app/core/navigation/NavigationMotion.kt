@@ -46,7 +46,6 @@ private const val PUSH_MILLIS = 300
 /** Lo que se aparta la pantalla de atrás mientras la nueva la empuja. */
 private const val PARALLAX = 3
 
-/** Y cuánto se apaga mientras se va: no desaparece, se queda detrás. */
 private const val DIMMED = 0.65f
 
 private fun Int.scaled(motionScale: Float) = (this * motionScale).roundToInt().coerceAtLeast(1)
@@ -85,58 +84,37 @@ fun screenPushIn(motionScale: Float, fromRight: Boolean): EnterTransition =
     slideInHorizontally(
         initialOffsetX = { width -> if (fromRight) width else -width / PARALLAX },
         animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
-    ) + fadeIn(
-        initialAlpha = if (fromRight) 1f else DIMMED,
-        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
     )
 
 fun screenPushOut(motionScale: Float, toLeft: Boolean): ExitTransition =
     slideOutHorizontally(
         targetOffsetX = { width -> if (toLeft) -width / PARALLAX else width },
         animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
-    ) + fadeOut(
-        targetAlpha = if (toLeft) DIMMED else 1f,
-        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
     )
 
 /**
  * El movimiento que toque, según lo que se haya elegido en Apariencia.
  *
- * Cambiar de pestaña nunca desliza, elija lo que elija: entre secciones no hay ni antes ni
- * después que contar, y sobre todo se cambia a golpes —tres toques seguidos en la barra— con
- * lo que tres deslizamientos se solapaban y se veían tres pantallas encimadas a medio camino.
- * Un fundido corto no se puede apilar: lo que se vea será una pantalla u otra.
+ * El mismo movimiento en todas partes, incluido el cambio de pestaña: es el que se eligió, y
+ * partirlo en dos según el destino hacía que la app se moviera de dos maneras sin motivo
+ * visible.
  */
 fun screenEnter(
     style: ScreenTransition,
     motionScale: Float,
-    fromRight: Boolean,
-    lateral: Boolean = false
-): EnterTransition = when {
-    style == ScreenTransition.NONE -> EnterTransition.None
-    lateral || style == ScreenTransition.FADE -> screenFadeIn(motionScale)
-    else -> screenPushIn(motionScale, fromRight)
+    fromRight: Boolean
+): EnterTransition = when (style) {
+    ScreenTransition.NONE -> EnterTransition.None
+    ScreenTransition.FADE -> screenFadeIn(motionScale)
+    ScreenTransition.PUSH -> screenPushIn(motionScale, fromRight)
 }
 
 fun screenExit(
     style: ScreenTransition,
     motionScale: Float,
-    toLeft: Boolean,
-    lateral: Boolean = false
-): ExitTransition = when {
-    style == ScreenTransition.NONE -> ExitTransition.None
-    lateral || style == ScreenTransition.FADE -> screenFadeOut(motionScale)
-    else -> screenPushOut(motionScale, toLeft)
-}
-
-/**
- * Si el cambio es de una sección a otra y no hacia dentro de una.
- *
- * Se mide por la pestaña a la que pertenece cada ruta: dos rutas de pestañas distintas son un
- * cambio lateral aunque una esté más adentro que la otra.
- */
-internal fun isLateralNavigation(initialRoute: String?, targetRoute: String?): Boolean {
-    val from = bottomRouteFor(initialRoute) ?: return false
-    val to = bottomRouteFor(targetRoute) ?: return false
-    return from != to
+    toLeft: Boolean
+): ExitTransition = when (style) {
+    ScreenTransition.NONE -> ExitTransition.None
+    ScreenTransition.FADE -> screenFadeOut(motionScale)
+    ScreenTransition.PUSH -> screenPushOut(motionScale, toLeft)
 }
