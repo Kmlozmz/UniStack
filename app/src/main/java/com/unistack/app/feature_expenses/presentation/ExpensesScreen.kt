@@ -99,6 +99,7 @@ import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
+import com.unistack.app.core.design.components.elasticScroll
 
 private val ExpenseBackground: Color
     @Composable get() = UniStackColors.Background
@@ -291,7 +292,7 @@ private fun ExpensesContent(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().elasticScroll(),
             contentPadding = PaddingValues(
                 start = scaledDp(24f, scale),
                 top = scaledDp(58f, scale),

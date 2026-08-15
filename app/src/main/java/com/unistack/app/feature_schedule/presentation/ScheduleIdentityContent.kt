@@ -93,6 +93,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import com.unistack.app.core.design.components.elasticScroll
 
 internal enum class IdentityScheduleView {
     TIMETABLE,
@@ -133,7 +134,8 @@ internal fun ScheduleIdentityContent(
         modifier = modifier
             .fillMaxSize()
             .background(UniStackColors.Background)
-            .statusBarsPadding(),
+            .statusBarsPadding()
+            .elasticScroll(),
         // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
         // la barra acoplada el valor es cero y esto queda igual que antes.
         contentPadding = PaddingValues(

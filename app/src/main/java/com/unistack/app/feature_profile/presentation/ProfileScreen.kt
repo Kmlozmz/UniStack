@@ -112,6 +112,7 @@ import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.launch
+import com.unistack.app.core.design.components.elasticScroll
 
 enum class ProfileScreenMode {
     PROFILE,
@@ -258,6 +259,7 @@ fun ProfileScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .elasticScroll()
             .background(UniStackColors.Background),
         // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
         // la barra acoplada el valor es cero y esto queda igual que antes.

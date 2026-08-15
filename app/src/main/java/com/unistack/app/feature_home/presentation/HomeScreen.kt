@@ -77,6 +77,7 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import java.time.LocalTime
 import kotlinx.coroutines.launch
+import com.unistack.app.core.design.components.elasticScroll
 
 @Composable
 fun HomeScreen(
@@ -190,7 +191,8 @@ fun HomeScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .statusBarsPadding(),
+                    .statusBarsPadding()
+                    .elasticScroll(),
                 contentPadding = PaddingValues(
                     start = sidePadding,
                     end = sidePadding,

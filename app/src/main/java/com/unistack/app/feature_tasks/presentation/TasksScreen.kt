@@ -114,6 +114,7 @@ import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.unistack.app.core.design.components.elasticScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -210,6 +211,7 @@ fun TasksScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .elasticScroll()
                 .nestedScroll(clearFocusOnScroll),
             contentPadding = PaddingValues(
                 start = 20.dp,

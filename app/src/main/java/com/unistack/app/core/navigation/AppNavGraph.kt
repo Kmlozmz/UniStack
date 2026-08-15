@@ -229,22 +229,31 @@ fun MainNavGraph(
                     .fillMaxSize()
                     .padding(contentPadding),
                 enterTransition = {
-                    mainSlideIn(
-                        fromRight = isForwardNavigation(initialState.destination.route, targetState.destination.route),
-                        motionScale = motionScale
-                    )
+                    val from = initialState.destination.route
+                    val to = targetState.destination.route
+                    if (isLateralNavigation(from, to)) {
+                        lateralEnter(motionScale)
+                    } else {
+                        depthEnter(fromRight = isForwardNavigation(from, to), motionScale = motionScale)
+                    }
                 },
                 exitTransition = {
-                    mainSlideOut(
-                        toLeft = isForwardNavigation(initialState.destination.route, targetState.destination.route),
-                        motionScale = motionScale
-                    )
+                    val from = initialState.destination.route
+                    val to = targetState.destination.route
+                    if (isLateralNavigation(from, to)) {
+                        lateralExit(motionScale)
+                    } else {
+                        depthExit(toLeft = isForwardNavigation(from, to), motionScale = motionScale)
+                    }
                 },
+                // Al volver, la pantalla que reaparece llega desde la izquierda y la que se va
+                // recorre la pantalla entera hacia la derecha: es el mismo gesto de entrar, del
+                // revés, y es lo que el gesto predictivo del sistema va dibujando con el dedo.
                 popEnterTransition = {
-                    mainSlideIn(fromRight = false, motionScale = motionScale)
+                    depthEnter(fromRight = false, motionScale = motionScale)
                 },
                 popExitTransition = {
-                    mainSlideOut(toLeft = false, motionScale = motionScale)
+                    depthPopExit(motionScale)
                 }
             ) {
                 composable(AppRoutes.Home) {
@@ -979,35 +988,6 @@ internal fun isForwardNavigation(initialRoute: String?, targetRoute: String?): B
     return routeDepth(targetRoute) >= routeDepth(initialRoute)
 }
 
-private fun mainSlideIn(fromRight: Boolean, motionScale: Float) =
-    slideInHorizontally(
-        initialOffsetX = { width ->
-            ((if (fromRight) width / 3 else -width / 3) * motionScale).roundToInt()
-        },
-        animationSpec = tween((MAIN_TRANSITION_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
-    ) + fadeIn(
-        animationSpec = tween(
-            (110 * motionScale).roundToInt(),
-            delayMillis = (25 * motionScale).roundToInt(),
-            easing = FastOutSlowInEasing
-        )
-    ) + scaleIn(
-        initialScale = 1f - (0.015f * motionScale),
-        animationSpec = tween((MAIN_TRANSITION_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
-    )
-
-private fun mainSlideOut(toLeft: Boolean, motionScale: Float) =
-    slideOutHorizontally(
-        targetOffsetX = { width ->
-            ((if (toLeft) -width / 4 else width / 4) * motionScale).roundToInt()
-        },
-        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
-    ) + fadeOut(
-        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
-    ) + scaleOut(
-        targetScale = 1f - (0.008f * motionScale),
-        animationSpec = tween((MAIN_EXIT_MILLIS * motionScale).roundToInt(), easing = FastOutSlowInEasing)
-    )
 
 private fun routeRank(route: String?): Int {
     return when (bottomRouteFor(route)) {

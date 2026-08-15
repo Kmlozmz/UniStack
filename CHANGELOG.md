@@ -42,6 +42,23 @@ _Nada pendiente._
 
 ---
 
+## [1.1.0-alpha.4] — 2026-08-15
+
+**Lo importante:** la app se mueve distinto. Las listas rebotan al llegar al final, los títulos
+se quedan arriba al desplazar, y cambiar de pantalla ya no es siempre el mismo deslizamiento.
+
+#### Movimiento
+- Las listas se despegan del borde con resistencia y vuelven con un muelle, en vez de plantarse en seco.
+- Entrar a un detalle y volver se mueven como dos capas: la nueva recorre la pantalla entera y la anterior se aparta un cuarto.
+- Cambiar de pestaña ya no desliza: las secciones se cruzan fundiéndose, porque entre ellas no hay ni antes ni después.
+- El gesto de atrás predictivo del sistema ya funciona como debe: faltaba declararlo.
+- Todo respeta el escalado de movimiento del teléfono, y se apaga si lo tienes desactivado.
+
+#### Títulos
+- En las pantallas de ayuda, novedades, recursos, acerca de, calculadora y notas rápidas, el título se encoge al desplazar y se queda fijo arriba. Antes se iba con el contenido.
+
+---
+
 ## [1.1.0-alpha.3] — 2026-08-14
 
 **Lo importante:** salir de un formulario a medio llenar avisa antes de perder lo escrito, y la
