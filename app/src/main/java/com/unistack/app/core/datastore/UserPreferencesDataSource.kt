@@ -290,7 +290,7 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("typographyStyle", typographyStyle.name)
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
-        .put("screenTransition", screenTransition.name)
+        .put("screenTransitionStyle", screenTransition.name)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
         .put("showHomeGreeting", showHomeGreeting)
         .put("showHomeHero", showHomeHero)
@@ -349,7 +349,11 @@ class UserPreferencesDataSource(private val context: Context) {
                 typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
                 bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
-                screenTransition = json.enumOrDefault("screenTransition", defaults.screenTransition),
+                // Clave nueva a propósito: la anterior guardaba «FADE» en los teléfonos que
+                // pasaron por las alphas, y ese valor —que entonces era el de por defecto, no una
+                // elección— se quedaba pisando el empuje. Con otra clave, todos empiezan por el
+                // valor de hoy y quien quiera el fundido lo vuelve a elegir.
+                screenTransition = json.enumOrDefault("screenTransitionStyle", defaults.screenTransition),
                 academicIndicatorStyle = json.enumOrDefault(
                     "academicIndicatorStyle",
                     defaults.academicIndicatorStyle

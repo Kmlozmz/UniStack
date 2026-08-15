@@ -51,12 +51,18 @@ private const val DIMMED = 0.65f
 
 private fun Int.scaled(motionScale: Float) = (this * motionScale).roundToInt().coerceAtLeast(1)
 
-/** Entrar en cualquier pantalla: aparece. */
+/**
+ * Entrar en cualquier pantalla: aparece, y no antes de que la otra se haya ido.
+ *
+ * La espera era la mitad de lo que tarda la anterior en irse, así que durante unas décimas se
+ * veían las dos superpuestas: los textos de una encima de los de la otra, como una doble
+ * exposición. Con la espera completa, en cada instante hay una sola pantalla.
+ */
 fun screenFadeIn(motionScale: Float): EnterTransition =
     fadeIn(
         animationSpec = tween(
             durationMillis = FADE_ENTER_MILLIS.scaled(motionScale),
-            delayMillis = (FADE_EXIT_MILLIS / 2).scaled(motionScale),
+            delayMillis = FADE_EXIT_MILLIS.scaled(motionScale),
             easing = Standard
         )
     )

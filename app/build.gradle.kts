@@ -185,7 +185,16 @@ android {
     defaultConfig {
         applicationId = "com.unistack.app"
         minSdk = 26
-        targetSdk = 36
+        /*
+         * Android 16 enciende el gesto de atrás predictivo para todo el que apunte a su API, y
+         * quita la forma de apagarlo: la bandera del manifiesto deja de tener efecto. Como ese
+         * gesto no se quiere —la ventana entera se encoge y se aparta a mitad del arrastre—, la
+         * app apunta a la API anterior, donde la bandera todavía manda.
+         *
+         * `compileSdk` sigue en 36, así que se compila contra lo último; lo único que cambia es
+         * a qué reglas de comportamiento se acoge. Volver a 36 es cambiar este número.
+         */
+        targetSdk = 35
         versionCode = generatedVersionCode
         versionName = generatedVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

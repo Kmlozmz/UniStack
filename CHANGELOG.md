@@ -42,6 +42,18 @@ _Nada pendiente._
 
 ---
 
+## [1.1.0-beta.3] — 2026-08-15
+
+**Lo importante:** se va el gesto de atrás predictivo, y el cambio entre pestañas deja de
+enseñar las dos pantallas a la vez.
+
+#### Movimiento
+- **El gesto de atrás vuelve a ser el de siempre.** Ya no se encoge la pantalla ni se aparta a medio arrastre.
+- **Al cambiar de pestaña ya no se superponen las dos pantallas.** La que llega esperaba a la mitad de lo que tardaba en irse la anterior, así que durante unas décimas se veían los textos de una encima de los de la otra.
+- El empuje al abrir un detalle vuelve a estar puesto de serie. Si venías de una versión anterior, tu ajuste guardado decía «fundido» aunque nunca lo eligieras.
+
+---
+
 ## [1.1.0-beta.2] — 2026-08-15
 
 **Lo importante:** al abrir algo, la pantalla nueva empuja a la anterior; los títulos se quedan

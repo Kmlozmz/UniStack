@@ -31,7 +31,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="UniStack"
         android:supportsRtl="true"
-        android:theme="@style/Theme.UniStack">
+        android:theme="@style/Theme.UniStack"
+        android:enableOnBackInvokedCallback="false">
 
         <!-- WorkManager se inicializa bajo demanda desde UniStackApplication, no con este
              proveedor: ver el comentario de esa clase. -->
