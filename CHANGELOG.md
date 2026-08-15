@@ -38,14 +38,21 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-**Lo importante:** el movimiento entre pantallas se elige en Apariencia, el rebote se calmó y el
-panel lateral deja de parecer una tarjeta pegada encima.
+_Nada pendiente._
+
+---
+
+## [1.1.0-alpha.5] — 2026-08-15
+
+**Lo importante:** al abrir algo, la pantalla nueva empuja a la anterior; el título se encoge
+hasta la barra en vez de saltar; y el panel lateral deja de parecer una tarjeta pegada encima.
 
 #### Movimiento
 - **Al abrir un detalle, la pantalla nueva entra entera desde el borde y empuja a la anterior**, que se aparta a un tercio y se apaga sin llegar a irse. Volver hace el mismo gesto del revés, que es el que dibuja el dedo con el gesto de atrás.
 - En Apariencia puedes cambiarlo por un fundido o quitarlo del todo.
 - El rebote de las listas es la goma de iOS con el recorrido a la mitad: se nota el borde sin que la lista parezca soltarse, y ya no se queda pegada arriba.
-- El título grande se desvanece al recogerse en vez de cortarse a mitad de camino, y el fondo deja de cambiar de color al desplazar.
+- **El título grande se encoge de verdad hasta quedarse en la barra.** Antes fundía el título grande con otro pequeño que aparecía arriba, así que no se recogía: desaparecía y volvía a aparecer. Ahora es el mismo texto de principio a fin, y la flecha se queda quieta.
+- El título deja de pegarse al borde de arriba: la cabecera respeta la barra de estado.
 
 #### Panel lateral
 - Usa el fondo de la app y llega hasta el borde, sin contorno ni separación: era lo que lo dejaba flotando encima de Inicio.
