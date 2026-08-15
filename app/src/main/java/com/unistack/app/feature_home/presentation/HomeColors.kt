@@ -42,13 +42,13 @@ internal val HomeBackgroundBrush: Brush
  */
 internal val HeroSurface: Color
     @Composable get() = if (UniStackColors.IsDarkTheme) {
+        // A oscuras, algo por encima de la tarjeta: la separa del fondo sin encenderse.
         UniStackColors.Primary.copy(alpha = 0.14f).compositeOver(UniStackColors.Card)
     } else {
-        UniStackColors.Primary.copy(alpha = 0.10f).compositeOver(HeroInk)
+        // En claro se tiñe, no se oscurece. Un bloque de grafito sobre una pantalla blanca es
+        // un agujero en mitad de la página, y era lo que pasaba antes.
+        UniStackColors.Primary.copy(alpha = 0.13f).compositeOver(UniStackColors.Card)
     }
-
-/** El grafito de base: el mismo en los dos temas, para que el hero se reconozca siempre. */
-private val HeroInk = Color(0xFF1D1A26) // design-tokens-ok: color propio del hero, no del tema
 
 /** Lo que va encima: se calcula, para que el texto se lea sobre la superficie que salga. */
 internal val HeroContent: Color

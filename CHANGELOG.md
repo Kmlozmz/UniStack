@@ -38,12 +38,24 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente._
+
+---
+
+## [1.1.0-beta.4] — 2026-08-15
+
+**Lo importante:** la pantalla que entra se dibuja encima de la que sale, y la tarjeta de
+«próximo paso» deja de ser un bloque oscuro en medio del tema claro.
+
 #### Movimiento
 - **Cambiar de pestaña a golpes ya no encima tres pantallas.** El empuje llevaba un fundido, y apagarse es volverse transparente: tres pantallas a medio camino se veían unas a través de otras. Ahora son opacas, y el empuje se queda igual en todas partes.
 - El empuje es algo más corto.
 
+- **La pantalla que entra se dibuja por encima de la que sale.** Se pintaba por detrás, así que el empuje se leía al revés: parecía que la anterior se apartaba para dejar ver algo que ya estaba puesto debajo.
+
 #### Inicio
 - **La tarjeta de «próximo paso» tiene color propio y deja de vestirse del acento.** Se pintaba del color del tema a toda saturación, así que con uno claro gritaba más que el resto y con uno oscuro el texto no se leía. El acento se queda en el botón, que es donde tiene que verse.
+- En tema claro la tarjeta se tiñe en vez de oscurecerse: un bloque de grafito sobre una pantalla blanca era un agujero en mitad de la página.
 
 ---
 

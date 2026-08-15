@@ -3,6 +3,7 @@ package com.unistack.app.core.navigation
 import com.unistack.app.core.design.theme.AppShapes
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -50,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
 import com.unistack.app.core.design.components.squishOnPress
 import androidx.compose.ui.text.style.TextAlign
@@ -65,6 +67,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
@@ -329,7 +334,7 @@ fun MainNavGraph(
                         )
                     }
                 }
-            composable(AppRoutes.Notifications) {
+            screen(AppRoutes.Notifications) {
                 NotificationHistoryScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -346,7 +351,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.NotificationDetail}/{notificationId}") { backStackEntry ->
+            screen("${AppRoutes.NotificationDetail}/{notificationId}") { backStackEntry ->
                 val notificationId = backStackEntry.arguments
                     ?.getString("notificationId")
                     ?.toIntOrNull()
@@ -367,13 +372,13 @@ fun MainNavGraph(
             // Académico, que es donde llega la barra inferior. Aquí solo quedan como
             // redirección porque hay recordatorios ya programados con la cadena "tasks"
             // guardada dentro; borrarlas dejaría esas notificaciones apuntando a la nada.
-            composable(AppRoutes.Grades) {
+            screen(AppRoutes.Grades) {
                 RedirectToAcademic(navController, AppRoutes.AcademicTabSubjects)
             }
-            composable(AppRoutes.Tasks) {
+            screen(AppRoutes.Tasks) {
                 RedirectToAcademic(navController, AppRoutes.AcademicTabTasks)
             }
-            composable(AppRoutes.Profile) {
+            screen(AppRoutes.Profile) {
                 ProfileScreen(
                     onOpenProClick = { navController.go(AppRoutes.Pro) },
                     onOpenSettingsClick = { navController.go(AppRoutes.Settings) },
@@ -385,7 +390,7 @@ fun MainNavGraph(
                     onOpenUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
-            composable(
+            screen(
                 route = AppRoutes.AcademicWithTab,
                 arguments = listOf(
                     navArgument(AppRoutes.AcademicTabArg) {
@@ -414,7 +419,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.Settings) {
+            screen(AppRoutes.Settings) {
                 SettingsHubScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -435,7 +440,7 @@ fun MainNavGraph(
                     onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
-            composable(AppRoutes.UpdateSettings) {
+            screen(AppRoutes.UpdateSettings) {
                 UpdateSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -444,7 +449,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AppearanceSettings) {
+            screen(AppRoutes.AppearanceSettings) {
                 AppearanceSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -453,7 +458,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AccessibilitySettings) {
+            screen(AppRoutes.AccessibilitySettings) {
                 AccessibilitySettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -462,7 +467,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.Calendar) {
+            screen(AppRoutes.Calendar) {
                 CalendarScheduleScreen(
                     onTaskClick = { taskId ->
                         navController.navigateIfModuleEnabled(AppRoutes.editTask(taskId), enabledModules)
@@ -480,7 +485,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AcademicSettings) {
+            screen(AppRoutes.AcademicSettings) {
                 ProfileScreen(
                     mode = ProfileScreenMode.ACADEMIC,
                     onBackClick = {
@@ -490,7 +495,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.ModuleSettings) {
+            screen(AppRoutes.ModuleSettings) {
                 ProfileScreen(
                     mode = ProfileScreenMode.MODULES,
                     onBackClick = {
@@ -500,7 +505,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.NotificationSettings) {
+            screen(AppRoutes.NotificationSettings) {
                 ProfileScreen(
                     mode = ProfileScreenMode.NOTIFICATIONS,
                     onBackClick = {
@@ -510,7 +515,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.DataSettings) {
+            screen(AppRoutes.DataSettings) {
                 ProfileScreen(
                     mode = ProfileScreenMode.DATA,
                     onBackClick = {
@@ -520,35 +525,35 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.WhatsNew) {
+            screen(AppRoutes.WhatsNew) {
                 WhatsNewScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.Resources) {
+            screen(AppRoutes.Resources) {
                 ResourcesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.Help) {
+            screen(AppRoutes.Help) {
                 HelpScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.About) {
+            screen(AppRoutes.About) {
                 AboutScreen(
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
                     onWhatsNewClick = { navController.go(AppRoutes.WhatsNew) },
                     onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
-            composable(AppRoutes.GpaCalculator) {
+            screen(AppRoutes.GpaCalculator) {
                 GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.QuickNotes) {
+            screen(AppRoutes.QuickNotes) {
                 QuickNotesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.AiAssistant) {
+            screen(AppRoutes.AiAssistant) {
                 AiAssistantScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.Labs) {
+            screen(AppRoutes.Labs) {
                 LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            composable(AppRoutes.Pro) {
+            screen(AppRoutes.Pro) {
                 ProScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -557,13 +562,13 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.Expenses) {
+            screen(AppRoutes.Expenses) {
                 ExpensesScreen(
                     onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
                     onEditExpenseClick = { expenseId -> navController.navigateIfModuleEnabled(AppRoutes.editExpense(expenseId), enabledModules) }
                 )
             }
-            composable(AppRoutes.AddSubject) {
+            screen(AppRoutes.AddSubject) {
                 SubjectFormScreen(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
@@ -580,7 +585,7 @@ fun MainNavGraph(
             }
             // Las dos rutas de Horario: el mismo formulario, con el bloque académico plegado
             // y volviendo al calendario en vez de al detalle de la materia.
-            composable(AppRoutes.AddSubjectFromSchedule) {
+            screen(AppRoutes.AddSubjectFromSchedule) {
                 SubjectFormScreen(
                     mode = SubjectFormMode.SCHEDULE,
                     onBackClick = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
@@ -588,7 +593,7 @@ fun MainNavGraph(
                     onUpgradeClick = { navController.go(AppRoutes.Pro) }
                 )
             }
-            composable("${AppRoutes.EditSubjectFromSchedule}/{subjectId}") { backStackEntry ->
+            screen("${AppRoutes.EditSubjectFromSchedule}/{subjectId}") { backStackEntry ->
                 SubjectFormScreen(
                     subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty(),
                     mode = SubjectFormMode.SCHEDULE,
@@ -596,7 +601,7 @@ fun MainNavGraph(
                     onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) }
                 )
             }
-            composable(AppRoutes.AddSubjectFromTask) {
+            screen(AppRoutes.AddSubjectFromTask) {
                 SubjectFormScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -611,7 +616,7 @@ fun MainNavGraph(
                     onUpgradeClick = { navController.go(AppRoutes.Pro) }
                 )
             }
-            composable("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
+            screen("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 SubjectDetailScreen(
                     subjectId = subjectId,
@@ -637,7 +642,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.PriorHistory}/{subjectId}") { backStackEntry ->
+            screen("${AppRoutes.PriorHistory}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 PriorHistoryScreen(
                     subjectId = subjectId,
@@ -652,7 +657,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.SubjectPeriodDetail}/{subjectId}/{periodId}") { backStackEntry ->
+            screen("${AppRoutes.SubjectPeriodDetail}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
                 SubjectPeriodDetailScreen(
@@ -665,7 +670,7 @@ fun MainNavGraph(
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) }
                 )
             }
-            composable("${AppRoutes.EditSubject}/{subjectId}") { backStackEntry ->
+            screen("${AppRoutes.EditSubject}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 SubjectFormScreen(
                     subjectId = subjectId,
@@ -679,7 +684,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.AddGrade}/{subjectId}") { backStackEntry ->
+            screen("${AppRoutes.AddGrade}/{subjectId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 AddGradeScreen(
                     subjectId = subjectId,
@@ -693,7 +698,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.AddGrade}/{subjectId}/{periodId}") { backStackEntry ->
+            screen("${AppRoutes.AddGrade}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
                 AddGradeScreen(
@@ -707,7 +712,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.AddGradeFromHistory}/{subjectId}/{periodId}") { backStackEntry ->
+            screen("${AppRoutes.AddGradeFromHistory}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
                 AddGradeScreen(
@@ -718,7 +723,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable("${AppRoutes.EditGrade}/{subjectId}/{gradeId}") { backStackEntry ->
+            screen("${AppRoutes.EditGrade}/{subjectId}/{gradeId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
                 val gradeId = backStackEntry.arguments?.getString("gradeId").orEmpty()
                 AddGradeScreen(
@@ -729,13 +734,13 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AddTask) {
+            screen(AppRoutes.AddTask) {
                 AddTaskScreen(
                     onBackClick = { navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
                     onCreateSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubjectFromTask, enabledModules) }
                 )
             }
-            composable("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
+            screen("${AppRoutes.EditTask}/{taskId}") { backStackEntry ->
                 val taskId = backStackEntry.arguments?.getString("taskId").orEmpty()
                 AddTaskScreen(
                     taskId = taskId,
@@ -751,10 +756,10 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AddExpense) {
+            screen(AppRoutes.AddExpense) {
                 AddExpenseScreen(onBackClick = { navController.navigateBackOr(AppRoutes.Expenses, enabledModules) })
             }
-            composable("${AppRoutes.EditExpense}/{expenseId}") { backStackEntry ->
+            screen("${AppRoutes.EditExpense}/{expenseId}") { backStackEntry ->
                 val expenseId = backStackEntry.arguments?.getString("expenseId").orEmpty()
                 AddExpenseScreen(
                     expenseId = expenseId,
@@ -763,7 +768,7 @@ fun MainNavGraph(
                     }
                 )
             }
-            composable(AppRoutes.AcademicTemplates) {
+            screen(AppRoutes.AcademicTemplates) {
                 AcademicTemplatesScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
@@ -985,6 +990,29 @@ private fun routeRank(route: String?): Int {
         AppRoutes.Expenses -> 3
         AppRoutes.Profile -> 4
         else -> 0
+    }
+}
+
+/**
+ * Un destino del grafo, dibujado en su capa.
+ *
+ * La pantalla que entra se dibujaba **por detrás** de la que sale, así que el empuje se veía al
+ * revés de lo que cuenta: en vez de una hoja nueva tapando a la anterior, parecía que la
+ * anterior se apartaba para dejar ver algo que ya estaba puesto debajo.
+ *
+ * El orden lo decide la profundidad de la ruta: lo que está más adentro se pinta por encima de
+ * lo que está más afuera. Al entrar a un detalle, el detalle tapa; al volver, el detalle sigue
+ * encima mientras se va, que es lo que hace que se lea como retirar una hoja.
+ */
+private fun NavGraphBuilder.screen(
+    route: String,
+    arguments: List<NamedNavArgument> = emptyList(),
+    content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
+) {
+    composable(route = route, arguments = arguments) { entry ->
+        Box(modifier = Modifier.zIndex(routeDepth(route).toFloat())) {
+            content(entry)
+        }
     }
 }
 
