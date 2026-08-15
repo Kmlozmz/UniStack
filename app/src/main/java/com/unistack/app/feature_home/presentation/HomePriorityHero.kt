@@ -231,14 +231,14 @@ internal fun PriorityHero(
                                 actionLabel,
                                 fontSize = if (compact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = UniStackColors.OnPrimaryContainer,
+                                color = HeroContent,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Icon(
                                 Icons.Rounded.ChevronRight,
                                 contentDescription = null,
-                                tint = UniStackColors.OnPrimaryContainer,
+                                tint = HeroContent,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -273,7 +273,7 @@ internal fun PriorityContextSheet(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 4.dp)
                     .size(width = 42.dp, height = 4.dp)
-                    .background(UniStackColors.OnPrimary.copy(alpha = 0.18f), AppShapes.Pill)
+                    .background(HeroContent.copy(alpha = 0.14f), AppShapes.Pill)
             )
         }
     ) {

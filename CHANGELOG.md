@@ -38,7 +38,12 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+#### Movimiento
+- **Cambiar de pestaña a golpes ya no encima tres pantallas.** Entre secciones se funde en vez de deslizar: un deslizamiento tarda lo suyo, y tres seguidos se solapaban a medio camino.
+- El empuje al abrir un detalle es algo más corto.
+
+#### Inicio
+- **La tarjeta de «próximo paso» tiene color propio y deja de vestirse del acento.** Se pintaba del color del tema a toda saturación, así que con uno claro gritaba más que el resto y con uno oscuro el texto no se leía. El acento se queda en el botón y en el rótulo.
 
 ---
 

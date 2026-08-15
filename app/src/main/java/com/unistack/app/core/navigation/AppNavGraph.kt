@@ -221,23 +221,23 @@ fun MainNavGraph(
                  * lo que se mueva sea el contenido, no el marco.
                  */
                 enterTransition = {
+                    val from = initialState.destination.route
+                    val to = targetState.destination.route
                     screenEnter(
                         style = appearance.screenTransition,
                         motionScale = motionScale,
-                        fromRight = isForwardNavigation(
-                            initialState.destination.route,
-                            targetState.destination.route
-                        )
+                        fromRight = isForwardNavigation(from, to),
+                        lateral = isLateralNavigation(from, to)
                     )
                 },
                 exitTransition = {
+                    val from = initialState.destination.route
+                    val to = targetState.destination.route
                     screenExit(
                         style = appearance.screenTransition,
                         motionScale = motionScale,
-                        toLeft = isForwardNavigation(
-                            initialState.destination.route,
-                            targetState.destination.route
-                        )
+                        toLeft = isForwardNavigation(from, to),
+                        lateral = isLateralNavigation(from, to)
                     )
                 },
                 popEnterTransition = {

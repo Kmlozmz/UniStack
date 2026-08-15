@@ -3,6 +3,7 @@ package com.unistack.app.feature_home.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.SolidColor
 import com.unistack.app.core.design.theme.UniStackColors
 
@@ -28,8 +29,33 @@ internal val HomeBackgroundBrush: Brush
  * `OnPrimary`, que se calcula por contraste, así que en un tema donde el acento sea claro la
  * tinta saldrá oscura sola en vez de quedarse en blanco ilegible.
  */
+/**
+ * El color del hero, que ya no es el acento.
+ *
+ * Se pintaba del acento a toda saturación, así que su aspecto cambiaba con cada tema: con uno
+ * claro el bloque gritaba más que el resto de la pantalla, y con uno oscuro el texto encima
+ * dejaba de leerse. Y no hay un acento que quede bien de las dos maneras.
+ *
+ * Ahora tiene su propia superficie —un grafito con una gota del acento, que lo emparenta con
+ * el tema sin depender de lo saturado que sea— y el acento aparece solo en el botón y en el
+ * rótulo, que es donde de verdad hace falta que resalte.
+ */
+internal val HeroSurface: Color
+    @Composable get() = if (UniStackColors.IsDarkTheme) {
+        UniStackColors.Primary.copy(alpha = 0.14f).compositeOver(UniStackColors.Card)
+    } else {
+        UniStackColors.Primary.copy(alpha = 0.10f).compositeOver(HeroInk)
+    }
+
+/** El grafito de base: el mismo en los dos temas, para que el hero se reconozca siempre. */
+private val HeroInk = Color(0xFF1D1A26) // design-tokens-ok: color propio del hero, no del tema
+
+/** Lo que va encima: se calcula, para que el texto se lea sobre la superficie que salga. */
+internal val HeroContent: Color
+    @Composable get() = UniStackColors.contentColorOn(HeroSurface)
+
 internal val HeroBrush: Brush
-    @Composable get() = SolidColor(UniStackColors.Primary)
+    @Composable get() = SolidColor(HeroSurface)
 
 internal val HomeCard: Color
     @Composable get() = UniStackColors.Card
@@ -99,7 +125,7 @@ internal val HomeHeroStarSoft: Color
 
 /** Los círculos decorativos: la misma tinta del contenido, apenas insinuada. */
 internal val HomeHeroOrnament: Color
-    @Composable get() = UniStackColors.OnPrimary.copy(alpha = 0.10f)
+    @Composable get() = HeroContent.copy(alpha = 0.07f)
 
 /** Sin borde: una superficie rellena no necesita contorno para separarse del fondo. */
 internal val HomeHeroStroke: Color
