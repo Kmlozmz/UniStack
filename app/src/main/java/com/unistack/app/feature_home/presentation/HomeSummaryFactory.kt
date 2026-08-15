@@ -37,6 +37,8 @@ import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.BuildConfig
+import com.unistack.app.core.utils.BuildStage
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
@@ -426,7 +428,10 @@ internal object HomeSummaryFactory {
     ): HomePrioritySummary {
         val index = TaskDateUtils.today().dayOfYear % 4
         val canUseExpenses = AppModule.EXPENSES in enabledModules && weeklyExpenseTotal > 0
-        val hasOpenWorks = works.any { it.status != AcademicWorkStatus.SUBMITTED }
+        // Trabajos está apagado fuera de dev y alpha, así que tampoco se propone desde Inicio:
+        // una sugerencia que lleva a una pantalla cerrada es peor que ninguna sugerencia.
+        val hasOpenWorks = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished &&
+            works.any { it.status != AcademicWorkStatus.SUBMITTED }
         return when {
             canUseExpenses && index == 1 -> HomePrioritySummary(
                 title = "Gastos bajo control",

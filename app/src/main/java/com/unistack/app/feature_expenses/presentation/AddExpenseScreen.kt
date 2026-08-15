@@ -74,6 +74,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.design.theme.UniStackColors
+import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
@@ -114,8 +115,6 @@ fun AddExpenseScreen(
     viewModel: ExpensesViewModel = hiltViewModel(),
     expenseId: String? = null
 ) {
-    BackHandler(onBack = onBackClick)
-
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val expense = expenseId?.let { id -> expenses.firstOrNull { it.id == id } }
@@ -131,6 +130,25 @@ fun AddExpenseScreen(
     var initialized by rememberSaveable(expenseId) { mutableStateOf(false) }
     var error by rememberSaveable(expenseId) { mutableStateOf<String?>(null) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+
+    // Hay algo que perder si lo escrito no es lo que había al entrar. En un gasto nuevo
+    // basta con que se haya tocado cualquiera de los dos campos.
+    val hasUnsavedChanges = if (expense == null) {
+        category != null || amount.isNotBlank()
+    } else {
+        category != expense.category ||
+            amount != expense.amount.toString() ||
+            date != ExpenseDateUtils.formatInput(ExpenseDateUtils.fromMillis(expense.dateMillis))
+    }
+    val requestLeave = rememberLeaveGuard(
+        hasUnsavedChanges = hasUnsavedChanges,
+        onLeave = onBackClick,
+        message = if (expense == null) {
+            "El gasto no se ha registrado todavía."
+        } else {
+            "Los cambios de este gasto se van a perder."
+        }
+    )
 
     val parsedAmount = amount.toIntOrNull()
     val parsedDate = ExpenseDateUtils.parseInput(date)
@@ -172,7 +190,7 @@ fun AddExpenseScreen(
         },
         isValid = isValid,
         error = error,
-        onBackClick = onBackClick,
+        onBackClick = requestLeave,
         onSaveClick = {
             val chosenCategory = category ?: run {
                 error = "Elige una categoría para el gasto."

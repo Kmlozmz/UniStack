@@ -59,6 +59,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
+import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
@@ -122,7 +123,6 @@ fun AddGradeScreen(
     initialPeriodId: String? = null,
     onCompleteHistoryClick: (String) -> Unit = {}
 ) {
-    BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
     val grade = gradeId?.let { id -> subject?.grades?.firstOrNull { it.id == id } }
@@ -152,6 +152,23 @@ fun AddGradeScreen(
         ?: lockedPeriod
         ?: periodScheme.periods.firstOrNull { it.id == subject?.activePeriodId }
         ?: periodScheme.periods.first()
+
+    val hasUnsavedChanges = if (grade == null) {
+        name.isNotBlank() || value.isNotBlank() || percentage.isNotBlank() || selectedType != null
+    } else {
+        name != grade.name ||
+            value != GradingScaleUtils.formatGrade(grade.value, scale) ||
+            selectedType != grade.type
+    }
+    val requestLeave = rememberLeaveGuard(
+        hasUnsavedChanges = hasUnsavedChanges,
+        onLeave = onBackClick,
+        message = if (grade == null) {
+            "La nota no se ha registrado todavía."
+        } else {
+            "Los cambios de esta nota se van a perder."
+        }
+    )
 
     val gradeValue = value.toDoubleOrNull()
     val percentageValue = percentage.toDoubleOrNull()
@@ -225,7 +242,7 @@ fun AddGradeScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 IconButton(
-                    onClick = onBackClick,
+                    onClick = requestLeave,
                     modifier = Modifier
                         .size(40.dp)
                         .background(UniStackColors.SurfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)

@@ -38,11 +38,22 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-#### Inicio
-- «Agregar nota» lleva a registrar la nota: pregunta la materia si tienes varias, va directo si solo tienes una y manda a crear la primera si no tienes ninguna. Antes dejaba en la lista de materias.
+**Lo importante:** salir de un formulario a medio llenar avisa antes de perder lo escrito, y la
+barra inferior responde al tacto.
 
-#### Ajustes
+#### Formularios
+- Al salir de materia, nota, tarea o gasto con algo escrito, la app pregunta antes de descartarlo.
+- El aviso vale igual para la flecha de atrás que para el gesto del sistema.
+- Guardar o eliminar salen directo: ahí no hay nada que perder.
+
+#### Navegación
+- La barra inferior da un toque háptico al cambiar de sección. Volver a tocar la sección en la que ya estás no vibra.
+- Tocar dos veces la misma fila ya no apila la pantalla dos veces: se salía dando atrás tantas veces como toques se hubieran dado.
+- «Agregar nota» lleva a registrar la nota: pregunta la materia si tienes varias, va directo si solo tienes una y manda a crear la primera si no tienes ninguna.
 - Elegir «Tareas» como pantalla de arranque abre Tareas. Abría Materias.
+
+#### Trabajos
+- Inicio deja de proponer «avanza un trabajo» donde esa pantalla está cerrada.
 
 ---
 

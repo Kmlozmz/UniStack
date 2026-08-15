@@ -100,6 +100,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
+import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.utils.NO_DATA
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -139,7 +140,6 @@ fun SubjectFormScreen(
     mode: SubjectFormMode = SubjectFormMode.ACADEMIC,
     onUpgradeClick: () -> Unit = {}
 ) {
-    BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -175,6 +175,27 @@ fun SubjectFormScreen(
     val scope = rememberCoroutineScope()
     val formScrollState = rememberScrollState()
     val spacing = LocalInterfaceSpacing.current
+    // Al crear, cualquier dato escrito cuenta. Al editar, solo lo que se aparte de la materia
+    // guardada: el color y el horario se cargan solos y preguntarían por cambios de nadie.
+    val hasUnsavedChanges = if (subject == null) {
+        name.isNotBlank() || targetAverage.isNotBlank() ||
+            scheduleDraft.professor.isNotBlank() || scheduleDraft.room.isNotBlank() ||
+            scheduleDraft.daysOfWeek.isNotEmpty()
+    } else {
+        name != subject.name ||
+            targetAverage != GradingScaleUtils.formatGrade(subject.targetAverage, scale) ||
+            customColor != subject.customColor
+    }
+    val requestLeave = rememberLeaveGuard(
+        hasUnsavedChanges = hasUnsavedChanges,
+        onLeave = onBackClick,
+        message = if (subject == null) {
+            "La materia no se ha creado todavía."
+        } else {
+            "Los cambios de esta materia se van a perder."
+        }
+    )
+
     val targetValue = targetAverage.toDoubleOrNull()
     val nameValidation = TextValidators.validateSubjectName(name)
     val isNameValid = name.isBlank() || nameValidation.isValid
@@ -251,7 +272,7 @@ fun SubjectFormScreen(
                 },
                 accent = accent,
                 initial = name.trim().firstOrNull()?.uppercaseChar(),
-                onBackClick = onBackClick
+                onBackClick = requestLeave
             )
             if (isEditing && subject == null) {
                 UniCard(

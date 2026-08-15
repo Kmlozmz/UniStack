@@ -1,5 +1,7 @@
 package com.unistack.app.feature_home.domain
 
+import com.unistack.app.BuildConfig
+import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
@@ -145,7 +147,14 @@ object DailyPriorityEngine {
         }
     }
 
+    /**
+     * Los trabajos solo compiten por el primer puesto donde Trabajos se puede abrir.
+     *
+     * Fuera de dev y alpha esa pantalla está cerrada, y proponer «avanza este trabajo» para
+     * luego no dejar entrar es peor que no proponer nada.
+     */
     private fun academicWorkCandidates(works: List<AcademicWork>): List<PriorityCandidate> {
+        if (!BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) return emptyList()
         val today = TaskDateUtils.today()
         return works
             .filterNot { it.status == AcademicWorkStatus.SUBMITTED }

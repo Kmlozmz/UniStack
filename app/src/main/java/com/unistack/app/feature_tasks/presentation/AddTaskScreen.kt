@@ -95,6 +95,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
+import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
@@ -119,8 +120,6 @@ fun AddTaskScreen(
     viewModel: TasksViewModel = hiltViewModel(),
     taskId: String? = null
 ) {
-    BackHandler(onBack = onBackClick)
-
     val tasks by viewModel.tasks.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -143,6 +142,28 @@ fun AddTaskScreen(
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
     var showUnlinkConfirmation by rememberSaveable { mutableStateOf(false) }
     val estimatedMinutes = "60"
+
+    // Lo que se compara es lo que se escribe, no lo que la pantalla elige sola: el tipo y
+    // la dificultad vienen con un valor puesto, así que preguntarían por cambios que nadie hizo.
+    val hasUnsavedChanges = if (task == null) {
+        title.isNotBlank() || description.isNotBlank() || dueDate.isNotBlank() ||
+            dueTime.isNotBlank() || selectedSubjectId != null || gradingChoice != null
+    } else {
+        title != task.title ||
+            description != task.description ||
+            selectedSubjectId != task.subjectId ||
+            selectedType != task.type ||
+            difficulty != task.difficulty
+    }
+    val requestLeave = rememberLeaveGuard(
+        hasUnsavedChanges = hasUnsavedChanges,
+        onLeave = onBackClick,
+        message = if (task == null) {
+            "La tarea no se ha creado todavía."
+        } else {
+            "Los cambios de esta tarea se van a perder."
+        }
+    )
 
     val titleValidation = TextValidators.validateActivityName(title)
     val isTitleValid = title.isBlank() || titleValidation.isValid

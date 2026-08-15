@@ -58,6 +58,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -279,7 +281,7 @@ fun MainNavGraph(
                             onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
                             onSeeExpensesClick = { navController.navigateIfModuleEnabled(AppRoutes.Expenses, enabledModules) },
                             onOpenTemplatesClick = { navController.navigateIfModuleEnabled(AppRoutes.AcademicTemplates, enabledModules) },
-                            onCalendarClick = { navController.navigate(AppRoutes.Calendar) },
+                            onCalendarClick = { navController.go(AppRoutes.Calendar) },
                             onSubjectClick = { subjectId -> navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules) },
                             onNotificationsClick = {
                                 navController.navigate(AppRoutes.Notifications) {
@@ -296,14 +298,14 @@ fun MainNavGraph(
                                     launchSingleTop = true
                                 }
                             },
-                            onWhatsNewClick = { navController.navigate(AppRoutes.WhatsNew) },
-                            onResourcesClick = { navController.navigate(AppRoutes.Resources) },
-                            onHelpClick = { navController.navigate(AppRoutes.Help) },
-                            onAboutClick = { navController.navigate(AppRoutes.About) },
-                            onGpaClick = { navController.navigate(AppRoutes.GpaCalculator) },
-                            onQuickNotesClick = { navController.navigate(AppRoutes.QuickNotes) },
-                            onAiClick = { navController.navigate(AppRoutes.AiAssistant) },
-                            onLabsClick = { navController.navigate(AppRoutes.Labs) },
+                            onWhatsNewClick = { navController.go(AppRoutes.WhatsNew) },
+                            onResourcesClick = { navController.go(AppRoutes.Resources) },
+                            onHelpClick = { navController.go(AppRoutes.Help) },
+                            onAboutClick = { navController.go(AppRoutes.About) },
+                            onGpaClick = { navController.go(AppRoutes.GpaCalculator) },
+                            onQuickNotesClick = { navController.go(AppRoutes.QuickNotes) },
+                            onAiClick = { navController.go(AppRoutes.AiAssistant) },
+                            onLabsClick = { navController.go(AppRoutes.Labs) },
                             onProfileClick = {
                                 navController.navigate(AppRoutes.Profile) {
                                     launchSingleTop = true
@@ -333,11 +335,11 @@ fun MainNavGraph(
                 NotificationHistoryScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Home)
+                            navController.go(AppRoutes.Home)
                         }
                     },
                     onNotificationClick = { notificationId ->
-                        navController.navigate(AppRoutes.notificationDetail(notificationId))
+                        navController.go(AppRoutes.notificationDetail(notificationId))
                     },
                     onSettingsClick = {
                         navController.navigate(AppRoutes.NotificationSettings) {
@@ -355,7 +357,7 @@ fun MainNavGraph(
                     notificationId = notificationId,
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Notifications)
+                            navController.go(AppRoutes.Notifications)
                         }
                     },
                     onOpenRelated = { route ->
@@ -375,14 +377,14 @@ fun MainNavGraph(
             }
             composable(AppRoutes.Profile) {
                 ProfileScreen(
-                    onOpenProClick = { navController.navigate(AppRoutes.Pro) },
-                    onOpenSettingsClick = { navController.navigate(AppRoutes.Settings) },
-                    onOpenAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) },
-                    onOpenNotificationsClick = { navController.navigate(AppRoutes.NotificationSettings) },
-                    onOpenModulesClick = { navController.navigate(AppRoutes.ModuleSettings) },
-                    onOpenAppearanceClick = { navController.navigate(AppRoutes.AppearanceSettings) },
-                    onOpenDataClick = { navController.navigate(AppRoutes.DataSettings) },
-                    onOpenUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
+                    onOpenProClick = { navController.go(AppRoutes.Pro) },
+                    onOpenSettingsClick = { navController.go(AppRoutes.Settings) },
+                    onOpenAcademicClick = { navController.go(AppRoutes.AcademicSettings) },
+                    onOpenNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
+                    onOpenModulesClick = { navController.go(AppRoutes.ModuleSettings) },
+                    onOpenAppearanceClick = { navController.go(AppRoutes.AppearanceSettings) },
+                    onOpenDataClick = { navController.go(AppRoutes.DataSettings) },
+                    onOpenUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
             composable(
@@ -418,28 +420,28 @@ fun MainNavGraph(
                 SettingsHubScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Profile)
+                            navController.go(AppRoutes.Profile)
                         }
                     },
-                    onAppearanceClick = { navController.navigate(AppRoutes.AppearanceSettings) },
-                    onAccessibilityClick = { navController.navigate(AppRoutes.AccessibilitySettings) },
+                    onAppearanceClick = { navController.go(AppRoutes.AppearanceSettings) },
+                    onAccessibilityClick = { navController.go(AppRoutes.AccessibilitySettings) },
                     onProfileClick = {
                         navController.navigate(AppRoutes.Profile) {
                             launchSingleTop = true
                         }
                     },
-                    onAcademicClick = { navController.navigate(AppRoutes.AcademicSettings) },
-                    onModulesClick = { navController.navigate(AppRoutes.ModuleSettings) },
-                    onNotificationsClick = { navController.navigate(AppRoutes.NotificationSettings) },
-                    onDataClick = { navController.navigate(AppRoutes.DataSettings) },
-                    onUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
+                    onAcademicClick = { navController.go(AppRoutes.AcademicSettings) },
+                    onModulesClick = { navController.go(AppRoutes.ModuleSettings) },
+                    onNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
+                    onDataClick = { navController.go(AppRoutes.DataSettings) },
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
             composable(AppRoutes.UpdateSettings) {
                 UpdateSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -448,7 +450,7 @@ fun MainNavGraph(
                 AppearanceSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -457,7 +459,7 @@ fun MainNavGraph(
                 AccessibilitySettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -485,7 +487,7 @@ fun MainNavGraph(
                     mode = ProfileScreenMode.ACADEMIC,
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -495,7 +497,7 @@ fun MainNavGraph(
                     mode = ProfileScreenMode.MODULES,
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -505,7 +507,7 @@ fun MainNavGraph(
                     mode = ProfileScreenMode.NOTIFICATIONS,
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
@@ -515,44 +517,44 @@ fun MainNavGraph(
                     mode = ProfileScreenMode.DATA,
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Settings)
+                            navController.go(AppRoutes.Settings)
                         }
                     }
                 )
             }
             composable(AppRoutes.WhatsNew) {
-                WhatsNewScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                WhatsNewScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.Resources) {
-                ResourcesScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                ResourcesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.Help) {
-                HelpScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                HelpScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.About) {
                 AboutScreen(
-                    onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) },
-                    onWhatsNewClick = { navController.navigate(AppRoutes.WhatsNew) },
-                    onUpdatesClick = { navController.navigate(AppRoutes.UpdateSettings) }
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
+                    onWhatsNewClick = { navController.go(AppRoutes.WhatsNew) },
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
             composable(AppRoutes.GpaCalculator) {
-                GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.QuickNotes) {
-                QuickNotesScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                QuickNotesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.AiAssistant) {
-                AiAssistantScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                AiAssistantScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.Labs) {
-                LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.navigate(AppRoutes.Home) })
+                LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             composable(AppRoutes.Pro) {
                 ProScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Profile)
+                            navController.go(AppRoutes.Profile)
                         }
                     }
                 )
@@ -575,7 +577,7 @@ fun MainNavGraph(
                             }
                         }
                     },
-                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
+                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
                 )
             }
             // Las dos rutas de Horario: el mismo formulario, con el bloque académico plegado
@@ -585,7 +587,7 @@ fun MainNavGraph(
                     mode = SubjectFormMode.SCHEDULE,
                     onBackClick = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
                     onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
-                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
+                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
                 )
             }
             composable("${AppRoutes.EditSubjectFromSchedule}/{subjectId}") { backStackEntry ->
@@ -608,7 +610,7 @@ fun MainNavGraph(
                             navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
                         }
                     },
-                    onUpgradeClick = { navController.navigate(AppRoutes.Pro) }
+                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
                 )
             }
             composable("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
@@ -703,7 +705,7 @@ fun MainNavGraph(
                         navController.navigateBackOr(AppRoutes.subjectPeriodDetail(subjectId, periodId), enabledModules)
                     },
                     onCompleteHistoryClick = { id ->
-                        navController.navigate(AppRoutes.priorHistory(id))
+                        navController.go(AppRoutes.priorHistory(id))
                     }
                 )
             }
@@ -767,7 +769,7 @@ fun MainNavGraph(
                 AcademicTemplatesScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
-                            navController.navigate(AppRoutes.Home)
+                            navController.go(AppRoutes.Home)
                         }
                     }
                 )
@@ -1080,6 +1082,18 @@ internal fun routeIsBuilt(route: String?): Boolean {
     return UnfinishedRoutes.none { routeBelongsTo(route, it) }
 }
 
+/**
+ * Navega a una pantalla sin apilarla dos veces.
+ *
+ * Sin `launchSingleTop`, tocar dos veces la misma fila —de ajustes, del panel, de donde sea—
+ * mete dos copias en la pila, y para salir hay que dar atrás tantas veces como toques se
+ * dieron. No hay ningún sitio de la app donde apilar la misma pantalla sobre sí misma
+ * signifique algo.
+ */
+private fun NavHostController.go(route: String) {
+    navigate(route) { launchSingleTop = true }
+}
+
 private fun NavHostController.navigateBackOr(
     fallbackRoute: String,
     enabledModules: Set<AppModule>
@@ -1149,6 +1163,7 @@ private fun UniStackBottomBarContent(
 ) {
     val appearance = LocalAppearancePreferences.current
     val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
     val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
     val showLabels = appearance.bottomBarStyle == BottomBarStyle.LABELED && items.size <= 5
     val floating = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
@@ -1196,11 +1211,23 @@ private fun UniStackBottomBarContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             items.forEach { item ->
+                /*
+                 * Un toque, un golpecito.
+                 *
+                 * Cambiar de sección es de lo poco que se hace sin mirar, con el pulgar y de
+                 * memoria: el aviso al tacto confirma que se dio en el sitio sin tener que
+                 * comprobarlo con la vista. Volver a tocar la sección en la que ya estás no
+                 * vibra, porque ahí no ha pasado nada que confirmar.
+                 */
+                val selected = selectedRoute == item.route
                 UniStackBottomBarItem(
                     item = item,
-                    selected = selectedRoute == item.route,
+                    selected = selected,
                     showLabel = showLabels,
-                    onClick = { onNavigate(item.route) },
+                    onClick = {
+                        if (!selected) haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onNavigate(item.route)
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
