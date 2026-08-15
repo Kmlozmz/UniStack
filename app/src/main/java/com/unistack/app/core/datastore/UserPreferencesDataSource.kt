@@ -291,6 +291,7 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("typographyStyle", typographyStyle.name)
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
+        .put("screenTransition", screenTransition.name)
         .put("navigationBarPresentation", navigationBarPresentation.name)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
         .put("showHomeGreeting", showHomeGreeting)
@@ -350,6 +351,7 @@ class UserPreferencesDataSource(private val context: Context) {
                 typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
                 bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
+                screenTransition = json.enumOrDefault("screenTransition", defaults.screenTransition),
                 navigationBarPresentation = json.enumOrDefault(
                     "navigationBarPresentation",
                     defaults.navigationBarPresentation

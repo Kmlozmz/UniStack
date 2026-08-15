@@ -70,12 +70,15 @@ fun CollapsingScaffold(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        // El subtítulo solo acompaña al título grande: encogido no cabe, y
-                        // recortarlo a puntos suspensivos no aporta nada.
-                        if (subtitle != null && appBarState.collapsedFraction < 0.5f) {
+                        // El subtítulo se desvanece con el recogido, no desaparece de golpe:
+                        // antes se cortaba a mitad de camino y ese salto era lo que hacía que
+                        // todo el gesto pareciera tosco.
+                        if (subtitle != null) {
                             Text(
                                 subtitle,
-                                color = UniStackColors.TextSecondary,
+                                color = UniStackColors.TextSecondary.copy(
+                                    alpha = (1f - appBarState.collapsedFraction * 1.6f).coerceIn(0f, 1f)
+                                ),
                                 fontSize = 12.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -95,7 +98,9 @@ fun CollapsingScaffold(
                 actions = { actions() },
                 colors = TopAppBarDefaults.largeTopAppBarColors(
                     containerColor = UniStackColors.Background,
-                    scrolledContainerColor = UniStackColors.SurfaceVariant,
+                    // El mismo fondo recogida que desplegada. Cambiar de color a mitad del
+                    // recorrido se ve como un escalón, no como una barra que se encoge.
+                    scrolledContainerColor = UniStackColors.Background,
                     titleContentColor = UniStackColors.TextPrimary,
                     navigationIconContentColor = UniStackColors.TextPrimary
                 ),
@@ -104,9 +109,9 @@ fun CollapsingScaffold(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .elasticScroll(),
+            // Sin rebote aquí: la cabecera que se encoge también consume desplazamiento, y
+            // entre las dos la lista se quedaba pegada arriba sin poder recolocarla.
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = horizontalPadding,
                 end = horizontalPadding,

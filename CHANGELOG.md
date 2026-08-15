@@ -38,7 +38,18 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+**Lo importante:** el movimiento entre pantallas se elige en Apariencia, el rebote se calmó y el
+panel lateral deja de parecer una tarjeta pegada encima.
+
+#### Movimiento
+- En Apariencia puedes elegir cómo cambia una pantalla por otra: fundido, deslizar o sin animación.
+- El deslizamiento de pantalla completa se retira: se sentía ajeno a la app.
+- El rebote de las listas se queda en un acuse de recibo: menos recorrido, sin salto al desplazar fuerte y sin quedarse pegado arriba.
+- El título grande se desvanece al recogerse en vez de cortarse a mitad de camino, y el fondo deja de cambiar de color al desplazar.
+
+#### Panel lateral
+- Usa el fondo de la app y llega hasta el borde, sin contorno ni separación: era lo que lo dejaba flotando encima de Inicio.
+- Inicio se encoge y se aparta por detrás mientras el panel entra, así que se ve que hay algo detrás.
 
 ---
 

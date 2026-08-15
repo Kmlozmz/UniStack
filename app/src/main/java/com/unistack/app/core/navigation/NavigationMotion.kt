@@ -6,10 +6,9 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import com.unistack.app.feature_user.domain.ScreenTransition
 import kotlin.math.roundToInt
 
 /**
@@ -20,14 +19,13 @@ import kotlin.math.roundToInt
  * es ni una cosa ni la otra —la pantalla aparece ya empezada, como si se hubiera perdido el
  * principio del movimiento—, que es lo que hacía que se sintiera desconectado.
  *
- * Ahora hay dos gestos, y cada uno dice algo distinto:
+ * Se probaron dos versiones con deslizamiento: un tercio de pantalla, que se leía como un
+ * movimiento al que le falta el principio, y el ancho completo con la anterior apartándose, que
+ * se sintió peor todavía. Las dos llamaban la atención sobre el marco en vez de sobre lo que
+ * hay dentro.
  *
- * - **En profundidad** (abrir un detalle, entrar a un ajuste): la nueva entra desde el borde
- *   recorriendo la pantalla entera, y la anterior se va despacio hacia el lado contrario, a un
- *   cuarto de velocidad. Ese desfase es lo que hace que se lean como dos capas y no como dos
- *   imágenes intercambiadas.
- * - **Entre pestañas** (Inicio ↔ Horario ↔ Gastos): nada se desliza, porque no hay ni un antes
- *   ni un después entre ellas. Se cruzan fundiéndose, con un pellizco de escala.
+ * Queda un fundido corto. No cuenta nada —ni jerarquía, ni dirección— y por eso no se equivoca:
+ * lo que se mueve es el contenido de cada pantalla, que ya tiene su propio movimiento.
  *
  * Las duraciones salen del escalado de movimiento del sistema, así que quien lo tenga reducido
  * lo ve más rápido, y quien lo apague no ve nada de esto.
@@ -37,87 +35,57 @@ import kotlin.math.roundToInt
 private val Standard = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
 /** Entrar y salir no duran lo mismo: lo que llega se mira, lo que se va estorba. */
-private const val ENTER_MILLIS = 320
-private const val EXIT_MILLIS = 240
-private const val FADE_THROUGH_OUT_MILLIS = 90
-private const val FADE_THROUGH_IN_MILLIS = 220
+private const val ENTER_MILLIS = 160
+private const val EXIT_MILLIS = 120
 
 private fun Int.scaled(motionScale: Float) = (this * motionScale).roundToInt().coerceAtLeast(1)
 
-/** La pantalla nueva entra desde el borde. [fromRight] es avanzar; falso, volver. */
-fun depthEnter(fromRight: Boolean, motionScale: Float): EnterTransition =
-    slideInHorizontally(
-        initialOffsetX = { width -> if (fromRight) width else -width },
-        animationSpec = tween(ENTER_MILLIS.scaled(motionScale), easing = Standard)
-    ) + fadeIn(
-        animationSpec = tween(
-            durationMillis = (ENTER_MILLIS / 2).scaled(motionScale),
-            easing = Standard
-        )
-    )
-
 /**
- * La anterior se aparta un cuarto de pantalla, no entera.
+ * Entrar en cualquier pantalla: aparece.
  *
- * Es el desfase que da la sensación de capas: si las dos recorrieran lo mismo, parecerían una
- * sola tira moviéndose de lado.
+ * Corto a propósito —bajo doscientos milisegundos—: una transición que se nota es una
+ * transición que estorba cuando se pasa por ella cincuenta veces al día.
  */
-fun depthExit(toLeft: Boolean, motionScale: Float): ExitTransition =
-    slideOutHorizontally(
-        targetOffsetX = { width -> if (toLeft) -width / 4 else width / 4 },
-        animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
-    ) + fadeOut(
-        animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
-    )
-
-/**
- * Cambio entre pestañas: se funden, sin dirección.
- *
- * Deslizar entre secciones obliga a inventarse un orden —¿Gastos está a la derecha de Horario?—
- * y ese orden cambia según los módulos que tengas encendidos. Fundir no miente.
- */
-fun lateralEnter(motionScale: Float): EnterTransition =
+fun screenFadeIn(motionScale: Float): EnterTransition =
     fadeIn(
         animationSpec = tween(
-            durationMillis = FADE_THROUGH_IN_MILLIS.scaled(motionScale),
-            delayMillis = FADE_THROUGH_OUT_MILLIS.scaled(motionScale),
-            easing = Standard
-        )
-    ) + scaleIn(
-        initialScale = 0.94f,
-        animationSpec = tween(
-            durationMillis = FADE_THROUGH_IN_MILLIS.scaled(motionScale),
-            delayMillis = FADE_THROUGH_OUT_MILLIS.scaled(motionScale),
+            durationMillis = ENTER_MILLIS.scaled(motionScale),
+            delayMillis = (EXIT_MILLIS / 2).scaled(motionScale),
             easing = Standard
         )
     )
 
-fun lateralExit(motionScale: Float): ExitTransition =
+/** Y salir: desaparece antes de que la siguiente empiece a llegar. */
+fun screenFadeOut(motionScale: Float): ExitTransition =
     fadeOut(
-        animationSpec = tween(FADE_THROUGH_OUT_MILLIS.scaled(motionScale), easing = Standard)
-    ) + scaleOut(
-        targetScale = 0.96f,
-        animationSpec = tween(FADE_THROUGH_OUT_MILLIS.scaled(motionScale), easing = Standard)
+        animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
     )
 
 /**
- * La que se va al volver atrás recorre la pantalla entera.
+ * El movimiento que toque, según lo que se haya elegido en Apariencia.
  *
- * Es la mitad que el dedo arrastra en el gesto predictivo: si solo se apartara un cuarto, el
- * sistema dibujaría la pantalla saliendo y volviendo a su sitio en cuanto sueltas, que es
- * justo la sensación de que el gesto «no responde».
+ * El deslizamiento es corto —un sexto de pantalla— a propósito: recorrer el ancho completo se
+ * probó y se sentía ajeno, como si la pantalla llegara de otro sitio en vez de abrirse encima.
  */
-fun depthPopExit(motionScale: Float): ExitTransition =
-    slideOutHorizontally(
-        targetOffsetX = { width -> width },
-        animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
-    ) + fadeOut(
-        animationSpec = tween(
-            durationMillis = EXIT_MILLIS.scaled(motionScale),
-            delayMillis = (EXIT_MILLIS / 3).scaled(motionScale),
-            easing = Standard
-        )
-    )
+fun screenEnter(style: ScreenTransition, motionScale: Float, fromRight: Boolean): EnterTransition =
+    when (style) {
+        ScreenTransition.NONE -> EnterTransition.None
+        ScreenTransition.FADE -> screenFadeIn(motionScale)
+        ScreenTransition.SLIDE -> slideInHorizontally(
+            initialOffsetX = { width -> if (fromRight) width / 6 else -width / 6 },
+            animationSpec = tween(ENTER_MILLIS.scaled(motionScale), easing = Standard)
+        ) + screenFadeIn(motionScale)
+    }
+
+fun screenExit(style: ScreenTransition, motionScale: Float, toLeft: Boolean): ExitTransition =
+    when (style) {
+        ScreenTransition.NONE -> ExitTransition.None
+        ScreenTransition.FADE -> screenFadeOut(motionScale)
+        ScreenTransition.SLIDE -> slideOutHorizontally(
+            targetOffsetX = { width -> if (toLeft) -width / 6 else width / 6 },
+            animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
+        ) + screenFadeOut(motionScale)
+    }
 
 /**
  * Si el cambio es entre secciones y no hacia dentro de una.

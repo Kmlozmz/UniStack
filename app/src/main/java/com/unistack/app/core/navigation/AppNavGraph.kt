@@ -228,32 +228,39 @@ fun MainNavGraph(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(contentPadding),
+                /*
+                 * Un fundido, y punto.
+                 *
+                 * Se probaron dos versiones con deslizamiento —un tercio de pantalla, y luego
+                 * el ancho completo con la anterior apartándose— y las dos se sentían ajenas a
+                 * la app. El fundido no compite con nada de lo que hay en pantalla y deja que
+                 * lo que se mueva sea el contenido, no el marco.
+                 */
                 enterTransition = {
-                    val from = initialState.destination.route
-                    val to = targetState.destination.route
-                    if (isLateralNavigation(from, to)) {
-                        lateralEnter(motionScale)
-                    } else {
-                        depthEnter(fromRight = isForwardNavigation(from, to), motionScale = motionScale)
-                    }
+                    screenEnter(
+                        style = appearance.screenTransition,
+                        motionScale = motionScale,
+                        fromRight = isForwardNavigation(
+                            initialState.destination.route,
+                            targetState.destination.route
+                        )
+                    )
                 },
                 exitTransition = {
-                    val from = initialState.destination.route
-                    val to = targetState.destination.route
-                    if (isLateralNavigation(from, to)) {
-                        lateralExit(motionScale)
-                    } else {
-                        depthExit(toLeft = isForwardNavigation(from, to), motionScale = motionScale)
-                    }
+                    screenExit(
+                        style = appearance.screenTransition,
+                        motionScale = motionScale,
+                        toLeft = isForwardNavigation(
+                            initialState.destination.route,
+                            targetState.destination.route
+                        )
+                    )
                 },
-                // Al volver, la pantalla que reaparece llega desde la izquierda y la que se va
-                // recorre la pantalla entera hacia la derecha: es el mismo gesto de entrar, del
-                // revés, y es lo que el gesto predictivo del sistema va dibujando con el dedo.
                 popEnterTransition = {
-                    depthEnter(fromRight = false, motionScale = motionScale)
+                    screenEnter(appearance.screenTransition, motionScale, fromRight = false)
                 },
                 popExitTransition = {
-                    depthPopExit(motionScale)
+                    screenExit(appearance.screenTransition, motionScale, toLeft = false)
                 }
             ) {
                 composable(AppRoutes.Home) {

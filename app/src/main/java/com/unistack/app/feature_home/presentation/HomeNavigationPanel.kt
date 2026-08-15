@@ -90,12 +90,17 @@ internal fun HomeNavigationPanel(
     onAiClick: () -> Unit,
     onLabsClick: () -> Unit
 ) {
-    val panelShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
-    val drawerSurface = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.Card.copy(alpha = 0.98f)
-    } else {
-        UniStackColors.Card
-    }
+    /*
+     * El panel es la app, no una tarjeta encima de la app.
+     *
+     * Iba como una tarjeta flotante: fondo de tarjeta, borde propio, ocho dp de separación por
+     * la derecha y las dos esquinas de ese lado redondeadas. Eso lo dejaba suspendido sobre
+     * Inicio, sin pertenecer a nada —de ahí que se sintiera fuera de sitio—. Ahora usa el fondo
+     * de la app, llega hasta el borde y solo redondea la esquina que asoma, que es la que
+     * necesita forma para no cortar en seco.
+     */
+    val panelShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
+    val drawerSurface = UniStackColors.Background
     val semesterChip = when (subjectsCount) {
         0 -> "Semestre activo"
         1 -> "1 materia"
@@ -242,17 +247,20 @@ internal fun HomeNavigationPanel(
     ModalDrawerSheet(
         modifier = Modifier
             .fillMaxHeight()
-            .fillMaxWidth(0.92f)
-            .widthIn(max = 360.dp),
-        drawerContainerColor = Color.Transparent
+            // Un poco más estrecho: el trozo de Inicio que queda a la vista es lo que recuerda
+            // de dónde vienes, y con el 92% no quedaba nada que ver.
+            .fillMaxWidth(0.86f)
+            .widthIn(max = 340.dp),
+        drawerContainerColor = Color.Transparent,
+        drawerShape = panelShape
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxHeight()
-                .padding(end = 8.dp),
+            modifier = Modifier.fillMaxHeight(),
             shape = panelShape,
             color = drawerSurface,
-            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+            // Sin borde: un contorno alrededor lo volvía a convertir en una lámina pegada
+            // encima. La sombra del propio cajón ya lo separa de lo que hay detrás.
+            tonalElevation = 0.dp
         ) {
             LazyColumn(
                 modifier = Modifier

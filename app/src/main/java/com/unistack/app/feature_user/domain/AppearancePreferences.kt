@@ -19,6 +19,7 @@ data class AppearancePreferences(
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
     val navigationBarPresentation: NavigationBarPresentation = NavigationBarPresentation.INTEGRATED,
+    val screenTransition: ScreenTransition = ScreenTransition.FADE,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,
@@ -140,6 +141,24 @@ enum class TypographyStyle {
 enum class BottomBarStyle {
     LABELED,
     ICONS_ONLY
+}
+
+/**
+ * Cómo cambia una pantalla por otra.
+ *
+ * Es una preferencia y no una decisión cerrada porque no hay una respuesta buena: el
+ * deslizamiento cuenta jerarquía y molesta a quien entra y sale cincuenta veces al día, y el
+ * fundido no cuenta nada y por eso no se equivoca. Cada quien nota una cosa distinta.
+ */
+enum class ScreenTransition {
+    /** Aparece y desaparece. Lo que viene puesto. */
+    FADE,
+
+    /** La nueva entra desde el borde y la anterior se aparta un poco. */
+    SLIDE,
+
+    /** Sin transición: la pantalla se sustituye. */
+    NONE
 }
 
 enum class NavigationBarPresentation {

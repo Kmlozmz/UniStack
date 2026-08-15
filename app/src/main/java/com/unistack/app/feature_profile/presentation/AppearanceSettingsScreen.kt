@@ -97,6 +97,7 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.NavigationBarPresentation
+import com.unistack.app.feature_user.domain.ScreenTransition
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_user.domain.TypographyStyle
@@ -386,6 +387,15 @@ fun AppearanceSettingsScreen(
                     label = NavigationBarPresentation::label,
                     onSelected = { value ->
                         viewModel.updateAppearance { it.copy(navigationBarPresentation = value) }
+                    }
+                )
+                SectionLabel("Cambio de pantalla")
+                ChoiceGrid(
+                    entries = ScreenTransition.entries,
+                    selected = appearance.screenTransition,
+                    label = ScreenTransition::label,
+                    onSelected = { value ->
+                        viewModel.updateAppearance { it.copy(screenTransition = value) }
                     }
                 )
                 SectionLabel("Pestaña inicial")
@@ -1197,6 +1207,12 @@ private fun TypographyStyle.label() = when (this) {
 private fun BottomBarStyle.label() = when (this) {
     BottomBarStyle.LABELED -> "Iconos y texto"
     BottomBarStyle.ICONS_ONLY -> "Solo iconos"
+}
+
+private fun ScreenTransition.label() = when (this) {
+    ScreenTransition.FADE -> "Fundido"
+    ScreenTransition.SLIDE -> "Deslizar"
+    ScreenTransition.NONE -> "Sin animación"
 }
 
 private fun NavigationBarPresentation.label() = when (this) {

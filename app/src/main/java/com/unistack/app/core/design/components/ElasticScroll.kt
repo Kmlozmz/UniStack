@@ -18,14 +18,26 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
+/*
+ * Los tres números que deciden cómo se siente.
+ *
+ * La primera tanda iba con 0,32 de resistencia, 220 de tope y 0,14 de empuje, y con un
+ * desplazamiento fuerte el rebote se iba tan lejos que parecía otra cosa: no una lista que
+ * frena contra el final, sino algo que se suelta. Estos valores dejan el gesto en un acuse de
+ * recibo —se nota que hay borde— sin llegar a ser un salto.
+ */
+
 /** Cuánto se resiste el contenido al pasarse del borde. Uno sería seguir al dedo sin más. */
-private const val RESISTANCE = 0.32f
+private const val RESISTANCE = 0.14f
 
 /** El tope: por mucho que se arrastre, no se despega más que esto. */
-private const val MAX_OVERSCROLL = 220f
+private const val MAX_OVERSCROLL = 72f
 
 /** Lo que empuja el rebote cuando la lista llega al final lanzada. */
-private const val FLING_PUSH = 0.14f
+private const val FLING_PUSH = 0.03f
+
+/** El empuje del lanzamiento, con techo propio: es el que se iba de madre. */
+private const val MAX_FLING_PUSH = 36f
 
 /**
  * El rebote al llegar al final de una lista.
@@ -74,6 +86,20 @@ fun Modifier.elasticScroll(): Modifier = composed {
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
+                /*
+                 * Si la lista consumió el gesto, es que ya no está en el borde: lo que quede
+                 * despegado vuelve a cero.
+                 *
+                 * Sin esto, un desvío podía quedarse puesto —la cabecera que se encoge también
+                 * consume desplazamiento, y entre las dos el gesto se cortaba a medias— y la
+                 * lista se quedaba pegada arriba sin forma de recolocarla.
+                 */
+                if (consumed.y != 0f && offset.value != 0f) {
+                    scope.launch {
+                        offset.animateTo(0f, spring(stiffness = Spring.StiffnessMedium))
+                    }
+                    return Offset.Zero
+                }
                 if (available.y == 0f || source != NestedScrollSource.UserInput) return Offset.Zero
 
                 // La resistencia crece con lo que ya se ha estirado: cuanto más lejos, más
@@ -91,8 +117,8 @@ fun Modifier.elasticScroll(): Modifier = composed {
                 offset.animateTo(
                     targetValue = 0f,
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMediumLow
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
                     ),
                     initialVelocity = available.y
                 )
@@ -107,13 +133,13 @@ fun Modifier.elasticScroll(): Modifier = composed {
              */
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
                 if (available.y == 0f) return Velocity.Zero
-                val push = (available.y * FLING_PUSH).coerceIn(-MAX_OVERSCROLL, MAX_OVERSCROLL)
+                val push = (available.y * FLING_PUSH).coerceIn(-MAX_FLING_PUSH, MAX_FLING_PUSH)
                 offset.snapTo(push)
                 offset.animateTo(
                     targetValue = 0f,
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
                     )
                 )
                 return available

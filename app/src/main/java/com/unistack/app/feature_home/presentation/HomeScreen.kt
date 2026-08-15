@@ -42,9 +42,11 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -174,9 +176,28 @@ fun HomeScreen(
             )
         }
     ) {
+        /*
+         * Inicio se retira mientras el panel entra.
+         *
+         * Es lo que convierte el gesto en un movimiento y no en una lámina que tapa: el
+         * contenido se encoge un poco y se va con el panel, así que se lee que hay algo detrás
+         * en vez de una pantalla que desaparece bajo otra. El desplazamiento del cajón viene en
+         * negativo mientras se abre, así que se normaliza a un valor de cero a uno.
+         */
+        val drawerProgress = with(LocalDensity.current) {
+            val offset = runCatching { drawerState.currentOffset }.getOrDefault(0f)
+            if (offset.isNaN()) 0f else (1f + (offset / 340.dp.toPx())).coerceIn(0f, 1f)
+        }
+
         BoxWithConstraints(
             modifier = modifier
                 .fillMaxSize()
+                .graphicsLayer {
+                    val scale = 1f - (0.06f * drawerProgress)
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = 26.dp.toPx() * drawerProgress
+                }
                 .background(HomeBackgroundBrush)
         ) {
             val viewportIsCompact = maxHeight < 840.dp || maxWidth < 390.dp
