@@ -96,7 +96,6 @@ import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.MotionPreference
-import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import com.unistack.app.feature_user.domain.ScreenTransition
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.TextScalePreference
@@ -378,15 +377,6 @@ fun AppearanceSettingsScreen(
                     label = BottomBarStyle::label,
                     onSelected = { value ->
                         viewModel.updateAppearance { it.copy(bottomBarStyle = value) }
-                    }
-                )
-                SectionLabel("Presentación")
-                ChoiceGrid(
-                    entries = NavigationBarPresentation.entries,
-                    selected = appearance.navigationBarPresentation,
-                    label = NavigationBarPresentation::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(navigationBarPresentation = value) }
                     }
                 )
                 SectionLabel("Cambio de pantalla")
@@ -1210,15 +1200,11 @@ private fun BottomBarStyle.label() = when (this) {
 }
 
 private fun ScreenTransition.label() = when (this) {
+    ScreenTransition.PUSH -> "Empuje"
     ScreenTransition.FADE -> "Fundido"
-    ScreenTransition.SLIDE -> "Deslizar"
     ScreenTransition.NONE -> "Sin animación"
 }
 
-private fun NavigationBarPresentation.label() = when (this) {
-    NavigationBarPresentation.INTEGRATED -> "Integrada"
-    NavigationBarPresentation.FLOATING -> "Flotante"
-}
 
 private fun AcademicIndicatorStyle.label() = when (this) {
     AcademicIndicatorStyle.RINGS -> "Anillos"

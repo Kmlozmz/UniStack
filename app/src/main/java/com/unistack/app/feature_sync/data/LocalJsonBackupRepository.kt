@@ -55,7 +55,6 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.MotionPreference
-import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_user.domain.TypographyStyle
@@ -329,7 +328,6 @@ class LocalJsonBackupRepository(
         .put("typographyStyle", value.typographyStyle.name)
         .put("decimalPlaces", value.decimalPlaces)
         .put("bottomBarStyle", value.bottomBarStyle.name)
-        .put("navigationBarPresentation", value.navigationBarPresentation.name)
         .put("academicIndicatorStyle", value.academicIndicatorStyle.name)
         .put("showHomeGreeting", value.showHomeGreeting)
         .put("showHomeHero", value.showHomeHero)
@@ -386,8 +384,6 @@ class LocalJsonBackupRepository(
             typographyStyle = json.optString("typographyStyle").toEnum(current.typographyStyle),
             decimalPlaces = json.optInt("decimalPlaces", current.decimalPlaces),
             bottomBarStyle = json.optString("bottomBarStyle").toEnum(current.bottomBarStyle),
-            navigationBarPresentation = json.optString("navigationBarPresentation")
-                .toEnum(current.navigationBarPresentation),
             academicIndicatorStyle = json.optString("academicIndicatorStyle")
                 .toEnum(current.academicIndicatorStyle),
             showHomeGreeting = json.optBoolean("showHomeGreeting", current.showHomeGreeting),

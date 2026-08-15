@@ -31,26 +31,35 @@ import kotlin.math.roundToInt
  * lo ve más rápido, y quien lo apague no ve nada de esto.
  */
 
-/** La curva estándar de Material: sale rápido y frena al llegar. */
+/** La curva estándar de Material, para el fundido. */
 private val Standard = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 
-/** Entrar y salir no duran lo mismo: lo que llega se mira, lo que se va estorba. */
-private const val ENTER_MILLIS = 160
-private const val EXIT_MILLIS = 120
+/**
+ * La curva del empuje.
+ *
+ * Arranca rápido y frena largo, que es lo que hace que la pantalla parezca tener peso en vez de
+ * aparecer colocada. Es la misma que usa iOS para su gesto de entrar y salir.
+ */
+private val Push = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
+
+private const val FADE_ENTER_MILLIS = 160
+private const val FADE_EXIT_MILLIS = 120
+private const val PUSH_MILLIS = 380
+
+/** Lo que se aparta la pantalla de atrás mientras la nueva la empuja. */
+private const val PARALLAX = 3
+
+/** Y cuánto se apaga mientras se va: no desaparece, se queda detrás. */
+private const val DIMMED = 0.65f
 
 private fun Int.scaled(motionScale: Float) = (this * motionScale).roundToInt().coerceAtLeast(1)
 
-/**
- * Entrar en cualquier pantalla: aparece.
- *
- * Corto a propósito —bajo doscientos milisegundos—: una transición que se nota es una
- * transición que estorba cuando se pasa por ella cincuenta veces al día.
- */
+/** Entrar en cualquier pantalla: aparece. */
 fun screenFadeIn(motionScale: Float): EnterTransition =
     fadeIn(
         animationSpec = tween(
-            durationMillis = ENTER_MILLIS.scaled(motionScale),
-            delayMillis = (EXIT_MILLIS / 2).scaled(motionScale),
+            durationMillis = FADE_ENTER_MILLIS.scaled(motionScale),
+            delayMillis = (FADE_EXIT_MILLIS / 2).scaled(motionScale),
             easing = Standard
         )
     )
@@ -58,33 +67,48 @@ fun screenFadeIn(motionScale: Float): EnterTransition =
 /** Y salir: desaparece antes de que la siguiente empiece a llegar. */
 fun screenFadeOut(motionScale: Float): ExitTransition =
     fadeOut(
-        animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
+        animationSpec = tween(FADE_EXIT_MILLIS.scaled(motionScale), easing = Standard)
     )
 
 /**
- * El movimiento que toque, según lo que se haya elegido en Apariencia.
+ * El empuje: la nueva entra entera desde el borde y la de atrás se aparta a un tercio.
  *
- * El deslizamiento es corto —un sexto de pantalla— a propósito: recorrer el ancho completo se
- * probó y se sentía ajeno, como si la pantalla llegara de otro sitio en vez de abrirse encima.
+ * Ese desfase entre las dos —una recorre la pantalla completa, la otra un tercio— es lo que
+ * hace que se lean como dos capas, una encima de la otra, y no como dos imágenes que se
+ * intercambian. Y la de atrás se apaga en vez de desaparecer, para que se entienda que sigue
+ * ahí esperando.
  */
+fun screenPushIn(motionScale: Float, fromRight: Boolean): EnterTransition =
+    slideInHorizontally(
+        initialOffsetX = { width -> if (fromRight) width else -width / PARALLAX },
+        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
+    ) + fadeIn(
+        initialAlpha = if (fromRight) 1f else DIMMED,
+        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
+    )
+
+fun screenPushOut(motionScale: Float, toLeft: Boolean): ExitTransition =
+    slideOutHorizontally(
+        targetOffsetX = { width -> if (toLeft) -width / PARALLAX else width },
+        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
+    ) + fadeOut(
+        targetAlpha = if (toLeft) DIMMED else 1f,
+        animationSpec = tween(PUSH_MILLIS.scaled(motionScale), easing = Push)
+    )
+
+/** El movimiento que toque, según lo que se haya elegido en Apariencia. */
 fun screenEnter(style: ScreenTransition, motionScale: Float, fromRight: Boolean): EnterTransition =
     when (style) {
         ScreenTransition.NONE -> EnterTransition.None
         ScreenTransition.FADE -> screenFadeIn(motionScale)
-        ScreenTransition.SLIDE -> slideInHorizontally(
-            initialOffsetX = { width -> if (fromRight) width / 6 else -width / 6 },
-            animationSpec = tween(ENTER_MILLIS.scaled(motionScale), easing = Standard)
-        ) + screenFadeIn(motionScale)
+        ScreenTransition.PUSH -> screenPushIn(motionScale, fromRight)
     }
 
 fun screenExit(style: ScreenTransition, motionScale: Float, toLeft: Boolean): ExitTransition =
     when (style) {
         ScreenTransition.NONE -> ExitTransition.None
         ScreenTransition.FADE -> screenFadeOut(motionScale)
-        ScreenTransition.SLIDE -> slideOutHorizontally(
-            targetOffsetX = { width -> if (toLeft) -width / 6 else width / 6 },
-            animationSpec = tween(EXIT_MILLIS.scaled(motionScale), easing = Standard)
-        ) + screenFadeOut(motionScale)
+        ScreenTransition.PUSH -> screenPushOut(motionScale, toLeft)
     }
 
 /**

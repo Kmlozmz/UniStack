@@ -203,7 +203,6 @@ class FirebaseCloudBackupRepository(
                 "typographyStyle" to profile.appearancePreferences.typographyStyle.name,
                 "decimalPlaces" to profile.appearancePreferences.decimalPlaces,
                 "bottomBarStyle" to profile.appearancePreferences.bottomBarStyle.name,
-                "navigationBarPresentation" to profile.appearancePreferences.navigationBarPresentation.name,
                 "academicIndicatorStyle" to profile.appearancePreferences.academicIndicatorStyle.name,
                 "showHomeGreeting" to profile.appearancePreferences.showHomeGreeting,
                 "showHomeHero" to profile.appearancePreferences.showHomeHero,

@@ -19,25 +19,25 @@ import kotlin.math.abs
 import kotlin.math.sign
 
 /*
- * Los tres números que deciden cómo se siente.
+ * Los números, elegidos probándolos uno al lado del otro.
  *
- * La primera tanda iba con 0,32 de resistencia, 220 de tope y 0,14 de empuje, y con un
- * desplazamiento fuerte el rebote se iba tan lejos que parecía otra cosa: no una lista que
- * frena contra el final, sino algo que se suelta. Estos valores dejan el gesto en un acuse de
- * recibo —se nota que hay borde— sin llegar a ser un salto.
+ * Es la goma de iOS con el recorrido recortado a la mitad: la misma resistencia, que es lo que
+ * hace que arrastrar de más cueste cada vez más, pero con un tope de ochenta píxeles en vez de
+ * los ciento sesenta del original. Con el tope largo se veía exagerado en una pantalla de
+ * teléfono; con este se nota el borde sin que la lista parezca soltarse.
  */
 
 /** Cuánto se resiste el contenido al pasarse del borde. Uno sería seguir al dedo sin más. */
-private const val RESISTANCE = 0.14f
+private const val RESISTANCE = 0.55f
 
 /** El tope: por mucho que se arrastre, no se despega más que esto. */
-private const val MAX_OVERSCROLL = 72f
+private const val MAX_OVERSCROLL = 80f
 
 /** Lo que empuja el rebote cuando la lista llega al final lanzada. */
-private const val FLING_PUSH = 0.03f
+private const val FLING_PUSH = 0.05f
 
 /** El empuje del lanzamiento, con techo propio: es el que se iba de madre. */
-private const val MAX_FLING_PUSH = 36f
+private const val MAX_FLING_PUSH = 40f
 
 /**
  * El rebote al llegar al final de una lista.

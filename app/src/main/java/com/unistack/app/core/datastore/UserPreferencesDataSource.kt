@@ -34,7 +34,6 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.LinkedAccount
 import com.unistack.app.feature_user.domain.MotionPreference
-import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import com.unistack.app.feature_user.domain.SavedGradeScenario
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SurfaceStyle
@@ -292,7 +291,6 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
         .put("screenTransition", screenTransition.name)
-        .put("navigationBarPresentation", navigationBarPresentation.name)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
         .put("showHomeGreeting", showHomeGreeting)
         .put("showHomeHero", showHomeHero)
@@ -352,10 +350,6 @@ class UserPreferencesDataSource(private val context: Context) {
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
                 bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
                 screenTransition = json.enumOrDefault("screenTransition", defaults.screenTransition),
-                navigationBarPresentation = json.enumOrDefault(
-                    "navigationBarPresentation",
-                    defaults.navigationBarPresentation
-                ),
                 academicIndicatorStyle = json.enumOrDefault(
                     "academicIndicatorStyle",
                     defaults.academicIndicatorStyle

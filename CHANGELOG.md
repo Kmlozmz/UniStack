@@ -42,14 +42,17 @@ número y la fecha, y se abre una nueva.
 panel lateral deja de parecer una tarjeta pegada encima.
 
 #### Movimiento
-- En Apariencia puedes elegir cómo cambia una pantalla por otra: fundido, deslizar o sin animación.
-- El deslizamiento de pantalla completa se retira: se sentía ajeno a la app.
-- El rebote de las listas se queda en un acuse de recibo: menos recorrido, sin salto al desplazar fuerte y sin quedarse pegado arriba.
+- **Al abrir un detalle, la pantalla nueva entra entera desde el borde y empuja a la anterior**, que se aparta a un tercio y se apaga sin llegar a irse. Volver hace el mismo gesto del revés, que es el que dibuja el dedo con el gesto de atrás.
+- En Apariencia puedes cambiarlo por un fundido o quitarlo del todo.
+- El rebote de las listas es la goma de iOS con el recorrido a la mitad: se nota el borde sin que la lista parezca soltarse, y ya no se queda pegada arriba.
 - El título grande se desvanece al recogerse en vez de cortarse a mitad de camino, y el fondo deja de cambiar de color al desplazar.
 
 #### Panel lateral
 - Usa el fondo de la app y llega hasta el borde, sin contorno ni separación: era lo que lo dejaba flotando encima de Inicio.
 - Inicio se encoge y se aparta por detrás mientras el panel entra, así que se ve que hay algo detrás.
+
+#### Barra inferior
+- Se retira la variante flotante: en UniStack quedaba como un elemento suelto encima de la app. La barra va acoplada al borde, que es como se veía mejor.
 
 ---
 

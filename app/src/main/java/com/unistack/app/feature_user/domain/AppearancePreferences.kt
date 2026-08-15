@@ -18,8 +18,7 @@ data class AppearancePreferences(
     val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
-    val navigationBarPresentation: NavigationBarPresentation = NavigationBarPresentation.INTEGRATED,
-    val screenTransition: ScreenTransition = ScreenTransition.FADE,
+    val screenTransition: ScreenTransition = ScreenTransition.PUSH,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,
@@ -151,20 +150,16 @@ enum class BottomBarStyle {
  * fundido no cuenta nada y por eso no se equivoca. Cada quien nota una cosa distinta.
  */
 enum class ScreenTransition {
-    /** Aparece y desaparece. Lo que viene puesto. */
-    FADE,
+    /** La nueva entra entera desde el borde y empuja a la anterior. Lo que viene puesto. */
+    PUSH,
 
-    /** La nueva entra desde el borde y la anterior se aparta un poco. */
-    SLIDE,
+    /** Aparece y desaparece, sin recorrido. */
+    FADE,
 
     /** Sin transición: la pantalla se sustituye. */
     NONE
 }
 
-enum class NavigationBarPresentation {
-    INTEGRATED,
-    FLOATING
-}
 
 enum class AcademicIndicatorStyle {
     RINGS,

@@ -119,7 +119,6 @@ import com.unistack.app.feature_updates.presentation.UpdateViewModel
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.InitialTab
-import com.unistack.app.feature_user.domain.NavigationBarPresentation
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlin.math.roundToInt
@@ -175,7 +174,6 @@ fun MainNavGraph(
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
     }
     val showBottomBar = !homeDrawerOpen && routeShowsBottomBar(currentRoute)
-    val barFloats = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
 
     LaunchedEffect(launchRoute, enabledModules) {
         launchRoute?.let { route ->
@@ -202,23 +200,14 @@ fun MainNavGraph(
             }
         }
     ) { innerPadding ->
-        /* Con la barra flotante el contenido pasa por debajo: se le quita el hueco que el
-           Scaffold había reservado y esa misma altura se publica en LocalBottomBarOverlay
-           para que cada pantalla la añada al final de su lista. Así lo último sigue
-           pudiendo subir por encima de la barra al desplazarse, pero mientras tanto se ve
-           correr por detrás, que es lo que hace una barra flotante.
-
-           Acoplada no se toca nada: ahí el hueco reservado es el comportamiento correcto. */
-        val overlayHeight = if (barFloats && showBottomBar) {
-            innerPadding.calculateBottomPadding()
-        } else {
-            0.dp
-        }
+        // La barra va acoplada al borde y reserva su hueco, así que nada se dibuja debajo: el
+        // desbordamiento que la variante flotante necesitaba se queda en cero.
+        val overlayHeight = 0.dp
         val contentPadding = PaddingValues(
             start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
             top = innerPadding.calculateTopPadding(),
             end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-            bottom = if (barFloats) 0.dp else innerPadding.calculateBottomPadding()
+            bottom = innerPadding.calculateBottomPadding()
         )
         CompositionLocalProvider(LocalBottomBarOverlay provides overlayHeight) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1153,47 +1142,37 @@ private fun UniStackBottomBarContent(
     val haptics = LocalHapticFeedback.current
     val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
     val showLabels = appearance.bottomBarStyle == BottomBarStyle.LABELED && items.size <= 5
-    val floating = appearance.navigationBarPresentation == NavigationBarPresentation.FLOATING
-
-    /* Las dos presentaciones son las dos variantes de barra de Material 3.
-       Acoplada: pegada al borde, a todo lo ancho y con las esquinas rectas; el borde de
-       la pantalla ya la delimita, así que no lleva contorno propio.
-       Flotante: separada de los bordes, con forma de píldora y elevación, porque aquí sí
-       tiene que despegarse del contenido que pasa por debajo.
-       La altura sale del spec: 80dp con etiqueta, 64dp solo con iconos. */
+    /*
+     * Una sola barra: acoplada al borde, a todo lo ancho y con las esquinas rectas.
+     *
+     * Hubo una variante flotante —píldora separada de los bordes, con sombra y el contenido
+     * pasando por debajo— y se retiró: en UniStack quedaba como un elemento suelto encima de
+     * la app, y obligaba a que cada pantalla reservara a mano el hueco que tapaba.
+     *
+     * La altura sale del spec: 80dp con etiqueta, 64dp solo con iconos.
+     */
     val barHeight = if (showLabels) 80.dp else 64.dp
 
     Surface(
         modifier = modifier
-            .padding(
-                // Márgenes ajustados: cada 2dp que se recorta aquí son 4dp más de ancho
-                // para cada destino, que es lo que decide si «Académico» cabe entero o
-                // acaba en puntos suspensivos.
-                start = if (floating) 8.dp else 0.dp,
-                end = if (floating) 8.dp else 0.dp,
-                bottom = if (floating) 12.dp + navigationBarBottom else 0.dp
-            )
             .fillMaxWidth()
-            .height(barHeight + if (floating) 0.dp else navigationBarBottom),
-        shape = if (floating) RoundedCornerShape(percent = 50) else RectangleShape,
+            .height(barHeight + navigationBarBottom),
+        shape = RectangleShape,
         // Flotando hace falta más contraste y una sombra de verdad. El color de barra sale
         // de una superficie elevada, apenas un par de tonos por encima del fondo: acoplada
         // basta, porque el borde de la pantalla ya la separa, pero suspendida sobre el
         // contenido se confundía con lo que pasaba por detrás y se veía sucia.
-        color = if (floating) UniStackColors.SurfaceVariant else UniStackColors.BottomBar,
-        tonalElevation = if (floating) 3.dp else 2.dp,
-        shadowElevation = if (floating) 12.dp else 0.dp,
-        border = if (floating) {
-            BorderStroke(1.dp, UniStackColors.SoftOutline)
-        } else {
-            null
-        }
+        color = UniStackColors.BottomBar,
+        tonalElevation = 2.dp,
+        shadowElevation = 0.dp,
+        // Sin contorno propio: el borde de la pantalla ya la delimita.
+        border = null
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 4.dp)
-                .padding(bottom = if (floating) 0.dp else navigationBarBottom),
+                .padding(bottom = navigationBarBottom),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
