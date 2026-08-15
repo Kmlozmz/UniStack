@@ -64,7 +64,6 @@ fun PriorHistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }

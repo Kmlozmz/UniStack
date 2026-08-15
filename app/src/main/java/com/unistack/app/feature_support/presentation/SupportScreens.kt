@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.components.SquishyButton
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
@@ -92,45 +93,17 @@ internal fun SupportScaffold(
     modifier: Modifier = Modifier,
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit
 ) {
-    BackHandler(onBack = onBackClick)
     val spacing = LocalInterfaceSpacing.current
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(UniStackColors.Background)
-            .statusBarsPadding()
-            .imePadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = UniStackColors.TextPrimary
-                    )
-                }
-                Column(Modifier.padding(start = 2.dp)) {
-                    Text(
-                        title,
-                        color = UniStackColors.TextPrimary,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 12.sp)
-                }
-            }
-        }
-        content()
-    }
+    LargeTitleScaffold(
+        title = title,
+        subtitle = subtitle,
+        onBackClick = onBackClick,
+        modifier = modifier.imePadding(),
+        horizontalPadding = spacing.screenHorizontal,
+        bottomPadding = scrollBottomRoom,
+        content = content
+    )
 }
 
 /**

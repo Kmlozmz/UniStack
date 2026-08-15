@@ -42,9 +42,15 @@ fun rememberLeaveGuard(
         }
     }
 
-    // El gesto de atrás pasa por la misma puerta. Mientras el diálogo está abierto lo captura
-    // él, para que un segundo atrás lo cierre en vez de salir por debajo.
-    BackHandler(enabled = true) {
+    /*
+     * Solo se intercepta el atrás cuando hay algo que perder.
+     *
+     * Un `BackHandler` siempre activo se come el gesto del sistema, y con él se va el gesto
+     * predictivo: la navegación deja de poder dibujar el arrastre porque el evento nunca le
+     * llega. Con la condición puesta, un formulario vacío se comporta como cualquier otra
+     * pantalla —la anterior sigue al dedo— y solo cuando hay texto escrito aparece la pregunta.
+     */
+    BackHandler(enabled = currentHasChanges || asking) {
         if (asking) asking = false else requestLeave()
     }
 

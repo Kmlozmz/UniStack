@@ -60,7 +60,6 @@ fun ProScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BackHandler(onBack = onBackClick)
     val entryPoint = rememberUniStackEntryPoint()
     val billingRepository = remember { entryPoint.billingRepository() }
     val billingState by billingRepository.state.collectAsStateWithLifecycle()

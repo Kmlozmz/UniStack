@@ -109,7 +109,6 @@ fun AppearanceSettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val current = profile
@@ -438,7 +437,6 @@ fun AccessibilitySettingsScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val current = profile ?: return
@@ -596,7 +594,6 @@ fun SettingsHubScreen(
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
 

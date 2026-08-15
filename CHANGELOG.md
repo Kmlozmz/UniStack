@@ -42,9 +42,13 @@ número y la fecha, y se abre una nueva.
 los de Android.
 
 #### Movimiento
+- **El gesto de atrás arrastra la pantalla con el dedo** y deja ver la anterior debajo: si sueltas antes de la mitad vuelve a su sitio, y si pasas de ahí se va. Antes cada pantalla se comía el gesto y el sistema no podía dibujarlo.
+- **El título de una pantalla se queda arriba en pequeño cuando el grande se va con el contenido**, con una línea que separa la barra. El intento anterior fundía dos títulos distintos y por eso se leía como un salto.
 - Las listas responden al llegar al final como cualquier app de Android, sin rebote propio.
-- Los títulos de las pantallas del panel vuelven a ser los de siempre: se van con el contenido.
 - Se mantiene el empuje al cambiar de pantalla, que es lo que sí funcionó.
+
+#### Formularios
+- Salir de un formulario vacío ya no pregunta ni corta el gesto: el aviso aparece solo si escribiste algo.
 
 ---
 

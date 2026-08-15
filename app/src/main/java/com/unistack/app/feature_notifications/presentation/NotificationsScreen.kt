@@ -133,7 +133,6 @@ fun NotificationHistoryScreen(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val notifications by remember(context) {
         NotificationHistoryStore.observe(context)
@@ -535,7 +534,6 @@ fun NotificationDetailScreen(
     onOpenRelated: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    BackHandler(onBack = onBackClick)
     val context = LocalContext.current
     val notifications by remember(context) {
         NotificationHistoryStore.observe(context)

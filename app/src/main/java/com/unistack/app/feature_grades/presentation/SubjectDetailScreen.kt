@@ -126,7 +126,6 @@ fun SubjectDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
@@ -459,7 +458,6 @@ fun SubjectPeriodDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()

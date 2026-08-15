@@ -87,7 +87,6 @@ fun AcademicTemplatesScreen(
     modifier: Modifier = Modifier,
     viewModel: AcademicTemplatesViewModel = hiltViewModel()
 ) {
-    BackHandler(onBack = onBackClick)
 
     val works by viewModel.works.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()

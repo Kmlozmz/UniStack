@@ -135,9 +135,6 @@ fun ProfileScreen(
     mode: ProfileScreenMode = ProfileScreenMode.PROFILE,
     onBackClick: () -> Unit = {}
 ) {
-    if (mode != ProfileScreenMode.PROFILE) {
-        BackHandler(onBack = onBackClick)
-    }
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
