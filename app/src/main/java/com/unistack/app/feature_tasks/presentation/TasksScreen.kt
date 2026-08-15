@@ -97,7 +97,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.components.SquishyButton
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.AppShapes
@@ -114,7 +113,6 @@ import com.unistack.app.feature_user.domain.GradingScale
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.unistack.app.core.design.components.elasticScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,7 +209,6 @@ fun TasksScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .elasticScroll()
                 .nestedScroll(clearFocusOnScroll),
             contentPadding = PaddingValues(
                 start = 20.dp,
@@ -440,14 +437,13 @@ fun TasksScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
-                .padding(end = 20.dp, bottom = 20.dp + LocalBottomBarOverlay.current)
+                .padding(end = 20.dp, bottom = 20.dp)
         )
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 20.dp, vertical = 92.dp)
-                .padding(bottom = LocalBottomBarOverlay.current)
         )
     }
 

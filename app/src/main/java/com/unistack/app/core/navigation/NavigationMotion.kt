@@ -19,13 +19,10 @@ import kotlin.math.roundToInt
  * es ni una cosa ni la otra —la pantalla aparece ya empezada, como si se hubiera perdido el
  * principio del movimiento—, que es lo que hacía que se sintiera desconectado.
  *
- * Se probaron dos versiones con deslizamiento: un tercio de pantalla, que se leía como un
- * movimiento al que le falta el principio, y el ancho completo con la anterior apartándose, que
- * se sintió peor todavía. Las dos llamaban la atención sobre el marco en vez de sobre lo que
- * hay dentro.
- *
- * Queda un fundido corto. No cuenta nada —ni jerarquía, ni dirección— y por eso no se equivoca:
- * lo que se mueve es el contenido de cada pantalla, que ya tiene su propio movimiento.
+ * Lo que quedó, después de probar tres: el empuje. La nueva entra entera desde el borde y la
+ * anterior se aparta a un tercio sin llegar a irse. Un tercio de recorrido para la que entra se
+ * leía como un movimiento al que le falta el principio, y fundir sin más no contaba de dónde
+ * venía nada.
  *
  * Las duraciones salen del escalado de movimiento del sistema, así que quien lo tenga reducido
  * lo ve más rápido, y quien lo apague no ve nada de esto.
@@ -110,15 +107,3 @@ fun screenExit(style: ScreenTransition, motionScale: Float, toLeft: Boolean): Ex
         ScreenTransition.FADE -> screenFadeOut(motionScale)
         ScreenTransition.PUSH -> screenPushOut(motionScale, toLeft)
     }
-
-/**
- * Si el cambio es entre secciones y no hacia dentro de una.
- *
- * Se mide por la pestaña a la que pertenece cada ruta: dos rutas de pestañas distintas son un
- * cambio lateral aunque una esté más adentro que la otra.
- */
-internal fun isLateralNavigation(initialRoute: String?, targetRoute: String?): Boolean {
-    val from = bottomRouteFor(initialRoute) ?: return false
-    val to = bottomRouteFor(targetRoute) ?: return false
-    return from != to
-}

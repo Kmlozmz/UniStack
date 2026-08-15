@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -200,16 +199,12 @@ fun MainNavGraph(
             }
         }
     ) { innerPadding ->
-        // La barra va acoplada al borde y reserva su hueco, así que nada se dibuja debajo: el
-        // desbordamiento que la variante flotante necesitaba se queda en cero.
-        val overlayHeight = 0.dp
         val contentPadding = PaddingValues(
             start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
             top = innerPadding.calculateTopPadding(),
             end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
             bottom = innerPadding.calculateBottomPadding()
         )
-        CompositionLocalProvider(LocalBottomBarOverlay provides overlayHeight) {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
@@ -778,7 +773,6 @@ fun MainNavGraph(
                         }
                     }
                 )
-            }
             }
         }
         }

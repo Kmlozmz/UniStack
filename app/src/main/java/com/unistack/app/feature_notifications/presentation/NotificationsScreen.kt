@@ -81,7 +81,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import com.unistack.app.core.design.components.elasticScroll
 
 private enum class NotificationFilter(val label: String) {
     ALL("Todas"),
@@ -153,8 +152,7 @@ fun NotificationHistoryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(NotificationSurface)
-            .statusBarsPadding()
-            .elasticScroll(),
+            .statusBarsPadding(),
         contentPadding = PaddingValues(start = 18.dp, top = 8.dp, end = 18.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

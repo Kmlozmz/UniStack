@@ -92,14 +92,12 @@ import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
-import com.unistack.app.core.design.components.elasticScroll
 
 private val ExpenseBackground: Color
     @Composable get() = UniStackColors.Background
@@ -292,7 +290,7 @@ private fun ExpensesContent(
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().elasticScroll(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = scaledDp(24f, scale),
                 top = scaledDp(58f, scale),
@@ -356,7 +354,7 @@ private fun ExpensesContent(
                 .align(Alignment.BottomEnd)
                 // Un FAB no es contenido que se desplaza: está anclado, así que la barra
                 // flotante lo taparía para siempre. Sube por encima de ella.
-                .padding(end = 20.dp, bottom = 20.dp + LocalBottomBarOverlay.current)
+                .padding(end = 20.dp, bottom = 20.dp)
         )
     }
 }

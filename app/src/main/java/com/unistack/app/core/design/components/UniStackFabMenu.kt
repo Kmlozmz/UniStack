@@ -66,7 +66,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,7 +96,7 @@ fun UniStackFabMenu(
     val scope = rememberCoroutineScope()
     // El botón y su menú están anclados, no se desplazan con el contenido: sin sumar lo que
     // ocupa la barra flotante quedarían tapados por ella de forma permanente.
-    val fabBottomPadding = expandedBottomPadding + LocalBottomBarOverlay.current
+    val fabBottomPadding = expandedBottomPadding
     val scrimAlpha by animateFloatAsState(
         targetValue = if (expanded) 0.18f else 0f,
         animationSpec = tween(durationMillis = 240, easing = LinearOutSlowInEasing),

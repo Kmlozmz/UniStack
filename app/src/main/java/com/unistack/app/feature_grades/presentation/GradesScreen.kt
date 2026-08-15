@@ -52,7 +52,6 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradeCalculator
@@ -65,7 +64,6 @@ import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
-import com.unistack.app.core.design.components.elasticScroll
 
 @Composable
 fun GradesScreen(
@@ -90,7 +88,7 @@ fun GradesScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().elasticScroll(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 22.dp,
                 top = if (embedded) 10.dp else 58.dp,
@@ -150,7 +148,7 @@ fun GradesScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
-                .padding(end = 20.dp, bottom = 20.dp + LocalBottomBarOverlay.current)
+                .padding(end = 20.dp, bottom = 20.dp)
         )
     }
 }

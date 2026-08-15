@@ -89,7 +89,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.UniStackColors
-import com.unistack.app.core.design.theme.LocalBottomBarOverlay
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
@@ -211,7 +210,7 @@ fun SubjectDetailScreen(
                 end = 22.dp,
                 // 96dp para el botón pegado, más lo que tape la barra flotante encima
                 // de él. Sin lo segundo, la última tarjeta de cortes quedaba debajo.
-                bottom = 96.dp + LocalBottomBarOverlay.current
+                bottom = 96.dp
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -375,7 +374,6 @@ fun SubjectDetailScreen(
                 // El degradado ya se dibuja hasta el borde porque va antes que el margen;
                 // lo que faltaba era apartarse del teclado.
                 .bottomActionInsets()
-                .padding(bottom = LocalBottomBarOverlay.current)
                 .padding(horizontal = 22.dp, vertical = 14.dp)
         ) {
             // Sin corte elegido el botón no lleva a ninguna parte: no hay a qué corte añadir
@@ -568,7 +566,6 @@ fun SubjectPeriodDetailScreen(
                 ),
                 modifier = Modifier
                     .bottomActionInsets()
-                    .padding(bottom = LocalBottomBarOverlay.current)
                     .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
                     .height(56.dp)

@@ -38,7 +38,13 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+**Lo importante:** se retiran el rebote de las listas y el título que se encogía. Vuelven a ser
+los de Android.
+
+#### Movimiento
+- Las listas responden al llegar al final como cualquier app de Android, sin rebote propio.
+- Los títulos de las pantallas del panel vuelven a ser los de siempre: se van con el contenido.
+- Se mantiene el empuje al cambiar de pantalla, que es lo que sí funcionó.
 
 ---
 

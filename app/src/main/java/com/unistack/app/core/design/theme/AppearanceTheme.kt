@@ -27,10 +27,7 @@ val LocalInterfaceSpacing = staticCompositionLocalOf { InterfaceSpacing() }
  *
  * Existe para que las pantallas dejen de llevar el número a mano. Había 126dp en Inicio,
  * 118dp en dos más y entre 6dp y 20dp en las otras cuatro, que es justo donde se rompía.
- */
-val LocalBottomBarOverlay = staticCompositionLocalOf { 0.dp }
-
-/**
+ *//**
  * Margen inferior mínimo para cualquier lista o columna desplazable.
  *
  * Hay aire propio —para que lo último no acabe pegado al borde— más lo que tape la barra
@@ -42,7 +39,7 @@ val LocalBottomBarOverlay = staticCompositionLocalOf { 0.dp }
  * en todas partes precisamente para que dejen de improvisarla.
  */
 val scrollBottomRoom: Dp
-    @Composable get() = 28.dp + LocalBottomBarOverlay.current
+    @Composable get() = 28.dp
 
 /**
  * Lo que ocupa un botón flotante anclado al fondo: 56dp de alto y 20dp de margen.
