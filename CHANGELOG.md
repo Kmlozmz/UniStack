@@ -38,17 +38,38 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-**Lo importante:** se retiran el rebote de las listas y el título que se encogía. Vuelven a ser
-los de Android.
+_Nada pendiente._
+
+---
+
+## [1.1.0-beta.2] — 2026-08-15
+
+**Lo importante:** al abrir algo, la pantalla nueva empuja a la anterior; los títulos se quedan
+arriba al desplazar; y la cabecera de Inicio deja de cortarse.
 
 #### Movimiento
-- **El gesto de atrás arrastra la pantalla con el dedo** y deja ver la anterior debajo: si sueltas antes de la mitad vuelve a su sitio, y si pasas de ahí se va. Antes cada pantalla se comía el gesto y el sistema no podía dibujarlo.
-- **El título de una pantalla se queda arriba en pequeño cuando el grande se va con el contenido**, con una línea que separa la barra. El intento anterior fundía dos títulos distintos y por eso se leía como un salto.
-- Las listas responden al llegar al final como cualquier app de Android, sin rebote propio.
-- Se mantiene el empuje al cambiar de pantalla, que es lo que sí funcionó.
+- **Al abrir un detalle, la pantalla nueva entra entera desde el borde y empuja a la anterior**, que se aparta a un tercio y se apaga sin llegar a irse. Volver hace el mismo gesto del revés.
+- En Apariencia puedes cambiarlo por un fundido o quitarlo del todo.
+- Las listas responden al llegar al final como cualquier app de Android.
+
+#### Pantallas
+- **La cabecera de Inicio se queda quieta al desplazar.** Se iba con la lista y el recorte la partía por la mitad contra la barra de estado.
+- **El título de las pantallas de ayuda, novedades, recursos y demás se queda arriba en pequeño** cuando el grande se va con el contenido, con una línea que separa la barra.
 
 #### Formularios
-- Salir de un formulario vacío ya no pregunta ni corta el gesto: el aviso aparece solo si escribiste algo.
+- Salir de un formulario vacío ya no pregunta: el aviso aparece solo si escribiste algo.
+
+#### Barra inferior
+- Da un toque háptico al cambiar de sección, y se retira la variante flotante: la barra va acoplada al borde.
+
+#### Panel lateral
+- Usa el fondo de la app y llega hasta el borde, e Inicio se aparta por detrás mientras el panel entra.
+
+#### Soporte
+- Reportar abre Telegram directamente, sin pasar por el navegador: con una VPN puesta, el enlace web terminaba en un error de DNS.
+
+#### Actualizaciones
+- Al terminar la descarga se abre solo el instalador de Android, y la barra de progreso se mueve aunque el servidor no diga cuánto pesa el archivo.
 
 ---
 

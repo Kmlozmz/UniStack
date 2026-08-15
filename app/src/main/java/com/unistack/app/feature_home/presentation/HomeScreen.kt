@@ -208,10 +208,27 @@ fun HomeScreen(
             val sidePadding = if (isCompact) 20.dp else 22.dp
             val sectionSpacing = if (isCompact) 15.dp else 18.dp
 
+            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+                /*
+                 * La cabecera se queda quieta.
+                 *
+                 * Era el primer elemento de la lista, así que al desplazar se iba hacia arriba
+                 * y el recorte del contenedor la partía por la mitad: el nombre de la app y los
+                 * iconos quedaban cortados a media altura contra la barra de estado. No es
+                 * contenido —es el marco de la pantalla—, y el marco no se desplaza.
+                 */
+                HomeHeader(
+                    photoUrl = summary.avatarPhotoUrl,
+                    unreadNotificationCount = notifications.count { !it.read },
+                    onMenuClick = openDrawer,
+                    onCalendarClick = onCalendarClick,
+                    onNotificationsClick = onNotificationsClick,
+                    onProfileClick = onProfileClick,
+                    modifier = Modifier.padding(horizontal = sidePadding)
+                )
+
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding(),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = sidePadding,
                     end = sidePadding,
@@ -220,16 +237,6 @@ fun HomeScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(sectionSpacing)
             ) {
-                item {
-                    HomeHeader(
-                        photoUrl = summary.avatarPhotoUrl,
-                        unreadNotificationCount = notifications.count { !it.read },
-                        onMenuClick = openDrawer,
-                        onCalendarClick = onCalendarClick,
-                        onNotificationsClick = onNotificationsClick,
-                        onProfileClick = onProfileClick
-                    )
-                }
                 if (appearance.showHomeGreeting) {
                     item {
                         HomeGreeting(name = displayName, compact = isCompact)
@@ -273,6 +280,7 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
             }
 
             UniStackFabMenu(
