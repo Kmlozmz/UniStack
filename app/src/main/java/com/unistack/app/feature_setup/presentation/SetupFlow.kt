@@ -1117,8 +1117,7 @@ fun SetupProfileScreen(
                 UniStackButton(
                     text = "Prefiero hacerlo después",
                     onClick = onSkipClick,
-                    variant = UniStackButtonVariant.Outlined,
-                    height = 48.dp
+                    variant = UniStackButtonVariant.Outlined
                 )
             }
         }

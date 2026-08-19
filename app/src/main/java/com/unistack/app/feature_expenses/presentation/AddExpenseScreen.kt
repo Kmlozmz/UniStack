@@ -616,7 +616,6 @@ private fun SaveExpenseButton(
         text = text,
         onClick = onClick,
         enabled = enabled,
-        height = 52.dp,
         containerColor = ExpenseFormCoral
     )
 }

@@ -306,9 +306,7 @@ fun HomeScreen(
                 showAddGrade = true,
                 showAddTask = true,
                 showAddExpense = true,
-                showAddSubject = false,
-                expandedEndPadding = 24.dp,
-                expandedBottomPadding = 12.dp
+                showAddSubject = false
             )
 
             if (pickingSubjectForGrade) {

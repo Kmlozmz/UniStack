@@ -1,8 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -384,7 +382,7 @@ fun SubjectDetailScreen(
             val addTarget = chosenPeriod?.takeIf { period ->
                 openPeriodSummaries.any { it.period.id == period.id }
             }
-            SquishyButton(
+            Button(
                 onClick = { addTarget?.let { onAddGradeClick(subject.id, it.id) } },
                 enabled = addTarget != null,
                 shape = AppShapes.LargeCard,
@@ -557,7 +555,7 @@ fun SubjectPeriodDetailScreen(
             color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
-            SquishyButton(
+            Button(
                 onClick = { onAddGradeClick(subject.id, period.id) },
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
@@ -995,7 +993,6 @@ private fun SubjectOverviewCard(
                             EvaluationValue(evaluated)
                             EvaluationBar(
                                 fraction = evaluated / 100.0,
-                                height = 7.dp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -1468,7 +1465,7 @@ private fun PeriodCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        EvaluationBar(fraction = progress, height = 5.dp)
+                        EvaluationBar(fraction = progress)
                     }
                 }
 

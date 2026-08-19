@@ -95,7 +95,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.theme.AppShapes
@@ -610,7 +609,7 @@ private fun TaskGradeResultSheet(
             )
 
             if (!enteringGrade) {
-                SquishyButton(
+                Button(
                     onClick = { enteringGrade = true },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Sí, registrar nota") }
@@ -689,7 +688,7 @@ private fun TaskGradeResultSheet(
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
-                SquishyButton(
+                Button(
                     onClick = {
                         val value = valueInput.toDoubleOrNull()
                         val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
@@ -1299,7 +1298,7 @@ private fun TaskCard(
                 when (task.gradingStatus) {
                     TaskGradingStatus.AWAITING_GRADE -> {
                         if (awaitingGrade) {
-                            SquishyButton(
+                            Button(
                                 onClick = onRegisterGradeClick,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1925,7 +1924,7 @@ private fun SortRadioGroup(
 
 @Composable
 private fun FiltersSheetFooter(onDismiss: () -> Unit) {
-    SquishyButton(
+    Button(
         onClick = onDismiss,
         modifier = Modifier
             .fillMaxWidth()

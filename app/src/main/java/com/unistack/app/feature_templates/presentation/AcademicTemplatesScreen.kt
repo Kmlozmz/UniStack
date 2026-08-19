@@ -65,7 +65,6 @@ import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
@@ -406,7 +405,7 @@ private fun WorkListSection(
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.weight(1f)
             )
-            SquishyButton(
+            Button(
                 onClick = onNewWork,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -494,7 +493,7 @@ private fun WorkCard(
                 trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
             if (!work.isFinished) {
-                SquishyButton(
+                Button(
                     onClick = onMarkSubmitted,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
@@ -674,7 +673,7 @@ private fun WorkEditorCard(
             error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
-            SquishyButton(
+            Button(
                 onClick = onSave,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -802,7 +801,7 @@ private fun ApaReferenceGeneratorCard(
                 fontSize = 12.sp,
                 lineHeight = 18.sp
             )
-            SquishyButton(
+            Button(
                 onClick = onCopyClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
@@ -859,7 +858,7 @@ private fun CopyTemplateCard(
                     Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
-            SquishyButton(
+            Button(
                 onClick = onCopyClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),

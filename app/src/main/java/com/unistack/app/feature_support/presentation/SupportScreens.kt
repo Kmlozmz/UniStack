@@ -59,7 +59,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackWordmark
@@ -76,6 +75,7 @@ import com.unistack.app.feature_updates.presentation.ReleaseNotes
 import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.Button
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *

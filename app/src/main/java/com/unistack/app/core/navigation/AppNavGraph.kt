@@ -53,7 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
-import com.unistack.app.core.design.components.squishOnPress
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.RectangleShape
@@ -1267,7 +1266,6 @@ private fun UniStackBottomBarItem(
             .fillMaxHeight()
             // Un poco menos de compresión que en un botón: el destino se aprieta lo justo
             // para notarse bajo el dedo sin saltar dentro de una barra tan compacta.
-            .squishOnPress(interactionSource, scale = 0.90f)
             .clip(RoundedCornerShape(percent = 50))
             .clickable(
                 interactionSource = interactionSource,

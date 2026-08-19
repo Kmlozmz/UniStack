@@ -90,7 +90,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
@@ -1119,7 +1118,7 @@ private fun TimePickerSheet(
             ) {
                 TimePicker(state = pickerState)
             }
-            SquishyButton(
+            Button(
                 onClick = {
                     onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute))
                 },
@@ -1924,7 +1923,7 @@ private fun CreateTaskButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    SquishyButton(
+    Button(
         onClick = onClick,
         enabled = enabled,
         shape = AppShapes.Pill,

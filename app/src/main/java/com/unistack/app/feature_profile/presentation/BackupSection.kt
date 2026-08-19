@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
@@ -54,6 +53,7 @@ import java.util.Locale
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.Button
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
@@ -494,7 +494,7 @@ private fun BackupButton(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    SquishyButton(
+    Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,

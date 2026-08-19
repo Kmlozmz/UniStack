@@ -90,7 +90,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.Expense
@@ -1271,7 +1270,7 @@ private fun ExpenseBudgetSheet(
                 fontSize = 12.sp,
                 lineHeight = 17.sp
             )
-            SquishyButton(
+            Button(
                 onClick = {
                     onSave(
                         (weeklyValue ?: 0).toString(),

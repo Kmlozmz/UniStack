@@ -93,7 +93,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -764,7 +763,7 @@ private fun AccountSyncCard(
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
-        SquishyButton(
+        Button(
             onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
             enabled = !isBusy,
             shape = AppShapes.Pill,
@@ -861,7 +860,7 @@ private fun PlanStatusCard(
                 if (plan.hasSubjectLimit) "${plan.maxSubjects} materias disponibles" else "Materias ilimitadas",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            SquishyButton(
+            Button(
                 onClick = onOpenProClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -1147,7 +1146,7 @@ private fun GradingSettingsCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp
         )
-        SquishyButton(
+        Button(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
@@ -1216,7 +1215,7 @@ private fun AcademicPeriodsSettingsCard(
             fontSize = 12.sp,
             fontWeight = FontWeight.ExtraBold
         )
-        SquishyButton(
+        Button(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
@@ -1309,7 +1308,7 @@ private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
             Icon(Icons.Rounded.RestartAlt, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             Text("Onboarding", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            SquishyButton(
+            Button(
                 onClick = onRestartClick,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),

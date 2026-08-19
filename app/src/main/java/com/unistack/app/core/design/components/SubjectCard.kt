@@ -87,7 +87,6 @@ fun SubjectCard(
             )
             EvaluationBar(
                 fraction = progress.toDouble(),
-                height = 7.dp,
                 color = accentColor
             )
         }

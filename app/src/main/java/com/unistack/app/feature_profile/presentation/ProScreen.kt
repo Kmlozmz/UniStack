@@ -49,7 +49,6 @@ import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.ProBenefit
@@ -163,7 +162,7 @@ private fun ProHeroCard(
                 fontSize = 14.sp,
                 lineHeight = 19.sp
             )
-            SquishyButton(
+            Button(
                 onClick = onUpgradeClick,
                 enabled = canBuy,
                 shape = AppShapes.Pill,
@@ -273,7 +272,7 @@ private fun BillingStatusCard(
                     )
                 }
             }
-            SquishyButton(
+            Button(
                 onClick = onRefreshClick,
                 enabled = !billingState.isLoading,
                 shape = AppShapes.Pill,

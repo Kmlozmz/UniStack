@@ -2,8 +2,6 @@ package com.unistack.app.feature_grades.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.design.components.SquishyButton
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -238,7 +236,7 @@ private fun HistoryPeriodCard(
                     Text(resultLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            SquishyButton(onClick = onFinalResultClick, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onFinalResultClick, modifier = Modifier.fillMaxWidth()) {
                 Text("Registrar nota final del corte")
             }
             OutlinedButton(onClick = onActivitiesClick, modifier = Modifier.fillMaxWidth()) {

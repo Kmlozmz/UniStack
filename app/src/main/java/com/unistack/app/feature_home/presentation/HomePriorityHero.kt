@@ -1,8 +1,6 @@
 package com.unistack.app.feature_home.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
-
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -367,7 +365,7 @@ internal fun PriorityContextSheet(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SquishyButton(
+                Button(
                     onClick = onDismiss,
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
@@ -380,7 +378,7 @@ internal fun PriorityContextSheet(
                 ) {
                     Text("Cerrar", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
-                SquishyButton(
+                Button(
                     onClick = onActionClick,
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(

@@ -68,7 +68,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
@@ -1218,7 +1217,7 @@ private fun IdentityEventRow(
 
 @Composable
 private fun IdentityPrimaryButton(label: String, onClick: () -> Unit) {
-    SquishyButton(
+    Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(LocalInterfaceSpacing.current.controlHeight),
         shape = AppShapes.MediumCard,

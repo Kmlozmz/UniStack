@@ -301,7 +301,6 @@ private fun SubjectListCard(
                 }
                 EvaluationBar(
                     fraction = calculation.evaluatedSemesterFraction,
-                    height = 4.dp,
                     // El color de la materia, el mismo de la franja y del avatar. En gris
                     // parecía una barra apagada que no avanzaba.
                     color = subjectColor

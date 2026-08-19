@@ -95,7 +95,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -1011,7 +1010,7 @@ private fun SubjectHistoryDialog(
                         }
                     }
                 }
-                SquishyButton(
+                Button(
                     onClick = { pending?.let { onMarkAttendance(it.date, it.session) } },
                     enabled = pending != null,
                     modifier = Modifier.fillMaxWidth().padding(16.dp),

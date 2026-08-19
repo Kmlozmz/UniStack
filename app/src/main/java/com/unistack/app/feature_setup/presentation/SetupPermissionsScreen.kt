@@ -152,8 +152,7 @@ fun SetupPermissionsScreen(
                     UniStackButton(
                         text = "Continuar sin notificaciones",
                         onClick = onContinueClick,
-                        variant = UniStackButtonVariant.Outlined,
-                        height = 48.dp
+                        variant = UniStackButtonVariant.Outlined
                     )
                 }
                 else -> {
@@ -165,8 +164,7 @@ fun SetupPermissionsScreen(
                     UniStackButton(
                         text = "Ahora no",
                         onClick = onContinueClick,
-                        variant = UniStackButtonVariant.Outlined,
-                        height = 48.dp
+                        variant = UniStackButtonVariant.Outlined
                     )
                 }
             }

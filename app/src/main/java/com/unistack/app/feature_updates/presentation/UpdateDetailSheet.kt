@@ -1,8 +1,6 @@
 package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -122,7 +120,7 @@ fun UpdateDetailSheet(
                 ) {
                     Text("Más tarde", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                SquishyButton(
+                Button(
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
                     enabled = state !is UpdateState.Downloading,
                     modifier = Modifier.weight(1f).height(48.dp),

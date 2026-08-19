@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.design.theme.AppShapes
@@ -49,6 +48,7 @@ import com.unistack.app.feature_support.domain.weightedAverage
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.Button
 /**
  * Calculadora de promedio.
  *
@@ -105,7 +105,7 @@ fun GpaCalculatorScreen(
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                SquishyButton(
+                Button(
                     onClick = { rows = rows + GpaRow() },
                     modifier = Modifier.weight(1f),
                     shape = AppShapes.Pill,
@@ -113,7 +113,7 @@ fun GpaCalculatorScreen(
                 ) {
                     Text("Añadir fila", fontSize = 13.sp)
                 }
-                SquishyButton(
+                Button(
                     onClick = {
                         rows = subjects.ifEmpty { rows }
                     },
@@ -243,7 +243,7 @@ fun QuickNotesScreen(
                             fontSize = 11.sp,
                             modifier = Modifier.weight(1f)
                         )
-                        SquishyButton(
+                        Button(
                             onClick = {
                                 text = ""
                                 QuickNotesStore.save(context, "")

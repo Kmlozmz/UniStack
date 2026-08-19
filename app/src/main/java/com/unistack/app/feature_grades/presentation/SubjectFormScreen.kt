@@ -92,7 +92,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.SubjectColorPalette
@@ -114,6 +113,7 @@ import kotlin.math.roundToInt
 
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.Button
 /**
  * De dónde se entra al formulario de materia.
  *
@@ -651,7 +651,7 @@ private fun PlanBanner(
                 )
             }
             if (limitReached) {
-                SquishyButton(
+                Button(
                     onClick = onUpgradeClick,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
@@ -881,7 +881,7 @@ private fun CustomSubjectColorDialog(
 
                 Spacer(Modifier.weight(1f))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SquishyButton(
+                    Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -891,7 +891,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text("Cancelar")
                     }
-                    SquishyButton(
+                    Button(
                         onClick = { onApply(workingColor) },
                         colors = ButtonDefaults.buttonColors(containerColor = selected),
                         modifier = Modifier.weight(1f)

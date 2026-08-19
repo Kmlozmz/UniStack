@@ -45,7 +45,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
-import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
@@ -53,6 +52,7 @@ import com.unistack.app.feature_user.domain.UserProfile
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.Button
 /** Las anticipaciones que se ofrecen. Cubren de «el mismo día» a «tres días antes». */
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -310,7 +310,7 @@ private fun PermissionCard(
             }
             if (!granted) {
                 Spacer(Modifier.width(10.dp))
-                SquishyButton(
+                Button(
                     onClick = onRequestPermission,
                     shape = AppShapes.Pill,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
