@@ -2,10 +2,20 @@ package com.unistack.app.feature_updates.presentation
 
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_updates.domain.UpdateChannel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +25,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -43,12 +55,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -59,6 +75,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackLoadingIndicator
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
+import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_updates.domain.UpdateState
 
@@ -82,6 +99,29 @@ fun UpdateSettingsScreen(
     var pendingChannel by remember { mutableStateOf<UpdateChannel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val pendingApks by viewModel.pendingApks.collectAsStateWithLifecycle()
+    val motionScale = LocalMotionDurationScale.current
+    /*
+     * La tarjeta de limpieza sigue en la lista mientras cae.
+     *
+     * Si se quitara en el momento de borrar no habría nada que animar: desaparecería de golpe,
+     * que es justo lo que no se quería. Y el número se recuerda porque durante la caída ya
+     * vale cero, y la tarjeta no puede ponerse a decir «0 APK» mientras se va.
+     */
+    var cleanupVisible by remember { mutableStateOf(false) }
+    var cleanupCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(pendingApks) {
+        if (pendingApks > 0) {
+            cleanupCount = pendingApks
+            cleanupVisible = true
+        } else if (cleanupVisible) {
+            delay(trashMillis(motionScale).toLong())
+            cleanupVisible = false
+        }
+    }
+    // Se puede haber descargado algo desde la otra pantalla mientras esta no estaba montada.
+    LaunchedEffect(Unit) { viewModel.refreshPendingApks() }
 
     LaunchedEffect(state) {
         showSheet = state is UpdateState.Available ||
@@ -152,45 +192,35 @@ fun UpdateSettingsScreen(
                 }
             }
         }
-        if (viewModel.hasPendingDownload) {
-            item {
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = UniStackColors.Card,
+        if (cleanupVisible) {
+            item(key = "limpieza") {
+                CleanupCard(
+                    visible = pendingApks > 0,
+                    apkCount = cleanupCount,
                     onClick = { confirmClearDownload = true }
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        UpdateIconTile(icon = Icons.Rounded.DeleteOutline, accent = UniStackColors.Coral)
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Limpiar descarga",
-                                color = UniStackColors.TextPrimary,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                "1 APK encontrado en el almacenamiento",
-                                color = UniStackColors.TextSecondary,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
+                )
             }
         }
     }
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = scrollBottomRoom)
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = scrollBottomRoom)
         )
     }
 
     if (confirmClearDownload) {
         AlertDialog(
             onDismissRequest = { confirmClearDownload = false },
-            title = { Text("¿Eliminar el APK descargado?", color = UniStackColors.TextPrimary) },
+            title = {
+                Text(
+                    if (cleanupCount > 1) "¿Eliminar los APK descargados?" else "¿Eliminar el APK descargado?",
+                    color = UniStackColors.TextPrimary
+                )
+            },
             text = {
                 Text(
                     "Libera espacio. Si luego quieres instalar esa versión, habrá que descargarla otra vez.",
@@ -201,10 +231,15 @@ fun UpdateSettingsScreen(
                 TextButton(
                     onClick = {
                         confirmClearDownload = false
+                        val borrados = cleanupCount
                         viewModel.clearDownload()
-                        // Borrar un archivo no se ve por ninguna parte: sin este aviso, la
-                        // tarjeta desaparecía y no quedaba claro si había pasado algo.
-                        scope.launch { snackbarHostState.showSnackbar("Descarga eliminada") }
+                        // Borrar un archivo no se ve por ninguna parte, y la tarjeta que cae
+                        // dice que algo se fue pero no cuánto. El aviso lo remata.
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (borrados > 1) "$borrados APK eliminados" else "APK eliminado"
+                            )
+                        }
                     }
                 ) { Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold) }
             },
@@ -501,6 +536,16 @@ private fun UpdateCheckCard(
                     color = UniStackColors.TextSecondary,
                     style = MaterialTheme.typography.bodySmall
                 )
+                // Ir por delante no se arregla instalando: Android no pone una versión encima
+                // de otra posterior. Decirlo aquí evita la búsqueda del botón que no existe.
+                if (state is UpdateState.Ahead) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Para volver a esa habría que desinstalar la app, y eso borra tus datos.",
+                        color = UniStackColors.TextSecondary.copy(alpha = 0.75f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
             if (state is UpdateState.UpToDate) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = UniStackColors.Primary)
@@ -531,5 +576,85 @@ private fun UpdateState.statusLabel(): String = when (this) {
     is UpdateState.Downloading -> "Descargando v${info.versionName}... ${progress}%"
     is UpdateState.ReadyToInstall -> "Lista para instalar: v${info.versionName}"
     UpdateState.UpToDate -> "Al día"
+    is UpdateState.Ahead -> "Vas por delante: lo último de este canal es la v${info.versionName}"
+    UpdateState.NoReleases -> "Este canal todavía no tiene ninguna versión publicada"
     is UpdateState.Error -> message
 }
+
+/**
+ * La tarjeta de limpieza, que se va como se tira algo a la basura.
+ *
+ * Se inclina, cae y se apaga; el hueco se cierra después, para que la lista no dé el tirón
+ * antes de que la tarjeta haya terminado de irse. La duración sale del escalado de movimiento
+ * del sistema: con las animaciones apagadas desaparece sin más.
+ */
+@Composable
+private fun CleanupCard(
+    visible: Boolean,
+    apkCount: Int,
+    onClick: () -> Unit
+) {
+    val motionScale = LocalMotionDurationScale.current
+    val toss = (TOSS_MILLIS * motionScale).roundToInt().coerceAtLeast(1)
+    val collapse = (COLLAPSE_MILLIS * motionScale).roundToInt().coerceAtLeast(1)
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(toss)) + expandVertically(tween(collapse)),
+        exit = shrinkVertically(
+            animationSpec = tween(collapse, delayMillis = toss),
+            shrinkTowards = Alignment.Top
+        )
+    ) {
+        val gone by transition.animateFloat(
+            // Acelerando, que es como cae algo que se suelta.
+            transitionSpec = { tween(toss, easing = FastOutLinearInEasing) },
+            label = "basura"
+        ) { estado -> if (estado == EnterExitState.Visible) 0f else 1f }
+
+        UniCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0.12f, 1f)
+                    rotationZ = -18f * gone
+                    translationY = 56.dp.toPx() * gone
+                    scaleX = 1f - 0.22f * gone
+                    scaleY = scaleX
+                }
+                .alpha(1f - gone),
+            color = UniStackColors.Card,
+            onClick = onClick
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                UpdateIconTile(icon = Icons.Rounded.DeleteOutline, accent = UniStackColors.Coral)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (apkCount > 1) "Limpiar descargas" else "Limpiar descarga",
+                        color = UniStackColors.TextPrimary,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        if (apkCount > 1) {
+                            "$apkCount APK ocupando espacio en el móvil"
+                        } else {
+                            "1 APK ocupando espacio en el móvil"
+                        },
+                        color = UniStackColors.TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Lo que tarda la tarjeta en caer, y lo que tarda el hueco en cerrarse detrás. */
+private const val TOSS_MILLIS = 260
+private const val COLLAPSE_MILLIS = 200
+
+/** Lo que dura la salida entera, para no quitar la tarjeta de la lista antes de tiempo. */
+private fun trashMillis(motionScale: Float): Int =
+    ((TOSS_MILLIS + COLLAPSE_MILLIS) * motionScale).roundToInt().coerceAtLeast(1)

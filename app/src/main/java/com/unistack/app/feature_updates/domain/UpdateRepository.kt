@@ -37,5 +37,10 @@ interface UpdateRepository {
     fun openInstallPermissionSettings()
     fun clearDownload()
     fun dismiss()
-    fun hasPendingDownload(): Boolean
+
+    /** Cuántos APK descargados ocupan espacio ahora mismo. Cambia al descargar y al limpiar. */
+    val pendingApks: StateFlow<Int>
+
+    /** Vuelve a mirar el disco, por si algo cambió mientras la app no estaba delante. */
+    fun refreshPendingApks()
 }

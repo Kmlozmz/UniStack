@@ -50,5 +50,14 @@ data class ReleaseVersion(
 
         /** Si [remote] es una versión posterior a [current]. */
         fun isNewer(remote: String, current: String): Boolean = parse(remote) > parse(current)
+
+        /**
+         * Si [remote] y [current] son la misma versión.
+         *
+         * Se comparan los números y el sufijo, no el texto: `v1.2.0-alpha.2` y `1.2.0-alpha.2`
+         * son la misma publicación aunque no se escriban igual.
+         */
+        fun isSame(remote: String, current: String): Boolean =
+            parse(remote).compareTo(parse(current)) == 0
     }
 }

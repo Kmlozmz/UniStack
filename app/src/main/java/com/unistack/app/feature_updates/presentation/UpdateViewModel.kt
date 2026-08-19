@@ -35,7 +35,18 @@ class UpdateViewModel @Inject constructor(
 
     val currentVersionName: String = BuildConfig.VERSION_NAME
     val currentVersionCode: Int = BuildConfig.VERSION_CODE
-    val hasPendingDownload: Boolean get() = updateRepository.hasPendingDownload()
+
+    /**
+     * Los APK que quedan en el disco.
+     *
+     * Era un `get()` que la pantalla leía al componerse: leer eso no suscribe a nada, así que
+     * al borrarlos la tarjeta de limpieza se quedaba puesta hasta salir y volver a entrar.
+     */
+    val pendingApks: StateFlow<Int> = updateRepository.pendingApks
+
+    fun refreshPendingApks() {
+        updateRepository.refreshPendingApks()
+    }
 
     fun checkForUpdates() {
         viewModelScope.launch {

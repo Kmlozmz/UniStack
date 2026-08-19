@@ -16,6 +16,7 @@ import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
+import com.unistack.app.feature_updates.domain.resolveUpdateState
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -72,6 +73,16 @@ class GitHubReleaseUpdateRepository(
 
     private val notificationManager = UpdateNotificationManager(context)
     private var downloadId: Long = -1L
+
+    /**
+     * Cuántos APK descargados quedan ocupando espacio.
+     *
+     * Era una función que la pantalla llamaba al componerse, así que no se enteraba de nada:
+     * borrabas el archivo y la tarjeta de limpieza seguía ahí hasta salir y volver a entrar.
+     * Como flujo, la lista se entera en el momento.
+     */
+    private val _pendingApks = MutableStateFlow(apkFiles().size)
+    override val pendingApks: StateFlow<Int> = _pendingApks.asStateFlow()
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val _channel = MutableStateFlow(readStoredChannel())
@@ -214,11 +225,11 @@ class GitHubReleaseUpdateRepository(
         refreshAccess()
         runCatching { fetchLatestRelease() }
             .onSuccess { info ->
-                if (info != null && ReleaseVersion.isNewer(info.versionName, BuildConfig.VERSION_NAME)) {
-                    _state.value = UpdateState.Available(info)
+                val resolved = resolveUpdateState(info, BuildConfig.VERSION_NAME)
+                _state.value = resolved
+                if (resolved is UpdateState.Available) {
                     if (notify) notificationManager.showUpdateAvailableNotification()
                 } else {
-                    _state.value = UpdateState.UpToDate
                     notificationManager.dismissNotification()
                 }
             }
@@ -268,10 +279,10 @@ class GitHubReleaseUpdateRepository(
                 .mapNotNull(releases::optJSONObject)
                 .filterNot { it.optBoolean("draft", false) }
                 .firstOrNull { current.accepts(it.optString("tag_name").removePrefix("v").removePrefix("V")) }
-                // Sin publicaciones para tu canal no hay error que dar: no tienes nada que
-                // instalar, que es justo lo que significa estar al día. Decir «no se encontró
-                // ninguna publicación» sonaba a avería, y con solo alphas publicadas era lo
-                // que veía todo el que estuviera en el canal estable, o sea todo el mundo.
+                // Sin publicaciones para tu canal no hay error que dar: no hay nada que
+                // instalar, y cómo se cuenta eso lo decide [resolveUpdateState]. Lanzar «no se
+                // encontró ninguna publicación» sonaba a avería, y con solo alphas publicadas
+                // lo veía todo el que estuviera en estable, o sea todo el mundo.
                 ?: return@withContext null
             parseRelease(published)
                 ?: throw IOException(
@@ -320,6 +331,7 @@ class GitHubReleaseUpdateRepository(
 
         val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         downloadId = downloadManager.enqueue(request)
+        refreshPendingApks()
         _state.value = UpdateState.Downloading(info, 0)
         observeDownload(downloadManager, info)
     }
@@ -347,6 +359,7 @@ class GitHubReleaseUpdateRepository(
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             _state.value = UpdateState.ReadyToInstall(info, apkUri())
+                            refreshPendingApks()
                             shouldStop = true
                             /*
                              * En cuanto está descargada se abre el instalador de Android.
@@ -420,8 +433,16 @@ class GitHubReleaseUpdateRepository(
         context.startActivity(intent)
     }
 
+    /**
+     * Se borra **todo** APK del directorio, no solo el del nombre fijo.
+     *
+     * Una descarga interrumpida deja el archivo con un sufijo del gestor del sistema
+     * (`unistack-update-1.apk`), y a ese no lo borraba nadie: la limpieza se llevaba uno y
+     * dejaba el resto ocupando sitio sin que nada lo dijera.
+     */
     override fun clearDownload() {
-        apkFile().delete()
+        apkFiles().forEach { it.delete() }
+        refreshPendingApks()
         _state.value = UpdateState.Idle
     }
 
@@ -429,7 +450,15 @@ class GitHubReleaseUpdateRepository(
         _state.value = UpdateState.Idle
     }
 
-    override fun hasPendingDownload(): Boolean = apkFile().exists()
+    override fun refreshPendingApks() {
+        _pendingApks.value = apkFiles().size
+    }
+
+    private fun apkFiles(): List<File> =
+        context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            ?.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".apk", ignoreCase = true) }
+            .orEmpty()
 
     private fun apkFile(): File =
         File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), APK_FILE_NAME)
