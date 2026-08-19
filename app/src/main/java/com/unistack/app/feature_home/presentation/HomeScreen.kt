@@ -1,11 +1,10 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_home.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,12 +20,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -38,48 +44,52 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.components.UniStackWordmark
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.CornerRounding
+import androidx.compose.material3.toShape
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.components.UniStackFabMenu
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
-import com.unistack.app.core.design.theme.UniStackTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.notifications.NotificationHistoryStore
-import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_home.domain.AcademicWorkSummary
-import com.unistack.app.feature_home.domain.DailyFocusItem
-import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomePriorityAction
-import com.unistack.app.feature_home.domain.HomePrioritySummary
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.HomeTimelineKind
 import com.unistack.app.feature_home.domain.HomeTimelineState
 import com.unistack.app.feature_home.domain.HomeTimelineSummary
-import com.unistack.app.feature_home.domain.SubjectRiskSeverity
-import com.unistack.app.feature_home.domain.SubjectRiskSummary
-import com.unistack.app.feature_home.domain.SubjectSummary
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.GradingScale
-import com.unistack.app.feature_user.domain.HomeSection
-import com.unistack.app.feature_user.domain.InterfaceDensity
-import java.time.LocalTime
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.utils.CurrencyFormatter
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlinx.coroutines.launch
+import androidx.graphics.shapes.star
+import com.unistack.app.core.utils.GradingScaleUtils
 
-import androidx.compose.material3.MaterialTheme
+private val SpanishLocale: Locale = Locale.forLanguageTag("es")
+
+/**
+ * Inicio.
+ *
+ * Cuatro bloques, en este orden y sin posibilidad de reordenarlos: quién eres, lo primero que
+ * tienes que hacer hoy, qué hay hoy, y tres cifras. La versión anterior dejaba mover y rotar
+ * estas piezas desde Apariencia, y el resultado era que la pantalla no tenía una forma: cada
+ * quien veía una distinta y ninguna estaba diseñada.
+ *
+ * El panel lateral se abre desde el avatar. Es la única vía a Configuración, Novedades, la
+ * calculadora de GPA y el resto de herramientas, así que no puede desaparecer aunque no salga
+ * en el marco.
+ */
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
@@ -114,184 +124,113 @@ fun HomeScreen(
     val notifications by remember(context) {
         NotificationHistoryStore.observe(context)
     }.collectAsStateWithLifecycle()
-    val displayName = summary.userName.takeIf { it.isNotBlank() } ?: "Pineda"
-    var showPriorityDetails by rememberSaveable { mutableStateOf(false) }
+    val hasUnread = notifications.any { !it.read }
+
     var pickingSubjectForGrade by rememberSaveable { mutableStateOf(false) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val drawerScope = rememberCoroutineScope()
-    val closeDrawer: () -> Unit = {
-        drawerScope.launch {
-            drawerState.close()
-            onDrawerOpenChange(false)
-        }
-        Unit
-    }
-    val closeDrawerAndRun: (() -> Unit) -> Unit = { action ->
-        onDrawerOpenChange(false)
-        drawerScope.launch { drawerState.close() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(drawerState.isOpen) { onDrawerOpenChange(drawerState.isOpen) }
+
+    val closeAndRun: (() -> Unit) -> Unit = { action ->
+        scope.launch { drawerState.close() }
         action()
     }
-    val openDrawer: () -> Unit = {
-        onDrawerOpenChange(true)
-        drawerScope.launch { drawerState.open() }
-        Unit
-    }
-    LaunchedEffect(drawerState.isOpen) {
-        onDrawerOpenChange(drawerState.isOpen)
-    }
-    val priorityActionLabel = summary.priority.action.actionLabel()
-    val openPriorityAction = {
-        when (summary.priority.action) {
-            HomePriorityAction.SUBJECT -> summary.priority.subjectId?.let(onSubjectClick) ?: onSeeAllSubjectsClick()
-            HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
-            HomePriorityAction.TASKS -> onSeeTasksClick()
-            HomePriorityAction.EXPENSES -> onSeeExpensesClick()
-            HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
-            HomePriorityAction.SCHEDULE -> onCalendarClick()
-        }
-    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             HomeNavigationPanel(
-                displayName = displayName,
+                displayName = summary.userName,
                 subjectsCount = summary.subjectsCount,
-                onClose = closeDrawer,
-                onSemesterClick = { closeDrawerAndRun(onSeeAllSubjectsClick) },
-                onWorksClick = { closeDrawerAndRun(onOpenTemplatesClick) },
-                onTasksClick = { closeDrawerAndRun(onSeeTasksClick) },
-                onNotificationsClick = { closeDrawerAndRun(onNotificationsClick) },
-                onDataClick = { closeDrawerAndRun(onDataClick) },
-                onSettingsClick = { closeDrawerAndRun(onSettingsClick) },
-                onProfileClick = { closeDrawerAndRun(onProfileClick) },
-                onWhatsNewClick = { closeDrawerAndRun(onWhatsNewClick) },
-                onResourcesClick = { closeDrawerAndRun(onResourcesClick) },
-                onHelpClick = { closeDrawerAndRun(onHelpClick) },
-                onAboutClick = { closeDrawerAndRun(onAboutClick) },
-                onGpaClick = { closeDrawerAndRun(onGpaClick) },
-                onQuickNotesClick = { closeDrawerAndRun(onQuickNotesClick) },
-                onAiClick = { closeDrawerAndRun(onAiClick) },
-                onLabsClick = { closeDrawerAndRun(onLabsClick) }
+                onClose = { scope.launch { drawerState.close() } },
+                onSemesterClick = { closeAndRun(onSeeAllSubjectsClick) },
+                onWorksClick = { closeAndRun(onOpenTemplatesClick) },
+                onTasksClick = { closeAndRun(onSeeTasksClick) },
+                onNotificationsClick = { closeAndRun(onNotificationsClick) },
+                onDataClick = { closeAndRun(onDataClick) },
+                onSettingsClick = { closeAndRun(onSettingsClick) },
+                onProfileClick = { closeAndRun(onProfileClick) },
+                onWhatsNewClick = { closeAndRun(onWhatsNewClick) },
+                onResourcesClick = { closeAndRun(onResourcesClick) },
+                onHelpClick = { closeAndRun(onHelpClick) },
+                onAboutClick = { closeAndRun(onAboutClick) },
+                onGpaClick = { closeAndRun(onGpaClick) },
+                onQuickNotesClick = { closeAndRun(onQuickNotesClick) },
+                onAiClick = { closeAndRun(onAiClick) },
+                onLabsClick = { closeAndRun(onLabsClick) }
             )
         }
     ) {
-        /*
-         * Inicio se retira mientras el panel entra.
-         *
-         * Es lo que convierte el gesto en un movimiento y no en una lámina que tapa: el
-         * contenido se encoge un poco y se va con el panel, así que se lee que hay algo detrás
-         * en vez de una pantalla que desaparece bajo otra. El desplazamiento del cajón viene en
-         * negativo mientras se abre, así que se normaliza a un valor de cero a uno.
-         */
-        val drawerProgress = with(LocalDensity.current) {
-            val offset = runCatching { drawerState.currentOffset }.getOrDefault(0f)
-            if (offset.isNaN()) 0f else (1f + (offset / 340.dp.toPx())).coerceIn(0f, 1f)
-        }
-
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    val scale = 1f - (0.06f * drawerProgress)
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = 26.dp.toPx() * drawerProgress
-                }
-                .background(HomeBackgroundBrush)
-        ) {
-            val viewportIsCompact = maxHeight < 840.dp || maxWidth < 390.dp
-            val isCompact = when (appearance.interfaceDensity) {
-                InterfaceDensity.COMPACT -> true
-                InterfaceDensity.BALANCED -> viewportIsCompact
-                InterfaceDensity.COMFORTABLE -> maxHeight < 760.dp || maxWidth < 350.dp
-            }
-            val sidePadding = if (isCompact) 20.dp else 22.dp
-            val sectionSpacing = if (isCompact) 15.dp else 18.dp
-
-            Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-                /*
-                 * La cabecera se queda quieta.
-                 *
-                 * Era el primer elemento de la lista, así que al desplazar se iba hacia arriba
-                 * y el recorte del contenedor la partía por la mitad: el nombre de la app y los
-                 * iconos quedaban cortados a media altura contra la barra de estado. No es
-                 * contenido —es el marco de la pantalla—, y el marco no se desplaza.
-                 */
-                HomeHeader(
-                    photoUrl = summary.avatarPhotoUrl,
-                    unreadNotificationCount = notifications.count { !it.read },
-                    onMenuClick = openDrawer,
-                    onCalendarClick = onCalendarClick,
-                    onNotificationsClick = onNotificationsClick,
-                    onProfileClick = onProfileClick,
-                    modifier = Modifier.padding(horizontal = sidePadding)
-                )
-
+        Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = sidePadding,
-                    end = sidePadding,
-                    top = if (isCompact) 6.dp else 8.dp,
-                    bottom = 126.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(sectionSpacing)
+                modifier = Modifier.fillMaxSize().statusBarsPadding(),
+                contentPadding = PaddingValues(bottom = 132.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
-                if (appearance.showHomeGreeting) {
-                    item {
-                        HomeGreeting(name = displayName, compact = isCompact)
+                item("cabecera") {
+                    HomeHeader(
+                        name = summary.userName.ifBlank { "Hola" },
+                        photoUrl = summary.avatarPhotoUrl,
+                        hasUnread = hasUnread,
+                        onNotificationsClick = onNotificationsClick,
+                        onAvatarClick = { scope.launch { drawerState.open() } }
+                    )
+                }
+
+                if (appearance.showHomeHero) {
+                    item("prioridad") {
+                        HomePriorityCard(
+                            summary = summary,
+                            onPrimaryAction = {
+                                val subjects = summary.subjects
+                                when (summary.priority.action) {
+                                    HomePriorityAction.SUBJECT -> when {
+                                        subjects.isEmpty() -> onAddSubjectClick()
+                                        summary.priority.subjectId != null ->
+                                            onAddGradeClick(summary.priority.subjectId!!)
+                                        subjects.size == 1 -> onAddGradeClick(subjects.first().id)
+                                        else -> pickingSubjectForGrade = true
+                                    }
+                                    HomePriorityAction.SUBJECTS -> onSeeAllSubjectsClick()
+                                    HomePriorityAction.TASKS -> onSeeTasksClick()
+                                    HomePriorityAction.EXPENSES -> onSeeExpensesClick()
+                                    HomePriorityAction.TEMPLATES -> onOpenTemplatesClick()
+                                    HomePriorityAction.SCHEDULE -> onCalendarClick()
+                                }
+                            },
+                            onSubjectClick = { id -> onSubjectClick(id) }
+                        )
                     }
                 }
-                appearance.homeSectionOrder.forEach { section ->
-                    when (section) {
-                        HomeSection.HERO -> if (appearance.showHomeHero) {
-                            item {
-                                PriorityHero(
-                                    title = summary.priority.title,
-                                    description = summary.priority.shortDescription,
-                                    action = summary.priority.action,
-                                    actionLabel = priorityActionLabel,
-                                    compact = isCompact,
-                                    onOpenClick = openPriorityAction,
-                                    onDetailsClick = { showPriorityDetails = true }
-                                )
-                            }
-                        }
-                        HomeSection.AGENDA -> if (appearance.showHomeAgenda) {
-                            item {
-                                TodayAgenda(
-                                    summary = summary,
-                                    compact = isCompact,
-                                    onTasksClick = onSeeTasksClick
-                                )
-                            }
-                        }
-                        HomeSection.SNAPSHOT -> if (appearance.showHomeSnapshot) {
-                            item {
-                                SemesterSnapshot(
-                                    summary = summary,
-                                    compact = isCompact,
-                                    onSubjectsClick = onSeeAllSubjectsClick,
-                                    onTasksClick = onSeeTasksClick,
-                                    onExpensesClick = onSeeExpensesClick,
-                                    onWorksClick = onOpenTemplatesClick
-                                )
-                            }
-                        }
+
+                if (appearance.showHomeAgenda) {
+                    item("hoy-cabecera") {
+                        HomeSectionHeader(
+                            title = todayLabel(),
+                            actionLabel = "Horario",
+                            onActionClick = onCalendarClick
+                        )
+                    }
+                    item("hoy") {
+                        HomeTodayCard(items = summary.todayItems, onEmptyClick = onCalendarClick)
                     }
                 }
-            }
+
+                if (appearance.showHomeSnapshot) {
+                    item("cifras") {
+                        HomeSnapshotRow(
+                            summary = summary,
+                            onAverageClick = onSeeAllSubjectsClick,
+                            onPendingClick = onSeeTasksClick,
+                            onExpensesClick = onSeeExpensesClick
+                        )
+                    }
+                }
             }
 
             UniStackFabMenu(
-                /*
-                 * «Agregar nota» abría la lista de materias.
-                 *
-                 * Una nota necesita una materia, y como el botón no sabía cuál, dejaba al
-                 * usuario en la lista a que se buscara la vida. Ahora decide: sin materias
-                 * manda a crear la primera, con una sola va directo a su formulario, y con
-                 * varias pregunta cuál —que es lo único que faltaba por saber—.
-                 */
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
                 onAddGradeClick = {
                     val subjects = summary.subjects
                     when {
@@ -303,106 +242,93 @@ fun HomeScreen(
                 onAddTaskClick = onAddTaskClick,
                 onAddExpenseClick = onAddExpenseClick,
                 onAddSubjectClick = onAddSubjectClick,
-                showAddGrade = true,
-                showAddTask = true,
-                showAddExpense = true,
+                showAddGrade = AppModule.GRADES in summary.enabledModules,
+                showAddTask = AppModule.TASKS in summary.enabledModules,
+                showAddExpense = AppModule.EXPENSES in summary.enabledModules,
                 showAddSubject = false
             )
-
-            if (pickingSubjectForGrade) {
-                SubjectPickerSheet(
-                    subjects = summary.subjects,
-                    onDismiss = { pickingSubjectForGrade = false },
-                    onSelected = { subjectId ->
-                        pickingSubjectForGrade = false
-                        onAddGradeClick(subjectId)
-                    }
-                )
-            }
-
-            if (showPriorityDetails) {
-                PriorityContextSheet(
-                    priority = summary.priority,
-                    actionLabel = priorityActionLabel,
-                    onActionClick = {
-                        showPriorityDetails = false
-                        openPriorityAction()
-                    },
-                    onDismiss = { showPriorityDetails = false }
-                )
-            }
         }
+    }
+
+    if (pickingSubjectForGrade) {
+        SubjectPickerSheet(
+            subjects = summary.subjects,
+            onDismiss = { pickingSubjectForGrade = false },
+            onSelected = { id ->
+                pickingSubjectForGrade = false
+                onAddGradeClick(id)
+            }
+        )
     }
 }
 
+/** «Buenas tardes / Kmlo», la campana y el avatar que abre el panel. */
 @Composable
 private fun HomeHeader(
+    name: String,
     photoUrl: String?,
-    unreadNotificationCount: Int,
-    onMenuClick: () -> Unit,
-    onCalendarClick: () -> Unit,
+    hasUnread: Boolean,
     onNotificationsClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onAvatarClick: () -> Unit
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(46.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 4.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        HeaderIcon(
-            icon = Icons.Rounded.Menu,
-            onClick = onMenuClick,
-            contentDescription = "Menú",
-            modifier = Modifier.align(Alignment.CenterStart)
-        )
-        UniStackWordmark(modifier = Modifier.align(Alignment.Center))
-        Row(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(contentAlignment = Alignment.TopEnd) {
-                HeaderIcon(
-                    icon = Icons.Rounded.NotificationsNone,
-                    contentDescription = "Notificaciones",
-                    onClick = onNotificationsClick
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = greeting(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.headlineMediumEmphasized,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Box(contentAlignment = Alignment.TopEnd) {
+            androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
+                Icon(
+                    Icons.Rounded.NotificationsNone,
+                    contentDescription = "Avisos",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (unreadNotificationCount > 0) {
-                    Box(
-                        modifier = Modifier
-                            .offset(x = (-5).dp, y = 4.dp)
-                            .size(if (unreadNotificationCount > 9) 17.dp else 14.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = unreadNotificationCount.coerceAtMost(9).toString(),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 8.sp,
-                            lineHeight = 9.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .cleanClickable(onProfileClick),
-                contentAlignment = Alignment.Center
-            ) {
-                if (photoUrl.isNullOrBlank()) {
-                    Text("P", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                } else {
-                    AsyncImage(
-                        model = photoUrl,
-                        contentDescription = "Foto de perfil",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+            if (hasUnread) {
+                Box(
+                    modifier = Modifier
+                        .offset(x = (-10).dp, y = 10.dp)
+                        .size(9.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.error)
+                )
+            }
+        }
+
+        Surface(
+            onClick = onAvatarClick,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(40.dp)
+        ) {
+            if (photoUrl != null) {
+                AsyncImage(
+                    model = photoUrl,
+                    contentDescription = "Tu perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = name.take(1).uppercase(SpanishLocale),
+                        style = MaterialTheme.typography.titleMediumEmphasized
                     )
                 }
             }
@@ -410,170 +336,345 @@ private fun HomeHeader(
     }
 }
 
+/**
+ * Lo primero de hoy.
+ *
+ * El rótulo sale de la acción que trae la prioridad, no de olfatear su propio texto. Antes se
+ * deducía por palabras clave, así que reescribir el mensaje podía cambiar el botón sin querer.
+ */
 @Composable
-private fun HeaderIcon(
-    icon: ImageVector,
-    contentDescription: String?,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+private fun HomePriorityCard(
+    summary: HomeSummary,
+    onPrimaryAction: () -> Unit,
+    onSubjectClick: (String) -> Unit
 ) {
-    val clickModifier = if (onClick != null) modifier.cleanClickable(onClick) else modifier
-    Box(modifier = clickModifier.size(38.dp), contentAlignment = Alignment.Center) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(23.dp)
-        )
+    val priority = summary.priority
+    val subjectId = priority.subjectId
+
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    ) {
+        Box {
+            // Una galleta de nueve lóbulos, apenas insinuada: es la forma de Material 3
+            // Expressive, dibujada con el mismo motor de polígonos que usa MaterialShapes.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 58.dp, y = (-54).dp)
+                    .size(190.dp)
+                    .alpha(0.14f)
+                    .clip(cookieShape())
+                    .background(MaterialTheme.colorScheme.onPrimaryContainer)
+            )
+
+            Column(
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onPrimaryContainer)
+                    )
+                    Text(text = "LO PRIMERO DE HOY", style = SectionLabelStyle)
+                }
+                Text(
+                    text = priority.title,
+                    style = MaterialTheme.typography.headlineSmallEmphasized
+                )
+                Text(
+                    text = priority.shortDescription,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.alpha(0.86f)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 6.dp)
+                ) {
+                    Button(
+                        shapes = UniStackButtonDefaults.shapes,
+                        onClick = onPrimaryAction,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                        Text(primaryActionLabel(priority.action))
+                    }
+                    if (subjectId != null) {
+                        TextButton(onClick = { onSubjectClick(subjectId) }) {
+                            Text("Ver materia", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun HomeGreeting(
-    name: String,
-    compact: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val greeting = remember { currentHomeGreeting() }
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 5.dp)
+private fun HomeSectionHeader(title: String, actionLabel: String, onActionClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 18.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            // Sin el nombre: la cabecera ya lleva el avatar de quien ha iniciado sesión, y
-            // repetirlo aquí obligaba a dos líneas en cuanto el nombre era medianamente
-            // largo, empujando todo lo demás hacia abajo.
-            text = "$greeting 👋",
+            text = title,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = if (compact) 28.sp else 30.sp,
-            lineHeight = if (compact) 32.sp else 35.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier.weight(1f)
         )
-        Text(
-            text = "¿Qué vamos a lograr hoy?",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = if (compact) 14.sp else 15.sp,
-            lineHeight = if (compact) 18.sp else 20.sp,
-            fontWeight = FontWeight.Medium
-        )
+        TextButton(onClick = onActionClick) { Text(actionLabel) }
     }
 }
 
-private fun currentHomeGreeting(): String {
-    return when (LocalTime.now().hour) {
-        in 5..11 -> "Buenos días"
-        in 12..18 -> "Buenas tardes"
+/** Lo de hoy: hora, un riel del color de lo que sea, y el detalle. */
+@Composable
+private fun HomeTodayCard(items: List<HomeTimelineSummary>, onEmptyClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        if (items.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("Hoy no tienes nada puesto", style = MaterialTheme.typography.titleSmallEmphasized)
+                Text(
+                    "Ni clases ni entregas. Si falta algo, añádelo desde Horario.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Abrir Horario") }
+            }
+        } else {
+            Column(modifier = Modifier.padding(6.dp)) {
+                items.forEach { item -> HomeTodayRow(item) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeTodayRow(item: HomeTimelineSummary) {
+    val sections = LocalSectionColors.current
+    val rail = when {
+        item.state == HomeTimelineState.DONE -> MaterialTheme.colorScheme.outlineVariant
+        item.kind == HomeTimelineKind.CLASS -> sections.schedule
+        item.kind == HomeTimelineKind.EXAM -> MaterialTheme.colorScheme.primary
+        item.kind == HomeTimelineKind.TASK || item.kind == HomeTimelineKind.WORK -> sections.atRisk
+        else -> MaterialTheme.colorScheme.tertiary
+    }
+    val timeColor = if (item.kind == HomeTimelineKind.TASK || item.kind == HomeTimelineKind.WORK) {
+        sections.atRisk
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Text(
+            text = item.timeText,
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = timeColor,
+            modifier = Modifier.width(46.dp)
+        )
+        Box(modifier = Modifier.width(4.dp).height(34.dp).clip(CircleShape).background(rail))
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.titleSmallEmphasized,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (item.subtitle.isNotBlank()) {
+                Text(
+                    text = item.subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (item.kind == HomeTimelineKind.TASK) sections.atRisk else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (item.state == HomeTimelineState.CURRENT) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = sections.scheduleContainer,
+                contentColor = sections.onScheduleContainer
+            ) {
+                Text(
+                    text = "AHORA",
+                    style = SectionLabelStyle,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+/** Promedio, pendientes y gasto del mes. */
+@Composable
+private fun HomeSnapshotRow(
+    summary: HomeSummary,
+    onAverageClick: () -> Unit,
+    onPendingClick: () -> Unit,
+    onExpensesClick: () -> Unit
+) {
+    val sections = LocalSectionColors.current
+    val modules = summary.enabledModules
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (AppModule.GRADES in modules) {
+            HomeTile(
+                label = "PROMEDIO",
+                value = summary.generalAverage?.let { String.format(SpanishLocale, "%.1f", it) } ?: "—",
+                onClick = onAverageClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                val max = GradingScaleUtils.maxGradeFor(summary.gradingScale).toFloat()
+                LinearWavyProgressIndicator(
+                    progress = { ((summary.generalAverage ?: 0.0).toFloat() / max).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+        }
+        if (AppModule.TASKS in modules) {
+            HomeTile(
+                label = "PENDIENTES",
+                value = summary.pendingTasks.toString(),
+                onClick = onPendingClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                    val overdue = summary.overdueTasks
+                    repeat(3) { index ->
+                        val filled = index < overdue.coerceAtMost(3)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(6.dp)
+                                .clip(CircleShape)
+                                .background(if (filled) sections.atRisk else MaterialTheme.colorScheme.outlineVariant)
+                        )
+                    }
+                }
+            }
+        }
+        if (AppModule.EXPENSES in modules) {
+            HomeTile(
+                label = "ESTA SEMANA",
+                value = CurrencyFormatter.formatCop(summary.weeklyExpenseTotal),
+                valueColor = sections.expenses,
+                onClick = onExpensesClick,
+                modifier = Modifier.weight(1f)
+            ) {
+                val bars = summary.weeklyExpenses?.chartValues.orEmpty().takeLast(5)
+                val peak = (bars.maxOrNull() ?: 0).coerceAtLeast(1)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier.fillMaxWidth().height(16.dp)
+                ) {
+                    bars.forEach { value ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height((4 + 12f * value / peak).dp)
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .background(sections.expenses)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeTile(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    valueColor: Color = Color.Unspecified,
+    footer: @Composable () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = label, style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
+                color = if (valueColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else valueColor,
+                maxLines = 1
+            )
+            Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.CenterStart) { footer() }
+        }
+    }
+}
+
+/** La galleta de nueve lóbulos, construida con el motor de polígonos de Material. */
+@Composable
+private fun cookieShape(): androidx.compose.ui.graphics.Shape {
+    val polygon = remember {
+        RoundedPolygon.star(
+            numVerticesPerRadius = 9,
+            radius = 1f,
+            innerRadius = 0.85f,
+            rounding = CornerRounding(0.45f)
+        )
+    }
+    return polygon.toShape()
+}
+
+private fun primaryActionLabel(action: HomePriorityAction): String = when (action) {
+    HomePriorityAction.SUBJECT -> "Registrar nota"
+    HomePriorityAction.SUBJECTS -> "Ver materias"
+    HomePriorityAction.TASKS -> "Ver tareas"
+    HomePriorityAction.EXPENSES -> "Ver gastos"
+    HomePriorityAction.TEMPLATES -> "Ver trabajos"
+    HomePriorityAction.SCHEDULE -> "Ver horario"
+}
+
+private fun greeting(): String {
+    val hour = java.time.LocalTime.now().hour
+    return when {
+        hour < 12 -> "Buenos días"
+        hour < 20 -> "Buenas tardes"
         else -> "Buenas noches"
     }
 }
 
-internal fun Modifier.cleanClickable(onClick: () -> Unit): Modifier = composed {
-    clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = onClick
-    )
+private fun todayLabel(): String {
+    val today = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("EEEE d", SpanishLocale)
+    return "Hoy, " + today.format(formatter)
 }
-
-@Preview(name = "Home Android modern", widthDp = 412, heightDp = 892, showBackground = true)
-@Composable
-private fun HomePreview412() {
-    UniStackTheme(darkTheme = true) {
-        HomeScreen(
-            uiState = HomeUiState(summary = previewHomeSummary),
-            onAddSubjectClick = {},
-            onSeeAllSubjectsClick = {},
-            onSeeTasksClick = {},
-            onSeeExpensesClick = {},
-            onOpenTemplatesClick = {},
-            onSubjectClick = {},
-            onProfileClick = {},
-            onAddGradeClick = { _ -> },
-            onAddTaskClick = {},
-            onAddExpenseClick = {}
-        )
-    }
-}
-
-private val previewHomeSummary = HomeSummary(
-    userName = "Pineda",
-    avatarPhotoUrl = null,
-    dashboardMessage = "Inglés necesita atención.",
-    priority = HomePrioritySummary(
-        title = "Inglés necesita atención",
-        shortDescription = "Repasa esta materia antes de abrir más frentes.",
-        fullDescription = "Inglés necesita atención académica. Revisa tus apuntes antes de entrar y prioriza lo que más peso tenga en la materia.",
-        suggestion = "Siguiente paso: repasar Inglés 15 minutos y dejar lista una nota corta.",
-        action = HomePriorityAction.SUBJECT,
-        subjectId = "english"
-    ),
-    dailyFocusItems = listOf(
-        DailyFocusItem(
-            slotLabel = "Ahora",
-            title = "Inglés necesita atención",
-            detail = "Repasa esta materia antes de abrir más frentes.",
-            minutesText = "15 min",
-            actionLabel = "Abrir",
-            action = HomePriorityAction.SUBJECT,
-            subjectId = "english"
-        ),
-        DailyFocusItem(
-            slotLabel = "Luego",
-            title = "Entrega de proyecto",
-            detail = "Avanza un paso del checklist.",
-            minutesText = "20 min",
-            actionLabel = "Trabajos",
-            action = HomePriorityAction.TEMPLATES
-        )
-    ),
-    generalAverage = 3.8,
-    subjectsCount = 1,
-    tasksToday = 0,
-    overdueTasks = 0,
-    pendingTasks = 0,
-    openAcademicWorks = 1,
-    subjects = listOf(
-        SubjectSummary(
-            id = "english",
-            name = "Inglés",
-            average = 3.7,
-            targetAverage = 4.2,
-            progress = 0.64f,
-            type = SubjectVisualType.PURPLE
-        )
-    ),
-    riskSubject = SubjectRiskSummary(
-        subjectId = "english",
-        subjectName = "Inglés",
-        detail = "Revisa tus apuntes antes de entrar.",
-        severity = SubjectRiskSeverity.ATTENTION
-    ),
-    neededGrade = null,
-    nextTask = null,
-    nextAcademicWork = AcademicWorkSummary(
-        id = "project",
-        subjectId = "math",
-        title = "Entrega de proyecto",
-        dueText = "hoy",
-        progress = 0.4f
-    ),
-    todayItems = listOf(
-        HomeTimelineSummary("Hoy", "Clase de Inglés", "Revisa apuntes antes de entrar", HomeTimelineKind.CLASS, HomeTimelineState.CURRENT),
-        HomeTimelineSummary("Hoy", "Entrega de proyecto", "Matemáticas · 40% listo", HomeTimelineKind.WORK, HomeTimelineState.PENDING),
-        HomeTimelineSummary("Mañana", "Examen parcial", "Física · 1 h", HomeTimelineKind.EXAM, HomeTimelineState.PENDING)
-    ),
-    weeklyExpenses = ExpenseSummary(
-        transport = 0,
-        food = 0,
-        total = 0,
-        chartValues = emptyList()
-    ),
-    weeklyExpenseTotal = 0,
-    productivitySummary = "Vas bien, Pineda.",
-    companionInsight = "Hoy conviene enfocarte en Inglés antes de abrir más frentes.",
-    gradingScale = GradingScale.ZERO_TO_FIVE,
-    enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES, AppModule.ACADEMIC_TEMPLATES)
-)
