@@ -63,7 +63,6 @@ import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_support.domain.changelogFor
@@ -133,7 +132,7 @@ fun WhatsNewScreen(
         modifier = modifier
     ) {
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     UniStackWordmark(fontSize = 20.sp)
                     Text(
@@ -146,7 +145,7 @@ fun WhatsNewScreen(
         }
         if (sections.isEmpty()) {
             item {
-                UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+                UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                     Text(
                         "Todavía no hay nada publicado para esta versión.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -155,7 +154,7 @@ fun WhatsNewScreen(
             }
         } else {
             items(sections, key = { it.version }) { section ->
-                UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+                UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
@@ -209,7 +208,7 @@ fun ResourcesScreen(
         items(ResourceLinks) { link ->
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 onClick = {
                     runCatching {
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
@@ -220,7 +219,7 @@ fun ResourcesScreen(
                     Box(
                         Modifier
                             .size(38.dp)
-                            .clip(AppShapes.Small)
+                            .clip(MaterialTheme.shapes.small)
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -313,7 +312,7 @@ fun HelpScreen(
                 val isOpen = expanded == index
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     onClick = { expanded = if (isOpen) null else index }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -352,7 +351,7 @@ fun HelpScreen(
              * que llevan a sitios distintos. Con icono, descripción y flecha, cada uno dice lo
              * que hace y ninguno pesa más que el otro.
              */
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "¿No está aquí lo tuyo?",
@@ -443,7 +442,7 @@ private fun SupportOptionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
@@ -452,7 +451,7 @@ private fun SupportOptionRow(
         Box(
             Modifier
                 .size(36.dp)
-                .clip(AppShapes.Small)
+                .clip(MaterialTheme.shapes.small)
                 .background(accent.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center
         ) {
@@ -532,7 +531,7 @@ private fun TicketComposer(
                     label = { Text("Tu mensaje") },
                     minLines = 4,
                     maxLines = 8,
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
@@ -579,7 +578,7 @@ fun AboutScreen(
         modifier = modifier
     ) {
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     UniStackWordmark(fontSize = 24.sp)
                     Text(
@@ -610,7 +609,7 @@ fun AboutScreen(
             )
         }
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Tus datos", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     Text(
@@ -643,12 +642,12 @@ private fun AboutRow(
     subtitle: String,
     onClick: () -> Unit
 ) {
-    UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.MediumCard, onClick = onClick) {
+    UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
                     .size(38.dp)
-                    .clip(AppShapes.Small)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {

@@ -89,7 +89,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.Expense
@@ -742,14 +741,14 @@ private fun BudgetProgress(
     Box(
         modifier = modifier
             .height(scaledDp(6f, scale))
-            .clip(AppShapes.Pill)
+            .clip(CircleShape)
             .background(ExpenseTrack)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(progress.coerceIn(0.03f, 1f))
-                .clip(AppShapes.Pill)
+                .clip(CircleShape)
                 .background(
                     SolidColor(ExpensePurple)
                 )
@@ -1028,7 +1027,7 @@ private fun ExpenseCategorySheetOption(
         modifier = modifier
             .height(50.dp)
             .cleanClickable(onClick),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = if (selected) accent.copy(alpha = 0.12f) else ExpenseCardHigh,
         border = BorderStroke(
             width = 1.dp,
@@ -1118,14 +1117,14 @@ private fun ExpensesEmptyState(
                     modifier = Modifier
                         .offset(x = scaledDp(-7f, scale), y = scaledDp(-22f, scale))
                         .size(width = scaledDp(4f, scale), height = scaledDp(9f, scale))
-                        .clip(AppShapes.Pill)
+                        .clip(CircleShape)
                         .background(ExpensePurple)
                 )
                 Box(
                     modifier = Modifier
                         .offset(x = scaledDp(7f, scale), y = scaledDp(-23f, scale))
                         .size(width = scaledDp(4f, scale), height = scaledDp(9f, scale))
-                        .clip(AppShapes.Pill)
+                        .clip(CircleShape)
                         .background(ExpensePurple)
                 )
             }
@@ -1162,7 +1161,7 @@ private fun RegisterExpenseButton(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         color = ExpenseCoral,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1278,7 +1277,7 @@ private fun ExpenseBudgetSheet(
                     )
                 },
                 enabled = isValid,
-                shape = AppShapes.SmallCard,
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExpenseCoral,
                     contentColor = contentColorOn(ExpenseCoral),
@@ -1305,7 +1304,7 @@ private fun BudgetInputField(
 ) {
     Surface(
         modifier = modifier.height(72.dp),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = ExpenseCardHigh,
         border = BorderStroke(1.dp, ExpenseDivider),
         tonalElevation = 0.dp,
@@ -1730,7 +1729,7 @@ private fun PreviewBottomNavItem(
             modifier = Modifier
                 .padding(top = scaledDp(6f, scale))
                 .size(width = scaledDp(19f, scale), height = scaledDp(4f, scale))
-                .clip(AppShapes.Pill)
+                .clip(CircleShape)
                 .background(if (selected) ExpensePurple else Color.Transparent)
         )
     }

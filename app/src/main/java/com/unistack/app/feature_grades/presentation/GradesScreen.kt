@@ -48,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.MetricCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.anchoredButtonRoom
@@ -206,7 +205,7 @@ private fun SubjectListCard(
             .fillMaxWidth()
             .bounceClick(onClick),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
@@ -366,7 +365,7 @@ private fun EmptyGradesCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 0.dp,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -403,7 +402,7 @@ private fun AddSubjectButton(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp

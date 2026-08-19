@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.revealIntoView
-import com.unistack.app.core.design.theme.AppShapes
+import androidx.compose.foundation.shape.CircleShape
 /**
  * Campo opcional para el nombre de la institución, con sugerencias de [InstitutionCatalog].
  *
@@ -84,7 +84,7 @@ fun InstitutionField(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
-                    .clip(AppShapes.Pill)
+                    .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             )
@@ -116,7 +116,7 @@ fun InstitutionField(
                         modifier = Modifier.size(22.dp)
                     )
                 },
-                shape = AppShapes.SmallCard
+                shape = MaterialTheme.shapes.medium
             )
         }
 
@@ -131,7 +131,7 @@ fun InstitutionField(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(AppShapes.Small)
+                            .clip(MaterialTheme.shapes.small)
                             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .clickable {
                                 fieldValue = TextFieldValue(suggestion, TextRange(suggestion.length))

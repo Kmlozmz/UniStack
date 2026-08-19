@@ -147,7 +147,6 @@ import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.revealIntoView
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
@@ -445,7 +444,7 @@ private fun WelcomeHeroCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.LargeCard)
+            .clip(MaterialTheme.shapes.extraLarge)
             .background(MaterialTheme.colorScheme.primaryContainer)
     ) {
         Box(
@@ -627,7 +626,7 @@ private fun WelcomeFeatureCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(containerColor)
             .clickable(role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 16.dp),
@@ -636,7 +635,7 @@ private fun WelcomeFeatureCard(
         Box(
             modifier = Modifier
                 .size(38.dp)
-                .clip(AppShapes.Small)
+                .clip(MaterialTheme.shapes.small)
                 .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
@@ -711,7 +710,7 @@ private fun WelcomeFeatureDialog(
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     )
 }
 
@@ -828,12 +827,12 @@ private fun SetupNameHero(name: String) {
                     translationY = badgeFloat.dp.toPx()
                     rotationZ = 12f + badgeTilt
                 }
-                .clip(AppShapes.SmallCard)
+                .clip(MaterialTheme.shapes.medium)
                 .background(cardColor)
                 .border(
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.58f else 0.32f),
-                    shape = AppShapes.SmallCard
+                    shape = MaterialTheme.shapes.medium
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -880,7 +879,7 @@ private fun SetupNameHero(name: String) {
                                     modifier = Modifier
                                         .width(64.dp)
                                         .height(6.dp)
-                                        .clip(AppShapes.Pill)
+                                        .clip(CircleShape)
                                         .background(
                                             MaterialTheme.colorScheme.outlineVariant.copy(
                                                 alpha = if (LocalIsDarkTheme.current) 0.45f else 0.72f
@@ -891,7 +890,7 @@ private fun SetupNameHero(name: String) {
                                     modifier = Modifier
                                         .width(78.dp)
                                         .height(6.dp)
-                                        .clip(AppShapes.Pill)
+                                        .clip(CircleShape)
                                         .background(
                                             MaterialTheme.colorScheme.outlineVariant.copy(
                                                 alpha = if (LocalIsDarkTheme.current) 0.28f else 0.54f
@@ -996,7 +995,7 @@ private fun SetupNameInput(
                         Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
                     }
                 },
-                shape = AppShapes.SmallCard,
+                shape = MaterialTheme.shapes.medium,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -1019,7 +1018,7 @@ private fun SetupNameInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.76f else 0.9f),
         borderWidth = 1.dp,
@@ -1304,7 +1303,7 @@ private fun GradeLevelChips(
                         scaleX = scale
                         scaleY = scale
                     }
-                    .clip(AppShapes.Pill)
+                    .clip(CircleShape)
                     .background(containerColor)
                     .clickable(role = Role.RadioButton) { onSelected(option) }
                     .semantics { stateDescription = if (isSelected) "Seleccionado" else "No seleccionado" }
@@ -1553,7 +1552,7 @@ private fun AcademicProgramHelpCard(
     UniCard(
         modifier = modifier.fillMaxWidth(),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
@@ -1646,7 +1645,7 @@ private fun SetupCustomProgramField(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                 )
             },
-            shape = AppShapes.SmallCard,
+            shape = MaterialTheme.shapes.medium,
             colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -2062,7 +2061,7 @@ private fun ConfirmedScaleRangeRow(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.52f else 0.72f),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.9f),
         borderWidth = 1.dp,
@@ -2098,7 +2097,7 @@ private fun GradeGoalInputRow(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -2154,7 +2153,7 @@ private fun GradeValueField(
     value: String,
     onValueChange: (String) -> Unit
 ) {
-    val shape = AppShapes.Small
+    val shape = MaterialTheme.shapes.small
     Box(
         modifier = Modifier
             .width(92.dp)
@@ -2196,7 +2195,7 @@ private fun ScaleInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -2341,7 +2340,7 @@ private fun AcademicDistributionCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = 1.dp,
@@ -2426,12 +2425,12 @@ private fun EvaluationTypeSegmentedControl(
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(AppShapes.Small)
+            .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f))
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.74f else 0.9f),
-                shape = AppShapes.Small
+                shape = MaterialTheme.shapes.small
             )
             .padding(SEGMENT_INSET),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -2463,7 +2462,7 @@ private fun EvaluationSegment(
             // Forma concéntrica con el contenedor, descontando su relleno de 3.dp. Sin
             // esto la píldora seleccionada quedaba más redonda que el borde que la
             // envuelve y los arcos no encajaban.
-            .clip(AppShapes.insetFromSmall(SEGMENT_INSET))
+            .clip(MaterialTheme.shapes.extraSmall)
             .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -2505,7 +2504,7 @@ private fun PeriodCountDropdown(
     val density = LocalDensity.current
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "period-count-dropdown-arrow")
     var anchorWidth by remember { mutableIntStateOf(0) }
-    val shape = AppShapes.Small
+    val shape = MaterialTheme.shapes.small
     val countLabel = when {
         count <= 0 -> "Selecciona una cantidad"
         customCountSelected && count == 6 -> "Otro (personalizado)"
@@ -2559,7 +2558,7 @@ private fun PeriodCountDropdown(
         }
 
         MaterialTheme(
-            shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.Small),
+            shapes = MaterialTheme.shapes.copy(extraSmall = MaterialTheme.shapes.small),
             colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             androidx.compose.material3.DropdownMenu(
@@ -2572,7 +2571,7 @@ private fun PeriodCountDropdown(
                     )
                     .background(
                         MaterialTheme.colorScheme.surfaceContainerHigh,
-                        AppShapes.Small
+                        MaterialTheme.shapes.small
                     )
             ) {
                 options.forEach { option ->
@@ -2640,7 +2639,7 @@ private fun PeriodDistributionSection(
         UniCard(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.46f else 0.72f),
-            shape = AppShapes.Small,
+            shape = MaterialTheme.shapes.small,
             tonalElevation = 0.dp,
             borderColor = Color.Transparent,
             borderWidth = 0.dp,
@@ -2761,7 +2760,7 @@ private fun PeriodSummaryCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = if (isValid) LocalSectionColors.current.onTrackContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -2910,7 +2909,7 @@ private fun CustomGradeRangeSelector(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 6.dp,
         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
         borderWidth = 1.dp,
@@ -2934,7 +2933,7 @@ private fun CustomGradeRangeSelector(
                 }
                 UniCard(
                     color = MaterialTheme.colorScheme.primary,
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     tonalElevation = 4.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
@@ -3339,7 +3338,7 @@ private fun SetupModuleSelectionCard(
 
 @Composable
 private fun SetupModuleCheckBox(selected: Boolean) {
-    val shape = AppShapes.Small
+    val shape = MaterialTheme.shapes.small
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -3368,7 +3367,7 @@ private fun SetupModulesInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.78f),
         borderWidth = 1.dp,
@@ -3407,7 +3406,7 @@ private fun SummaryInfoCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
         borderWidth = 1.dp,
@@ -3530,7 +3529,7 @@ private fun SummaryPercentChip(label: String) {
     Box(
         modifier = Modifier
             .height(21.dp)
-            .clip(AppShapes.Pill)
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.88f else 1f))
             .padding(horizontal = 7.dp),
         contentAlignment = Alignment.Center
@@ -3570,7 +3569,7 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
                 Box(
                     modifier = Modifier
                         .height(20.dp)
-                        .clip(AppShapes.Pill)
+                        .clip(CircleShape)
                         .background(LocalSectionColors.current.onTrackContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.68f else 1f))
                         .padding(horizontal = 10.dp),
                     contentAlignment = Alignment.Center
@@ -3593,7 +3592,7 @@ private fun SetupSummaryNoticeCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
         borderWidth = 0.dp,
@@ -3864,14 +3863,14 @@ internal fun SetupScaffold(
                     .then(
                         if (welcome) {
                             Modifier
-                                .clip(AppShapes.LargeCard)
+                                .clip(MaterialTheme.shapes.extraLarge)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainerLow
                                 )
                                 .border(
                                     width = 1.dp,
                                     color = MaterialTheme.colorScheme.outlineVariant,
-                                    shape = AppShapes.LargeCard
+                                    shape = MaterialTheme.shapes.extraLarge
                                 )
                                 .padding(24.dp)
                         } else {
@@ -3978,7 +3977,7 @@ private fun SetupTopBar(
                         modifier = Modifier
                             .weight(1f)
                             .height(barHeight)
-                            .clip(AppShapes.Pill)
+                            .clip(CircleShape)
                             .background(barColor)
                     )
                 }
@@ -4121,7 +4120,7 @@ private fun ModuleSelectableCard(
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.2.dp else 1.dp,
@@ -4195,7 +4194,7 @@ private fun SelectableIconCard(
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.3.dp else 1.dp,
@@ -4303,7 +4302,7 @@ private fun SummarySection(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
@@ -4432,7 +4431,7 @@ private fun SetupDropdownField(
     val density = LocalDensity.current
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "setup-dropdown-arrow")
     var anchorWidth by remember { mutableIntStateOf(0) }
-    val shape = AppShapes.SmallCard
+    val shape = MaterialTheme.shapes.medium
     val displayValue = value.ifBlank { "Seleccionar" }
     val isPlaceholder = value.isBlank()
 
@@ -4507,7 +4506,7 @@ private fun SetupDropdownField(
             }
 
             MaterialTheme(
-                shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.SmallCard),
+                shapes = MaterialTheme.shapes.copy(extraSmall = MaterialTheme.shapes.medium),
                 colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 androidx.compose.material3.DropdownMenu(
@@ -4525,7 +4524,7 @@ private fun SetupDropdownField(
                         .heightIn(max = 300.dp)
                         .background(
                             MaterialTheme.colorScheme.surfaceContainerHigh,
-                            AppShapes.SmallCard
+                            MaterialTheme.shapes.medium
                         )
                 ) {
                     options.forEach { option ->
@@ -4564,7 +4563,7 @@ private fun SetupDropdownField(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.58f else 0.9f) else Color.Transparent,
-                                    AppShapes.Small
+                                    MaterialTheme.shapes.small
                                 ),
                             onClick = {
                                 onExpandedChange(false)
@@ -4587,7 +4586,7 @@ private fun DropdownIconBox(
 ) {
     Box(
         modifier = modifier
-            .clip(AppShapes.Small)
+            .clip(MaterialTheme.shapes.small)
             .background(
                 MaterialTheme.colorScheme.primaryContainer.copy(
                     alpha = when {

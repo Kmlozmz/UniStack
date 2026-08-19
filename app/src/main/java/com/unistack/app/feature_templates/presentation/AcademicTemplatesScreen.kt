@@ -63,7 +63,6 @@ import com.unistack.app.core.design.components.UniFilterChipRow
 import com.unistack.app.core.design.components.UniFilterOption
 import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
@@ -358,7 +357,7 @@ private fun HeaderCard(workCount: Int, activeCount: Int) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 6.dp,
         contentPadding = PaddingValues(18.dp)
     ) {
@@ -407,7 +406,7 @@ private fun WorkListSection(
             )
             Button(
                 onClick = onNewWork,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
             ) {
@@ -451,7 +450,7 @@ private fun WorkCard(
             .fillMaxWidth()
             .bounceClick(onSelect),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = if (selected) 5.dp else 2.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -495,7 +494,7 @@ private fun WorkCard(
             if (!work.isFinished) {
                 Button(
                     onClick = onMarkSubmitted,
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -538,7 +537,7 @@ private fun TemplateOption(
             .fillMaxWidth()
             .then(if (enabled) Modifier.bounceClick(onClick) else Modifier),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = if (selected) 5.dp else 2.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -589,7 +588,7 @@ private fun WorkEditorCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -605,7 +604,7 @@ private fun WorkEditorCard(
                 label = { Text("Título") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             OutlinedTextField(
                 value = dueDate,
@@ -614,7 +613,7 @@ private fun WorkEditorCard(
                 placeholder = { Text("YYYY-MM-DD") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 isError = dueDate.isNotBlank() && TaskDateUtils.parseInput(dueDate) == null
             )
             Text("Materia", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
@@ -642,7 +641,7 @@ private fun WorkEditorCard(
                 label = { Text("Tesis u objetivo") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             OutlinedTextField(
                 value = outline,
@@ -650,7 +649,7 @@ private fun WorkEditorCard(
                 label = { Text("Esquema") },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             OutlinedTextField(
                 value = sources,
@@ -660,7 +659,7 @@ private fun WorkEditorCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("academic-work-sources"),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             OutlinedTextField(
                 value = notes,
@@ -668,14 +667,14 @@ private fun WorkEditorCard(
                 label = { Text("Notas") },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick = onSave,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -696,7 +695,7 @@ private fun PersistentChecklistCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -727,7 +726,7 @@ private fun ChecklistRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(if (checked) LocalSectionColors.current.onTrackContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
             .bounceClick(onToggle)
             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -746,7 +745,7 @@ private fun TemplateDetailCard(template: EssayTemplate) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -783,7 +782,7 @@ private fun ApaReferenceGeneratorCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
@@ -803,7 +802,7 @@ private fun ApaReferenceGeneratorCard(
             )
             Button(
                 onClick = onCopyClick,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -820,7 +819,7 @@ private fun ApaTipCard(tip: ApaTip) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 3.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -846,7 +845,7 @@ private fun CopyTemplateCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
@@ -860,7 +859,7 @@ private fun CopyTemplateCard(
             }
             Button(
                 onClick = onCopyClick,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()

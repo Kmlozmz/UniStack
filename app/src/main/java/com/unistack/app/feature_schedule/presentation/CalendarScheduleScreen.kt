@@ -94,7 +94,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -117,6 +116,7 @@ import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Shape
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
@@ -129,8 +129,10 @@ private val ScheduleRescheduled: Color
     @Composable get() = LocalSectionColors.current.schedule
 private val ScheduleCancelled: Color
     @Composable get() = LocalSectionColors.current.atRisk
-private val ScheduleShape
-    get() = AppShapes.SmallCard
+private val ScheduleShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.shapes.medium
 
 private enum class CalendarMode(val label: String) {
     MONTH("Mes"),

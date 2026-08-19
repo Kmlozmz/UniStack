@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.AppShapes
 @Composable
 fun MetricCard(
     value: String,
@@ -34,7 +33,7 @@ fun MetricCard(
 ) {
     UniCard(
         modifier = modifier.height(58.dp),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         onClick = onClick,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 6.dp)

@@ -31,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_home.domain.SubjectSummary
 
@@ -51,7 +50,7 @@ internal fun SubjectPickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier
@@ -79,7 +78,7 @@ internal fun SubjectPickerSheet(
                 items(subjects, key = { it.id }) { subject ->
                     UniCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = AppShapes.MediumCard,
+                        shape = MaterialTheme.shapes.large,
                         onClick = { onSelected(subject.id) }
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

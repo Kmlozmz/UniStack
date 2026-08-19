@@ -88,15 +88,16 @@ fun Modifier.expressivePress(
 /**
  * Forma que se redondea al seleccionarse, el otro gesto característico de Expressive.
  *
- * Parte del radio de tarjeta que corresponda a la preferencia `cornerStyle`, así que sigue
- * respetando el ajuste de esquinas del usuario.
+ * Parte del radio de la forma `large` del tema y le suma unos grados al seleccionarse. Antes
+ * partía de la preferencia de esquinas del usuario; esa preferencia ya no existe, porque la
+ * escala de formas la define el sistema de diseño.
  */
 @Composable
 fun rememberSelectionShape(
     selected: Boolean,
     extraRadiusWhenSelected: Dp = 8.dp
 ): RoundedCornerShape {
-    val base = AppearanceRuntime.cornerStyle.cardRadius()
+    val base = 28.dp
     val radius by animateDpAsState(
         targetValue = if (selected) base + extraRadiusWhenSelected else base,
         animationSpec = spring(

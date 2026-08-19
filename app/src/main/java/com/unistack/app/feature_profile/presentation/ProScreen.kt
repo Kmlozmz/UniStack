@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_profile.domain.FeatureGate
@@ -127,7 +126,7 @@ private fun ProHeroCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primary,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 8.dp,
         contentPadding = PaddingValues(20.dp)
     ) {
@@ -165,7 +164,7 @@ private fun ProHeroCard(
             Button(
                 onClick = onUpgradeClick,
                 enabled = canBuy,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onPrimary,
                     contentColor = MaterialTheme.colorScheme.primary
@@ -193,7 +192,7 @@ private fun BenefitCard(benefit: ProBenefit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 4.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -236,7 +235,7 @@ private fun BillingStatusCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = if (billingState.errorMessage == null) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.errorContainer,
-        shape = AppShapes.LargeCard,
+        shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -275,7 +274,7 @@ private fun BillingStatusCard(
             Button(
                 onClick = onRefreshClick,
                 enabled = !billingState.isLoading,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {

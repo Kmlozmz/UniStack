@@ -1,6 +1,5 @@
 package com.unistack.app.feature_home.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -91,7 +90,7 @@ internal fun PriorityHero(
             .fillMaxWidth()
             .height(heroHeight)
             .cleanClickable(onDetailsClick),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         color = Color.Transparent,
         border = BorderStroke(1.dp, HomeHeroStroke),
         shadowElevation = 0.dp
@@ -273,7 +272,7 @@ internal fun PriorityContextSheet(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 4.dp)
                     .size(width = 42.dp, height = 4.dp)
-                    .background(HeroContent.copy(alpha = 0.14f), AppShapes.Pill)
+                    .background(HeroContent.copy(alpha = 0.14f), CircleShape)
             )
         }
     ) {
@@ -328,11 +327,11 @@ internal fun PriorityContextSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, AppShapes.MediumCard)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large)
                     .border(
                         width = 0.7.dp,
                         color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = AppShapes.MediumCard
+                        shape = MaterialTheme.shapes.large
                     )
                     .padding(horizontal = 16.dp, vertical = 15.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -367,7 +366,7 @@ internal fun PriorityContextSheet(
             ) {
                 Button(
                     onClick = onDismiss,
-                    shape = AppShapes.Small,
+                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         contentColor = MaterialTheme.colorScheme.onSurface
@@ -380,7 +379,7 @@ internal fun PriorityContextSheet(
                 }
                 Button(
                     onClick = onActionClick,
-                    shape = AppShapes.Small,
+                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary

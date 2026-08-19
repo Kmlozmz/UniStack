@@ -2,7 +2,6 @@ package com.unistack.app.feature_expenses.presentation
 
 import com.unistack.app.core.utils.DayLabels
 
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.activity.compose.BackHandler
@@ -87,6 +86,8 @@ import java.util.Locale
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Shape
 private val ExpenseFormBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseFormCard: Color
@@ -105,8 +106,14 @@ private val ExpenseFormOptionText: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ExpenseFormDisabled: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
-private val ExpenseFormShape = AppShapes.MediumCard
-private val ExpenseFieldShape = AppShapes.SmallCard
+private val ExpenseFormShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.shapes.large
+private val ExpenseFieldShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.shapes.medium
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
 
 @Composable
@@ -791,7 +798,7 @@ private fun ExpenseCalendarMonthGrid(
                                     date != null -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
-                                shape = AppShapes.Small
+                                shape = MaterialTheme.shapes.small
                             ),
                         contentAlignment = Alignment.Center
                     ) {

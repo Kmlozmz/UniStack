@@ -1,6 +1,5 @@
 package com.unistack.app.feature_grades.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -110,7 +109,11 @@ import kotlin.math.round
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
-private val LargeCardShape = AppShapes.SmallCard
+import androidx.compose.ui.graphics.Shape
+private val LargeCardShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.shapes.medium
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -385,7 +388,7 @@ fun SubjectDetailScreen(
             Button(
                 onClick = { addTarget?.let { onAddGradeClick(subject.id, it.id) } },
                 enabled = addTarget != null,
-                shape = AppShapes.LargeCard,
+                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -557,7 +560,7 @@ fun SubjectPeriodDetailScreen(
         ) {
             Button(
                 onClick = { onAddGradeClick(subject.id, period.id) },
-                shape = AppShapes.LargeCard,
+                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -792,7 +795,7 @@ private fun SubjectClassFacts(session: ClassSession) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -869,7 +872,7 @@ private fun PeriodChooser(
                 val selected = chosenPeriodId == period.id
                 Surface(
                     modifier = Modifier.bounceClick { onChoose(period.id) },
-                    shape = AppShapes.Small,
+                    shape = MaterialTheme.shapes.small,
                     color = if (selected) {
                         MaterialTheme.colorScheme.primary
                     } else {
@@ -1181,7 +1184,7 @@ private fun SubjectMetricsBandContent(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -1481,7 +1484,7 @@ private fun PeriodCard(
                         Box(
                             modifier = Modifier
                                 .size(38.dp)
-                                .background(accent.copy(alpha = 0.15f), AppShapes.Small),
+                                .background(accent.copy(alpha = 0.15f), MaterialTheme.shapes.small),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -1621,7 +1624,7 @@ private fun GradeRowItem(
         Box(
             modifier = Modifier
                 .size(44.dp)
-                .background(grade.type.colorLocal().copy(alpha = 0.15f), AppShapes.Small),
+                .background(grade.type.colorLocal().copy(alpha = 0.15f), MaterialTheme.shapes.small),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1803,7 +1806,7 @@ private fun EmptyPeriodNotesInline() {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.Small),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), MaterialTheme.shapes.small),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1874,7 +1877,7 @@ private fun EmptyPeriodNotesCard() {
 private fun StatusBadge(status: PeriodStatus) {
     Box(
         modifier = Modifier
-            .background(status.color.copy(alpha = 0.12f), AppShapes.Small)
+            .background(status.color.copy(alpha = 0.12f), MaterialTheme.shapes.small)
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(
@@ -1890,7 +1893,7 @@ private fun StatusBadge(status: PeriodStatus) {
 private fun CustomStatusBadge(label: String, color: Color) {
     Box(
         modifier = Modifier
-            .background(color.copy(alpha = 0.12f), AppShapes.Small)
+            .background(color.copy(alpha = 0.12f), MaterialTheme.shapes.small)
             .padding(horizontal = 10.dp, vertical = 4.dp)
     ) {
         Text(

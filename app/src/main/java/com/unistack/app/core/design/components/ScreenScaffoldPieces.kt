@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.AppShapes
+import androidx.compose.foundation.shape.CircleShape
 data class UniFilterOption<T>(
     val value: T,
     val label: String
@@ -82,7 +82,7 @@ fun UniEmptyStateCard(
     UniCard(
         modifier = modifier.fillMaxWidth(),
         color = color,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         contentPadding = PaddingValues(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -92,7 +92,7 @@ fun UniEmptyStateCard(
             if (actionText != null && onActionClick != null) {
                 Button(
                     onClick = onActionClick,
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = iconColor),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                 ) {
@@ -157,7 +157,7 @@ fun <T> UniFilterChipRow(
                 label = {
                     Text(option.label, fontWeight = FontWeight.Bold)
                 },
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,

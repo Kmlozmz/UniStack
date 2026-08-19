@@ -55,7 +55,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.utils.BuildStage
 
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -320,7 +319,7 @@ private fun DrawerPanelHeader(
         Box(
             modifier = Modifier
                 .size(58.dp)
-                .clip(AppShapes.MediumCard)
+                .clip(MaterialTheme.shapes.large)
                 .background(
                     SolidColor(MaterialTheme.colorScheme.primary)
                 ),
@@ -413,7 +412,7 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
         modifier = Modifier
             .fillMaxWidth()
             .height(58.dp),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
             alpha = when {
                 !enabled -> if (LocalIsDarkTheme.current) 0.28f else 0.45f
@@ -478,7 +477,7 @@ private fun DrawerIconTile(
     Box(
         modifier = Modifier
             .size(42.dp)
-            .clip(AppShapes.Small)
+            .clip(MaterialTheme.shapes.small)
             .background(
                 SolidColor(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.30f else 0.18f))
             ),

@@ -47,12 +47,12 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_user.domain.UserProfile
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
 /** Las anticipaciones que se ofrecen. Cubren de «el mismo día» a «tres días antes». */
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -98,7 +98,7 @@ internal fun NotificationSection(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.alpha(if (permissionGranted) 1f else 0.45f)
         ) {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     SectionTitle(Icons.Rounded.NotificationsActive, "Qué te avisa")
                     ReminderRow(
@@ -178,7 +178,7 @@ internal fun NotificationSection(
                 }
             }
 
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SectionTitle(Icons.Rounded.Schedule, "Con cuánta anticipación")
                     Text(
@@ -210,7 +210,7 @@ internal fun NotificationSection(
                 }
             }
 
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) {
@@ -270,12 +270,12 @@ private fun PermissionCard(
     onRequestPermission: () -> Unit
 ) {
     val accent = if (granted) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
-    UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+    UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
                     .size(40.dp)
-                    .clip(AppShapes.Small)
+                    .clip(MaterialTheme.shapes.small)
                     .background(accent.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -312,7 +312,7 @@ private fun PermissionCard(
                 Spacer(Modifier.width(10.dp))
                 Button(
                     onClick = onRequestPermission,
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(actionLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -378,12 +378,12 @@ private fun LeadChip(
 ) {
     Box(
         modifier = modifier
-            .clip(AppShapes.Pill)
+            .clip(CircleShape)
             .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = 1.dp,
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                shape = AppShapes.Pill
+                shape = CircleShape
             )
             .clickable(enabled = enabled, onClick = onClick)
             .semantics {
@@ -415,7 +415,7 @@ private fun HourStepper(
 ) {
     Column(
         modifier = modifier
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

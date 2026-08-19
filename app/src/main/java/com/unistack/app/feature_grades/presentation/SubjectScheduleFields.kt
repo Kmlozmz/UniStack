@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import java.time.DayOfWeek
@@ -72,7 +71,7 @@ internal fun SubjectWhenFields(
             placeholder = { Text("Aula 301") },
             leadingIcon = { Icon(Icons.Rounded.Place, null) },
             singleLine = true,
-            shape = AppShapes.SmallCard
+            shape = MaterialTheme.shapes.medium
         )
         Box {
             SchedulePickerField(
@@ -138,7 +137,7 @@ internal fun SubjectWhenFields(
                     }
                 ) { Text("Volver") }
             },
-            shape = AppShapes.LargeCard
+            shape = MaterialTheme.shapes.extraLarge
         )
     }
     if (endPickerVisible) {
@@ -193,13 +192,13 @@ private fun ScheduleDays(
             (1..7).forEach { day ->
                 val selected = day in draft.daysOfWeek
                 Box(
-                    Modifier.weight(1f).height(42.dp).clip(AppShapes.SmallCard)
+                    Modifier.weight(1f).height(42.dp).clip(MaterialTheme.shapes.medium)
                         .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
                         .border(
                             0.7.dp,
                             if (selected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
-                            AppShapes.SmallCard
+                            MaterialTheme.shapes.medium
                         )
                         .clickable {
                             onDraftChange(draft.copy(daysOfWeek = if (selected) draft.daysOfWeek - day else draft.daysOfWeek + day))
@@ -229,7 +228,7 @@ private fun SchedulePickerField(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
     ) {
@@ -267,7 +266,7 @@ private fun SubjectTimePicker(
             TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     )
 }
 

@@ -1,6 +1,5 @@
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import android.os.Build
@@ -546,7 +545,7 @@ private fun HomeSectionOrderEditor(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(AppShapes.Small)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f))
                     .padding(start = 12.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -797,7 +796,7 @@ private fun AppearanceSection(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(AppShapes.Small)
+                        .clip(MaterialTheme.shapes.small)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -835,7 +834,7 @@ private fun <T> ChoiceGrid(
                     Surface(
                         onClick = { onSelected(entry) },
                         modifier = Modifier.weight(1f),
-                        shape = AppShapes.Small,
+                        shape = MaterialTheme.shapes.small,
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                         } else {
@@ -943,7 +942,7 @@ private fun ColorChoice(
     Column(
         modifier = Modifier
             .width(66.dp)
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1004,7 +1003,7 @@ private fun HexColorField(
             )
         },
         singleLine = true,
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -1019,7 +1018,7 @@ private fun PreferenceSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .clickable { onCheckedChange(!checked) }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1076,7 +1075,7 @@ private fun SettingsDestination(
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .clip(AppShapes.Small)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
                 contentAlignment = Alignment.Center
             ) {

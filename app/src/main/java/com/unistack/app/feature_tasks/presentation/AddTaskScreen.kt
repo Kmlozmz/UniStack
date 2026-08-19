@@ -89,7 +89,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.utils.TextValidators
@@ -109,6 +108,7 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.foundation.shape.CircleShape
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
@@ -543,7 +543,7 @@ private fun AddTaskContent(
             }
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
             ) {
@@ -634,7 +634,7 @@ private fun TaskHeader(
                     .size(40.dp)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                        shape = AppShapes.Pill
+                        shape = CircleShape
                     )
             ) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
@@ -717,7 +717,7 @@ private fun SectionTitle(text: String) {
         Box(
             modifier = Modifier
                 .size(width = 4.dp, height = 24.dp)
-                .background(MaterialTheme.colorScheme.primary, AppShapes.Pill)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
         )
         Text(
             text = text,
@@ -733,7 +733,7 @@ private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
         borderWidth = 0.5.dp,
@@ -818,7 +818,7 @@ private fun CompactInfoAction(
 ) {
     Surface(
         modifier = modifier.bounceClick(onClick),
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
     ) {
@@ -957,7 +957,7 @@ private fun BasicInfoRowShell(
         Box(
             modifier = Modifier
                 .size(46.dp)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.SmallCard),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), MaterialTheme.shapes.medium),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1066,7 +1066,7 @@ private fun MonthCalendarDialog(
             }
         },
         containerColor = UniStackDatePickerColors.Surface,
-        shape = AppShapes.MediumCard
+        shape = MaterialTheme.shapes.large
     )
 }
 
@@ -1123,7 +1123,7 @@ private fun TimePickerSheet(
                     onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute))
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             ) {
                 Text("Usar esta hora")
             }
@@ -1155,7 +1155,7 @@ private fun LinkedGradeCard(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.SmallCard),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1188,7 +1188,7 @@ private fun LinkedGradeCard(
         if (changed) {
             Spacer(modifier = Modifier.height(12.dp))
             Surface(
-                shape = AppShapes.SmallCard,
+                shape = MaterialTheme.shapes.medium,
                 color = LocalSectionColors.current.atRisk.copy(alpha = 0.10f)
             ) {
                 Row(
@@ -1261,7 +1261,7 @@ private fun GradingIntentSelector(
                     modifier = Modifier
                         .weight(1f)
                         .bounceClick { onSelected(choice) },
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     color = if (isSelected) {
                         MaterialTheme.colorScheme.primaryContainer
                     } else {
@@ -1363,7 +1363,7 @@ private fun CalendarMonthGrid(
                                     enabled -> UniStackDatePickerColors.DayCell
                                     else -> Color.Transparent
                                 },
-                                shape = AppShapes.Small
+                                shape = MaterialTheme.shapes.small
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1430,7 +1430,7 @@ private fun SubjectDropdown(
                         .size(width = 42.dp, height = 4.dp)
                         .background(
                             MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.20f),
-                            AppShapes.Pill
+                            CircleShape
                         )
                 )
             }
@@ -1589,11 +1589,11 @@ private fun SubjectSearchField(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .background(SubjectSheetField, AppShapes.MediumCard)
+            .background(SubjectSheetField, MaterialTheme.shapes.large)
             .border(
                 width = 0.5.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
-                shape = AppShapes.MediumCard
+                shape = MaterialTheme.shapes.large
             )
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1639,7 +1639,7 @@ private fun SubjectSheetOption(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    val shape = AppShapes.MediumCard
+    val shape = MaterialTheme.shapes.large
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1666,7 +1666,7 @@ private fun SubjectSheetOption(
                 .size(48.dp)
                 .background(
                     color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
-                    shape = AppShapes.SmallCard
+                    shape = MaterialTheme.shapes.medium
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -1707,12 +1707,12 @@ private fun SubjectSheetOption(
                 .size(28.dp)
                 .background(
                     color = if (selected) SubjectSheetAccent.copy(alpha = 0.18f) else Color.Transparent,
-                    shape = AppShapes.Pill
+                    shape = CircleShape
                 )
                 .border(
                     width = 1.dp,
                     color = if (selected) SubjectSheetAccent else SubjectSheetMuted.copy(alpha = 0.36f),
-                    shape = AppShapes.Pill
+                    shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -1730,7 +1730,7 @@ private fun SubjectSheetOption(
 
 @Composable
 private fun CreateSubjectSheetAction(onClick: () -> Unit) {
-    val shape = AppShapes.MediumCard
+    val shape = MaterialTheme.shapes.large
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1748,7 +1748,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(SubjectSheetAccent, AppShapes.SmallCard),
+                .background(SubjectSheetAccent, MaterialTheme.shapes.medium),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1820,7 +1820,7 @@ private fun TaskTypeSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .bounceClick { expanded = true },
-            shape = AppShapes.MediumCard,
+            shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f))
         ) {
@@ -1888,8 +1888,8 @@ private fun PrioritySegmentedControl(
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f), AppShapes.Pill)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), AppShapes.Pill)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f), CircleShape)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), CircleShape)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -1901,7 +1901,7 @@ private fun PrioritySegmentedControl(
                     .fillMaxSize()
                     .background(
                         color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = AppShapes.Pill
+                        shape = CircleShape
                     )
                     .bounceClick { onSelected(priority) },
                 contentAlignment = Alignment.Center
@@ -1926,7 +1926,7 @@ private fun CreateTaskButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,

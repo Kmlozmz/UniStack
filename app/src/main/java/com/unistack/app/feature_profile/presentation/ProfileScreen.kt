@@ -92,7 +92,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -297,7 +296,7 @@ fun ProfileScreen(
                     // según la app.
                     Row(
                         modifier = Modifier
-                            .clip(AppShapes.Pill)
+                            .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .bounceClick(onOpenSettingsClick)
                             .padding(start = 12.dp, end = 14.dp, top = 9.dp, bottom = 9.dp),
@@ -327,7 +326,7 @@ fun ProfileScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = AppShapes.LargeCard
+                    shape = MaterialTheme.shapes.extraLarge
                 ) {
                     Text("Cargando perfil local...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -646,7 +645,7 @@ fun ProfileScreen(
                             Text(validation.errorMessage ?: "Ingresa un nombre válido")
                         }
                     },
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
@@ -709,7 +708,7 @@ private fun DataStatusStrip(summary: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
@@ -766,7 +765,7 @@ private fun AccountSyncCard(
         Button(
             onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
             enabled = !isBusy,
-            shape = AppShapes.Pill,
+            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (currentUser.isLinked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
                 contentColor = if (currentUser.isLinked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
@@ -829,7 +828,7 @@ private fun SyncStatusPill(status: SyncStatus) {
     }
     UniCard(
         color = color,
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
     ) {
@@ -851,7 +850,7 @@ private fun PlanStatusCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -862,7 +861,7 @@ private fun PlanStatusCard(
             )
             Button(
                 onClick = onOpenProClick,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -882,7 +881,7 @@ private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -931,7 +930,7 @@ private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit)
 private fun ProfileChip(text: String) {
     Box(
         modifier = Modifier
-            .clip(AppShapes.Pill)
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.55f))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
@@ -970,7 +969,7 @@ private fun AcademicSnapshotCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1008,14 +1007,14 @@ private fun AcademicSnapshotCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
-                    .clip(AppShapes.Pill)
+                    .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(progress)
                         .height(8.dp)
-                        .clip(AppShapes.Pill)
+                        .clip(CircleShape)
                         .background(if (progress >= 1f) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary)
                 )
             }
@@ -1057,7 +1056,7 @@ private fun SnapshotCell(
 ) {
     Column(
         modifier = modifier
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1128,7 +1127,7 @@ private fun GradingSettingsCard(
                 label = { Text("Mínima") },
                 singleLine = true,
                 isError = passingGradeInput.isNotBlank() && (passing == null || passing !in 0.0..maxGrade),
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.weight(1f)
             )
             OutlinedTextField(
@@ -1137,7 +1136,7 @@ private fun GradingSettingsCard(
                 label = { Text("Meta") },
                 singleLine = true,
                 isError = targetAverageInput.isNotBlank() && !isValid,
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -1149,7 +1148,7 @@ private fun GradingSettingsCard(
         Button(
             onClick = onSaveClick,
             enabled = isValid,
-            shape = AppShapes.Pill,
+            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1205,7 +1204,7 @@ private fun AcademicPeriodsSettingsCard(
                 onValueChange = { onWeightChange(index, it) },
                 label = { Text("${label.singular} ${index + 1} (%)") },
                 singleLine = true,
-                shape = AppShapes.MediumCard,
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -1218,7 +1217,7 @@ private fun AcademicPeriodsSettingsCard(
         Button(
             onClick = onSaveClick,
             enabled = isValid,
-            shape = AppShapes.Pill,
+            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1280,7 +1279,7 @@ private fun ReminderToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clip(AppShapes.MediumCard)
+            .clip(MaterialTheme.shapes.large)
             .toggleable(
                 value = checked,
                 role = Role.Checkbox,
@@ -1302,7 +1301,7 @@ private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.errorContainer,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.RestartAlt, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -1310,7 +1309,7 @@ private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
             Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = onRestartClick,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -1328,7 +1327,7 @@ private fun SettingsCard(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1360,7 +1359,7 @@ private fun SelectionPill(
             }
             .bounceClick(onClick),
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         tonalElevation = if (selected) 5.dp else 0.dp,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 9.dp)
     ) {

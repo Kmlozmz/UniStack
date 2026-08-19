@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import kotlin.math.roundToInt
@@ -73,7 +72,7 @@ internal fun FormBlock(
         } else {
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
         },
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         borderColor = if (tinted) {
             accent.copy(alpha = 0.28f)
@@ -105,7 +104,7 @@ internal fun FormBlock(
                 Box(
                     modifier = Modifier
                         .size(38.dp)
-                        .background(accent.copy(alpha = 0.16f), AppShapes.SmallCard),
+                        .background(accent.copy(alpha = 0.16f), MaterialTheme.shapes.medium),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))

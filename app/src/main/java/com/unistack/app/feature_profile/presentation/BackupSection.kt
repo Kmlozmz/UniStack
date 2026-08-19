@@ -44,7 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import java.time.Instant
 import java.time.ZoneId
@@ -54,6 +53,7 @@ import java.util.Locale
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
@@ -142,9 +142,9 @@ internal fun BackupSection(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(AppShapes.MediumCard)
+                .clip(MaterialTheme.shapes.large)
                 .background(LocalSectionColors.current.atRisk.copy(alpha = 0.16f))
-                .border(1.dp, LocalSectionColors.current.atRisk.copy(alpha = 0.55f), AppShapes.MediumCard)
+                .border(1.dp, LocalSectionColors.current.atRisk.copy(alpha = 0.55f), MaterialTheme.shapes.large)
                 .padding(14.dp)
         ) {
             Icon(
@@ -172,7 +172,7 @@ internal fun BackupSection(
             }
         }
 
-        UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+        UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 BackupBlockTitle(Icons.Rounded.Backup, "Copia de seguridad")
                 Text(
@@ -185,7 +185,7 @@ internal fun BackupSection(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .clip(AppShapes.MediumCard)
+                        .clip(MaterialTheme.shapes.large)
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .padding(12.dp)
                 ) {
@@ -248,7 +248,7 @@ internal fun BackupSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .alpha(if (cloudAvailable) 1f else 0.45f),
-            shape = AppShapes.LargeCard
+            shape = MaterialTheme.shapes.extraLarge
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -257,7 +257,7 @@ internal fun BackupSection(
                         Spacer(Modifier.width(8.dp))
                         Box(
                             Modifier
-                                .clip(AppShapes.Pill)
+                                .clip(CircleShape)
                                 .background(LocalSectionColors.current.atRisk.copy(alpha = 0.22f))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
@@ -299,7 +299,7 @@ internal fun BackupSection(
             }
         }
 
-        UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+        UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 BackupBlockTitle(Icons.Rounded.Description, "Exportar para leer fuera")
                 Text(
@@ -474,7 +474,7 @@ private fun BackupBlockTitle(icon: ImageVector, title: String) {
         Box(
             Modifier
                 .size(34.dp)
-                .clip(AppShapes.Small)
+                .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
@@ -498,7 +498,7 @@ private fun BackupButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,

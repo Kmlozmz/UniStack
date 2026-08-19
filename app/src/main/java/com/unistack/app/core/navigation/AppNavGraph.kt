@@ -1,7 +1,5 @@
 package com.unistack.app.core.navigation
 
-import com.unistack.app.core.design.theme.AppShapes
-
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.slideInHorizontally

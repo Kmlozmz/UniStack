@@ -63,7 +63,6 @@ import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
-import com.unistack.app.core.design.theme.AppShapes
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 /**
@@ -201,7 +200,7 @@ fun SetupPermissionsScreen(
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = AppShapes.SmallCard,
+                shape = MaterialTheme.shapes.medium,
                 tonalElevation = 0.dp,
                 borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
                 borderWidth = 1.dp,
@@ -232,7 +231,7 @@ fun SetupPermissionsScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = AppShapes.SmallCard,
+                    shape = MaterialTheme.shapes.medium,
                     tonalElevation = 0.dp,
                     borderColor = Color.Transparent,
                     borderWidth = 0.dp,

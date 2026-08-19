@@ -67,7 +67,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
@@ -259,7 +258,7 @@ internal fun ScheduleIdentityContent(
 private fun FullScheduleLaunchCard(onClick: () -> Unit) {
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         onClick = onClick
     ) {
         Row(
@@ -307,27 +306,15 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
 @Composable
 private fun IdentitySurface(
     modifier: Modifier = Modifier,
-    shape: Shape = AppShapes.MediumCard,
+    shape: Shape = MaterialTheme.shapes.large,
     color: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val appearance = LocalAppearancePreferences.current
-    val resolvedColor = if (appearance.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
-        color.copy(alpha = 0.90f)
-    } else {
-        color
-    }
-    val border = if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-        BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
-    } else {
-        null
-    }
-    val shadowElevation = when (appearance.surfaceStyle) {
-        SurfaceStyle.ELEVATED -> 6.dp
-        SurfaceStyle.TRANSLUCENT -> 2.dp
-        SurfaceStyle.FLAT, SurfaceStyle.OUTLINED -> 0.dp
-    }
+    val resolvedColor = color
+    val border: BorderStroke? = null
+    val shadowElevation = 0.dp
+
     if (onClick == null) {
         Surface(
             modifier = modifier,
@@ -625,7 +612,7 @@ private fun IdentityMetricDetailsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = AppShapes.LargeCard
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier
@@ -637,7 +624,7 @@ private fun IdentityMetricDetailsSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
-                    Modifier.size(42.dp).clip(AppShapes.SmallCard).background(IdentityAccent.copy(alpha = 0.13f)),
+                    Modifier.size(42.dp).clip(MaterialTheme.shapes.medium).background(IdentityAccent.copy(alpha = 0.13f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = null, tint = IdentityAccent)
@@ -659,7 +646,7 @@ private fun IdentityMetricDetailsSheet(
             }
 
             if (count == 0) {
-                IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                     Text(
                         emptyMessage,
                         modifier = Modifier.padding(18.dp),
@@ -682,7 +669,7 @@ private fun IdentityMetricDetailsSheet(
                             val occurrenceDate = nextOccurrenceDate(selectedDate, session) ?: selectedDate
                             val days = session.daysOfWeek.sorted()
                                 .joinToString(" · ") { identityDayLetter(DayOfWeek.of(it)) }
-                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = subject?.name ?: "Materia",
@@ -697,7 +684,7 @@ private fun IdentityMetricDetailsSheet(
                             key = ClassSession::id
                         ) { session ->
                             val subject = uiState.subjects.firstOrNull { it.id == session.subjectId }
-                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = subject?.name ?: "Clase",
@@ -712,7 +699,7 @@ private fun IdentityMetricDetailsSheet(
                             key = { (date, _) -> date.toEpochDay() }
                         ) { (date, daySessions) ->
                             val dayMinutes = daySessions.sumOf { it.endMinute - it.startMinute }
-                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = IdentityAccent,
                                     title = date.format(DateTimeFormatter.ofPattern("EEEE d", IdentityLocale)).identityCapitalized(),
@@ -726,7 +713,7 @@ private fun IdentityMetricDetailsSheet(
                             items = monthAgendaEvents,
                             key = { (date, event) -> "${date.toEpochDay()}-${event.id}" }
                         ) { (date, event) ->
-                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = event.identityColor(),
                                     title = event.title,
@@ -741,7 +728,7 @@ private fun IdentityMetricDetailsSheet(
                             key = StudentTask::id
                         ) { task ->
                             val subject = uiState.subjects.firstOrNull { it.id == task.subjectId }
-                            IdentitySurface(Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+                            IdentitySurface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = task.title,
@@ -907,7 +894,7 @@ private fun NextClassPanel(
     val next = remember(sessions) { findUpcomingClass(LocalDate.now(), sessions) }
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         onClick = next?.let { { onSessionClick(it.first, it.second) } }
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -989,7 +976,7 @@ private fun IdentityMonthCalendar(
 
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.MediumCard
+        shape = MaterialTheme.shapes.large
     ) {
         Column {
             Row(
@@ -1060,7 +1047,7 @@ private fun IdentityMonthCell(
             .height(47.dp)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
             .padding(3.dp)
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .background(if (selected) IdentityAccent else Color.Transparent)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1112,7 +1099,7 @@ private fun SelectedDayPanel(
 
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.MediumCard
+        shape = MaterialTheme.shapes.large
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(
@@ -1182,7 +1169,7 @@ private fun IdentityEventRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically
@@ -1220,7 +1207,7 @@ private fun IdentityPrimaryButton(label: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(LocalInterfaceSpacing.current.controlHeight),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         colors = ButtonDefaults.buttonColors(
             containerColor = IdentityAccent,
             contentColor = MaterialTheme.colorScheme.onPrimary

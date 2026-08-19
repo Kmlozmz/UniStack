@@ -1,6 +1,5 @@
 package com.unistack.app.feature_grades.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -112,7 +111,7 @@ fun PriorHistoryScreen(
         }
         item {
             Surface(
-                shape = AppShapes.SmallCard,
+                shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
             ) {
                 Row(
@@ -213,7 +212,7 @@ private fun HistoryPeriodCard(
     unknown: Boolean
 ) {
     Surface(
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {

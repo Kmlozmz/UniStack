@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -45,7 +44,7 @@ fun SubjectCard(
             .height(102.dp)
             .bounceClick(onClick),
         color = backgroundColor,
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 4.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 11.dp)
     ) {

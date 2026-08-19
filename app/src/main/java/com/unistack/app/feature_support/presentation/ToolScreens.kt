@@ -40,7 +40,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_support.domain.GpaRow
 import com.unistack.app.feature_support.domain.QuickNotesStore
@@ -49,6 +48,7 @@ import com.unistack.app.feature_support.domain.weightedAverage
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.CircleShape
 /**
  * Calculadora de promedio.
  *
@@ -81,7 +81,7 @@ fun GpaCalculatorScreen(
         modifier = modifier.dismissKeyboardOnTapOutside()
     ) {
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Promedio simulado", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(
@@ -108,7 +108,7 @@ fun GpaCalculatorScreen(
                 Button(
                     onClick = { rows = rows + GpaRow() },
                     modifier = Modifier.weight(1f),
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Text("Añadir fila", fontSize = 13.sp)
@@ -119,7 +119,7 @@ fun GpaCalculatorScreen(
                     },
                     enabled = subjects.isNotEmpty(),
                     modifier = Modifier.weight(1f),
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Traer mis materias", fontSize = 13.sp)
@@ -127,7 +127,7 @@ fun GpaCalculatorScreen(
             }
         }
         itemsIndexedRows(rows) { index, row ->
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.MediumCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
@@ -137,7 +137,7 @@ fun GpaCalculatorScreen(
                             },
                             label = { Text("Materia") },
                             singleLine = true,
-                            shape = AppShapes.MediumCard,
+                            shape = MaterialTheme.shapes.large,
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
@@ -156,7 +156,7 @@ fun GpaCalculatorScreen(
                             label = { Text("Nota") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            shape = AppShapes.MediumCard,
+                            shape = MaterialTheme.shapes.large,
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
@@ -167,7 +167,7 @@ fun GpaCalculatorScreen(
                             label = { Text("Créditos") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            shape = AppShapes.MediumCard,
+                            shape = MaterialTheme.shapes.large,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -226,14 +226,14 @@ fun QuickNotesScreen(
         modifier = modifier.dismissKeyboardOnTapOutside()
     ) {
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it.take(4000) },
                         label = { Text("Escribe aquí") },
                         minLines = 12,
-                        shape = AppShapes.MediumCard,
+                        shape = MaterialTheme.shapes.large,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -249,7 +249,7 @@ fun QuickNotesScreen(
                                 QuickNotesStore.save(context, "")
                             },
                             enabled = text.isNotEmpty(),
-                            shape = AppShapes.Pill,
+                            shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 contentColor = MaterialTheme.colorScheme.error
@@ -289,13 +289,13 @@ private fun ComingSoonScreen(
         modifier = modifier
     ) {
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             Modifier
                                 .size(46.dp)
-                                .clip(AppShapes.MediumCard)
+                                .clip(MaterialTheme.shapes.large)
                                 .background(accent.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -312,7 +312,7 @@ private fun ComingSoonScreen(
             }
         }
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     Text("Lo que traerá", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     plans.forEach { plan ->
@@ -321,7 +321,7 @@ private fun ComingSoonScreen(
                                 Modifier
                                     .padding(top = 6.dp)
                                     .size(6.dp)
-                                    .clip(AppShapes.Pill)
+                                    .clip(CircleShape)
                                     .background(accent)
                             )
                             Spacer(Modifier.width(10.dp))

@@ -25,8 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.AppShapes
-
 import com.unistack.app.core.utils.bounceClick
 
 @Composable
@@ -43,7 +41,7 @@ fun QuickActionButton(
             .height(48.dp)
             .bounceClick(onClick),
         color = backgroundColor,
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
     ) {

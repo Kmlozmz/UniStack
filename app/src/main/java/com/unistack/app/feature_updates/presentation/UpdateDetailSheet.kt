@@ -1,6 +1,5 @@
 package com.unistack.app.feature_updates.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -113,7 +112,7 @@ fun UpdateDetailSheet(
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = AppShapes.Small,
+                    shape = MaterialTheme.shapes.small,
                     // Sin este relleno, Material reserva 24dp a cada lado y en media pantalla
                     // el texto se queda sin sitio y se recorta a puntos.
                     contentPadding = PaddingValues(horizontal = 8.dp)
@@ -124,7 +123,7 @@ fun UpdateDetailSheet(
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
                     enabled = state !is UpdateState.Downloading,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = AppShapes.Small,
+                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary

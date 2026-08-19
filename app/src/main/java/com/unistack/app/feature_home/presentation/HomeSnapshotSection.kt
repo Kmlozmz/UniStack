@@ -1,6 +1,5 @@
 package com.unistack.app.feature_home.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.utils.NO_DATA
 
 import androidx.compose.foundation.background
@@ -159,11 +158,11 @@ private fun SnapshotMetric(
     val inset = if (compact) 14.dp else 16.dp
     Column(
         modifier = modifier
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             // Contorno de un pelo: sin él las casillas y el fondo quedaban casi al mismo
             // tono y la rejilla se leía como una mancha en vez de como cuatro piezas.
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, AppShapes.SmallCard)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.medium)
             .expressivePress(onClick = onClick)
             .padding(inset),
         verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
@@ -171,7 +170,7 @@ private fun SnapshotMetric(
         Box(
             modifier = Modifier
                 .size(if (compact) 32.dp else 36.dp)
-                .clip(AppShapes.Small)
+                .clip(MaterialTheme.shapes.small)
                 .background(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.22f else 0.15f)),
             contentAlignment = Alignment.Center
         ) {

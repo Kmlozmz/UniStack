@@ -71,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.R
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.notifications.NotificationHistoryItem
 import com.unistack.app.core.notifications.NotificationHistoryStore
@@ -314,7 +313,7 @@ private fun NotificationInboxSummary(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -352,7 +351,7 @@ private fun NotificationInboxSummary(
             }
             if (actionCount > 0) {
                 Surface(
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.13f)
                 ) {
                     Text(
@@ -377,7 +376,7 @@ private fun NotificationSummaryStat(
 ) {
     Surface(
         modifier = modifier,
-        shape = AppShapes.SmallCard,
+        shape = MaterialTheme.shapes.medium,
         color = NotificationCard.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f)
     ) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -395,7 +394,7 @@ private fun NotificationFilterBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             .background(NotificationFilterSurface.copy(alpha = 0.72f))
             .horizontalScroll(rememberScrollState())
             .padding(5.dp),
@@ -405,7 +404,7 @@ private fun NotificationFilterBar(
             val isSelected = selected == filter
             Surface(
                 onClick = { onSelected(filter) },
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 color = if (isSelected) NotificationPrimary else Color.Transparent,
                 border = if (isSelected) null else BorderStroke(1.dp, NotificationBorder.copy(alpha = 0.45f)),
                 tonalElevation = 0.dp
@@ -434,7 +433,7 @@ private fun NotificationHistoryCard(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = NotificationCard,
         border = BorderStroke(
             1.dp,
@@ -446,7 +445,7 @@ private fun NotificationHistoryCard(
                 Box(
                     modifier = Modifier
                         .size(46.dp)
-                        .clip(AppShapes.Small)
+                        .clip(MaterialTheme.shapes.small)
                         .background(category.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -516,7 +515,7 @@ private fun NotificationHistoryCard(
 @Composable
 private fun NotificationCategoryPill(category: NotificationCategory) {
     Surface(
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         color = category.color.copy(alpha = 0.13f)
     ) {
         Text(
@@ -609,7 +608,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -623,7 +622,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
                 Box(
                     modifier = Modifier
                         .size(58.dp)
-                        .clip(AppShapes.SmallCard)
+                        .clip(MaterialTheme.shapes.medium)
                         .background(category.color.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -669,7 +668,7 @@ private fun NotificationDetailMessage(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -715,7 +714,7 @@ private fun NotificationMetaCard(item: NotificationHistoryItem) {
     val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = NotificationCard,
         border = BorderStroke(1.dp, NotificationBorder)
     ) {
@@ -785,7 +784,7 @@ private fun NotificationHintCard(item: NotificationHistoryItem) {
     val category = item.category()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = AppShapes.Small,
+        shape = MaterialTheme.shapes.small,
         color = category.color.copy(alpha = if (LocalIsDarkTheme.current) 0.12f else 0.09f),
         border = BorderStroke(1.dp, category.color.copy(alpha = 0.18f))
     ) {
@@ -846,7 +845,7 @@ private fun NotificationDetailActions(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp),
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.error.copy(alpha = if (LocalIsDarkTheme.current) 0.14f else 0.12f)
             ) {
                 Row(
@@ -865,7 +864,7 @@ private fun NotificationDetailActions(
                     modifier = Modifier
                         .weight(1.25f)
                         .height(48.dp),
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     color = NotificationPrimary
                 ) {
                     Row(
@@ -900,7 +899,7 @@ private fun NotificationStatusPill(
 ) {
     val visual = item.visual()
     Surface(
-        shape = AppShapes.Pill,
+        shape = CircleShape,
         color = visual.color.copy(alpha = 0.13f)
     ) {
         Row(
@@ -989,7 +988,7 @@ private fun EmptyNotifications(
             Spacer(Modifier.height(4.dp))
             Surface(
                 onClick = onSettingsClick,
-                shape = AppShapes.Pill,
+                shape = CircleShape,
                 color = NotificationPrimary.copy(alpha = 0.14f)
             ) {
                 Text(

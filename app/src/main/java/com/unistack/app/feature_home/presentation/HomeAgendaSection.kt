@@ -1,7 +1,5 @@
 package com.unistack.app.feature_home.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -71,7 +69,7 @@ internal fun TodayAgenda(
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = AppShapes.SmallCard,
+            shape = MaterialTheme.shapes.medium,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {

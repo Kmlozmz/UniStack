@@ -91,7 +91,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.SubjectColorPalette
@@ -284,7 +283,7 @@ fun SubjectFormScreen(
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     tonalElevation = 0.dp,
                     borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
                     borderWidth = 0.5.dp
@@ -317,7 +316,7 @@ fun SubjectFormScreen(
                     label = { Text("Nombre") },
                     placeholder = { Text("Ej: Estadística inferencial") },
                     singleLine = true,
-                    shape = AppShapes.SmallCard,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     isError = !isNameValid,
                     supportingText = {
@@ -349,7 +348,7 @@ fun SubjectFormScreen(
                     placeholder = { Text("Prof. Pérez") },
                     leadingIcon = { Icon(Icons.Rounded.Person, null) },
                     singleLine = true,
-                    shape = AppShapes.SmallCard,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     supportingText = professorHint
                 )
@@ -402,7 +401,7 @@ fun SubjectFormScreen(
                     },
                     label = { Text("Meta de promedio (0 a $maxGradeLabel)") },
                     singleLine = true,
-                    shape = AppShapes.SmallCard,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
                     // También en blanco: sin meta no se puede guardar, y marcarlo solo cuando
                     // hay algo escrito dejaba el campo vacío con aspecto de correcto.
@@ -548,7 +547,7 @@ private fun SubjectFormHeader(
             onClick = onBackClick,
             modifier = Modifier
                 .size(40.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f), CircleShape)
         ) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
         }
@@ -558,7 +557,7 @@ private fun SubjectFormHeader(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(accent, AppShapes.SmallCard),
+                    .background(accent, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center
             ) {
                 if (initial != null) {
@@ -607,7 +606,7 @@ private fun PlanBanner(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = AppShapes.MediumCard,
+        shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         borderColor = if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
@@ -619,7 +618,7 @@ private fun PlanBanner(
                     .size(44.dp)
                     .background(
                         if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                        AppShapes.SmallCard
+                        MaterialTheme.shapes.medium
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -653,7 +652,7 @@ private fun PlanBanner(
             if (limitReached) {
                 Button(
                     onClick = onUpgradeClick,
-                    shape = AppShapes.Pill,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
@@ -813,7 +812,7 @@ private fun CustomSubjectColorDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp),
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     color = selected
                 ) {
                     Box(
@@ -875,7 +874,7 @@ private fun CustomSubjectColorDialog(
                     label = { Text("Hexadecimal") },
                     placeholder = { Text("#6750F5") },
                     singleLine = true,
-                    shape = AppShapes.SmallCard,
+                    shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -918,7 +917,7 @@ private fun SaturationValuePicker(
         modifier = Modifier
             .fillMaxWidth()
             .height(150.dp)
-            .clip(AppShapes.SmallCard)
+            .clip(MaterialTheme.shapes.medium)
             // Sin el tono como clave: reiniciar el bloque a mitad de un arrastre cancela el
             // gesto, y el lienzo dejaba de seguir el dedo.
             .pointerInput(Unit) {

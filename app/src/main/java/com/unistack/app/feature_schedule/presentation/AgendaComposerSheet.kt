@@ -55,7 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AgendaEvent
@@ -88,7 +87,7 @@ internal fun AgendaCreateMenuSheet(
     onSelect: (AgendaCreateKind) -> Unit,
     onAddClass: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = AppShapes.LargeCard) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -235,7 +234,7 @@ internal fun AgendaComposerSheet(
     val date = LocalDate.ofEpochDay(dateEpochDay)
     val academic = kind.academic
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = AppShapes.LargeCard) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.extraLarge) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -253,7 +252,7 @@ internal fun AgendaComposerSheet(
                     Text(if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
-            OutlinedTextField(title, { title = it.take(100) }, Modifier.fillMaxWidth(), label = { Text("Título") }, singleLine = true, shape = AppShapes.SmallCard)
+            OutlinedTextField(title, { title = it.take(100) }, Modifier.fillMaxWidth(), label = { Text("Título") }, singleLine = true, shape = MaterialTheme.shapes.medium)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton({ dateEpochDay-- }) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Día anterior") }
                 Text(
@@ -265,8 +264,8 @@ internal fun AgendaComposerSheet(
                 IconButton({ dateEpochDay++ }) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, "Día siguiente") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(startText, { startText = it.take(5) }, Modifier.weight(1f), label = { Text(if (academic) "Hora límite" else "Inicio") }, placeholder = { Text("08:00") }, singleLine = true, shape = AppShapes.SmallCard)
-                if (!academic) OutlinedTextField(endText, { endText = it.take(5) }, Modifier.weight(1f), label = { Text("Fin") }, placeholder = { Text("09:00") }, singleLine = true, shape = AppShapes.SmallCard)
+                OutlinedTextField(startText, { startText = it.take(5) }, Modifier.weight(1f), label = { Text(if (academic) "Hora límite" else "Inicio") }, placeholder = { Text("08:00") }, singleLine = true, shape = MaterialTheme.shapes.medium)
+                if (!academic) OutlinedTextField(endText, { endText = it.take(5) }, Modifier.weight(1f), label = { Text("Fin") }, placeholder = { Text("09:00") }, singleLine = true, shape = MaterialTheme.shapes.medium)
             }
             if (academic) {
                 Text("Tipo académico", fontWeight = FontWeight.Bold)
@@ -290,7 +289,7 @@ internal fun AgendaComposerSheet(
                     Switch(generatesGrade, { generatesGrade = it })
                 }
             } else {
-                OutlinedTextField(location, { location = it.take(80) }, Modifier.fillMaxWidth(), label = { Text("Ubicación (opcional)") }, singleLine = true, shape = AppShapes.SmallCard)
+                OutlinedTextField(location, { location = it.take(80) }, Modifier.fillMaxWidth(), label = { Text("Ubicación (opcional)") }, singleLine = true, shape = MaterialTheme.shapes.medium)
                 Text("Repetición", fontWeight = FontWeight.Bold)
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AgendaRecurrence.entries.forEach { option ->
@@ -304,7 +303,7 @@ internal fun AgendaComposerSheet(
                     }
                 }
             }
-            OutlinedTextField(notes, { notes = it.take(500) }, Modifier.fillMaxWidth(), label = { Text("Notas (opcional)") }, minLines = 2, shape = AppShapes.SmallCard)
+            OutlinedTextField(notes, { notes = it.take(500) }, Modifier.fillMaxWidth(), label = { Text("Notas (opcional)") }, minLines = 2, shape = MaterialTheme.shapes.medium)
             error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (existingEvent != null && onDeleteEvent != null) {
@@ -322,7 +321,7 @@ internal fun AgendaComposerSheet(
                         }
                         if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
                     },
-                    shape = AppShapes.MediumCard,
+                    shape = MaterialTheme.shapes.large,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
                 ) {

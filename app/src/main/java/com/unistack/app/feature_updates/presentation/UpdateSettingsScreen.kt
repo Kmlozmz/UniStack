@@ -1,6 +1,5 @@
 package com.unistack.app.feature_updates.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.feature_updates.domain.UpdateChannel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -321,7 +320,7 @@ fun UpdateSettingsScreen(
                         singleLine = true,
                         enabled = !checkingCode,
                         isError = codeError != null,
-                        shape = AppShapes.Small,
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier.fillMaxWidth()
                     )
                     codeError?.let {
@@ -427,7 +426,7 @@ private fun UpdateChannelCard(
                     Surface(
                         onClick = { if (isLocked) onRequestCode(option) else onSelect(option) },
                         modifier = Modifier.weight(1f),
-                        shape = AppShapes.Pill,
+                        shape = CircleShape,
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
@@ -565,7 +564,7 @@ private fun UpdateIconTile(
     Box(
         modifier = Modifier
             .size(42.dp)
-            .background(accent.copy(alpha = 0.13f), AppShapes.Small),
+            .background(accent.copy(alpha = 0.13f), MaterialTheme.shapes.small),
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = null, tint = accent)

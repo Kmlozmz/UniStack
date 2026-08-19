@@ -1,6 +1,5 @@
 package com.unistack.app.feature_grades.presentation
 
-import com.unistack.app.core.design.theme.AppShapes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,7 +68,13 @@ import com.unistack.app.feature_user.domain.GradingScale
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.material3.Button
-private val FormCardShape = AppShapes.SmallCard
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Shape
+private val FormCardShape: Shape
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.shapes.medium
 private val FormFieldColor: Color
     @Composable get() = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
 
@@ -244,7 +249,7 @@ fun AddGradeScreen(
                     onClick = requestLeave,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), AppShapes.Pill)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), CircleShape)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
@@ -569,7 +574,7 @@ fun AddGradeScreen(
                     }
                 },
                 enabled = isValid,
-                shape = AppShapes.LargeCard,
+                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
