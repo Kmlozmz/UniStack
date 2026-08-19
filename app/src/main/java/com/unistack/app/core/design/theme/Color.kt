@@ -151,6 +151,65 @@ object UniStackColors {
         return if (contrastWithLight >= contrastWithDark) Color.White else DarkInk
     }
 
+    /**
+     * Reapunta todos los tokens de este objeto al esquema de Material 3 Expressive.
+     *
+     * Es el puente de la migración, y existe por una razón de escala: la app lee
+     * `UniStackColors.*` en unos mil quinientos sitios. Reescribirlos uno a uno para pasar a
+     * `MaterialTheme.colorScheme` es el trabajo correcto, pero es un trabajo largo; mientras
+     * tanto, esta función hace que todos ellos pinten ya con la identidad nueva.
+     *
+     * La equivalencia no es literal, y ahí está lo interesante:
+     *  - `Card` pasa a ser `surfaceContainerLow` y `SurfaceVariant` a `surfaceContainerHigh`.
+     *    Material distingue cinco niveles de contenedor; antes había uno solo, mezclado a mano.
+     *  - `Coral` deja de ser el color de error y pasa a ser **solo** la identidad de Gastos.
+     *    El error vive ahora en `scheme.error`, que es otro valor. Era el enredo que impedía
+     *    afinar cualquiera de los dos.
+     *  - `BottomBarSelected` pasa a `secondaryContainer`, que es lo que pide el spec. Con un
+     *    esquema generado desde la semilla ya no deja una píldora azul bajo un acento violeta,
+     *    que era el motivo para no usarlo.
+     *
+     * Según se vayan reescribiendo pantallas contra `MaterialTheme.colorScheme`, esta función
+     * y el objeto entero se quedan sin lectores y se borran.
+     */
+    internal fun adoptExpressiveScheme(
+        scheme: androidx.compose.material3.ColorScheme,
+        sections: SectionColors,
+        darkTheme: Boolean
+    ) {
+        // Anula la memoria de applyTheme(): si el usuario cambia una preferencia y luego
+        // vuelve, el esquema debe reaplicarse aunque la firma coincida.
+        appliedSignature = null
+
+        IsDarkTheme = darkTheme
+        Primary = scheme.primary
+        OnPrimary = scheme.onPrimary
+        PrimaryLight = scheme.primaryContainer
+        OnPrimaryContainer = scheme.onPrimaryContainer
+        PrimaryDark = scheme.onPrimaryContainer
+
+        Blue = sections.schedule
+        BlueLight = sections.scheduleContainer
+        Teal = scheme.tertiary
+        TealLight = scheme.tertiaryContainer
+        Green = sections.onTrack
+        GreenLight = sections.onTrackContainer
+        Coral = sections.expenses
+        CoralLight = sections.expensesContainer
+        Yellow = sections.atRisk
+        YellowLight = sections.atRiskContainer
+
+        Background = scheme.background
+        Card = scheme.surfaceContainerLow
+        SurfaceVariant = scheme.surfaceContainerHigh
+        TextPrimary = scheme.onSurface
+        TextSecondary = scheme.onSurfaceVariant
+        SoftOutline = scheme.outlineVariant
+        GradientEnd = scheme.surfaceContainer
+        BottomBar = scheme.surfaceContainer
+        BottomBarSelected = scheme.secondaryContainer
+    }
+
     internal fun applyTheme(
         darkTheme: Boolean,
         oledTheme: Boolean,

@@ -296,11 +296,29 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    /*
+     * material3 va fijado por encima del BOM, y clavado en alpha15 a propósito.
+     *
+     * El lenguaje de diseño de la app es Material 3 Expressive, y sus componentes
+     * —MaterialExpressiveTheme, MotionScheme, MaterialShapes, ButtonGroup,
+     * LinearWavyProgressIndicator, FloatingActionButtonMenu, FloatingToolbar, SplitButton—
+     * solo existen en el canal 1.5.0-alpha. El BOM estable se queda en 1.4.0, que no trae
+     * ninguno.
+     *
+     * Y es alpha15 y no la última porque de alpha19 en adelante hace falta Android Gradle
+     * plugin 9.1 y compileSdk 37: toda la cadena de compilación, a cambio de componentes que
+     * alpha15 ya tiene. Se comprobaron uno por uno dentro del propio artefacto. Lo que cambia
+     * después son nombres —`TonalToggleButton` pasa a `FilledTonalToggleButton` en alpha25—
+     * y eso se absorbe en core/design, que es el único sitio de la app que nombra a Material.
+     *
+     * Subir de aquí es una decisión de infraestructura, no de diseño. Cuando toque, el orden
+     * es: AGP 9.1, compileSdk 37, y después la alpha.
+     */
+    implementation("androidx.compose.material3:material3:1.5.0-alpha15")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    // Polígonos redondeados y morphing entre formas (motor sobre el que Material construye
-    // MaterialShapes). Estable, e independiente de material3: nos da las formas expresivas
-    // sin arrastrar el canal alpha de material3 1.5.
+    // Polígonos redondeados y morphing entre formas: es el motor sobre el que material3
+    // construye MaterialShapes. Se declara aparte porque las formas de la marca se dibujan
+    // con él directamente, no solo a través de los componentes.
     implementation("androidx.graphics:graphics-shapes:1.1.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
 

@@ -1,23 +1,47 @@
 package com.unistack.app.core.design.theme
 
 import android.os.Build
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
-import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
+import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_user.domain.TypographyStyle
 
+/**
+ * La identidad cromática de la sección en la que se está.
+ *
+ * Se provee aquí y no se importa suelta porque depende del tema: los mismos roles tienen dos
+ * juegos de valores, claro y oscuro.
+ */
+val LocalSectionColors = staticCompositionLocalOf { SectionColors.Light }
+
+/**
+ * El tema de la app: Material 3 Expressive.
+ *
+ * Lo que provee [MaterialExpressiveTheme] y no proveía el `MaterialTheme` anterior es el
+ * **esquema de movimiento**. A partir de aquí, los componentes de Material animan con muelles
+ * —`spatial` con rebote para lo que se mueve, `effects` sin rebote para color y opacidad— en
+ * lugar de con duraciones fijas. Un muelle interrumpido a mitad de camino sale de donde está;
+ * un `tween` salta al principio de la curva nueva. Es exactamente lo que se veía al cambiar de
+ * pestaña a golpes.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UniStackTheme(
     darkTheme: Boolean = false,
@@ -27,23 +51,15 @@ fun UniStackTheme(
     content: @Composable () -> Unit
 ) {
     AppearanceRuntime.cornerStyle = appearance.cornerStyle
-    UniStackColors.applyTheme(
-        darkTheme = darkTheme,
-        oledTheme = oledTheme,
-        appearance = appearance,
-        highContrast = accessibility.highContrastEnabled,
-        dynamicAccent = dynamicAccent(darkTheme)
-    )
-    val radius = appearance.cornerStyle.cardRadius()
-    val shapes = UniStackShapes.copy(
-        extraSmall = RoundedCornerShape((radius.value * 0.55f).coerceAtLeast(4f).dp),
-        small = RoundedCornerShape((radius.value * 0.75f).coerceAtLeast(6f).dp),
-        medium = RoundedCornerShape(radius),
-        large = RoundedCornerShape(radius + 4.dp),
-        extraLarge = RoundedCornerShape(radius + 10.dp)
-    )
-    val typography = appearanceTypography(
-        useSystemFont = appearance.typographyStyle == TypographyStyle.SYSTEM
+
+    val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = appearance)
+    val sections = SectionColors.forTheme(darkTheme)
+
+    // Puente hacia el código que todavía lee UniStackColors. Ver adoptExpressiveScheme().
+    UniStackColors.adoptExpressiveScheme(scheme = scheme, sections = sections, darkTheme = darkTheme)
+
+    val typography = expressiveTypography(
+        appearanceTypography(useSystemFont = appearance.typographyStyle == TypographyStyle.SYSTEM)
     )
 
     // La preferencia de "texto grande" se aplica sobre el fontScale de la densidad, no
@@ -54,6 +70,7 @@ fun UniStackTheme(
     val textScale = if (accessibility.textScale == TextScalePreference.LARGE) 1.10f else 1f
 
     CompositionLocalProvider(
+        LocalSectionColors provides sections,
         LocalAppearancePreferences provides appearance,
         LocalAccessibilityPreferences provides accessibility,
         LocalMotionDurationScale provides accessibility.motionScale(),
@@ -63,71 +80,64 @@ fun UniStackTheme(
             fontScale = density.fontScale * textScale
         )
     ) {
-        MaterialTheme(
-            colorScheme = if (darkTheme) darkUniStackColorScheme() else lightUniStackColorScheme(),
+        MaterialExpressiveTheme(
+            colorScheme = scheme,
+            motionScheme = MotionScheme.expressive(),
+            shapes = ExpressiveShapeScale,
             typography = typography,
-            shapes = shapes,
             content = content
         )
     }
 }
 
 /**
- * Roles tonales extraídos del fondo de pantalla del sistema (Material You / Monet).
- * Devuelve null en API < 31, donde el llamador cae al violeta de marca.
+ * La escala de formas, una sola y sin preferencia de esquinas.
  *
- * Tomamos el esquema que corresponde al modo actual —incluido el oscuro, con su `primary`
- * pastel de tono 80—. Es seguro porque el contenido encima se resuelve con
- * [UniStackColors.contentColorOn] en vez de asumir blanco.
+ * Los cinco tamaños de Material, con los valores de la maqueta. Que no dependa de un ajuste es
+ * la decisión: cada variante de esquina multiplicaba por tres los estados que había que mirar
+ * en cada pantalla nueva, a cambio de una diferencia que casi nadie tocaba.
+ */
+internal val ExpressiveShapeScale = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(28.dp),
+    extraLarge = RoundedCornerShape(32.dp)
+)
+
+/**
+ * El esquema que toca: el de la marca, o el del fondo de pantalla si se ha pedido.
+ *
+ * El violeta manda por defecto. Monet queda a un toque de distancia en Apariencia, pero
+ * dejarlo de serie hacía que la app se viera del color del fondo de pantalla de cada quien:
+ * UniStack no tenía identidad propia en su propia app.
  */
 @Composable
-private fun dynamicAccent(darkTheme: Boolean): DynamicAccent? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
-    val context = LocalContext.current
-    val scheme = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    return DynamicAccent(
-        primary = scheme.primary,
-        primaryContainer = scheme.primaryContainer,
-        onPrimaryContainer = scheme.onPrimaryContainer
-    )
+private fun expressiveColorScheme(
+    darkTheme: Boolean,
+    oledTheme: Boolean,
+    appearance: AppearancePreferences
+): ColorScheme {
+    val base = when {
+        appearance.accentStyle == AccentStyle.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> ExpressiveDarkScheme
+        else -> ExpressiveLightScheme
+    }
+
+    // OLED apaga el píxel: el fondo y el contenedor más bajo van a negro puro, y el resto de
+    // los niveles se conservan para que la jerarquía de profundidad no se venga abajo.
+    // design-tokens-ok-begin: el negro puro ES el modo OLED, no un color de marca
+    return if (oledTheme && darkTheme) {
+        base.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainerLowest = Color.Black
+        )
+    } else {
+        base
+    }
+    // design-tokens-ok-end
 }
-
-private fun lightUniStackColorScheme() = lightColorScheme(
-    primary = UniStackColors.Primary,
-    onPrimary = UniStackColors.OnPrimary,
-    primaryContainer = UniStackColors.PrimaryLight,
-    onPrimaryContainer = UniStackColors.OnPrimaryContainer,
-    secondary = UniStackColors.Blue,
-    onSecondary = UniStackColors.contentColorOn(UniStackColors.Blue),
-    secondaryContainer = UniStackColors.BlueLight,
-    tertiary = UniStackColors.Teal,
-    onTertiary = UniStackColors.contentColorOn(UniStackColors.Teal),
-    tertiaryContainer = UniStackColors.TealLight,
-    background = UniStackColors.Background,
-    onBackground = UniStackColors.TextPrimary,
-    surface = UniStackColors.Card,
-    onSurface = UniStackColors.TextPrimary,
-    surfaceVariant = UniStackColors.SurfaceVariant,
-    onSurfaceVariant = UniStackColors.TextSecondary,
-    outline = UniStackColors.SoftOutline
-)
-
-private fun darkUniStackColorScheme() = darkColorScheme(
-    primary = UniStackColors.Primary,
-    onPrimary = UniStackColors.OnPrimary,
-    primaryContainer = UniStackColors.PrimaryLight,
-    onPrimaryContainer = UniStackColors.OnPrimaryContainer,
-    secondary = UniStackColors.Blue,
-    onSecondary = UniStackColors.contentColorOn(UniStackColors.Blue),
-    secondaryContainer = UniStackColors.BlueLight,
-    tertiary = UniStackColors.Teal,
-    onTertiary = UniStackColors.contentColorOn(UniStackColors.Teal),
-    tertiaryContainer = UniStackColors.TealLight,
-    background = UniStackColors.Background,
-    onBackground = UniStackColors.TextPrimary,
-    surface = UniStackColors.Card,
-    onSurface = UniStackColors.TextPrimary,
-    surfaceVariant = UniStackColors.SurfaceVariant,
-    onSurfaceVariant = UniStackColors.TextSecondary,
-    outline = UniStackColors.SoftOutline
-)
