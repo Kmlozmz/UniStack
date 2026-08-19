@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniStackBrandMark
 import com.unistack.app.core.design.components.UniStackBrandPill
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.hypot

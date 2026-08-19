@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.SurfaceStyle
 
 import androidx.compose.material3.MaterialTheme

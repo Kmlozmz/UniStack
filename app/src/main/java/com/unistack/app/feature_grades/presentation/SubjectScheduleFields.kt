@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import java.time.DayOfWeek

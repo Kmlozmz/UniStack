@@ -35,8 +35,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.contentColorOn
 /** Variantes visuales del botón, en la jerarquía de énfasis de Material. */

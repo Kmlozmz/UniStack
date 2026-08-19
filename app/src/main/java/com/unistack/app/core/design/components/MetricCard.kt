@@ -23,8 +23,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.theme.UniStackColors
-
 @Composable
 fun MetricCard(
     value: String,

@@ -55,9 +55,6 @@ fun UniStackTheme(
     val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = appearance)
     val sections = SectionColors.forTheme(darkTheme)
 
-    // Puente hacia el código que todavía lee UniStackColors. Ver adoptExpressiveScheme().
-    UniStackColors.adoptExpressiveScheme(scheme = scheme, sections = sections, darkTheme = darkTheme)
-
     val typography = expressiveTypography(
         appearanceTypography(useSystemFont = appearance.typographyStyle == TypographyStyle.SYSTEM)
     )
@@ -71,6 +68,7 @@ fun UniStackTheme(
 
     CompositionLocalProvider(
         LocalSectionColors provides sections,
+        LocalIsDarkTheme provides darkTheme,
         LocalAppearancePreferences provides appearance,
         LocalAccessibilityPreferences provides accessibility,
         LocalMotionDurationScale provides accessibility.motionScale(),

@@ -11,8 +11,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 /**
  * Avisa antes de abandonar un formulario a medio llenar.

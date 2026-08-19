@@ -83,7 +83,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.AccentIntensity
 import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AcademicIndicatorStyle

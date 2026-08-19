@@ -51,7 +51,6 @@ import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradeCalculator

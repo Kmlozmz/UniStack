@@ -25,8 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.UniStackColors
-
 data class UniSegmentedOption<T>(
     val value: T,
     val label: String,

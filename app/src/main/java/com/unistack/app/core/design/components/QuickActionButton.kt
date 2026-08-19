@@ -25,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.AppShapes
 
 import com.unistack.app.core.utils.bounceClick

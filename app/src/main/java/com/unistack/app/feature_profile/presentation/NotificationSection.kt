@@ -49,7 +49,6 @@ import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.UserProfile
 
 import androidx.compose.material3.MaterialTheme

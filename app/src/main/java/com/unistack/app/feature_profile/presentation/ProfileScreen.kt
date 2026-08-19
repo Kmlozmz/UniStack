@@ -94,7 +94,6 @@ import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.GradingScaleUtils

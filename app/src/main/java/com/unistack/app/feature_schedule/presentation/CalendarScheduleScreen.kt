@@ -96,7 +96,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.components.SquishyButton
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus

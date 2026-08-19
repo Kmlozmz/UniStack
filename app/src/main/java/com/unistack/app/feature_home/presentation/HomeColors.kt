@@ -5,21 +5,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.SolidColor
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
 /**
- * Tokens de color de la pantalla de inicio.
+ * Lo poco que Inicio necesita por encima del esquema de Material.
  *
- * Todos delegan en [UniStackColors]: antes este archivo era una paleta paralela con medio
- * centenar de hex fijos, y por eso Inicio era la única zona que no reaccionaba al tema del
- * usuario ni al color dinámico del sistema.
+ * Este archivo fue una paleta paralela con medio centenar de hex fijos, y luego cincuenta y
+ * tres alias que solo reenviaban al tema. Los alias se sustituyeron por su valor en los puntos
+ * de uso: un nombre que no decide nada solo esconde de qué token se trata.
  *
- * Se conservan los nombres para no tocar los puntos de uso, y todos son `@Composable get()`
- * para que se lean dentro de la composición y recompongan al cambiar el tema.
+ * Lo que queda es lo que sí decide algo: la superficie del hero y lo que se calcula sobre ella.
  */
 
 internal val HomeBackgroundBrush: Brush
@@ -61,9 +58,6 @@ internal val HeroContent: Color
 internal val HeroBrush: Brush
     @Composable get() = SolidColor(HeroSurface)
 
-internal val HomeCard: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
-
 /**
  * Fondo de las casillas del tablero: una superficie neutra, no teñida del acento.
  *
@@ -71,49 +65,6 @@ internal val HomeCard: Color
  * cuatro tintes distintos y ninguna cifra destacaba. El color se queda solo en el chip del
  * icono, que es donde distingue de un vistazo, y el fondo pasa a ser el mismo en las cuatro.
  */
-internal val HomeSnapshotTile: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
-internal val HomeText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurface
-internal val HomeSoftText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomeMuted: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomeBorder: Color
-    @Composable get() = MaterialTheme.colorScheme.outlineVariant
-internal val HomePurple: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeTeal: Color
-    @Composable get() = MaterialTheme.colorScheme.tertiary
-internal val HomeCoral: Color
-    @Composable get() = MaterialTheme.colorScheme.error
-internal val HomeYellow: Color
-    @Composable get() = LocalSectionColors.current.atRisk
-
-internal val HomeBgTop: Color
-    @Composable get() = MaterialTheme.colorScheme.background
-internal val HomeBgMid: Color
-    @Composable get() = MaterialTheme.colorScheme.background
-internal val HomeBgBottom: Color
-    @Composable get() = MaterialTheme.colorScheme.background
-internal val HomeCardDark: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
-
-internal val HomeHeroStart: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroMid: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroEnd: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroTransition: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroVioletDepth: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeHeroVioletWash: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeHeroLightViolet: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-
 // Todo lo que va encima del hero se deriva de OnPrimary, nunca de los textos de la pantalla:
 // el fondo ya no es el de la pantalla, así que TextPrimary podía quedar ilegible encima.
 /*
@@ -142,76 +93,7 @@ internal val HomeHeroOrnament: Color
 /** Sin borde: una superficie rellena no necesita contorno para separarse del fondo. */
 internal val HomeHeroStroke: Color
     get() = Color.Transparent
-internal val HomeHeroAssetShadow: Color
-    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.32f)
-internal val HomeHeroButtonStart: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeHeroButtonEnd: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-
-internal val HomeAccentPurple: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeAvatarPurpleTop: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeAvatarPurpleBottom: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeAccentTeal: Color
-    @Composable get() = MaterialTheme.colorScheme.tertiary
-internal val HomeAccentCoral: Color
-    @Composable get() = MaterialTheme.colorScheme.error
-internal val HomeAccentYellow: Color
-    @Composable get() = LocalSectionColors.current.atRisk
-
-internal val HomeTextPrimary: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurface
-internal val HomeTextSoft: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomeTextMuted: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomeStroke: Color
-    @Composable get() = MaterialTheme.colorScheme.outlineVariant
-
 /** Contenido sobre el acento: se calcula, nunca se asume blanco. */
-internal val HomeHeroLight: Color
-    @Composable get() = MaterialTheme.colorScheme.onPrimary
-
 /** design-tokens-ok: las sombras son negras por física, no por marca. */
 internal val HomeShadow = Color.Black
 
-internal val HomeHeroLightModeStart: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroLightModeMid: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroLightModeTransition: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroLightModeEnd: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomeHeroLightModeGlow: Color
-    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)
-internal val HomeHeroLightModeAccent: Color
-    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.62f)
-internal val HomeHeroLightModeDepth: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-internal val HomeCompanionHeart: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-
-internal val HomePrioritySheetSurface: Color
-    @Composable get() = MaterialTheme.colorScheme.background
-internal val HomePrioritySheetSuggestion: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
-internal val HomePrioritySheetText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurface
-internal val HomePrioritySheetBody: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomePrioritySheetMuted: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-internal val HomePrioritySheetSecondaryButton: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
-internal val HomePrioritySheetIconCircle: Color
-    @Composable get() = MaterialTheme.colorScheme.primaryContainer
-internal val HomePrioritySheetCardBorder: Color
-    @Composable get() = MaterialTheme.colorScheme.outlineVariant
-internal val HomePrioritySheetSun: Color
-    @Composable get() = LocalSectionColors.current.atRisk
-internal val HomePrioritySheetAccentSoft: Color
-    @Composable get() = MaterialTheme.colorScheme.primary

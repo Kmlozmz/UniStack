@@ -53,7 +53,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniStackWordmark
-import com.unistack.app.core.design.theme.UniStackColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniStackFabMenu
@@ -376,7 +375,7 @@ private fun HomeHeader(
                             .offset(x = (-5).dp, y = 4.dp)
                             .size(if (unreadNotificationCount > 9) 17.dp else 14.dp)
                             .clip(CircleShape)
-                            .background(HomePurple),
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -425,7 +424,7 @@ private fun HeaderIcon(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = HomeText,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(23.dp)
         )
     }
@@ -447,7 +446,7 @@ private fun HomeGreeting(
             // repetirlo aquí obligaba a dos líneas en cuanto el nombre era medianamente
             // largo, empujando todo lo demás hacia abajo.
             text = "$greeting 👋",
-            color = HomeText,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = if (compact) 28.sp else 30.sp,
             lineHeight = if (compact) 32.sp else 35.sp,
             fontWeight = FontWeight.Bold,
@@ -457,7 +456,7 @@ private fun HomeGreeting(
         )
         Text(
             text = "¿Qué vamos a lograr hoy?",
-            color = HomeMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = if (compact) 14.sp else 15.sp,
             lineHeight = if (compact) 18.sp else 20.sp,
             fontWeight = FontWeight.Medium

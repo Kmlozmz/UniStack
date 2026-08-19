@@ -55,11 +55,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
 
 import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 @Composable
 internal fun PriorityHero(
     title: String,
@@ -265,8 +265,8 @@ internal fun PriorityContextSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = HomePrioritySheetSurface,
-        contentColor = HomePrioritySheetText,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.64f),
         shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
@@ -294,7 +294,7 @@ internal fun PriorityContextSheet(
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
                         text = priority.title,
-                        color = HomePrioritySheetText,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 25.sp,
                         lineHeight = 29.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -304,7 +304,7 @@ internal fun PriorityContextSheet(
                     )
                     Text(
                         text = "✦ Tu prioridad de hoy",
-                        color = HomePrioritySheetAccentSoft,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 14.sp,
                         lineHeight = 18.sp,
                         fontWeight = FontWeight.SemiBold
@@ -319,7 +319,7 @@ internal fun PriorityContextSheet(
                 bodyParagraphs.forEach { paragraph ->
                     Text(
                         text = paragraph,
-                        color = HomePrioritySheetBody,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp,
                         lineHeight = 21.sp,
                         fontWeight = FontWeight.Normal
@@ -330,10 +330,10 @@ internal fun PriorityContextSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(HomePrioritySheetSuggestion, AppShapes.MediumCard)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh, AppShapes.MediumCard)
                     .border(
                         width = 0.7.dp,
-                        color = HomePrioritySheetCardBorder,
+                        color = MaterialTheme.colorScheme.outlineVariant,
                         shape = AppShapes.MediumCard
                     )
                     .padding(horizontal = 16.dp, vertical = 15.dp),
@@ -347,14 +347,14 @@ internal fun PriorityContextSheet(
                 ) {
                     Text(
                         text = "Sugerencia",
-                        color = HomePrioritySheetAccentSoft,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 14.sp,
                         lineHeight = 18.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = suggestionText,
-                        color = HomePrioritySheetBody,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 19.sp,
                         fontWeight = FontWeight.Medium
@@ -371,8 +371,8 @@ internal fun PriorityContextSheet(
                     onClick = onDismiss,
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = HomePrioritySheetSecondaryButton,
-                        contentColor = HomePrioritySheetText
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier
                         .weight(1f)
@@ -384,7 +384,7 @@ internal fun PriorityContextSheet(
                     onClick = onActionClick,
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = HomePurple,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier
@@ -401,11 +401,11 @@ internal fun PriorityContextSheet(
 @Composable
 private fun PrioritySunBadge(modifier: Modifier = Modifier) {
     // El token se lee en composición: dentro del Canvas ya no hay contexto @Composable.
-    val sunColor = HomePrioritySheetSun
+    val sunColor = LocalSectionColors.current.atRisk
     Box(
         modifier = modifier
             .size(56.dp)
-            .background(HomePrioritySheetIconCircle, CircleShape),
+            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.size(32.dp)) {
@@ -444,13 +444,13 @@ private fun PriorityBulbBadge(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(42.dp)
-            .background(HomePrioritySheetIconCircle, CircleShape),
+            .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Rounded.Lightbulb,
             contentDescription = null,
-            tint = HomePrioritySheetAccentSoft,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
     }

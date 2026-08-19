@@ -88,7 +88,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences

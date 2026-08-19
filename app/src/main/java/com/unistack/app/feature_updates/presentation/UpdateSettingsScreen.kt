@@ -76,7 +76,6 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackLoadingIndicator
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_updates.domain.UpdateState
 
 @Composable

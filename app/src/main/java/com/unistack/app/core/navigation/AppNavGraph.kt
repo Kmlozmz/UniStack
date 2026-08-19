@@ -78,7 +78,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.di.rememberUniStackEntryPoint
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalAppearancePreferences

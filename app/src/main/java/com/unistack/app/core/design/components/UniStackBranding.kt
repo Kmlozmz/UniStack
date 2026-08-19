@@ -20,8 +20,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.R
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 @Composable
 fun UniStackLogoMark(

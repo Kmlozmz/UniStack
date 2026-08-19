@@ -73,7 +73,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter

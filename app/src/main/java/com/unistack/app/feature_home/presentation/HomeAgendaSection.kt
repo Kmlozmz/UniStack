@@ -45,6 +45,8 @@ import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.HomeTimelineKind
 import com.unistack.app.feature_home.domain.HomeTimelineState
 import com.unistack.app.feature_home.domain.HomeTimelineSummary
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 
 @Composable
 internal fun TodayAgenda(
@@ -63,15 +65,15 @@ internal fun TodayAgenda(
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 11.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Agenda", color = HomeText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text("Agenda", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.weight(1f))
-            Text(countText, color = HomeMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(countText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = AppShapes.SmallCard,
-            color = HomeCard,
-            border = BorderStroke(1.dp, HomeBorder)
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
             Column(modifier = Modifier.padding(vertical = if (compact) 6.dp else 8.dp)) {
                 when {
@@ -110,7 +112,7 @@ private fun AgendaTimelineRow(
             Text(item.time, color = item.accent, fontSize = 10.sp, lineHeight = 13.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 item.title,
-                color = HomeText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = if (compact) 13.sp else 14.sp,
                 lineHeight = if (compact) 16.sp else 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -119,14 +121,14 @@ private fun AgendaTimelineRow(
             )
             Text(
                 item.subtitle,
-                color = HomeMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 lineHeight = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = HomeMuted, modifier = Modifier.size(18.dp))
+        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -153,7 +155,7 @@ internal fun AgendaFocusRow(
             Text(item.slotLabel, color = accent, fontSize = 10.sp, lineHeight = 13.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 item.title,
-                color = HomeText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = if (compact) 13.sp else 14.sp,
                 lineHeight = if (compact) 16.sp else 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -162,7 +164,7 @@ internal fun AgendaFocusRow(
             )
             Text(
                 item.detail,
-                color = HomeMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 lineHeight = 13.sp,
                 maxLines = 1,
@@ -197,7 +199,7 @@ internal fun AgendaDivider() {
             .fillMaxWidth()
             .padding(start = 63.dp, end = 14.dp)
             .height(1.dp)
-            .background(HomeBorder)
+            .background(MaterialTheme.colorScheme.outlineVariant)
     )
 }
 
@@ -214,15 +216,15 @@ private fun TimelineEmptyRow(compact: Boolean) {
             modifier = Modifier
                 .size(if (compact) 30.dp else 34.dp)
                 .clip(CircleShape)
-                .background(HomePurple.copy(alpha = 0.12f)),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = HomePurple, modifier = Modifier.size(if (compact) 16.dp else 18.dp))
+            Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(if (compact) 16.dp else 18.dp))
         }
         Spacer(modifier = Modifier.width(14.dp))
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Día despejado", color = HomeText, fontSize = if (compact) 12.sp else 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
-            Text("Sin vencimientos cercanos por ahora", color = HomeMuted, fontSize = 10.sp, lineHeight = 13.sp)
+            Text("Día despejado", color = MaterialTheme.colorScheme.onSurface, fontSize = if (compact) 12.sp else 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("Sin vencimientos cercanos por ahora", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, lineHeight = 13.sp)
         }
     }
 }
@@ -250,11 +252,11 @@ private fun HomeTimelineSummary.toTimelineItem(): TimelineItem {
             HomeTimelineKind.FOCUS -> Icons.Rounded.Star
         },
         accent = when (kind) {
-            HomeTimelineKind.CLASS -> HomePurple
-            HomeTimelineKind.TASK -> HomeTeal
-            HomeTimelineKind.WORK -> HomeYellow
-            HomeTimelineKind.EXAM -> HomeCoral
-            HomeTimelineKind.FOCUS -> HomePurple
+            HomeTimelineKind.CLASS -> MaterialTheme.colorScheme.primary
+            HomeTimelineKind.TASK -> MaterialTheme.colorScheme.tertiary
+            HomeTimelineKind.WORK -> LocalSectionColors.current.atRisk
+            HomeTimelineKind.EXAM -> MaterialTheme.colorScheme.error
+            HomeTimelineKind.FOCUS -> MaterialTheme.colorScheme.primary
         },
         active = state == HomeTimelineState.CURRENT
     )
@@ -275,10 +277,10 @@ internal fun HomePriorityAction.focusIcon(): ImageVector {
 internal fun HomePriorityAction.agendaAccent(): Color {
     return when (this) {
         HomePriorityAction.SUBJECT,
-        HomePriorityAction.SUBJECTS -> HomePurple
-        HomePriorityAction.TASKS -> HomeTeal
-        HomePriorityAction.EXPENSES -> HomeCoral
-        HomePriorityAction.TEMPLATES -> HomeYellow
-        HomePriorityAction.SCHEDULE -> HomeTeal
+        HomePriorityAction.SUBJECTS -> MaterialTheme.colorScheme.primary
+        HomePriorityAction.TASKS -> MaterialTheme.colorScheme.tertiary
+        HomePriorityAction.EXPENSES -> MaterialTheme.colorScheme.error
+        HomePriorityAction.TEMPLATES -> LocalSectionColors.current.atRisk
+        HomePriorityAction.SCHEDULE -> MaterialTheme.colorScheme.tertiary
     }
 }

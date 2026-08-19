@@ -42,7 +42,6 @@ import com.unistack.app.core.design.components.SquishyButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_support.domain.GpaRow
 import com.unistack.app.feature_support.domain.QuickNotesStore

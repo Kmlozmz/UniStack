@@ -23,8 +23,6 @@ import com.unistack.app.core.design.shapes.PolygonShape
 import com.unistack.app.core.design.shapes.UniStackShapesCatalog
 import com.unistack.app.core.design.shapes.morphToPath
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 /**
  * Indicador de carga expresivo: un polígono que gira mientras muta hacia la siguiente

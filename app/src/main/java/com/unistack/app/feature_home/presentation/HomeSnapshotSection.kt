@@ -31,13 +31,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.expressivePress
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_user.domain.AppModule
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 @Composable
 internal fun SemesterSnapshot(
     summary: HomeSummary,
@@ -88,7 +89,7 @@ internal fun SemesterSnapshot(
         // «desactualizado» posible— y ocupaba el sitio de la derecha como si fuera una acción.
         Text(
             text = "Tu semestre",
-            color = HomeText,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 15.sp,
             lineHeight = 19.sp,
             fontWeight = FontWeight.Bold
@@ -98,7 +99,7 @@ internal fun SemesterSnapshot(
                 label = "Materias",
                 value = summary.subjectsCount.toString(),
                 icon = Icons.AutoMirrored.Rounded.MenuBook,
-                accent = HomePurple,
+                accent = MaterialTheme.colorScheme.primary,
                 compact = compact,
                 onClick = onSubjectsClick,
                 modifier = Modifier.weight(1f)
@@ -107,7 +108,7 @@ internal fun SemesterSnapshot(
                 label = "Promedio",
                 value = averageText,
                 icon = Icons.AutoMirrored.Rounded.TrendingUp,
-                accent = HomeTeal,
+                accent = MaterialTheme.colorScheme.tertiary,
                 compact = compact,
                 onClick = onSubjectsClick,
                 modifier = Modifier.weight(1f)
@@ -118,7 +119,7 @@ internal fun SemesterSnapshot(
                 label = pendingLabel,
                 value = pendingValue.toString(),
                 icon = Icons.AutoMirrored.Rounded.EventNote,
-                accent = HomeYellow,
+                accent = LocalSectionColors.current.atRisk,
                 compact = compact,
                 onClick = onTasksClick,
                 modifier = Modifier.weight(1f)
@@ -127,7 +128,7 @@ internal fun SemesterSnapshot(
                 label = if (showWorks) "Trabajos" else "Gastos",
                 value = if (showWorks) worksText else moneyText,
                 icon = if (showWorks) Icons.Rounded.Description else Icons.Rounded.Wallet,
-                accent = HomeCoral,
+                accent = MaterialTheme.colorScheme.error,
                 compact = compact,
                 onClick = if (showWorks) onWorksClick else onExpensesClick,
                 modifier = Modifier.weight(1f)
@@ -159,10 +160,10 @@ private fun SnapshotMetric(
     Column(
         modifier = modifier
             .clip(AppShapes.SmallCard)
-            .background(HomeSnapshotTile)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             // Contorno de un pelo: sin él las casillas y el fondo quedaban casi al mismo
             // tono y la rejilla se leía como una mancha en vez de como cuatro piezas.
-            .border(1.dp, HomeBorder, AppShapes.SmallCard)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, AppShapes.SmallCard)
             .expressivePress(onClick = onClick)
             .padding(inset),
         verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 12.dp)
@@ -179,7 +180,7 @@ private fun SnapshotMetric(
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(
                 value,
-                color = HomeText,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = if (compact) 21.sp else 23.sp,
                 lineHeight = if (compact) 25.sp else 27.sp,
                 fontWeight = FontWeight.Bold,
@@ -188,7 +189,7 @@ private fun SnapshotMetric(
             )
             Text(
                 label,
-                color = HomeMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = if (compact) 11.sp else 12.sp,
                 lineHeight = 15.sp,
                 fontWeight = FontWeight.Medium,

@@ -66,7 +66,6 @@ import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_support.domain.changelogFor
 import com.unistack.app.feature_support.domain.SupportChannel

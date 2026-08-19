@@ -19,8 +19,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.theme.UniStackColors
-
 /**
  * Las notas de una versión, escritas en Markdown y leídas como tales.
  *

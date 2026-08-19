@@ -28,7 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniStackAnimatedLaunchScreen
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_setup.presentation.SetupFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged

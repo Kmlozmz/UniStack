@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 
 import androidx.compose.material3.MaterialTheme
 /**
- * Colores del selector de fecha, delegados en [UniStackColors].
+ * Colores del selector de fecha, tomados del esquema de Material.
  *
  * Antes fijaban sus propios hex (incluido un acento coral que ignoraba el acento elegido
  * por el usuario), lo que dejaba el date picker fuera del tema y del color dinámico.

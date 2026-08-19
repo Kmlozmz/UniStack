@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.feature_tasks.presentation.TasksScreen
 

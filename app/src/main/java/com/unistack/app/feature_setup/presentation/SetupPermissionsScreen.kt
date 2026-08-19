@@ -64,8 +64,6 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.AppShapes
-import com.unistack.app.core.design.theme.UniStackColors
-
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 /**

@@ -149,7 +149,6 @@ import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.EducationLevel
