@@ -151,19 +151,6 @@ fun AppearanceSettingsScreen(
         }
         item {
             AppearanceSection(
-                icon = Icons.Rounded.AutoAwesome,
-                title = "Perfiles visuales"
-            ) {
-                ChoiceGrid(
-                    entries = VisualPreset.entries.filterNot { it == VisualPreset.CUSTOM },
-                    selected = appearance.visualPreset,
-                    label = VisualPreset::label,
-                    onSelected = viewModel::applyVisualPreset
-                )
-            }
-        }
-        item {
-            AppearanceSection(
                 icon = Icons.Rounded.DarkMode,
                 title = "Tema y fondo"
             ) {
@@ -174,40 +161,11 @@ fun AppearanceSettingsScreen(
                     label = VisualPreference::label,
                     onSelected = viewModel::updateVisualPreference
                 )
-                if (current.visualPreference == VisualPreference.CUSTOM) {
-                    SectionLabel("Base del tema")
-                    ChoiceGrid(
-                        entries = CustomThemeBase.entries,
-                        selected = appearance.customThemeBase,
-                        label = CustomThemeBase::label,
-                        columns = 3,
-                        onSelected = { base ->
-                            viewModel.updateAppearance { it.copy(customThemeBase = base) }
-                        }
-                    )
-                    SectionLabel("Fondo")
-                    BackgroundChoices(
-                        selected = appearance.backgroundStyle,
-                        customColor = appearance.customBackgroundColor,
-                        onSelected = { style ->
-                            viewModel.updateAppearance { it.copy(backgroundStyle = style) }
-                        },
-                        onCustomColor = { color ->
-                            viewModel.updateAppearance {
-                                it.copy(
-                                    backgroundStyle = BackgroundStyle.CUSTOM,
-                                    customBackgroundColor = color
-                                )
-                            }
-                        }
-                    )
-                } else {
-                    Text(
-                        text = current.visualPreference.themeDescription(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+                Text(
+                    text = current.visualPreference.themeDescription(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
         item {
@@ -215,55 +173,28 @@ fun AppearanceSettingsScreen(
                 icon = Icons.Rounded.ColorLens,
                 title = "Colores"
             ) {
-                AccentChoices(
-                    selected = appearance.accentStyle,
-                    customColor = appearance.customAccentColor,
+                /*
+                 * Dos opciones, que son las dos que la app sabe entregar de verdad.
+                 *
+                 * Antes se ofrecían siete acentos y uno personalizado, y de ahí se derivaba
+                 * el resto de la paleta mezclando colores. Ahora el color es un esquema
+                 * tonal completo: o el que Material saca del fondo de pantalla, o el de la
+                 * marca. No hay forma de fabricar los otros seis sin volver a mezclarlos a
+                 * mano, y ofrecer una opción que no cambia nada es peor que no ofrecerla.
+                 */
+                ChoiceGrid(
+                    entries = listOf(AccentStyle.VIOLET, AccentStyle.DYNAMIC),
+                    selected = if (appearance.accentStyle == AccentStyle.DYNAMIC) {
+                        AccentStyle.DYNAMIC
+                    } else {
+                        AccentStyle.VIOLET
+                    },
+                    label = { style ->
+                        if (style == AccentStyle.DYNAMIC) "Del fondo de pantalla" else "Violeta UniStack"
+                    },
+                    columns = 2,
                     onSelected = { style ->
                         viewModel.updateAppearance { it.copy(accentStyle = style) }
-                    },
-                    onCustomColor = { color ->
-                        viewModel.updateAppearance {
-                            it.copy(
-                                accentStyle = AccentStyle.CUSTOM,
-                                customAccentColor = color
-                            )
-                        }
-                    }
-                )
-                SectionLabel("Intensidad")
-                ChoiceGrid(
-                    entries = AccentIntensity.entries,
-                    selected = appearance.accentIntensity,
-                    label = AccentIntensity::label,
-                    columns = 3,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(accentIntensity = value) }
-                    }
-                )
-            }
-        }
-        item {
-            AppearanceSection(
-                icon = Icons.Rounded.Layers,
-                title = "Superficies y formas"
-            ) {
-                SectionLabel("Tarjetas")
-                ChoiceGrid(
-                    entries = SurfaceStyle.entries,
-                    selected = appearance.surfaceStyle,
-                    label = SurfaceStyle::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(surfaceStyle = value) }
-                    }
-                )
-                SectionLabel("Esquinas")
-                ChoiceGrid(
-                    entries = CornerStyle.entries,
-                    selected = appearance.cornerStyle,
-                    label = CornerStyle::label,
-                    columns = 3,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(cornerStyle = value) }
                     }
                 )
             }
