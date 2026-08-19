@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_tasks.presentation
 
 import com.unistack.app.core.utils.DayLabels
@@ -109,6 +111,8 @@ import java.util.Locale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
@@ -1119,11 +1123,12 @@ private fun TimePickerSheet(
                 TimePicker(state = pickerState)
             }
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute))
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large
+                modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Text("Usar esta hora")
             }
@@ -1924,9 +1929,9 @@ private fun CreateTaskButton(
     modifier: Modifier = Modifier
 ) {
     Button(
+        shapes = UniStackButtonDefaults.shapes,
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,

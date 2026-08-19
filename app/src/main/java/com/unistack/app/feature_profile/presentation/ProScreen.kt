@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_profile.presentation
 
 import android.app.Activity
@@ -51,6 +53,9 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.ProBenefit
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.foundation.layout.heightIn
 
 @Composable
 fun ProScreen(
@@ -162,14 +167,15 @@ private fun ProHeroCard(
                 lineHeight = 19.sp
             )
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onUpgradeClick,
                 enabled = canBuy,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onPrimary,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Icon(Icons.Rounded.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text(
@@ -272,11 +278,12 @@ private fun BillingStatusCard(
                 }
             }
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onRefreshClick,
                 enabled = !billingState.isLoading,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                 Text("Revisar estado", modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.ExtraBold)

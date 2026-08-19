@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.animation.AnimatedVisibility
@@ -113,6 +115,8 @@ import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 /**
  * De dónde se entra al formulario de materia.
  *
@@ -651,8 +655,8 @@ private fun PlanBanner(
             }
             if (limitReached) {
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onUpgradeClick,
-                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
@@ -881,6 +885,7 @@ private fun CustomSubjectColorDialog(
                 Spacer(Modifier.weight(1f))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(
+                        shapes = UniStackButtonDefaults.shapes,
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -891,6 +896,7 @@ private fun CustomSubjectColorDialog(
                         Text("Cancelar")
                     }
                     Button(
+                        shapes = UniStackButtonDefaults.shapes,
                         onClick = { onApply(workingColor) },
                         colors = ButtonDefaults.buttonColors(containerColor = selected),
                         modifier = Modifier.weight(1f)

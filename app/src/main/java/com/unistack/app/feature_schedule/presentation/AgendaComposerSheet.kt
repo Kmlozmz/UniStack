@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 
 package com.unistack.app.feature_schedule.presentation
 
@@ -66,6 +66,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 
 internal enum class AgendaCreateKind(
     val title: String,
@@ -311,6 +313,7 @@ internal fun AgendaComposerSheet(
                 }
                 Spacer(Modifier.weight(1f))
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = {
                         val start = parseAgendaMinute(startText)
                         val end = parseAgendaMinute(endText)
@@ -321,7 +324,6 @@ internal fun AgendaComposerSheet(
                         }
                         if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
                     },
-                    shape = MaterialTheme.shapes.large,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
                 ) {

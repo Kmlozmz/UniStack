@@ -120,6 +120,8 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.foundation.layout.heightIn
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
@@ -1015,10 +1017,11 @@ private fun SubjectHistoryDialog(
                     }
                 }
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = { pending?.let { onMarkAttendance(it.date, it.session) } },
                     enabled = pending != null,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    shape = ScheduleShape,
+                    modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight).padding(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ScheduleAccent),
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {

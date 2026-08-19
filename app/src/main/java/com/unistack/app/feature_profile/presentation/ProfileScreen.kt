@@ -114,6 +114,7 @@ import kotlinx.coroutines.launch
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 enum class ProfileScreenMode {
     PROFILE,
     ACADEMIC,
@@ -767,14 +768,15 @@ private fun AccountSyncCard(
             lineHeight = 16.sp
         )
         Button(
+            shapes = UniStackButtonDefaults.shapes,
             onClick = if (currentUser.isLinked) onUnlinkClick else onGoogleClick,
             enabled = !isBusy,
-            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (currentUser.isLinked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
                 contentColor = if (currentUser.isLinked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
         ) {
             Text(
                 when {
@@ -864,10 +866,11 @@ private fun PlanStatusCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onOpenProClick,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Text("Ver UniStack Pro")
             }
@@ -1141,11 +1144,12 @@ private fun GradingSettingsCard(
             fontSize = 12.sp
         )
         Button(
+            shapes = UniStackButtonDefaults.shapes,
             onClick = onSaveClick,
             enabled = isValid,
-            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
         ) {
             Text("Guardar escala")
         }
@@ -1210,11 +1214,12 @@ private fun AcademicPeriodsSettingsCard(
             fontWeight = FontWeight.ExtraBold
         )
         Button(
+            shapes = UniStackButtonDefaults.shapes,
             onClick = onSaveClick,
             enabled = isValid,
-            shape = CircleShape,
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
         ) {
             Text("Guardar ${label.plural.lowercase()}")
         }
@@ -1303,10 +1308,11 @@ private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
             Text("Onboarding", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onRestartClick,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Text("Reiniciar onboarding")
             }

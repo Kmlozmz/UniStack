@@ -103,6 +103,7 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -1264,6 +1265,7 @@ private fun ExpenseBudgetSheet(
                 lineHeight = 17.sp
             )
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     onSave(
                         (weeklyValue ?: 0).toString(),
@@ -1271,7 +1273,6 @@ private fun ExpenseBudgetSheet(
                     )
                 },
                 enabled = isValid,
-                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExpenseCoral,
                     contentColor = contentColorOn(ExpenseCoral),

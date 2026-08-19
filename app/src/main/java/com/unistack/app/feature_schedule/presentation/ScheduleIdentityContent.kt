@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_schedule.presentation
 
 import com.unistack.app.core.utils.DayLabels
@@ -92,6 +94,8 @@ import java.util.Locale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 internal enum class IdentityScheduleView {
     TIMETABLE,
     CALENDAR
@@ -1205,9 +1209,10 @@ private fun IdentityEventRow(
 @Composable
 private fun IdentityPrimaryButton(label: String, onClick: () -> Unit) {
     Button(
+        shapes = UniStackButtonDefaults.shapes,
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(LocalInterfaceSpacing.current.controlHeight),
-        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight).height(LocalInterfaceSpacing.current.controlHeight),
         colors = ButtonDefaults.buttonColors(
             containerColor = IdentityAccent,
             contentColor = MaterialTheme.colorScheme.onPrimary

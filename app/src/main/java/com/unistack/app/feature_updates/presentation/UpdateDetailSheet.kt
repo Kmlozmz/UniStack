@@ -34,6 +34,7 @@ import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateState
 import java.util.Locale
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,9 +114,9 @@ fun UpdateDetailSheet(
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 OutlinedButton(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = MaterialTheme.shapes.small,
                     // Sin este relleno, Material reserva 24dp a cada lado y en media pantalla
                     // el texto se queda sin sitio y se recorta a puntos.
                     contentPadding = PaddingValues(horizontal = 8.dp)
@@ -123,10 +124,10 @@ fun UpdateDetailSheet(
                     Text("Más tarde", maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = if (state is UpdateState.ReadyToInstall) onInstallClick else onDownloadClick,
                     enabled = state !is UpdateState.Downloading,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary

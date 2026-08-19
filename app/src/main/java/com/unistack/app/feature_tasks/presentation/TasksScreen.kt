@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.compose.foundation.BorderStroke
@@ -114,6 +116,8 @@ import java.util.Locale
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
@@ -609,8 +613,10 @@ private fun TaskGradeResultSheet(
 
             if (!enteringGrade) {
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = { enteringGrade = true },
                     modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                 ) { Text("Sí, registrar nota") }
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                     Text("Todavía no la recibo")
@@ -688,6 +694,7 @@ private fun TaskGradeResultSheet(
                     Text(it, color = MaterialTheme.colorScheme.error)
                 }
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = {
                         val value = valueInput.toDoubleOrNull()
                         val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
@@ -698,6 +705,7 @@ private fun TaskGradeResultSheet(
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                 ) { Text("Guardar nota") }
             }
         }
@@ -1298,11 +1306,11 @@ private fun TaskCard(
                     TaskGradingStatus.AWAITING_GRADE -> {
                         if (awaitingGrade) {
                             Button(
+                                shapes = UniStackButtonDefaults.shapes,
                                 onClick = onRegisterGradeClick,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(40.dp),
-                                shape = MaterialTheme.shapes.small,
                                 contentPadding = PaddingValues(horizontal = 14.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary,
@@ -1924,11 +1932,11 @@ private fun SortRadioGroup(
 @Composable
 private fun FiltersSheetFooter(onDismiss: () -> Unit) {
     Button(
+        shapes = UniStackButtonDefaults.shapes,
         onClick = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        shape = MaterialTheme.shapes.large,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary

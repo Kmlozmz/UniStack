@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_home.presentation
 
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -57,6 +59,8 @@ import com.unistack.app.feature_home.domain.HomePrioritySummary
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 @Composable
 internal fun PriorityHero(
     title: String,
@@ -365,8 +369,8 @@ internal fun PriorityContextSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onDismiss,
-                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                         contentColor = MaterialTheme.colorScheme.onSurface
@@ -378,8 +382,8 @@ internal fun PriorityContextSheet(
                     Text("Cerrar", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onActionClick,
-                    shape = MaterialTheme.shapes.small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary

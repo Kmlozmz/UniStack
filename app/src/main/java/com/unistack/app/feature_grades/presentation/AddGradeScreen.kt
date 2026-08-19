@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_grades.presentation
 
 import androidx.activity.compose.BackHandler
@@ -71,6 +73,8 @@ import androidx.compose.material3.Button
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 private val FormCardShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -524,6 +528,7 @@ fun AddGradeScreen(
             shadowElevation = 8.dp
         ) {
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     val editingGradeId = gradeId
                     var shouldShowHistory = false
@@ -574,7 +579,6 @@ fun AddGradeScreen(
                     }
                 },
                 enabled = isValid,
-                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,

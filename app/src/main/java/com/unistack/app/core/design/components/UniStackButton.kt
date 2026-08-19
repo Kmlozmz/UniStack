@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,17 +36,20 @@ enum class UniStackButtonVariant {
 }
 
 /**
- * El botón ancho de la app: el que ocupa el pie de un formulario o cierra un paso del alta.
+ * El botón ancho de la app: el que cierra un formulario o un paso del alta.
  *
- * Cada variante es el botón de Material que le corresponde —[Button], [FilledTonalButton] y
- * [OutlinedButton]—, sin nada encima. Antes esto era un único `Button` al que se le pintaban
- * a mano el relleno, el contorno y el contenido de las tres variantes, más un gesto de
- * compresión con su propia animación y unas esquinas que se cuadraban al pulsar.
+ * **Tamaño y forma son los del tamaño «medium» de Material**, que resulta ser exactamente el
+ * que tenía la app antes de migrar: 56dp de alto y esquinas de 28dp. Al adoptar Material se
+ * quedó con el tamaño por defecto —40dp y forma de píldora— y se veía pequeño y demasiado
+ * redondo para lo que es: la acción principal de la pantalla, anclada abajo.
  *
- * Todo eso lo hacen ya los botones de Material 3 Expressive: la respuesta al pulsar sale del
- * `MotionScheme` del tema y la forma, de la escala de formas. También se fue la altura fija de
- * 56dp; la de Material se adapta al tamaño de letra del sistema, que es lo que quiere quien
- * pone el texto en grande.
+ * **La forma cambia al pulsar.** En reposo lleva la forma «cuadrada» de su tamaño (28dp) y bajo
+ * el dedo pasa a la de pulsado (12dp): las esquinas se cierran mientras lo tienes apretado y
+ * vuelven a abrirse al soltar. Es el morphing de Material 3 Expressive, y lo hace el propio
+ * componente a partir de [ButtonDefaults]; no hay ninguna animación escrita aquí.
+ *
+ * Nota sobre la dirección: Material aprieta las esquinas al pulsar, no las redondea. Si se
+ * quiere al revés —redondear bajo el dedo— basta con intercambiar los dos valores de `shapes`.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -71,42 +75,68 @@ fun UniStackButton(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (leadingIcon != null) {
-                Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.MediumIconSize))
             }
             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.labelLargeEmphasized,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
             if (trailingIcon != null) {
-                Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Icon(trailingIcon, contentDescription = null, modifier = Modifier.size(ButtonDefaults.MediumIconSize))
             }
         }
     }
 
-    val width = modifier.fillMaxWidth()
+    val sized = modifier
+        .fillMaxWidth()
+        .heightIn(min = ButtonDefaults.MediumContainerHeight)
+
+    // Cuadrado en reposo, esquinas cerradas bajo el dedo.
+    val shapes = ButtonDefaults.shapes(
+        shape = ButtonDefaults.squareShape,
+        pressedShape = ButtonDefaults.pressedShape
+    )
+    val padding = ButtonDefaults.MediumContentPadding
 
     when {
         containerColor != null -> Button(
             onClick = onClick,
-            modifier = width,
+            shapes = shapes,
+            modifier = sized,
             enabled = enabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = containerColor,
                 contentColor = contentColorOn(containerColor)
-            )
+            ),
+            contentPadding = padding
         ) { content() }
 
-        variant == UniStackButtonVariant.Filled ->
-            Button(onClick = onClick, modifier = width, enabled = enabled) { content() }
+        variant == UniStackButtonVariant.Filled -> Button(
+            onClick = onClick,
+            shapes = shapes,
+            modifier = sized,
+            enabled = enabled,
+            contentPadding = padding
+        ) { content() }
 
-        variant == UniStackButtonVariant.Tonal ->
-            FilledTonalButton(onClick = onClick, modifier = width, enabled = enabled) { content() }
+        variant == UniStackButtonVariant.Tonal -> FilledTonalButton(
+            onClick = onClick,
+            shapes = shapes,
+            modifier = sized,
+            enabled = enabled,
+            contentPadding = padding
+        ) { content() }
 
-        else ->
-            OutlinedButton(onClick = onClick, modifier = width, enabled = enabled) { content() }
+        else -> OutlinedButton(
+            onClick = onClick,
+            shapes = shapes,
+            modifier = sized,
+            enabled = enabled,
+            contentPadding = padding
+        ) { content() }
     }
 }

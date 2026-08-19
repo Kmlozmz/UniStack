@@ -18,7 +18,6 @@ data class AppearancePreferences(
     val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
-    val screenTransition: ScreenTransition = ScreenTransition.PUSH,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,
@@ -149,18 +148,6 @@ enum class BottomBarStyle {
  * deslizamiento cuenta jerarquía y molesta a quien entra y sale cincuenta veces al día, y el
  * fundido no cuenta nada y por eso no se equivoca. Cada quien nota una cosa distinta.
  */
-enum class ScreenTransition {
-    /** La nueva entra entera desde el borde y empuja a la anterior. Lo que viene puesto. */
-    PUSH,
-
-    /** Aparece y desaparece, sin recorrido. */
-    FADE,
-
-    /** Sin transición: la pantalla se sustituye. */
-    NONE
-}
-
-
 enum class AcademicIndicatorStyle {
     RINGS,
     BARS,

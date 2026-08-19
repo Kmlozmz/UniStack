@@ -290,7 +290,6 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("typographyStyle", typographyStyle.name)
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
-        .put("screenTransitionStyle", screenTransition.name)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
         .put("showHomeGreeting", showHomeGreeting)
         .put("showHomeHero", showHomeHero)
@@ -353,7 +352,6 @@ class UserPreferencesDataSource(private val context: Context) {
                 // pasaron por las alphas, y ese valor —que entonces era el de por defecto, no una
                 // elección— se quedaba pisando el empuje. Con otra clave, todos empiezan por el
                 // valor de hoy y quien quiera el fundido lo vuelve a elegir.
-                screenTransition = json.enumOrDefault("screenTransitionStyle", defaults.screenTransition),
                 academicIndicatorStyle = json.enumOrDefault(
                     "academicIndicatorStyle",
                     defaults.academicIndicatorStyle

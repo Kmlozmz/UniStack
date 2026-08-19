@@ -94,7 +94,6 @@ import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InitialTab
 import com.unistack.app.feature_user.domain.MotionPreference
-import com.unistack.app.feature_user.domain.ScreenTransition
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_user.domain.TypographyStyle
@@ -291,60 +290,6 @@ fun AppearanceSettingsScreen(
                     checked = appearance.heroShowsExpenses,
                     onCheckedChange = { enabled ->
                         viewModel.updateAppearance { it.copy(heroShowsExpenses = enabled) }
-                    }
-                )
-            }
-        }
-        item {
-            AppearanceSection(
-                icon = Icons.Rounded.Dashboard,
-                title = "Navegación e indicadores"
-            ) {
-                SectionLabel("Barra inferior")
-                ChoiceGrid(
-                    entries = BottomBarStyle.entries,
-                    selected = appearance.bottomBarStyle,
-                    label = BottomBarStyle::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(bottomBarStyle = value) }
-                    }
-                )
-                SectionLabel("Cambio de pantalla")
-                ChoiceGrid(
-                    entries = ScreenTransition.entries,
-                    selected = appearance.screenTransition,
-                    label = ScreenTransition::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(screenTransition = value) }
-                    }
-                )
-                SectionLabel("Pestaña inicial")
-                ChoiceGrid(
-                    entries = InitialTab.entries,
-                    selected = appearance.initialTab,
-                    label = InitialTab::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(initialTab = value) }
-                    }
-                )
-                SectionLabel("Progreso académico")
-                ChoiceGrid(
-                    entries = AcademicIndicatorStyle.entries,
-                    selected = appearance.academicIndicatorStyle,
-                    label = AcademicIndicatorStyle::label,
-                    columns = 3,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(academicIndicatorStyle = value) }
-                    }
-                )
-                SectionLabel("Decimales")
-                ChoiceGrid(
-                    entries = listOf(0, 1, 2),
-                    selected = appearance.decimalPlaces,
-                    label = { value -> value.toString() },
-                    columns = 3,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(decimalPlaces = value) }
                     }
                 )
             }
@@ -1126,14 +1071,6 @@ private fun BottomBarStyle.label() = when (this) {
     BottomBarStyle.LABELED -> "Iconos y texto"
     BottomBarStyle.ICONS_ONLY -> "Solo iconos"
 }
-
-private fun ScreenTransition.label() = when (this) {
-    ScreenTransition.PUSH -> "Empuje"
-    ScreenTransition.FADE -> "Fundido"
-    ScreenTransition.NONE -> "Sin animación"
-}
-
-
 private fun AcademicIndicatorStyle.label() = when (this) {
     AcademicIndicatorStyle.RINGS -> "Anillos"
     AcademicIndicatorStyle.BARS -> "Barras"

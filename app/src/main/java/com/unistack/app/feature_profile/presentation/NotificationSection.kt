@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_profile.presentation
 
 import androidx.compose.foundation.background
@@ -53,6 +55,8 @@ import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 /** Las anticipaciones que se ofrecen. Cubren de «el mismo día» a «tres días antes». */
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -311,8 +315,8 @@ private fun PermissionCard(
             if (!granted) {
                 Spacer(Modifier.width(10.dp))
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onRequestPermission,
-                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(actionLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)

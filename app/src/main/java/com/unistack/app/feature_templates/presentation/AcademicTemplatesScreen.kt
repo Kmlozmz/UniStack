@@ -83,6 +83,8 @@ import kotlinx.coroutines.launch
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.foundation.layout.heightIn
 @Composable
 fun AcademicTemplatesScreen(
     onBackClick: () -> Unit,
@@ -408,8 +410,8 @@ private fun WorkListSection(
                 modifier = Modifier.weight(1f)
             )
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onNewWork,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
             ) {
@@ -496,10 +498,11 @@ private fun WorkCard(
             )
             if (!work.isFinished) {
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = onMarkSubmitted,
-                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                     modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                 ) {
                     Text("Marcar entregado")
                 }
@@ -676,10 +679,11 @@ private fun WorkEditorCard(
                 Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onSave,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
                 Text(if (isEditing) "Guardar trabajo" else "Crear trabajo")
             }
@@ -804,11 +808,12 @@ private fun ApaReferenceGeneratorCard(
                 lineHeight = 18.sp
             )
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onCopyClick,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                     .testTag("copy-apa-references")
             ) {
                 Text("Copiar referencias")
@@ -861,11 +866,12 @@ private fun CopyTemplateCard(
                 }
             }
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = onCopyClick,
-                shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                     .testTag("copy-work-to-clipboard")
             ) {
                 Text("Copiar al portapapeles")

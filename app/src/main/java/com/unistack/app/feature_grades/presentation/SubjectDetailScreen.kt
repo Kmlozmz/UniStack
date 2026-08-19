@@ -113,6 +113,7 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 private val LargeCardShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -389,9 +390,9 @@ fun SubjectDetailScreen(
                 openPeriodSummaries.any { it.period.id == period.id }
             }
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = { addTarget?.let { onAddGradeClick(subject.id, it.id) } },
                 enabled = addTarget != null,
-                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -562,8 +563,8 @@ fun SubjectPeriodDetailScreen(
             shadowElevation = 8.dp
         ) {
             Button(
+                shapes = UniStackButtonDefaults.shapes,
                 onClick = { onAddGradeClick(subject.id, period.id) },
-                shape = MaterialTheme.shapes.extraLarge,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary

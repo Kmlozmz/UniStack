@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_profile.presentation
 
 import android.net.Uri
@@ -54,6 +56,8 @@ import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
@@ -495,10 +499,10 @@ private fun BackupButton(
     onClick: () -> Unit
 ) {
     Button(
+        shapes = UniStackButtonDefaults.shapes,
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
-        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,

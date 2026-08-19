@@ -49,7 +49,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -135,9 +134,6 @@ fun MainNavGraph(
     onLaunchRouteConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    // El movimiento de las transiciones sale del tema, igual que el de los componentes.
-    val motion = MaterialTheme.motionScheme
-    val motionEnabled = LocalMotionDurationScale.current > 0f
     val appearance = LocalAppearancePreferences.current
     val userRepository = rememberUniStackEntryPoint().userRepository()
     val enabledModules by remember {
@@ -214,41 +210,7 @@ fun MainNavGraph(
                 startDestination = resolvedInitialRoute,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding),
-                /*
-                 * Un fundido, y punto.
-                 *
-                 * Se probaron dos versiones con deslizamiento —un tercio de pantalla, y luego
-                 * el ancho completo con la anterior apartándose— y las dos se sentían ajenas a
-                 * la app. El fundido no compite con nada de lo que hay en pantalla y deja que
-                 * lo que se mueva sea el contenido, no el marco.
-                 */
-                enterTransition = {
-                    val from = initialState.destination.route
-                    val to = targetState.destination.route
-                    screenEnter(
-                        style = appearance.screenTransition,
-                        motion = motion,
-                        motionEnabled = motionEnabled,
-                        fromRight = isForwardNavigation(from, to)
-                    )
-                },
-                exitTransition = {
-                    val from = initialState.destination.route
-                    val to = targetState.destination.route
-                    screenExit(
-                        style = appearance.screenTransition,
-                        motion = motion,
-                        motionEnabled = motionEnabled,
-                        toLeft = isForwardNavigation(from, to)
-                    )
-                },
-                popEnterTransition = {
-                    screenEnter(appearance.screenTransition, motion, motionEnabled, fromRight = false)
-                },
-                popExitTransition = {
-                    screenExit(appearance.screenTransition, motion, motionEnabled, toLeft = false)
-                }
+                    .padding(contentPadding)
             ) {
                 composable(AppRoutes.Home) {
                     val viewModel: HomeViewModel = hiltViewModel()
@@ -1010,9 +972,7 @@ private fun NavGraphBuilder.screen(
     content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
     composable(route = route, arguments = arguments) { entry ->
-        Box(modifier = Modifier.zIndex(routeDepth(route).toFloat())) {
-            content(entry)
-        }
+        content(entry)
     }
 }
 

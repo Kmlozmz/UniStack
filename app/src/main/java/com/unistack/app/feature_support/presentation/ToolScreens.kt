@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_support.presentation
 
 import androidx.compose.foundation.background
@@ -49,6 +51,8 @@ import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import com.unistack.app.core.design.components.UniStackButtonDefaults
 /**
  * Calculadora de promedio.
  *
@@ -106,20 +110,20 @@ fun GpaCalculatorScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = { rows = rows + GpaRow() },
                     modifier = Modifier.weight(1f),
-                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Text("Añadir fila", fontSize = 13.sp)
                 }
                 Button(
+                    shapes = UniStackButtonDefaults.shapes,
                     onClick = {
                         rows = subjects.ifEmpty { rows }
                     },
                     enabled = subjects.isNotEmpty(),
                     modifier = Modifier.weight(1f),
-                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Traer mis materias", fontSize = 13.sp)
@@ -244,12 +248,12 @@ fun QuickNotesScreen(
                             modifier = Modifier.weight(1f)
                         )
                         Button(
+                            shapes = UniStackButtonDefaults.shapes,
                             onClick = {
                                 text = ""
                                 QuickNotesStore.save(context, "")
                             },
                             enabled = text.isNotEmpty(),
-                            shape = CircleShape,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 contentColor = MaterialTheme.colorScheme.error
