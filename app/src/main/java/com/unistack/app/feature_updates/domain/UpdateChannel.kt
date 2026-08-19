@@ -74,4 +74,22 @@ enum class UpdateChannel(
             }
         }
     }
+
+    companion object {
+        /**
+         * El canal que abre la propia versión instalada, o null si es una definitiva.
+         *
+         * El código es para **entrar** a un canal, y quien tiene una beta puesta ya está
+         * dentro: pedírselo para seguir donde está no protege nada y lo deja sin recibir
+         * actualizaciones de lo que lleva instalado, que es el único sitio del que no puede
+         * salir sin desinstalar.
+         *
+         * Una definitiva no abre nada: es lo que recibe todo el mundo por defecto.
+         */
+        fun ofInstalled(versionName: String): UpdateChannel? = when (Stage.of(versionName)) {
+            Stage.FINAL -> null
+            Stage.BETA -> BETA
+            Stage.ALPHA -> ALPHA
+        }
+    }
 }

@@ -22,7 +22,12 @@ sealed interface UpdateState {
      */
     data class Ahead(val info: UpdateInfo) : UpdateState
 
-    /** El canal no tiene ninguna versión publicada todavía. Tampoco es estar al día. */
+    /**
+     * El canal no tiene ninguna versión publicada que ofrecer.
+     *
+     * En pantalla se cuenta como lo que es para quien lo lee —no hay nada más nuevo que
+     * instalar—, no como un fallo: «no se encontró ninguna publicación» sonaba a avería.
+     */
     data object NoReleases : UpdateState
 
     data class Error(val message: String) : UpdateState

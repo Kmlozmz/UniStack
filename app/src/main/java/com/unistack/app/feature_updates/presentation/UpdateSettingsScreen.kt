@@ -161,9 +161,11 @@ fun UpdateSettingsScreen(
                     codeChannel = canal
                 },
                 onSelect = { elegido ->
-                    // Bajar a estable no necesita aviso: es el canal seguro. Subir sí, porque
-                    // lo que se acepta es recibir versiones a medio hacer.
-                    if (elegido == UpdateChannel.STABLE) {
+                    // Bajar a estable no necesita aviso: es el canal seguro. Y el canal de la
+                    // versión instalada tampoco: lo que ese aviso pide aceptar —recibir
+                    // versiones a medio hacer— es justo lo que ya se tiene puesto.
+                    val propio = UpdateChannel.ofInstalled(viewModel.currentVersionName)
+                    if (elegido == UpdateChannel.STABLE || elegido == propio) {
                         viewModel.setChannel(elegido)
                     } else {
                         pendingChannel = elegido
@@ -547,7 +549,9 @@ private fun UpdateCheckCard(
                     )
                 }
             }
-            if (state is UpdateState.UpToDate) {
+            // También con el canal vacío: no hay nada que instalar, que es lo que el visto
+            // significa. Dejarlo sin él hacía que un estado correcto pareciera a medias.
+            if (state is UpdateState.UpToDate || state is UpdateState.NoReleases) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = UniStackColors.Primary)
             }
         }
@@ -577,7 +581,7 @@ private fun UpdateState.statusLabel(): String = when (this) {
     is UpdateState.ReadyToInstall -> "Lista para instalar: v${info.versionName}"
     UpdateState.UpToDate -> "Al día"
     is UpdateState.Ahead -> "Vas por delante: lo último de este canal es la v${info.versionName}"
-    UpdateState.NoReleases -> "Este canal todavía no tiene ninguna versión publicada"
+    UpdateState.NoReleases -> "Estás en la última versión disponible para este canal"
     is UpdateState.Error -> message
 }
 

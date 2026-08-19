@@ -1,6 +1,8 @@
 package com.unistack.app.feature_updates.domain
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -35,6 +37,31 @@ class UpdateChannelTest {
         UpdateChannel.entries.forEach { canal ->
             assertTrue(canal.name, canal.accepts("1.0.0"))
         }
+    }
+
+    @Test
+    fun `la version instalada abre su propio canal`() {
+        // Quien ya lleva una beta no tiene que pedir permiso para recibir betas: el codigo es
+        // para entrar, y ya esta dentro.
+        assertEquals(UpdateChannel.BETA, UpdateChannel.ofInstalled("1.2.0-beta.1"))
+        assertEquals(UpdateChannel.ALPHA, UpdateChannel.ofInstalled("1.2.0-alpha.3"))
+    }
+
+    @Test
+    fun `una candidata cuenta como beta tambien para abrir el canal`() {
+        assertEquals(UpdateChannel.BETA, UpdateChannel.ofInstalled("1.2.0-rc.1"))
+    }
+
+    @Test
+    fun `una definitiva no abre ningun canal`() {
+        // No hace falta: la definitiva la recibe todo el mundo desde el canal estable.
+        assertNull(UpdateChannel.ofInstalled("1.2.0"))
+    }
+
+    @Test
+    fun `una compilacion local abre el canal alpha`() {
+        // «dev» no es un canal, y su sufijo cae del lado del circulo mas pequeno.
+        assertEquals(UpdateChannel.ALPHA, UpdateChannel.ofInstalled("0.0.0-dev.42"))
     }
 
     @Test

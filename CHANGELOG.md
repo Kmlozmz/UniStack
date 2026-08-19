@@ -38,13 +38,21 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-**Lo importante:** buscar actualizaciones dice «al día» solo cuando de verdad tienes lo último
-de tu canal, y la limpieza de descargas se ve pasar.
+_Nada pendiente._
+
+---
+
+## [1.2.0-beta.1] — 2026-08-19
+
+**Lo importante:** el canal de la versión que llevas puesta ya no pide código, y buscar
+actualizaciones dice «al día» solo cuando de verdad tienes lo último de tu canal.
 
 #### Actualizaciones
+- **Tu propio canal viene abierto.** Con una beta instalada no hace falta código para recibir betas: ya estás dentro. Igual con las alpha.
+- Y viene elegido de entrada, si nunca escogiste otro: instalar una beta y quedarse en el canal estable dejaba anclado en esa beta.
 - **«Al día» solo si lo instalado coincide con lo último del canal.** Con una alpha puesta y el canal beta elegido, la app decía que estabas al día mirando una beta más vieja que la tuya.
 - Cuando tu versión es posterior a lo publicado, se dice cuál es la última del canal y que volver a ella exigiría desinstalar.
-- Un canal sin ninguna versión publicada ya no se anuncia como estar al día.
+- Cuando el canal no tiene nada más que ofrecer, se dice que estás en la última versión disponible para él.
 - **La tarjeta de limpiar descargas se va al eliminar:** se inclina y cae, en vez de quedarse puesta hasta salir de la pantalla y volver a entrar.
 - La limpieza borra **todos** los APK guardados, no solo el último, y dice cuántos había.
 - El aviso de confirmación ya no se queda debajo de la barra de gestos.

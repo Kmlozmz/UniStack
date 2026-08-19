@@ -88,9 +88,32 @@ class GitHubReleaseUpdateRepository(
     private val _channel = MutableStateFlow(readStoredChannel())
     override val channel: StateFlow<UpdateChannel> = _channel.asStateFlow()
 
+    /**
+     * Los canales que no hacen falta pedir: el estable, y el de la versión que ya está puesta.
+     *
+     * Se calcula cada vez en lugar de guardarse, porque cambia al actualizar: pasar de una beta
+     * a la definitiva tiene que cerrar el canal beta si nadie canjeó su código.
+     */
+    private fun baseChannels(): Set<UpdateChannel> = setOfNotNull(
+        UpdateChannel.STABLE,
+        UpdateChannel.ofInstalled(BuildConfig.VERSION_NAME)
+    )
+
+    /**
+     * Sin nada elegido manda la versión instalada.
+     *
+     * Quien instala una beta quiere betas; dejarlo en estable era ofrecerle solo definitivas y
+     * dejarlo anclado en la beta que tuviera. Si en algún momento eligió a mano, eso está
+     * guardado y no se toca.
+     */
     private fun readStoredChannel(): UpdateChannel {
-        val stored = prefs.getString(KEY_CHANNEL, null) ?: return UpdateChannel.STABLE
-        return runCatching { UpdateChannel.valueOf(stored) }.getOrDefault(UpdateChannel.STABLE)
+        val fallback = UpdateChannel.ofInstalled(BuildConfig.VERSION_NAME) ?: UpdateChannel.STABLE
+        val stored = prefs.getString(KEY_CHANNEL, null)
+            ?.let { name -> runCatching { UpdateChannel.valueOf(name) }.getOrNull() }
+            ?: return fallback
+        // Y tiene que seguir concedido: instalar una beta encima de una alpha deja elegido un
+        // canal que ya no se tiene, y la pantalla lo enseñaba marcado y con candado a la vez.
+        return if (stored in readStoredChannels()) stored else fallback
     }
 
     // Un conjunto y no un nivel: se pueden tener varios codigos a la vez, y tener el de alpha
@@ -102,10 +125,10 @@ class GitHubReleaseUpdateRepository(
         prefs.getStringSet(KEY_ACCESS_FINGERPRINTS, emptySet()).orEmpty()
 
     private fun readStoredChannels(): Set<UpdateChannel> {
-        val stored = prefs.getString(KEY_ACCESS_CHANNELS, null) ?: return setOf(UpdateChannel.STABLE)
+        val stored = prefs.getString(KEY_ACCESS_CHANNELS, null) ?: return baseChannels()
         val channels = stored.split(",")
             .mapNotNull { name -> runCatching { UpdateChannel.valueOf(name) }.getOrNull() }
-        return channels.toSet() + UpdateChannel.STABLE
+        return channels.toSet() + baseChannels()
     }
 
     override fun setChannel(channel: UpdateChannel) {
@@ -152,7 +175,7 @@ class GitHubReleaseUpdateRepository(
             val verifiedAt = prefs.getLong(KEY_ACCESS_VERIFIED_AT, 0L)
             if (verifiedAt > 0L && System.currentTimeMillis() - verifiedAt > ACCESS_GRACE_MILLIS) {
                 prefs.edit { remove(KEY_ACCESS_FINGERPRINTS) }
-                applyAccess(setOf(UpdateChannel.STABLE))
+                applyAccess(emptySet())
             }
             return
         }
@@ -165,11 +188,13 @@ class GitHubReleaseUpdateRepository(
             putStringSet(KEY_ACCESS_FINGERPRINTS, alive)
             putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
         }
-        applyAccess(granted + UpdateChannel.STABLE)
+        applyAccess(granted)
     }
 
     private fun applyAccess(granted: Set<UpdateChannel>) {
-        val channels = granted + UpdateChannel.STABLE
+        // Retirar un código no puede cerrarle a nadie el canal de la versión que lleva puesta:
+        // no se puede salir de ahí sin desinstalar, y quedaría sin recibir nada.
+        val channels = granted + baseChannels()
         if (channels == _unlockedChannels.value) return
         prefs.edit { putString(KEY_ACCESS_CHANNELS, channels.joinToString(",") { it.name }) }
         _unlockedChannels.value = channels
