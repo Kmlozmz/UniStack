@@ -157,6 +157,9 @@ import kotlin.math.roundToInt
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
     const val Name = "setup_name"
@@ -614,22 +617,19 @@ private fun WelcomeFeatureCard(
         animationSpec = colorSpec,
         label = "feature-icon-tint"
     )
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.04f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "feature-scale"
-    )
-
-    Column(
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(MaterialTheme.shapes.large)
-            .background(containerColor)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 16.dp),
+    // Card de Material. El escalado del 4% al seleccionar se fue con el resto: la respuesta
+    // al pulsar la pone el MotionScheme del tema, igual que en cualquier otra tarjeta.
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        )
+    ) {
+      Column(
+        modifier = Modifier.padding(horizontal = 14.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Box(
@@ -653,6 +653,7 @@ private fun WelcomeFeatureCard(
             lineHeight = 16.sp,
             fontWeight = FontWeight.Medium
         )
+    }
     }
 }
 
@@ -1281,42 +1282,14 @@ private fun GradeLevelChips(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         options.forEach { option ->
-            val isSelected = option == selected
-            val containerColor by animateColorAsState(
-                targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-                label = "grade-chip-container"
+            // FilterChip de Material: la marca de selección aparece a la izquierda y el
+            // relleno cambia solo. Antes eran tres animaciones escritas a mano -relleno,
+            // contenido y un escalado del 6%- sobre una caja pulsable.
+            FilterChip(
+                selected = option == selected,
+                onClick = { onSelected(option) },
+                label = { Text(option) }
             )
-            val contentColor by animateColorAsState(
-                targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-                label = "grade-chip-content"
-            )
-            val scale by animateFloatAsState(
-                targetValue = if (isSelected) 1.06f else 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-                label = "grade-chip-scale"
-            )
-            Box(
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
-                    .clip(CircleShape)
-                    .background(containerColor)
-                    .clickable(role = Role.RadioButton) { onSelected(option) }
-                    .semantics { stateDescription = if (isSelected) "Seleccionado" else "No seleccionado" }
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = option,
-                    color = contentColor,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
         }
     }
 }

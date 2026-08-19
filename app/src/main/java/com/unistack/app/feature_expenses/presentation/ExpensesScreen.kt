@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_expenses.presentation
 
 import com.unistack.app.core.utils.DayLabels
@@ -99,6 +101,8 @@ import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -738,22 +742,12 @@ private fun BudgetProgress(
     scale: Float,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .height(scaledDp(6f, scale))
-            .clip(CircleShape)
-            .background(ExpenseTrack)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(progress.coerceIn(0.03f, 1f))
-                .clip(CircleShape)
-                .background(
-                    SolidColor(ExpensePurple)
-                )
-        )
-    }
+    LinearWavyProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
+        modifier = modifier,
+        color = ExpensePurple,
+        trackColor = ExpenseTrack
+    )
 }
 
 @Composable

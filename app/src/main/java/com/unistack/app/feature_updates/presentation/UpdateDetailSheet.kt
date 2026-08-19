@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_updates.presentation
 
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateState
 import java.util.Locale
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,14 +85,14 @@ fun UpdateDetailSheet(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val unknown = state.progress == UpdateState.UNKNOWN_PROGRESS
                     if (unknown) {
-                        LinearProgressIndicator(
+                        LinearWavyProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
                         )
                     } else {
-                        LinearProgressIndicator(
+                        LinearWavyProgressIndicator(
                             progress = { state.progress / 100f },
                             modifier = Modifier
                                 .fillMaxWidth()

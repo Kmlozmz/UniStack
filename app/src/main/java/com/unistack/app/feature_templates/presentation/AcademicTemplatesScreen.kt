@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_templates.presentation
 
 import android.content.ClipData
@@ -30,7 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -80,6 +82,7 @@ import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 @Composable
 fun AcademicTemplatesScreen(
     onBackClick: () -> Unit,
@@ -485,7 +488,7 @@ private fun WorkCard(
                     Icon(Icons.Rounded.Delete, contentDescription = "Eliminar trabajo", tint = MaterialTheme.colorScheme.error)
                 }
             }
-            LinearProgressIndicator(
+            LinearWavyProgressIndicator(
                 progress = { work.checklistProgress },
                 modifier = Modifier.fillMaxWidth(),
                 color = work.status.color(),

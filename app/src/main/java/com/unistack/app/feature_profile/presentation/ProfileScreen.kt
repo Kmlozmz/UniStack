@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_profile.presentation
 
 import android.Manifest
@@ -110,6 +112,8 @@ import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 enum class ProfileScreenMode {
     PROFILE,
     ACADEMIC,
@@ -1003,21 +1007,12 @@ private fun AcademicSnapshotCard(
 
             // La barra se llena al llegar a la meta, no al llegar al máximo de la escala: la
             // referencia que importa es la que tú te pusiste.
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress)
-                        .height(8.dp)
-                        .clip(CircleShape)
-                        .background(if (progress >= 1f) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary)
-                )
-            }
+            LinearWavyProgressIndicator(
+                progress = { progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth(),
+                color = if (progress >= 1f) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            )
             Text(footer, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

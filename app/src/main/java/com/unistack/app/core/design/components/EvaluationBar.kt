@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.fillMaxWidth

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_grades.presentation
 
 import androidx.activity.compose.BackHandler
@@ -48,7 +50,7 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -110,6 +112,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 private val LargeCardShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -970,18 +973,16 @@ private fun SubjectOverviewCard(
                 when (indicatorStyle) {
                     AcademicIndicatorStyle.RINGS -> {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 progress = { 1f },
                                 modifier = Modifier.fillMaxSize(),
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                strokeWidth = 7.dp,
                                 trackColor = Color.Transparent
                             )
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
                                 modifier = Modifier.fillMaxSize(),
                                 color = MaterialTheme.colorScheme.primary,
-                                strokeWidth = 7.dp,
                                 trackColor = Color.Transparent
                             )
                             EvaluationValue(evaluated)

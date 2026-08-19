@@ -135,7 +135,9 @@ fun MainNavGraph(
     onLaunchRouteConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
-    val motionScale = LocalMotionDurationScale.current
+    // El movimiento de las transiciones sale del tema, igual que el de los componentes.
+    val motion = MaterialTheme.motionScheme
+    val motionEnabled = LocalMotionDurationScale.current > 0f
     val appearance = LocalAppearancePreferences.current
     val userRepository = rememberUniStackEntryPoint().userRepository()
     val enabledModules by remember {
@@ -226,7 +228,8 @@ fun MainNavGraph(
                     val to = targetState.destination.route
                     screenEnter(
                         style = appearance.screenTransition,
-                        motionScale = motionScale,
+                        motion = motion,
+                        motionEnabled = motionEnabled,
                         fromRight = isForwardNavigation(from, to)
                     )
                 },
@@ -235,15 +238,16 @@ fun MainNavGraph(
                     val to = targetState.destination.route
                     screenExit(
                         style = appearance.screenTransition,
-                        motionScale = motionScale,
+                        motion = motion,
+                        motionEnabled = motionEnabled,
                         toLeft = isForwardNavigation(from, to)
                     )
                 },
                 popEnterTransition = {
-                    screenEnter(appearance.screenTransition, motionScale, fromRight = false)
+                    screenEnter(appearance.screenTransition, motion, motionEnabled, fromRight = false)
                 },
                 popExitTransition = {
-                    screenExit(appearance.screenTransition, motionScale, toLeft = false)
+                    screenExit(appearance.screenTransition, motion, motionEnabled, toLeft = false)
                 }
             ) {
                 composable(AppRoutes.Home) {

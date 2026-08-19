@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_schedule.presentation
 
 import com.unistack.app.core.utils.DayLabels
@@ -57,13 +59,13 @@ import androidx.compose.material.icons.rounded.ZoomIn
 import androidx.compose.material.icons.rounded.ZoomOut
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -117,6 +119,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
@@ -977,12 +980,11 @@ private fun SubjectHistoryDialog(
                             Text("$attended asistencias  \u2022  $absent faltas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
+                            CircularWavyProgressIndicator(
                                 progress = { rate / 100f },
                                 modifier = Modifier.fillMaxSize(),
                                 color = ScheduleAccent,
-                                trackColor = MaterialTheme.colorScheme.outlineVariant,
-                                strokeWidth = 4.dp
+                                trackColor = MaterialTheme.colorScheme.outlineVariant
                             )
                             Text("$rate%", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
