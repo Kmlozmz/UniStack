@@ -1235,21 +1235,22 @@ private fun UniStackBottomBarItem(
        rectángulo redondeado detrás del icono y además un subrayado suelto debajo de la
        etiqueta, así que el elemento activo se marcaba por duplicado.
 
-       El contenedor sale del acento y no de secondaryContainer, que es lo que pide
-       Material: en esta app "secondary" es un azul con identidad propia, no una variante
-       tonal del primario, y usarlo dejaría el indicador azul bajo un acento violeta. */
+       Usa secondaryContainer, que es lo que pide el spec. Durante mucho tiempo salió del
+       contenedor del acento porque "secondary" era un azul con identidad propia y la píldora
+       quedaba azul bajo un acento violeta; con el esquema generado desde la semilla, el
+       secundario ya es familia del primario y el motivo desapareció. */
     val indicatorColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
+        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
         label = "bottomItemIndicator"
     )
     val iconColor by animateColorAsState(
         targetValue = if (selected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
+            MaterialTheme.colorScheme.onSecondaryContainer
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
-        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
         label = "bottomItemIcon"
     )
     val labelColor by animateColorAsState(
@@ -1258,7 +1259,7 @@ private fun UniStackBottomBarItem(
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
-        animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
         label = "bottomItemLabel"
     )
     val interactionSource = remember { MutableInteractionSource() }
