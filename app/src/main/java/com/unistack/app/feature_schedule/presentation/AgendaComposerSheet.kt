@@ -90,7 +90,7 @@ internal fun AgendaCreateMenuSheet(
     onSelect: (AgendaCreateKind) -> Unit,
     onAddClass: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background, shape = AppShapes.LargeCard) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = AppShapes.LargeCard) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -107,17 +107,17 @@ internal fun AgendaCreateMenuSheet(
                     Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Rounded.CalendarMonth, null, tint = UniStackColors.Primary)
+                    Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Agregar a la agenda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
                     Text(
                         "Elige el tipo y se abre el formulario correcto.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -155,7 +155,7 @@ internal fun AgendaCreateMenuSheet(
 private fun AgendaSectionLabel(text: String) {
     Text(
         text = text,
-        color = UniStackColors.Primary,
+        color = MaterialTheme.colorScheme.primary,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(top = 6.dp)
@@ -182,23 +182,23 @@ private fun AgendaKindRow(
                 Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = UniStackColors.Primary, modifier = Modifier.size(19.dp))
+                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
             }
             Spacer(Modifier.width(11.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
                     title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -237,7 +237,7 @@ internal fun AgendaComposerSheet(
     val date = LocalDate.ofEpochDay(dateEpochDay)
     val academic = kind.academic
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background, shape = AppShapes.LargeCard) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = AppShapes.LargeCard) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -248,11 +248,11 @@ internal fun AgendaComposerSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(kind.icon, null, tint = UniStackColors.Primary)
+                Icon(kind.icon, null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(if (existingEvent == null) kind.title else "Editar evento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                    Text(if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias", color = UniStackColors.TextSecondary, style = MaterialTheme.typography.bodySmall)
+                    Text(if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
             OutlinedTextField(title, { title = it.take(100) }, Modifier.fillMaxWidth(), label = { Text("Título") }, singleLine = true, shape = AppShapes.SmallCard)
@@ -287,7 +287,7 @@ internal fun AgendaComposerSheet(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Genera calificación", fontWeight = FontWeight.Bold)
-                        Text("Quedará vinculada al seguimiento de notas.", color = UniStackColors.TextSecondary, style = MaterialTheme.typography.bodySmall)
+                        Text("Quedará vinculada al seguimiento de notas.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                     Switch(generatesGrade, { generatesGrade = it })
                 }
@@ -310,7 +310,7 @@ internal fun AgendaComposerSheet(
             error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (existingEvent != null && onDeleteEvent != null) {
-                    TextButton(onClick = { onDeleteEvent(existingEvent.id); onDismiss() }) { Text("Eliminar", color = UniStackColors.Coral) }
+                    TextButton(onClick = { onDeleteEvent(existingEvent.id); onDismiss() }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
                 }
                 Spacer(Modifier.weight(1f))
                 SquishyButton(
@@ -325,7 +325,7 @@ internal fun AgendaComposerSheet(
                         if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
                     },
                     shape = AppShapes.MediumCard,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
                 ) {
                     Icon(Icons.Rounded.Save, null)

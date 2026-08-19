@@ -112,6 +112,7 @@ import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.launch
 
+import com.unistack.app.core.design.theme.LocalSectionColors
 enum class ProfileScreenMode {
     PROFILE,
     ACADEMIC,
@@ -254,7 +255,7 @@ fun ProfileScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background),
+            .background(MaterialTheme.colorScheme.background),
         // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
         // la barra acoplada el valor es cero y esto queda igual que antes.
         contentPadding = PaddingValues(
@@ -275,7 +276,7 @@ fun ProfileScreen(
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "Volver",
-                            tint = UniStackColors.TextPrimary
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -287,7 +288,7 @@ fun ProfileScreen(
                         ProfileScreenMode.NOTIFICATIONS -> "Notificaciones"
                         ProfileScreenMode.DATA -> "Datos y respaldos"
                     },
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.weight(1f)
@@ -299,7 +300,7 @@ fun ProfileScreen(
                     Row(
                         modifier = Modifier
                             .clip(AppShapes.Pill)
-                            .background(UniStackColors.SurfaceVariant)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .bounceClick(onOpenSettingsClick)
                             .padding(start = 12.dp, end = 14.dp, top = 9.dp, bottom = 9.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -307,13 +308,13 @@ fun ProfileScreen(
                         Icon(
                             Icons.Rounded.Settings,
                             contentDescription = null,
-                            tint = UniStackColors.Primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(19.dp)
                         )
                         Spacer(Modifier.width(7.dp))
                         Text(
                             "Configuración",
-                            color = UniStackColors.Primary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -327,10 +328,10 @@ fun ProfileScreen(
             item {
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
-                    color = UniStackColors.Card,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
                     shape = AppShapes.LargeCard
                 ) {
-                    Text("Cargando perfil local...", color = UniStackColors.TextSecondary)
+                    Text("Cargando perfil local...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
@@ -520,19 +521,19 @@ fun ProfileScreen(
                 item {
                     Text(
                         message,
-                        color = if (message.startsWith("Revisa") || message.startsWith("Debe")) UniStackColors.Coral else UniStackColors.Green,
+                        color = if (message.startsWith("Revisa") || message.startsWith("Debe")) MaterialTheme.colorScheme.error else LocalSectionColors.current.onTrack,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
             actionState.message?.let { message ->
                 item {
-                    Text(message, color = UniStackColors.Green, fontWeight = FontWeight.Bold)
+                    Text(message, color = LocalSectionColors.current.onTrack, fontWeight = FontWeight.Bold)
                 }
             }
             actionState.errorMessage?.let { message ->
                 item {
-                    Text(message, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text(message, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -558,7 +559,7 @@ fun ProfileScreen(
                         confirmingScaleChange = impact
                     }
                 ) {
-                    Text("Continuar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Continuar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -566,7 +567,7 @@ fun ProfileScreen(
                     Text("Cancelar", fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -594,7 +595,7 @@ fun ProfileScreen(
                         }
                     }
                 ) {
-                    Text("Sí, borrar definitivamente", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Sí, borrar definitivamente", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -602,7 +603,7 @@ fun ProfileScreen(
                     Text("Cancelar", fontWeight = FontWeight.Bold)
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -618,7 +619,7 @@ fun ProfileScreen(
                         viewModel.restartOnboarding()
                     }
                 ) {
-                    Text("Reiniciar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Reiniciar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -626,7 +627,7 @@ fun ProfileScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -676,7 +677,7 @@ fun ProfileScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -692,7 +693,7 @@ fun ProfileScreen(
                         viewModel.unlinkAccount()
                     }
                 ) {
-                    Text("Desvincular", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Desvincular", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -700,7 +701,7 @@ fun ProfileScreen(
                     Text("Cancelar")
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
@@ -711,12 +712,12 @@ private fun DataStatusStrip(summary: String) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(AppShapes.MediumCard)
-            .background(UniStackColors.PrimaryLight)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("Backup actual", color = UniStackColors.Primary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
-            Text(summary, color = UniStackColors.TextPrimary, fontSize = 12.sp, lineHeight = 16.sp)
+            Text("Backup actual", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+            Text(summary, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, lineHeight = 16.sp)
         }
     }
 }
@@ -743,12 +744,12 @@ private fun AccountSyncCard(
             ) {
                 Text(
                     text = currentUser.accountLabel(),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     text = currentUser.email ?: "Sin cuenta vinculada",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             }
@@ -760,7 +761,7 @@ private fun AccountSyncCard(
             } else {
                 "Puedes usar la app localmente o vincular una cuenta de Google."
             },
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
@@ -769,8 +770,8 @@ private fun AccountSyncCard(
             enabled = !isBusy,
             shape = AppShapes.Pill,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (currentUser.isLinked) UniStackColors.SurfaceVariant else UniStackColors.Primary,
-                contentColor = if (currentUser.isLinked) UniStackColors.TextPrimary else UniStackColors.OnPrimary
+                containerColor = if (currentUser.isLinked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
+                contentColor = if (currentUser.isLinked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -795,12 +796,12 @@ private fun AccountAvatar(
         modifier = modifier
             .clip(CircleShape)
             .background(
-                SolidColor(UniStackColors.PrimaryLight)
+                SolidColor(MaterialTheme.colorScheme.primaryContainer)
             ),
         contentAlignment = Alignment.Center
     ) {
         if (photoUrl.isNullOrBlank()) {
-            Icon(Icons.Rounded.Person, contentDescription = contentDescription, tint = UniStackColors.PrimaryDark)
+            Icon(Icons.Rounded.Person, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         } else {
             AsyncImage(
                 model = photoUrl,
@@ -815,18 +816,18 @@ private fun AccountAvatar(
 @Composable
 private fun SyncStatusPill(status: SyncStatus) {
     val color = when (status) {
-        SyncStatus.LOCAL_ONLY -> UniStackColors.SurfaceVariant
-        SyncStatus.READY_FOR_BACKUP -> UniStackColors.PrimaryLight
-        SyncStatus.SYNC_PENDING -> UniStackColors.YellowLight
-        SyncStatus.SYNCED -> UniStackColors.GreenLight
-        SyncStatus.SYNC_ERROR -> UniStackColors.CoralLight
+        SyncStatus.LOCAL_ONLY -> MaterialTheme.colorScheme.surfaceContainerHigh
+        SyncStatus.READY_FOR_BACKUP -> MaterialTheme.colorScheme.primaryContainer
+        SyncStatus.SYNC_PENDING -> LocalSectionColors.current.atRiskContainer
+        SyncStatus.SYNCED -> LocalSectionColors.current.onTrackContainer
+        SyncStatus.SYNC_ERROR -> MaterialTheme.colorScheme.errorContainer
     }
     val textColor = when (status) {
-        SyncStatus.LOCAL_ONLY -> UniStackColors.TextSecondary
-        SyncStatus.READY_FOR_BACKUP -> UniStackColors.Primary
-        SyncStatus.SYNC_PENDING -> UniStackColors.Yellow
-        SyncStatus.SYNCED -> UniStackColors.Green
-        SyncStatus.SYNC_ERROR -> UniStackColors.Coral
+        SyncStatus.LOCAL_ONLY -> MaterialTheme.colorScheme.onSurfaceVariant
+        SyncStatus.READY_FOR_BACKUP -> MaterialTheme.colorScheme.primary
+        SyncStatus.SYNC_PENDING -> LocalSectionColors.current.atRisk
+        SyncStatus.SYNCED -> LocalSectionColors.current.onTrack
+        SyncStatus.SYNC_ERROR -> MaterialTheme.colorScheme.error
     }
     UniCard(
         color = color,
@@ -851,20 +852,20 @@ private fun PlanStatusCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
-            Text("Plan actual: ${plan.name}", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text("Plan actual: ${plan.name}", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             Text(
                 if (plan.hasSubjectLimit) "${plan.maxSubjects} materias disponibles" else "Materias ilimitadas",
-                color = UniStackColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             SquishyButton(
                 onClick = onOpenProClick,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Ver UniStack Pro")
@@ -882,7 +883,7 @@ private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit)
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -898,14 +899,14 @@ private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit)
                 ) {
                     Text(
                         name,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 21.sp,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1
                     )
-                    Text(profile.educationSummary(), color = UniStackColors.TextSecondary, fontSize = 13.sp)
+                    Text(profile.educationSummary(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     profile.institutionName?.takeIf(String::isNotBlank)?.let { institution ->
-                        Text(institution, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                        Text(institution, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
                 // El nombre se edita desde aquí. Antes vivía en una tarjeta aparte con su campo
@@ -915,7 +916,7 @@ private fun ProfileHeaderCard(profile: UserProfile, onEditNameClick: () -> Unit)
                     Icon(
                         Icons.Rounded.Edit,
                         contentDescription = "Editar nombre",
-                        tint = UniStackColors.Primary
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -933,10 +934,10 @@ private fun ProfileChip(text: String) {
     Box(
         modifier = Modifier
             .clip(AppShapes.Pill)
-            .background(UniStackColors.Background.copy(alpha = 0.55f))
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.55f))
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
-        Text(text, color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -970,34 +971,34 @@ private fun AcademicSnapshotCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = UniStackColors.Primary)
+                Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
                     "Tu semestre",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp).weight(1f)
                 )
                 TextButton(onClick = onOpenAcademicClick) {
-                    Text("Ajustar", color = UniStackColors.Primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Ajustar", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                 }
             }
 
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     averageText,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 34.sp,
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     "  de meta " + GradingScaleUtils.formatGrade(target, scale),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -1010,17 +1011,17 @@ private fun AcademicSnapshotCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(AppShapes.Pill)
-                    .background(UniStackColors.SurfaceVariant)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(progress)
                         .height(8.dp)
                         .clip(AppShapes.Pill)
-                        .background(if (progress >= 1f) UniStackColors.Green else UniStackColors.Primary)
+                        .background(if (progress >= 1f) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary)
                 )
             }
-            Text(footer, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+            Text(footer, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SnapshotCell(
@@ -1037,7 +1038,7 @@ private fun AcademicSnapshotCard(
                     modifier = Modifier.weight(1f),
                     value = snapshot.atRisk.toString(),
                     label = "En riesgo",
-                    valueColor = if (snapshot.atRisk > 0) UniStackColors.Coral else UniStackColors.TextPrimary
+                    valueColor = if (snapshot.atRisk > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )
                 SnapshotCell(
                     modifier = Modifier.weight(1f),
@@ -1054,12 +1055,12 @@ private fun SnapshotCell(
     modifier: Modifier,
     value: String,
     label: String,
-    valueColor: Color = UniStackColors.TextPrimary
+    valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
     Column(
         modifier = modifier
             .clip(AppShapes.MediumCard)
-            .background(UniStackColors.SurfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -1067,7 +1068,7 @@ private fun SnapshotCell(
         Text(value, color = valueColor, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, maxLines = 1)
         Text(
             label,
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 9.sp,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
@@ -1144,14 +1145,14 @@ private fun GradingSettingsCard(
         }
         Text(
             "Rango activo: 0 a ${GradingScaleUtils.formatGrade(maxGrade, selectedScale)}",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp
         )
         SquishyButton(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Guardar escala")
@@ -1176,7 +1177,7 @@ private fun AcademicPeriodsSettingsCard(
     SettingsCard(title = "${label.plural} del semestre") {
         Text(
             "Esta estructura se usa en todas las materias nuevas y existentes.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
@@ -1212,7 +1213,7 @@ private fun AcademicPeriodsSettingsCard(
         }
         Text(
             "Total: ${String.format(java.util.Locale.US, "%.0f", total)}%",
-            color = if (isValid) UniStackColors.Green else UniStackColors.Coral,
+            color = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error,
             fontSize = 12.sp,
             fontWeight = FontWeight.ExtraBold
         )
@@ -1220,7 +1221,7 @@ private fun AcademicPeriodsSettingsCard(
             onClick = onSaveClick,
             enabled = isValid,
             shape = AppShapes.Pill,
-            colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Guardar ${label.plural.lowercase()}")
@@ -1257,8 +1258,8 @@ private fun ModulesSettingsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(module.label(), color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
-                    Text(module.description(), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text(module.label(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                    Text(module.description(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
                 Checkbox(
                     checked = enabled,
@@ -1292,8 +1293,8 @@ private fun ReminderToggleRow(
     ) {
         Checkbox(checked = checked, onCheckedChange = null)
         Column(modifier = Modifier.padding(start = 8.dp)) {
-            Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-            Text(description, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
     }
 }
@@ -1302,17 +1303,17 @@ private fun ReminderToggleRow(
 private fun ResetOnboardingCard(onRestartClick: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.CoralLight,
+        color = MaterialTheme.colorScheme.errorContainer,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(Icons.Rounded.RestartAlt, contentDescription = null, tint = UniStackColors.Coral)
-            Text("Onboarding", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-            Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = UniStackColors.TextSecondary)
+            Icon(Icons.Rounded.RestartAlt, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            Text("Onboarding", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text("Puedes volver al flujo inicial sin borrar tus datos locales.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             SquishyButton(
                 onClick = onRestartClick,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Coral),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Reiniciar onboarding")
@@ -1328,15 +1329,15 @@ private fun SettingsCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Settings, contentDescription = null, tint = UniStackColors.Primary)
+                Icon(Icons.Rounded.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(
                     title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(start = 10.dp)
                 )
@@ -1360,14 +1361,14 @@ private fun SelectionPill(
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             }
             .bounceClick(onClick),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.Pill,
         tonalElevation = if (selected) 5.dp else 0.dp,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 9.dp)
     ) {
         Text(
             text,
-            color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,

@@ -48,8 +48,8 @@ fun UpdateDetailSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = UniStackColors.Background,
-        contentColor = UniStackColors.TextPrimary,
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
     ) {
         Column(
@@ -63,12 +63,12 @@ fun UpdateDetailSheet(
                 "Nueva actualización v${info.versionName}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = UniStackColors.TextPrimary
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 "Publicado el ${info.releaseDate} · ${String.format(Locale.US, "%.1f", info.sizeMb)} MB",
                 style = MaterialTheme.typography.bodySmall,
-                color = UniStackColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             // Las notas se desplazan dentro de su propio hueco y con tope de alto. Sin eso,
             // una lista larga empujaba los botones fuera de la hoja: se veían recortados por
@@ -104,7 +104,7 @@ fun UpdateDetailSheet(
                     Text(
                         if (unknown) "Descargando..." else "${state.progress}%",
                         style = MaterialTheme.typography.labelMedium,
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -129,8 +129,8 @@ fun UpdateDetailSheet(
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = UniStackColors.Primary,
-                        contentColor = UniStackColors.OnPrimary
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {

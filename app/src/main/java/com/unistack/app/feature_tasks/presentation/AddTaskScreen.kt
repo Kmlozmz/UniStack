@@ -110,6 +110,7 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+import com.unistack.app.core.design.theme.LocalSectionColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
@@ -396,7 +397,7 @@ fun AddTaskScreen(
                         onBackClick()
                     }
                 ) {
-                    Text("Eliminar", color = UniStackColors.Coral)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -587,10 +588,10 @@ private fun AddTaskContent(
                 }
             }
             if (taskMissing) {
-                Text("Tarea no encontrada.", color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
+                Text("Tarea no encontrada.", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
             }
             error?.let {
-                Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Medium)
+                Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
             }
         }
         // La superficie llega al borde de la pantalla y el margen del sistema va dentro,
@@ -901,7 +902,7 @@ private fun TaskNameRow(
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = error ?: "Ingresa una actividad válida",
-                color = UniStackColors.Coral,
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Normal
             )
@@ -1190,7 +1191,7 @@ private fun LinkedGradeCard(
             Spacer(modifier = Modifier.height(12.dp))
             Surface(
                 shape = AppShapes.SmallCard,
-                color = UniStackColors.Yellow.copy(alpha = 0.10f)
+                color = LocalSectionColors.current.atRisk.copy(alpha = 0.10f)
             ) {
                 Row(
                     modifier = Modifier.padding(11.dp),
@@ -1200,7 +1201,7 @@ private fun LinkedGradeCard(
                     Icon(
                         Icons.Rounded.WarningAmber,
                         contentDescription = null,
-                        tint = UniStackColors.Yellow,
+                        tint = LocalSectionColors.current.atRisk,
                         modifier = Modifier.size(19.dp)
                     )
                     Text(
@@ -1290,7 +1291,7 @@ private fun GradingIntentSelector(
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 "Selecciona una materia para poder registrar la nota.",
-                color = UniStackColors.Coral,
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -1371,7 +1372,7 @@ private fun CalendarMonthGrid(
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
                             color = when {
-                                selected -> UniStackColors.OnPrimary
+                                selected -> MaterialTheme.colorScheme.onPrimary
                                 enabled -> UniStackDatePickerColors.Text
                                 else -> UniStackDatePickerColors.Muted.copy(alpha = 0.35f)
                             },
@@ -1420,8 +1421,8 @@ private fun SubjectDropdown(
                 subjectQuery = ""
             },
             containerColor = SubjectSheetSurface,
-            contentColor = UniStackColors.OnPrimary,
-            scrimColor = UniStackColors.Scrim.copy(alpha = 0.62f),
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
             contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
             dragHandle = {
@@ -1430,7 +1431,7 @@ private fun SubjectDropdown(
                         .padding(top = 12.dp, bottom = 4.dp)
                         .size(width = 42.dp, height = 4.dp)
                         .background(
-                            UniStackColors.OnPrimary.copy(alpha = 0.20f),
+                            MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.20f),
                             AppShapes.Pill
                         )
                 )
@@ -1543,8 +1544,8 @@ private fun PeriodDropdown(
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             containerColor = SubjectSheetSurface,
-            contentColor = UniStackColors.OnPrimary,
-            scrimColor = UniStackColors.Scrim.copy(alpha = 0.62f),
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.62f),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Column(
@@ -1593,7 +1594,7 @@ private fun SubjectSearchField(
             .background(SubjectSheetField, AppShapes.MediumCard)
             .border(
                 width = 0.5.dp,
-                color = UniStackColors.SoftOutline,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 shape = AppShapes.MediumCard
             )
             .padding(horizontal = 16.dp),
@@ -1651,7 +1652,7 @@ private fun SubjectSheetOption(
             )
             .border(
                 width = 0.8.dp,
-                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else UniStackColors.SoftOutline,
+                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else MaterialTheme.colorScheme.outlineVariant,
                 shape = shape
             )
             .clickable(
@@ -1737,7 +1738,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
             .fillMaxWidth()
             .heightIn(min = 74.dp)
             .background(SubjectSheetCreateSurface, shape)
-            .border(0.7.dp, UniStackColors.SoftOutline, shape)
+            .border(0.7.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1755,7 +1756,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = null,
-                tint = UniStackColors.OnPrimary,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -1930,7 +1931,7 @@ private fun CreateTaskButton(
         shape = AppShapes.Pill,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = UniStackColors.OnPrimary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.13f),
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
         ),
@@ -1953,25 +1954,25 @@ private fun CreateTaskButton(
 }
 
 private val SubjectSheetSurface: Color
-    @Composable get() = UniStackColors.Background
+    @Composable get() = MaterialTheme.colorScheme.background
 private val SubjectSheetField: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val SubjectSheetItemSurface: Color
-    @Composable get() = UniStackColors.Card
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
 private val SubjectSheetSelectedSurface: Color
-    @Composable get() = UniStackColors.PrimaryLight
+    @Composable get() = MaterialTheme.colorScheme.primaryContainer
 private val SubjectSheetCreateSurface: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val SubjectSheetAccent: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val SubjectSheetAccentSoft: Color
-    @Composable get() = UniStackColors.PrimaryDark
+    @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
 private val SubjectSheetSelectedIcon: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val SubjectSheetText: Color
-    @Composable get() = UniStackColors.TextPrimary
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 private val SubjectSheetMuted: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
 private fun TaskType.label(): String {
     return when (this) {

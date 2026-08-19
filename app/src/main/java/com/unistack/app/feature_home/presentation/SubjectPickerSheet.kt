@@ -51,7 +51,7 @@ internal fun SubjectPickerSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         shape = AppShapes.LargeCard
     ) {
         Column(
@@ -64,13 +64,13 @@ internal fun SubjectPickerSheet(
         ) {
             Text(
                 "¿En qué materia?",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 "La nota se registra dentro de una materia.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
             LazyColumn(
@@ -94,7 +94,7 @@ internal fun SubjectPickerSheet(
                             Text(
                                 subject.name,
                                 modifier = Modifier.weight(1f),
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -102,7 +102,7 @@ internal fun SubjectPickerSheet(
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                                 contentDescription = null,
-                                tint = UniStackColors.TextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
                         }

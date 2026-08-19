@@ -31,7 +31,7 @@ fun SectionHeader(
     ) {
         Text(
             text = title,
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 17.sp
@@ -44,7 +44,7 @@ fun SectionHeader(
             ) {
                 Text(
                     text = actionText,
-                    color = UniStackColors.PrimaryDark,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
@@ -52,7 +52,7 @@ fun SectionHeader(
                 Icon(
                     imageVector = Icons.Rounded.ChevronRight,
                     contentDescription = null,
-                    tint = UniStackColors.PrimaryDark,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(18.dp)
                 )
             }

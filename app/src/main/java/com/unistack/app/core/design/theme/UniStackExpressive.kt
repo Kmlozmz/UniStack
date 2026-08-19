@@ -8,10 +8,12 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import kotlin.math.pow
 
 /**
  * Material 3 Expressive, tal cual, como identidad de UniStack.
@@ -287,3 +289,40 @@ val SectionLabelStyle: TextStyle = TextStyle(
     fontWeight = FontWeight.Bold,
     letterSpacing = 1.0.sp
 )
+
+// ---------------------------------------------------------------------------------------------
+// Utilidades del tema
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Si el tema en curso es el oscuro.
+ *
+ * No es `isSystemInDarkTheme()`: el usuario puede forzar claro u oscuro desde Apariencia, y
+ * entonces el sistema y la app no coinciden. Lo provee [UniStackTheme].
+ */
+val LocalIsDarkTheme = staticCompositionLocalOf { false }
+
+/** Tinta oscura para contenido sobre superficies claras: más suave que el negro puro. */
+private val DarkInk = Color(0xFF1B1B21)
+private const val DarkInkLuminance = 0.0136f
+
+/**
+ * Color de contenido legible sobre un fondo **arbitrario**, eligiendo entre tinta clara y
+ * oscura por ratio de contraste WCAG.
+ *
+ * Sigue haciendo falta con Material: el esquema trae un `onX` por cada rol suyo, pero no por
+ * los colores que elige el usuario —el color de una materia, un acento de Monet—. Sobre esos,
+ * `Color.White` fijo deja de ser legible en cuanto el color es claro.
+ */
+fun contentColorOn(background: Color): Color {
+    val luminance = relativeLuminance(background)
+    val contrastWithLight = 1.05f / (luminance + 0.05f)
+    val contrastWithDark = (luminance + 0.05f) / (DarkInkLuminance + 0.05f)
+    return if (contrastWithLight >= contrastWithDark) Color.White else DarkInk
+}
+
+private fun relativeLuminance(color: Color): Float {
+    fun channel(value: Float): Float =
+        if (value <= 0.03928f) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
+    return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
+}

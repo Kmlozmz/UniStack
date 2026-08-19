@@ -80,6 +80,7 @@ import com.unistack.app.feature_user.domain.InterfaceDensity
 import java.time.LocalTime
 import kotlinx.coroutines.launch
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
@@ -380,7 +381,7 @@ private fun HomeHeader(
                     ) {
                         Text(
                             text = unreadNotificationCount.coerceAtMost(9).toString(),
-                            color = UniStackColors.OnPrimary,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             fontSize = 8.sp,
                             lineHeight = 9.sp,
                             fontWeight = FontWeight.Bold
@@ -393,12 +394,12 @@ private fun HomeHeader(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.Primary)
+                    .background(MaterialTheme.colorScheme.primary)
                     .cleanClickable(onProfileClick),
                 contentAlignment = Alignment.Center
             ) {
                 if (photoUrl.isNullOrBlank()) {
-                    Text("P", color = UniStackColors.OnPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text("P", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 } else {
                     AsyncImage(
                         model = photoUrl,

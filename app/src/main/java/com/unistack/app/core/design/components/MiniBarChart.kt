@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun MiniBarChart(
     values: List<Int>,
@@ -60,14 +61,14 @@ fun MiniBarChart(
                             .height(barHeight)
                             .clip(AppShapes.Small)
                             .background(
-                                SolidColor(UniStackColors.Primary)
+                                SolidColor(MaterialTheme.colorScheme.primary)
                             )
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = labels.getOrElse(index) { "" },
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Medium,
                     lineHeight = 9.sp,

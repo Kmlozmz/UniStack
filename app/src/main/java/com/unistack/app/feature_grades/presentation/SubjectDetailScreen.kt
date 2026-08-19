@@ -110,6 +110,9 @@ import com.unistack.app.feature_user.domain.GradingScale
 import java.util.Locale
 import kotlin.math.round
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import androidx.compose.runtime.ReadOnlyComposable
 private val LargeCardShape = AppShapes.SmallCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,7 +200,7 @@ fun SubjectDetailScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -279,7 +282,7 @@ fun SubjectDetailScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         "Cortes del semestre",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -288,7 +291,7 @@ fun SubjectDetailScreen(
                     // seguidas.
                     Text(
                         "${periodScheme.periods.size} cortes",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
@@ -331,7 +334,7 @@ fun SubjectDetailScreen(
                 item {
                     Text(
                         "Completados",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -364,9 +367,9 @@ fun SubjectDetailScreen(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            UniStackColors.Background.copy(alpha = 0f),
-                            UniStackColors.Background.copy(alpha = 0.9f),
-                            UniStackColors.Background
+                            MaterialTheme.colorScheme.background.copy(alpha = 0f),
+                            MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
+                            MaterialTheme.colorScheme.background
                         )
                     )
                 )
@@ -387,10 +390,10 @@ fun SubjectDetailScreen(
                 enabled = addTarget != null,
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UniStackColors.Primary,
-                    contentColor = UniStackColors.OnPrimary,
-                    disabledContainerColor = UniStackColors.SurfaceVariant,
-                    disabledContentColor = UniStackColors.TextSecondary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -402,9 +405,9 @@ fun SubjectDetailScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     val buttonContent = if (addTarget == null) {
-                        UniStackColors.TextSecondary
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
-                        UniStackColors.OnPrimary
+                        MaterialTheme.colorScheme.onPrimary
                     }
                     Icon(Icons.Rounded.Add, contentDescription = null, tint = buttonContent)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -426,8 +429,8 @@ fun SubjectDetailScreen(
     if (showDeleteSubjectDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteSubjectDialog = false },
-            title = { Text("¿Eliminar materia?", color = UniStackColors.TextPrimary) },
-            text = { Text("También se eliminarán sus cortes y notas.", color = UniStackColors.TextSecondary) },
+            title = { Text("¿Eliminar materia?", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("También se eliminarán sus cortes y notas.", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -435,15 +438,15 @@ fun SubjectDetailScreen(
                         if (viewModel.deleteSubject(subject.id)) onSubjectDeleted()
                     }
                 ) {
-                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteSubjectDialog = false }) {
-                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 }
@@ -480,7 +483,7 @@ fun SubjectPeriodDetailScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -516,7 +519,7 @@ fun SubjectPeriodDetailScreen(
                 item {
                     Text(
                         "Notas del corte",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -526,8 +529,8 @@ fun SubjectPeriodDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(LargeCardShape)
-                            .background(UniStackColors.Card)
-                            .border(1.dp, UniStackColors.SoftOutline, LargeCardShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, LargeCardShape)
                     ) {
                         grades.forEachIndexed { index, grade ->
                             GradeRowItem(
@@ -537,7 +540,7 @@ fun SubjectPeriodDetailScreen(
                                 onDeleteClick = { gradeIdPendingDelete = grade.id }
                             )
                             if (index < grades.lastIndex) {
-                                HorizontalDivider(color = UniStackColors.SoftOutline, thickness = 1.dp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
                             }
                         }
                     }
@@ -552,15 +555,15 @@ fun SubjectPeriodDetailScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
-            color = UniStackColors.Background,
+            color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
             SquishyButton(
                 onClick = { onAddGradeClick(subject.id, period.id) },
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UniStackColors.Primary,
-                    contentColor = UniStackColors.OnPrimary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 modifier = Modifier
                     .bottomActionInsets()
@@ -568,13 +571,13 @@ fun SubjectPeriodDetailScreen(
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = null, tint = UniStackColors.OnPrimary)
+                Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Agregar nota a ${periodDisplayName(period)}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = UniStackColors.OnPrimary
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -584,8 +587,8 @@ fun SubjectPeriodDetailScreen(
     gradeIdPendingDelete?.let { gradeId ->
         AlertDialog(
             onDismissRequest = { gradeIdPendingDelete = null },
-            title = { Text("¿Eliminar nota?", color = UniStackColors.TextPrimary) },
-            text = { Text("Esta acción no se puede deshacer.", color = UniStackColors.TextSecondary) },
+            title = { Text("¿Eliminar nota?", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Esta acción no se puede deshacer.", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -593,15 +596,15 @@ fun SubjectPeriodDetailScreen(
                         gradeIdPendingDelete = null
                     }
                 ) {
-                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { gradeIdPendingDelete = null }) {
-                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 }
@@ -611,14 +614,14 @@ private fun MissingSubjectState(onBackClick: () -> Unit, modifier: Modifier = Mo
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
             .padding(20.dp)
     ) {
         IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.TextPrimary)
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onSurface)
         }
-        Text("Materia no encontrada", color = UniStackColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Materia no encontrada", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -647,7 +650,7 @@ private fun SubjectHeader(
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Column(
@@ -659,7 +662,7 @@ private fun SubjectHeader(
         ) {
             Text(
                 title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 2,
@@ -674,19 +677,19 @@ private fun SubjectHeader(
                 Box(
                     modifier = Modifier
                         .size(16.dp)
-                        .background(UniStackColors.Primary, RoundedCornerShape(4.dp)),
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Rounded.BarChart,
                         contentDescription = null,
-                        tint = UniStackColors.OnPrimary,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(10.dp)
                     )
                 }
                 Text(
                     subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -700,31 +703,31 @@ private fun SubjectHeader(
                 Icon(
                     Icons.Rounded.MoreVert,
                     contentDescription = "Opciones de materia",
-                    tint = UniStackColors.TextPrimary
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
             }
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = onDismissMenu,
-                modifier = Modifier.background(UniStackColors.Card)
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar materia", color = UniStackColors.TextPrimary) },
-                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = UniStackColors.TextSecondary) },
+                    text = { Text("Editar materia", color = MaterialTheme.colorScheme.onSurface) },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = onEditClick
                 )
                 onCompleteHistoryClick?.let { action ->
                     DropdownMenuItem(
-                        text = { Text("Completar historial", color = UniStackColors.TextPrimary) },
+                        text = { Text("Completar historial", color = MaterialTheme.colorScheme.onSurface) },
                         leadingIcon = {
-                            Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = UniStackColors.Yellow)
+                            Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = LocalSectionColors.current.atRisk)
                         },
                         onClick = action
                     )
                 }
                 DropdownMenuItem(
-                    text = { Text("Eliminar materia", color = UniStackColors.Coral) },
-                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = UniStackColors.Coral) },
+                    text = { Text("Eliminar materia", color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     onClick = onDeleteClick
                 )
             }
@@ -747,7 +750,7 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Column(
@@ -757,13 +760,13 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
         ) {
             Text(
                 title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 subtitle,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -812,10 +815,10 @@ private fun SubjectClassFacts(session: ClassSession) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = UniStackColors.TextSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
-                    Text(text, color = UniStackColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(text, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -839,7 +842,7 @@ private fun PeriodChooser(
     if (periods.isEmpty()) {
         Text(
             "Todos los cortes están completos.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
         return
@@ -847,14 +850,14 @@ private fun PeriodChooser(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             if (chosenPeriodId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",
-            color = if (chosenPeriodId == null) UniStackColors.TextPrimary else UniStackColors.TextSecondary,
+            color = if (chosenPeriodId == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = if (chosenPeriodId == null) 15.sp else 13.sp,
             fontWeight = if (chosenPeriodId == null) FontWeight.ExtraBold else FontWeight.SemiBold
         )
         if (chosenPeriodId == null) {
             Text(
                 "Elígelo para saber dónde entran tus notas y qué cortes ya pasaron.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 17.sp
             )
@@ -887,7 +890,7 @@ private fun PeriodChooser(
                     Text(
                         periodDisplayName(period),
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                        color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
+                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -915,10 +918,10 @@ private fun SubjectOverviewCard(
     val average = calculation.currentAverage
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline,
+        borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
@@ -934,14 +937,14 @@ private fun SubjectOverviewCard(
                 ) {
                     Text(
                         if (calculation.isFinished) "Nota final" else "Promedio de lo evaluado",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                     if (average == null) {
                         Text(
                             "Sin evaluar",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -949,13 +952,13 @@ private fun SubjectOverviewCard(
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 GradingScaleUtils.formatGrade(average, scale),
-                                color = UniStackColors.Primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 42.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
@@ -970,14 +973,14 @@ private fun SubjectOverviewCard(
                             CircularProgressIndicator(
                                 progress = { 1f },
                                 modifier = Modifier.fillMaxSize(),
-                                color = UniStackColors.Primary.copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                                 strokeWidth = 7.dp,
                                 trackColor = Color.Transparent
                             )
                             CircularProgressIndicator(
                                 progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
                                 modifier = Modifier.fillMaxSize(),
-                                color = UniStackColors.Primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 strokeWidth = 7.dp,
                                 trackColor = Color.Transparent
                             )
@@ -994,7 +997,7 @@ private fun SubjectOverviewCard(
                             EvaluationBar(
                                 fraction = evaluated / 100.0,
                                 height = 7.dp,
-                                color = UniStackColors.Primary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -1008,7 +1011,7 @@ private fun SubjectOverviewCard(
                 floor == null || ceiling == null -> {
                     Text(
                         "Registra tu primera nota para saber entre qué notas puedes acabar.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -1016,7 +1019,7 @@ private fun SubjectOverviewCard(
                 calculation.isFinished -> {
                     Text(
                         "Ya no queda nada por evaluar: esta es la nota definitiva.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -1025,7 +1028,7 @@ private fun SubjectOverviewCard(
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
                             "Dónde puedes acabar",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -1039,9 +1042,9 @@ private fun SubjectOverviewCard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), UniStackColors.TextSecondary)
-                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), UniStackColors.TextPrimary)
-                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), UniStackColors.TextSecondary)
+                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onSurfaceVariant)
+                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onSurface)
+                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -1069,7 +1072,7 @@ private fun OutcomeRangeBar(
     val end = (ceiling / maxGrade).coerceIn(0.0, 1.0).toFloat()
     val targetAt = (target / maxGrade).coerceIn(0.0, 1.0).toFloat()
     val targetIsInside = target in floor..ceiling
-    val bandColor = if (targetIsInside) UniStackColors.Primary else UniStackColors.Coral
+    val bandColor = if (targetIsInside) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
     BoxWithConstraints(
         modifier = Modifier
@@ -1083,7 +1086,7 @@ private fun OutcomeRangeBar(
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.SurfaceVariant)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
         Box(
             modifier = Modifier
@@ -1101,7 +1104,7 @@ private fun OutcomeRangeBar(
                 .width(3.dp)
                 .fillMaxHeight()
                 .clip(CircleShape)
-                .background(UniStackColors.TextPrimary)
+                .background(MaterialTheme.colorScheme.onSurface)
         )
     }
 }
@@ -1109,7 +1112,7 @@ private fun OutcomeRangeBar(
 @Composable
 private fun RangeLegend(label: String, value: String, valueColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
@@ -1119,13 +1122,13 @@ private fun EvaluationValue(evaluated: Double) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "${formatPercent(evaluated)}%",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold
         )
         Text(
             "evaluado",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium
         )
@@ -1147,14 +1150,20 @@ private fun SubjectMetricsBand(
     remainingPercentage: Double,
     scale: GradingScale
 ) {
+    // Los cuatro tonos se leen del tema aqui, en contexto composable, y la lambda solo
+    // elige entre ellos: leer el tema dentro de la lambda la haria composable a ella.
+    val toneUnknown = MaterialTheme.colorScheme.onSurfaceVariant
+    val toneSecured = LocalSectionColors.current.onTrack
+    val toneUnreachable = MaterialTheme.colorScheme.error
+    val toneAtRisk = LocalSectionColors.current.atRisk
     val reachTone: (Double) -> Color = { threshold ->
         val floor = calculation.guaranteedMinimum
         val ceiling = calculation.bestPossible
         when {
-            floor == null || ceiling == null -> UniStackColors.TextSecondary
-            floor >= threshold - 0.0001 -> UniStackColors.Green
-            ceiling < threshold - 0.0001 -> UniStackColors.Coral
-            else -> UniStackColors.Yellow
+            floor == null || ceiling == null -> toneUnknown
+            floor >= threshold - 0.0001 -> toneSecured
+            ceiling < threshold - 0.0001 -> toneUnreachable
+            else -> toneAtRisk
         }
     }
     SubjectMetricsBandContent(
@@ -1194,7 +1203,7 @@ private fun SubjectMetricsBandContent(
             MetricDivider()
             MetricBandItem("Objetivo", targetGrade, targetTone, Modifier.weight(1f))
             MetricDivider()
-            MetricBandItem("Por evaluar", remainingPercentage, UniStackColors.TextPrimary, Modifier.weight(1f))
+            MetricBandItem("Por evaluar", remainingPercentage, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
         }
     }
 }
@@ -1206,14 +1215,14 @@ private fun MetricBandItem(label: String, value: String, color: Color, modifier:
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Normal)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Normal)
         Text(value, color = color, fontSize = 17.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun MetricDivider() {
-    Box(Modifier.fillMaxHeight().width(1.dp).background(UniStackColors.SoftOutline))
+    Box(Modifier.fillMaxHeight().width(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
 }
 
 @Composable
@@ -1228,11 +1237,11 @@ private fun SubjectInsightCard(
     // así que «tu meta está en riesgo» se leía sobre fondo verde y con el número
     // resaltado también en verde: el color decía lo contrario que el texto.
     val tone = when (calculation.outlook) {
-        TargetOutlook.NO_DATA -> UniStackColors.TextSecondary
-        TargetOutlook.SECURED -> UniStackColors.Green
-        TargetOutlook.ON_TRACK -> UniStackColors.Teal
-        TargetOutlook.AT_RISK -> UniStackColors.Yellow
-        TargetOutlook.UNREACHABLE -> UniStackColors.Coral
+        TargetOutlook.NO_DATA -> MaterialTheme.colorScheme.onSurfaceVariant
+        TargetOutlook.SECURED -> LocalSectionColors.current.onTrack
+        TargetOutlook.ON_TRACK -> MaterialTheme.colorScheme.tertiary
+        TargetOutlook.AT_RISK -> LocalSectionColors.current.atRisk
+        TargetOutlook.UNREACHABLE -> MaterialTheme.colorScheme.error
     }
 
     val annotatedText = remember(calculation, targetGrade, maxGrade, scale, tone) {
@@ -1331,7 +1340,7 @@ private fun SubjectInsightCard(
             )
             Text(
                 text = annotatedText,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 modifier = Modifier.weight(1f)
@@ -1352,8 +1361,8 @@ private fun PeriodCard(
 ) {
     val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     val accent = when {
-        needsHistory -> UniStackColors.Yellow
-        isActive -> UniStackColors.Primary
+        needsHistory -> LocalSectionColors.current.atRisk
+        isActive -> MaterialTheme.colorScheme.primary
         else -> summary.status.color
     }
     // Un corte cerrado se apaga un poco: sigue ahí para consultarlo, pero ya no compite por la
@@ -1366,10 +1375,10 @@ private fun PeriodCard(
             .fillMaxWidth()
             .alpha(cardAlpha)
             .bounceClick(onClick),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = if (isActive) accent.copy(alpha = 0.48f) else UniStackColors.SoftOutline,
+        borderColor = if (isActive) accent.copy(alpha = 0.48f) else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
@@ -1401,7 +1410,7 @@ private fun PeriodCard(
                         ) {
                             Text(
                                 periodDisplayName(summary.period),
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
@@ -1410,7 +1419,7 @@ private fun PeriodCard(
                             // que importa ahora mismo— no se podía saber si estaba pendiente,
                             // en curso o completado.
                             if (needsHistory) {
-                                CustomStatusBadge("Completar historial", UniStackColors.Yellow)
+                                CustomStatusBadge("Completar historial", LocalSectionColors.current.atRisk)
                             } else {
                                 StatusBadge(status = summary.status)
                             }
@@ -1420,7 +1429,7 @@ private fun PeriodCard(
                                 append("${formatPercent(summary.period.weight * 100)}% de la materia")
                                 if (isActive) append("  ·  Corte actual")
                             },
-                            color = if (isActive) UniStackColors.Primary else UniStackColors.TextSecondary,
+                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
                         )
@@ -1429,7 +1438,7 @@ private fun PeriodCard(
                         if (summary.average == null) {
                             Text(
                                 "Sin evaluar",
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 18.sp,
                                 lineHeight = 28.sp,
                                 fontWeight = FontWeight.ExtraBold
@@ -1447,7 +1456,7 @@ private fun PeriodCard(
                                 )
                                 Text(
                                     " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                    color = UniStackColors.TextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(start = 2.dp, bottom = 3.dp)
@@ -1456,7 +1465,7 @@ private fun PeriodCard(
                         }
                         Text(
                             "${formatPercent(summary.evaluated)}% evaluado",
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -1488,7 +1497,7 @@ private fun PeriodCard(
                         }
                         Text(
                             gradeCountLabel(summary.grades.size),
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -1496,7 +1505,7 @@ private fun PeriodCard(
                     Icon(
                         Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = UniStackColors.TextSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -1522,10 +1531,10 @@ private fun PeriodSummaryCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline,
+        borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(20.dp)
     ) {
@@ -1538,7 +1547,7 @@ private fun PeriodSummaryCard(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         "Nota del corte",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1548,7 +1557,7 @@ private fun PeriodSummaryCard(
                         // valor y no como una ausencia.
                         Text(
                             "Sin evaluar",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -1563,7 +1572,7 @@ private fun PeriodSummaryCard(
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
@@ -1589,7 +1598,7 @@ private fun PeriodSummaryCard(
                             append("  ·  queda ${formatPercent(remaining)}% por repartir")
                         }
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -1634,7 +1643,7 @@ private fun GradeRowItem(
         ) {
             Text(
                 grade.name,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -1642,13 +1651,13 @@ private fun GradeRowItem(
             )
             Text(
                 grade.contextLabel(),
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
         }
         Text(
             GradingScaleUtils.formatGrade(grade.value, scale),
-            color = UniStackColors.Green,
+            color = LocalSectionColors.current.onTrack,
             fontSize = 22.sp,
             fontWeight = FontWeight.ExtraBold
         )
@@ -1657,22 +1666,22 @@ private fun GradeRowItem(
                 Icon(
                     Icons.Rounded.MoreVert,
                     contentDescription = "Opciones de nota",
-                    tint = UniStackColors.TextSecondary
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
-                modifier = Modifier.background(UniStackColors.Card)
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar", color = UniStackColors.TextPrimary) },
-                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = UniStackColors.TextSecondary) },
+                    text = { Text("Editar", color = MaterialTheme.colorScheme.onSurface) },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = { showMenu = false; onEditClick() }
                 )
                 DropdownMenuItem(
-                    text = { Text("Eliminar", color = UniStackColors.Coral) },
-                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = UniStackColors.Coral) },
+                    text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     onClick = { showMenu = false; onDeleteClick() }
                 )
             }
@@ -1690,10 +1699,10 @@ private fun GradeRowCard(
     var showMenu by remember { mutableStateOf(false) }
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline,
+        borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
@@ -1722,7 +1731,7 @@ private fun GradeRowCard(
             ) {
                 Text(
                     grade.name,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
@@ -1730,13 +1739,13 @@ private fun GradeRowCard(
                 )
                 Text(
                     grade.contextLabel(),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             }
             Text(
                 GradingScaleUtils.formatGrade(grade.value, scale),
-                color = UniStackColors.Green,
+                color = LocalSectionColors.current.onTrack,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -1745,25 +1754,25 @@ private fun GradeRowCard(
                     Icon(
                         Icons.Rounded.MoreVert,
                         contentDescription = "Opciones de nota",
-                        tint = UniStackColors.TextSecondary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
-                    modifier = Modifier.background(UniStackColors.Card)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Editar", color = UniStackColors.TextPrimary) },
-                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = UniStackColors.TextSecondary) },
+                        text = { Text("Editar", color = MaterialTheme.colorScheme.onSurface) },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                         onClick = {
                             showMenu = false
                             onEditClick()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Eliminar", color = UniStackColors.Coral) },
-                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = UniStackColors.Coral) },
+                        text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                         onClick = {
                             showMenu = false
                             onDeleteClick()
@@ -1789,8 +1798,8 @@ private fun EmptyPeriodNotesInline() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(LargeCardShape)
-            .background(UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.92f))
-            .border(1.dp, UniStackColors.SoftOutline, LargeCardShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.92f))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, LargeCardShape)
             .padding(horizontal = 18.dp, vertical = 22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1798,20 +1807,20 @@ private fun EmptyPeriodNotesInline() {
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .background(UniStackColors.Primary.copy(alpha = 0.12f), AppShapes.Small),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), AppShapes.Small),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.AutoMirrored.Rounded.Assignment,
                 contentDescription = null,
-                tint = UniStackColors.Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
         }
-        Text("Aún no hay notas", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text("Aún no hay notas", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Text(
             "Agrega una actividad para calcular este corte.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
             lineHeight = 17.sp
@@ -1823,10 +1832,10 @@ private fun EmptyPeriodNotesInline() {
 private fun EmptyPeriodNotesCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline,
+        borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(24.dp)
     ) {
@@ -1838,25 +1847,25 @@ private fun EmptyPeriodNotesCard() {
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .background(UniStackColors.Primary.copy(alpha = 0.12f), CircleShape),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Rounded.Assignment,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
                 )
             }
             Text(
                 "Aún no hay notas",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
             Text(
                 "Agrega una actividad para calcular el avance de este corte.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
                 lineHeight = 18.sp
@@ -1913,9 +1922,9 @@ private enum class PeriodStatus(val label: String) {
 
 private val PeriodStatus.color: Color
     @Composable get() = when (this) {
-        PeriodStatus.COMPLETED -> UniStackColors.Green
-        PeriodStatus.IN_PROGRESS -> UniStackColors.Primary
-        PeriodStatus.PENDING -> UniStackColors.Yellow
+        PeriodStatus.COMPLETED -> LocalSectionColors.current.onTrack
+        PeriodStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
+        PeriodStatus.PENDING -> LocalSectionColors.current.atRisk
     }
 
 private fun PeriodStatus.icon(): ImageVector {
@@ -1962,15 +1971,17 @@ private fun GradeType.icon(): ImageVector {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun GradeType.colorLocal(): Color {
     return when (this) {
         GradeType.WORKSHOP,
-        GradeType.PRACTICE -> UniStackColors.Green
-        GradeType.PRESENTATION -> UniStackColors.Primary
+        GradeType.PRACTICE -> LocalSectionColors.current.onTrack
+        GradeType.PRESENTATION -> MaterialTheme.colorScheme.primary
         GradeType.EXAM,
-        GradeType.QUIZ -> UniStackColors.Yellow
+        GradeType.QUIZ -> LocalSectionColors.current.atRisk
         GradeType.PROJECT,
-        GradeType.RESEARCH -> UniStackColors.Blue
-        GradeType.OTHER -> UniStackColors.TextSecondary
+        GradeType.RESEARCH -> LocalSectionColors.current.schedule
+        GradeType.OTHER -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }

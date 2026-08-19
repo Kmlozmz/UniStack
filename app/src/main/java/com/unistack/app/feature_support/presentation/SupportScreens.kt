@@ -76,6 +76,7 @@ import com.unistack.app.feature_support.domain.buildTicket
 import com.unistack.app.feature_updates.presentation.ReleaseNotes
 import kotlinx.coroutines.launch
 
+import com.unistack.app.core.design.theme.LocalSectionColors
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *
@@ -138,7 +139,7 @@ fun WhatsNewScreen(
                     UniStackWordmark(fontSize = 20.sp)
                     Text(
                         "Tienes la ${BuildConfig.VERSION_NAME}",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -149,7 +150,7 @@ fun WhatsNewScreen(
                 UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                     Text(
                         "Todavía no hay nada publicado para esta versión.",
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -160,13 +161,13 @@ fun WhatsNewScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 section.version,
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold
                             )
                             section.date?.let { date ->
                                 Spacer(Modifier.width(8.dp))
-                                Text(date, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                                Text(date, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             }
                         }
                         ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
@@ -221,25 +222,25 @@ fun ResourcesScreen(
                         Modifier
                             .size(38.dp)
                             .clip(AppShapes.Small)
-                            .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.AutoMirrored.Rounded.MenuBook,
                             contentDescription = null,
-                            tint = UniStackColors.Primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(19.dp)
                         )
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(link.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
-                        Text(link.subtitle, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                        Text(link.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text(link.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                     Icon(
                         Icons.Rounded.ChevronRight,
                         contentDescription = null,
-                        tint = UniStackColors.TextSecondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -321,20 +322,20 @@ fun HelpScreen(
                             Text(
                                 entry.question,
                                 modifier = Modifier.weight(1f),
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
                             )
                             Icon(
                                 if (isOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                                 contentDescription = null,
-                                tint = UniStackColors.TextSecondary
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         AnimatedVisibility(visible = isOpen) {
                             Text(
                                 entry.answer,
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
                             )
@@ -356,26 +357,26 @@ fun HelpScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "¿No está aquí lo tuyo?",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
                         "Escríbelo y se abre Telegram en el tema que corresponda, con tu versión " +
                             "y tu teléfono ya apuntados.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
                     )
                     SupportOptionRow(
                         icon = Icons.Rounded.BugReport,
-                        accent = UniStackColors.Coral,
+                        accent = MaterialTheme.colorScheme.error,
                         title = "Reportar un fallo",
                         subtitle = "Algo no funciona como debería",
                         onClick = { composing = TicketKind.BUG }
                     )
                     SupportOptionRow(
                         icon = Icons.Rounded.Lightbulb,
-                        accent = UniStackColors.Yellow,
+                        accent = LocalSectionColors.current.atRisk,
                         title = "Sugerir algo",
                         subtitle = "Algo que te falta o mejorarías",
                         onClick = { composing = TicketKind.IDEA }
@@ -404,7 +405,7 @@ fun HelpScreen(
             confirmButton = {
                 TextButton(onClick = { opened = null }) { Text("Entendido") }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -444,7 +445,7 @@ private fun SupportOptionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(AppShapes.MediumCard)
-            .background(UniStackColors.SurfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -460,13 +461,13 @@ private fun SupportOptionRow(
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, lineHeight = 15.sp)
         }
         Icon(
             Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = UniStackColors.TextSecondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -522,7 +523,7 @@ private fun TicketComposer(
                     } else {
                         "Cuenta qué te falta y para qué lo usarías."
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -537,13 +538,13 @@ private fun TicketComposer(
                 )
                 Text(
                     "${text.length} de 1500",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
                 Text(
                     "Al enviar se copia el mensaje y se abre el grupo: solo tienes que pegarlo. " +
                         "El grupo es público, así que no escribas nada que no quieras que se lea.",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
                 )
@@ -560,7 +561,7 @@ private fun TicketComposer(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
         },
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     )
 }
 
@@ -584,7 +585,7 @@ fun AboutScreen(
                     UniStackWordmark(fontSize = 24.sp)
                     Text(
                         "Tu semestre en un solo sitio: notas, horario, tareas y gastos.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -612,13 +613,13 @@ fun AboutScreen(
         item {
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Tus datos", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                    Text("Tus datos", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     Text(
                         "Todo lo que registras se guarda en este teléfono. La app no manda tus " +
                             "notas, tareas ni gastos a ningún servidor. Si vinculas una cuenta de " +
                             "Google, se usa solo para el respaldo que tú pidas, y puedes " +
                             "desvincularla cuando quieras desde tu perfil.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -631,8 +632,8 @@ fun AboutScreen(
 @Composable
 private fun AboutFact(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f), color = UniStackColors.TextSecondary, fontSize = 13.sp)
-        Text(value, color = UniStackColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+        Text(value, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -649,20 +650,20 @@ private fun AboutRow(
                 Modifier
                     .size(38.dp)
                     .clip(AppShapes.Small)
-                    .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(19.dp))
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = UniStackColors.TextSecondary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         }

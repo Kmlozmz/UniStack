@@ -99,45 +99,48 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.contentColorOn
 private val ExpenseBackground: Color
-    @Composable get() = UniStackColors.Background
+    @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
-    @Composable get() = UniStackColors.Card
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
 private val ExpenseCardHigh: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val ExpenseCoral: Color
-    @Composable get() = UniStackColors.Coral
+    @Composable get() = LocalSectionColors.current.expenses
 private val ExpenseCoralDeep: Color
-    @Composable get() = UniStackColors.Coral
+    @Composable get() = LocalSectionColors.current.expenses
 private val ExpensePurple: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val ExpenseText: Color
-    @Composable get() = UniStackColors.TextPrimary
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 private val ExpenseMuted: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ExpenseTrack: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 // Los filetes salen de SoftOutline, que mezcla la tarjeta con el color de texto y por tanto
 // se comporta bien en cualquier tema. Antes en oscuro salían de OnPrimary al 6%, y OnPrimary
 // es «contenido sobre el acento»: con un acento claro —el caso normal con Monet en oscuro—
 // se resuelve a tinta oscura, y tinta oscura al 6% sobre un fondo oscuro no se ve. De ahí
 // que los contornos hubieran desaparecido en esta pantalla.
 private val ExpenseBorder: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.SoftOutline
+    @Composable get() = if (LocalIsDarkTheme.current) {
+        MaterialTheme.colorScheme.outlineVariant
     } else {
-        UniStackColors.SoftOutline.copy(alpha = 0.7f)
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
     }
 private val ExpenseDivider: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) {
-        UniStackColors.SoftOutline.copy(alpha = 0.8f)
+    @Composable get() = if (LocalIsDarkTheme.current) {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f)
     } else {
-        UniStackColors.SoftOutline.copy(alpha = 0.5f)
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     }
 private val ExpenseSelectedText: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val ExpenseNeutralIcon: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ReferenceBars = listOf(28, 55, 35, 78, 32, 52, 40)
 
 @Composable
@@ -1175,19 +1178,19 @@ private fun RegisterExpenseButton(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = UniStackColors.contentColorOn(ExpenseCoral),
+                    tint = contentColorOn(ExpenseCoral),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Registrar gasto",
-                color = UniStackColors.contentColorOn(ExpenseCoral),
+                color = contentColorOn(ExpenseCoral),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1280,7 +1283,7 @@ private fun ExpenseBudgetSheet(
                 shape = AppShapes.SmallCard,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = ExpenseCoral,
-                    contentColor = UniStackColors.contentColorOn(ExpenseCoral),
+                    contentColor = contentColorOn(ExpenseCoral),
                     disabledContainerColor = ExpenseTrack,
                     disabledContentColor = ExpenseMuted
                 ),
@@ -1415,7 +1418,7 @@ private fun ExpenseListItem(
                 Icon(Icons.Rounded.Edit, contentDescription = "Editar gasto", tint = ExpenseMuted)
             }
             IconButton(onClick = onDeleteClick) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Eliminar gasto", tint = UniStackColors.Coral)
+                Icon(Icons.Rounded.Delete, contentDescription = "Eliminar gasto", tint = LocalSectionColors.current.expenses)
             }
         }
     }

@@ -69,6 +69,8 @@ import com.unistack.app.core.design.theme.UniStackColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 data class FabMenuItem(
     val label: String,
     val icon: ImageVector,
@@ -108,7 +110,7 @@ fun UniStackFabMenu(
                 FabMenuItem(
                     label = "Agregar nota",
                     icon = Icons.Rounded.Add,
-                    color = UniStackColors.Primary,
+                    color = MaterialTheme.colorScheme.primary,
                     contentDescription = "Agregar nota",
                     onClick = onAddGradeClick
                 )
@@ -119,7 +121,7 @@ fun UniStackFabMenu(
                 FabMenuItem(
                     label = "Nueva tarea",
                     icon = Icons.AutoMirrored.Rounded.Assignment,
-                    color = UniStackColors.Blue,
+                    color = LocalSectionColors.current.schedule,
                     contentDescription = "Nueva tarea",
                     onClick = onAddTaskClick
                 )
@@ -130,7 +132,7 @@ fun UniStackFabMenu(
                 FabMenuItem(
                     label = "Registrar gasto",
                     icon = Icons.Rounded.AccountBalanceWallet,
-                    color = UniStackColors.Coral,
+                    color = MaterialTheme.colorScheme.error,
                     contentDescription = "Registrar gasto",
                     onClick = onAddExpenseClick
                 )
@@ -141,7 +143,7 @@ fun UniStackFabMenu(
                 FabMenuItem(
                     label = "Nueva materia",
                     icon = Icons.AutoMirrored.Rounded.MenuBook,
-                    color = UniStackColors.Green,
+                    color = LocalSectionColors.current.onTrack,
                     contentDescription = "Nueva materia",
                     onClick = onAddSubjectClick
                 )
@@ -182,7 +184,7 @@ fun UniStackFabMenu(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(UniStackColors.Scrim.copy(alpha = scrimAlpha))
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = scrimAlpha))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -263,14 +265,14 @@ private fun FabMenuOption(
             onClick = onSelected,
             modifier = modifier.semantics { contentDescription = item.contentDescription },
             shape = AppShapes.MediumCard,
-            color = if (UniStackColors.IsDarkTheme) {
-                UniStackColors.Card
+            color = if (LocalIsDarkTheme.current) {
+                MaterialTheme.colorScheme.surfaceContainerLow
             } else {
                 MaterialTheme.colorScheme.surface
             },
             tonalElevation = 0.dp,
             shadowElevation = 0.dp,
-            border = androidx.compose.foundation.BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.44f))
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.44f))
         ) {
             Row(
                 modifier = Modifier.padding(start = 16.dp, top = 9.dp, end = 9.dp, bottom = 9.dp),
@@ -278,7 +280,7 @@ private fun FabMenuOption(
             ) {
                 Text(
                     text = item.label,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -289,7 +291,7 @@ private fun FabMenuOption(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(item.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.20f else 0.13f)),
+                        .background(item.color.copy(alpha = if (LocalIsDarkTheme.current) 0.20f else 0.13f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -347,8 +349,8 @@ private fun FabMenuButton(
         onClick = onClick,
         modifier = modifier.size(56.dp),
         shape = RoundedCornerShape(radius),
-        containerColor = UniStackColors.Primary,
-        contentColor = UniStackColors.OnPrimary
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
         Icon(
             imageVector = Icons.Rounded.Add,

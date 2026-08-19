@@ -72,12 +72,12 @@ fun ProScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(UniStackColors.Background)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -100,7 +100,7 @@ fun ProScreen(
             item {
                 Text(
                     text = "Beneficios Pro",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -128,7 +128,7 @@ private fun ProHeroCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Primary,
+        color = MaterialTheme.colorScheme.primary,
         shape = AppShapes.LargeCard,
         tonalElevation = 8.dp,
         contentPadding = PaddingValues(20.dp)
@@ -138,19 +138,19 @@ private fun ProHeroCard(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.OnPrimary.copy(alpha = 0.22f)),
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.22f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Star,
                     contentDescription = null,
-                    tint = UniStackColors.OnPrimary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(28.dp)
                 )
             }
             Text(
                 text = "UniStack Pro",
-                color = UniStackColors.OnPrimary,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -160,7 +160,7 @@ private fun ProHeroCard(
                 } else {
                     "Desbloquea materias ilimitadas para organizar todos tus semestres."
                 },
-                color = UniStackColors.OnPrimary.copy(alpha = 0.88f),
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f),
                 fontSize = 14.sp,
                 lineHeight = 19.sp
             )
@@ -169,8 +169,8 @@ private fun ProHeroCard(
                 enabled = canBuy,
                 shape = AppShapes.Pill,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UniStackColors.OnPrimary,
-                    contentColor = UniStackColors.Primary
+                    containerColor = MaterialTheme.colorScheme.onPrimary,
+                    contentColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -194,7 +194,7 @@ private fun ProHeroCard(
 private fun BenefitCard(benefit: ProBenefit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.MediumCard,
         tonalElevation = 4.dp,
         contentPadding = PaddingValues(14.dp)
@@ -204,13 +204,13 @@ private fun BenefitCard(benefit: ProBenefit) {
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.CheckCircle,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -218,10 +218,10 @@ private fun BenefitCard(benefit: ProBenefit) {
                 modifier = Modifier.padding(start = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text(benefit.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                Text(benefit.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                 Text(
                     benefit.description,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 18.sp
                 )
@@ -237,7 +237,7 @@ private fun BillingStatusCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = if (billingState.errorMessage == null) UniStackColors.SurfaceVariant else UniStackColors.CoralLight,
+        color = if (billingState.errorMessage == null) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.errorContainer,
         shape = AppShapes.LargeCard,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(14.dp)
@@ -247,7 +247,7 @@ private fun BillingStatusCard(
                 Icon(
                     Icons.Rounded.CreditCard,
                     contentDescription = null,
-                    tint = if (billingState.errorMessage == null) UniStackColors.Primary else UniStackColors.Coral
+                    tint = if (billingState.errorMessage == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
                 Column(
                     modifier = Modifier.padding(start = 12.dp),
@@ -260,7 +260,7 @@ private fun BillingStatusCard(
                             billingState.isBillingAvailable -> "Google Play Billing disponible"
                             else -> "Google Play Billing no disponible"
                         },
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
@@ -268,7 +268,7 @@ private fun BillingStatusCard(
                             ?: billingState.message
                             ?: billingState.products.firstOrNull()?.description
                             ?: "Verifica que la app esté instalada desde una cuenta con acceso al producto Pro.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
@@ -278,7 +278,7 @@ private fun BillingStatusCard(
                 onClick = onRefreshClick,
                 enabled = !billingState.isLoading,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))

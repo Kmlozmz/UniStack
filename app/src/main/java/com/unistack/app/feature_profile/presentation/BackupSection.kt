@@ -53,6 +53,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 private val BackupLocale = Locale.forLanguageTag("es")
 
 /** Lo que se ha elegido restaurar, mientras se decide. */
@@ -142,21 +144,21 @@ internal fun BackupSection(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(AppShapes.MediumCard)
-                .background(UniStackColors.Yellow.copy(alpha = 0.16f))
-                .border(1.dp, UniStackColors.Yellow.copy(alpha = 0.55f), AppShapes.MediumCard)
+                .background(LocalSectionColors.current.atRisk.copy(alpha = 0.16f))
+                .border(1.dp, LocalSectionColors.current.atRisk.copy(alpha = 0.55f), AppShapes.MediumCard)
                 .padding(14.dp)
         ) {
             Icon(
                 Icons.Rounded.Info,
                 contentDescription = null,
-                tint = UniStackColors.Yellow,
+                tint = LocalSectionColors.current.atRisk,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(11.dp))
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     "Esto es temporal",
-                    color = UniStackColors.Yellow,
+                    color = LocalSectionColors.current.atRisk,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -164,7 +166,7 @@ internal fun BackupSection(
                     "Por ahora la copia la guardas tú, en un archivo. Pronto vas a poder " +
                         "vincular tu cuenta de Google y que se haga sola, sin que tengas que " +
                         "acordarte.",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -177,7 +179,7 @@ internal fun BackupSection(
                 Text(
                     "Un archivo con todo lo que tienes registrado. Guárdalo donde quieras y " +
                         "úsalo para volver a dejar la app como estaba.",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -185,21 +187,21 @@ internal fun BackupSection(
                     Modifier
                         .fillMaxWidth()
                         .clip(AppShapes.MediumCard)
-                        .background(UniStackColors.SurfaceVariant)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Contenido", color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                        Text("Contenido", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         Text(
                             dataSummary,
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             lineHeight = 17.sp
                         )
                         Text(
                             lastBackup?.let { "Última copia: ${formatBackupDate(it)}" }
                                 ?: "Todavía no has guardado ninguna copia.",
-                            color = if (lastBackup == null) UniStackColors.Coral else UniStackColors.TextSecondary,
+                            color = if (lastBackup == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                     }
@@ -257,10 +259,10 @@ internal fun BackupSection(
                         Box(
                             Modifier
                                 .clip(AppShapes.Pill)
-                                .background(UniStackColors.Yellow.copy(alpha = 0.22f))
+                                .background(LocalSectionColors.current.atRisk.copy(alpha = 0.22f))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
-                            Text("Pronto", color = UniStackColors.Yellow, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("Pronto", color = LocalSectionColors.current.atRisk, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
@@ -274,7 +276,7 @@ internal fun BackupSection(
                         cloudLinked -> cloudStatus ?: "Tu cuenta está lista para respaldar y recuperar."
                         else -> "Conecta una cuenta de Google desde tu perfil para usar la nube."
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -304,7 +306,7 @@ internal fun BackupSection(
                 Text(
                     "Formatos para abrir en otro sitio. No sirven para restaurar: para eso está " +
                         "la copia de seguridad.",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
@@ -349,7 +351,7 @@ internal fun BackupSection(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         pending.name,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -358,7 +360,7 @@ internal fun BackupSection(
                         Text(
                             "No es una copia de UniStack, o está incompleto. Elige el archivo " +
                                 "que guardaste desde «Guardar».",
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
                         )
@@ -373,7 +375,7 @@ internal fun BackupSection(
                          */
                         Text(
                             "Esto es lo que cambiaría:",
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -389,7 +391,7 @@ internal fun BackupSection(
                         Text(
                             "Se reemplaza todo, no se mezcla, y no se puede deshacer. Si dudas, " +
                                 "guarda antes una copia de lo que tienes ahora.",
-                            color = UniStackColors.Coral,
+                            color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
                             lineHeight = 16.sp
                         )
@@ -405,7 +407,7 @@ internal fun BackupSection(
                             onFeedback(if (restored) "Copia restaurada." else "No se pudo restaurar el archivo.")
                         }
                     ) {
-                        Text("Restaurar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                        Text("Restaurar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 }
             },
@@ -414,7 +416,7 @@ internal fun BackupSection(
                     Text(if (incoming == null) "Entendido" else "Cancelar")
                 }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
@@ -426,7 +428,7 @@ private fun RestoreComparisonHeader() {
         Text(
             "Ahora",
             modifier = Modifier.width(58.dp),
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.End
@@ -434,7 +436,7 @@ private fun RestoreComparisonHeader() {
         Text(
             "Quedaría",
             modifier = Modifier.width(72.dp),
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.End
@@ -448,18 +450,18 @@ private fun RestoreComparisonRow(label: String, current: Int?, incoming: Int) {
     // que nadie compare los dos números.
     val losing = current != null && incoming < current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         Text(
             current?.toString() ?: "—",
             modifier = Modifier.width(58.dp),
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             textAlign = TextAlign.End
         )
         Text(
             incoming.toString(),
             modifier = Modifier.width(72.dp),
-            color = if (losing) UniStackColors.Coral else UniStackColors.TextPrimary,
+            color = if (losing) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.End
@@ -474,13 +476,13 @@ private fun BackupBlockTitle(icon: ImageVector, title: String) {
             Modifier
                 .size(34.dp)
                 .clip(AppShapes.Small)
-                .background(UniStackColors.Primary.copy(alpha = 0.14f)),
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         }
         Spacer(Modifier.width(10.dp))
-        Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
     }
 }
 
@@ -499,10 +501,10 @@ private fun BackupButton(
         modifier = modifier,
         shape = AppShapes.Pill,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (primary) UniStackColors.Primary else UniStackColors.SurfaceVariant,
-            contentColor = if (primary) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
-            disabledContainerColor = UniStackColors.SurfaceVariant,
-            disabledContentColor = UniStackColors.TextSecondary
+            containerColor = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     ) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))

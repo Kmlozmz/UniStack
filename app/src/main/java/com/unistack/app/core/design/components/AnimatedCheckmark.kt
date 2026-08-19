@@ -24,6 +24,7 @@ import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 import kotlinx.coroutines.launch
 
+import androidx.compose.material3.MaterialTheme
 /**
  * Marca de verificación que se dibuja trazo a trazo, en vez de aparecer ya hecha.
  *
@@ -34,7 +35,7 @@ import kotlinx.coroutines.launch
 fun AnimatedCheckmark(
     modifier: Modifier = Modifier,
     size: Dp = 38.dp,
-    color: Color = UniStackColors.OnPrimary,
+    color: Color = MaterialTheme.colorScheme.onPrimary,
     strokeWidth: Dp = 4.dp,
     durationMillis: Int = 520
 ) {

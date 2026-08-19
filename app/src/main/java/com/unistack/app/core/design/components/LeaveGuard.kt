@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.font.FontWeight
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 /**
  * Avisa antes de abandonar un formulario a medio llenar.
  *
@@ -66,13 +67,13 @@ fun rememberLeaveGuard(
                         currentOnLeave()
                     }
                 ) {
-                    Text("Salir", color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                    Text("Salir", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { asking = false }) { Text("Seguir aquí") }
             },
-            containerColor = UniStackColors.Background
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 

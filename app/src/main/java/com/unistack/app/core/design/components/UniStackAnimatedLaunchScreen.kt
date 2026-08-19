@@ -145,7 +145,7 @@ fun UniStackAnimatedLaunchScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -173,7 +173,7 @@ fun UniStackAnimatedLaunchScreen(
                     modifier = Modifier
                         .size(width = 3.dp, height = 26.dp)
                         .graphicsLayer { alpha = cursorAlpha.value }
-                        .background(UniStackColors.TextPrimary)
+                        .background(MaterialTheme.colorScheme.onSurface)
                 )
             }
         }
@@ -250,10 +250,10 @@ private fun UniStackLaunchWordmark(
 ) {
     Text(
         text = buildAnnotatedString {
-            withStyle(SpanStyle(color = UniStackColors.TextPrimary)) {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface)) {
                 append(UniText.take(uniRevealCount))
             }
-            withStyle(SpanStyle(color = UniStackColors.Primary)) {
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                 append(StackText.take(stackRevealCount))
             }
         },

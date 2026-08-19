@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun UpdateAvailableBanner(
     versionName: String,
@@ -29,7 +30,7 @@ fun UpdateAvailableBanner(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = UniStackColors.Coral,
+        targetValue = MaterialTheme.colorScheme.error,
         label = "banner_bg"
     )
 
@@ -47,19 +48,19 @@ fun UpdateAvailableBanner(
             Icon(
                 imageVector = Icons.Rounded.Download,
                 contentDescription = null,
-                tint = UniStackColors.OnPrimary,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.padding(end = 12.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Nueva actualización",
-                    color = UniStackColors.OnPrimary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "UniStack $versionName disponible • Toca para descargar",
-                    color = UniStackColors.OnPrimary.copy(alpha = 0.9f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                     fontSize = 12.sp
                 )
             }

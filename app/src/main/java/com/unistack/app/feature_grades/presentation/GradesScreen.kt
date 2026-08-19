@@ -65,6 +65,10 @@ import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.runtime.ReadOnlyComposable
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
@@ -225,7 +229,7 @@ private fun SubjectListCard(
                     .padding(start = 12.dp)
                     .size(38.dp)
                     .background(
-                        subjectColor.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f),
+                        subjectColor.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.12f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -335,25 +339,25 @@ private fun subjectTone(
 ): SubjectTone {
     return when (calculation.outlook) {
         TargetOutlook.NO_DATA -> SubjectTone(
-            MaterialTheme.colorScheme.primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.62f),
+            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.62f),
             "Sin notas"
         )
         TargetOutlook.SECURED -> SubjectTone(
-            UniStackColors.Green,
+            LocalSectionColors.current.onTrack,
             if (calculation.isFinished) "Meta cumplida" else "Meta asegurada"
         )
-        TargetOutlook.ON_TRACK -> SubjectTone(UniStackColors.Teal, "Sobre meta")
+        TargetOutlook.ON_TRACK -> SubjectTone(MaterialTheme.colorScheme.tertiary, "Sobre meta")
         TargetOutlook.AT_RISK -> {
             val current = calculation.currentAverage
             val closeToTarget = current != null &&
                 target - current <= GradeCalculator.closeToTargetMargin(maxGrade)
             SubjectTone(
-                if (closeToTarget) UniStackColors.Yellow else UniStackColors.Coral,
+                if (closeToTarget) LocalSectionColors.current.atRisk else MaterialTheme.colorScheme.error,
                 "Por subir"
             )
         }
         TargetOutlook.UNREACHABLE -> SubjectTone(
-            UniStackColors.Coral,
+            MaterialTheme.colorScheme.error,
             if (calculation.isFinished) "Bajo la meta" else "Fuera de alcance"
         )
     }
@@ -415,19 +419,19 @@ private fun AddSubjectButton(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = UniStackColors.contentColorOn(UniStackColors.Primary),
+                    tint = contentColorOn(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Agregar materia",
-                color = UniStackColors.contentColorOn(UniStackColors.Primary),
+                color = contentColorOn(MaterialTheme.colorScheme.primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -438,13 +442,15 @@ private fun AddSubjectButton(
     }
 }
 
+@Composable
+@ReadOnlyComposable
 fun subjectAccent(type: SubjectVisualType): Color = when (type) {
-    SubjectVisualType.TEAL -> UniStackColors.Teal
-    SubjectVisualType.BLUE -> UniStackColors.Blue
-    SubjectVisualType.CORAL -> UniStackColors.Coral
-    SubjectVisualType.PURPLE -> UniStackColors.Primary
-    SubjectVisualType.GREEN -> UniStackColors.Green
-    SubjectVisualType.YELLOW -> UniStackColors.Yellow
+    SubjectVisualType.TEAL -> MaterialTheme.colorScheme.tertiary
+    SubjectVisualType.BLUE -> LocalSectionColors.current.schedule
+    SubjectVisualType.CORAL -> MaterialTheme.colorScheme.error
+    SubjectVisualType.PURPLE -> MaterialTheme.colorScheme.primary
+    SubjectVisualType.GREEN -> LocalSectionColors.current.onTrack
+    SubjectVisualType.YELLOW -> LocalSectionColors.current.atRisk
     SubjectVisualType.ROSE -> CategoricalSubjectAccents.Rose
     SubjectVisualType.INDIGO -> CategoricalSubjectAccents.Indigo
     SubjectVisualType.ORANGE -> CategoricalSubjectAccents.Orange
@@ -453,23 +459,27 @@ fun subjectAccent(type: SubjectVisualType): Color = when (type) {
     SubjectVisualType.SLATE -> CategoricalSubjectAccents.Slate
 }
 
+@Composable
+@ReadOnlyComposable
 fun subjectAccent(subject: Subject): Color {
     return subject.customColor?.let { Color(it) } ?: subjectAccent(subject.visualType)
 }
 
+@Composable
+@ReadOnlyComposable
 fun subjectBackground(type: SubjectVisualType): Color = when (type) {
-    SubjectVisualType.TEAL -> UniStackColors.TealLight
-    SubjectVisualType.BLUE -> UniStackColors.BlueLight
-    SubjectVisualType.CORAL -> UniStackColors.CoralLight
-    SubjectVisualType.PURPLE -> UniStackColors.PrimaryLight
-    SubjectVisualType.GREEN -> UniStackColors.GreenLight
-    SubjectVisualType.YELLOW -> UniStackColors.YellowLight
-    SubjectVisualType.ROSE -> CategoricalSubjectBackgrounds.rose(UniStackColors.IsDarkTheme)
-    SubjectVisualType.INDIGO -> CategoricalSubjectBackgrounds.indigo(UniStackColors.IsDarkTheme)
-    SubjectVisualType.ORANGE -> CategoricalSubjectBackgrounds.orange(UniStackColors.IsDarkTheme)
-    SubjectVisualType.CYAN -> CategoricalSubjectBackgrounds.cyan(UniStackColors.IsDarkTheme)
-    SubjectVisualType.LIME -> CategoricalSubjectBackgrounds.lime(UniStackColors.IsDarkTheme)
-    SubjectVisualType.SLATE -> CategoricalSubjectBackgrounds.slate(UniStackColors.IsDarkTheme)
+    SubjectVisualType.TEAL -> MaterialTheme.colorScheme.tertiaryContainer
+    SubjectVisualType.BLUE -> LocalSectionColors.current.scheduleContainer
+    SubjectVisualType.CORAL -> MaterialTheme.colorScheme.errorContainer
+    SubjectVisualType.PURPLE -> MaterialTheme.colorScheme.primaryContainer
+    SubjectVisualType.GREEN -> LocalSectionColors.current.onTrackContainer
+    SubjectVisualType.YELLOW -> LocalSectionColors.current.atRiskContainer
+    SubjectVisualType.ROSE -> CategoricalSubjectBackgrounds.rose(LocalIsDarkTheme.current)
+    SubjectVisualType.INDIGO -> CategoricalSubjectBackgrounds.indigo(LocalIsDarkTheme.current)
+    SubjectVisualType.ORANGE -> CategoricalSubjectBackgrounds.orange(LocalIsDarkTheme.current)
+    SubjectVisualType.CYAN -> CategoricalSubjectBackgrounds.cyan(LocalIsDarkTheme.current)
+    SubjectVisualType.LIME -> CategoricalSubjectBackgrounds.lime(LocalIsDarkTheme.current)
+    SubjectVisualType.SLATE -> CategoricalSubjectBackgrounds.slate(LocalIsDarkTheme.current)
 }
 
 @Composable

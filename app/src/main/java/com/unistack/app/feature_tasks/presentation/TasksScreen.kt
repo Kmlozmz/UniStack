@@ -114,6 +114,9 @@ import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.runtime.ReadOnlyComposable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
@@ -785,7 +788,7 @@ private fun TaskStatsRow(
             label = "Hoy",
             value = todayTasks.size.toString(),
             supportingText = pendingText(todayTasks),
-            accent = UniStackColors.Green,
+            accent = LocalSectionColors.current.onTrack,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
@@ -800,7 +803,7 @@ private fun TaskStatsRow(
             label = "Semana",
             value = weekTasks.size.toString(),
             supportingText = pendingText(weekTasks),
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
@@ -815,7 +818,7 @@ private fun TaskStatsRow(
             label = "Vencidas",
             value = overdueTasks.size.toString(),
             supportingText = "pendientes",
-            accent = UniStackColors.Coral,
+            accent = MaterialTheme.colorScheme.error,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
@@ -913,12 +916,12 @@ private fun TaskStatDialog(
                     )
                     Text(
                         text = "Hechas: $done",
-                        color = UniStackColors.Green,
+                        color = LocalSectionColors.current.onTrack,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Pendientes: $pending",
-                        color = if (pending > 0) UniStackColors.Coral else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (pending > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -929,7 +932,7 @@ private fun TaskStatDialog(
                 Text("Entendido", fontWeight = FontWeight.Bold)
             }
         },
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     )
 }
 
@@ -1326,7 +1329,7 @@ private fun TaskCard(
                     TaskGradingStatus.GRADED -> {
                         Text(
                             text = gradeSummary?.let { "Nota $it" } ?: "Nota registrada",
-                            color = UniStackColors.Green,
+                            color = LocalSectionColors.current.onTrack,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -1381,12 +1384,12 @@ private fun TaskCard(
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text("Eliminar", color = UniStackColors.Coral) },
+                        text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
                                 Icons.Rounded.Delete,
                                 contentDescription = null,
-                                tint = UniStackColors.Coral
+                                tint = MaterialTheme.colorScheme.error
                             )
                         },
                         onClick = {
@@ -1487,19 +1490,19 @@ private fun NewTaskFab(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.OnPrimary.copy(alpha = 0.12f)),
+                    .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = UniStackColors.contentColorOn(UniStackColors.Primary),
+                    tint = contentColorOn(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.size(18.dp)
                 )
             }
             Text(
                 text = "Nueva tarea",
-                color = UniStackColors.contentColorOn(UniStackColors.Primary),
+                color = contentColorOn(MaterialTheme.colorScheme.primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -1527,7 +1530,7 @@ private fun TasksFilterBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
@@ -1931,12 +1934,12 @@ private fun FiltersSheetFooter(onDismiss: () -> Unit) {
         shape = AppShapes.MediumCard,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = UniStackColors.OnPrimary
+            contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
         Text(
             "Ver resultados",
-            color = UniStackColors.OnPrimary,
+            color = MaterialTheme.colorScheme.onPrimary,
             fontWeight = FontWeight.ExtraBold
         )
     }
@@ -1998,11 +2001,13 @@ private fun TaskDifficulty.rank(): Int {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun TaskDifficulty.color(): Color {
     return when (this) {
-        TaskDifficulty.EASY -> UniStackColors.Green
-        TaskDifficulty.MEDIUM -> UniStackColors.Yellow
-        TaskDifficulty.HARD -> UniStackColors.Coral
+        TaskDifficulty.EASY -> LocalSectionColors.current.onTrack
+        TaskDifficulty.MEDIUM -> LocalSectionColors.current.atRisk
+        TaskDifficulty.HARD -> MaterialTheme.colorScheme.error
     }
 }
 

@@ -56,6 +56,7 @@ import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 
+import com.unistack.app.core.design.theme.LocalSectionColors
 @Composable
 fun PriorHistoryScreen(
     subjectId: String,
@@ -84,7 +85,7 @@ fun PriorHistoryScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -95,7 +96,7 @@ fun PriorHistoryScreen(
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Volver",
-                        tint = UniStackColors.TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Column(modifier = Modifier.padding(start = 4.dp)) {
@@ -103,11 +104,11 @@ fun PriorHistoryScreen(
                         "Completar historial",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        color = UniStackColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         subject?.name.orEmpty(),
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -139,7 +140,7 @@ fun PriorHistoryScreen(
             item {
                 Text(
                     "No hay cortes anteriores pendientes.",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 28.dp)
                 )
             }
@@ -216,8 +217,8 @@ private fun HistoryPeriodCard(
 ) {
     Surface(
         shape = AppShapes.SmallCard,
-        color = UniStackColors.Card,
-        border = androidx.compose.foundation.BorderStroke(1.dp, UniStackColors.SoftOutline)
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -227,15 +228,15 @@ private fun HistoryPeriodCard(
                 Icon(
                     if (resolved) Icons.Rounded.CheckCircle else Icons.AutoMirrored.Rounded.HelpOutline,
                     contentDescription = null,
-                    tint = if (resolved) UniStackColors.Green else UniStackColors.Primary
+                    tint = if (resolved) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary
                 )
                 Column(modifier = Modifier.padding(start = 10.dp)) {
                     Text(
                         period.name,
                         fontWeight = FontWeight.Bold,
-                        color = UniStackColors.TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(resultLabel, color = UniStackColors.TextSecondary)
+                    Text(resultLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             SquishyButton(onClick = onFinalResultClick, modifier = Modifier.fillMaxWidth()) {

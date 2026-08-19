@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 /** La barra de arriba: lo justo para la flecha y el título en pequeño. */
 private val BarHeight = 52.dp
 
@@ -89,7 +90,7 @@ fun LargeTitleScaffold(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         LazyColumn(
             state = listState,
@@ -106,7 +107,7 @@ fun LargeTitleScaffold(
                 Column(modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)) {
                     Text(
                         text = title,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 28.sp,
                         lineHeight = 32.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -116,7 +117,7 @@ fun LargeTitleScaffold(
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -131,7 +132,7 @@ fun LargeTitleScaffold(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopStart)
-                .background(UniStackColors.Background)
+                .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
             Row(
@@ -145,7 +146,7 @@ fun LargeTitleScaffold(
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Volver",
-                        tint = UniStackColors.TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
@@ -153,7 +154,7 @@ fun LargeTitleScaffold(
                     modifier = Modifier
                         .weight(1f)
                         .alpha(handover),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -171,7 +172,7 @@ fun LargeTitleScaffold(
                     .fillMaxWidth()
                     .height(1.dp)
                     .alpha(handover)
-                    .background(UniStackColors.SoftOutline)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
             )
         }
     }

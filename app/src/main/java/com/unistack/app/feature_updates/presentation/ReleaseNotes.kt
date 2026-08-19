@@ -46,7 +46,7 @@ fun ReleaseNotes(
                     block.text,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
@@ -54,20 +54,20 @@ fun ReleaseNotes(
                     Text(
                         "•",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         block.text,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 is NotesBlock.Paragraph -> Text(
                     block.text,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = UniStackColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 NotesBlock.Divider -> Spacer(Modifier.height(2.dp))

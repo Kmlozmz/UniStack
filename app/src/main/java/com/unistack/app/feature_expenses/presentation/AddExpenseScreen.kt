@@ -86,24 +86,26 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 private val ExpenseFormBackground: Color
-    @Composable get() = UniStackColors.Background
+    @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseFormCard: Color
-    @Composable get() = UniStackColors.Card
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
 private val ExpenseFormCardHigh: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val ExpenseFormBorder: Color
-    @Composable get() = UniStackColors.SoftOutline
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val ExpenseFormCoral: Color
-    @Composable get() = UniStackColors.Coral
+    @Composable get() = LocalSectionColors.current.expenses
 private val ExpenseFormText: Color
-    @Composable get() = UniStackColors.TextPrimary
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 private val ExpenseFormMuted: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ExpenseFormOptionText: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ExpenseFormDisabled: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val ExpenseFormShape = AppShapes.MediumCard
 private val ExpenseFieldShape = AppShapes.SmallCard
 private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
@@ -797,7 +799,7 @@ private fun ExpenseCalendarMonthGrid(
                     ) {
                         Text(
                             text = date?.dayOfMonth?.toString().orEmpty(),
-                            color = if (selected) UniStackColors.OnPrimary else UniStackDatePickerColors.Text,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimary else UniStackDatePickerColors.Text,
                             fontSize = 12.sp,
                             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
                         )

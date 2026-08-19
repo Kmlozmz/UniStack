@@ -67,7 +67,7 @@ fun MetricCard(
             ) {
                 Text(
                     text = value,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     lineHeight = 17.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -76,7 +76,7 @@ fun MetricCard(
                 )
                 Text(
                     text = label,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 9.sp,
                     lineHeight = 11.sp,

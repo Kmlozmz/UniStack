@@ -63,7 +63,7 @@ fun QuickActionButton(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = UniStackColors.OnPrimary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(16.dp)
                 )
             }

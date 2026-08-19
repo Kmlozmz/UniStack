@@ -21,10 +21,11 @@ import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.SurfaceStyle
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun UniCard(
     modifier: Modifier = Modifier,
-    color: Color = UniStackColors.Card,
+    color: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     brush: Brush? = null,
     shape: Shape? = null,
     tonalElevation: Dp = 6.dp,
@@ -57,7 +58,7 @@ fun UniCard(
     val resolvedBorderColor = if (borderColor != Color.Transparent) {
         borderColor
     } else {
-        UniStackColors.SoftOutline.copy(alpha = 0.55f)
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
     }
     val backgroundModifier = if (brush != null) {
         Modifier.background(brush)

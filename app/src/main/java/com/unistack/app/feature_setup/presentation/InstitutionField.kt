@@ -77,17 +77,17 @@ fun InstitutionField(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = label,
-                color = UniStackColors.Primary,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 14.sp
             )
             Text(
                 text = "Opcional",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(AppShapes.Pill)
-                    .background(UniStackColors.SurfaceVariant)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }
@@ -106,7 +106,7 @@ fun InstitutionField(
                 placeholder = {
                     Text(
                         text = placeholder,
-                        color = UniStackColors.TextSecondary.copy(alpha = 0.72f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                         fontSize = 15.sp
                     )
                 },
@@ -114,7 +114,7 @@ fun InstitutionField(
                     Icon(
                         imageVector = Icons.Rounded.Apartment,
                         contentDescription = null,
-                        tint = UniStackColors.Primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 },
@@ -134,7 +134,7 @@ fun InstitutionField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(AppShapes.Small)
-                            .background(UniStackColors.SurfaceVariant)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                             .clickable {
                                 fieldValue = TextFieldValue(suggestion, TextRange(suggestion.length))
                                 onValueChange(suggestion)
@@ -147,12 +147,12 @@ fun InstitutionField(
                         Icon(
                             imageVector = Icons.Rounded.Apartment,
                             contentDescription = null,
-                            tint = UniStackColors.Primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
                             text = suggestion,
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 14.sp,
                             lineHeight = 18.sp
                         )

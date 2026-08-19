@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
+import androidx.compose.material3.MaterialTheme
 /** Ancho del símbolo mientras se dispersa. */
 private val ExitMarkWidth = 132.dp
 
@@ -177,7 +178,7 @@ fun SetupFinishTransition(
                 // Sirve para cualquier nivel: primaria, secundaria, universidad y «otro».
                 // Hablar de «semestre» habría dejado fuera a media app.
                 text = "Mucho éxito en tus estudios",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -202,13 +203,13 @@ fun SetupFinishTransition(
  * el efecto de apagar un televisor de tubo, y cortarlo salta. El contorno no llega a tapar
  * nada, así que se disuelve sin dejar nada que resolver.
  *
- * El color sale de UniStackColors.Primary, que con el acento dinámico activo lo deriva
+ * El color sale de MaterialTheme.colorScheme.primary, que con el acento dinámico activo lo deriva
  * Monet del fondo de pantalla, así que el cierre se tiñe del color del usuario.
  */
 @Composable
 private fun SetupFinishWave(progress: Float) {
     if (progress <= 0f || progress >= 1f) return
-    val color = UniStackColors.Primary
+    val color = MaterialTheme.colorScheme.primary
     Canvas(modifier = Modifier.fillMaxSize()) {
         val center = Offset(size.width / 2f, size.height / 2f)
         val farthest = hypot(size.width / 2f, size.height / 2f)

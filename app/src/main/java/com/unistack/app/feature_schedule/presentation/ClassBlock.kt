@@ -25,6 +25,8 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.ReadOnlyComposable
 /** Alto a partir del cual el nombre puede ocupar dos líneas. */
 private val TwoLinesFitFrom = 34.dp
 
@@ -87,7 +89,7 @@ internal fun ClassBlock(
         ) {
             Text(
                 text = name,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 10.sp,
                 lineHeight = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -102,7 +104,7 @@ internal fun ClassBlock(
             if (showTime) {
                 Text(
                     text = startLabel,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 8.sp,
                     lineHeight = 9.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -113,7 +115,7 @@ internal fun ClassBlock(
             if (showRoom) {
                 Text(
                     text = room,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 8.sp,
                     lineHeight = 9.sp,
                     maxLines = 1,
@@ -131,5 +133,7 @@ internal fun ClassBlock(
  * la vista previa y en el detalle, pero el horario completo llamaba directo a [subjectAccent] y
  * se saltaba el color personalizado: la misma materia salía de dos colores según la pantalla.
  */
+@Composable
+@ReadOnlyComposable
 internal fun Subject?.scheduleBlockColor(fallback: Color): Color =
-    this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: fallback
+    this?.customColor?.let(::Color) ?: this?.let { subject -> subjectAccent(subject) } ?: fallback

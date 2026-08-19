@@ -52,6 +52,8 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_user.domain.UserProfile
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 /** Las anticipaciones que se ofrecen. Cubren de «el mismo día» a «tres días antes». */
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -182,7 +184,7 @@ internal fun NotificationSection(
                     SectionTitle(Icons.Rounded.Schedule, "Con cuánta anticipación")
                     Text(
                         "Los avisos de tareas y trabajos llegan " + leadLabel(lead) + " de la fecha.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
                     )
@@ -236,7 +238,7 @@ internal fun NotificationSection(
                         } else {
                             "Los avisos pueden llegar a cualquier hora."
                         },
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
                     )
@@ -268,7 +270,7 @@ private fun PermissionCard(
     actionLabel: String,
     onRequestPermission: () -> Unit
 ) {
-    val accent = if (granted) UniStackColors.Green else UniStackColors.Coral
+    val accent = if (granted) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
     UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -289,7 +291,7 @@ private fun PermissionCard(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     if (granted) "El sistema deja avisarte" else "El sistema no deja avisarte",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
@@ -302,7 +304,7 @@ private fun PermissionCard(
                         "Puedes dejar elegido qué quieres recibir, pero no llegará nada hasta " +
                             "que el sistema lo permita."
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
@@ -312,7 +314,7 @@ private fun PermissionCard(
                 SquishyButton(
                     onClick = onRequestPermission,
                     shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(actionLabel, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
@@ -324,9 +326,9 @@ private fun PermissionCard(
 @Composable
 private fun SectionTitle(icon: ImageVector, title: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(19.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
         Spacer(Modifier.width(9.dp))
-        Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+        Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
     }
 }
 
@@ -343,11 +345,11 @@ private fun ReminderRow(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(title, color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-            Text(description, color = UniStackColors.TextSecondary, fontSize = 11.sp, lineHeight = 15.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, lineHeight = 15.sp)
         }
         Switch(
             checked = checked,
@@ -378,10 +380,10 @@ private fun LeadChip(
     Box(
         modifier = modifier
             .clip(AppShapes.Pill)
-            .background(if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant)
+            .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
                 width = 1.dp,
-                color = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 shape = AppShapes.Pill
             )
             .clickable(enabled = enabled, onClick = onClick)
@@ -396,7 +398,7 @@ private fun LeadChip(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 9.dp),
-            color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -415,12 +417,12 @@ private fun HourStepper(
     Column(
         modifier = modifier
             .clip(AppShapes.MediumCard)
-            .background(UniStackColors.SurfaceVariant)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(label, color = UniStackColors.TextSecondary, fontSize = 11.sp)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
                 onClick = { onChange((hour + 23) % 24) },
@@ -430,14 +432,14 @@ private fun HourStepper(
                 Icon(
                     Icons.Rounded.Remove,
                     contentDescription = "Una hora menos en $label",
-                    tint = UniStackColors.TextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(17.dp)
                 )
             }
             Text(
                 hourLabel(hour),
                 modifier = Modifier.width(58.dp),
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -450,7 +452,7 @@ private fun HourStepper(
                 Icon(
                     Icons.Rounded.Add,
                     contentDescription = "Una hora más en $label",
-                    tint = UniStackColors.TextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(17.dp)
                 )
             }
@@ -460,10 +462,10 @@ private fun HourStepper(
 
 @Composable
 private fun switchColors() = SwitchDefaults.colors(
-    checkedThumbColor = UniStackColors.OnPrimary,
-    checkedTrackColor = UniStackColors.Primary,
-    uncheckedThumbColor = UniStackColors.TextSecondary,
-    uncheckedTrackColor = UniStackColors.SurfaceVariant
+    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+    checkedTrackColor = MaterialTheme.colorScheme.primary,
+    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh
 )
 
 private fun hourLabel(hour: Int): String = "%02d:00".format(hour)

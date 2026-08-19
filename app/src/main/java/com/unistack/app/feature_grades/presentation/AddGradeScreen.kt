@@ -70,12 +70,13 @@ import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 private val FormCardShape = AppShapes.SmallCard
 private val FormFieldColor: Color
-    @Composable get() = if (UniStackColors.IsDarkTheme) UniStackColors.SurfaceVariant else UniStackColors.Card
+    @Composable get() = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
 
 private val DisabledButtonColor: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 
 /**
  * Los colores de los campos, en un sitio.
@@ -88,16 +89,16 @@ private fun formFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = FormFieldColor,
     unfocusedContainerColor = FormFieldColor,
     disabledContainerColor = FormFieldColor,
-    focusedBorderColor = UniStackColors.Primary,
-    unfocusedBorderColor = UniStackColors.SoftOutline,
-    errorBorderColor = UniStackColors.Coral,
-    focusedTextColor = UniStackColors.TextPrimary,
-    unfocusedTextColor = UniStackColors.TextPrimary,
-    errorTextColor = UniStackColors.TextPrimary,
-    focusedLabelColor = UniStackColors.Primary,
-    unfocusedLabelColor = UniStackColors.TextSecondary,
-    focusedPlaceholderColor = UniStackColors.TextSecondary,
-    unfocusedPlaceholderColor = UniStackColors.TextSecondary
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    errorBorderColor = MaterialTheme.colorScheme.error,
+    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+    errorTextColor = MaterialTheme.colorScheme.onSurface,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
 )
 
 /** Los tipos de actividad y su rótulo, para no repetir la lista en dos sitios. */
@@ -229,7 +230,7 @@ fun AddGradeScreen(
         modifier = modifier
             .fillMaxSize()
             .dismissKeyboardOnTapOutside()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -245,17 +246,17 @@ fun AddGradeScreen(
                     onClick = requestLeave,
                     modifier = Modifier
                         .size(40.dp)
-                        .background(UniStackColors.SurfaceVariant.copy(alpha = 0.52f), AppShapes.Pill)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), AppShapes.Pill)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Volver",
-                        tint = UniStackColors.TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
                     text = if (isEditing) "Editar nota" else "Nueva nota",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -267,7 +268,7 @@ fun AddGradeScreen(
                         periodDisplayName(selectedPeriod),
                         "${formatPercent(selectedPeriod.weight * 100)}% de la materia"
                     ).joinToString("  ·  "),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -275,7 +276,7 @@ fun AddGradeScreen(
             FormBlock(
                 title = "Qué registras",
                 icon = Icons.AutoMirrored.Rounded.Assignment,
-                accent = UniStackColors.Primary
+                accent = MaterialTheme.colorScheme.primary
             ) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -311,14 +312,14 @@ fun AddGradeScreen(
                     } else {
                         "Se combina con las demás según el peso que tenga dentro del corte."
                     },
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
                 if (!isEditing && lockedPeriod == null) {
                     Text(
                         text = "Corte",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -355,7 +356,7 @@ fun AddGradeScreen(
                         if (!isNameValid) {
                             Text(
                                 nameValidation.errorMessage ?: "Ingresa un nombre de actividad válido",
-                                color = UniStackColors.Coral
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -363,7 +364,7 @@ fun AddGradeScreen(
                 if (selectedSource == GradeSource.ACTIVITY) {
                     Text(
                         text = "Tipo (opcional)",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -395,7 +396,7 @@ fun AddGradeScreen(
             FormBlock(
                 title = "Cuánto vale",
                 icon = Icons.Rounded.BarChart,
-                accent = UniStackColors.Primary
+                accent = MaterialTheme.colorScheme.primary
             ) {
                 OutlinedTextField(
                     value = value,
@@ -412,7 +413,7 @@ fun AddGradeScreen(
                     trailingIcon = {
                         Text(
                             text = "/ $maxGradeLabel",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(end = 12.dp)
                         )
@@ -428,13 +429,13 @@ fun AddGradeScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "No conozco el peso",
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
                             Text(
                                 text = "La nota queda registrada y no entra en el cálculo hasta que le pongas peso.",
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
                             )
@@ -466,7 +467,7 @@ fun AddGradeScreen(
                         trailingIcon = {
                             Text(
                                 text = "%",
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(end = 12.dp)
                             )
@@ -487,9 +488,9 @@ fun AddGradeScreen(
                                             "${periodDisplayName(selectedPeriod)}."
                                 },
                                 color = if (percentage.isNotBlank() && !isPercentageValid) {
-                                    UniStackColors.Coral
+                                    MaterialTheme.colorScheme.error
                                 } else {
-                                    UniStackColors.TextSecondary
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                             )
                         },
@@ -501,7 +502,7 @@ fun AddGradeScreen(
             error?.let {
                 Text(
                     text = it,
-                    color = UniStackColors.Coral,
+                    color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
@@ -516,7 +517,7 @@ fun AddGradeScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
-            color = UniStackColors.Background,
+            color = MaterialTheme.colorScheme.background,
             shadowElevation = 8.dp
         ) {
             SquishyButton(
@@ -572,10 +573,10 @@ fun AddGradeScreen(
                 enabled = isValid,
                 shape = AppShapes.LargeCard,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = UniStackColors.Primary,
-                    contentColor = UniStackColors.OnPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     disabledContainerColor = DisabledButtonColor,
-                    disabledContentColor = UniStackColors.TextSecondary
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
@@ -588,7 +589,7 @@ fun AddGradeScreen(
                     text = if (isEditing) "Guardar cambios" else "Guardar nota",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = if (isValid) UniStackColors.OnPrimary else UniStackColors.TextSecondary
+                    color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -640,12 +641,12 @@ private fun ActivityChip(
         modifier = Modifier
             .bounceClick(onClick)
             .background(
-                color = if (isSelected) UniStackColors.Primary else FormFieldColor,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else FormFieldColor,
                 shape = FormCardShape
             )
             .border(
                 width = 1.dp,
-                color = if (isSelected) UniStackColors.Primary else UniStackColors.SoftOutline,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                 shape = FormCardShape
             )
             .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -653,7 +654,7 @@ private fun ActivityChip(
     ) {
         Text(
             text = label,
-            color = if (isSelected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )

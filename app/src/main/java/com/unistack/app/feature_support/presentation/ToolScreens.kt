@@ -48,6 +48,8 @@ import com.unistack.app.feature_support.domain.GpaRow
 import com.unistack.app.feature_support.domain.QuickNotesStore
 import com.unistack.app.feature_support.domain.weightedAverage
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
 /**
  * Calculadora de promedio.
  *
@@ -82,10 +84,10 @@ fun GpaCalculatorScreen(
         item {
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Promedio simulado", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text("Promedio simulado", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     Text(
                         averageText,
-                        color = UniStackColors.Primary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 38.sp,
                         lineHeight = 40.sp,
                         fontWeight = FontWeight.ExtraBold
@@ -96,7 +98,7 @@ fun GpaCalculatorScreen(
                         } else {
                             "Sobre ${GradingScaleUtils.formatGrade(maxGrade, scale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)} · ${rows.count { it.isUsable }} materias contadas"
                         },
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
                 }
@@ -108,7 +110,7 @@ fun GpaCalculatorScreen(
                     onClick = { rows = rows + GpaRow() },
                     modifier = Modifier.weight(1f),
                     shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.SurfaceVariant, contentColor = UniStackColors.TextPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface)
                 ) {
                     Text("Añadir fila", fontSize = 13.sp)
                 }
@@ -119,7 +121,7 @@ fun GpaCalculatorScreen(
                     enabled = subjects.isNotEmpty(),
                     modifier = Modifier.weight(1f),
                     shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Traer mis materias", fontSize = 13.sp)
                 }
@@ -143,7 +145,7 @@ fun GpaCalculatorScreen(
                             onClick = { rows = rows.filterIndexed { i, _ -> i != index } },
                             enabled = rows.size > 1
                         ) {
-                            Icon(Icons.Rounded.Close, contentDescription = "Quitar fila", tint = UniStackColors.TextSecondary)
+                            Icon(Icons.Rounded.Close, contentDescription = "Quitar fila", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -176,7 +178,7 @@ fun GpaCalculatorScreen(
         item {
             Text(
                 "Los créditos pueden quedar en blanco: sin ellos todas las materias pesan igual.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
@@ -238,7 +240,7 @@ fun QuickNotesScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "${text.length} de 4000",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
                             modifier = Modifier.weight(1f)
                         )
@@ -250,8 +252,8 @@ fun QuickNotesScreen(
                             enabled = text.isNotEmpty(),
                             shape = AppShapes.Pill,
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = UniStackColors.SurfaceVariant,
-                                contentColor = UniStackColors.Coral
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
                             Text("Vaciar", fontSize = 13.sp)
@@ -302,18 +304,18 @@ private fun ComingSoonScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(headline, color = UniStackColors.TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(headline, color = MaterialTheme.colorScheme.onSurface, fontSize = 17.sp, fontWeight = FontWeight.ExtraBold)
                             Text("En construcción", color = accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    Text(body, color = UniStackColors.TextSecondary, fontSize = 13.sp, lineHeight = 19.sp)
+                    Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 19.sp)
                 }
             }
         }
         item {
             UniCard(modifier = Modifier.fillMaxWidth(), shape = AppShapes.LargeCard) {
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Text("Lo que traerá", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                    Text("Lo que traerá", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     plans.forEach { plan ->
                         Row(verticalAlignment = Alignment.Top) {
                             Box(
@@ -324,7 +326,7 @@ private fun ComingSoonScreen(
                                     .background(accent)
                             )
                             Spacer(Modifier.width(10.dp))
-                            Text(plan, color = UniStackColors.TextSecondary, fontSize = 13.sp, lineHeight = 18.sp)
+                            Text(plan, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 18.sp)
                         }
                     }
                 }
@@ -339,7 +341,7 @@ fun AiAssistantScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
         title = "UniStack AI",
         subtitle = "Tu asistente académico",
         icon = Icons.Rounded.AutoAwesome,
-        accent = UniStackColors.Primary,
+        accent = MaterialTheme.colorScheme.primary,
         headline = "El asistente todavía no está listo",
         body = "La idea es que responda sobre lo que ya tienes registrado: cuánto necesitas en el " +
             "parcial que viene, qué semana se te junta todo, qué materia conviene atender primero. " +
@@ -360,7 +362,7 @@ fun LabsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
         title = "Labs",
         subtitle = "Funciones experimentales",
         icon = Icons.Rounded.Science,
-        accent = UniStackColors.Yellow,
+        accent = LocalSectionColors.current.atRisk,
         headline = "Todavía no hay experimentos abiertos",
         body = "Labs será donde se puedan encender funciones a medio hacer, con el aviso de que " +
             "pueden fallar. Ahora mismo no hay ninguna: las que están a medias se prueban en el " +

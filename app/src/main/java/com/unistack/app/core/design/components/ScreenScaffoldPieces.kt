@@ -53,13 +53,13 @@ fun UniScreenHeader(
         ) {
             Text(
                 text = title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 text = subtitle,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -78,8 +78,8 @@ fun UniEmptyStateCard(
     modifier: Modifier = Modifier,
     actionText: String? = null,
     onActionClick: (() -> Unit)? = null,
-    color: Color = UniStackColors.Card,
-    iconColor: Color = UniStackColors.Primary
+    color: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    iconColor: Color = MaterialTheme.colorScheme.primary
 ) {
     UniCard(
         modifier = modifier.fillMaxWidth(),
@@ -89,8 +89,8 @@ fun UniEmptyStateCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(icon, contentDescription = null, tint = iconColor)
-            Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-            Text(body, color = UniStackColors.TextSecondary, fontSize = 13.sp, lineHeight = 18.sp)
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, lineHeight = 18.sp)
             if (actionText != null && onActionClick != null) {
                 SquishyButton(
                     onClick = onActionClick,
@@ -122,12 +122,12 @@ fun UniConfirmDeleteDialog(
             Icon(
                 Icons.Rounded.Delete,
                 contentDescription = null,
-                tint = UniStackColors.Coral
+                tint = MaterialTheme.colorScheme.error
             )
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(confirmText, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                Text(confirmText, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -135,7 +135,7 @@ fun UniConfirmDeleteDialog(
                 Text(dismissText)
             }
         },
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     )
 }
 
@@ -161,16 +161,16 @@ fun <T> UniFilterChipRow(
                 },
                 shape = AppShapes.Pill,
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = UniStackColors.PrimaryLight,
-                    selectedLabelColor = UniStackColors.PrimaryDark,
-                    containerColor = UniStackColors.Card,
-                    labelColor = UniStackColors.TextSecondary
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = option.value == selected,
                     borderColor = Color.Transparent,
-                    selectedBorderColor = UniStackColors.Primary.copy(alpha = 0.25f)
+                    selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
                 )
             )
         }

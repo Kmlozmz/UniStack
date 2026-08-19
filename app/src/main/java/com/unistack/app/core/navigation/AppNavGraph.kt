@@ -193,7 +193,7 @@ fun MainNavGraph(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             if (showBottomBar) {
@@ -1182,7 +1182,7 @@ private fun UniStackBottomBarContent(
         // de una superficie elevada, apenas un par de tonos por encima del fondo: acoplada
         // basta, porque el borde de la pantalla ya la separa, pero suspendida sobre el
         // contenido se confundía con lo que pasaba por detrás y se veía sucia.
-        color = UniStackColors.BottomBar,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 2.dp,
         shadowElevation = 0.dp,
         // Sin contorno propio: el borde de la pantalla ya la delimita.
@@ -1239,13 +1239,13 @@ private fun UniStackBottomBarItem(
        Material: en esta app "secondary" es un azul con identidad propia, no una variante
        tonal del primario, y usarlo dejaría el indicador azul bajo un acento violeta. */
     val indicatorColor by animateColorAsState(
-        targetValue = if (selected) UniStackColors.PrimaryLight else Color.Transparent,
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
         animationSpec = tween(motionDuration, easing = FastOutSlowInEasing),
         label = "bottomItemIndicator"
     )
     val iconColor by animateColorAsState(
         targetValue = if (selected) {
-            UniStackColors.OnPrimaryContainer
+            MaterialTheme.colorScheme.onPrimaryContainer
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
@@ -1254,7 +1254,7 @@ private fun UniStackBottomBarItem(
     )
     val labelColor by animateColorAsState(
         targetValue = if (selected) {
-            UniStackColors.TextPrimary
+            MaterialTheme.colorScheme.onSurface
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },

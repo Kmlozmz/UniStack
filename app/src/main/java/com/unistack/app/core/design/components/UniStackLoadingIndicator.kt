@@ -25,6 +25,7 @@ import com.unistack.app.core.design.shapes.morphToPath
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 /**
  * Indicador de carga expresivo: un polígono que gira mientras muta hacia la siguiente
  * forma de la secuencia, encadenando el ciclo indefinidamente.
@@ -38,7 +39,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 fun UniStackLoadingIndicator(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    color: Color = UniStackColors.Primary,
+    color: Color = MaterialTheme.colorScheme.primary,
     periodMillis: Int = 900
 ) {
     val shapes = remember { UniStackShapesCatalog.loadingSequence }

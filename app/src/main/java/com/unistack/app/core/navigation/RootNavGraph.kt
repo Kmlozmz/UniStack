@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun RootNavGraph(
     modifier: Modifier = Modifier,
@@ -116,7 +117,7 @@ fun RootNavGraph(
             .fillMaxSize()
             // Sin esto asomaba el fondo blanco de la ventana en cualquier hueco en que no
             // hubiera nada opaco encima: el tema hereda de Theme.Material.Light.
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         if (!isLoading) {
             when {

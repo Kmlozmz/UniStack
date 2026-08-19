@@ -66,6 +66,8 @@ import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 /**
  * ¿Existe el permiso de notificaciones como permiso de ejecución en este dispositivo?
  *
@@ -181,11 +183,11 @@ fun SetupPermissionsScreen(
             Text(
                 text = buildAnnotatedString {
                     append("¿Te avisamos de\n")
-                    withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                         append("lo importante?")
                     }
                 },
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 28.sp,
                 lineHeight = 32.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -193,7 +195,7 @@ fun SetupPermissionsScreen(
             )
             Text(
                 text = "Actívalas para no perderte fechas, clases ni cambios en tu promedio.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 15.sp,
                 lineHeight = 21.sp,
                 textAlign = TextAlign.Center,
@@ -202,10 +204,10 @@ fun SetupPermissionsScreen(
 
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
-                color = UniStackColors.Card,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = AppShapes.SmallCard,
                 tonalElevation = 0.dp,
-                borderColor = UniStackColors.SoftOutline.copy(alpha = 0.84f),
+                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
                 borderWidth = 1.dp,
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
             ) {
@@ -233,7 +235,7 @@ fun SetupPermissionsScreen(
             AnimatedVisibility(visible = mustUseSettings, enter = fadeIn(), exit = fadeOut()) {
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
-                    color = UniStackColors.SurfaceVariant,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     shape = AppShapes.SmallCard,
                     tonalElevation = 0.dp,
                     borderColor = Color.Transparent,
@@ -247,12 +249,12 @@ fun SetupPermissionsScreen(
                         Icon(
                             imageVector = Icons.Rounded.AccessTime,
                             contentDescription = null,
-                            tint = UniStackColors.Primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
                             text = "Android ya no volverá a preguntar. Puedes activarlas desde los ajustes del sistema.",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
                         )
@@ -279,7 +281,7 @@ private fun PermissionsHero(granted: Boolean) {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.16f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.28f else 0.16f),
                             Color.Transparent
                         )
                     )
@@ -290,16 +292,16 @@ private fun PermissionsHero(granted: Boolean) {
                 .graphicsLayer { translationY = float.dp.toPx() }
                 .size(76.dp)
                 .clip(CircleShape)
-                .background(if (granted) UniStackColors.Primary else UniStackColors.PrimaryLight),
+                .background(if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
             if (granted) {
-                AnimatedCheckmark(size = 34.dp, color = UniStackColors.OnPrimary)
+                AnimatedCheckmark(size = 34.dp, color = MaterialTheme.colorScheme.onPrimary)
             } else {
                 Icon(
                     imageVector = Icons.Rounded.NotificationsActive,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(36.dp)
                 )
             }
@@ -322,27 +324,27 @@ private fun PermissionExampleRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.PrimaryLight),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = UniStackColors.Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 lineHeight = 17.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = detail,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 15.sp
             )

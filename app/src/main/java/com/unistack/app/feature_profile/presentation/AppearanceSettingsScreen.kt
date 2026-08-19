@@ -103,6 +103,8 @@ import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.feature_user.domain.VisualPreset
 
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.design.theme.contentColorOn
 @Composable
 fun AppearanceSettingsScreen(
     onBackClick: () -> Unit,
@@ -116,7 +118,7 @@ fun AppearanceSettingsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
@@ -136,7 +138,7 @@ fun AppearanceSettingsScreen(
         if (current == null) {
             item {
                 UniCard(modifier = Modifier.fillMaxWidth()) {
-                    Text("Cargando preferencias...", color = UniStackColors.TextSecondary)
+                    Text("Cargando preferencias...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             return@LazyColumn
@@ -204,7 +206,7 @@ fun AppearanceSettingsScreen(
                 } else {
                     Text(
                         text = current.visualPreference.themeDescription(),
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -445,7 +447,7 @@ fun AccessibilitySettingsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
@@ -546,14 +548,14 @@ private fun HomeSectionOrderEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(AppShapes.Small)
-                    .background(UniStackColors.SurfaceVariant.copy(alpha = 0.58f))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f))
                     .padding(start = 12.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     section.label(),
                     modifier = Modifier.weight(1f),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -600,7 +602,7 @@ fun SettingsHubScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
@@ -699,7 +701,7 @@ private fun SettingsHeader(
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Spacer(Modifier.width(4.dp))
@@ -707,13 +709,13 @@ private fun SettingsHeader(
             Text(
                 title,
                 style = MaterialTheme.typography.headlineSmall,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = UniStackColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -726,8 +728,8 @@ private fun AppearancePreview(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
-        borderColor = UniStackColors.Primary.copy(alpha = 0.24f),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
         borderWidth = 1.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -736,13 +738,13 @@ private fun AppearancePreview(
                     modifier = Modifier
                         .size(42.dp)
                         .clip(CircleShape)
-                        .background(UniStackColors.Primary.copy(alpha = 0.16f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Rounded.Palette,
                         contentDescription = null,
-                        tint = UniStackColors.Primary
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 Spacer(Modifier.width(12.dp))
@@ -750,13 +752,13 @@ private fun AppearancePreview(
                     Text(
                         "Hola, ${name.ifBlank { "estudiante" }}",
                         style = MaterialTheme.typography.titleMedium,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         appearance.summary(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = UniStackColors.TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -769,9 +771,9 @@ private fun AppearancePreview(
                             .clip(MaterialTheme.shapes.medium)
                             .background(
                                 if (index == 0) {
-                                    UniStackColors.Primary.copy(alpha = 0.18f)
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
                                 } else {
-                                    UniStackColors.SurfaceVariant
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                                 }
                             )
                     )
@@ -789,7 +791,7 @@ private fun AppearanceSection(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card
+        color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -797,16 +799,16 @@ private fun AppearanceSection(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(AppShapes.Small)
-                        .background(UniStackColors.Primary.copy(alpha = 0.13f)),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(icon, contentDescription = null, tint = UniStackColors.Primary)
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(Modifier.width(10.dp))
                 Text(
                     title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -836,19 +838,19 @@ private fun <T> ChoiceGrid(
                         modifier = Modifier.weight(1f),
                         shape = AppShapes.Small,
                         color = if (isSelected) {
-                            UniStackColors.Primary.copy(alpha = 0.14f)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                         } else {
-                            UniStackColors.SurfaceVariant.copy(alpha = 0.62f)
+                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.62f)
                         },
                         border = BorderStroke(
                             1.dp,
-                            if (isSelected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = 0.45f)
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
                         )
                     ) {
                         Text(
                             label(entry),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 11.dp),
-                            color = if (isSelected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 1,
@@ -872,10 +874,10 @@ private fun BackgroundChoices(
     // design-tokens-ok-begin: muestras del selector; enseñan el color literal que se va a
     // aplicar, así que no pueden derivar del tema actual sin dejar de representar la opción.
     val choices = listOf(
-        BackgroundStyle.DEFAULT to UniStackColors.Background,
-        BackgroundStyle.PURE to if (UniStackColors.IsDarkTheme) Color.Black else Color.White,
-        BackgroundStyle.COOL to if (UniStackColors.IsDarkTheme) Color(0xFF050A13) else Color(0xFFF5F7FC),
-        BackgroundStyle.VIOLET to if (UniStackColors.IsDarkTheme) Color(0xFF0D0818) else Color(0xFFFAF7FF)
+        BackgroundStyle.DEFAULT to MaterialTheme.colorScheme.background,
+        BackgroundStyle.PURE to if (LocalIsDarkTheme.current) Color.Black else Color.White,
+        BackgroundStyle.COOL to if (LocalIsDarkTheme.current) Color(0xFF050A13) else Color(0xFFF5F7FC),
+        BackgroundStyle.VIOLET to if (LocalIsDarkTheme.current) Color(0xFF0D0818) else Color(0xFFFAF7FF)
     )
     // design-tokens-ok-end
     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -890,7 +892,7 @@ private fun BackgroundChoices(
     }
     HexColorField(
         label = "Fondo personalizado",
-        color = customColor ?: UniStackColors.Background.toArgb(),
+        color = customColor ?: MaterialTheme.colorScheme.background.toArgb(),
         onColorChanged = onCustomColor
     )
 }
@@ -905,7 +907,7 @@ private fun AccentChoices(
     val choices = buildList {
         // Material You solo existe desde Android 12; en versiones previas no ofrecemos la opción.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            add(AccentStyle.DYNAMIC to UniStackColors.Primary)
+            add(AccentStyle.DYNAMIC to MaterialTheme.colorScheme.primary)
         }
         // design-tokens-ok-begin: muestras de acento; cada una debe verse con su color real
         add(AccentStyle.VIOLET to Color(0xFF6750F5))
@@ -927,7 +929,7 @@ private fun AccentChoices(
     }
     HexColorField(
         label = "Acento personalizado",
-        color = customColor ?: UniStackColors.Primary.toArgb(),
+        color = customColor ?: MaterialTheme.colorScheme.primary.toArgb(),
         onColorChanged = onCustomColor
     )
 }
@@ -967,13 +969,13 @@ private fun ColorChoice(
                 Icon(
                     Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = UniStackColors.contentColorOn(color)
+                    tint = contentColorOn(color)
                 )
             }
         }
         Text(
             label,
-            color = if (selected) UniStackColors.Primary else UniStackColors.TextSecondary,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             maxLines = 1
         )
@@ -1026,14 +1028,14 @@ private fun PreferenceSwitch(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
             )
             if (subtitle != null) {
                 Text(
                     subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -1046,7 +1048,7 @@ private fun PreferenceSwitch(
 private fun SectionLabel(text: String) {
     Text(
         text,
-        color = UniStackColors.TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.SemiBold
     )
@@ -1063,11 +1065,11 @@ private fun SettingsDestination(
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         color = if (highlighted) {
-            UniStackColors.Primary.copy(alpha = 0.08f)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
         } else {
-            UniStackColors.Card
+            MaterialTheme.colorScheme.surfaceContainerLow
         },
-        borderColor = if (highlighted) UniStackColors.Primary.copy(alpha = 0.28f) else Color.Transparent,
+        borderColor = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else Color.Transparent,
         borderWidth = if (highlighted) 1.dp else 0.dp,
         onClick = onClick
     ) {
@@ -1076,22 +1078,22 @@ private fun SettingsDestination(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(AppShapes.Small)
-                    .background(UniStackColors.Primary.copy(alpha = 0.13f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = UniStackColors.Primary)
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }

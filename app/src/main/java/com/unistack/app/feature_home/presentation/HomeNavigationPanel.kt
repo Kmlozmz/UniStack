@@ -59,6 +59,8 @@ import com.unistack.app.core.design.theme.AppShapes
 import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.core.utils.BuildStage
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 internal data class DrawerPanelAction(
     val icon: ImageVector,
     val title: String,
@@ -100,7 +102,7 @@ internal fun HomeNavigationPanel(
      * necesita forma para no cortar en seco.
      */
     val panelShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
-    val drawerSurface = UniStackColors.Background
+    val drawerSurface = MaterialTheme.colorScheme.background
     val semesterChip = when (subjectsCount) {
         0 -> "Semestre activo"
         1 -> "1 materia"
@@ -123,21 +125,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             title = "Materias",
             subtitle = "Notas, cortes y promedios",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             onClick = onSemesterClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Tareas",
             subtitle = "Entregas y pendientes",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             onClick = onTasksClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Description,
             title = "Trabajos",
             subtitle = "Plantillas y exportaciones",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             badge = if (unfinished) null else "Pronto",
             onClick = onWorksClick.takeIf { unfinished }
         ),
@@ -145,7 +147,7 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.Calculate,
             title = "Calculadora GPA",
             subtitle = "Simula y calcula tu promedio",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             onClick = onGpaClick
         )
     )
@@ -154,21 +156,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.Settings,
             title = "Configuración",
             subtitle = "Apariencia, recordatorios y módulos",
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = onSettingsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Backup,
             title = "Sincronización",
             subtitle = "Respaldos, importar y exportar",
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = onDataClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.School,
             title = "Tu perfil",
             subtitle = "Nombre, cuenta y meta",
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = onProfileClick
         )
     )
@@ -177,7 +179,7 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
             subtitle = "Tu asistente académico",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             badge = if (unfinished) null else "Pronto",
             onClick = onAiClick.takeIf { unfinished }
         ),
@@ -185,14 +187,14 @@ internal fun HomeNavigationPanel(
             icon = Icons.Rounded.History,
             title = "Historial",
             subtitle = "Avisos y actividad reciente",
-            accent = UniStackColors.Green,
+            accent = LocalSectionColors.current.onTrack,
             onClick = onNotificationsClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
             subtitle = "Qué trae cada versión",
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = onWhatsNewClick
         )
     )
@@ -201,21 +203,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             title = "Recursos",
             subtitle = "Biblioteca y enlaces útiles",
-            accent = UniStackColors.Green,
+            accent = LocalSectionColors.current.onTrack,
             onClick = onResourcesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
             subtitle = "Bloc de notas temporal",
-            accent = UniStackColors.Green,
+            accent = LocalSectionColors.current.onTrack,
             onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
             subtitle = "Funciones experimentales",
-            accent = UniStackColors.Yellow,
+            accent = LocalSectionColors.current.atRisk,
             badge = if (unfinished) null else "Pronto",
             onClick = onLabsClick.takeIf { unfinished }
         )
@@ -225,21 +227,21 @@ internal fun HomeNavigationPanel(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
             subtitle = "Preguntas frecuentes y contacto",
-            accent = UniStackColors.Blue,
+            accent = LocalSectionColors.current.schedule,
             onClick = onHelpClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Lightbulb,
             title = "Enviar sugerencia",
             subtitle = "Cuéntanos cómo podemos mejorar",
-            accent = UniStackColors.Yellow,
+            accent = LocalSectionColors.current.atRisk,
             onClick = onHelpClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Info,
             title = "Acerca de",
             subtitle = "Versión, datos y políticas",
-            accent = UniStackColors.Primary,
+            accent = MaterialTheme.colorScheme.primary,
             onClick = onAboutClick
         )
     )
@@ -286,7 +288,7 @@ internal fun HomeNavigationPanel(
                 item {
                     Text(
                         text = "v${BuildConfig.VERSION_NAME}",
-                        color = UniStackColors.TextSecondary.copy(alpha = 0.72f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(start = 2.dp, top = 8.dp)
                     )
@@ -321,14 +323,14 @@ private fun DrawerPanelHeader(
                 .size(58.dp)
                 .clip(AppShapes.MediumCard)
                 .background(
-                    SolidColor(UniStackColors.Primary)
+                    SolidColor(MaterialTheme.colorScheme.primary)
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Rounded.School,
                 contentDescription = null,
-                tint = UniStackColors.OnPrimary,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(31.dp)
             )
         }
@@ -339,14 +341,14 @@ private fun DrawerPanelHeader(
         ) {
             Text(
                 "Centro UniStack",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1
             )
             Text(
                 "Hola, $displayName 👋",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -355,11 +357,11 @@ private fun DrawerPanelHeader(
             Surface(
                 onClick = onSemesterClick,
                 shape = RoundedCornerShape(7.dp),
-                color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.12f)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.12f)
             ) {
                 Text(
                     semesterChip,
-                    color = UniStackColors.Primary,
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -376,7 +378,7 @@ private fun DrawerPanelDivider() {
         modifier = Modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(UniStackColors.SoftOutline.copy(alpha = 0.48f))
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f))
     )
 }
 
@@ -391,11 +393,11 @@ private fun DrawerPanelSection(text: String) {
             modifier = Modifier
                 .size(7.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.Primary)
+                .background(MaterialTheme.colorScheme.primary)
         )
         Text(
             text = text.uppercase(),
-            color = UniStackColors.Primary,
+            color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 0.4.sp
@@ -413,14 +415,14 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
             .fillMaxWidth()
             .height(58.dp),
         shape = AppShapes.MediumCard,
-        color = UniStackColors.SurfaceVariant.copy(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
             alpha = when {
-                !enabled -> if (UniStackColors.IsDarkTheme) 0.28f else 0.45f
-                UniStackColors.IsDarkTheme -> 0.58f
+                !enabled -> if (LocalIsDarkTheme.current) 0.28f else 0.45f
+                LocalIsDarkTheme.current -> 0.58f
                 else -> 0.82f
             }
         ),
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = if (enabled) 0.20f else 0.10f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (enabled) 0.20f else 0.10f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
@@ -435,7 +437,7 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         action.title,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.ExtraBold,
                         maxLines = 1,
@@ -449,7 +451,7 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
                 }
                 Text(
                     action.subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     lineHeight = 14.sp,
                     maxLines = 1,
@@ -461,7 +463,7 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
                 Icon(
                     Icons.Rounded.ChevronRight,
                     contentDescription = null,
-                    tint = UniStackColors.TextSecondary.copy(alpha = 0.76f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -479,7 +481,7 @@ private fun DrawerIconTile(
             .size(42.dp)
             .clip(AppShapes.Small)
             .background(
-                SolidColor(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.18f))
+                SolidColor(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.30f else 0.18f))
             ),
         contentAlignment = Alignment.Center
     ) {
@@ -499,7 +501,7 @@ private fun DrawerBadge(
 ) {
     Surface(
         shape = RoundedCornerShape(7.dp),
-        color = accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.13f)
+        color = accent.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.13f)
     ) {
         Text(
             text = text,

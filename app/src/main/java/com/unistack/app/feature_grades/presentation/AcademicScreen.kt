@@ -76,7 +76,7 @@ fun AcademicScreen(
             )
             Text(
                 text = "Materias, notas y entregas en un mismo lugar.",
-                color = UniStackColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             UniSegmentedControl(
                 selected = selectedTab,

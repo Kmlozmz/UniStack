@@ -42,7 +42,7 @@ fun <T> UniSegmentedControl(
 ) {
     UniCard(
         modifier = modifier.height(LocalInterfaceSpacing.current.controlHeight),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(3.dp)
@@ -55,7 +55,7 @@ fun <T> UniSegmentedControl(
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(AppShapes.SmallCard)
-                        .background(if (isSelected) UniStackColors.Card else Color.Transparent)
+                        .background(if (isSelected) MaterialTheme.colorScheme.surfaceContainerLow else Color.Transparent)
                         .clickable { onSelected(option.value) },
                     contentAlignment = Alignment.Center
                 ) {
@@ -63,13 +63,13 @@ fun <T> UniSegmentedControl(
                         Icon(
                             option.icon,
                             contentDescription = null,
-                            tint = if (isSelected) UniStackColors.Primary else UniStackColors.TextSecondary,
+                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(9.dp))
                         Text(
                             option.label,
-                            color = if (isSelected) UniStackColors.Primary else UniStackColors.TextSecondary,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )

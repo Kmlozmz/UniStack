@@ -81,6 +81,8 @@ import com.unistack.app.feature_templates.domain.buildApaReferenceDraft
 import com.unistack.app.feature_templates.domain.exportText
 import kotlinx.coroutines.launch
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.ReadOnlyComposable
 @Composable
 fun AcademicTemplatesScreen(
     onBackClick: () -> Unit,
@@ -146,12 +148,12 @@ fun AcademicTemplatesScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(UniStackColors.Background)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -311,7 +313,7 @@ fun AcademicTemplatesScreen(
             item {
                 Text(
                     text = "APA básico",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold
                 )
@@ -333,7 +335,7 @@ fun AcademicTemplatesScreen(
             }
             feedback?.let { message ->
                 item {
-                    Text(message, color = UniStackColors.Green, fontWeight = FontWeight.Bold)
+                    Text(message, color = LocalSectionColors.current.onTrack, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -357,27 +359,27 @@ fun AcademicTemplatesScreen(
 private fun HeaderCard(workCount: Int, activeCount: Int) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = AppShapes.LargeCard,
         tonalElevation = 6.dp,
         contentPadding = PaddingValues(18.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(Icons.AutoMirrored.Rounded.Assignment, UniStackColors.Primary, UniStackColors.OnPrimary)
+            IconBadge(Icons.AutoMirrored.Rounded.Assignment, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary)
             Column(
                 modifier = Modifier.padding(start = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = "$activeCount activos",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 22.sp,
                     lineHeight = 25.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     text = if (workCount == 1) "1 trabajo guardado" else "$workCount trabajos guardados",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 18.sp
                 )
@@ -400,7 +402,7 @@ private fun WorkListSection(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "Trabajos guardados",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.weight(1f)
@@ -408,7 +410,7 @@ private fun WorkListSection(
             SquishyButton(
                 onClick = onNewWork,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 Text("Nuevo", fontWeight = FontWeight.Bold)
@@ -419,8 +421,8 @@ private fun WorkListSection(
                 title = "Aún no tienes trabajos guardados.",
                 body = "Crea uno desde una plantilla para persistir checklist, fecha, materia y progreso.",
                 icon = Icons.AutoMirrored.Rounded.Assignment,
-                color = UniStackColors.Card,
-                iconColor = UniStackColors.Primary
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                iconColor = MaterialTheme.colorScheme.primary
             )
         } else {
             works.forEach { work ->
@@ -450,7 +452,7 @@ private fun WorkCard(
         modifier = Modifier
             .fillMaxWidth()
             .bounceClick(onSelect),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.MediumCard,
         tonalElevation = if (selected) 5.dp else 2.dp,
         contentPadding = PaddingValues(14.dp)
@@ -468,7 +470,7 @@ private fun WorkCard(
                         .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(work.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+                    Text(work.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     Text(
                         listOfNotNull(
                             subjectName ?: "General",
@@ -476,27 +478,27 @@ private fun WorkCard(
                             work.status.label(),
                             work.priority.label()
                         ).joinToString(" · "),
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Eliminar trabajo", tint = UniStackColors.Coral)
+                    Icon(Icons.Rounded.Delete, contentDescription = "Eliminar trabajo", tint = MaterialTheme.colorScheme.error)
                 }
             }
             LinearProgressIndicator(
                 progress = { work.checklistProgress },
                 modifier = Modifier.fillMaxWidth(),
                 color = work.status.color(),
-                trackColor = UniStackColors.SurfaceVariant
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
             )
             if (!work.isFinished) {
                 SquishyButton(
                     onClick = onMarkSubmitted,
                     shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Green),
+                    colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Marcar entregado")
@@ -514,7 +516,7 @@ private fun TemplatePicker(
     onTemplateSelected: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Plantillas", color = UniStackColors.TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+        Text("Plantillas", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
         templates.forEach { template ->
             TemplateOption(
                 template = template,
@@ -537,7 +539,7 @@ private fun TemplateOption(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (enabled) Modifier.bounceClick(onClick) else Modifier),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.MediumCard,
         tonalElevation = if (selected) 5.dp else 2.dp,
         contentPadding = PaddingValues(14.dp)
@@ -545,8 +547,8 @@ private fun TemplateOption(
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconBadge(
                 icon = if (selected) Icons.Rounded.Star else Icons.AutoMirrored.Rounded.MenuBook,
-                background = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
-                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary
+                background = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
             )
             Column(
                 modifier = Modifier
@@ -554,8 +556,8 @@ private fun TemplateOption(
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(template.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                Text(template.description, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                Text(template.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                Text(template.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
         }
     }
@@ -588,14 +590,14 @@ private fun WorkEditorCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = if (isEditing) "Editar trabajo" else "Crear trabajo desde plantilla",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
             )
@@ -617,20 +619,20 @@ private fun WorkEditorCard(
                 shape = AppShapes.MediumCard,
                 isError = dueDate.isNotBlank() && TaskDateUtils.parseInput(dueDate) == null
             )
-            Text("Materia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text("Materia", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
                 options = listOf(UniFilterOption<String?>(null, "General")) +
                     subjects.map { UniFilterOption<String?>(it.id, it.name) },
                 selected = subjectId,
                 onSelected = onSubjectSelected
             )
-            Text("Estado", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text("Estado", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
                 options = AcademicWorkStatus.entries.map { UniFilterOption(it, it.label()) },
                 selected = status,
                 onSelected = onStatusSelected
             )
-            Text("Prioridad", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
+            Text("Prioridad", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
                 options = AcademicWorkPriority.entries.map { UniFilterOption(it, it.label()) },
                 selected = priority,
@@ -671,12 +673,12 @@ private fun WorkEditorCard(
                 shape = AppShapes.MediumCard
             )
             error?.let {
-                Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
             SquishyButton(
                 onClick = onSave,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isEditing) "Guardar trabajo" else "Crear trabajo")
@@ -695,16 +697,16 @@ private fun PersistentChecklistCard(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(Icons.Rounded.CheckCircle, UniStackColors.GreenLight, UniStackColors.Green)
+                IconBadge(Icons.Rounded.CheckCircle, LocalSectionColors.current.onTrackContainer, LocalSectionColors.current.onTrack)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Checklist persistente", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    Text("$completedCount de ${items.size} pasos listos", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text("Checklist persistente", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                    Text("$completedCount de ${items.size} pasos listos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             items.forEach { item ->
@@ -728,15 +730,15 @@ private fun ChecklistRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(AppShapes.MediumCard)
-            .background(if (checked) UniStackColors.GreenLight else UniStackColors.SurfaceVariant)
+            .background(if (checked) LocalSectionColors.current.onTrackContainer else MaterialTheme.colorScheme.surfaceContainerHigh)
             .bounceClick(onToggle)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Checkbox(checked = checked, onCheckedChange = { onToggle() })
         Column(modifier = Modifier.weight(1f)) {
-            Text(item.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            Text(item.detail, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
+            Text(item.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(item.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 16.sp)
         }
     }
 }
@@ -745,29 +747,29 @@ private fun ChecklistRow(
 private fun TemplateDetailCard(template: EssayTemplate) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(template.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+            Text(template.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
             template.sections.forEachIndexed { index, section ->
                 Row(verticalAlignment = Alignment.Top) {
                     Box(
                         modifier = Modifier
                             .size(26.dp)
                             .clip(CircleShape)
-                            .background(UniStackColors.PrimaryLight),
+                            .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("${index + 1}", color = UniStackColors.Primary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("${index + 1}", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
                     }
                     Column(
                         modifier = Modifier.padding(start = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Text(section.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
-                        Text(section.prompt, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
+                        Text(section.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text(section.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 16.sp)
                     }
                 }
             }
@@ -782,29 +784,29 @@ private fun ApaReferenceGeneratorCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.LargeCard,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(Icons.Rounded.AutoAwesome, UniStackColors.GreenLight, UniStackColors.Green)
+                IconBadge(Icons.Rounded.AutoAwesome, LocalSectionColors.current.onTrackContainer, LocalSectionColors.current.onTrack)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Generador de referencias", color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    Text("Autor | Año | Título | Medio", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text("Generador de referencias", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                    Text("Autor | Año | Título | Medio", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             Text(
                 text = referenceDraft,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 lineHeight = 18.sp
             )
             SquishyButton(
                 onClick = onCopyClick,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Green),
+                colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("copy-apa-references")
@@ -819,19 +821,19 @@ private fun ApaReferenceGeneratorCard(
 private fun ApaTipCard(tip: ApaTip) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.MediumCard,
         tonalElevation = 3.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            IconBadge(Icons.Rounded.Check, UniStackColors.BlueLight, UniStackColors.Blue)
+            IconBadge(Icons.Rounded.Check, LocalSectionColors.current.scheduleContainer, LocalSectionColors.current.schedule)
             Column(
                 modifier = Modifier.padding(start = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text(tip.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                Text(tip.description, color = UniStackColors.TextSecondary, fontSize = 12.sp, lineHeight = 17.sp)
+                Text(tip.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                Text(tip.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 17.sp)
             }
         }
     }
@@ -845,23 +847,23 @@ private fun CopyTemplateCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.LargeCard,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(Icons.Rounded.AutoAwesome, UniStackColors.PrimaryLight, UniStackColors.Primary)
+                IconBadge(Icons.Rounded.AutoAwesome, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text(title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold)
-                    Text(body, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                    Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             SquishyButton(
                 onClick = onCopyClick,
                 shape = AppShapes.Pill,
-                colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("copy-work-to-clipboard")
@@ -917,13 +919,15 @@ private fun AcademicWorkStatus.label(): String {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun AcademicWorkStatus.color(): Color {
     return when (this) {
-        AcademicWorkStatus.IDEA -> UniStackColors.Blue
-        AcademicWorkStatus.DRAFT -> UniStackColors.Primary
-        AcademicWorkStatus.REVIEW -> UniStackColors.Yellow
-        AcademicWorkStatus.READY -> UniStackColors.Green
-        AcademicWorkStatus.SUBMITTED -> UniStackColors.TextSecondary
+        AcademicWorkStatus.IDEA -> LocalSectionColors.current.schedule
+        AcademicWorkStatus.DRAFT -> MaterialTheme.colorScheme.primary
+        AcademicWorkStatus.REVIEW -> LocalSectionColors.current.atRisk
+        AcademicWorkStatus.READY -> LocalSectionColors.current.onTrack
+        AcademicWorkStatus.SUBMITTED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 }
 
@@ -935,11 +939,13 @@ private fun AcademicWorkPriority.label(): String {
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun AcademicWorkPriority.color(): Color {
     return when (this) {
-        AcademicWorkPriority.LOW -> UniStackColors.Green
-        AcademicWorkPriority.MEDIUM -> UniStackColors.Yellow
-        AcademicWorkPriority.HIGH -> UniStackColors.Coral
+        AcademicWorkPriority.LOW -> LocalSectionColors.current.onTrack
+        AcademicWorkPriority.MEDIUM -> LocalSectionColors.current.atRisk
+        AcademicWorkPriority.HIGH -> MaterialTheme.colorScheme.error
     }
 }
 

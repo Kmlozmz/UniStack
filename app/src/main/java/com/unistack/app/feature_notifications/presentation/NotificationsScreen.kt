@@ -82,6 +82,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import androidx.compose.runtime.ReadOnlyComposable
 private enum class NotificationFilter(val label: String) {
     ALL("Todas"),
     ACTIONS("Acción"),
@@ -106,25 +110,25 @@ private enum class NotificationFilter(val label: String) {
 }
 
 private val NotificationSurface: Color
-    @Composable get() = UniStackColors.Background
+    @Composable get() = MaterialTheme.colorScheme.background
 private val NotificationCard: Color
-    @Composable get() = UniStackColors.Card
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
 private val NotificationFilterSurface: Color
-    @Composable get() = UniStackColors.SurfaceVariant
+    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val NotificationBorder: Color
-    @Composable get() = UniStackColors.SoftOutline
+    @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val NotificationPrimary: Color
-    @Composable get() = UniStackColors.Primary
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val NotificationAccentText: Color
-    @Composable get() = UniStackColors.PrimaryDark
+    @Composable get() = MaterialTheme.colorScheme.onPrimaryContainer
 private val NotificationText: Color
-    @Composable get() = UniStackColors.TextPrimary
+    @Composable get() = MaterialTheme.colorScheme.onSurface
 private val NotificationBody: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val NotificationMuted: Color
-    @Composable get() = UniStackColors.TextSecondary
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val NotificationHeroBrush: Brush
-    @Composable get() = SolidColor(UniStackColors.PrimaryLight)
+    @Composable get() = SolidColor(MaterialTheme.colorScheme.primaryContainer)
 
 @Composable
 fun NotificationHistoryScreen(
@@ -350,11 +354,11 @@ private fun NotificationInboxSummary(
             if (actionCount > 0) {
                 Surface(
                     shape = AppShapes.Pill,
-                    color = UniStackColors.Coral.copy(alpha = 0.13f)
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.13f)
                 ) {
                     Text(
                         "$actionCount con acción",
-                        color = UniStackColors.Coral,
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -375,7 +379,7 @@ private fun NotificationSummaryStat(
     Surface(
         modifier = modifier,
         shape = AppShapes.SmallCard,
-        color = NotificationCard.copy(alpha = if (UniStackColors.IsDarkTheme) 0.62f else 0.82f)
+        color = NotificationCard.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f)
     ) {
         Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(value.toString(), color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
@@ -409,7 +413,7 @@ private fun NotificationFilterBar(
             ) {
                 Text(
                     text = filter.label,
-                    color = if (isSelected) UniStackColors.OnPrimary else NotificationMuted,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else NotificationMuted,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
@@ -783,7 +787,7 @@ private fun NotificationHintCard(item: NotificationHistoryItem) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = AppShapes.Small,
-        color = category.color.copy(alpha = if (UniStackColors.IsDarkTheme) 0.12f else 0.09f),
+        color = category.color.copy(alpha = if (LocalIsDarkTheme.current) 0.12f else 0.09f),
         border = BorderStroke(1.dp, category.color.copy(alpha = 0.18f))
     ) {
         Row(
@@ -844,16 +848,16 @@ private fun NotificationDetailActions(
                     .weight(1f)
                     .height(48.dp),
                 shape = AppShapes.Pill,
-                color = UniStackColors.Coral.copy(alpha = if (UniStackColors.IsDarkTheme) 0.14f else 0.12f)
+                color = MaterialTheme.colorScheme.error.copy(alpha = if (LocalIsDarkTheme.current) 0.14f else 0.12f)
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = UniStackColors.Coral, modifier = Modifier.size(19.dp))
+                    Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(19.dp))
                     Spacer(modifier = Modifier.width(7.dp))
-                    Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.SemiBold)
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                 }
             }
             if (onOpenRelated != null) {
@@ -870,9 +874,9 @@ private fun NotificationDetailActions(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Abrir", color = UniStackColors.OnPrimary, fontWeight = FontWeight.Bold)
+                        Text("Abrir", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(7.dp))
-                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = UniStackColors.OnPrimary, modifier = Modifier.size(19.dp))
+                        Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(19.dp))
                     }
                 }
             } else {
@@ -881,7 +885,7 @@ private fun NotificationDetailActions(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = UniStackColors.Green, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = LocalSectionColors.current.onTrack, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(7.dp))
                     Text("Vista", color = NotificationMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
@@ -1040,16 +1044,36 @@ private enum class NotificationKind {
 private data class NotificationCategory(
     val label: String,
     val kind: NotificationKind,
-    val color: Color,
     val icon: ImageVector,
     val hint: String,
     val requiresAction: Boolean
 )
 
+/**
+ * El color de una categoria, derivado de su tipo.
+ *
+ * Vive fuera de [NotificationCategory] a proposito: clasificar una notificacion es leer su
+ * texto, y eso no depende del tema. Teniendo el color dentro, clasificar exigia contexto
+ * composable y el filtro de la lista -que solo mira el tipo- no podia ejecutarse dentro de
+ * un remember.
+ */
+private val NotificationCategory.color: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = when (kind) {
+        NotificationKind.SUMMARY -> LocalSectionColors.current.schedule
+        NotificationKind.CLASS -> MaterialTheme.colorScheme.tertiary
+        NotificationKind.TASK -> LocalSectionColors.current.atRisk
+        NotificationKind.ACADEMIC -> MaterialTheme.colorScheme.primary
+        NotificationKind.SYSTEM -> MaterialTheme.colorScheme.primary
+    }
+
+@Composable
+@ReadOnlyComposable
 private fun NotificationHistoryItem.visual(): NotificationVisual {
     return when {
-        read -> NotificationVisual("Vista", UniStackColors.Green, Icons.Rounded.CheckCircle)
-        else -> NotificationVisual("Nueva", UniStackColors.Blue, Icons.Rounded.Campaign)
+        read -> NotificationVisual("Vista", LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
+        else -> NotificationVisual("Nueva", LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
     }
 }
 
@@ -1059,7 +1083,6 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
         "resumen" in text || "dia despejado" in text || "día despejado" in text -> NotificationCategory(
             label = "Resumen",
             kind = NotificationKind.SUMMARY,
-            color = UniStackColors.Blue,
             icon = Icons.Rounded.Event,
             hint = "Revisa tu agenda y decide el siguiente movimiento del dia.",
             requiresAction = false
@@ -1067,7 +1090,6 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
         "clase" in text || "asististe" in text -> NotificationCategory(
             label = "Clase",
             kind = NotificationKind.CLASS,
-            color = UniStackColors.Teal,
             icon = Icons.Rounded.School,
             hint = "Registra asistencia, modalidad o cambios para mantener tu horario al dia.",
             requiresAction = "asististe" in text || "asistencia" in text
@@ -1075,7 +1097,6 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
         "tarea" in text || "trabajo" in text || "entrega" in text -> NotificationCategory(
             label = "Entrega",
             kind = NotificationKind.TASK,
-            color = UniStackColors.Yellow,
             icon = Icons.Rounded.TaskAlt,
             hint = "Abre la actividad para actualizar estado, hora limite o nota obtenida.",
             requiresAction = true
@@ -1083,7 +1104,6 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
         "nota" in text || "promedio" in text || "corte" in text || "materia" in text -> NotificationCategory(
             label = "Academico",
             kind = NotificationKind.ACADEMIC,
-            color = UniStackColors.Primary,
             icon = Icons.Rounded.School,
             hint = "Completa notas, pesos o cortes anteriores para mejorar la proyeccion.",
             requiresAction = true
@@ -1091,7 +1111,6 @@ private fun NotificationHistoryItem.category(): NotificationCategory {
         else -> NotificationCategory(
             label = "Aviso",
             kind = NotificationKind.SYSTEM,
-            color = UniStackColors.Primary,
             icon = Icons.Rounded.NotificationsNone,
             hint = "Mantener tus datos al dia ayuda a UniStack a priorizar mejor.",
             requiresAction = false

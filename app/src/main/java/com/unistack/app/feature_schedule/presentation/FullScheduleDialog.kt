@@ -103,7 +103,7 @@ internal fun FullScheduleDialog(
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = UniStackColors.Background
+            color = MaterialTheme.colorScheme.background
         ) {
             Column(
                 modifier = Modifier
@@ -121,7 +121,7 @@ internal fun FullScheduleDialog(
                     weekStart = weekStart,
                     horizontalScroll = horizontalScroll
                 )
-                HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.7f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -185,19 +185,19 @@ private fun FullScheduleHeader(
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Cerrar horario completo",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Column(Modifier.weight(1f)) {
             Text(
                 "Horario completo",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 fullScheduleWeekLabel(weekStart, weekEnd),
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -205,14 +205,14 @@ private fun FullScheduleHeader(
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
                 contentDescription = "Semana anterior",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         IconButton(onClick = onNextWeek) {
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = "Semana siguiente",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -246,7 +246,7 @@ private fun FullScheduleDayHeader(
                     ) {
                         Text(
                             fullScheduleDayLetter(date.dayOfWeek),
-                            color = if (isToday) UniStackColors.Primary else UniStackColors.TextSecondary,
+                            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -255,12 +255,12 @@ private fun FullScheduleDayHeader(
                             modifier = Modifier
                                 .size(25.dp)
                                 .clip(CircleShape)
-                                .background(if (isToday) UniStackColors.Primary else Color.Transparent),
+                                .background(if (isToday) MaterialTheme.colorScheme.primary else Color.Transparent),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 date.dayOfMonth.toString(),
-                                color = if (isToday) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+                                color = if (isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -285,7 +285,7 @@ private fun FullScheduleTimeAxis(
                 FullScheduleHourHeight * (endHour - startHour) +
                     FullScheduleTopInset + FullScheduleBottomInset
             )
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         (startHour..endHour).forEach { hour ->
             Text(
@@ -297,7 +297,7 @@ private fun FullScheduleTimeAxis(
                     )
                     .fillMaxWidth()
                     .padding(end = 7.dp),
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 lineHeight = 12.sp,
                 textAlign = TextAlign.End,
@@ -324,7 +324,7 @@ private fun FullScheduleGrid(
     Box(
         modifier = modifier
             .height(contentHeight)
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         repeat((endHour - startHour) * 2 + 1) { line ->
             val isFullHour = line % 2 == 0
@@ -333,7 +333,7 @@ private fun FullScheduleGrid(
                     y = FullScheduleTopInset + FullScheduleHourHeight * (line / 2f)
                 ),
                 thickness = if (isFullHour) 1.dp else 0.5.dp,
-                color = UniStackColors.SoftOutline.copy(alpha = if (isFullHour) 0.72f else 0.34f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (isFullHour) 0.72f else 0.34f)
             )
         }
         repeat(8) { line ->
@@ -342,7 +342,7 @@ private fun FullScheduleGrid(
                     .offset(x = dayWidth * line, y = FullScheduleTopInset)
                     .width(1.dp)
                     .height(gridHeight)
-                    .background(UniStackColors.SoftOutline.copy(alpha = 0.62f))
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
             )
         }
 
@@ -384,7 +384,7 @@ private fun FullScheduleGrid(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(24.dp),
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -403,7 +403,7 @@ private fun FullScheduleSession(
     ClassBlock(
         modifier = modifier,
         height = height,
-        color = subject.scheduleBlockColor(UniStackColors.Primary),
+        color = subject.scheduleBlockColor(MaterialTheme.colorScheme.primary),
         name = subject?.name ?: "Clase",
         room = session.place.room,
         startLabel = fullScheduleTime(session.startMinute, use24Hour),

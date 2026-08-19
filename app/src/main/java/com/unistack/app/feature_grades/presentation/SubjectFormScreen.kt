@@ -113,6 +113,8 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.runtime.ReadOnlyComposable
 /**
  * De dónde se entra al formulario de materia.
  *
@@ -157,10 +159,15 @@ fun SubjectFormScreen(
     // a crear. El interruptor solo aparece en la ruta académica.
     val scheduleIsOptional = mode == SubjectFormMode.ACADEMIC
 
+    // El acento de cada tipo se resuelve aqui, en contexto composable. Dentro de
+    // remember o LaunchedEffect no se puede leer el tema, y antes se leia porque el
+    // color no venia del tema sino de un objeto global.
+    val accentArgbByType = SubjectVisualType.entries.associateWith { subjectAccent(it).toArgb() }
+
     var name by remember { mutableStateOf("") }
     var targetAverage by remember { mutableStateOf("") }
     var visualType by remember { mutableStateOf(SubjectVisualType.TEAL) }
-    var customColor by remember { mutableStateOf<Int?>(subjectAccent(SubjectVisualType.TEAL).toArgb()) }
+    var customColor by remember { mutableStateOf<Int?>(accentArgbByType.getValue(SubjectVisualType.TEAL)) }
     // Vacío mientras nadie lo elija. En edición se carga el que ya tuviera la materia,
     // para no borrar una elección hecha desde su pantalla.
     var activePeriodId by remember { mutableStateOf("") }
@@ -220,12 +227,12 @@ fun SubjectFormScreen(
             name = subject.name
             targetAverage = GradingScaleUtils.formatGrade(subject.targetAverage, scale)
             visualType = subject.visualType
-            customColor = subject.customColor ?: subjectAccent(subject.visualType).toArgb()
+            customColor = subject.customColor ?: accentArgbByType.getValue(subject.visualType)
             activePeriodId = subject.activePeriodId
             initialized = true
         } else if (!isEditing) {
             targetAverage = GradingScaleUtils.formatGrade(defaultAverage, scale)
-            customColor = subjectAccent(visualType).toArgb()
+            customColor = accentArgbByType.getValue(visualType)
             activePeriodId = ""
             initialized = true
         }
@@ -324,7 +331,7 @@ fun SubjectFormScreen(
                     selectedColor = customColor ?: subjectAccent(visualType).toArgb(),
                     onSelected = { color ->
                         customColor = color
-                        visualType = closestVisualType(Color(color))
+                        visualType = closestVisualType(Color(color), accentArgbByType)
                     }
                 )
                 // El profesor se guarda dentro del bloque de clase, que es donde lo aloja el
@@ -416,7 +423,7 @@ fun SubjectFormScreen(
             }
 
             error?.let {
-                Text(it, color = UniStackColors.Coral, fontWeight = FontWeight.Bold)
+                Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         }
         // La barra llega hasta el borde inferior de la pantalla y el margen del sistema va
@@ -558,7 +565,7 @@ private fun SubjectFormHeader(
                 if (initial != null) {
                     Text(
                         initial.toString(),
-                        color = UniStackColors.contentColorOn(accent),
+                        color = contentColorOn(accent),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -566,7 +573,7 @@ private fun SubjectFormHeader(
                     Icon(
                         Icons.Rounded.School,
                         contentDescription = null,
-                        tint = UniStackColors.contentColorOn(accent)
+                        tint = contentColorOn(accent)
                     )
                 }
             }
@@ -603,7 +610,7 @@ private fun PlanBanner(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
         shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
-        borderColor = if (limitReached) UniStackColors.Coral.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
+        borderColor = if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
         borderWidth = 0.5.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -612,7 +619,7 @@ private fun PlanBanner(
                 modifier = Modifier
                     .size(44.dp)
                     .background(
-                        if (limitReached) UniStackColors.Coral.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                        if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                         AppShapes.SmallCard
                     ),
                 contentAlignment = Alignment.Center
@@ -620,7 +627,7 @@ private fun PlanBanner(
                 Icon(
                     Icons.Rounded.AutoAwesome,
                     contentDescription = null,
-                    tint = if (limitReached) UniStackColors.Coral else MaterialTheme.colorScheme.primary
+                    tint = if (limitReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             }
             Column(
@@ -648,7 +655,7 @@ private fun PlanBanner(
                 SquishyButton(
                     onClick = onUpgradeClick,
                     shape = AppShapes.Pill,
-                    colors = ButtonDefaults.buttonColors(containerColor = UniStackColors.Primary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Text("Ver Pro", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -688,11 +695,12 @@ private fun SubjectColorField(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+        val accentArgbByType = SubjectVisualType.entries.associateWith { subjectAccent(it).toArgb() }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(SubjectColorPalette, key = { it.toArgb() }) { color ->
                 ColorSwatch(
                     color = color,
-                    label = closestVisualType(color).accessibilityLabel(),
+                    label = closestVisualType(color, accentArgbByType).accessibilityLabel(),
                     selected = color.toArgb() == selectedColor,
                     onClick = { onSelected(color.toArgb()) }
                 )
@@ -815,7 +823,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text(
                             selected.toHexString(),
-                            color = UniStackColors.contentColorOn(selected),
+                            color = contentColorOn(selected),
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
@@ -891,7 +899,7 @@ private fun CustomSubjectColorDialog(
                     ) {
                         Text(
                             "Aplicar",
-                            color = UniStackColors.contentColorOn(selected)
+                            color = contentColorOn(selected)
                         )
                     }
                 }
@@ -995,14 +1003,14 @@ private fun ColorSwatch(
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
-            Icon(Icons.Rounded.Check, contentDescription = null, tint = UniStackColors.contentColorOn(color))
+            Icon(Icons.Rounded.Check, contentDescription = null, tint = contentColorOn(color))
         }
     }
 }
 
-private fun closestVisualType(color: Color): SubjectVisualType {
+private fun closestVisualType(color: Color, accents: Map<SubjectVisualType, Int>): SubjectVisualType {
     return SubjectVisualType.entries.minBy { type ->
-        val candidate = subjectAccent(type)
+        val candidate = Color(accents.getValue(type))
         val dr = candidate.red - color.red
         val dg = candidate.green - color.green
         val db = candidate.blue - color.blue

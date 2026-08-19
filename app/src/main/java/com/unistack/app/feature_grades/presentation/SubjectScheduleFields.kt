@@ -25,6 +25,7 @@ import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+import androidx.compose.material3.MaterialTheme
 /**
  * Campos del bloque «Cuándo» del formulario de materia: qué días, a qué hora, dónde y cada
  * cuánto se repite.
@@ -97,7 +98,7 @@ internal fun SubjectWhenFields(
             Text(
                 if (draft.daysOfWeek.isEmpty()) "Selecciona al menos un día."
                 else "La hora final debe ser posterior a la inicial.",
-                color = UniStackColors.Coral,
+                color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
         }

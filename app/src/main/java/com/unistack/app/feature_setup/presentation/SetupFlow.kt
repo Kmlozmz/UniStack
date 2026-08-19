@@ -157,6 +157,8 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
     const val Name = "setup_name"
@@ -216,7 +218,7 @@ fun SetupFlow(
     NavHost(
         navController = navController,
         startDestination = SetupRoutes.Welcome,
-        modifier = modifier.background(UniStackColors.Background),
+        modifier = modifier.background(MaterialTheme.colorScheme.background),
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it / 2 },
@@ -425,7 +427,7 @@ private fun WelcomeBrand() {
         UniStackLogoMark(size = 38.dp)
         Text(
             text = "UniStack",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 18.sp,
             lineHeight = 22.sp,
             fontWeight = FontWeight.ExtraBold
@@ -445,7 +447,7 @@ private fun WelcomeHeroCard() {
         modifier = Modifier
             .fillMaxWidth()
             .clip(AppShapes.LargeCard)
-            .background(UniStackColors.PrimaryLight)
+            .background(MaterialTheme.colorScheme.primaryContainer)
     ) {
         Box(
             modifier = Modifier
@@ -459,7 +461,7 @@ private fun WelcomeHeroCard() {
                 }
                 .size(112.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.24f))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.30f else 0.24f))
         )
         Box(
             modifier = Modifier
@@ -473,7 +475,7 @@ private fun WelcomeHeroCard() {
                 }
                 .size(82.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.22f else 0.16f))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.22f else 0.16f))
         )
         Column(
             modifier = Modifier
@@ -483,7 +485,7 @@ private fun WelcomeHeroCard() {
         ) {
             Text(
                 text = "BIENVENIDO",
-                color = UniStackColors.Primary,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -492,18 +494,18 @@ private fun WelcomeHeroCard() {
             Text(
                 text = buildAnnotatedString {
                     append("Tu semestre,\n")
-                    withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                         append("a tu medida")
                     }
                 },
-                color = UniStackColors.PrimaryDark,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 fontSize = 30.sp,
                 lineHeight = 34.sp,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
                 text = "Unas preguntas rápidas y UniStack estará listo desde el primer día.",
-                color = UniStackColors.PrimaryDark.copy(alpha = 0.82f),
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
                 fontSize = 13.sp,
                 lineHeight = 19.sp,
                 modifier = Modifier.fillMaxWidth(0.82f)
@@ -555,7 +557,7 @@ private fun WelcomeFeaturesGrid() {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = "Con tu configuración podrás",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -595,22 +597,22 @@ private fun WelcomeFeatureCard(
 ) {
     val colorSpec = spring<Color>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
     val containerColor by animateColorAsState(
-        targetValue = if (selected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
         animationSpec = colorSpec,
         label = "feature-container"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
         animationSpec = colorSpec,
         label = "feature-content"
     )
     val iconBackground by animateColorAsState(
-        targetValue = if (selected) UniStackColors.OnPrimary.copy(alpha = 0.18f) else UniStackColors.PrimaryLight,
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primaryContainer,
         animationSpec = colorSpec,
         label = "feature-icon-bg"
     )
     val iconTint by animateColorAsState(
-        targetValue = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary,
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
         animationSpec = colorSpec,
         label = "feature-icon-tint"
     )
@@ -668,13 +670,13 @@ private fun WelcomeFeatureDialog(
                 modifier = Modifier
                     .size(54.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = feature.icon,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -682,7 +684,7 @@ private fun WelcomeFeatureDialog(
         title = {
             Text(
                 text = feature.label,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 20.sp,
                 lineHeight = 26.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -693,7 +695,7 @@ private fun WelcomeFeatureDialog(
         text = {
             Text(
                 text = feature.description,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
                 textAlign = TextAlign.Center
@@ -703,13 +705,13 @@ private fun WelcomeFeatureDialog(
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = "Entendido",
-                    color = UniStackColors.Primary,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
         },
-        containerColor = UniStackColors.Card,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.LargeCard
     )
 }
@@ -762,8 +764,8 @@ fun SetupNameScreen(
 
 @Composable
 private fun SetupNameHero(name: String) {
-    val glowAlpha = if (UniStackColors.IsDarkTheme) 0.36f else 0.18f
-    val cardColor = if (UniStackColors.IsDarkTheme) UniStackColors.SurfaceVariant else UniStackColors.Card
+    val glowAlpha = if (LocalIsDarkTheme.current) 0.36f else 0.18f
+    val cardColor = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
 
     val badgeFloat = floatingOffset(travel = 7f, durationMillis = 2800, label = "name-badge-float")
     val badgeTilt = floatingOffset(travel = 2.5f, durationMillis = 3600, label = "name-badge-tilt")
@@ -783,8 +785,8 @@ private fun SetupNameHero(name: String) {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            UniStackColors.Primary.copy(alpha = glowAlpha),
-                            UniStackColors.Primary.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             Color.Transparent
                         )
                     )
@@ -793,7 +795,7 @@ private fun SetupNameHero(name: String) {
         Icon(
             imageVector = Icons.Rounded.AutoAwesome,
             contentDescription = null,
-            tint = UniStackColors.Primary,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(x = (-88).dp, y = (-48).dp)
@@ -808,7 +810,7 @@ private fun SetupNameHero(name: String) {
         Icon(
             imageVector = Icons.Rounded.AutoAwesome,
             contentDescription = null,
-            tint = UniStackColors.Primary,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .align(Alignment.Center)
                 .offset(x = (-102).dp, y = (-22).dp)
@@ -831,7 +833,7 @@ private fun SetupNameHero(name: String) {
                 .background(cardColor)
                 .border(
                     width = 1.dp,
-                    color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.32f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.58f else 0.32f),
                     shape = AppShapes.SmallCard
                 ),
             contentAlignment = Alignment.Center
@@ -845,13 +847,13 @@ private fun SetupNameHero(name: String) {
                         modifier = Modifier
                             .size(29.dp)
                             .clip(CircleShape)
-                            .background(UniStackColors.Primary.copy(alpha = 0.92f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.92f))
                     )
                     Box(
                         modifier = Modifier
                             .size(15.dp)
                             .clip(CircleShape)
-                            .background(UniStackColors.OnPrimary.copy(alpha = 0.18f))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.18f))
                     )
                 }
                 Box(
@@ -859,7 +861,7 @@ private fun SetupNameHero(name: String) {
                         .width(50.dp)
                         .height(21.dp)
                         .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                        .background(UniStackColors.Primary)
+                        .background(MaterialTheme.colorScheme.primary)
                 )
                 // El nombre se va escribiendo aquí en vivo; sin nombre aún, barras de relleno.
                 val badgeName = name.trim()
@@ -881,8 +883,8 @@ private fun SetupNameHero(name: String) {
                                         .height(6.dp)
                                         .clip(AppShapes.Pill)
                                         .background(
-                                            UniStackColors.SoftOutline.copy(
-                                                alpha = if (UniStackColors.IsDarkTheme) 0.45f else 0.72f
+                                            MaterialTheme.colorScheme.outlineVariant.copy(
+                                                alpha = if (LocalIsDarkTheme.current) 0.45f else 0.72f
                                             )
                                         )
                                 )
@@ -892,8 +894,8 @@ private fun SetupNameHero(name: String) {
                                         .height(6.dp)
                                         .clip(AppShapes.Pill)
                                         .background(
-                                            UniStackColors.SoftOutline.copy(
-                                                alpha = if (UniStackColors.IsDarkTheme) 0.28f else 0.54f
+                                            MaterialTheme.colorScheme.outlineVariant.copy(
+                                                alpha = if (LocalIsDarkTheme.current) 0.28f else 0.54f
                                             )
                                         )
                                 )
@@ -901,7 +903,7 @@ private fun SetupNameHero(name: String) {
                         } else {
                             Text(
                                 text = badgeName,
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.sp,
                                 lineHeight = 15.sp,
                                 fontWeight = FontWeight.Bold,
@@ -928,11 +930,11 @@ private fun SetupNameTitle() {
         Text(
             text = buildAnnotatedString {
                 append("¿Cómo ")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append("te llamas?")
                 }
             },
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 30.sp,
             lineHeight = 34.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -940,7 +942,7 @@ private fun SetupNameTitle() {
         )
         Text(
             text = "Usaremos tu nombre para saludarte\ny personalizar tu panel.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             lineHeight = 22.sp,
             textAlign = TextAlign.Center
@@ -961,7 +963,7 @@ private fun SetupNameInput(
     ) {
         Text(
             text = "Nombre",
-            color = UniStackColors.Primary,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal
         )
@@ -978,7 +980,7 @@ private fun SetupNameInput(
                 placeholder = {
                     Text(
                         text = "Escribe tu nombre",
-                        color = UniStackColors.TextSecondary.copy(alpha = 0.72f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                         fontSize = 15.sp
                     )
                 },
@@ -986,7 +988,7 @@ private fun SetupNameInput(
                     Icon(
                         imageVector = Icons.Rounded.Person,
                         contentDescription = null,
-                        tint = UniStackColors.Primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                 },
@@ -997,15 +999,15 @@ private fun SetupNameInput(
                 },
                 shape = AppShapes.SmallCard,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = UniStackColors.Primary,
-                    unfocusedBorderColor = UniStackColors.Primary,
-                    errorBorderColor = UniStackColors.Coral,
-                    focusedTextColor = UniStackColors.TextPrimary,
-                    unfocusedTextColor = UniStackColors.TextPrimary,
-                    cursorColor = UniStackColors.Primary,
-                    focusedContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.12f else 0.76f),
-                    unfocusedContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.08f else 0.62f),
-                    errorContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.08f else 0.62f)
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
+                    errorBorderColor = MaterialTheme.colorScheme.error,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.12f else 0.76f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.08f else 0.62f),
+                    errorContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.08f else 0.62f)
                 ),
                 isError = showError
             )
@@ -1017,10 +1019,10 @@ private fun SetupNameInput(
 private fun SetupNameInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.MediumCard,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.76f else 0.9f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.76f else 0.9f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 15.dp)
     ) {
@@ -1033,19 +1035,19 @@ private fun SetupNameInfoCard() {
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Edit,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(23.dp)
                 )
             }
             Text(
                 text = "Podrás cambiarlo en cualquier momento\ndesde tu perfil.",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
                 modifier = Modifier.weight(1f)
@@ -1261,7 +1263,7 @@ fun SetupProfileScreen(
 private fun SetupProfileSectionTitle(text: String) {
     Text(
         text = text,
-        color = UniStackColors.TextPrimary,
+        color = MaterialTheme.colorScheme.onSurface,
         fontSize = 18.sp,
         lineHeight = 22.sp,
         fontWeight = FontWeight.ExtraBold,
@@ -1284,12 +1286,12 @@ private fun GradeLevelChips(
         options.forEach { option ->
             val isSelected = option == selected
             val containerColor by animateColorAsState(
-                targetValue = if (isSelected) UniStackColors.Primary else UniStackColors.SurfaceVariant,
+                targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
                 animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
                 label = "grade-chip-container"
             )
             val contentColor by animateColorAsState(
-                targetValue = if (isSelected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+                targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
                 label = "grade-chip-content"
             )
@@ -1324,7 +1326,7 @@ private fun GradeLevelChips(
 
 @Composable
 private fun SetupEducationHero() {
-    val glowAlpha = if (UniStackColors.IsDarkTheme) 0.38f else 0.16f
+    val glowAlpha = if (LocalIsDarkTheme.current) 0.38f else 0.16f
     val heroFloat = floatingOffset(travel = 5f, durationMillis = 3000, label = "education-hero-float")
 
     Box(
@@ -1340,8 +1342,8 @@ private fun SetupEducationHero() {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            UniStackColors.Primary.copy(alpha = glowAlpha),
-                            UniStackColors.Primary.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             Color.Transparent
                         )
                     )
@@ -1352,10 +1354,10 @@ private fun SetupEducationHero() {
                 .graphicsLayer { translationY = heroFloat.dp.toPx() }
                 .size(68.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.68f else 1f))
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.68f else 1f))
                 .border(
                     width = 1.dp,
-                    color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.34f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.34f),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
@@ -1363,7 +1365,7 @@ private fun SetupEducationHero() {
             Icon(
                 imageVector = Icons.Rounded.School,
                 contentDescription = null,
-                tint = UniStackColors.Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(38.dp)
             )
         }
@@ -1380,11 +1382,11 @@ private fun SetupEducationTitle() {
         Text(
             text = buildAnnotatedString {
                 append("¿Cuál es tu\n")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append("nivel de estudio?")
                 }
             },
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 28.sp,
             lineHeight = 32.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -1392,7 +1394,7 @@ private fun SetupEducationTitle() {
         )
         Text(
             text = "Esto nos ayuda a adaptar UniStack\na tu etapa académica.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 19.sp,
             textAlign = TextAlign.Center
@@ -1458,9 +1460,9 @@ private fun EducationLevelCard(
     modifier: Modifier = Modifier
 ) {
     val cardColor = if (selected) {
-        UniStackColors.PrimaryLight
+        MaterialTheme.colorScheme.primaryContainer
     } else {
-        UniStackColors.Card
+        MaterialTheme.colorScheme.surfaceContainerLow
     }
 
     UniCard(
@@ -1480,7 +1482,7 @@ private fun EducationLevelCard(
         color = cardColor,
         shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
@@ -1491,13 +1493,13 @@ private fun EducationLevelCard(
                         .align(Alignment.TopEnd)
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(UniStackColors.Primary),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
-                        tint = UniStackColors.OnPrimary,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -1510,7 +1512,7 @@ private fun EducationLevelCard(
                 Icon(
                     imageVector = content.icon,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(34.dp)
                 )
                 Column(
@@ -1519,7 +1521,7 @@ private fun EducationLevelCard(
                 ) {
                     Text(
                         text = content.title,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp,
                         lineHeight = 18.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -1527,7 +1529,7 @@ private fun EducationLevelCard(
                     )
                     Text(
                         text = content.caption,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 15.sp,
                         textAlign = TextAlign.Center
@@ -1552,10 +1554,10 @@ private fun AcademicProgramHelpCard(
 ) {
     UniCard(
         modifier = modifier.fillMaxWidth(),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.SurfaceVariant,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
@@ -1569,13 +1571,13 @@ private fun AcademicProgramHelpCard(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.86f else 1f)),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.86f else 1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Rounded.AutoAwesome,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -1585,14 +1587,14 @@ private fun AcademicProgramHelpCard(
             ) {
                 Text(
                     text = "No encuentras tu carrera?",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "Podrás agregarla manualmente.",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 16.sp
                 )
@@ -1600,14 +1602,14 @@ private fun AcademicProgramHelpCard(
             Icon(
                 imageVector = if (selected) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
-                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.Primary,
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .size(if (selected) 24.dp else 26.dp)
                     .then(
                         if (selected) {
                             Modifier
                                 .clip(CircleShape)
-                                .background(UniStackColors.Primary)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .padding(4.dp)
                         } else {
                             Modifier
@@ -1636,27 +1638,27 @@ private fun SetupCustomProgramField(
             label = {
                 Text(
                     text = "Nombre del programa",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Normal
                 )
             },
             placeholder = {
                 Text(
                     text = "Ej: Ingeniería Biomédica",
-                    color = UniStackColors.TextSecondary.copy(alpha = 0.72f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                 )
             },
             shape = AppShapes.SmallCard,
             colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = UniStackColors.Primary,
-                unfocusedBorderColor = UniStackColors.SoftOutline,
-                errorBorderColor = UniStackColors.Coral,
-                focusedTextColor = UniStackColors.TextPrimary,
-                unfocusedTextColor = UniStackColors.TextPrimary,
-                cursorColor = UniStackColors.Primary,
-                focusedContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.16f else 0.76f),
-                unfocusedContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.1f else 0.62f),
-                errorContainerColor = UniStackColors.Card.copy(alpha = if (UniStackColors.IsDarkTheme) 0.1f else 0.62f)
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                errorBorderColor = MaterialTheme.colorScheme.error,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.16f else 0.76f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.1f else 0.62f),
+                errorContainerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (LocalIsDarkTheme.current) 0.1f else 0.62f)
             ),
             supportingText = {
                 if (showError) {
@@ -1781,7 +1783,7 @@ fun SetupGradingScaleScreen(
                 if (!isValid && !waitingForCustomRange) {
                     Text(
                         text = "Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.",
-                        color = UniStackColors.Coral,
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
                         textAlign = TextAlign.Center
@@ -1814,8 +1816,8 @@ private fun SetupScaleHero() {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.5f else 0.24f),
-                            UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.8f else 1f)
+                            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.5f else 0.24f),
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.8f else 1f)
                         )
                     )
                 ),
@@ -1824,7 +1826,7 @@ private fun SetupScaleHero() {
             Icon(
                 imageVector = Icons.Rounded.BarChart,
                 contentDescription = null,
-                tint = UniStackColors.Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(30.dp)
             )
         }
@@ -1840,7 +1842,7 @@ private fun SetupScaleTitle() {
     ) {
         Text(
             text = "¿Cómo es la escala de tus notas?",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 22.sp,
             lineHeight = 25.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -1848,7 +1850,7 @@ private fun SetupScaleTitle() {
         )
         Text(
             text = "Esto nos permite calcular tus promedios y metas\nde forma precisa.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 17.sp,
             textAlign = TextAlign.Center
@@ -1867,7 +1869,7 @@ private fun ScaleTypeSection(
     ) {
         Text(
             text = "Tipo de escala",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp,
             lineHeight = 17.sp,
             fontWeight = FontWeight.SemiBold
@@ -1937,10 +1939,10 @@ private fun ScaleTypeCard(
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = if (selected) 1.4.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 9.dp)
     ) {
@@ -1967,7 +1969,7 @@ private fun ScaleTypeCard(
                 }
                 Text(
                     text = option.title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = if (option.icon == null) 17.sp else 13.sp,
                     lineHeight = if (option.icon == null) 21.sp else 16.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -1978,7 +1980,7 @@ private fun ScaleTypeCard(
                 if (option.subtitle != null) {
                     Text(
                         text = option.subtitle,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp,
                         lineHeight = 13.sp,
                         textAlign = TextAlign.Center
@@ -2000,10 +2002,10 @@ private fun ScaleRadioDot(
             .clip(CircleShape)
             .border(
                 width = 1.6.dp,
-                color = if (selected) UniStackColors.Primary else UniStackColors.TextSecondary.copy(alpha = 0.72f),
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                 shape = CircleShape
             )
-            .background(if (selected) UniStackColors.PrimaryLight else Color.Transparent),
+            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
         if (selected) {
@@ -2011,7 +2013,7 @@ private fun ScaleRadioDot(
                 modifier = Modifier
                     .size(9.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.Primary)
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
     }
@@ -2028,8 +2030,8 @@ private fun ScaleBadge(
             .height(34.dp)
             .clip(RoundedCornerShape(9.dp))
             .background(
-                if (selected) UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.88f else 1f)
-                else UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.92f)
+                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.88f else 1f)
+                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.82f else 0.92f)
             )
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
@@ -2038,13 +2040,13 @@ private fun ScaleBadge(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = UniStackColors.TextPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(18.dp)
             )
         } else {
             Text(
                 text = text.orEmpty(),
-                color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -2061,10 +2063,10 @@ private fun ConfirmedScaleRangeRow(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.52f else 0.72f),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.52f else 0.72f),
         shape = AppShapes.Small,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.9f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.9f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
     ) {
@@ -2075,13 +2077,13 @@ private fun ConfirmedScaleRangeRow(
         ) {
             Text(
                 text = "Rango confirmado: 0 a ${customGradeMax.toInt()}",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 16.sp,
                 modifier = Modifier.weight(1f)
             )
             TextButton(onClick = onEditClick) {
-                Text("Cambiar", color = UniStackColors.Primary, fontWeight = FontWeight.SemiBold)
+                Text("Cambiar", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -2097,7 +2099,7 @@ private fun GradeGoalInputRow(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2113,13 +2115,13 @@ private fun GradeGoalInputRow(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.86f else 1f)),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.86f else 1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(21.dp)
                 )
             }
@@ -2129,14 +2131,14 @@ private fun GradeGoalInputRow(
             ) {
                 Text(
                     text = title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 14.sp,
                     lineHeight = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = subtitle,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     lineHeight = 14.sp
                 )
@@ -2160,7 +2162,7 @@ private fun GradeValueField(
             .width(92.dp)
             .height(44.dp)
             .clip(shape)
-            .border(1.dp, UniStackColors.SoftOutline, shape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .background(Color.Transparent)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
@@ -2170,14 +2172,14 @@ private fun GradeValueField(
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 lineHeight = 19.sp,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(UniStackColors.Primary),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
             modifier = Modifier.fillMaxWidth(),
             decorationBox = { innerTextField ->
                 Box(
@@ -2195,7 +2197,7 @@ private fun GradeValueField(
 private fun ScaleInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2211,12 +2213,12 @@ private fun ScaleInfoCard() {
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.Primary),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "i",
-                    color = UniStackColors.OnPrimary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 19.sp,
                     lineHeight = 21.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -2224,7 +2226,7 @@ private fun ScaleInfoCard() {
             }
             Text(
                 text = "Puedes cambiar esta configuración en cualquier momento\ndesde Ajustes.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -2308,7 +2310,7 @@ private fun AcademicPeriodsTitle() {
     ) {
         Text(
             text = "¿Cómo se divide tu nota final?",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 24.sp,
             lineHeight = 27.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -2316,7 +2318,7 @@ private fun AcademicPeriodsTitle() {
         )
         Text(
             text = "Elige el sistema de evaluación y distribuye\nel 100% de tu nota final.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 18.sp,
             textAlign = TextAlign.Center
@@ -2340,17 +2342,17 @@ private fun AcademicDistributionCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.78f else 0.9f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = "Tipo de evaluación",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 lineHeight = 18.sp,
                 fontWeight = FontWeight.SemiBold
@@ -2363,7 +2365,7 @@ private fun AcademicDistributionCard(
                 // Ambas opciones se comportan igual: solo cambia el nombre. Decirlo evita
                 // que se lea como una decisión de cálculo y que se dude en elegir.
                 text = "Como los llame tu institución. Solo cambia el nombre, no el cálculo.",
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 lineHeight = 14.sp,
                 textAlign = TextAlign.Center,
@@ -2383,7 +2385,7 @@ private fun AcademicDistributionCard(
                     SetupDivider()
                     Text(
                         text = "Cantidad de ${(label ?: AcademicPeriodLabel.CORTE).plural.lowercase()}",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 14.sp,
                         lineHeight = 17.sp,
                         fontWeight = FontWeight.SemiBold
@@ -2427,10 +2429,10 @@ private fun EvaluationTypeSegmentedControl(
             .fillMaxWidth()
             .height(48.dp)
             .clip(AppShapes.Small)
-            .background(UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.62f else 0.82f))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f))
             .border(
                 width = 1.dp,
-                color = UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 0.9f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.74f else 0.9f),
                 shape = AppShapes.Small
             )
             .padding(SEGMENT_INSET),
@@ -2464,7 +2466,7 @@ private fun EvaluationSegment(
             // esto la píldora seleccionada quedaba más redonda que el borde que la
             // envuelve y los arcos no encajaban.
             .clip(AppShapes.insetFromSmall(SEGMENT_INSET))
-            .background(if (selected) UniStackColors.Primary else Color.Transparent)
+            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .clickable(
                 interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null,
@@ -2479,12 +2481,12 @@ private fun EvaluationSegment(
             Icon(
                 imageVector = Icons.Rounded.CalendarMonth,
                 contentDescription = null,
-                tint = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary,
+                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(16.dp)
             )
             Text(
                 text = label,
-                color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 lineHeight = 16.sp,
                 fontWeight = FontWeight.SemiBold
@@ -2525,10 +2527,10 @@ private fun PeriodCountDropdown(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp),
-            color = UniStackColors.SurfaceVariant,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             shape = shape,
             tonalElevation = 0.dp,
-            borderColor = if (expanded) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.92f),
+            borderColor = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.82f else 0.92f),
             borderWidth = if (expanded) 1.4.dp else 1.dp,
             onClick = { onExpandedChange(!expanded) },
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
@@ -2540,7 +2542,7 @@ private fun PeriodCountDropdown(
             ) {
                 Text(
                     text = countLabel,
-                    color = if (count <= 0) UniStackColors.TextSecondary else UniStackColors.TextPrimary,
+                    color = if (count <= 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp,
                     lineHeight = 16.sp,
                     fontWeight = if (count <= 0) FontWeight.Normal else FontWeight.SemiBold,
@@ -2549,7 +2551,7 @@ private fun PeriodCountDropdown(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = UniStackColors.TextPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .size(24.dp)
                         .padding(1.dp)
@@ -2560,7 +2562,7 @@ private fun PeriodCountDropdown(
 
         MaterialTheme(
             shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.Small),
-            colorScheme = MaterialTheme.colorScheme.copy(surface = UniStackColors.Card)
+            colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             androidx.compose.material3.DropdownMenu(
                 expanded = expanded,
@@ -2571,7 +2573,7 @@ private fun PeriodCountDropdown(
                         if (anchorWidth > 0) Modifier.width(with(density) { anchorWidth.toDp() }) else Modifier.fillMaxWidth()
                     )
                     .background(
-                        UniStackColors.SurfaceVariant,
+                        MaterialTheme.colorScheme.surfaceContainerHigh,
                         AppShapes.Small
                     )
             ) {
@@ -2580,7 +2582,7 @@ private fun PeriodCountDropdown(
                         text = {
                             Text(
                                 text = option.label,
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 15.sp,
                                 lineHeight = 19.sp
                             )
@@ -2612,7 +2614,7 @@ private fun PeriodDistributionSection(
         ) {
             Text(
                 text = "Distribución de la nota",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 lineHeight = 16.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -2624,7 +2626,7 @@ private fun PeriodDistributionSection(
             ) {
                 Text(
                     text = "Total asignado: ${formatSetupPercent(total)}%",
-                    color = if (isValid) UniStackColors.Green else UniStackColors.TextSecondary,
+                    color = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     lineHeight = 13.sp,
                     fontWeight = if (isValid) FontWeight.SemiBold else FontWeight.Normal
@@ -2632,14 +2634,14 @@ private fun PeriodDistributionSection(
                 Icon(
                     imageVector = if (isValid) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
                     contentDescription = null,
-                    tint = if (isValid) UniStackColors.Green else UniStackColors.TextSecondary,
+                    tint = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
                 )
             }
         }
         UniCard(
             modifier = Modifier.fillMaxWidth(),
-            color = UniStackColors.SurfaceVariant.copy(alpha = if (UniStackColors.IsDarkTheme) 0.46f else 0.72f),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.46f else 0.72f),
             shape = AppShapes.Small,
             tonalElevation = 0.dp,
             borderColor = Color.Transparent,
@@ -2678,19 +2680,19 @@ private fun PeriodWeightRow(
             modifier = Modifier
                 .size(24.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.Primary),
+                .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = (index + 1).toString(),
-                color = UniStackColors.OnPrimary,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
         Text(
             text = label,
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 13.sp,
             lineHeight = 16.sp,
             modifier = Modifier.weight(1f)
@@ -2714,7 +2716,7 @@ private fun CompactPercentField(
         modifier = modifier
             .height(40.dp)
             .clip(shape)
-            .border(1.dp, UniStackColors.SoftOutline, shape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .background(Color.Transparent)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -2725,13 +2727,13 @@ private fun CompactPercentField(
             onValueChange = onValueChange,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(UniStackColors.Primary),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
             modifier = Modifier.weight(1f),
             decorationBox = { innerTextField ->
                 Box(
@@ -2744,7 +2746,7 @@ private fun CompactPercentField(
         )
         Text(
             text = "%",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 12.sp,
             lineHeight = 14.sp
         )
@@ -2757,10 +2759,10 @@ private fun PeriodSummaryCard(
     remaining: Double,
     isValid: Boolean
 ) {
-    val accent = if (isValid) UniStackColors.Green else UniStackColors.Primary
+    val accent = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = if (isValid) UniStackColors.GreenLight else UniStackColors.SurfaceVariant,
+        color = if (isValid) LocalSectionColors.current.onTrackContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.Small,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -2776,7 +2778,7 @@ private fun PeriodSummaryCard(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.18f else 0.14f))
+                    .background(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.14f))
                     .border(2.dp, accent, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -2797,15 +2799,15 @@ private fun PeriodSummaryCard(
                 modifier = Modifier
                     .width(1.dp)
                     .height(34.dp)
-                    .background(UniStackColors.SoftOutline.copy(alpha = 0.72f))
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
             )
             PeriodSummaryMetric(
                 title = "Restante",
                 value = "${formatSetupPercent(remaining)}%",
                 color = when {
-                    isValid -> UniStackColors.Green
-                    remaining < 0 -> UniStackColors.Coral
-                    else -> UniStackColors.Primary
+                    isValid -> LocalSectionColors.current.onTrack
+                    remaining < 0 -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
                 },
                 modifier = Modifier.weight(1f)
             )
@@ -2826,7 +2828,7 @@ private fun PeriodSummaryMetric(
     ) {
         Text(
             text = title,
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             lineHeight = 13.sp
         )
@@ -2859,13 +2861,13 @@ private fun AcademicPeriodsBottomActions(
         Icon(
             imageVector = Icons.Rounded.Lock,
             contentDescription = null,
-            tint = UniStackColors.TextSecondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(13.dp)
         )
         Spacer(modifier = Modifier.width(5.dp))
         Text(
             text = if (enabled) "Tu distribución está completa." else "Completa el 100% para continuar.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             lineHeight = 12.sp
         )
@@ -2897,7 +2899,7 @@ private fun SetupDivider() {
         modifier = Modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.72f else 0.86f))
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.86f))
     )
 }
 
@@ -2909,10 +2911,10 @@ private fun CustomGradeRangeSelector(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = AppShapes.LargeCard,
         tonalElevation = 6.dp,
-        borderColor = UniStackColors.Primary.copy(alpha = 0.18f),
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(16.dp)
     ) {
@@ -2921,26 +2923,26 @@ private fun CustomGradeRangeSelector(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         "Define el máximo",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 17.sp
                     )
                     Text(
                         "Tu escala irá de 0 hasta este valor.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
                 }
                 UniCard(
-                    color = UniStackColors.Primary,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = AppShapes.Pill,
                     tonalElevation = 4.dp,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
                     Text(
                         customGradeMax.toInt().toString(),
-                        color = UniStackColors.Card,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
@@ -2948,7 +2950,7 @@ private fun CustomGradeRangeSelector(
             }
             Text(
                 "Rango actual: 0 a ${customGradeMax.toInt()}",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal
             )
@@ -2960,11 +2962,11 @@ private fun CustomGradeRangeSelector(
                 valueRange = 1f..100f,
                 steps = 98,
                 colors = SliderDefaults.colors(
-                    thumbColor = UniStackColors.Primary,
-                    activeTrackColor = UniStackColors.Primary,
-                    inactiveTrackColor = UniStackColors.Primary.copy(alpha = 0.18f),
-                    activeTickColor = UniStackColors.Card.copy(alpha = 0.35f),
-                    inactiveTickColor = UniStackColors.Primary.copy(alpha = 0.22f)
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    activeTickColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.35f),
+                    inactiveTickColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -2973,7 +2975,7 @@ private fun CustomGradeRangeSelector(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 listOf("1", "25", "50", "75", "100").forEach { mark ->
-                    Text(mark, color = UniStackColors.TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Normal)
+                    Text(mark, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Normal)
                 }
             }
             UniStackButton(text = "Confirmar rango", onClick = onConfirmClick)
@@ -3205,8 +3207,8 @@ private fun SetupModulesHero() {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.34f else 0.16f),
-                            UniStackColors.Primary.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.34f else 0.16f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
                             Color.Transparent
                         )
                     )
@@ -3217,10 +3219,10 @@ private fun SetupModulesHero() {
                 .graphicsLayer { translationY = float.dp.toPx() }
                 .size(50.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.74f else 1f))
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.74f else 1f))
                 .border(
                     width = 1.dp,
-                    color = UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.26f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.58f else 0.26f),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
@@ -3228,7 +3230,7 @@ private fun SetupModulesHero() {
             Icon(
                 imageVector = Icons.Rounded.GridView,
                 contentDescription = null,
-                tint = UniStackColors.Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -3244,7 +3246,7 @@ private fun SetupModulesTitle() {
     ) {
         Text(
             text = "¿Qué quieres organizar con UniStack?",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 23.sp,
             lineHeight = 26.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -3252,7 +3254,7 @@ private fun SetupModulesTitle() {
         )
         Text(
             text = "Activa los módulos que necesitas.\nPuedes cambiar esta configuración en Ajustes.",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 18.sp,
             textAlign = TextAlign.Center
@@ -3297,10 +3299,10 @@ private fun SetupModuleSelectionCard(
             .semantics {
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline.copy(alpha = 0.9f),
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.9f),
         borderWidth = if (selected) 1.3.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     ) {
@@ -3316,7 +3318,7 @@ private fun SetupModuleSelectionCard(
             ) {
                 Text(
                     text = option.label,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     lineHeight = 19.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -3325,7 +3327,7 @@ private fun SetupModuleSelectionCard(
                 )
                 Text(
                     text = option.description,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 15.sp,
                     maxLines = 1,
@@ -3344,10 +3346,10 @@ private fun SetupModuleCheckBox(selected: Boolean) {
         modifier = Modifier
             .size(32.dp)
             .clip(shape)
-            .background(if (selected) UniStackColors.Primary else Color.Transparent)
+            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .border(
                 width = if (selected) 0.dp else 2.dp,
-                color = if (selected) Color.Transparent else UniStackColors.TextSecondary.copy(alpha = 0.38f),
+                color = if (selected) Color.Transparent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                 shape = shape
             ),
         contentAlignment = Alignment.Center
@@ -3356,7 +3358,7 @@ private fun SetupModuleCheckBox(selected: Boolean) {
             Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
-                tint = UniStackColors.OnPrimary,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -3367,10 +3369,10 @@ private fun SetupModuleCheckBox(selected: Boolean) {
 private fun SetupModulesInfoCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.SurfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = 0.78f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.78f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 10.dp)
     ) {
@@ -3384,12 +3386,12 @@ private fun SetupModulesInfoCard() {
                 text = buildAnnotatedString {
                     append("Siempre puedes activar o desactivar módulos\n")
                     append("desde ")
-                    withStyle(SpanStyle(color = UniStackColors.Primary, fontWeight = FontWeight.SemiBold)) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
                         append("Ajustes")
                     }
                     append(" más adelante.")
                 },
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 modifier = Modifier.weight(1f)
@@ -3406,10 +3408,10 @@ private fun SummaryInfoCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline.copy(alpha = 0.84f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
     ) {
@@ -3422,7 +3424,7 @@ private fun SummaryInfoCard(
                 SetupPurpleIconBox(icon = icon, size = 34.dp, iconSize = 19.dp)
                 Text(
                     text = title,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -3462,14 +3464,14 @@ private fun SummaryKeyValueRow(
         ) {
             Text(
                 text = label,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 17.sp,
                 modifier = Modifier.weight(0.9f)
             )
             Text(
                 text = value,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 lineHeight = 17.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -3481,7 +3483,7 @@ private fun SummaryKeyValueRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(UniStackColors.SoftOutline.copy(alpha = 0.5f))
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             )
         }
     }
@@ -3496,7 +3498,7 @@ private fun SummaryDistributionRow(weights: List<String>) {
     ) {
         Text(
             text = "Distribución",
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 14.sp,
             modifier = Modifier.weight(0.85f)
@@ -3504,7 +3506,7 @@ private fun SummaryDistributionRow(weights: List<String>) {
         if (weights.isEmpty()) {
             Text(
                 text = "Sin definir",
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -3531,13 +3533,13 @@ private fun SummaryPercentChip(label: String) {
         modifier = Modifier
             .height(21.dp)
             .clip(AppShapes.Pill)
-            .background(UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.88f else 1f))
+            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.88f else 1f))
             .padding(horizontal = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
-            color = UniStackColors.Primary,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 11.sp,
             lineHeight = 13.sp,
             fontWeight = FontWeight.SemiBold
@@ -3558,11 +3560,11 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(UniStackColors.Primary)
+                        .background(MaterialTheme.colorScheme.primary)
                 )
                 Text(
                     text = module.shortLabel(),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp,
                     lineHeight = 14.sp,
                     modifier = Modifier.weight(1f)
@@ -3571,13 +3573,13 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
                     modifier = Modifier
                         .height(20.dp)
                         .clip(AppShapes.Pill)
-                        .background(UniStackColors.GreenLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.68f else 1f))
+                        .background(LocalSectionColors.current.onTrackContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.68f else 1f))
                         .padding(horizontal = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Activo",
-                        color = UniStackColors.Green,
+                        color = LocalSectionColors.current.onTrack,
                         fontSize = 11.sp,
                         lineHeight = 13.sp,
                         fontWeight = FontWeight.SemiBold
@@ -3592,7 +3594,7 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
 private fun SetupSummaryNoticeCard() {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.PrimaryLight,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
         borderColor = Color.Transparent,
@@ -3608,12 +3610,12 @@ private fun SetupSummaryNoticeCard() {
             Text(
                 text = buildAnnotatedString {
                     append("Puedes cambiar todo esto desde ")
-                    withStyle(SpanStyle(color = UniStackColors.Primary, fontWeight = FontWeight.SemiBold)) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
                         append("Ajustes")
                     }
                     append(".")
                 },
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -3659,7 +3661,7 @@ private fun SetupFinishHero(name: String) {
                     .background(
                         Brush.radialGradient(
                             listOf(
-                                UniStackColors.Primary.copy(alpha = if (UniStackColors.IsDarkTheme) 0.30f else 0.18f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.30f else 0.18f),
                                 Color.Transparent
                             )
                         )
@@ -3669,19 +3671,19 @@ private fun SetupFinishHero(name: String) {
                 modifier = Modifier
                     .size(66.dp)
                     .clip(CircleShape)
-                    .background(UniStackColors.PrimaryLight),
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(UniStackColors.Primary),
+                        .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
                     AnimatedCheckmark(
                         size = 28.dp,
-                        color = UniStackColors.OnPrimary
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -3689,11 +3691,11 @@ private fun SetupFinishHero(name: String) {
         Text(
             text = buildAnnotatedString {
                 append("Todo listo, ")
-                withStyle(SpanStyle(color = UniStackColors.Primary)) {
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append("$name.")
                 }
             },
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 26.sp,
             lineHeight = 30.sp,
             fontWeight = FontWeight.ExtraBold,
@@ -3712,13 +3714,13 @@ private fun SetupPurpleIconBox(
         modifier = Modifier
             .size(size)
             .clip(RoundedCornerShape((size.value * 0.28f).dp))
-            .background(UniStackColors.PrimaryLight),
+            .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = UniStackColors.Primary,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(iconSize)
         )
     }
@@ -3730,12 +3732,12 @@ private fun SetupInfoDot(size: androidx.compose.ui.unit.Dp) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(UniStackColors.Primary),
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "i",
-            color = UniStackColors.OnPrimary,
+            color = MaterialTheme.colorScheme.onPrimary,
             fontSize = (size.value * 0.48f).sp,
             lineHeight = (size.value * 0.52f).sp,
             fontWeight = FontWeight.ExtraBold
@@ -3795,7 +3797,7 @@ internal fun SetupScaffold(
         modifier = modifier
             .fillMaxSize()
             .then(if (overlayKeyboard) Modifier else Modifier.windowInsetsPadding(imeInsets)),
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
         topBar = {
             if (onBackClick != null || step != null) {
@@ -3818,7 +3820,7 @@ internal fun SetupScaffold(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(UniStackColors.Background)
+                        .background(MaterialTheme.colorScheme.background)
                         .navigationBarsPadding()
                         .padding(horizontal = 22.dp)
                         .padding(top = 6.dp, bottom = 7.dp),
@@ -3866,11 +3868,11 @@ internal fun SetupScaffold(
                             Modifier
                                 .clip(AppShapes.LargeCard)
                                 .background(
-                                    UniStackColors.Card
+                                    MaterialTheme.colorScheme.surfaceContainerLow
                                 )
                                 .border(
                                     width = 1.dp,
-                                    color = UniStackColors.SoftOutline,
+                                    color = MaterialTheme.colorScheme.outlineVariant,
                                     shape = AppShapes.LargeCard
                                 )
                                 .padding(24.dp)
@@ -3898,7 +3900,7 @@ internal fun SetupScaffold(
                             .onSizeChanged {
                                 floatingActionsHeight = with(density) { it.height.toDp() }
                             }
-                            .background(UniStackColors.Background)
+                            .background(MaterialTheme.colorScheme.background)
                             .navigationBarsPadding()
                             .padding(horizontal = 22.dp)
                             .padding(top = 6.dp, bottom = 7.dp),
@@ -3928,14 +3930,14 @@ private fun SetupTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = "Volver",
-                        tint = UniStackColors.TextPrimary
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
             if (step != null) {
                 Text(
                     text = "Paso $step de $totalSteps",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center)
@@ -3956,9 +3958,9 @@ private fun SetupTopBar(
                     val isActive = index < step.coerceIn(1, totalSteps)
                     val barColor by animateColorAsState(
                         targetValue = if (isActive) {
-                            UniStackColors.Primary
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.5f else 0.72f)
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.5f else 0.72f)
                         },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioLowBouncy,
@@ -4012,7 +4014,7 @@ private fun SetupHeroIcon(size: androidx.compose.ui.unit.Dp = 62.dp) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(UniStackColors.Primary),
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         UniStackLogoMarkWhite(size = size * 0.56f)
@@ -4034,15 +4036,15 @@ private fun SetupStepHeader(
             modifier = Modifier
                 .size(60.dp)
                 .clip(CircleShape)
-                .background(UniStackColors.PrimaryLight),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = UniStackColors.Primary, modifier = Modifier.size(26.dp))
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
         }
         Text(
             title,
             style = MaterialTheme.typography.headlineSmall,
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             lineHeight = 28.sp
@@ -4050,7 +4052,7 @@ private fun SetupStepHeader(
         if (subtitle != null) {
             Text(
                 subtitle,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 fontSize = 13.sp,
                 lineHeight = 19.sp
@@ -4120,10 +4122,10 @@ private fun ModuleSelectableCard(
             .semantics {
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.2.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
     ) {
@@ -4135,13 +4137,13 @@ private fun ModuleSelectableCard(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(if (selected) UniStackColors.Card else UniStackColors.SurfaceVariant),
+                    .background(if (selected) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = option.icon,
                     contentDescription = null,
-                    tint = if (selected) UniStackColors.Primary else UniStackColors.TextSecondary,
+                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(21.dp)
                 )
             }
@@ -4151,12 +4153,12 @@ private fun ModuleSelectableCard(
             ) {
                 Text(
                     text = option.label,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = option.description,
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 14.sp
                 )
@@ -4165,7 +4167,7 @@ private fun ModuleSelectableCard(
                 Icon(
                     imageVector = Icons.Rounded.Check,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -4194,10 +4196,10 @@ private fun SelectableIconCard(
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.3.dp else 1.dp,
         contentPadding = PaddingValues(11.dp)
     ) {
@@ -4210,13 +4212,13 @@ private fun SelectableIconCard(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     label,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
@@ -4229,7 +4231,7 @@ private fun SelectableIconCard(
                 Icon(
                     Icons.Rounded.CheckCircle,
                     contentDescription = null,
-                    tint = UniStackColors.Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(18.dp)
@@ -4275,17 +4277,17 @@ private fun SetupChoiceChip(
                 indication = null,
                 onClick = onClick
             ),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.2.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = label,
-                color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
@@ -4302,17 +4304,17 @@ private fun SummarySection(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = AppShapes.SmallCard,
         tonalElevation = 0.dp,
-        borderColor = UniStackColors.SoftOutline,
+        borderColor = MaterialTheme.colorScheme.outlineVariant,
         borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(
                 text = title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -4324,7 +4326,7 @@ private fun SummarySection(
                 ) {
                     Text(
                         text = label,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 15.sp,
                         fontWeight = FontWeight.Normal,
@@ -4332,7 +4334,7 @@ private fun SummarySection(
                     )
                     Text(
                         text = value,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 12.sp,
                         lineHeight = 15.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -4397,17 +4399,17 @@ private fun ScaleChip(
                 indication = null,
                 onClick = onClick
             ),
-        color = if (selected) UniStackColors.PrimaryLight else UniStackColors.Card,
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
         shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
         tonalElevation = 0.dp,
-        borderColor = if (selected) UniStackColors.Primary else UniStackColors.SoftOutline,
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         borderWidth = if (selected) 1.2.dp else 1.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 label,
-                color = if (selected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 fontSize = 13.sp
             )
@@ -4442,7 +4444,7 @@ private fun SetupDropdownField(
     ) {
         Text(
             text = label,
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 15.sp
         )
@@ -4455,13 +4457,13 @@ private fun SetupDropdownField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(72.dp),
-                color = UniStackColors.Card,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = shape,
                 tonalElevation = 0.dp,
                 borderColor = when {
-                    expanded -> UniStackColors.Primary
-                    enabled -> UniStackColors.SoftOutline.copy(alpha = if (UniStackColors.IsDarkTheme) 0.82f else 0.92f)
-                    else -> UniStackColors.SoftOutline.copy(alpha = 0.48f)
+                    expanded -> MaterialTheme.colorScheme.primary
+                    enabled -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.82f else 0.92f)
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
                 },
                 borderWidth = if (expanded) 1.4.dp else 1.dp,
                 enabled = enabled,
@@ -4484,9 +4486,9 @@ private fun SetupDropdownField(
                     Text(
                         text = displayValue,
                         color = when {
-                            !enabled -> UniStackColors.TextSecondary.copy(alpha = 0.58f)
-                            isPlaceholder -> UniStackColors.TextPrimary
-                            else -> UniStackColors.TextPrimary
+                            !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.58f)
+                            isPlaceholder -> MaterialTheme.colorScheme.onSurface
+                            else -> MaterialTheme.colorScheme.onSurface
                         },
                         fontSize = 17.sp,
                         lineHeight = 21.sp,
@@ -4498,7 +4500,7 @@ private fun SetupDropdownField(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = if (enabled) UniStackColors.Primary else UniStackColors.TextSecondary.copy(alpha = 0.5f),
+                        tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier
                             .size(25.dp)
                             .rotate(rotation + 90f)
@@ -4508,7 +4510,7 @@ private fun SetupDropdownField(
 
             MaterialTheme(
                 shapes = MaterialTheme.shapes.copy(extraSmall = AppShapes.SmallCard),
-                colorScheme = MaterialTheme.colorScheme.copy(surface = UniStackColors.Card)
+                colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 androidx.compose.material3.DropdownMenu(
                     expanded = expanded && enabled,
@@ -4524,7 +4526,7 @@ private fun SetupDropdownField(
                         )
                         .heightIn(max = 300.dp)
                         .background(
-                            UniStackColors.SurfaceVariant,
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
                             AppShapes.SmallCard
                         )
                 ) {
@@ -4534,7 +4536,7 @@ private fun SetupDropdownField(
                             text = {
                                 Text(
                                     text = option,
-                                    color = if (isSelected) UniStackColors.Primary else UniStackColors.TextPrimary,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                     fontSize = 13.sp,
                                     lineHeight = 17.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
@@ -4555,7 +4557,7 @@ private fun SetupDropdownField(
                                     Icon(
                                         Icons.Rounded.Check,
                                         contentDescription = null,
-                                        tint = UniStackColors.Primary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -4563,7 +4565,7 @@ private fun SetupDropdownField(
                             modifier = Modifier
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                                 .background(
-                                    if (isSelected) UniStackColors.PrimaryLight.copy(alpha = if (UniStackColors.IsDarkTheme) 0.58f else 0.9f) else Color.Transparent,
+                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.58f else 0.9f) else Color.Transparent,
                                     AppShapes.Small
                                 ),
                             onClick = {
@@ -4589,10 +4591,10 @@ private fun DropdownIconBox(
         modifier = modifier
             .clip(AppShapes.Small)
             .background(
-                UniStackColors.PrimaryLight.copy(
+                MaterialTheme.colorScheme.primaryContainer.copy(
                     alpha = when {
                         !enabled -> 0.42f
-                        UniStackColors.IsDarkTheme -> 0.9f
+                        LocalIsDarkTheme.current -> 0.9f
                         else -> 1f
                     }
                 )
@@ -4602,7 +4604,7 @@ private fun DropdownIconBox(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (enabled) UniStackColors.Primary else UniStackColors.TextSecondary,
+            tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(iconSize)
         )
     }

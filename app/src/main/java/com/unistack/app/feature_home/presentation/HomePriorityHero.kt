@@ -59,6 +59,7 @@ import com.unistack.app.core.design.theme.UniStackColors
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 internal fun PriorityHero(
     title: String,
@@ -219,7 +220,7 @@ internal fun PriorityHero(
                         modifier = Modifier
                             .height(if (compact) 36.dp else 38.dp)
                             .clip(CircleShape)
-                            .background(UniStackColors.Primary)
+                            .background(MaterialTheme.colorScheme.primary)
                             .cleanClickable(onOpenClick)
                             .padding(horizontal = if (compact) 16.dp else 18.dp),
                         contentAlignment = Alignment.Center
@@ -232,14 +233,14 @@ internal fun PriorityHero(
                                 actionLabel,
                                 fontSize = if (compact) 12.sp else 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = UniStackColors.OnPrimary,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Icon(
                                 Icons.Rounded.ChevronRight,
                                 contentDescription = null,
-                                tint = UniStackColors.OnPrimary,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -266,7 +267,7 @@ internal fun PriorityContextSheet(
         onDismissRequest = onDismiss,
         containerColor = HomePrioritySheetSurface,
         contentColor = HomePrioritySheetText,
-        scrimColor = UniStackColors.Scrim.copy(alpha = 0.64f),
+        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.64f),
         shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
         contentWindowInsets = { WindowInsets(0.dp, 0.dp, 0.dp, 0.dp) },
         dragHandle = {
@@ -384,7 +385,7 @@ internal fun PriorityContextSheet(
                     shape = AppShapes.Small,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = HomePurple,
-                        contentColor = UniStackColors.OnPrimary
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
                     modifier = Modifier
                         .weight(1f)

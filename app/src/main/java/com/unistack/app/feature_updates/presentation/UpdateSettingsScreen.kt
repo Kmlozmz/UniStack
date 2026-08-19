@@ -129,7 +129,7 @@ fun UpdateSettingsScreen(
             state is UpdateState.ReadyToInstall
     }
 
-    Box(modifier = modifier.fillMaxSize().background(UniStackColors.Background)) {
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -174,20 +174,20 @@ fun UpdateSettingsScreen(
             )
         }
         item {
-            UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card) {
+            UniCard(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     UpdateIconTile(icon = Icons.Rounded.Info)
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Versión ${viewModel.currentVersionName}",
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             "Build ${viewModel.currentVersionCode}",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -220,13 +220,13 @@ fun UpdateSettingsScreen(
             title = {
                 Text(
                     if (cleanupCount > 1) "¿Eliminar los APK descargados?" else "¿Eliminar el APK descargado?",
-                    color = UniStackColors.TextPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
                 Text(
                     "Libera espacio. Si luego quieres instalar esa versión, habrá que descargarla otra vez.",
-                    color = UniStackColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -243,21 +243,21 @@ fun UpdateSettingsScreen(
                             )
                         }
                     }
-                ) { Text("Eliminar", color = UniStackColors.Coral, fontWeight = FontWeight.Bold) }
+                ) { Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmClearDownload = false }) {
-                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 
     pendingChannel?.let { elegido ->
         AlertDialog(
             onDismissRequest = { pendingChannel = null },
-            title = { Text("Recibir versiones ${elegido.label.lowercase()}", color = UniStackColors.TextPrimary) },
+            title = { Text("Recibir versiones ${elegido.label.lowercase()}", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Text(
                     buildString {
@@ -280,7 +280,7 @@ fun UpdateSettingsScreen(
                                 "se instala encima de una posterior, y desinstalar borra tus datos."
                         )
                     },
-                    color = UniStackColors.TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
@@ -293,23 +293,23 @@ fun UpdateSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { pendingChannel = null }) {
-                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 
     codeChannel?.let { canal ->
         AlertDialog(
             onDismissRequest = { if (!checkingCode) codeChannel = null },
-            title = { Text("Acceso a ${canal.label}", color = UniStackColors.TextPrimary) },
+            title = { Text("Acceso a ${canal.label}", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Este canal se abre con su propio código. Si no tienes uno, pídeselo a " +
                             "quien publica la app.",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                     OutlinedTextField(
@@ -326,7 +326,7 @@ fun UpdateSettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     codeError?.let {
-                        Text(it, color = UniStackColors.Coral, style = MaterialTheme.typography.bodySmall)
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             },
@@ -354,10 +354,10 @@ fun UpdateSettingsScreen(
             },
             dismissButton = {
                 TextButton(enabled = !checkingCode, onClick = { codeChannel = null }) {
-                    Text("Cancelar", color = UniStackColors.TextSecondary)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
-            containerColor = UniStackColors.Card
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
 
@@ -397,7 +397,7 @@ private fun UpdateChannelCard(
     onRequestCode: (UpdateChannel) -> Unit,
     onSelect: (UpdateChannel) -> Unit
 ) {
-    UniCard(modifier = Modifier.fillMaxWidth(), color = UniStackColors.Card) {
+    UniCard(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 UpdateIconTile(icon = Icons.Rounded.Layers)
@@ -405,13 +405,13 @@ private fun UpdateChannelCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "Qué versiones recibes",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         selected.description,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -432,7 +432,7 @@ private fun UpdateChannelCard(
                         color = if (isSelected) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            UniStackColors.SurfaceVariant
+                            MaterialTheme.colorScheme.surfaceContainerHigh
                         }
                     ) {
                         Row(
@@ -444,7 +444,7 @@ private fun UpdateChannelCard(
                                 Icon(
                                     Icons.Rounded.Lock,
                                     contentDescription = null,
-                                    tint = UniStackColors.TextSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(Modifier.width(4.dp))
@@ -453,9 +453,9 @@ private fun UpdateChannelCard(
                                 option.label,
                                 textAlign = TextAlign.Center,
                                 color = if (isSelected) {
-                                    UniStackColors.OnPrimary
+                                    MaterialTheme.colorScheme.onPrimary
                                 } else {
-                                    UniStackColors.TextSecondary
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold
@@ -478,7 +478,7 @@ private fun UpdateSettingsHeader(onBackClick: () -> Unit) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
-                tint = UniStackColors.TextPrimary
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
         Spacer(Modifier.width(4.dp))
@@ -486,13 +486,13 @@ private fun UpdateSettingsHeader(onBackClick: () -> Unit) {
             Text(
                 "Actualizaciones de UniStack",
                 style = MaterialTheme.typography.headlineSmall,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 "Mantén UniStack al día",
                 style = MaterialTheme.typography.bodySmall,
-                color = UniStackColors.TextSecondary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -506,36 +506,36 @@ private fun UpdateCheckCard(
     val isChecking = state is UpdateState.Checking
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = UniStackColors.Card,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         onClick = if (isChecking) null else onCheckClick
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .background(UniStackColors.Primary.copy(alpha = 0.13f), CircleShape),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (isChecking) {
                     UniStackLoadingIndicator(
                         size = 20.dp,
-                        color = UniStackColors.Primary
+                        color = MaterialTheme.colorScheme.primary
                     )
                 } else {
-                    Icon(Icons.Rounded.Refresh, contentDescription = null, tint = UniStackColors.Primary)
+                    Icon(Icons.Rounded.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     "Verificar sistema",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = state.statusLabel(),
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
                 // Ir por delante no se arregla instalando: Android no pone una versión encima
@@ -544,7 +544,7 @@ private fun UpdateCheckCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = "Para volver a esa habría que desinstalar la app, y eso borra tus datos.",
-                        color = UniStackColors.TextSecondary.copy(alpha = 0.75f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -552,7 +552,7 @@ private fun UpdateCheckCard(
             // También con el canal vacío: no hay nada que instalar, que es lo que el visto
             // significa. Dejarlo sin él hacía que un estado correcto pareciera a medias.
             if (state is UpdateState.UpToDate || state is UpdateState.NoReleases) {
-                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = UniStackColors.Primary)
+                Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -561,7 +561,7 @@ private fun UpdateCheckCard(
 @Composable
 private fun UpdateIconTile(
     icon: ImageVector,
-    accent: Color = UniStackColors.Primary
+    accent: Color = MaterialTheme.colorScheme.primary
 ) {
     Box(
         modifier = Modifier
@@ -627,16 +627,16 @@ private fun CleanupCard(
                     scaleY = scaleX
                 }
                 .alpha(1f - gone),
-            color = UniStackColors.Card,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
             onClick = onClick
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                UpdateIconTile(icon = Icons.Rounded.DeleteOutline, accent = UniStackColors.Coral)
+                UpdateIconTile(icon = Icons.Rounded.DeleteOutline, accent = MaterialTheme.colorScheme.error)
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         if (apkCount > 1) "Limpiar descargas" else "Limpiar descarga",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -646,7 +646,7 @@ private fun CleanupCard(
                         } else {
                             "1 APK ocupando espacio en el móvil"
                         },
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }

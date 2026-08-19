@@ -37,6 +37,7 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_user.domain.AppModule
 
+import com.unistack.app.core.design.theme.LocalIsDarkTheme
 @Composable
 internal fun SemesterSnapshot(
     summary: HomeSummary,
@@ -170,7 +171,7 @@ private fun SnapshotMetric(
             modifier = Modifier
                 .size(if (compact) 32.dp else 36.dp)
                 .clip(AppShapes.Small)
-                .background(accent.copy(alpha = if (UniStackColors.IsDarkTheme) 0.22f else 0.15f)),
+                .background(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.22f else 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(if (compact) 17.dp else 19.dp))

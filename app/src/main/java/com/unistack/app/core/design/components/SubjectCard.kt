@@ -28,6 +28,7 @@ import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.core.utils.GradingScaleUtils
 
+import com.unistack.app.core.design.theme.contentColorOn
 @Composable
 fun SubjectCard(
     name: String,
@@ -64,13 +65,13 @@ fun SubjectCard(
                     contentDescription = null,
                     // El color de materia lo elige el usuario: el contenido se calcula
                     // para seguir siendo legible sobre un amarillo o un lima.
-                    tint = UniStackColors.contentColorOn(accentColor),
+                    tint = contentColorOn(accentColor),
                     modifier = Modifier.size(15.dp)
                 )
             }
             Text(
                 text = name,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1,
@@ -80,7 +81,7 @@ fun SubjectCard(
             )
             Text(
                 text = GradingScaleUtils.formatGrade(average, gradingScale),
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 22.sp,
                 lineHeight = 22.sp

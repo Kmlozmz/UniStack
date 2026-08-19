@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.R
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
 @Composable
 fun UniStackLogoMark(
     modifier: Modifier = Modifier,
@@ -61,8 +62,8 @@ fun UniStackWordmark(
 ) {
     Text(
         text = buildAnnotatedString {
-            withStyle(SpanStyle(color = UniStackColors.TextPrimary)) { append("Uni") }
-            withStyle(SpanStyle(color = UniStackColors.Primary)) { append("Stack") }
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface)) { append("Uni") }
+            withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) { append("Stack") }
         },
         modifier = modifier,
         fontSize = fontSize,

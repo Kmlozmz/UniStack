@@ -3,6 +3,7 @@ package com.unistack.app.core.design.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
+import androidx.compose.material3.MaterialTheme
 /**
  * Colores del selector de fecha, delegados en [UniStackColors].
  *
@@ -11,21 +12,21 @@ import androidx.compose.ui.graphics.Color
  */
 object UniStackDatePickerColors {
     val Surface: Color
-        @Composable get() = UniStackColors.Card
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
 
     val DayCell: Color
-        @Composable get() = UniStackColors.SurfaceVariant
+        @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 
     val Accent: Color
-        @Composable get() = UniStackColors.Primary
+        @Composable get() = MaterialTheme.colorScheme.primary
 
     /** Contenido sobre [Accent]; se calcula para no romperse con acentos claros. */
     val OnAccent: Color
-        @Composable get() = UniStackColors.OnPrimary
+        @Composable get() = MaterialTheme.colorScheme.onPrimary
 
     val Text: Color
-        @Composable get() = UniStackColors.TextPrimary
+        @Composable get() = MaterialTheme.colorScheme.onSurface
 
     val Muted: Color
-        @Composable get() = UniStackColors.TextSecondary
+        @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 }

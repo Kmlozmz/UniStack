@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.UniStackColors
 
+import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.contentColorOn
 /** Variantes visuales del botón, en la jerarquía de énfasis de Material. */
 enum class UniStackButtonVariant {
     /** Relleno con el color de acento. Acción principal de la pantalla. */
@@ -91,18 +93,18 @@ fun UniStackButton(
     )
 
     val containerTarget = when {
-        !enabled -> UniStackColors.SurfaceVariant
+        !enabled -> MaterialTheme.colorScheme.surfaceContainerHigh
         containerColor != null -> containerColor
-        variant == UniStackButtonVariant.Filled -> UniStackColors.Primary
-        variant == UniStackButtonVariant.Tonal -> UniStackColors.PrimaryLight
+        variant == UniStackButtonVariant.Filled -> MaterialTheme.colorScheme.primary
+        variant == UniStackButtonVariant.Tonal -> MaterialTheme.colorScheme.primaryContainer
         else -> Color.Transparent
     }
     val contentTarget = when {
-        !enabled -> UniStackColors.TextSecondary
-        containerColor != null -> UniStackColors.contentColorOn(containerColor)
-        variant == UniStackButtonVariant.Filled -> UniStackColors.OnPrimary
-        variant == UniStackButtonVariant.Tonal -> UniStackColors.OnPrimaryContainer
-        else -> UniStackColors.Primary
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant
+        containerColor != null -> contentColorOn(containerColor)
+        variant == UniStackButtonVariant.Filled -> MaterialTheme.colorScheme.onPrimary
+        variant == UniStackButtonVariant.Tonal -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.primary
     }
     val colorSpec = spring<Color>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
     val containerColor by animateColorAsState(containerTarget, colorSpec, label = "button-container")
@@ -122,7 +124,7 @@ fun UniStackButton(
             disabledContentColor = contentColor
         ),
         border = if (variant == UniStackButtonVariant.Outlined) {
-            BorderStroke(1.dp, if (enabled) UniStackColors.Primary else UniStackColors.SoftOutline)
+            BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
         } else {
             null
         },

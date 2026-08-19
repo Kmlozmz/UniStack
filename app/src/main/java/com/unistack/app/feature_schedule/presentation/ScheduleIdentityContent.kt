@@ -93,6 +93,8 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.ReadOnlyComposable
 internal enum class IdentityScheduleView {
     TIMETABLE,
     CALENDAR
@@ -108,7 +110,9 @@ private enum class IdentityMetricDetail {
 }
 
 private val IdentityAccent: Color
-    get() = UniStackColors.Primary
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.colorScheme.primary
 private val IdentityLocale = Locale.forLanguageTag("es")
 
 @Composable
@@ -131,7 +135,7 @@ internal fun ScheduleIdentityContent(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(UniStackColors.Background)
+            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         // Se suma lo que tape la barra flotante, que se dibuja encima del contenido. Con
         // la barra acoplada el valor es cero y esto queda igual que antes.
@@ -282,20 +286,20 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     "Horario completo",
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     "Consulta todas las horas y los 7 días",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = "Abrir horario completo",
-                tint = UniStackColors.TextSecondary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -306,7 +310,7 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
 private fun IdentitySurface(
     modifier: Modifier = Modifier,
     shape: Shape = AppShapes.MediumCard,
-    color: Color = UniStackColors.Card,
+    color: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
@@ -317,7 +321,7 @@ private fun IdentitySurface(
         color
     }
     val border = if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-        BorderStroke(0.7.dp, UniStackColors.SoftOutline.copy(alpha = 0.62f))
+        BorderStroke(0.7.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
     } else {
         null
     }
@@ -355,7 +359,7 @@ private fun IdentityHeader(view: IdentityScheduleView) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             text = if (view == IdentityScheduleView.TIMETABLE) "Horario" else "Calendario",
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.ExtraBold
         )
@@ -365,7 +369,7 @@ private fun IdentityHeader(view: IdentityScheduleView) {
             } else {
                 "Fechas, eventos y entregas de tu mes."
             },
-            color = UniStackColors.TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -622,7 +626,7 @@ private fun IdentityMetricDetailsSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = UniStackColors.Background,
+        containerColor = MaterialTheme.colorScheme.background,
         shape = AppShapes.LargeCard
     ) {
         Column(
@@ -644,13 +648,13 @@ private fun IdentityMetricDetailsSheet(
                 Column(Modifier.weight(1f)) {
                     Text(
                         title,
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
                         subtitle,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -661,7 +665,7 @@ private fun IdentityMetricDetailsSheet(
                     Text(
                         emptyMessage,
                         modifier = Modifier.padding(18.dp),
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -800,7 +804,7 @@ private fun IdentityWeeklyTimeline(
                     text = identityDayLetter(DayOfWeek.of(day)),
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -824,10 +828,10 @@ private fun IdentityWeeklyTimeline(
                             Text(
                                 text = formatIdentityMinute(row.hour * 60, use24Hour),
                                 modifier = Modifier.width(axisWidth).offset(y = (-7).dp),
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall
                             )
-                            HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.7f))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f))
                         }
 
                         // El corte se ve: si no, dos bloques separados por horas parecerían
@@ -840,11 +844,11 @@ private fun IdentityWeeklyTimeline(
                                 text = "\u22ee",
                                 modifier = Modifier.width(axisWidth),
                                 textAlign = TextAlign.Center,
-                                color = UniStackColors.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall
                             )
                             HorizontalDivider(
-                                color = UniStackColors.SoftOutline.copy(alpha = 0.45f)
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
                             )
                         }
                     }
@@ -856,7 +860,7 @@ private fun IdentityWeeklyTimeline(
                         .offset(x = axisWidth + dayWidth * line)
                         .width(1.dp)
                         .fillMaxHeight()
-                        .background(UniStackColors.SoftOutline.copy(alpha = 0.62f))
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
                 )
             }
             sessions.forEach { session ->
@@ -926,7 +930,7 @@ private fun NextClassPanel(
                     )
                     Text(
                         "No hay clases programadas",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -945,7 +949,7 @@ private fun NextClassPanel(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             subject?.name ?: "Clase",
-                            color = UniStackColors.TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -954,7 +958,7 @@ private fun NextClassPanel(
                     }
                     Text(
                         "${formatIdentityMinute(session.startMinute, use24Hour)} - ${formatIdentityMinute(session.endMinute, use24Hour)}  •  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -963,7 +967,7 @@ private fun NextClassPanel(
                 Icon(
                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = "Abrir clase",
-                    tint = UniStackColors.TextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -995,18 +999,18 @@ private fun IdentityMonthCalendar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { onDateSelected(selectedDate.minusMonths(1).withDayOfMonth(1)) }) {
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Mes anterior", tint = UniStackColors.TextPrimary)
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Mes anterior", tint = MaterialTheme.colorScheme.onSurface)
                 }
                 Text(
                     text = selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", IdentityLocale)).identityCapitalized(),
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = { onDateSelected(selectedDate.plusMonths(1).withDayOfMonth(1)) }) {
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Mes siguiente", tint = UniStackColors.TextPrimary)
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Mes siguiente", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
@@ -1015,7 +1019,7 @@ private fun IdentityMonthCalendar(
                         text = label,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1034,7 +1038,7 @@ private fun IdentityMonthCalendar(
                             inMonth = YearMonth.from(date) == month,
                             selected = date == selectedDate,
                             colors = daySessions.map { session -> subjects.firstOrNull { it.id == session.subjectId }.identityColor() } +
-                                dayTasks.map { IdentityAccent } + dayAgendaEvents.map(AgendaEvent::identityColor),
+                                dayTasks.map { IdentityAccent } + dayAgendaEvents.map { event -> event.identityColor() },
                             onClick = { onDateSelected(date) }
                         )
                     }
@@ -1056,7 +1060,7 @@ private fun IdentityMonthCell(
     Column(
         modifier = modifier
             .height(47.dp)
-            .border(0.5.dp, UniStackColors.SoftOutline.copy(alpha = 0.62f))
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
             .padding(3.dp)
             .clip(AppShapes.SmallCard)
             .background(if (selected) IdentityAccent else Color.Transparent)
@@ -1067,9 +1071,9 @@ private fun IdentityMonthCell(
         Text(
             text = date.dayOfMonth.toString(),
             color = when {
-                selected -> UniStackColors.OnPrimary
-                inMonth -> UniStackColors.TextPrimary
-                else -> UniStackColors.TextSecondary.copy(alpha = 0.45f)
+                selected -> MaterialTheme.colorScheme.onPrimary
+                inMonth -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
             },
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Bold
@@ -1082,7 +1086,7 @@ private fun IdentityMonthCell(
                         Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(if (selected) UniStackColors.OnPrimary.copy(alpha = 0.78f) else color)
+                            .background(if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f) else color)
                     )
                 }
             }
@@ -1122,7 +1126,7 @@ private fun SelectedDayPanel(
             if (daySessions.isEmpty() && dayTasks.isEmpty() && dayAgendaEvents.isEmpty()) {
                 Text(
                     "No hay eventos para este día",
-                    color = UniStackColors.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -1190,7 +1194,7 @@ private fun IdentityEventRow(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
                 title,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = titleMaxLines,
@@ -1198,7 +1202,7 @@ private fun IdentityEventRow(
             )
             Text(
                 detail,
-                color = UniStackColors.TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = detailMaxLines,
                 overflow = TextOverflow.Ellipsis
@@ -1207,7 +1211,7 @@ private fun IdentityEventRow(
         Icon(
             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
             contentDescription = "Abrir evento",
-            tint = UniStackColors.TextSecondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(22.dp)
         )
     }
@@ -1238,12 +1242,16 @@ private fun ClassSession.identityPlace(): IdentityPlace {
     return IdentityPlace(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" })
 }
 
+@Composable
+@ReadOnlyComposable
 private fun Subject?.identityColor(): Color = scheduleBlockColor(IdentityAccent)
 
+@Composable
+@ReadOnlyComposable
 private fun AgendaEvent.identityColor(): Color = colorArgb?.let(::Color) ?: when (kind) {
-    AgendaEventKind.PERSONAL -> UniStackColors.Teal
-    AgendaEventKind.MEETING -> UniStackColors.Blue
-    AgendaEventKind.REMINDER -> UniStackColors.Yellow
+    AgendaEventKind.PERSONAL -> MaterialTheme.colorScheme.tertiary
+    AgendaEventKind.MEETING -> LocalSectionColors.current.schedule
+    AgendaEventKind.REMINDER -> LocalSectionColors.current.atRisk
     AgendaEventKind.CUSTOM -> IdentityAccent
 }
 

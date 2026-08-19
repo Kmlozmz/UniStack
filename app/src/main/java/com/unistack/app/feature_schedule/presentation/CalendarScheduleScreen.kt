@@ -116,16 +116,21 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.runtime.ReadOnlyComposable
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
    literal de ScheduleAccent, y SchedulePink, que solo alimentaba la lista de muestras. */
 private val ScheduleAccent: Color
-    get() = UniStackColors.Primary
+    @Composable
+    @ReadOnlyComposable
+    get() = MaterialTheme.colorScheme.primary
 private val ScheduleRescheduled: Color
-    @Composable get() = UniStackColors.Blue
+    @Composable get() = LocalSectionColors.current.schedule
 private val ScheduleCancelled: Color
-    @Composable get() = UniStackColors.Yellow
+    @Composable get() = LocalSectionColors.current.atRisk
 private val ScheduleShape
     get() = AppShapes.SmallCard
 
@@ -308,16 +313,16 @@ private fun ScheduleHeader(
         Text(
             text = title,
             modifier = Modifier.weight(1f),
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold,
             letterSpacing = 0.sp
         )
         IconButton(onClick = onCalendarClick) {
-            Icon(Icons.Rounded.CalendarMonth, contentDescription = "Abrir calendario", tint = UniStackColors.TextPrimary)
+            Icon(Icons.Rounded.CalendarMonth, contentDescription = "Abrir calendario", tint = MaterialTheme.colorScheme.onSurface)
         }
         IconButton(onClick = onMenuClick) {
-            Icon(Icons.Rounded.MoreVert, contentDescription = "M\u00e1s opciones", tint = UniStackColors.TextPrimary)
+            Icon(Icons.Rounded.MoreVert, contentDescription = "M\u00e1s opciones", tint = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
@@ -339,7 +344,7 @@ private fun WeekPicker(
                 "${weekStart.dayOfMonth} - ${weekStart.plusDays(6).dayOfMonth} de ${weekStart.format(DateTimeFormatter.ofPattern("MMMM", SpanishLocale))}",
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp
             )
@@ -349,8 +354,8 @@ private fun WeekPicker(
         }
         Surface(
             shape = ScheduleShape,
-            color = UniStackColors.SurfaceVariant,
-            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.55f))
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
         ) {
             Row(Modifier.fillMaxWidth().padding(4.dp)) {
                 (0L..6L).forEach { offset ->
@@ -365,8 +370,8 @@ private fun WeekPicker(
                             .padding(vertical = 5.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(dayLetter(date.dayOfWeek), fontSize = 10.sp, color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextSecondary)
-                        Text(date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) UniStackColors.OnPrimary else UniStackColors.TextPrimary)
+                        Text(dayLetter(date.dayOfWeek), fontSize = 10.sp, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(date.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
@@ -400,8 +405,8 @@ private fun TimetableRangeControls(
             colors = SliderDefaults.colors(
                 thumbColor = ScheduleAccent,
                 activeTrackColor = ScheduleAccent,
-                inactiveTrackColor = UniStackColors.SoftOutline,
-                activeTickColor = UniStackColors.OnPrimary.copy(alpha = 0.72f),
+                inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant,
+                activeTickColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
                 inactiveTickColor = ScheduleAccent.copy(alpha = 0.55f)
             )
         )
@@ -435,7 +440,7 @@ private fun WeekSummary(
         .ifEmpty { entries.takeLast(2) }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Esta semana", color = UniStackColors.TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
+        Text("Esta semana", color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
         if (upcoming.isEmpty()) {
             CalendarEmptyState("No hay clases programadas esta semana")
         }
@@ -446,8 +451,8 @@ private fun WeekSummary(
                 onClick = { onSessionClick(date, session) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = ScheduleShape,
-                color = UniStackColors.SurfaceVariant,
-                border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))
             ) {
                 Row(Modifier.height(70.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.width(3.dp).fillMaxHeight().background(color))
@@ -456,17 +461,17 @@ private fun WeekSummary(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             date.format(DateTimeFormatter.ofPattern("EEE, d 'de' MMMM", SpanishLocale)).capitalized(),
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp
                         )
-                        Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(subject?.name ?: "Clase", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}  \u2022  ${session.place.room.ifBlank { "Sin aula" }}",
-                            color = UniStackColors.TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp
                         )
                     }
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir clase", tint = UniStackColors.TextSecondary, modifier = Modifier.padding(horizontal = 10.dp))
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir clase", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 10.dp))
                 }
             }
         }
@@ -490,7 +495,7 @@ private fun CalendarToolbar(
                 selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", SpanishLocale)).capitalized(),
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
-                color = UniStackColors.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
@@ -498,7 +503,7 @@ private fun CalendarToolbar(
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Mes siguiente")
             }
         }
-        Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
+        Surface(shape = ScheduleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
             Row(Modifier.fillMaxWidth()) {
                 CalendarMode.entries.forEach { option ->
                     Text(
@@ -510,7 +515,7 @@ private fun CalendarToolbar(
                             .clickable { onMode(option) }
                             .padding(vertical = 8.dp),
                         textAlign = TextAlign.Center,
-                        color = if (mode == option) ScheduleAccent else UniStackColors.TextSecondary,
+                        color = if (mode == option) ScheduleAccent else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = if (mode == option) FontWeight.Bold else FontWeight.Normal,
                         fontSize = 12.sp
                     )
@@ -536,13 +541,13 @@ private fun MonthGrid(
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Row(Modifier.fillMaxWidth()) {
             DayLabels.medium.forEach { label ->
-                Text(label, Modifier.weight(1f), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                Text(label, Modifier.weight(1f), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
         }
         Surface(
             shape = ScheduleShape,
-            color = UniStackColors.SurfaceVariant.copy(alpha = 0.7f),
-            border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))
         ) {
             Column {
                 repeat(cellCount / 7) { row ->
@@ -587,7 +592,7 @@ private fun MonthCell(
     Column(
         modifier = modifier
             .height(height)
-            .border(0.5.dp, UniStackColors.SoftOutline.copy(alpha = 0.45f))
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
             .padding(3.dp)
             .then(
                 if (selected) Modifier
@@ -602,9 +607,9 @@ private fun MonthCell(
         Text(
             date.dayOfMonth.toString(),
             color = when {
-                selected && !expanded -> UniStackColors.OnPrimary
-                !inMonth -> UniStackColors.TextSecondary.copy(alpha = 0.45f)
-                else -> UniStackColors.TextPrimary
+                selected && !expanded -> MaterialTheme.colorScheme.onPrimary
+                !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                else -> MaterialTheme.colorScheme.onSurface
             },
             fontSize = 13.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
@@ -620,7 +625,7 @@ private fun MonthCell(
                         .clip(RoundedCornerShape(3.dp))
                         .background(subject.scheduleColor())
                         .padding(horizontal = 2.dp, vertical = 1.dp),
-                    color = UniStackColors.OnPrimary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 7.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -653,7 +658,7 @@ private fun MonthLegend(sessions: List<ClassSession>, subjects: List<Subject>) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(8.dp).clip(CircleShape).background(subject.scheduleColor()))
                 Spacer(Modifier.width(6.dp))
-                Text(subject.name, color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                Text(subject.name, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
         }
     }
@@ -678,14 +683,14 @@ private fun DayAgenda(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenDay),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(date.longTitle(), Modifier.weight(1f), color = UniStackColors.TextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = UniStackColors.TextSecondary)
+            Text(date.longTitle(), Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (sessions.isEmpty() && tasks.isEmpty()) {
-            Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
+            Surface(shape = ScheduleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                 Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleAccent, modifier = Modifier.size(30.dp))
-                    Text("No hay clases para este d\u00eda", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
+                    Text("No hay clases para este d\u00eda", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     TextButton(onClick = onAddClass) { Text("A\u00f1adir clase", color = ScheduleAccent) }
                 }
             }
@@ -715,8 +720,8 @@ private fun AgendaClassCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = ScheduleShape,
-        color = UniStackColors.SurfaceVariant,
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))
     ) {
         Row(modifier = Modifier.height(if (rich) 88.dp else 76.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(color))
@@ -725,21 +730,21 @@ private fun AgendaClassCard(
                     Modifier.padding(start = 14.dp).size(48.dp).clip(ScheduleShape).background(color.copy(alpha = 0.86f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.OnPrimary)
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 }
             }
             Column(Modifier.padding(start = 14.dp).width(64.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(formatMinute(session.startMinute, use24Hour), color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                Text(formatMinute(session.endMinute, use24Hour), color = UniStackColors.TextSecondary, fontSize = 13.sp)
+                Text(formatMinute(session.startMinute, use24Hour), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(formatMinute(session.endMinute, use24Hour), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subject?.name ?: "Clase", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (occurrence != null && occurrence.status != ClassAttendanceStatus.PENDING) {
                 Box(Modifier.size(8.dp).clip(CircleShape).background(occurrence.status.color()))
             }
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.padding(horizontal = 10.dp))
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 10.dp))
         }
     }
 }
@@ -750,17 +755,17 @@ private fun AgendaTaskCard(task: StudentTask, subject: Subject?, onClick: (Strin
         onClick = { onClick(task.id) },
         modifier = Modifier.fillMaxWidth(),
         shape = ScheduleShape,
-        color = UniStackColors.SurfaceVariant,
-        border = BorderStroke(1.dp, UniStackColors.SoftOutline.copy(alpha = 0.65f))
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f))
     ) {
         Row(Modifier.height(70.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(ScheduleCancelled))
             Icon(Icons.Rounded.Event, contentDescription = null, tint = ScheduleCancelled, modifier = Modifier.padding(horizontal = 14.dp))
             Column(Modifier.weight(1f)) {
-                Text(task.title, color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(subject?.name ?: "Tarea", color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                Text(task.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subject?.name ?: "Tarea", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.padding(end = 10.dp))
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(end = 10.dp))
         }
     }
 }
@@ -788,11 +793,11 @@ private fun CalendarAgendaView(
                 Text(
                     if (date == LocalDate.now()) "Hoy  \u00b7  ${date.longTitle()}" else date.longTitle(),
                     modifier = Modifier.weight(1f),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
-                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = UniStackColors.TextSecondary, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Abrir d\u00eda", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
             dateSessions.forEach { session ->
                 val subject = subjects.firstOrNull { it.id == session.subjectId }
@@ -817,7 +822,7 @@ private fun CalendarListView(
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(
             month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", SpanishLocale)).capitalized(),
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             fontSize = 13.sp
         )
@@ -838,15 +843,15 @@ private fun CalendarListView(
                     Text(
                         date.format(DateTimeFormatter.ofPattern("dd MMM (EEE)", SpanishLocale)),
                         modifier = Modifier.width(92.dp),
-                        color = UniStackColors.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 10.sp
                     )
                     Box(Modifier.size(7.dp).clip(CircleShape).background(subject.scheduleColor()))
                     Spacer(Modifier.width(9.dp))
-                    Text(formatMinute(session.startMinute, use24Hour), modifier = Modifier.width(48.dp), color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    Text(subject?.name ?: "Clase", modifier = Modifier.weight(1f), color = UniStackColors.TextPrimary, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(formatMinute(session.startMinute, use24Hour), modifier = Modifier.width(48.dp), color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(subject?.name ?: "Clase", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.45f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
             }
         }
     }
@@ -862,7 +867,7 @@ private fun DayScheduleView(
     onAddClass: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(date.longTitle(), color = UniStackColors.TextPrimary, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
+        Text(date.longTitle(), color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold)
         if (sessions.isEmpty()) {
             CalendarEmptyState("No hay clases para este d\u00eda")
         }
@@ -878,16 +883,16 @@ private fun DayScheduleView(
             ) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.width(58.dp)) {
-                        Text(formatMinute(session.startMinute, use24Hour), color = UniStackColors.TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        Text(formatMinute(session.endMinute, use24Hour), color = UniStackColors.TextSecondary, fontSize = 11.sp)
+                        Text(formatMinute(session.startMinute, use24Hour), color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(formatMinute(session.endMinute, use24Hour), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     }
                     Box(Modifier.width(3.dp).height(42.dp).background(color))
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(subject?.name ?: "Clase", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                        Text(subject?.name ?: "Clase", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text(listOf(session.place.room, session.place.professor).filter(String::isNotBlank).joinToString("  \u2022  "), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                     }
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = UniStackColors.TextSecondary)
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -903,8 +908,8 @@ private fun DayScheduleView(
 
 @Composable
 private fun CalendarEmptyState(message: String) {
-    Surface(shape = ScheduleShape, color = UniStackColors.SurfaceVariant, border = BorderStroke(1.dp, UniStackColors.SoftOutline)) {
-        Text(message, Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary, fontSize = 12.sp)
+    Surface(shape = ScheduleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+        Text(message, Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
     }
 }
 
@@ -931,17 +936,17 @@ private fun SubjectHistoryDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
     ) {
-        Surface(Modifier.fillMaxSize(), color = UniStackColors.Background) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleAccent)
                 ) {
                     IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(4.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = UniStackColors.OnPrimary)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                     Box(
                         modifier = Modifier.align(Alignment.BottomCenter).offset(y = 22.dp).size(50.dp)
-                            .clip(CircleShape).background(UniStackColors.Background)
+                            .clip(CircleShape).background(MaterialTheme.colorScheme.background)
                             .border(1.dp, ScheduleAccent.copy(alpha = 0.35f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -953,7 +958,7 @@ private fun SubjectHistoryDialog(
                     subject.name,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                     textAlign = TextAlign.Center,
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 18.sp,
                     lineHeight = 21.sp,
                     fontWeight = FontWeight.ExtraBold
@@ -962,44 +967,44 @@ private fun SubjectHistoryDialog(
                 Surface(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     shape = ScheduleShape,
-                    color = UniStackColors.SurfaceVariant,
-                    border = BorderStroke(1.dp, UniStackColors.SoftOutline)
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Asistencia general", color = UniStackColors.TextSecondary, fontSize = 11.sp)
-                            Text("$rate%", color = UniStackColors.TextPrimary, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("$attended asistencias  \u2022  $absent faltas", color = UniStackColors.TextSecondary, fontSize = 10.sp)
+                            Text("Asistencia general", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text("$rate%", color = MaterialTheme.colorScheme.onSurface, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
+                            Text("$attended asistencias  \u2022  $absent faltas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(
                                 progress = { rate / 100f },
                                 modifier = Modifier.fillMaxSize(),
                                 color = ScheduleAccent,
-                                trackColor = UniStackColors.SoftOutline,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant,
                                 strokeWidth = 4.dp
                             )
-                            Text("$rate%", color = UniStackColors.TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text("$rate%", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
                 Text(
                     "Historial",
                     modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 7.dp),
-                    color = UniStackColors.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
                     shape = ScheduleShape,
-                    color = UniStackColors.SurfaceVariant,
-                    border = BorderStroke(1.dp, UniStackColors.SoftOutline)
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     LazyColumn(contentPadding = PaddingValues(vertical = 5.dp)) {
                         if (entries.isEmpty()) {
                             item {
-                                Text("A\u00fan no hay clases en el historial", Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = UniStackColors.TextSecondary)
+                                Text("A\u00fan no hay clases en el historial", Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         items(entries, key = { "${it.session.id}:${it.date.toEpochDay()}" }) { entry ->
@@ -1028,12 +1033,12 @@ private fun HistoryRow(entry: HistoryEntry) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Rounded.Event, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.size(16.dp))
+        Icon(Icons.Rounded.Event, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
         Text(
             entry.date.format(DateTimeFormatter.ofPattern("d MMM (EEE)", SpanishLocale)),
             modifier = Modifier.weight(1f),
-            color = UniStackColors.TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 11.sp
         )
         Box(Modifier.size(7.dp).clip(CircleShape).background(entry.status.color()))
@@ -1066,7 +1071,7 @@ private fun ClassDetailsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = UniStackColors.Background
+        containerColor = MaterialTheme.colorScheme.background
     ) {
         Column(
             Modifier
@@ -1080,20 +1085,20 @@ private fun ClassDetailsSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(46.dp).clip(ScheduleShape).background(accent), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = UniStackColors.contentColorOn(accent))
+                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = contentColorOn(accent))
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         subject?.name ?: "Clase",
-                        color = UniStackColors.TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 19.sp,
                         lineHeight = 22.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(date.longTitle(), color = UniStackColors.TextSecondary, fontSize = 12.sp)
+                    Text(date.longTitle(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
                 StatusPill(status)
             }
@@ -1112,7 +1117,7 @@ private fun ClassDetailsSheet(
                 )
             )
 
-            Text("Registrar asistencia", color = UniStackColors.TextPrimary, fontWeight = FontWeight.Bold)
+            Text("Registrar asistencia", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(ClassAttendanceStatus.ATTENDED, ClassAttendanceStatus.ABSENT, ClassAttendanceStatus.CANCELLED).forEach { option ->
                     val selected = occurrence?.status == option
@@ -1122,8 +1127,8 @@ private fun ClassDetailsSheet(
                         onClick = { onStatus(if (selected) ClassAttendanceStatus.PENDING else option) },
                         modifier = Modifier.weight(1f),
                         shape = ScheduleShape,
-                        color = if (selected) option.color().copy(alpha = 0.18f) else UniStackColors.SurfaceVariant,
-                        border = BorderStroke(1.dp, if (selected) option.color() else UniStackColors.SoftOutline)
+                        color = if (selected) option.color().copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        border = BorderStroke(1.dp, if (selected) option.color() else MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Column(
                             Modifier.padding(vertical = 9.dp),
@@ -1133,13 +1138,13 @@ private fun ClassDetailsSheet(
                             Icon(
                                 option.icon(),
                                 contentDescription = null,
-                                tint = if (selected) option.color() else UniStackColors.TextSecondary,
+                                tint = if (selected) option.color() else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(17.dp)
                             )
                             Text(
                                 option.label(),
                                 textAlign = TextAlign.Center,
-                                color = if (selected) option.color() else UniStackColors.TextSecondary,
+                                color = if (selected) option.color() else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -1147,10 +1152,10 @@ private fun ClassDetailsSheet(
                     }
                 }
             }
-            HorizontalDivider(color = UniStackColors.SoftOutline.copy(alpha = 0.6f))
-            DetailActionRow(Icons.Rounded.CalendarMonth, "Ver historial", UniStackColors.TextPrimary, onHistory)
-            DetailActionRow(Icons.Rounded.Edit, "Editar clase", UniStackColors.TextPrimary, onEdit)
-            DetailActionRow(Icons.Rounded.DeleteOutline, "Eliminar clase", UniStackColors.Coral, onDelete)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+            DetailActionRow(Icons.Rounded.CalendarMonth, "Ver historial", MaterialTheme.colorScheme.onSurface, onHistory)
+            DetailActionRow(Icons.Rounded.Edit, "Editar clase", MaterialTheme.colorScheme.onSurface, onEdit)
+            DetailActionRow(Icons.Rounded.DeleteOutline, "Eliminar clase", MaterialTheme.colorScheme.error, onDelete)
         }
     }
 }
@@ -1188,20 +1193,20 @@ private fun ClassInfoGrid(items: List<ClassInfo>) {
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = ScheduleShape,
-                        color = UniStackColors.SurfaceVariant
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
                     ) {
                         Column(
                             Modifier.padding(horizontal = 11.dp, vertical = 9.dp),
                             verticalArrangement = Arrangement.spacedBy(3.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(info.icon, contentDescription = null, tint = UniStackColors.TextSecondary, modifier = Modifier.size(13.dp))
+                                Icon(info.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(13.dp))
                                 Spacer(Modifier.width(5.dp))
-                                Text(info.label, color = UniStackColors.TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                                Text(info.label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                             }
                             Text(
                                 info.value,
-                                color = UniStackColors.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 12.sp,
                                 lineHeight = 14.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -1271,7 +1276,7 @@ private fun OptionsSheet(
     onAddClass: () -> Unit,
     onAddTask: () -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = UniStackColors.Background) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 18.dp, end = 18.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OptionRow(Icons.Rounded.CalendarMonth, "Ir a hoy", onToday)
             OptionRow(Icons.Rounded.Schedule, "Horario semanal", onTimetable)
@@ -1289,7 +1294,7 @@ private fun OptionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, lab
     Row(Modifier.fillMaxWidth().clip(ScheduleShape).clickable(onClick = onClick).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = ScheduleAccent)
         Spacer(Modifier.width(12.dp))
-        Text(label, color = UniStackColors.TextPrimary, fontWeight = FontWeight.SemiBold)
+        Text(label, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -1301,7 +1306,9 @@ private data class HistoryEntry(
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
-private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let(::subjectAccent) ?: ScheduleAccent
+@Composable
+@ReadOnlyComposable
+private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let { subject -> subjectAccent(subject) } ?: ScheduleAccent
 
 private fun LocalDate.weekStart(): LocalDate = minusDays((dayOfWeek.value - 1).toLong())
 
@@ -1387,9 +1394,9 @@ private fun ClassAttendanceStatus.label(): String = when (this) {
 
 @Composable
 private fun ClassAttendanceStatus.color(): Color = when (this) {
-    ClassAttendanceStatus.PENDING -> UniStackColors.TextSecondary
+    ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
     ClassAttendanceStatus.ATTENDED -> ScheduleAccent
-    ClassAttendanceStatus.ABSENT -> UniStackColors.Coral
+    ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error
     ClassAttendanceStatus.CANCELLED -> ScheduleCancelled
     ClassAttendanceStatus.RESCHEDULED -> ScheduleRescheduled
 }
