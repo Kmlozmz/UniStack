@@ -19,8 +19,6 @@ data class HomeUiState(
             priority = HomePrioritySummary(
                 title = "Prepara tu semestre",
                 shortDescription = "Agrega materias y tareas para activar prioridades reales.",
-                fullDescription = "Configura tus materias y tareas para que UniStack pueda convertir el Home en una agenda inteligente con prioridades reales.",
-                suggestion = "Siguiente paso: crear tu primera materia.",
                 action = HomePriorityAction.SUBJECTS
             ),
             dailyFocusItems = emptyList(),

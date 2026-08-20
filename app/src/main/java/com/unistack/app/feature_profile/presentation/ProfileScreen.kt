@@ -708,21 +708,6 @@ fun ProfileScreen(
     }
 }
 
-@Composable
-private fun DataStatusStrip(summary: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("Backup actual", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
-            Text(summary, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, lineHeight = 16.sp)
-        }
-    }
-}
 
 @Composable
 private fun AccountSyncCard(
@@ -1268,33 +1253,6 @@ private fun ModulesSettingsCard(
     }
 }
 
-@Composable
-private fun ReminderToggleRow(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onToggle: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.large)
-            .toggleable(
-                value = checked,
-                role = Role.Checkbox,
-                onValueChange = { onToggle() }
-            )
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Checkbox(checked = checked, onCheckedChange = null)
-        Column(modifier = Modifier.padding(start = 8.dp)) {
-            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-        }
-    }
-}
 
 @Composable
 private fun ResetOnboardingCard(onRestartClick: () -> Unit) {

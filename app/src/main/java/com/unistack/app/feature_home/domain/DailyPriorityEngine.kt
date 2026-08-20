@@ -202,8 +202,6 @@ object DailyPriorityEngine {
                 } else {
                     "Vigila esta materia con un repaso corto hoy."
                 },
-                fullDescription = "La elegí porque ${risk.subjectName} requiere seguimiento académico. ${risk.detail}",
-                suggestion = "${heroActionPrefix()}: repasar ${risk.subjectName} 15 minutos y revisar qué evaluación pesa más.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = risk.subjectId
             )
@@ -232,8 +230,6 @@ object DailyPriorityEngine {
             summary = HomePrioritySummary(
                 title = if (overBudget) "Gastos sobre el límite" else "Gastos cerca del límite",
                 shortDescription = "Revisa tu semana antes de registrar más gastos.",
-                fullDescription = "La elegí porque ya usaste $usagePercent% de tu presupuesto semanal. Revisarlo ahora te ayuda a ajustar el resto de la semana.",
-                suggestion = "${heroActionPrefix()}: mirar tus categorías y decidir si conviene pausar algún gasto.",
                 action = HomePriorityAction.EXPENSES
             )
         )
@@ -258,12 +254,6 @@ object DailyPriorityEngine {
                 days == 0L -> "Atiéndela hoy para mantener el día bajo control."
                 else -> "Reserva un bloque corto antes de que se acerque."
             },
-            fullDescription = when {
-                days < 0 -> "La elegí porque ya está vencida. $title aparece como la tarea que más conviene resolver primero."
-                days == 0L -> "La elegí porque vence hoy. $title necesita atención para que el resto del día no se acumule."
-                else -> "La elegí porque vence $dueText y tiene una prioridad suficiente para prepararla con calma."
-            },
-            suggestion = "${heroActionPrefix()}: $actionVerb $timeText y dejar un avance claro.",
             action = HomePriorityAction.TASKS
         )
     }
@@ -281,8 +271,6 @@ object DailyPriorityEngine {
                 days <= 0 -> "Dale prioridad antes de sumar nuevas tareas."
                 else -> "Avanza un poco antes de que se acumule."
             },
-            fullDescription = "La elegí porque este trabajo vence $dueText y todavía no está marcado como entregado. Un avance pequeño hoy reduce presión después.",
-            suggestion = "${heroActionPrefix()}: avanzar 15 minutos y marcar un paso concreto.",
             action = HomePriorityAction.TEMPLATES,
             subjectId = subjectId
         )

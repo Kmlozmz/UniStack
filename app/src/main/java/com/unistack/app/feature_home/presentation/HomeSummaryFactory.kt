@@ -271,8 +271,6 @@ internal object HomeSummaryFactory {
             return HomePrioritySummary(
                 title = "Prepara tu semestre",
                 shortDescription = "Agrega tus materias para activar prioridades reales.",
-                fullDescription = "Todavía no tienes materias registradas. Cuando agregues tus cursos, UniStack podrá ordenar tareas, notas y alertas según tu semestre real.",
-                suggestion = "${heroActionPrefix()}: crear tu primera materia para empezar con una agenda útil.",
                 action = HomePriorityAction.SUBJECTS
             )
         }
@@ -303,8 +301,6 @@ internal object HomeSummaryFactory {
                     "${waitingResults.size} resultados esperan registro"
                 },
                 shortDescription = "Registra la calificación o indica que la actividad no tuvo nota.",
-                fullDescription = "Estas tareas ya están terminadas, pero aún no sabemos su resultado. Resolverlas mantiene tus promedios, metas y proyecciones al día.",
-                suggestion = "${heroActionPrefix()}: revisar los resultados pendientes y cerrar el ciclo de cada tarea.",
                 action = HomePriorityAction.TASKS,
                 subjectId = next?.subjectId
             )
@@ -329,8 +325,6 @@ internal object HomeSummaryFactory {
             return HomePrioritySummary(
                 title = "Completa el historial de ${incompleteHistory.name}",
                 shortDescription = "Faltan datos de cortes anteriores para calcular una proyección fiable.",
-                fullDescription = "Puedes registrar actividades individuales, la nota final del corte o marcar que no recuerdas el resultado. La app seguirá funcionando aunque lo dejes para después.",
-                suggestion = "${heroActionPrefix()}: completar un corte anterior o marcarlo como desconocido.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = incompleteHistory.id
             )
@@ -352,8 +346,6 @@ internal object HomeSummaryFactory {
                 } else {
                     "Hay $count notas sin porcentaje; la proyección todavía es provisional."
                 },
-                fullDescription = "Las notas sin peso se conservan, pero no pueden participar con precisión en la proyección. Añade sus porcentajes cuando los conozcas.",
-                suggestion = "${heroActionPrefix()}: revisar los porcentajes pendientes de ${subjectWithUnknownWeights.name}.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = subjectWithUnknownWeights.id
             )
@@ -398,8 +390,6 @@ internal object HomeSummaryFactory {
         return HomePrioritySummary(
             title = "$subjectName a las $timeText",
             shortDescription = "Tienes clase $dayText. Revisa aula, asistencia y recordatorio.",
-            fullDescription = "Tu horario ya esta conectado con UniStack. Desde Agenda puedes registrar asistencia, modalidad, cambios puntuales y mantener tus recordatorios alineados con la clase.",
-            suggestion = "${heroActionPrefix()}: abrir el horario y preparar la siguiente clase.",
             action = HomePriorityAction.SCHEDULE,
             subjectId = session.subjectId,
             timeframe = timeframe
@@ -450,30 +440,22 @@ internal object HomeSummaryFactory {
             canUseExpenses && index == 1 -> HomePrioritySummary(
                 title = "Gastos bajo control",
                 shortDescription = "Buen momento para revisar si tu semana sigue en ritmo.",
-                fullDescription = "No hay urgencias académicas fuertes ahora. Como ya registraste gastos esta semana, puedes hacer una revisión rápida sin convertirlo en preocupación.",
-                suggestion = "${heroActionPrefix()}: revisar tus gastos 2 minutos y seguir con el día.",
                 action = HomePriorityAction.EXPENSES
             )
             hasOpenWorks && index == 2 -> HomePrioritySummary(
                 title = "Espacio para avanzar",
                 shortDescription = "Aprovecha un bloque corto para mover un trabajo.",
-                fullDescription = "No tienes una urgencia clara ahora. Este es un buen momento para avanzar un trabajo abierto antes de que se acerque la fecha.",
-                suggestion = "${heroActionPrefix()}: escoger un trabajo y avanzar 15 minutos.",
                 action = HomePriorityAction.TEMPLATES
             )
             pendingTasks.isNotEmpty() && index == 3 -> HomePrioritySummary(
                 title = "Buen ritmo",
                 shortDescription = "Ordena una tarea pequeña y deja el día más liviano.",
-                fullDescription = "No hay vencimientos cercanos fuertes. Aun así, tienes tareas pendientes que puedes organizar para evitar presión después.",
-                suggestion = "${heroActionPrefix()}: elegir una tarea simple y dejarla encaminada.",
                 action = HomePriorityAction.TASKS
             )
             academicFocus != null -> academicFocus.toPrioritySummary()
             else -> HomePrioritySummary(
                 title = "Día despejado",
                 shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
-                fullDescription = "No tienes vencimientos cercanos por ahora. Es un buen momento para repasar, avanzar en tus materias o dejar listas tus próximas actividades.",
-                suggestion = "${heroActionPrefix()}: dedica 15 minutos a repasar hoy para mantener el ritmo.",
                 action = if (subjects.isNotEmpty()) HomePriorityAction.SUBJECTS else HomePriorityAction.TASKS
             )
         }
@@ -518,12 +500,6 @@ internal object HomeSummaryFactory {
             } else {
                 "Agrega una nota para activar proyección y seguimiento real."
             },
-            fullDescription = if (averageText != null) {
-                "$subjectName tiene promedio $averageText con ${evaluatedPercentage.roundPercent()}% evaluado. La meta es ${GradingScaleUtils.formatGrade(targetAverage, gradingScale)}."
-            } else {
-                "$subjectName ya está creada, pero aún no tiene notas. La siguiente acción útil es registrar la primera evaluación."
-            },
-            suggestion = "${heroActionPrefix()}: ${if (averageText != null) "agrega la próxima nota o revisa el porcentaje restante" else "agrega la primera nota de $subjectName"}.",
             action = HomePriorityAction.SUBJECT,
             subjectId = subjectId
         )

@@ -84,7 +84,7 @@ fun AcademicScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.padding(start = 20.dp, top = 18.dp, end = 8.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -104,7 +104,7 @@ fun AcademicScreen(
                     text = "Materias, notas y entregas en un mismo lugar.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp)
+                    modifier = Modifier.padding(end = 12.dp, bottom = 8.dp)
                 )
                 UniSegmentedControl(
                     selected = selectedTab,

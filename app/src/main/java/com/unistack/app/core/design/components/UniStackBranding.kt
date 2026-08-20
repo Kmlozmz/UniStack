@@ -73,20 +73,3 @@ fun UniStackWordmark(
     )
 }
 
-@Composable
-fun UniStackBrandHeader(
-    modifier: Modifier = Modifier,
-    showText: Boolean = true,
-    symbolSize: Dp = 34.dp
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        UniStackLogoMark(size = symbolSize)
-        if (showText) {
-            Spacer(modifier = Modifier.width(8.dp))
-            UniStackWordmark(fontSize = 23.sp)
-        }
-    }
-}

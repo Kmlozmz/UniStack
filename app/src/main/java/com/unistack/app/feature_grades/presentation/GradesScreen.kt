@@ -136,40 +136,26 @@ fun GradesScreen(
                 }
             }
             item("filtros") {
-                /*
-                 * Los filtros, dentro de un grupo de botones.
-                 *
-                 * `animateWidth` es lo que les da el rebote y la relación con el vecino: al
-                 * mantener pulsado uno, ese se ensancha y los de al lado se comprimen para
-                 * dejarle sitio, y al soltar vuelven con el muelle del tema. Sueltos en una
-                 * fila cada uno respondía por su cuenta y no se tocaban entre ellos.
-                 *
-                 * Sin `weight`: cada uno mide lo que ocupa su texto. Forzándolos al mismo
-                 * ancho, el grupo daba por desbordado su contenido y no dibujaba nada.
-                 */
-                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // FilterChip a secas. Sin grupo de botones y sin animateWidth: la interacción
+                // entre vecinos se probó aquí y se descartó; vive solo en Materias/Tareas.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SubjectFilter.entries.forEach { option ->
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val isSelected = filter == option
-                        OutlinedToggleButton(
-                            checked = isSelected,
-                            onCheckedChange = { filter = option },
-                            interactionSource = interactionSource,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 38.dp)
-                                .animateWidth(interactionSource)
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.size(6.dp))
+                        FilterChip(
+                            selected = filter == option,
+                            onClick = { filter = option },
+                            label = { Text(option.label) },
+                            leadingIcon = if (filter == option) {
+                                {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else {
+                                null
                             }
-                            Text(option.label, style = MaterialTheme.typography.labelLarge)
-                        }
+                        )
                     }
                 }
             }
@@ -215,210 +201,13 @@ fun GradesScreen(
     }
 }
 
-@Composable
-private fun SubjectsStatsRow(
-    subjectCount: Int,
-    generalAverage: Double?,
-    evaluatedSubjects: Int,
-    gradingScale: GradingScale
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        MetricCard(
-            value = subjectCount.toString(),
-            label = if (subjectCount == 1) "Materia" else "Materias",
-            icon = Icons.Rounded.Book,
-            iconColor = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
-        )
-        MetricCard(
-            value = GradingScaleUtils.formatGrade(generalAverage, gradingScale),
-            label = "Promedio",
-            icon = Icons.Rounded.Grade,
-            iconColor = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
-        )
-        MetricCard(
-            value = evaluatedSubjects.toString(),
-            label = if (evaluatedSubjects == 1) "Evaluada" else "Evaluadas",
-            icon = Icons.Rounded.BarChart,
-            iconColor = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
 
-@Composable
-private fun SubjectListCard(
-    subject: Subject,
-    calculation: SubjectGradeCalculation,
-    classSession: ClassSession?,
-    gradingScale: GradingScale,
-    maxGrade: Double,
-    onClick: () -> Unit
-) {
-    val tone = subjectTone(calculation, subject.targetAverage, maxGrade)
-    val subjectColor = subjectAccent(subject)
-    val evaluated = calculation.evaluatedSemesterFraction * 100.0
-    val targetText = GradingScaleUtils.formatGrade(subject.targetAverage, gradingScale)
-    UniCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .bounceClick(onClick),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        contentPadding = PaddingValues(0.dp)
-    ) {
-        // Dos columnas: a la izquierda quién y cuándo, a la derecha cómo va. Con los datos
-        // sueltos en tres filas la tarjeta crecía y no se leía en diagonal; así ocupa lo
-        // mismo que cuando solo llevaba el nombre y la cifra.
-        Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(subjectColor)
-            )
-            Box(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .size(38.dp)
-                    .background(
-                        subjectColor.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.12f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.School,
-                    contentDescription = null,
-                    tint = subjectColor,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp, end = 8.dp, top = 11.dp, bottom = 11.dp),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        subject.name,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        // Sin notas no hay nota que enseñar, así que el hueco lo ocupa la meta.
-                        calculation.currentAverage
-                            ?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
-                            ?: "Meta $targetText",
-                        color = tone.color,
-                        fontSize = if (calculation.currentAverage == null) 14.sp else 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Profesor y horario, que se piden al crear la materia y hasta ahora solo
-                    // se veían en Horario. Comparte fila con el estado en vez de abrir otra.
-                    val classLine = classSession?.let { session ->
-                        listOfNotNull(
-                            session.place.professor.takeIf { it.isNotBlank() },
-                            session.daysAndTimeLabel().takeIf { it.isNotBlank() }
-                        ).joinToString("  ·  ")
-                    }?.takeIf { it.isNotBlank() }
-                    Text(
-                        classLine ?: "${String.format(Locale.US, "%.0f", evaluated)}% evaluado",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        tone.label,
-                        color = tone.color,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1
-                    )
-                }
-                EvaluationBar(
-                    fraction = calculation.evaluatedSemesterFraction,
-                    // El color de la materia, el mismo de la franja y del avatar. En gris
-                    // parecía una barra apagada que no avanzaba.
-                    color = subjectColor
-                )
-            }
-            Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(end = 10.dp)
-                    .size(20.dp)
-            )
-        }
-    }
-}
 
 private data class SubjectTone(
     val color: Color,
     val label: String
 )
 
-/**
- * Color y rótulo de una materia, a partir de dónde puede acabar y no solo de dónde está.
- *
- * El margen para el aviso sale de la escala. Estaba escrito como 0.5 fijo, que en la escala
- * de 0 a 100 es medio punto: el estado ámbar solo existía entre 79.5 y 80.
- */
-@Composable
-private fun subjectTone(
-    calculation: SubjectGradeCalculation,
-    target: Double,
-    maxGrade: Double
-): SubjectTone {
-    return when (calculation.outlook) {
-        TargetOutlook.NO_DATA -> SubjectTone(
-            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.62f),
-            "Sin notas"
-        )
-        TargetOutlook.SECURED -> SubjectTone(
-            LocalSectionColors.current.onTrack,
-            if (calculation.isFinished) "Meta cumplida" else "Meta asegurada"
-        )
-        TargetOutlook.ON_TRACK -> SubjectTone(MaterialTheme.colorScheme.tertiary, "Sobre meta")
-        TargetOutlook.AT_RISK -> {
-            val current = calculation.currentAverage
-            val closeToTarget = current != null &&
-                target - current <= GradeCalculator.closeToTargetMargin(maxGrade)
-            SubjectTone(
-                if (closeToTarget) LocalSectionColors.current.atRisk else MaterialTheme.colorScheme.error,
-                "Por subir"
-            )
-        }
-        TargetOutlook.UNREACHABLE -> SubjectTone(
-            MaterialTheme.colorScheme.error,
-            if (calculation.isFinished) "Bajo la meta" else "Fuera de alcance"
-        )
-    }
-}
 
 @Composable
 private fun EmptyGradesCard() {
@@ -522,22 +311,6 @@ fun subjectAccent(subject: Subject): Color {
     return subject.customColor?.let { Color(it) } ?: subjectAccent(subject.visualType)
 }
 
-@Composable
-@ReadOnlyComposable
-fun subjectBackground(type: SubjectVisualType): Color = when (type) {
-    SubjectVisualType.TEAL -> MaterialTheme.colorScheme.tertiaryContainer
-    SubjectVisualType.BLUE -> LocalSectionColors.current.scheduleContainer
-    SubjectVisualType.CORAL -> MaterialTheme.colorScheme.errorContainer
-    SubjectVisualType.PURPLE -> MaterialTheme.colorScheme.primaryContainer
-    SubjectVisualType.GREEN -> LocalSectionColors.current.onTrackContainer
-    SubjectVisualType.YELLOW -> LocalSectionColors.current.atRiskContainer
-    SubjectVisualType.ROSE -> CategoricalSubjectBackgrounds.rose(LocalIsDarkTheme.current)
-    SubjectVisualType.INDIGO -> CategoricalSubjectBackgrounds.indigo(LocalIsDarkTheme.current)
-    SubjectVisualType.ORANGE -> CategoricalSubjectBackgrounds.orange(LocalIsDarkTheme.current)
-    SubjectVisualType.CYAN -> CategoricalSubjectBackgrounds.cyan(LocalIsDarkTheme.current)
-    SubjectVisualType.LIME -> CategoricalSubjectBackgrounds.lime(LocalIsDarkTheme.current)
-    SubjectVisualType.SLATE -> CategoricalSubjectBackgrounds.slate(LocalIsDarkTheme.current)
-}
 
 @Composable
 private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {

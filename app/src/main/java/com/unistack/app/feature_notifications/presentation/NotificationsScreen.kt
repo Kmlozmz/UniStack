@@ -367,24 +367,6 @@ private fun NotificationInboxSummary(
     }
 }
 
-@Composable
-private fun NotificationSummaryStat(
-    label: String,
-    value: Int,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.medium,
-        color = NotificationCard.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f)
-    ) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(value.toString(), color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = NotificationMuted, fontSize = 10.sp, lineHeight = 12.sp, maxLines = 1)
-        }
-    }
-}
 
 @Composable
 private fun NotificationFilterBar(
@@ -663,49 +645,6 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
     }
 }
 
-@Composable
-private fun NotificationDetailMessage(item: NotificationHistoryItem) {
-    val category = item.category()
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = NotificationCard,
-        border = BorderStroke(1.dp, NotificationBorder)
-    ) {
-        Column(
-            modifier = Modifier.padding(17.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(category.color.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(category.icon, contentDescription = null, tint = category.color, modifier = Modifier.size(22.dp))
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = item.title,
-                    color = NotificationText,
-                    fontSize = 22.sp,
-                    lineHeight = 26.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Text(
-                text = item.body,
-                color = NotificationBody,
-                fontSize = 14.sp,
-                lineHeight = 21.sp,
-                fontWeight = FontWeight.Normal
-            )
-        }
-    }
-}
 
 @Composable
 private fun NotificationMetaCard(item: NotificationHistoryItem) {
