@@ -236,10 +236,6 @@ fun CalendarScheduleScreen(
                 showAgendaMenu = false
                 editingAgendaEvent = null
                 agendaCreateKind = kind
-            },
-            onAddClass = {
-                showAgendaMenu = false
-                startAddClass()
             }
         )
     }

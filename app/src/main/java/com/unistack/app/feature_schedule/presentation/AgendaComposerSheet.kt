@@ -17,12 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Alarm
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Event
@@ -34,8 +32,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextAlign
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -49,13 +55,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AgendaEvent
 import com.unistack.app.feature_schedule.domain.AgendaEventKind
@@ -86,10 +90,13 @@ internal enum class AgendaCreateKind(
 @Composable
 internal fun AgendaCreateMenuSheet(
     onDismiss: () -> Unit,
-    onSelect: (AgendaCreateKind) -> Unit,
-    onAddClass: () -> Unit
+    onSelect: (AgendaCreateKind) -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.extraLarge) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -98,31 +105,13 @@ internal fun AgendaCreateMenuSheet(
                 .padding(top = 4.dp, bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.CalendarMonth, null, tint = MaterialTheme.colorScheme.primary)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Agregar a la agenda", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                    Text(
-                        "Elige el tipo y se abre el formulario correcto.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
+            AgendaSheetHeader(
+                icon = Icons.Rounded.CalendarMonth,
+                title = "Agregar a la agenda",
+                subtitle = "Elige el tipo y se abre el formulario correcto."
+            )
 
-            AgendaSectionLabel("Académico")
+            AgendaSectionLabel("ACADÉMICO")
             listOf(
                 AgendaCreateKind.TASK,
                 AgendaCreateKind.EVALUATION,
@@ -130,15 +119,8 @@ internal fun AgendaCreateMenuSheet(
             ).forEach { kind ->
                 AgendaKindRow(kind = kind, onClick = { onSelect(kind) })
             }
-            AgendaKindRow(
-                kind = null,
-                onClick = onAddClass,
-                title = "Clase recurrente",
-                subtitle = "Añade una materia al horario",
-                icon = Icons.AutoMirrored.Rounded.MenuBook
-            )
 
-            AgendaSectionLabel("Personal")
+            AgendaSectionLabel("PERSONAL")
             listOf(
                 AgendaCreateKind.PERSONAL,
                 AgendaCreateKind.REMINDER,
@@ -150,25 +132,61 @@ internal fun AgendaCreateMenuSheet(
     }
 }
 
+/** La cabecera común de los sheets de agenda: el icono en su cuadrado, qué es y para qué. */
+@Composable
+private fun AgendaSheetHeader(
+    icon: ImageVector,
+    title: String,
+    subtitle: String
+) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(46.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+/** El rótulo de un grupo: versales pequeñas del color del acento, como en el resto de sheets. */
 @Composable
 private fun AgendaSectionLabel(text: String) {
     Text(
         text = text,
         color = MaterialTheme.colorScheme.primary,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 6.dp)
+        style = SectionLabelStyle,
+        modifier = Modifier.padding(top = 6.dp, start = 4.dp)
     )
 }
 
 @Composable
 private fun AgendaKindRow(
-    kind: AgendaCreateKind?,
+    kind: AgendaCreateKind,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    title: String = kind?.title.orEmpty(),
-    subtitle: String = kind?.subtitle.orEmpty(),
-    icon: ImageVector = kind?.icon ?: Icons.Rounded.Event
+    modifier: Modifier = Modifier
 ) {
     UniCard(
         modifier = modifier.fillMaxWidth(),
@@ -180,23 +198,24 @@ private fun AgendaKindRow(
             Box(
                 Modifier
                     .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
+                Icon(kind.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
             }
             Spacer(Modifier.width(11.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    title,
+                    kind.title,
                     color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    subtitle,
+                    kind.subtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
@@ -205,6 +224,18 @@ private fun AgendaKindRow(
             }
         }
     }
+}
+
+/** Un campo del formulario, con su rótulo fuera y arriba en vez de flotando dentro. */
+@Composable
+private fun AgendaFieldLabel(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(start = 4.dp)
+    )
 }
 
 @Composable
@@ -235,8 +266,20 @@ internal fun AgendaComposerSheet(
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val date = LocalDate.ofEpochDay(dateEpochDay)
     val academic = kind.academic
+    // Los pasos de fecha y los chips se tragan el toque, así que el campo que estuviera
+    // escrito se quedaba enfocado y el teclado tapaba media hoja mientras se elegía.
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val releaseFocus = {
+        focusManager.clearFocus()
+        keyboard?.hide()
+    }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.background, shape = MaterialTheme.shapes.extraLarge) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -246,95 +289,243 @@ internal fun AgendaComposerSheet(
                 .padding(bottom = 18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(kind.icon, null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(if (existingEvent == null) kind.title else "Editar evento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-                    Text(if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            AgendaSheetHeader(
+                icon = kind.icon,
+                title = if (existingEvent == null) kind.title else "Editar evento",
+                subtitle = if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias"
+            )
+
+            OutlinedTextField(
+                title,
+                { title = it.take(100) },
+                Modifier.fillMaxWidth(),
+                label = { Text("Título") },
+                singleLine = true,
+                shape = MaterialTheme.shapes.medium
+            )
+
+            // La fecha, en su propia tarjeta. Suelta sobre el fondo, las dos flechas y el texto
+            // no se leían como un mismo control sino como tres cosas puestas en fila.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainer
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilledTonalIconButton(
+                        onClick = { releaseFocus(); dateEpochDay-- },
+                        modifier = Modifier.size(38.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Día anterior", modifier = Modifier.size(20.dp))
+                    }
+                    Text(
+                        date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", AgendaLocale)).replaceFirstChar(Char::uppercase),
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    FilledTonalIconButton(
+                        onClick = { releaseFocus(); dateEpochDay++ },
+                        modifier = Modifier.size(38.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, "Día siguiente", modifier = Modifier.size(20.dp))
+                    }
                 }
             }
-            OutlinedTextField(title, { title = it.take(100) }, Modifier.fillMaxWidth(), label = { Text("Título") }, singleLine = true, shape = MaterialTheme.shapes.medium)
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton({ dateEpochDay-- }) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Día anterior") }
-                Text(
-                    date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale.forLanguageTag("es"))).replaceFirstChar(Char::uppercase),
-                    modifier = Modifier.weight(1f),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton({ dateEpochDay++ }) { Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, "Día siguiente") }
-            }
+
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(startText, { startText = it.take(5) }, Modifier.weight(1f), label = { Text(if (academic) "Hora límite" else "Inicio") }, placeholder = { Text("08:00") }, singleLine = true, shape = MaterialTheme.shapes.medium)
-                if (!academic) OutlinedTextField(endText, { endText = it.take(5) }, Modifier.weight(1f), label = { Text("Fin") }, placeholder = { Text("09:00") }, singleLine = true, shape = MaterialTheme.shapes.medium)
+                OutlinedTextField(
+                    startText,
+                    { startText = it.take(5) },
+                    Modifier.weight(1f),
+                    label = { Text(if (academic) "Hora límite" else "Inicio") },
+                    placeholder = { Text("08:00") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+                if (!academic) {
+                    OutlinedTextField(
+                        endText,
+                        { endText = it.take(5) },
+                        Modifier.weight(1f),
+                        label = { Text("Fin") },
+                        placeholder = { Text("09:00") },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                }
             }
+
             if (academic) {
-                Text("Tipo académico", fontWeight = FontWeight.Bold)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AgendaSectionLabel("TIPO ACADÉMICO")
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     taskTypesFor(kind).forEach { type ->
-                        FilterChip(selectedTaskType == type, { selectedTaskType = type }, label = { Text(type.agendaLabel()) })
+                        FilterChip(
+                            selectedTaskType == type,
+                            { releaseFocus(); selectedTaskType = type },
+                            label = { Text(type.agendaLabel(), maxLines = 1, softWrap = false) }
+                        )
                     }
                 }
-                Text("Materia (opcional)", fontWeight = FontWeight.Bold)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selectedSubjectId == null, { selectedSubjectId = null }, label = { Text("Sin materia") })
+
+                AgendaSectionLabel("MATERIA (OPCIONAL)")
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selectedSubjectId == null,
+                        { releaseFocus(); selectedSubjectId = null },
+                        label = { Text("Sin materia", maxLines = 1, softWrap = false) }
+                    )
                     subjects.forEach { subject ->
-                        FilterChip(selectedSubjectId == subject.id, { selectedSubjectId = subject.id }, label = { Text(subject.name, maxLines = 1) })
+                        FilterChip(
+                            selectedSubjectId == subject.id,
+                            { releaseFocus(); selectedSubjectId = subject.id },
+                            label = { Text(subject.name, maxLines = 1, softWrap = false) }
+                        )
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Genera calificación", fontWeight = FontWeight.Bold)
-                        Text("Quedará vinculada al seguimiento de notas.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+
+                // El interruptor va dentro de una tarjeta: es un ajuste, y suelto entre
+                // rótulos parecía un párrafo con un mando al lado.
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                    Row(
+                        Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                "Genera calificación",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Quedará vinculada al seguimiento de notas.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Switch(generatesGrade, { releaseFocus(); generatesGrade = it })
                     }
-                    Switch(generatesGrade, { generatesGrade = it })
                 }
             } else {
-                OutlinedTextField(location, { location = it.take(80) }, Modifier.fillMaxWidth(), label = { Text("Ubicación (opcional)") }, singleLine = true, shape = MaterialTheme.shapes.medium)
-                Text("Repetición", fontWeight = FontWeight.Bold)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    location,
+                    { location = it.take(80) },
+                    Modifier.fillMaxWidth(),
+                    label = { Text("Ubicación (opcional)") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.medium
+                )
+
+                AgendaSectionLabel("REPETICIÓN")
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     AgendaRecurrence.entries.forEach { option ->
-                        FilterChip(recurrence == option, { recurrence = option }, label = { Text(option.agendaLabel()) })
+                        FilterChip(
+                            recurrence == option,
+                            { releaseFocus(); recurrence = option },
+                            label = { Text(option.agendaLabel(), maxLines = 1, softWrap = false) }
+                        )
                     }
                 }
-                Text("Recordatorio", fontWeight = FontWeight.Bold)
-                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                AgendaSectionLabel("RECORDATORIO")
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     listOf(0, 5, 15, 30, 60, 1440).forEach { minutes ->
-                        FilterChip(reminder == minutes, { reminder = minutes }, label = { Text(minutes.reminderLabel()) })
+                        FilterChip(
+                            reminder == minutes,
+                            { releaseFocus(); reminder = minutes },
+                            label = { Text(minutes.reminderLabel(), maxLines = 1, softWrap = false) }
+                        )
                     }
                 }
             }
-            OutlinedTextField(notes, { notes = it.take(500) }, Modifier.fillMaxWidth(), label = { Text("Notas (opcional)") }, minLines = 2, shape = MaterialTheme.shapes.medium)
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (existingEvent != null && onDeleteEvent != null) {
-                    TextButton(onClick = { onDeleteEvent(existingEvent.id); onDismiss() }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
-                }
-                Spacer(Modifier.weight(1f))
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = {
-                        val start = parseAgendaMinute(startText)
-                        val end = parseAgendaMinute(endText)
-                        val saved = if (academic) {
-                            onSaveAcademic(title, notes, selectedSubjectId, selectedTaskType, date, start, generatesGrade)
-                        } else {
-                            onSaveEvent(existingEvent, title, notes, kind.toEventKind(), date, start, end, location, reminder, recurrence)
-                        }
-                        if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp)
+
+            OutlinedTextField(
+                notes,
+                { notes = it.take(500) },
+                Modifier.fillMaxWidth(),
+                label = { Text("Notas (opcional)") },
+                minLines = 2,
+                shape = MaterialTheme.shapes.medium
+            )
+            error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Guardar ocupa el ancho, como el botón principal de cualquier otra pantalla.
+            // Estaba en una esquina, del tamaño de un botón secundario, siendo la única cosa
+            // que había que hacer en toda la hoja.
+            Button(
+                shapes = UniStackButtonDefaults.shapes,
+                onClick = {
+                    releaseFocus()
+                    val start = parseAgendaMinute(startText)
+                    val end = parseAgendaMinute(endText)
+                    val saved = if (academic) {
+                        onSaveAcademic(title, notes, selectedSubjectId, selectedTaskType, date, start, generatesGrade)
+                    } else {
+                        onSaveEvent(existingEvent, title, notes, kind.toEventKind(), date, start, end, location, reminder, recurrence)
+                    }
+                    if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
+                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(9.dp))
+                Text("Guardar", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+            }
+            if (existingEvent != null && onDeleteEvent != null) {
+                TextButton(
+                    onClick = { onDeleteEvent(existingEvent.id); onDismiss() },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Rounded.Save, null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Guardar", fontWeight = FontWeight.Bold)
+                    Text(
+                        "Eliminar evento",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
     }
 }
+
+private val AgendaLocale: Locale = Locale.forLanguageTag("es")
 
 private fun defaultTaskType(kind: AgendaCreateKind) = when (kind) {
     AgendaCreateKind.EVALUATION -> TaskType.EXAM
