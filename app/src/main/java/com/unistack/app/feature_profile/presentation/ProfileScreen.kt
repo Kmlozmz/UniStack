@@ -763,10 +763,11 @@ private fun AccountSyncCard(
 }
 
 @Composable
-private fun AccountAvatar(
+internal fun AccountAvatar(
     photoUrl: String?,
     contentDescription: String?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initial: String? = null
 ) {
     Box(
         modifier = modifier
@@ -777,7 +778,18 @@ private fun AccountAvatar(
         contentAlignment = Alignment.Center
     ) {
         if (photoUrl.isNullOrBlank()) {
-            Icon(Icons.Rounded.Person, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            // Sin foto, la inicial antes que el monigote: dice de quién es la ficha, y el
+            // icono genérico es el mismo para todo el mundo.
+            if (initial.isNullOrBlank()) {
+                Icon(Icons.Rounded.Person, contentDescription = contentDescription, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            } else {
+                Text(
+                    text = initial,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
         } else {
             AsyncImage(
                 model = photoUrl,
@@ -1326,7 +1338,7 @@ private fun SelectionPill(
     }
 }
 
-private fun UserProfile.educationSummary(): String {
+internal fun UserProfile.educationSummary(): String {
     val level = when (educationLevel) {
         EducationLevel.PRIMARY -> "Primaria"
         EducationLevel.SECONDARY -> "Secundaria"

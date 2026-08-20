@@ -417,7 +417,8 @@ fun MainNavGraph(
                     onModulesClick = { navController.go(AppRoutes.ModuleSettings) },
                     onNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
                     onDataClick = { navController.go(AppRoutes.DataSettings) },
-                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) },
+                    onProClick = { navController.go(AppRoutes.Pro) }
                 )
             }
             screen(AppRoutes.UpdateSettings) {

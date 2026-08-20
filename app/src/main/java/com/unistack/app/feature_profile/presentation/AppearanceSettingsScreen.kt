@@ -2,21 +2,16 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.theme.scrollBottomRoom
-
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -24,27 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Accessibility
-import androidx.compose.material.icons.rounded.Animation
-import androidx.compose.material.icons.rounded.Backup
-import androidx.compose.material.icons.rounded.ColorLens
-import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.FormatSize
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Notifications
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.RestartAlt
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.SpaceDashboard
-import androidx.compose.material.icons.rounded.Widgets
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -52,41 +30,47 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.unistack.app.core.design.components.UniCard
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.feature_user.domain.AccentIntensity
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.feature_user.domain.AccentStyle
-import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.AppearancePreferences
-import com.unistack.app.feature_user.domain.BackgroundStyle
-import com.unistack.app.feature_user.domain.BottomBarStyle
-import com.unistack.app.feature_user.domain.CornerStyle
-import com.unistack.app.feature_user.domain.CustomThemeBase
-import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.HomeSection
-import com.unistack.app.feature_user.domain.InitialTab
-import com.unistack.app.feature_user.domain.MotionPreference
-import com.unistack.app.feature_user.domain.SurfaceStyle
-import com.unistack.app.feature_user.domain.TextScalePreference
+import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
-import com.unistack.app.feature_user.domain.VisualPreset
 
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import com.unistack.app.core.design.theme.SectionLabelStyle
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+/**
+ * Apariencia: la pantalla más grande de ajustes, y la única con vista previa.
+ *
+ * La maqueta va arriba del todo y no al final porque es la razón de estar aquí: se cambia una
+ * cosa y se mira qué pasa. Debajo, cada decisión es un grupo conectado en vez de una rejilla
+ * de dos columnas con contorno —cuatro modos en dos filas de dos no se leían como cuatro
+ * opciones de lo mismo, sino como dos parejas.
+ */
 @Composable
 fun AppearanceSettingsScreen(
     onBackClick: () -> Unit,
@@ -100,7 +84,6 @@ fun AppearanceSettingsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
         contentPadding = PaddingValues(
             start = spacing.screenHorizontal,
@@ -108,171 +91,160 @@ fun AppearanceSettingsScreen(
             top = 8.dp,
             bottom = scrollBottomRoom
         ),
-        verticalArrangement = Arrangement.spacedBy(spacing.section)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
             SettingsHeader(
                 title = "Apariencia",
-                subtitle = "Personaliza cómo se ve y se siente UniStack",
+                subtitle = "Tema, color, densidad y tu inicio",
                 onBackClick = onBackClick
             )
         }
         if (current == null) {
             item {
-                UniCard(modifier = Modifier.fillMaxWidth()) {
-                    Text("Cargando preferencias...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                Text(
+                    "Cargando preferencias...",
+                    modifier = Modifier.padding(12.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             return@LazyColumn
         }
 
         val appearance = current.appearancePreferences
         item {
-            AppearancePreview(
-                name = current.preferredName,
-                appearance = appearance
-            )
+            HomePreviewCard(name = current.preferredName, appearance = appearance)
         }
         item {
-            AppearanceSection(
-                icon = Icons.Rounded.DarkMode,
-                title = "Tema y fondo"
-            ) {
-                SectionLabel("Modo")
-                ChoiceGrid(
-                    entries = VisualPreference.entries,
-                    selected = current.visualPreference,
-                    label = VisualPreference::label,
-                    onSelected = viewModel::updateVisualPreference
+            SettingsGroupBare(label = "MODO") {
+                UniSegmentedControl(
+                    // El modo personalizado no entra: no hay forma de configurarlo desde
+                    // ninguna pantalla, así que como quinto segmento sería un botón que
+                    // no lleva a nada. Quien lo tuviera guardado ve «Sistema» marcado y
+                    // puede salir de ahí eligiendo cualquiera de los cuatro.
+                    selected = current.visualPreference.orSystem(),
+                    options = VisiblePreferences.map { option ->
+                        UniSegmentedOption(value = option, label = option.label())
+                    },
+                    onSelected = viewModel::updateVisualPreference,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     text = current.visualPreference.themeDescription(),
+                    modifier = Modifier.padding(top = 8.dp, start = 4.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
         }
         item {
-            AppearanceSection(
-                icon = Icons.Rounded.ColorLens,
-                title = "Colores"
-            ) {
+            SettingsGroupBare(label = "COLOR") {
                 /*
                  * Dos opciones, que son las dos que la app sabe entregar de verdad.
                  *
                  * Antes se ofrecían siete acentos y uno personalizado, y de ahí se derivaba
                  * el resto de la paleta mezclando colores. Ahora el color es un esquema
                  * tonal completo: o el que Material saca del fondo de pantalla, o el de la
-                 * marca. No hay forma de fabricar los otros seis sin volver a mezclarlos a
-                 * mano, y ofrecer una opción que no cambia nada es peor que no ofrecerla.
+                 * marca. Ofrecer una opción que no cambia nada es peor que no ofrecerla.
                  */
-                ChoiceGrid(
-                    entries = listOf(AccentStyle.VIOLET, AccentStyle.DYNAMIC),
-                    selected = if (appearance.accentStyle == AccentStyle.DYNAMIC) {
-                        AccentStyle.DYNAMIC
-                    } else {
-                        AccentStyle.VIOLET
-                    },
-                    label = { style ->
-                        if (style == AccentStyle.DYNAMIC) "Del fondo de pantalla" else "Violeta UniStack"
-                    },
-                    columns = 2,
-                    onSelected = { style ->
-                        viewModel.updateAppearance { it.copy(accentStyle = style) }
-                    }
-                )
+                val dynamic = appearance.accentStyle == AccentStyle.DYNAMIC
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AccentChoiceCard(
+                        title = "Del fondo",
+                        detail = "Toma el color de tu pantalla",
+                        dot = MaterialTheme.colorScheme.tertiary,
+                        selected = dynamic,
+                        modifier = Modifier.weight(1f)
+                    ) { viewModel.updateAppearance { it.copy(accentStyle = AccentStyle.DYNAMIC) } }
+                    AccentChoiceCard(
+                        title = "Violeta UniStack",
+                        detail = "El de la marca, siempre",
+                        dot = MaterialTheme.colorScheme.primary,
+                        selected = !dynamic,
+                        modifier = Modifier.weight(1f)
+                    ) { viewModel.updateAppearance { it.copy(accentStyle = AccentStyle.VIOLET) } }
+                }
             }
         }
         item {
-            AppearanceSection(
-                icon = Icons.Rounded.SpaceDashboard,
-                title = "Tamaño y densidad"
-            ) {
-                SectionLabel("Densidad")
-                ChoiceGrid(
-                    entries = InterfaceDensity.entries,
-                    selected = appearance.interfaceDensity,
-                    label = InterfaceDensity::label,
-                    columns = 3,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(interfaceDensity = value) }
-                    }
-                )
-                SectionLabel("Tipografía")
-                ChoiceGrid(
-                    entries = TypographyStyle.entries,
-                    selected = appearance.typographyStyle,
-                    label = TypographyStyle::label,
-                    onSelected = { value ->
-                        viewModel.updateAppearance { it.copy(typographyStyle = value) }
-                    }
-                )
+            SettingsGroupBare(label = "DENSIDAD Y LETRA") {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    UniSegmentedControl(
+                        selected = appearance.interfaceDensity,
+                        options = InterfaceDensity.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(interfaceDensity = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.typographyStyle,
+                        options = TypographyStyle.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(typographyStyle = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
         item {
-            AppearanceSection(
-                icon = Icons.Rounded.Home,
-                title = "Inicio"
-            ) {
-                PreferenceSwitch(
-                    title = "Saludo",
-                    subtitle = "Encabezado con nombre y momento del día",
-                    checked = appearance.showHomeGreeting,
-                    onCheckedChange = { enabled ->
+            SettingsGroupBare(label = "TARJETAS DE INICIO") {
+                HomeBlocksCard(
+                    appearance = appearance,
+                    onToggleGreeting = { enabled ->
                         viewModel.updateAppearance { it.copy(showHomeGreeting = enabled) }
-                    }
-                )
-                PreferenceSwitch(
-                    title = "Hero inteligente",
-                    subtitle = "Prioridad académica principal",
-                    checked = appearance.showHomeHero,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAppearance { it.copy(showHomeHero = enabled) }
-                    }
-                )
-                PreferenceSwitch(
-                    title = "Agenda",
-                    subtitle = "Actividades y vencimientos cercanos",
-                    checked = appearance.showHomeAgenda,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAppearance { it.copy(showHomeAgenda = enabled) }
-                    }
-                )
-                PreferenceSwitch(
-                    title = "Tablero",
-                    subtitle = "Resumen académico y financiero",
-                    checked = appearance.showHomeSnapshot,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAppearance { it.copy(showHomeSnapshot = enabled) }
-                    }
-                )
-                SectionLabel("Orden")
-                HomeSectionOrderEditor(
-                    order = appearance.homeSectionOrder,
-                    onMove = { section, direction ->
-                        viewModel.updateAppearance {
-                            it.copy(homeSectionOrder = it.homeSectionOrder.move(section, direction))
+                    },
+                    onToggleSection = { section, enabled ->
+                        viewModel.updateAppearance { preferences ->
+                            when (section) {
+                                HomeSection.HERO -> preferences.copy(showHomeHero = enabled)
+                                HomeSection.AGENDA -> preferences.copy(showHomeAgenda = enabled)
+                                HomeSection.SNAPSHOT -> preferences.copy(showHomeSnapshot = enabled)
+                            }
                         }
+                    },
+                    onReorder = { order ->
+                        viewModel.updateAppearance { it.copy(homeSectionOrder = order) }
                     }
                 )
-                SectionLabel("Información del hero")
-                PreferenceSwitch(
+                Text(
+                    text = "Arrastra por el asa para cambiar el orden.",
+                    modifier = Modifier.padding(top = 10.dp, start = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        item {
+            SettingsGroup(label = "QUÉ ENSEÑA LO SIGUIENTE") {
+                HomeToggleRow(
                     title = "Notas",
+                    detail = "Promedios y materias en riesgo",
                     checked = appearance.heroShowsGrades,
+                    draggable = false,
                     onCheckedChange = { enabled ->
                         viewModel.updateAppearance { it.copy(heroShowsGrades = enabled) }
                     }
                 )
-                PreferenceSwitch(
+                HomeToggleRow(
                     title = "Tareas",
+                    detail = "Entregas que vencen pronto",
                     checked = appearance.heroShowsTasks,
+                    draggable = false,
                     onCheckedChange = { enabled ->
                         viewModel.updateAppearance { it.copy(heroShowsTasks = enabled) }
                     }
                 )
-                PreferenceSwitch(
+                HomeToggleRow(
                     title = "Gastos",
+                    detail = "Cuánto llevas gastado",
                     checked = appearance.heroShowsExpenses,
+                    draggable = false,
                     onCheckedChange = { enabled ->
                         viewModel.updateAppearance { it.copy(heroShowsExpenses = enabled) }
                     }
@@ -292,573 +264,338 @@ fun AppearanceSettingsScreen(
     }
 }
 
+/** Los cuatro modos que se pueden elegir. */
+private val VisiblePreferences = listOf(
+    VisualPreference.SYSTEM,
+    VisualPreference.LIGHT,
+    VisualPreference.DARK,
+    VisualPreference.OLED
+)
+
+private fun VisualPreference.orSystem(): VisualPreference =
+    if (this in VisiblePreferences) this else VisualPreference.SYSTEM
+
+/**
+ * Un rótulo de sección con su contenido suelto debajo, sin contenedor.
+ *
+ * [SettingsGroup] mete lo suyo dentro de una tarjeta, que es lo que quieren las listas de
+ * filas. Aquí abajo van controles que ya traen su propio fondo —los grupos conectados, las
+ * tarjetas de color— y meterlos en otra tarjeta sería una caja dentro de otra caja.
+ */
 @Composable
-fun AccessibilitySettingsScreen(
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = hiltViewModel()
-) {
-    val profile by viewModel.profile.collectAsStateWithLifecycle()
-    val spacing = LocalInterfaceSpacing.current
-    val current = profile ?: return
-    val accessibility = current.accessibilityPreferences
-
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(spacing.section)
-    ) {
-        item {
-            SettingsHeader(
-                title = "Accesibilidad",
-                subtitle = "Lectura, movimiento y formatos",
-                onBackClick = onBackClick
-            )
-        }
-        item {
-            // Aquí había un selector de idioma con Sistema / Español / English. La
-            // preferencia se guardaba y hasta se sincronizaba, pero nadie la leía nunca:
-            // no existen traducciones y la interfaz está solo en español. El propio texto
-            // de ayuda lo admitía. Ofrecer un control que no hace nada es una promesa
-            // incumplida, y en la pantalla de accesibilidad es donde peor sienta.
-            //
-            // AppLanguage y su persistencia siguen en pie para no romper los respaldos ya
-            // guardados; lo que vuelve es el selector, cuando haya algo que seleccionar.
-            AppearanceSection(
-                icon = Icons.Rounded.Language,
-                title = "Formatos"
-            ) {
-                PreferenceSwitch(
-                    title = "Formato de 24 horas",
-                    subtitle = if (accessibility.use24HourTime) "Ejemplo: 18:30" else "Ejemplo: 6:30 p. m.",
-                    checked = accessibility.use24HourTime,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAccessibility { it.copy(use24HourTime = enabled) }
-                    }
-                )
-            }
-        }
-        item {
-            AppearanceSection(
-                icon = Icons.Rounded.FormatSize,
-                title = "Lectura"
-            ) {
-                SectionLabel("Tamaño del texto")
-                ChoiceGrid(
-                    entries = TextScalePreference.entries,
-                    selected = accessibility.textScale,
-                    label = TextScalePreference::label,
-                    onSelected = { value ->
-                        viewModel.updateAccessibility { it.copy(textScale = value) }
-                    }
-                )
-                PreferenceSwitch(
-                    title = "Contraste reforzado",
-                    subtitle = "Texto secundario y bordes más visibles",
-                    checked = accessibility.highContrastEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAccessibility { it.copy(highContrastEnabled = enabled) }
-                    }
-                )
-            }
-        }
-        item {
-            AppearanceSection(
-                icon = Icons.Rounded.Animation,
-                title = "Movimiento"
-            ) {
-                ChoiceGrid(
-                    entries = MotionPreference.entries,
-                    selected = accessibility.motionPreference,
-                    label = MotionPreference::label,
-                    onSelected = { value ->
-                        viewModel.updateAccessibility { it.copy(motionPreference = value) }
-                    }
-                )
-                PreferenceSwitch(
-                    title = "Animación del hero",
-                    subtitle = "Movimiento ambiental en la tarjeta principal",
-                    checked = accessibility.heroAnimationEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.updateAccessibility { it.copy(heroAnimationEnabled = enabled) }
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeSectionOrderEditor(
-    order: List<HomeSection>,
-    onMove: (HomeSection, Int) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        order.forEachIndexed { index, section ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f))
-                    .padding(start = 12.dp, end = 4.dp, top = 5.dp, bottom = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    section.label(),
-                    modifier = Modifier.weight(1f),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                IconButton(
-                    onClick = { onMove(section, -1) },
-                    enabled = index > 0
-                ) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowUp,
-                        contentDescription = "Subir ${section.label()}"
-                    )
-                }
-                IconButton(
-                    onClick = { onMove(section, 1) },
-                    enabled = index < order.lastIndex
-                ) {
-                    Icon(
-                        Icons.Rounded.KeyboardArrowDown,
-                        contentDescription = "Bajar ${section.label()}"
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun SettingsHubScreen(
-    onBackClick: (() -> Unit)?,
-    onAppearanceClick: () -> Unit,
-    onAccessibilityClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    onAcademicClick: () -> Unit,
-    onModulesClick: () -> Unit,
-    onNotificationsClick: () -> Unit,
-    onDataClick: () -> Unit,
-    onUpdatesClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: ProfileViewModel = hiltViewModel()
-) {
-    val profile by viewModel.profile.collectAsStateWithLifecycle()
-    val spacing = LocalInterfaceSpacing.current
-
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            SettingsHeader(
-                title = "Configuración",
-                subtitle = "Tu experiencia, tus datos y tu semestre",
-                onBackClick = onBackClick
-            )
-        }
-        item {
-            SettingsGroup(label = "PERSONALIZACIÓN") {
-                SettingsRow(
-                    icon = Icons.Rounded.Palette,
-                    title = "Apariencia",
-                    subtitle = profile?.appearancePreferences?.summary() ?: "Tema y personalización",
-                    onClick = onAppearanceClick
-                )
-                SettingsRowDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Accessibility,
-                    title = "Accesibilidad",
-                    subtitle = "Texto, contraste, movimiento y formatos",
-                    onClick = onAccessibilityClick
-                )
-            }
-        }
-        item {
-            SettingsGroup(label = "TU SEMESTRE") {
-                SettingsRow(
-                    icon = Icons.Rounded.School,
-                    title = "Configuración académica",
-                    subtitle = "Escala, metas y estructura de cortes",
-                    onClick = onAcademicClick
-                )
-                SettingsRowDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Widgets,
-                    title = "Módulos",
-                    subtitle = "Activa las áreas que quieres usar",
-                    onClick = onModulesClick
-                )
-                SettingsRowDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Person,
-                    title = "Cuenta y perfil",
-                    subtitle = "Nombre, cuenta vinculada y sincronización",
-                    onClick = onProfileClick
-                )
-            }
-        }
-        item {
-            SettingsGroup(label = "LA APP") {
-                SettingsRow(
-                    icon = Icons.Rounded.Notifications,
-                    title = "Notificaciones",
-                    subtitle = "Recordatorios, permisos y horario silencioso",
-                    onClick = onNotificationsClick
-                )
-                SettingsRowDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Backup,
-                    title = "Datos y respaldos",
-                    subtitle = "Exportar, restaurar y repetir configuración inicial",
-                    onClick = onDataClick
-                )
-                SettingsRowDivider()
-                SettingsRow(
-                    icon = Icons.Rounded.Refresh,
-                    title = "Actualizaciones",
-                    subtitle = "Verifica y descarga la última versión",
-                    onClick = onUpdatesClick
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SettingsHeader(
-    title: String,
-    subtitle: String,
-    onBackClick: (() -> Unit)?
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Sin flecha cuando la pantalla es raíz de pestaña: una flecha que no lleva a
-        // ninguna parte es peor que no tenerla.
-        if (onBackClick != null) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Spacer(Modifier.width(4.dp))
-        } else {
-            Spacer(Modifier.width(4.dp))
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun AppearancePreview(
-    name: String,
-    appearance: AppearancePreferences
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
-        borderWidth = 1.dp
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Rounded.Palette,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Hola, ${name.ifBlank { "estudiante" }}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        appearance.summary(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(3) { index ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(if (index == 0) 46.dp else 38.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(
-                                if (index == 0) {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainerHigh
-                                }
-                            )
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AppearanceSection(
-    icon: ImageVector,
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            content()
-        }
-    }
-}
-
-@Composable
-private fun <T> ChoiceGrid(
-    entries: List<T>,
-    selected: T,
-    label: (T) -> String,
-    columns: Int = 2,
-    onSelected: (T) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        entries.chunked(columns).forEach { rowEntries ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                rowEntries.forEach { entry ->
-                    val isSelected = entry == selected
-                    Surface(
-                        onClick = { onSelected(entry) },
-                        modifier = Modifier.weight(1f),
-                        shape = MaterialTheme.shapes.small,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.62f)
-                        },
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
-                        )
-                    ) {
-                        Text(
-                            label(entry),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 11.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                repeat(columns - rowEntries.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-    }
-}
-
-
-
-
-
-@Composable
-private fun PreferenceSwitch(
-    title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold
-    )
-}
-
-@Composable
-private fun SettingsGroup(label: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun SettingsGroupBare(label: String, content: @Composable () -> Unit) {
+    Column {
         Text(
             text = label,
             style = SectionLabelStyle,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 12.dp, top = 8.dp)
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 9.dp)
         )
+        content()
+    }
+}
+
+/**
+ * Tu inicio, en pequeño y de verdad.
+ *
+ * Lo que había antes eran tres rectángulos grises y una línea de texto que resumía los ajustes
+ * con palabras. No enseñaba nada: para saber cómo iba a quedar el inicio había que salir de
+ * aquí e ir a mirarlo. Esta maqueta enciende y apaga las mismas piezas que los interruptores
+ * de abajo, y el color y la letra son los del tema que esté puesto en ese momento.
+ */
+@Composable
+private fun HomePreviewCard(name: String, appearance: AppearancePreferences) {
+    val shown = name.takeIf { it.isNotBlank() } ?: "Estudiante"
+
+    Column {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerLow
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            Column(content = content)
+            Surface(
+                modifier = Modifier.padding(10.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Column(modifier = Modifier.padding(13.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.tertiaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = shown.first().uppercase(),
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                "Uni",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                "Stack",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                        Spacer(Modifier.width(22.dp))
+                    }
+                    if (appearance.showHomeGreeting) {
+                        Text(
+                            text = greetingForNow().uppercase(),
+                            modifier = Modifier.padding(top = 10.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            style = SectionLabelStyle
+                        )
+                        Text(
+                            text = shown,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleLargeEmphasized,
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 1
+                        )
+                    }
+                    if (appearance.showHomeHero) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 9.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                                Text("LO SIGUIENTE", style = SectionLabelStyle)
+                                Text(
+                                    "Cálculo III a las 10:00",
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Text(
+            text = "Así queda tu inicio con lo que elijas.",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
+}
+
+/**
+ * Una de las dos formas de elegir color: el punto enseña de qué color se habla.
+ */
+@Composable
+private fun AccentChoiceCard(
+    title: String,
+    detail: String,
+    dot: androidx.compose.ui.graphics.Color,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    ) {
+        Row(
+            modifier = Modifier.padding(13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(dot)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 2
+                )
+            }
         }
     }
 }
 
 /**
- * Una entrada de ajustes: icono en su pastilla, titulo, apoyo y la punta de flecha.
+ * Los cuatro bloques de inicio: encender, apagar y ordenar en la misma lista.
  *
- * Van varias dentro de un mismo contenedor y no una tarjeta por entrada. Con una tarjeta cada
- * una, ocho ajustes son ocho bloques del mismo peso y nada dice cuales se parecen entre si;
- * agrupadas, el contenedor es el que agrupa y el rotulo de arriba dice de que va el grupo.
+ * Antes eran dos cosas separadas —cuatro interruptores arriba y, más abajo, un editor de orden
+ * con flechas que repetía tres de esos mismos nombres—. Que un bloque saliera dos veces con
+ * dos controles distintos obligaba a leer las dos listas para saber cómo iba a quedar el
+ * inicio. Ahora cada bloque aparece una vez, con su interruptor y su asa.
+ *
+ * El saludo no lleva asa: no está en el orden porque siempre encabeza, y un asa que no mueve
+ * nada es peor que no tenerla.
  */
 @Composable
-private fun SettingsRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
+private fun HomeBlocksCard(
+    appearance: AppearancePreferences,
+    onToggleGreeting: (Boolean) -> Unit,
+    onToggleSection: (HomeSection, Boolean) -> Unit,
+    onReorder: (List<HomeSection>) -> Unit
 ) {
-    Surface(onClick = onClick, color = Color.Transparent) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
-                }
-            }
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMediumEmphasized,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline
+    var dragged by remember { mutableStateOf<HomeSection?>(null) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var rowHeight by remember { mutableIntStateOf(0) }
+    val order by rememberUpdatedState(appearance.homeSectionOrder)
+    val reorder by rememberUpdatedState(onReorder)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column {
+            HomeToggleRow(
+                title = "Saludo",
+                detail = "Tu nombre y el momento del día",
+                checked = appearance.showHomeGreeting,
+                draggable = false,
+                onCheckedChange = onToggleGreeting
             )
+            order.forEach { section ->
+                val isDragged = dragged == section
+                HomeToggleRow(
+                    modifier = Modifier
+                        .zIndex(if (isDragged) 1f else 0f)
+                        .graphicsLayer { translationY = if (isDragged) dragOffset else 0f }
+                        .onSizeChanged { rowHeight = it.height },
+                    title = section.label(),
+                    detail = section.detail(),
+                    checked = appearance.showsSection(section),
+                    draggable = true,
+                    // La clave del gesto es solo la sección: si dependiera del orden, la
+                    // primera permuta reiniciaría el detector y el dedo se quedaría a
+                    // medias con la fila pegada al sitio nuevo.
+                    handleModifier = Modifier.pointerInput(section) {
+                        detectDragGestures(
+                            onDragStart = {
+                                dragged = section
+                                dragOffset = 0f
+                            },
+                            onDragEnd = {
+                                dragged = null
+                                dragOffset = 0f
+                            },
+                            onDragCancel = {
+                                dragged = null
+                                dragOffset = 0f
+                            },
+                            onDrag = { change, amount ->
+                                change.consume()
+                                dragOffset += amount.y
+                                val height = rowHeight
+                                if (height <= 0) return@detectDragGestures
+                                val index = order.indexOf(section)
+                                val step = when {
+                                    dragOffset > height / 2f && index < order.lastIndex -> 1
+                                    dragOffset < -height / 2f && index > 0 -> -1
+                                    else -> 0
+                                }
+                                if (step != 0) {
+                                    // Al permutar, la fila ya salta un hueco entero por sí
+                                    // sola: se le descuenta esa altura al arrastre para que
+                                    // siga justo debajo del dedo y no se adelante.
+                                    dragOffset -= step * height
+                                    reorder(
+                                        order.toMutableList().apply {
+                                            add(index + step, removeAt(index))
+                                        }
+                                    )
+                                }
+                            }
+                        )
+                    },
+                    onCheckedChange = { enabled -> onToggleSection(section, enabled) }
+                )
+            }
         }
     }
 }
 
+/**
+ * Una fila de bloque: asa opcional, nombre, apoyo e interruptor.
+ */
 @Composable
-private fun SettingsRowDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(start = 72.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-    )
+private fun HomeToggleRow(
+    title: String,
+    detail: String,
+    checked: Boolean,
+    draggable: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    handleModifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .cleanClickable { onCheckedChange(!checked) }
+            .padding(horizontal = 15.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(13.dp)
+    ) {
+        if (draggable) {
+            Icon(
+                Icons.Rounded.DragHandle,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = handleModifier
+                    .size(20.dp)
+                    .semantics { contentDescription = "Arrastra para reordenar $title" }
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmallEmphasized,
+                // Apagado, el nombre se atenúa: es lo que deja contar de un vistazo cuántos
+                // bloques quedan encendidos sin leer los interruptores uno a uno.
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (checked) 1f else 0.55f)
+            )
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
 
-private fun AppearancePreferences.summary(): String =
-    "${accentStyle.label()} · ${interfaceDensity.label()} · ${surfaceStyle.label()}"
+private fun AppearancePreferences.showsSection(section: HomeSection): Boolean = when (section) {
+    HomeSection.HERO -> showHomeHero
+    HomeSection.AGENDA -> showHomeAgenda
+    HomeSection.SNAPSHOT -> showHomeSnapshot
+}
 
 private fun VisualPreference.label() = when (this) {
     VisualPreference.SYSTEM -> "Sistema"
@@ -869,62 +606,11 @@ private fun VisualPreference.label() = when (this) {
 }
 
 private fun VisualPreference.themeDescription() = when (this) {
-    VisualPreference.SYSTEM -> "Sigue el tema del dispositivo y utiliza el fondo original."
-    VisualPreference.LIGHT -> "Usa la apariencia clara con el fondo original."
-    VisualPreference.DARK -> "Usa la apariencia oscura con el fondo original."
-    VisualPreference.OLED -> "Usa negro puro para aprovechar pantallas OLED."
+    VisualPreference.SYSTEM -> "Sigue el tema de Android."
+    VisualPreference.LIGHT -> "Siempre claro, aunque Android esté oscuro."
+    VisualPreference.DARK -> "Siempre oscuro, aunque Android esté claro."
+    VisualPreference.OLED -> "Negro puro: en pantallas OLED gasta menos batería."
     VisualPreference.CUSTOM -> ""
-}
-
-private fun CustomThemeBase.label() = when (this) {
-    CustomThemeBase.SYSTEM -> "Sistema"
-    CustomThemeBase.LIGHT -> "Clara"
-    CustomThemeBase.DARK -> "Oscura"
-}
-
-private fun VisualPreset.label() = when (this) {
-    VisualPreset.DEFAULT -> "UniStack"
-    VisualPreset.MINIMAL -> "Minimalista"
-    VisualPreset.OLED -> "OLED"
-    VisualPreset.FOCUS -> "Enfoque"
-    VisualPreset.CUSTOM -> "Personal"
-}
-
-private fun BackgroundStyle.label() = when (this) {
-    BackgroundStyle.DEFAULT -> "Original"
-    BackgroundStyle.PURE -> "Puro"
-    BackgroundStyle.COOL -> "Frío"
-    BackgroundStyle.VIOLET -> "Lavanda"
-    BackgroundStyle.CUSTOM -> "Personal"
-}
-
-private fun AccentStyle.label() = when (this) {
-    AccentStyle.DYNAMIC -> "Del sistema"
-    AccentStyle.VIOLET -> "Violeta"
-    AccentStyle.BLUE -> "Azul"
-    AccentStyle.TEAL -> "Turquesa"
-    AccentStyle.GREEN -> "Verde"
-    AccentStyle.PINK -> "Rosa"
-    AccentStyle.CUSTOM -> "Personal"
-}
-
-private fun AccentIntensity.label() = when (this) {
-    AccentIntensity.SOFT -> "Suave"
-    AccentIntensity.BALANCED -> "Equilibrada"
-    AccentIntensity.VIBRANT -> "Vibrante"
-}
-
-private fun SurfaceStyle.label() = when (this) {
-    SurfaceStyle.FLAT -> "Planas"
-    SurfaceStyle.OUTLINED -> "Bordes"
-    SurfaceStyle.ELEVATED -> "Elevadas"
-    SurfaceStyle.TRANSLUCENT -> "Suaves"
-}
-
-private fun CornerStyle.label() = when (this) {
-    CornerStyle.COMPACT -> "Compactas"
-    CornerStyle.BALANCED -> "Medias"
-    CornerStyle.SOFT -> "Suaves"
 }
 
 private fun InterfaceDensity.label() = when (this) {
@@ -933,56 +619,19 @@ private fun InterfaceDensity.label() = when (this) {
     InterfaceDensity.COMFORTABLE -> "Cómoda"
 }
 
-private fun MotionPreference.label() = when (this) {
-    MotionPreference.FULL -> "Completo"
-    MotionPreference.REDUCED -> "Reducido"
-    MotionPreference.NONE -> "Sin movimiento"
-}
-
-private fun TextScalePreference.label() = when (this) {
-    TextScalePreference.STANDARD -> "Estándar"
-    TextScalePreference.LARGE -> "Grande"
-}
-
 private fun TypographyStyle.label() = when (this) {
-    TypographyStyle.UNISTACK -> "UniStack"
-    TypographyStyle.SYSTEM -> "Sistema"
-}
-
-private fun BottomBarStyle.label() = when (this) {
-    BottomBarStyle.LABELED -> "Iconos y texto"
-    BottomBarStyle.ICONS_ONLY -> "Solo iconos"
-}
-private fun AcademicIndicatorStyle.label() = when (this) {
-    AcademicIndicatorStyle.RINGS -> "Anillos"
-    AcademicIndicatorStyle.BARS -> "Barras"
-    AcademicIndicatorStyle.NUMBERS -> "Cifras"
+    TypographyStyle.UNISTACK -> "Letra UniStack"
+    TypographyStyle.SYSTEM -> "La del sistema"
 }
 
 private fun HomeSection.label() = when (this) {
-    HomeSection.HERO -> "Hero inteligente"
-    HomeSection.AGENDA -> "Agenda"
-    HomeSection.SNAPSHOT -> "Tablero"
+    HomeSection.HERO -> "Lo siguiente"
+    HomeSection.AGENDA -> "Hoy"
+    HomeSection.SNAPSHOT -> "Cifras"
 }
 
-private fun InitialTab.label() = when (this) {
-    InitialTab.HOME -> "Inicio"
-    InitialTab.GRADES -> "Materias"
-    InitialTab.TASKS -> "Tareas"
-    InitialTab.EXPENSES -> "Gastos"
+private fun HomeSection.detail() = when (this) {
+    HomeSection.HERO -> "La tarjeta con lo más urgente"
+    HomeSection.AGENDA -> "Clases y entregas del día"
+    HomeSection.SNAPSHOT -> "Promedio, pendientes y gasto"
 }
-
-private fun List<HomeSection>.move(section: HomeSection, direction: Int): List<HomeSection> {
-    val source = indexOf(section)
-    if (source == -1) return this
-    val target = (source + direction).coerceIn(indices)
-    if (source == target) return this
-    return toMutableList().apply {
-        add(target, removeAt(source))
-    }
-}
-
-private fun Int.toHexString(): String = String.format("#%06X", this and 0xFFFFFF)
-
-private fun Color.luminanceValue(): Float =
-    0.299f * red + 0.587f * green + 0.114f * blue

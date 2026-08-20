@@ -67,6 +67,7 @@ import com.unistack.app.feature_home.domain.HomeTimelineState
 import com.unistack.app.feature_home.domain.HomeTimelineSummary
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -357,7 +358,7 @@ private fun HomeHeader(
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Text(
-                text = greeting().uppercase(SpanishLocale),
+                text = greetingForNow().uppercase(SpanishLocale),
                 style = SectionLabelStyle,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -765,22 +766,6 @@ private fun primaryActionLabel(action: HomePriorityAction): String = when (actio
     HomePriorityAction.EXPENSES -> "Ver gastos"
     HomePriorityAction.TEMPLATES -> "Ver trabajos"
     HomePriorityAction.SCHEDULE -> "Ver horario"
-}
-
-/**
- * El saludo, con el cielo que le toque a esa hora.
- *
- * La madrugada se lleva su propio tramo: hasta las seis, «Buenos días» era mentira y la app
- * lo decía igual. De seis a doce el sol, de doce a ocho la tarde, y el resto la luna.
- */
-private fun greeting(): String {
-    val hour = java.time.LocalTime.now().hour
-    return when {
-        hour < 6 -> "🌙 Buenas noches"
-        hour < 12 -> "☀️ Buenos días"
-        hour < 20 -> "🌤️ Buenas tardes"
-        else -> "🌙 Buenas noches"
-    }
 }
 
 private fun todayLabel(): String {

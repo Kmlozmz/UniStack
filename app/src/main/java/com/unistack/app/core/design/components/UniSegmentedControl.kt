@@ -28,7 +28,11 @@ import androidx.compose.ui.unit.dp
 data class UniSegmentedOption<T>(
     val value: T,
     val label: String,
-    val icon: ImageVector,
+    /**
+     * Opcional: cuatro segmentos con icono y rótulo no caben en el ancho de un teléfono, y
+     * en las listas de preferencias el rótulo ya dice todo lo que hay que decir.
+     */
+    val icon: ImageVector? = null,
     /** Un número al lado del rótulo, si esa vista tiene algo pendiente que contar. */
     val badge: Int? = null
 )
@@ -79,8 +83,10 @@ fun <T> UniSegmentedControl(
                     .defaultMinSize(minHeight = 48.dp)
                     .animateWidth(interactionSource)
             ) {
-                Icon(option.icon, contentDescription = null, modifier = Modifier.size(ToggleButtonDefaults.IconSize))
-                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                if (option.icon != null) {
+                    Icon(option.icon, contentDescription = null, modifier = Modifier.size(ToggleButtonDefaults.IconSize))
+                    Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                }
                 // Sin ajuste de línea: mientras `animateWidth` estrecha al vecino, el
                 // rótulo cabría en menos de lo que mide y `Text` lo partiría en dos.
                 Text(text = option.label, maxLines = 1, softWrap = false)
