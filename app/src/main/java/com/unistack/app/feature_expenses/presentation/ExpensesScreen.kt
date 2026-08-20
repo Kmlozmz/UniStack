@@ -104,6 +104,10 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroup
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -403,9 +407,8 @@ private fun ExpensesHeroCard(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = scaledDp(250f, scale)),
-        shape = RoundedCornerShape(scaledDp(18f, scale)),
+        shape = MaterialTheme.shapes.large,
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -430,10 +433,10 @@ private fun ExpensesHeroCard(
                         ) {
                             AccentCircleIcon(
                                 icon = Icons.Rounded.AccountBalanceWallet,
-                                iconColor = ExpenseCoral,
-                                backgroundColor = ExpenseCoral.copy(alpha = 0.16f),
-                                size = scaledDp(42f, scale),
-                                iconSize = scaledDp(21f, scale)
+                                iconColor = LocalSectionColors.current.onExpensesContainer,
+                                backgroundColor = LocalSectionColors.current.expensesContainer,
+                                size = 42.dp,
+                                iconSize = 21.dp
                             )
                             HeroPeriodSelector(
                                 selectedPeriod = selectedPeriod,
@@ -761,49 +764,23 @@ private fun ExpensesFilters(
     onCategoryClick: () -> Unit,
     scale: Float
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val segmentedWidth = scaledDp(206f, scale)
-        val categoryWidth = scaledDp(156f, scale)
-
-        if (maxWidth < 300.dp) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(scaledDp(12f, scale)),
-                horizontalAlignment = Alignment.End
-            ) {
-                PeriodSegmentedControl(
-                    selectedPeriod = selectedPeriod,
-                    onPeriodSelected = onPeriodSelected,
-                    scale = scale,
-                    modifier = Modifier.width(segmentedWidth)
-                )
-                CategoryChip(
-                    selectedCategory = selectedCategory,
-                    onClick = onCategoryClick,
-                    scale = scale,
-                    modifier = Modifier.width(categoryWidth)
-                )
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                PeriodSegmentedControl(
-                    selectedPeriod = selectedPeriod,
-                    onPeriodSelected = onPeriodSelected,
-                    scale = scale,
-                    modifier = Modifier.width(segmentedWidth)
-                )
-                CategoryChip(
-                    selectedCategory = selectedCategory,
-                    onClick = onCategoryClick,
-                    scale = scale,
-                    modifier = Modifier.width(categoryWidth)
-                )
-            }
-        }
+    // Anchos fijos de 206 y 156 puntos, y una rama aparte para pantallas de menos de 300:
+    // el grupo reparte solo y el chip ocupa lo que mide su texto, asi que no hace falta ni
+    // medir la pantalla ni escribir dos veces la misma fila.
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PeriodSegmentedControl(
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected,
+            modifier = Modifier.weight(1f)
+        )
+        CategoryChip(
+            selectedCategory = selectedCategory,
+            onClick = onCategoryClick
+        )
     }
 }
 
@@ -811,43 +788,40 @@ private fun ExpensesFilters(
 private fun PeriodSegmentedControl(
     selectedPeriod: ExpensePeriodFilter,
     onPeriodSelected: (ExpensePeriodFilter) -> Unit,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier.height(scaledDp(42f, scale)),
-        shape = RoundedCornerShape(scaledDp(14f, scale)),
-        color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    // El mismo grupo conectado que Horario/Calendario y Materias/Tareas. Era una caja con
+    // tres cajas dentro y la elegida tenida al 28 %, que se leia mas como un resalte que
+    // como una eleccion.
+    val options = listOf(
+        ExpensePeriodFilter.ALL,
+        ExpensePeriodFilter.WEEK,
+        ExpensePeriodFilter.MONTH
+    )
+    ButtonGroup(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
-        Row(modifier = Modifier.padding(scaledDp(3f, scale))) {
-            listOf(
-                ExpensePeriodFilter.ALL,
-                ExpensePeriodFilter.WEEK,
-                ExpensePeriodFilter.MONTH
-            ).forEach { period ->
-                val selected = selectedPeriod == period
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(scaledDp(12f, scale)))
-                        .background(if (selected) ExpensePurple.copy(alpha = 0.28f) else Color.Transparent)
-                        .cleanClickable { onPeriodSelected(period) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = period.label,
-                        color = if (selected) ExpenseSelectedText else ExpenseMuted,
-                        fontSize = scaledSp(13f, scale),
-                        lineHeight = scaledSp(15f, scale),
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        softWrap = false
-                    )
-                }
+        options.forEachIndexed { index, period ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val selected = selectedPeriod == period
+            val shapes = when (index) {
+                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+            ToggleButton(
+                checked = selected,
+                onCheckedChange = { onPeriodSelected(period) },
+                shapes = shapes,
+                interactionSource = interactionSource,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 44.dp)
+                    .animateWidth(interactionSource)
+            ) {
+                Text(period.label, maxLines = 1, softWrap = false)
             }
         }
     }
@@ -857,30 +831,39 @@ private fun PeriodSegmentedControl(
 private fun CategoryChip(
     selectedCategory: ExpenseCategory?,
     onClick: () -> Unit,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
+    // Con una categoria puesta el chip se rellena: el filtro activo se ve sin leerlo, que
+    // es justo lo que un chip de filtro tiene que hacer.
+    val active = selectedCategory != null
+    val labelColor = if (active) {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    } else {
+        ExpenseMuted
+    }
     Surface(
         modifier = modifier
-            .height(scaledDp(42f, scale))
+            .height(44.dp)
             .cleanClickable(onClick),
-        shape = RoundedCornerShape(scaledDp(14f, scale)),
-        color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
+        shape = CircleShape,
+        color = if (active) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = scaledDp(12f, scale)),
+            modifier = Modifier.padding(start = 14.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(scaledDp(6f, scale))
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                text = "Categoría: ${selectedCategory?.label() ?: "Todas"}",
-                color = ExpenseMuted,
-                fontSize = scaledSp(13f, scale),
-                lineHeight = scaledSp(15f, scale),
-                fontWeight = FontWeight.Medium,
+                text = selectedCategory?.label() ?: "Categoria",
+                color = labelColor,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Clip
@@ -888,8 +871,8 @@ private fun CategoryChip(
             Icon(
                 imageVector = Icons.Rounded.KeyboardArrowDown,
                 contentDescription = null,
-                tint = ExpenseMuted,
-                modifier = Modifier.size(scaledDp(14f, scale))
+                tint = labelColor,
+                modifier = Modifier.size(18.dp)
             )
         }
     }
@@ -1064,6 +1047,23 @@ private fun ExpenseCategorySheetOption(
     }
 }
 
+/**
+ * Un color por categoría, sacado de los tonos del tema.
+ *
+ * La pantalla pintaba los seis cajones del mismo coral, que es el color de la sección y no
+ * el del gasto. Con un tono por categoría la lista se lee de un vistazo.
+ */
+@Composable
+private fun ExpenseCategory.expenseTone(): Color = when (this) {
+    ExpenseCategory.TRANSPORT -> LocalSectionColors.current.schedule
+    ExpenseCategory.FOOD -> LocalSectionColors.current.expenses
+    ExpenseCategory.COPIES -> LocalSectionColors.current.atRisk
+    ExpenseCategory.MATERIALS -> MaterialTheme.colorScheme.tertiary
+    ExpenseCategory.OUTINGS -> LocalSectionColors.current.onTrack
+    ExpenseCategory.OTHER -> MaterialTheme.colorScheme.outline
+}
+
+@Composable
 private fun ExpenseCategory.expenseSheetIcon(): ImageVector {
     return when (this) {
         ExpenseCategory.TRANSPORT -> Icons.Rounded.DirectionsBus
@@ -1084,9 +1084,8 @@ private fun ExpensesEmptyState(
         modifier = Modifier
             .fillMaxWidth()
             .height(scaledDp(250f, scale)),
-        shape = RoundedCornerShape(scaledDp(18f, scale)),
+        shape = MaterialTheme.shapes.large,
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -1354,11 +1353,32 @@ private fun ExpenseListItem(
     onDeleteClick: () -> Unit,
     scale: Float
 ) {
+    // Editar y borrar se van a la hoja que abre la fila.
+    //
+    // Eran dos botones de icono en cada fila: con diez gastos, veinte mandos en la lista, y
+    // el de borrar a un dedo de distancia del de editar. Ahora la fila se toca entera y las
+    // dos acciones salen abajo con su nombre escrito, como en el sheet de clase de Horario.
+    var showActions by rememberSaveable(expense.id) { mutableStateOf(false) }
+
+    if (showActions) {
+        ExpenseActionsSheet(
+            expense = expense,
+            onDismiss = { showActions = false },
+            onEditClick = {
+                showActions = false
+                onEditClick()
+            },
+            onDeleteClick = {
+                showActions = false
+                onDeleteClick()
+            }
+        )
+    }
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(scaledDp(24f, scale)),
+        modifier = Modifier.fillMaxWidth().cleanClickable { showActions = true },
+        shape = MaterialTheme.shapes.medium,
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -1371,12 +1391,15 @@ private fun ExpenseListItem(
             ),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // El icono dice de qué es el gasto. Los seis cajones llevaban el mismo billete
+            // en el mismo coral, así que una lista de diez gastos era diez veces el mismo
+            // dibujo y había que leer el rótulo de cada fila para distinguirlas.
             AccentCircleIcon(
-                icon = Icons.Rounded.Payments,
-                iconColor = ExpenseCoral,
-                backgroundColor = ExpenseCoral.copy(alpha = 0.16f),
-                size = scaledDp(46f, scale),
-                iconSize = scaledDp(23f, scale)
+                icon = expense.category.expenseSheetIcon(),
+                iconColor = contentColorOn(expense.category.expenseTone()),
+                backgroundColor = expense.category.expenseTone(),
+                size = 46.dp,
+                iconSize = 22.dp
             )
             Column(
                 modifier = Modifier
@@ -1406,12 +1429,113 @@ private fun ExpenseListItem(
                 fontSize = scaledSp(17f, scale),
                 maxLines = 1
             )
-            IconButton(onClick = onEditClick) {
-                Icon(Icons.Rounded.Edit, contentDescription = "Editar gasto", tint = ExpenseMuted)
+        }
+    }
+}
+
+/** Qué se puede hacer con un gasto, dicho con palabras y no con dos iconos en la fila. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpenseActionsSheet(
+    expense: Expense,
+    onDismiss: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    val tone = expense.category.expenseTone()
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AccentCircleIcon(
+                    icon = expense.category.expenseSheetIcon(),
+                    iconColor = contentColorOn(tone),
+                    backgroundColor = tone,
+                    size = 46.dp,
+                    iconSize = 22.dp
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = expense.category.label(),
+                        color = ExpenseText,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = ExpenseDateUtils.formatDisplay(expense.dateMillis) +
+                            "  •  " + CurrencyFormatter.formatCop(expense.amount),
+                        color = ExpenseMuted,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
-            IconButton(onClick = onDeleteClick) {
-                Icon(Icons.Rounded.Delete, contentDescription = "Eliminar gasto", tint = LocalSectionColors.current.expenses)
-            }
+            ExpenseActionRow(
+                icon = Icons.Rounded.Edit,
+                tone = MaterialTheme.colorScheme.primary,
+                title = "Editar gasto",
+                subtitle = "Categoría, monto y fecha",
+                onClick = onEditClick
+            )
+            ExpenseActionRow(
+                icon = Icons.Rounded.Delete,
+                tone = MaterialTheme.colorScheme.error,
+                title = "Eliminar gasto",
+                subtitle = "Se borra del historial y de los totales",
+                titleColor = MaterialTheme.colorScheme.error,
+                onClick = onDeleteClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpenseActionRow(
+    icon: ImageVector,
+    tone: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .cleanClickable(onClick)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AccentCircleIcon(
+            icon = icon,
+            iconColor = tone,
+            backgroundColor = tone.copy(alpha = 0.16f),
+            size = 36.dp,
+            iconSize = 19.dp
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = title,
+                color = titleColor,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = subtitle,
+                color = ExpenseMuted,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -1670,7 +1794,6 @@ private fun ExpensesPreviewBottomNav(
             .height(scaledDp(96f, scale)),
         shape = RoundedCornerShape(topStart = scaledDp(28f, scale), topEnd = scaledDp(28f, scale)),
         color = ExpenseCard,
-        border = BorderStroke(scaledDp(1f, scale), ExpenseBorder),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
