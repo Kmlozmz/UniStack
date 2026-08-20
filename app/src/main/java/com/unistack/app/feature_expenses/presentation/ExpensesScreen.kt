@@ -98,6 +98,7 @@ import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
@@ -312,9 +313,9 @@ private fun ExpensesContent(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = 24.dp,
+                start = LocalInterfaceSpacing.current.screenHorizontal,
                 top = 58.dp,
-                end = 24.dp,
+                end = LocalInterfaceSpacing.current.screenHorizontal,
                 bottom = bottomPadding
             ),
             verticalArrangement = Arrangement.spacedBy(20.dp)
@@ -377,20 +378,19 @@ private fun ExpensesContent(
 
 @Composable
 private fun ExpensesHeader() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             text = "Gastos",
             color = ExpenseText,
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
             maxLines = 1,
             softWrap = false
         )
         Text(
             text = "Registra gastos personales y académicos.",
             color = ExpenseMuted,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }

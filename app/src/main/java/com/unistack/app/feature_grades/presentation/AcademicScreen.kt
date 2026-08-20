@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -88,13 +89,22 @@ fun AcademicScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.padding(start = 20.dp, top = 18.dp, end = 8.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                modifier = Modifier.padding(
+                    start = LocalInterfaceSpacing.current.screenHorizontal,
+                    top = 18.dp,
+                    end = 8.dp,
+                    bottom = 8.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // El mismo papel que Horario y Gastos. Este iba en headlineLarge, cuatro
+                    // puntos por encima de los otros dos, asi que la misma cabecera pesaba
+                    // distinto segun la pestana en la que estuvieras.
                     Text(
                         text = "Académico",
-                        style = MaterialTheme.typography.headlineLargeEmphasized,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.weight(1f)
                     )
                     /*
