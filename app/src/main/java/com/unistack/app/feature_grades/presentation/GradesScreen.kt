@@ -164,6 +164,19 @@ fun GradesScreen(
                             checked = isSelected,
                             onCheckedChange = { filter = option },
                             interactionSource = interactionSource,
+                            /*
+                             * Marcado, el contenedor del acento.
+                             *
+                             * Llevaba el contenedor secundario, que en esta paleta es un gris
+                             * violáceo: puesto debajo del selector de arriba —relleno con el
+                             * acento a plena fuerza— no se leía como elegido, se leía como
+                             * apagado. Con el contenedor del acento pertenece a la misma
+                             * familia sin competir con él.
+                             */
+                            colors = ToggleButtonDefaults.outlinedToggleButtonColors(
+                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                             modifier = Modifier
                                 .defaultMinSize(minHeight = 38.dp)
