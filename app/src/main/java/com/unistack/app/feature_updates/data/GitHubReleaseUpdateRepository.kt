@@ -10,9 +10,7 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
-import com.unistack.app.feature_updates.domain.ChannelAccess
 import com.unistack.app.feature_updates.domain.ReleaseVersion
-import com.unistack.app.feature_updates.domain.UpdateChannel
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
@@ -37,23 +35,9 @@ import org.json.JSONObject
 private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
 private const val KEY_LAST_CHECKED_AT = "last_checked_at"
-private const val KEY_CHANNEL = "update_channel"
-private const val KEY_ACCESS_FINGERPRINTS = "access_fingerprints"
-private const val KEY_ACCESS_CHANNELS = "access_channels"
 
-/** La lista de códigos vive junto a los APK, en el repositorio público de publicaciones. */
-private const val KEY_ACCESS_VERIFIED_AT = "access_verified_at"
 
-/**
- * Cuánto puede vivir un acceso sin poder confirmarse contra la lista.
- *
- * Sin este tope, quedarse sin conexión conservaba el canal para siempre, y basta con cortarle
- * el paso a un dominio para no perderlo nunca: la revocación se esquivaba sola. Con él, un
- * corte normal no molesta a nadie y un bloqueo deliberado caduca.
- */
-private const val ACCESS_GRACE_MILLIS = 7L * 24 * 60 * 60 * 1000
 
-private const val ACCESS_LIST_PATH = "https://raw.githubusercontent.com/%s/main/canales.json"
 /**
  * Cada cuánto se deja consultar por su cuenta.
  *
@@ -84,155 +68,11 @@ class GitHubReleaseUpdateRepository(
     private val _pendingApks = MutableStateFlow(apkFiles().size)
     override val pendingApks: StateFlow<Int> = _pendingApks.asStateFlow()
 
+    private val _releases = MutableStateFlow<List<UpdateInfo>>(emptyList())
+    override val releases: StateFlow<List<UpdateInfo>> = _releases.asStateFlow()
+
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val _channel = MutableStateFlow(readStoredChannel())
-    override val channel: StateFlow<UpdateChannel> = _channel.asStateFlow()
 
-    /**
-     * Los canales que no hacen falta pedir: el estable, y el de la versión que ya está puesta.
-     *
-     * Se calcula cada vez en lugar de guardarse, porque cambia al actualizar: pasar de una beta
-     * a la definitiva tiene que cerrar el canal beta si nadie canjeó su código.
-     */
-    private fun baseChannels(): Set<UpdateChannel> = setOfNotNull(
-        UpdateChannel.STABLE,
-        UpdateChannel.ofInstalled(BuildConfig.VERSION_NAME)
-    )
-
-    /**
-     * Sin nada elegido manda la versión instalada.
-     *
-     * Quien instala una beta quiere betas; dejarlo en estable era ofrecerle solo definitivas y
-     * dejarlo anclado en la beta que tuviera. Si en algún momento eligió a mano, eso está
-     * guardado y no se toca.
-     */
-    private fun readStoredChannel(): UpdateChannel {
-        val fallback = UpdateChannel.ofInstalled(BuildConfig.VERSION_NAME) ?: UpdateChannel.STABLE
-        val stored = prefs.getString(KEY_CHANNEL, null)
-            ?.let { name -> runCatching { UpdateChannel.valueOf(name) }.getOrNull() }
-            ?: return fallback
-        // Y tiene que seguir concedido: instalar una beta encima de una alpha deja elegido un
-        // canal que ya no se tiene, y la pantalla lo enseñaba marcado y con candado a la vez.
-        return if (stored in readStoredChannels()) stored else fallback
-    }
-
-    // Un conjunto y no un nivel: se pueden tener varios codigos a la vez, y tener el de alpha
-    // no da el de beta.
-    private val _unlockedChannels = MutableStateFlow(readStoredChannels())
-    override val unlockedChannels: StateFlow<Set<UpdateChannel>> = _unlockedChannels.asStateFlow()
-
-    private fun storedFingerprints(): Set<String> =
-        prefs.getStringSet(KEY_ACCESS_FINGERPRINTS, emptySet()).orEmpty()
-
-    private fun readStoredChannels(): Set<UpdateChannel> {
-        val stored = prefs.getString(KEY_ACCESS_CHANNELS, null) ?: return baseChannels()
-        val channels = stored.split(",")
-            .mapNotNull { name -> runCatching { UpdateChannel.valueOf(name) }.getOrNull() }
-        return channels.toSet() + baseChannels()
-    }
-
-    override fun setChannel(channel: UpdateChannel) {
-        // Solo lo concedido: el selector ya no ofrece lo demas, pero esto es lo que lo impide
-        // si el estado llegara por otro camino.
-        val allowed = if (channel in _unlockedChannels.value) channel else UpdateChannel.STABLE
-        prefs.edit { putString(KEY_CHANNEL, allowed.name) }
-        _channel.value = allowed
-    }
-
-    override suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel? =
-        withContext(Dispatchers.IO) {
-        val fingerprint = ChannelAccess.fingerprint(code)
-        // El código tiene que ser el del canal que se está abriendo. Antes valía cualquiera de
-        // la lista: metías el de alpha en la casilla de beta y te abría alpha, que no es lo que
-        // pediste ni lo que esperas al pulsar «Beta».
-        val granted = ChannelAccess.grantFor(fingerprint, channel, fetchAccessEntries())
-            ?: return@withContext null
-        prefs.edit {
-            putStringSet(KEY_ACCESS_FINGERPRINTS, storedFingerprints() + fingerprint)
-            putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
-        }
-        applyAccess(_unlockedChannels.value + granted)
-        granted
-    }
-
-    /**
-     * Vuelve a contrastar el código guardado con la lista publicada.
-     *
-     * Es lo que hace que retirar una línea de la lista revoque de verdad: sin esto, quien
-     * canjeó una vez se quedaba con el canal abierto para siempre. Si la lista no se puede
-     * consultar no se toca nada, porque quedarse sin cobertura no es lo mismo que perder el
-     * permiso.
-     */
-    private suspend fun refreshAccess() {
-        val stored = storedFingerprints()
-        if (stored.isEmpty()) return
-        val entries = runCatching { fetchAccessEntries() }.getOrNull()
-
-        if (entries == null) {
-            // No se pudo consultar. Un corte puntual no revoca nada, pero el permiso no puede
-            // sobrevivir indefinidamente sin confirmarse: si no, mantenerlo es tan facil como
-            // impedir que la app llegue a la lista.
-            val verifiedAt = prefs.getLong(KEY_ACCESS_VERIFIED_AT, 0L)
-            if (verifiedAt > 0L && System.currentTimeMillis() - verifiedAt > ACCESS_GRACE_MILLIS) {
-                prefs.edit { remove(KEY_ACCESS_FINGERPRINTS) }
-                applyAccess(emptySet())
-            }
-            return
-        }
-
-        // Se conservan solo las huellas que siguen en la lista: asi una revocacion se lleva su
-        // canal y deja intactos los demas codigos que tenga esa persona.
-        val alive = stored.filter { ChannelAccess.channelFor(it, entries) != null }.toSet()
-        val granted = alive.mapNotNull { ChannelAccess.channelFor(it, entries) }.toSet()
-        prefs.edit {
-            putStringSet(KEY_ACCESS_FINGERPRINTS, alive)
-            putLong(KEY_ACCESS_VERIFIED_AT, System.currentTimeMillis())
-        }
-        applyAccess(granted)
-    }
-
-    private fun applyAccess(granted: Set<UpdateChannel>) {
-        // Retirar un código no puede cerrarle a nadie el canal de la versión que lleva puesta:
-        // no se puede salir de ahí sin desinstalar, y quedaría sin recibir nada.
-        val channels = granted + baseChannels()
-        if (channels == _unlockedChannels.value) return
-        prefs.edit { putString(KEY_ACCESS_CHANNELS, channels.joinToString(",") { it.name }) }
-        _unlockedChannels.value = channels
-        if (_channel.value !in channels) setChannel(UpdateChannel.STABLE)
-    }
-
-    private fun fetchAccessEntries(): List<ChannelAccess.AccessEntry> {
-        val url = URL(String.format(ACCESS_LIST_PATH, BuildConfig.GITHUB_REPO))
-        val connection = url.openConnection() as HttpURLConnection
-        connection.connectTimeout = 10_000
-        connection.readTimeout = 10_000
-        try {
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                throw IOException("No se pudo consultar la lista de códigos (${connection.responseCode}).")
-            }
-            val body = connection.inputStream.bufferedReader().use { it.readText() }
-            val codes = JSONObject(body).optJSONArray("codigos") ?: return emptyList()
-            return (0 until codes.length()).mapNotNull { index ->
-                val entry = codes.optJSONObject(index) ?: return@mapNotNull null
-                val channel = runCatching {
-                    UpdateChannel.valueOf(entry.optString("canal").uppercase())
-                }.getOrNull() ?: return@mapNotNull null
-                val fingerprint = entry.optString("huella").takeIf { it.isNotBlank() }
-                    ?: return@mapNotNull null
-                ChannelAccess.AccessEntry(channel, fingerprint)
-            }
-        } finally {
-            connection.disconnect()
-        }
-    }
-
-    /**
-     * Comprobación pedida por el usuario: **no notifica**.
-     *
-     * La notificación existe para enterarte de algo que no estabas mirando. Al pulsar
-     * «Verificar» o cambiar de canal ya estás delante de la pantalla, y aun así te llegaba el
-     * aviso a la barra de estado contando lo que tenías en la mano.
-     */
     override suspend fun checkForUpdates() = runCheck(notify = false)
 
     override suspend fun checkForUpdatesIfDue() {
@@ -247,9 +87,10 @@ class GitHubReleaseUpdateRepository(
 
     private suspend fun runCheck(notify: Boolean) {
         _state.value = UpdateState.Checking
-        refreshAccess()
-        runCatching { fetchLatestRelease() }
-            .onSuccess { info ->
+        runCatching { fetchReleases() }
+            .onSuccess { published ->
+                _releases.value = published
+                val info = published.firstOrNull()
                 val resolved = resolveUpdateState(info, BuildConfig.VERSION_NAME)
                 _state.value = resolved
                 if (resolved is UpdateState.Available) {
@@ -264,13 +105,14 @@ class GitHubReleaseUpdateRepository(
     }
 
     /**
-     * Devuelve la última versión publicada, o lanza explicando por qué no pudo saberlo.
+     * Las publicaciones recientes, de la más nueva a la más vieja.
      *
      * Se consulta la lista y no `/releases/latest`, que **excluye los preestrenos**: con una
-     * alpha publicada, ese endpoint devolvía 404 y la app decía que no había ninguna
-     * publicación. Se toma la primera que no sea borrador, que es la más reciente.
+     * beta publicada, ese endpoint devolvía 404 y la app decía que no había ninguna
+     * publicación. Aquí no se filtra nada más que los borradores; la primera que quede es la
+     * última publicada, sea preestreno o definitiva.
      */
-    private suspend fun fetchLatestRelease(): UpdateInfo? = withContext(Dispatchers.IO) {
+    private suspend fun fetchReleases(): List<UpdateInfo> = withContext(Dispatchers.IO) {
         val url = URL("https://api.github.com/repos/${BuildConfig.GITHUB_REPO}/releases?per_page=10")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -293,26 +135,14 @@ class GitHubReleaseUpdateRepository(
                 HttpURLConnection.HTTP_FORBIDDEN -> throw IOException(
                     "GitHub rechazó la consulta, probablemente por exceso de peticiones. Inténtalo más tarde."
                 )
-                else -> throw IOException("GitHub respondió $code al consultar la última versión.")
+                else -> throw IOException("GitHub respondió $code al consultar las publicaciones.")
             }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             val releases = JSONArray(body)
-            // La más reciente que acepte el canal, no la más reciente a secas: con el canal
-            // estable, una alpha publicada después de la definitiva no es una actualización.
-            val current = _channel.value
-            val published = (0 until releases.length())
+            (0 until releases.length())
                 .mapNotNull(releases::optJSONObject)
                 .filterNot { it.optBoolean("draft", false) }
-                .firstOrNull { current.accepts(it.optString("tag_name").removePrefix("v").removePrefix("V")) }
-                // Sin publicaciones para tu canal no hay error que dar: no hay nada que
-                // instalar, y cómo se cuenta eso lo decide [resolveUpdateState]. Lanzar «no se
-                // encontró ninguna publicación» sonaba a avería, y con solo alphas publicadas
-                // lo veía todo el que estuviera en estable, o sea todo el mundo.
-                ?: return@withContext null
-            parseRelease(published)
-                ?: throw IOException(
-                    "La última publicación no trae ningún APK adjunto, así que no hay nada que descargar."
-                )
+                .mapNotNull(::parseRelease)
         } finally {
             connection.disconnect()
         }

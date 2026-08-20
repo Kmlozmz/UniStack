@@ -3,7 +3,7 @@ package com.unistack.app.feature_updates.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.BuildConfig
-import com.unistack.app.feature_updates.domain.UpdateChannel
+import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,21 +17,9 @@ class UpdateViewModel @Inject constructor(
 ) : ViewModel() {
 
     val state: StateFlow<UpdateState> = updateRepository.state
-    val channel: StateFlow<UpdateChannel> = updateRepository.channel
-    val unlockedChannels: StateFlow<Set<UpdateChannel>> = updateRepository.unlockedChannels
 
-    /** Devuelve el canal si el codigo es el suyo, o null si no vale para ese canal. */
-    suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel? =
-        updateRepository.redeemAccessCode(code, channel)
-
-    /**
-     * Cambiar de canal vuelve a consultar en el acto: si bajas de alpha a estable, lo que la
-     * pantalla enseñaba puede haber dejado de ser una actualización para ti.
-     */
-    fun setChannel(channel: UpdateChannel) {
-        updateRepository.setChannel(channel)
-        viewModelScope.launch { updateRepository.checkForUpdates() }
-    }
+    /** Las publicaciones recientes, de la más nueva a la más vieja. */
+    val releases: StateFlow<List<UpdateInfo>> = updateRepository.releases
 
     val currentVersionName: String = BuildConfig.VERSION_NAME
     val currentVersionCode: Int = BuildConfig.VERSION_CODE
@@ -67,6 +55,10 @@ class UpdateViewModel @Inject constructor(
      * en Ajustes y volver, y el estado tiene que reflejarlo.
      */
     fun canInstallPackages(): Boolean = updateRepository.canInstallPackages()
+
+    fun openInstallPermissionSettings() {
+        updateRepository.openInstallPermissionSettings()
+    }
 
     fun clearDownload() {
         updateRepository.clearDownload()

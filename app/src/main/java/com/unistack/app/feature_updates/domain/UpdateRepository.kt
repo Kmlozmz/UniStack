@@ -2,28 +2,25 @@ package com.unistack.app.feature_updates.domain
 
 import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * De dónde salen las actualizaciones.
+ *
+ * **No hay canales.** Los hubo —estable, beta y alpha, cada uno con su código de acceso— y se
+ * quitaron enteros: la app toma siempre la última publicación de GitHub, sea preestreno o
+ * definitiva. Mantenerlos obligaba a una lista de códigos publicada aparte, a un periodo de
+ * gracia para revocarlos y a decidir en cada consulta qué versiones «acepta» tu canal, y a
+ * cambio de eso repartía las mismas descargas públicas que cualquiera podía bajar del enlace.
+ */
 interface UpdateRepository {
     val state: StateFlow<UpdateState>
 
-    /** Hasta qué punto de la escalera se aceptan actualizaciones. */
-    val channel: StateFlow<UpdateChannel>
-    fun setChannel(channel: UpdateChannel)
-
     /**
-     * Los canales que este móvil puede elegir. Siempre incluye [UpdateChannel.STABLE], que no
-     * necesita permiso; cada código añade el suyo, y tener el de alpha no da el de beta.
-     */
-    val unlockedChannels: StateFlow<Set<UpdateChannel>>
-
-    /**
-     * Canjea un código para el canal que se está intentando abrir.
+     * Las publicaciones recientes, de la más nueva a la más vieja.
      *
-     * Devuelve el canal si el código es **el de ese canal**; null en cualquier otro caso: que no
-     * exista, que no se pudiera consultar la lista, o que sea el código de otro canal. Los tres
-     * se responden igual a propósito, para no ir diciendo a qué canal pertenece un código que
-     * alguien acaba de probar.
+     * La pantalla las enseña con sus notas: quien va a instalar quiere ver qué cambió, y si se
+     * saltó una versión, qué cambió en la que no llegó a poner.
      */
-    suspend fun redeemAccessCode(code: String, channel: UpdateChannel): UpdateChannel?
+    val releases: StateFlow<List<UpdateInfo>>
 
     suspend fun checkForUpdates()
     suspend fun checkForUpdatesIfDue()
