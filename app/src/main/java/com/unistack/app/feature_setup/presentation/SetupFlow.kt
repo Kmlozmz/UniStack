@@ -105,6 +105,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.fillMaxHeight
+import com.unistack.app.core.utils.GradingScaleUtils
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -1698,13 +1701,29 @@ fun SetupGradingScaleScreen(
             )
         }
     ) {
+        val scaleMax = if (selectedScale == GradingScale.CUSTOM) {
+            customGradeMax
+        } else {
+            GradingScaleUtils.maxGradeFor(selectedScale)
+        }
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            SetupScaleHero()
-            SetupScaleTitle()
+            /*
+             * Ver la escala, no solo elegirla.
+             *
+             * Antes se elegía entre tres tarjetas y luego se escribían dos notas a mano en
+             * sendos campos con teclado, sin nada que dijera qué significaban esos números
+             * dentro del rango. La franja parte la escala en los tres tramos que de verdad
+             * importan —lo que reprueba, lo que aprueba y lo que llega a tu meta— y se
+             * redibuja al mover cualquiera de las dos cifras, así que la relación entre
+             * ellas se ve antes de seguir.
+             */
+            SetupPlainTitle(
+                title = "¿Cómo son tus notas?",
+                subtitle = "Con esto calculamos tus promedios y tus metas."
+            )
             ScaleTypeSection(
                 selectedChoice = selectedChoice,
                 onChoiceSelected = { choice ->
@@ -1735,21 +1754,29 @@ fun SetupGradingScaleScreen(
                         onEditClick = onEditCustomGradeRange
                     )
                 }
-                GradeGoalInputRow(
-                    icon = Icons.Rounded.CheckCircle,
-                    title = "Nota mínima para aprobar",
-                    subtitle = "Ingresa la nota mínima aprobatoria.",
+                ScaleZoneBar(
+                    max = scaleMax,
+                    passing = gradeValueOf(passingGrade),
+                    target = gradeValueOf(targetAverage)
+                )
+                GradeStepperRow(
+                    label = "Apruebas con",
                     value = passingGrade,
+                    max = scaleMax,
+                    floorValue = 0.0,
+                    ceilingValue = gradeValueOf(targetAverage) ?: scaleMax,
+                    filled = false,
                     onValueChange = onPassingGradeChange
                 )
-                GradeGoalInputRow(
-                    icon = Icons.Rounded.BarChart,
-                    title = "Promedio objetivo",
-                    subtitle = "¿Qué promedio quieres alcanzar?",
+                GradeStepperRow(
+                    label = "Tu meta",
                     value = targetAverage,
+                    max = scaleMax,
+                    floorValue = gradeValueOf(passingGrade) ?: 0.0,
+                    ceilingValue = scaleMax,
+                    filled = true,
                     onValueChange = onTargetAverageChange
                 )
-                ScaleInfoCard()
                 val waitingForCustomRange = selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed
                 if (!isValid && !waitingForCustomRange) {
                     Text(
@@ -1765,69 +1792,184 @@ fun SetupGradingScaleScreen(
     }
 }
 
+/** El título de un paso, alineado a la izquierda como en el resto de la app. */
 @Composable
-private fun SetupScaleHero() {
-    val float = floatingOffset(travel = 4f, durationMillis = 3100, label = "scale-hero-float")
-    val breath = floatingOffset(travel = 0.05f, durationMillis = 3900, label = "scale-hero-breath")
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        contentAlignment = Alignment.Center
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun SetupPlainTitle(title: String, subtitle: String) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .graphicsLayer {
-                    translationY = float.dp.toPx()
-                    scaleX = 1f + breath
-                    scaleY = 1f + breath
-                }
-                .size(54.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.5f else 0.24f),
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.8f else 1f)
-                        )
-                    )
-                ),
-            contentAlignment = Alignment.Center
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.headlineMediumEmphasized
+        )
+        Text(
+            text = subtitle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+/**
+ * La escala partida en sus tres tramos, a lo ancho.
+ *
+ * Cada zona ocupa lo que le toca del rango, así que la anchura misma dice cuánto margen hay
+ * entre aprobar y llegar a la meta. Con la meta pegada al máximo la zona verde se estrecha
+ * hasta desaparecer, que es exactamente lo que significa ponerse una meta así.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
+    if (max <= 0.0) return
+    val pass = (passing ?: 0.0).coerceIn(0.0, max)
+    val goal = (target ?: max).coerceIn(pass, max)
+    val zones = listOf(
+        Triple("Reprobado", (pass / max).toFloat(), MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer),
+        Triple("Aprobado", ((goal - pass) / max).toFloat(), LocalSectionColors.current.atRiskContainer to LocalSectionColors.current.onAtRiskContainer),
+        Triple("Meta", ((max - goal) / max).toFloat(), LocalSectionColors.current.onTrackContainer to LocalSectionColors.current.onOnTrackContainer)
+    )
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(46.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Icon(
-                imageVector = Icons.Rounded.BarChart,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(30.dp)
+            zones.forEach { (label, share, colors) ->
+                if (share <= 0.001f) return@forEach
+                Box(
+                    modifier = Modifier
+                        .weight(share)
+                        .fillMaxHeight()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(colors.first),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = colors.second,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = formatGradeValue(0.0, max),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
+            Text(
+                text = formatGradeValue(max, max),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
             )
         }
     }
 }
 
+/**
+ * Una nota que se mueve con dos botones, no con el teclado.
+ *
+ * Escribirla a mano abría el teclado sobre media pantalla y dejaba entrar cualquier cosa
+ * —vacío, texto, un número fuera de la escala—, que es de donde salía el aviso rojo de
+ * validación. Con pasos, la cifra no puede salirse ni cruzarse con la otra.
+ */
 @Composable
-private fun SetupScaleTitle() {
-    Column(
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun GradeStepperRow(
+    label: String,
+    value: String,
+    max: Double,
+    floorValue: Double,
+    ceilingValue: Double,
+    filled: Boolean,
+    onValueChange: (String) -> Unit
+) {
+    val step = if (max > 10.0) 5.0 else 0.1
+    val current = gradeValueOf(value) ?: floorValue
+    val container = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerLow
+    val content = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    val stepContainer = if (filled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.surfaceContainerHigh
+    val stepContent = if (filled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+        shape = MaterialTheme.shapes.medium,
+        color = container,
+        tonalElevation = 0.dp
     ) {
-        Text(
-            text = "¿Cómo es la escala de tus notas?",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 22.sp,
-            lineHeight = 25.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "Esto nos permite calcular tus promedios y metas\nde forma precisa.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
-            lineHeight = 17.sp,
-            textAlign = TextAlign.Center
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    color = content.copy(alpha = 0.78f),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = value.ifBlank { formatGradeValue(current, max) },
+                    color = content,
+                    style = MaterialTheme.typography.headlineSmallEmphasized
+                )
+            }
+            GradeStepperButton("−", stepContainer, stepContent) {
+                onValueChange(formatGradeValue((current - step).coerceAtLeast(floorValue), max))
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            GradeStepperButton("+", stepContainer, stepContent) {
+                onValueChange(formatGradeValue((current + step).coerceAtMost(ceilingValue), max))
+            }
+        }
     }
 }
+
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun GradeStepperButton(
+    symbol: String,
+    container: Color,
+    content: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(38.dp),
+        shape = CircleShape,
+        color = container,
+        tonalElevation = 0.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = symbol,
+                color = content,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+private fun gradeValueOf(text: String): Double? = text.trim().replace(',', '.').toDoubleOrNull()
+
+private fun formatGradeValue(value: Double, max: Double): String =
+    if (max > 10.0) {
+        kotlin.math.round(value).toInt().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.1f", value)
+    }
+
+
 
 @Composable
 private fun ScaleTypeSection(
@@ -2060,152 +2202,8 @@ private fun ConfirmedScaleRangeRow(
     }
 }
 
-@Composable
-private fun GradeGoalInputRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = Color.Transparent,
-        borderWidth = 0.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.86f else 1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(21.dp)
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 14.sp,
-                    lineHeight = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp
-                )
-            }
-            GradeValueField(
-                value = value,
-                onValueChange = onValueChange
-            )
-        }
-    }
-}
 
-@Composable
-private fun GradeValueField(
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        modifier = Modifier
-            .width(92.dp)
-            .height(44.dp)
-            .clip(shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .background(Color.Transparent)
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                lineHeight = 19.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier.fillMaxWidth(),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    innerTextField()
-                }
-            }
-        )
-    }
-}
 
-@Composable
-private fun ScaleInfoCard() {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = Color.Transparent,
-        borderWidth = 0.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 11.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "i",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 19.sp,
-                    lineHeight = 21.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-            Text(
-                text = "Puedes cambiar esta configuración en cualquier momento\ndesde Ajustes.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
 
 private data class ScaleTypeOption(
     val choice: SetupScaleChoice,
