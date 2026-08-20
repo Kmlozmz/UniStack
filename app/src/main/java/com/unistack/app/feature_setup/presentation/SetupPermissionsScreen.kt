@@ -41,6 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import com.unistack.app.core.design.components.UniStackLogoMarkWhite
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Surface
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -63,6 +70,7 @@ import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 /**
@@ -93,6 +101,7 @@ internal fun hasNotificationPermission(context: android.content.Context): Boolea
  * Nunca bloquea: se puede continuar sin conceder nada.
  */
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 fun SetupPermissionsScreen(
     onBackClick: () -> Unit,
     onContinueClick: () -> Unit,
@@ -131,6 +140,7 @@ fun SetupPermissionsScreen(
         !activity.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
 
     BackHandler(onBack = onBackClick)
+    var exampleKind by rememberSaveable { mutableStateOf(PermissionExampleKind.CLASS) }
     SetupScaffold(
         onBackClick = onBackClick,
         step = step,
@@ -171,60 +181,70 @@ fun SetupPermissionsScreen(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            PermissionsHero(granted = granted)
+            /*
+             * Se enseña, no se promete.
+             *
+             * Aquí había tres filas de texto diciendo de qué avisaría la app. Decirlo no
+             * cuesta nada y por eso no convence a nadie: lo que despeja la duda es ver el
+             * aviso donde va a salir. Y el ejemplo lo elige el usuario con los tres chips,
+             * que es la única forma honesta de ser concreto en este punto del flujo: aquí
+             * todavía no hay ni una clase creada, así que cualquier hora sería inventada.
+             * Por eso la maqueta va marcada como ejemplo.
+             */
             Text(
                 text = buildAnnotatedString {
-                    append("¿Te avisamos de\n")
+                    append("¿Te aviso de\n")
                     withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("lo importante?")
+                        append("lo que se te viene?")
                     }
                 },
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 28.sp,
-                lineHeight = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.headlineMediumEmphasized
             )
             Text(
-                text = "Actívalas para no perderte fechas, clases ni cambios en tu promedio.",
+                text = "Toca abajo para ver de qué te avisaría.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 15.sp,
-                lineHeight = 21.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                style = MaterialTheme.typography.bodyMedium
             )
 
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                shape = MaterialTheme.shapes.medium,
-                tonalElevation = 0.dp,
-                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
-                borderWidth = 1.dp,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Ejemplos concretos, no nombres de permisos: lo que se decide aquí es
-                    // si el usuario quiere estos avisos, no si acepta POST_NOTIFICATIONS.
-                    PermissionExampleRow(
-                        icon = Icons.Rounded.TaskAlt,
-                        title = "Entregas que vencen",
-                        detail = "Antes de que se te pase la fecha."
-                    )
-                    PermissionExampleRow(
-                        icon = Icons.Rounded.School,
-                        title = "Tu próxima clase",
-                        detail = "Un recordatorio antes de empezar."
-                    )
-                    PermissionExampleRow(
-                        icon = Icons.Rounded.TrendingUp,
-                        title = "Cambios en tu promedio",
-                        detail = "Cuando una nota mueve tu meta."
-                    )
+            PermissionLockPreview(kind = exampleKind)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PermissionExampleKind.entries.forEach { kind ->
+                    val selected = kind == exampleKind
+                    Surface(
+                        onClick = { exampleKind = kind },
+                        modifier = Modifier.weight(1f).height(42.dp),
+                        shape = CircleShape,
+                        color = if (selected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = kind.chip,
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
+                    }
                 }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PermissionPerkRow("Un par al día como mucho, y solo de lo tuyo.")
+                PermissionPerkRow("Se calculan en tu teléfono. Nada sale de aquí.")
             }
 
             AnimatedVisibility(visible = mustUseSettings, enter = fadeIn(), exit = fadeOut()) {
@@ -260,90 +280,132 @@ fun SetupPermissionsScreen(
     }
 }
 
+
+
+/** Los tres avisos que la app sabe dar, con la pinta que tienen en la pantalla de bloqueo. */
+private enum class PermissionExampleKind(
+    val chip: String,
+    val clock: String,
+    val ago: String,
+    val title: String,
+    val body: String
+) {
+    CLASS("Clases", "9:41", "ahora", "Cálculo III empieza en 15 minutos", "Aula 302 · hasta las 11:40"),
+    TASK("Entregas", "8:00", "8:00", "Hoy vence el ensayo de Ética", "Antes de las 18:00 · te quedan 10 h"),
+    GRADE("Notas", "19:20", "19:20", "Tu promedio de Redes subió a 4.1", "Con el quiz que acabas de registrar")
+}
+
 @Composable
-private fun PermissionsHero(granted: Boolean) {
-    val float = floatingOffset(travel = 5f, durationMillis = 3000, label = "permissions-hero-float")
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(112.dp),
-        contentAlignment = Alignment.Center
+private fun PermissionLockPreview(kind: PermissionExampleKind) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp
     ) {
-        Box(
-            modifier = Modifier
-                .size(112.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.28f else 0.16f),
-                            Color.Transparent
-                        )
+        Box(modifier = Modifier.padding(12.dp)) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+                tonalElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Surface(
+                            shape = MaterialTheme.shapes.extraSmall,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ) {
+                            Text(
+                                text = "EJEMPLO",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp)
+                            )
+                        }
+                    }
+                    Text(
+                        text = kind.clock,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 46.sp,
+                        lineHeight = 52.sp,
+                        fontWeight = FontWeight.Light
                     )
-                )
-        )
-        Box(
-            modifier = Modifier
-                .graphicsLayer { translationY = float.dp.toPx() }
-                .size(76.dp)
-                .clip(CircleShape)
-                .background(if (granted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            if (granted) {
-                AnimatedCheckmark(size = 34.dp, color = MaterialTheme.colorScheme.onPrimary)
-            } else {
-                Icon(
-                    imageVector = Icons.Rounded.NotificationsActive,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
+                    Text(
+                        text = "jueves, 20 de agosto",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 0.dp
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    UniStackLogoMarkWhite(size = 11.dp)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "UniStack",
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = kind.ago,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = kind.title,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = kind.body,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PermissionExampleRow(
-    icon: ImageVector,
-    title: String,
-    detail: String
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = detail,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                lineHeight = 15.sp
-            )
-        }
+private fun PermissionPerkRow(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Rounded.Check,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(11.dp))
+        Text(
+            text = text,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 

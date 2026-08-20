@@ -86,6 +86,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -3102,47 +3103,38 @@ fun SetupDoneScreen(
             }
         }
     ) {
+        /*
+         * Tres cosas y ninguna más.
+         *
+         * Aquí había una celebración, una tarjeta con las seis cosas que el usuario acababa
+         * de escribir y un aviso debajo. Ninguna de las tres se ganaba el sitio: el resumen
+         * le devuelve lo que ya sabe, y el aviso explica algo que ya no puede cambiar sin
+         * volver atrás. Después de siete pasos de formulario, lo mejor que puede hacer esta
+         * pantalla es apartarse: el sello, el nombre y la puerta.
+         */
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .graphicsLayer {
                     alpha = contentAlpha
                     translationY = contentShift.dp.toPx()
                 },
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             SetupFinishHero(name = displayName)
-            // Un único repaso compacto. Cuatro tarjetas debajo de una celebración eran un
-            // muro justo cuando el usuario quiere entrar, pero conviene poder detectar aquí
-            // un error caro —la escala o los pesos— antes de empezar a cargar datos.
-            SummaryInfoCard(
-                icon = Icons.Rounded.School,
-                title = "Tu configuración"
-            ) {
-                SummaryKeyValueRow("Nivel de estudio", educationLevel?.label() ?: "Sin definir")
-                if (isSchoolLevel) {
-                    SummaryKeyValueRow("Grado", academicInfo.ifBlank { "Sin definir" })
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(
+                text = if (gradesEnabled) {
+                    "UniStack ya es tuyo. Empieza por una materia y el resto se acomoda solo."
                 } else {
-                    SummaryKeyValueRow("Carrera", program.ifBlank { "Sin definir" })
-                }
-                if (institutionName.isNotBlank()) {
-                    SummaryKeyValueRow("Institución", institutionName)
-                }
-                if (gradesEnabled) {
-                    SummaryKeyValueRow("Escala", gradingScale.summaryLabel(customGradeMax))
-                    SummaryKeyValueRow(
-                        // No se llega aquí sin tipo elegido: el paso no deja continuar sin él.
-                        periodLabel?.plural ?: "Distribución",
-                        if (weights.isEmpty()) "Sin definir" else "${weights.size} · ${weights.joinToString(" / ") { "$it%" }}"
-                    )
-                }
-                SummaryKeyValueRow(
-                    label = "Módulos",
-                    value = enabledModules.sortedBy { it.ordinal }.joinToString(" · ") { it.shortLabel() },
-                    divider = false
-                )
-            }
-            SetupSummaryNoticeCard()
+                    "UniStack ya es tuyo. Entra y empieza a llenarlo."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
         }
     }
 
@@ -3370,94 +3362,7 @@ private fun SetupModulesInfoCard() {
     }
 }
 
-@Composable
-private fun SummaryInfoCard(
-    icon: ImageVector,
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.84f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SetupPurpleIconBox(icon = icon, size = 34.dp, iconSize = 19.dp)
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.weight(1f)
-                )
-                // Sin flecha: la tarjeta no lleva a ninguna parte y la flecha prometía que sí.
-            }
-            Column(
-                modifier = Modifier.padding(start = 44.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                content = content
-            )
-        }
-    }
-}
 
-/**
- * Fila del repaso final, en dos columnas alineadas.
- *
- * El valor va alineado a la izquierda de su columna y no a la derecha: alineado a la
- * derecha, un valor largo que ocupa dos líneas quedaba en escalera y la tabla dejaba de
- * leerse como tal. [divider] separa las filas salvo la última.
- */
-@Composable
-private fun SummaryKeyValueRow(
-    label: String,
-    value: String,
-    divider: Boolean = true
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
-                modifier = Modifier.weight(0.9f)
-            )
-            Text(
-                text = value,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1.1f)
-            )
-        }
-        if (divider) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            )
-        }
-    }
-}
 
 @Composable
 private fun SummaryDistributionRow(weights: List<String>) {
@@ -3560,42 +3465,9 @@ private fun SummaryModulesList(enabledModules: Set<AppModule>) {
     }
 }
 
-@Composable
-private fun SetupSummaryNoticeCard() {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = Color.Transparent,
-        borderWidth = 0.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            SetupInfoDot(size = 28.dp)
-            Text(
-                text = buildAnnotatedString {
-                    append("Puedes cambiar todo esto desde ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
-                        append("Ajustes")
-                    }
-                    append(".")
-                },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
 
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun SetupFinishHero(name: String) {
     // El sello entra con rebote: es el único momento del onboarding que celebra algo, y
     // aparecer ya colocado lo hacía indistinguible de una cabecera cualquiera.
@@ -3637,38 +3509,27 @@ private fun SetupFinishHero(name: String) {
                         )
                     )
             )
+            // La marca y no un tick de confirmación: lo que cierra el onboarding es que la
+            // app ya es tuya, y el visto lo tiene cualquier formulario guardado.
             Box(
                 modifier = Modifier
-                    .size(66.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(30.dp))
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AnimatedCheckmark(
-                        size = 28.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
+                UniStackLogoMarkWhite(size = 44.dp)
             }
         }
         Text(
             text = buildAnnotatedString {
-                append("Todo listo, ")
+                append("Listo, ")
                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
                     append("$name.")
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 26.sp,
-            lineHeight = 30.sp,
-            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.headlineMediumEmphasized,
             textAlign = TextAlign.Center
         )
     }
