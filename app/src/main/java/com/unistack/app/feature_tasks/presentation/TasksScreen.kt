@@ -3,6 +3,11 @@
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.DateRange
+import androidx.compose.material.icons.rounded.Today
+import com.unistack.app.core.design.components.MetricCard
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ButtonGroupDefaults
@@ -249,7 +254,8 @@ fun TasksScreen(
                 item {
                     TaskStatsRow(
                         tasks = tasks,
-                        onUserInteraction = clearSearchFocus
+                        onUserInteraction = clearSearchFocus,
+                        onTaskClick = onEditTaskClick
                     )
                 }
             }
@@ -777,10 +783,20 @@ private fun TaskSearchBar(
     )
 }
 
+/**
+ * Las tres cifras de Tareas, en las mismas tarjetas que Horario.
+ *
+ * Eran tres tarjetas de 104dp con tres líneas cada una —rótulo, cifra y un pie que repetía
+ * «sin tareas»— y al tocarlas salía un diálogo que decía cuántas había hechas y cuántas
+ * pendientes, sin enseñar ninguna. Ahora son la misma `MetricCard` de 58dp que usan Horario
+ * e Inicio, y al tocarlas se abre la hoja con las tareas que hay detrás del número, cada una
+ * tocable para abrirla, que es lo que hacen las de Horario.
+ */
 @Composable
 private fun TaskStatsRow(
     tasks: List<StudentTask>,
-    onUserInteraction: () -> Unit
+    onUserInteraction: () -> Unit,
+    onTaskClick: (String) -> Unit
 ) {
     val today = TaskDateUtils.today()
     val activeTasks = tasks.filterNot { it.completed }
@@ -795,158 +811,183 @@ private fun TaskStatsRow(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        TaskStatCard(
-            label = "Hoy",
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.Today,
+            iconColor = LocalSectionColors.current.onTrack,
             value = todayTasks.size.toString(),
-            supportingText = pendingText(todayTasks),
-            accent = LocalSectionColors.current.onTrack,
+            label = "Hoy",
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Hoy",
-                    description = "Aquí verás el número de tareas que tienes para hoy.",
+                    title = "Tareas de hoy",
+                    description = "Lo que vence hoy y sigue sin marcar.",
                     tasks = todayTasks
                 )
-            },
-            modifier = Modifier.weight(1f)
+            }
         )
-        TaskStatCard(
-            label = "Semana",
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.DateRange,
+            iconColor = LocalSectionColors.current.schedule,
             value = weekTasks.size.toString(),
-            supportingText = pendingText(weekTasks),
-            accent = LocalSectionColors.current.schedule,
+            label = "Semana",
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Semana",
-                    description = "Aquí verás las tareas que vencen entre hoy y los próximos 6 días.",
+                    title = "Tareas de la semana",
+                    description = "Lo que vence entre hoy y los próximos seis días.",
                     tasks = weekTasks
                 )
-            },
-            modifier = Modifier.weight(1f)
+            }
         )
-        TaskStatCard(
-            label = "Vencidas",
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.ErrorOutline,
+            iconColor = MaterialTheme.colorScheme.error,
             value = overdueTasks.size.toString(),
-            supportingText = "pendientes",
-            accent = MaterialTheme.colorScheme.error,
+            label = "Vencidas",
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Vencidas",
-                    description = "Aquí verás las tareas pendientes que ya pasaron de su fecha límite.",
+                    title = "Tareas vencidas",
+                    description = "Pasó su fecha límite y siguen pendientes.",
                     tasks = overdueTasks
                 )
-            },
-            modifier = Modifier.weight(1f)
+            }
         )
     }
 
     selectedStat?.let { detail ->
-        TaskStatDialog(
+        TaskStatSheet(
             detail = detail,
-            onDismiss = { selectedStat = null }
+            onDismiss = { selectedStat = null },
+            onTaskClick = { taskId ->
+                selectedStat = null
+                onTaskClick(taskId)
+            }
         )
     }
 }
 
+/** Lo que hay detrás del número, en la misma hoja que usa Horario para lo mismo. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TaskStatCard(
-    label: String,
-    value: String,
-    supportingText: String,
-    accent: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+private fun TaskStatSheet(
+    detail: TaskStatDetail,
+    onDismiss: () -> Unit,
+    onTaskClick: (String) -> Unit
 ) {
-    UniCard(
-        modifier = modifier
-            .height(104.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 0.dp,
-        onClick = onClick,
-        contentPadding = PaddingValues(0.dp)
+    val ordered = remember(detail) { detail.tasks.sortedBy(StudentTask::dueDateMillis) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text(
-                text = label,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = value,
-                color = accent,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = supportingText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun TaskStatDialog(
-    detail: TaskStatDetail,
-    onDismiss: () -> Unit
-) {
-    val done = detail.tasks.count { it.completed }
-    val pending = detail.tasks.size - done
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = detail.title,
-                fontWeight = FontWeight.ExtraBold
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = detail.description,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.Assignment,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = "Total: ${detail.tasks.size}",
-                        fontWeight = FontWeight.Bold
+                        detail.title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = "Hechas: $done",
-                        color = LocalSectionColors.current.onTrack,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Pendientes: $pending",
-                        color = if (pending > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
+                        detail.description,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Entendido", fontWeight = FontWeight.Bold)
+
+            if (ordered.isEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainer
+                ) {
+                    Text(
+                        "Nada aquí. Cuando algo entre en este grupo, aparecerá en esta lista.",
+                        modifier = Modifier.padding(18.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 480.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(items = ordered, key = { it.id }) { task ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            onClick = { onTaskClick(task.id) }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(10.dp)
+                                        .clip(CircleShape)
+                                        .background(task.difficulty.color())
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                Column(
+                                    Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        task.title,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        TaskDateUtils.dueText(task.dueDateMillis),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    )
+        }
+    }
 }
 
 @Composable
