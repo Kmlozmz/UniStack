@@ -66,6 +66,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
@@ -168,11 +175,21 @@ fun CalendarScheduleScreen(
     var historySubjectId by rememberSaveable { mutableStateOf<String?>(null) }
     var showFullSchedule by rememberSaveable { mutableStateOf(false) }
     var showAgendaMenu by rememberSaveable { mutableStateOf(false) }
+    var showAddClassSheet by rememberSaveable { mutableStateOf(false) }
     var agendaCreateKind by remember { mutableStateOf<AgendaCreateKind?>(null) }
     var editingAgendaEvent by remember { mutableStateOf<com.unistack.app.feature_schedule.domain.AgendaEvent?>(null) }
 
     val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
     val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }
+
+    // Materias que existen y no tienen ni un solo bloque en el horario. Si no hay ninguna,
+    // «Agregar clase» va directo al formulario y nadie ve un paso de más.
+    val subjectsWithoutSchedule = state.subjects.filter { subject ->
+        state.sessions.none { it.subjectId == subject.id }
+    }
+    val startAddClass = {
+        if (subjectsWithoutSchedule.isEmpty()) onAddClassClick() else showAddClassSheet = true
+    }
 
     /*
      * Nada hasta que haya datos.
@@ -207,7 +224,7 @@ fun CalendarScheduleScreen(
                 com.unistack.app.feature_schedule.domain.AgendaEventKind.CUSTOM -> AgendaCreateKind.CUSTOM
             }
         },
-        onAddClass = onAddClassClick,
+        onAddClass = startAddClass,
         onAddEvent = { showAgendaMenu = true },
         onOpenFullSchedule = { showFullSchedule = true },
         modifier = modifier
@@ -222,6 +239,20 @@ fun CalendarScheduleScreen(
             },
             onAddClass = {
                 showAgendaMenu = false
+                startAddClass()
+            }
+        )
+    }
+    if (showAddClassSheet) {
+        AddClassSheet(
+            pendingSubjects = subjectsWithoutSchedule,
+            onDismiss = { showAddClassSheet = false },
+            onPickSubject = { subjectId ->
+                showAddClassSheet = false
+                onEditSubjectClick(subjectId)
+            },
+            onNewSubject = {
+                showAddClassSheet = false
                 onAddClassClick()
             }
         )
@@ -472,22 +503,28 @@ private fun ClassDetailsSheet(
     onDelete: () -> Unit,
     onStatus: (ClassAttendanceStatus) -> Unit
 ) {
-    // Abierto del todo desde el principio. Con la altura a medias \u2014lo que hace un
-    // ModalBottomSheet por defecto\u2014 las acciones del final quedaban fuera de la pantalla y
-    // hab\u00eda que arrastrar el sheet hacia arriba para descubrir que estaban ah\u00ed.
+    // Abierto del todo desde el principio. Con la altura a medias —lo que hace un
+    // ModalBottomSheet por defecto— las acciones del final quedaban fuera de la pantalla y
+    // había que arrastrar el sheet hacia arriba para descubrir que estaban ahí.
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val accent = subject.scheduleColor()
     val status = occurrence?.status ?: ClassAttendanceStatus.PENDING
+    val statusOptions = listOf(
+        ClassAttendanceStatus.ATTENDED,
+        ClassAttendanceStatus.ABSENT,
+        ClassAttendanceStatus.CANCELLED
+    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                // Y aun as\u00ed el contenido rueda: en una pantalla baja, o con la letra del
+                // Y aun así el contenido rueda: en una pantalla baja, o con la letra del
                 // sistema en grande, el sheet completo tampoco da para todo.
                 .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
@@ -495,96 +532,293 @@ private fun ClassDetailsSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(46.dp).clip(ScheduleShape).background(accent), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = contentColorOn(accent))
+                Box(
+                    Modifier.size(46.dp).clip(RoundedCornerShape(16.dp)).background(accent),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.MenuBook,
+                        contentDescription = null,
+                        tint = contentColorOn(accent),
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
                         subject?.name ?: "Clase",
                         color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 19.sp,
-                        lineHeight = 22.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(date.longTitle(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(
+                        date.longTitle(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
+                Spacer(Modifier.width(10.dp))
                 StatusPill(status)
             }
 
-            // Los datos, en rejilla de dos. Antes iban en una l\u00ednea de texto pegados con
-            // puntos: si faltaba el aula y el profesor, la l\u00ednea quedaba vac\u00eda y el hueco
-            // parec\u00eda un fallo de la app en vez de un dato que nadie hab\u00eda rellenado.
+            // Los datos, en rejilla de dos. Antes iban en una línea de texto pegados con
+            // puntos: si faltaba el aula y el profesor, la línea quedaba vacía y el hueco
+            // parecía un fallo de la app en vez de un dato que nadie había rellenado.
             ClassInfoGrid(
                 listOf(
                     ClassInfo(Icons.Rounded.Schedule, "Horario", "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
-                    ClassInfo(Icons.Rounded.HourglassBottom, "Duraci\u00f3n", durationLabel(session.endMinute - session.startMinute)),
+                    ClassInfo(Icons.Rounded.HourglassBottom, "Duración", durationLabel(session.endMinute - session.startMinute)),
                     ClassInfo(Icons.Rounded.Place, "Aula", session.place.room.ifBlank { "Sin aula" }),
                     ClassInfo(Icons.Rounded.Person, "Profesor", session.place.professor.ifBlank { "Sin profesor" }),
-                    ClassInfo(Icons.Rounded.Repeat, "Repetici\u00f3n", repeatLabel(session.repeatEveryWeeks)),
+                    ClassInfo(Icons.Rounded.Repeat, "Repetición", repeatLabel(session.repeatEveryWeeks)),
                     ClassInfo(Icons.Rounded.NotificationsNone, "Recordatorio", reminderLabel(session.reminderMinutes))
                 )
             )
 
-            Text("Registrar asistencia", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(ClassAttendanceStatus.ATTENDED, ClassAttendanceStatus.ABSENT, ClassAttendanceStatus.CANCELLED).forEach { option ->
+            SheetGroupLabel("REGISTRAR ASISTENCIA")
+            // Un grupo conectado, como el de Horario y Calendario arriba: tres piezas que se
+            // tocan y una sola elegida. Eran tres rectángulos sueltos con borde, que es la
+            // forma que tenía la app antes de este diseño.
+            ButtonGroup(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+            ) {
+                statusOptions.forEachIndexed { index, option ->
+                    val interactionSource = remember { MutableInteractionSource() }
                     val selected = occurrence?.status == option
-                    Surface(
+                    val shapes = when (index) {
+                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                        statusOptions.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    }
+                    ToggleButton(
                         // Volver a tocar el estado marcado lo deshace: si te equivocas de
-                        // bot\u00f3n, antes no hab\u00eda forma de volver a \u00abpendiente\u00bb.
-                        onClick = { onStatus(if (selected) ClassAttendanceStatus.PENDING else option) },
-                        modifier = Modifier.weight(1f),
-                        shape = ScheduleShape,
-                        color = if (selected) option.color().copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, if (selected) option.color() else MaterialTheme.colorScheme.outlineVariant)
+                        // botón, antes no había forma de volver a «pendiente».
+                        checked = selected,
+                        onCheckedChange = { onStatus(if (selected) ClassAttendanceStatus.PENDING else option) },
+                        shapes = shapes,
+                        colors = ToggleButtonDefaults.toggleButtonColors(
+                            checkedContainerColor = option.color(),
+                            checkedContentColor = contentColorOn(option.color())
+                        ),
+                        interactionSource = interactionSource,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .defaultMinSize(minHeight = 58.dp)
+                            .animateWidth(interactionSource)
                     ) {
                         Column(
-                            Modifier.padding(vertical = 9.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Icon(
-                                option.icon(),
-                                contentDescription = null,
-                                tint = if (selected) option.color() else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(17.dp)
-                            )
+                            Icon(option.icon(), contentDescription = null, modifier = Modifier.size(18.dp))
+                            // Sin ajuste de línea: mientras el vecino se ensancha, «Cancelada»
+                            // cabría en menos de lo que mide y se partiría en dos.
                             Text(
                                 option.label(),
-                                textAlign = TextAlign.Center,
-                                color = if (selected) option.color() else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
                 }
             }
+
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-            DetailActionRow(Icons.Rounded.CalendarMonth, "Ver historial", MaterialTheme.colorScheme.onSurface, onHistory)
-            DetailActionRow(Icons.Rounded.Edit, "Editar clase", MaterialTheme.colorScheme.onSurface, onEdit)
-            DetailActionRow(Icons.Rounded.DeleteOutline, "Eliminar clase", MaterialTheme.colorScheme.error, onDelete)
+            SheetActionRow(
+                icon = Icons.Rounded.CalendarMonth,
+                tone = LocalSectionColors.current.schedule,
+                title = "Ver historial",
+                subtitle = "Las asistencias que llevas de esta materia",
+                onClick = onHistory
+            )
+            SheetActionRow(
+                icon = Icons.Rounded.Edit,
+                tone = MaterialTheme.colorScheme.tertiary,
+                title = "Editar clase",
+                subtitle = "Días, hora, aula y profesor",
+                onClick = onEdit
+            )
+            SheetActionRow(
+                icon = Icons.Rounded.DeleteOutline,
+                tone = MaterialTheme.colorScheme.error,
+                title = "Eliminar clase",
+                // Dicho aquí porque es justo lo que confunde: esto vacía el horario de la
+                // materia, no borra la materia ni sus notas.
+                subtitle = "Se quita del horario; la materia sigue en Académico",
+                onClick = onDelete,
+                titleColor = MaterialTheme.colorScheme.error
+            )
         }
     }
 }
 
-/** El estado de hoy, al lado del nombre: es lo primero que se viene a mirar. */
+/** El rótulo de un grupo dentro de un sheet: pequeño, en versales y del color del acento. */
+@Composable
+private fun SheetGroupLabel(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.primary,
+        style = SectionLabelStyle,
+        modifier = Modifier.padding(start = 4.dp)
+    )
+}
+
+/** Una acción del sheet: el icono en su cuadrado de color, qué hace y qué significa. */
+@Composable
+private fun SheetActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tone: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    val shape = MaterialTheme.shapes.medium
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier.size(36.dp).clip(RoundedCornerShape(13.dp)).background(tone.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tone, modifier = Modifier.size(19.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title,
+                color = titleColor,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Agregar clase, sabiendo lo que ya tienes.
+ *
+ * Borrar una clase del horario deja la materia viva en Académico —eso es lo que tiene que
+ * pasar—, pero volver a ponerle horario obligaba a salir a Académico, buscarla y editarla, o
+ * a crearla otra vez y acabar con la materia repetida. Aquí se ofrecen primero las materias
+ * que existen y no tienen horario puesto; crear una nueva sigue estando, abajo.
+ *
+ * Si no hay ninguna materia suelta, este sheet no llega a aparecer: se va derecho al
+ * formulario, que es lo que hacía antes el botón.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun AddClassSheet(
+    pendingSubjects: List<Subject>,
+    onDismiss: () -> Unit,
+    onPickSubject: (String) -> Unit,
+    onNewSubject: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(start = 18.dp, end = 18.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.MenuBook,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        "Agregar clase",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        "Ponle horario a una materia que ya tienes, o crea una nueva.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            SheetGroupLabel("SIN HORARIO TODAVÍA")
+            pendingSubjects.forEach { subject ->
+                val tone = subject.scheduleColor()
+                SheetActionRow(
+                    icon = Icons.AutoMirrored.Rounded.MenuBook,
+                    tone = tone,
+                    title = subject.name,
+                    subtitle = "Ya está en Académico; le faltan los días y la hora",
+                    onClick = { onPickSubject(subject.id) }
+                )
+            }
+
+            SheetGroupLabel("O EMPEZAR DE CERO")
+            SheetActionRow(
+                icon = Icons.Rounded.Add,
+                tone = MaterialTheme.colorScheme.primary,
+                title = "Materia nueva",
+                subtitle = "Crea la materia y su horario a la vez",
+                onClick = onNewSubject
+            )
+        }
+    }
+}
+
+/**
+ * El estado de hoy, al lado del nombre: es lo primero que se viene a mirar.
+ *
+ * La misma etiqueta que llevan las filas del calendario —versales pequeñas sobre el color
+ * relleno—, para que «PENDIENTE» aquí y «EXAMEN» allí se lean como la misma clase de cosa.
+ */
 @Composable
 private fun StatusPill(status: ClassAttendanceStatus) {
-    Surface(
-        shape = CircleShape,
-        color = status.color().copy(alpha = 0.16f),
-        border = BorderStroke(1.dp, status.color().copy(alpha = 0.5f))
+    val tone = status.color()
+    Box(
+        Modifier
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(tone)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(
-            status.label(),
-            Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            color = status.color(),
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
+            status.label().uppercase(SpanishLocale),
+            color = contentColorOn(tone),
+            style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.5.sp)
         )
     }
 }

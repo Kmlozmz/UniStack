@@ -836,22 +836,50 @@ private fun IdentityWeeklyTimeline(
             )
         }
         Spacer(Modifier.height(10.dp))
+        // El día elegido se marca aquí arriba y solo aquí. Estuvo tintada la columna entera
+        // de la rejilla y no se leía como una selección: parecía una sombra suelta detrás de
+        // una clase. Una píldora debajo de la letra dice lo mismo sin ambigüedad, y deja al
+        // anillo la otra pregunta, que es cuál de los días es hoy.
+        val today = LocalDate.now()
         Row(Modifier.padding(start = axisWidth)) {
             visibleDays.forEach { day ->
                 val date = weekStart.plusDays((day - 1).toLong())
                 val picked = date == selectedDate
-                Text(
-                    text = identityDayLetter(DayOfWeek.of(day)),
-                    modifier = Modifier
+                val isToday = date == today
+                Box(
+                    Modifier
                         .weight(1f)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .clickable { onDateSelected(date) }
-                        .padding(vertical = 3.dp),
-                    textAlign = TextAlign.Center,
-                    color = if (picked) IdentityAccent else MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (picked) FontWeight.Bold else FontWeight.SemiBold
-                )
+                        .height(34.dp)
+                        .clickable { onDateSelected(date) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(if (picked) IdentityAccent else Color.Transparent)
+                            .then(
+                                if (isToday && !picked) {
+                                    Modifier.border(1.5.dp, IdentityAccent, CircleShape)
+                                } else {
+                                    Modifier
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = identityDayLetter(DayOfWeek.of(day)),
+                            textAlign = TextAlign.Center,
+                            color = when {
+                                picked -> MaterialTheme.colorScheme.onPrimary
+                                isToday -> IdentityAccent
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
         Spacer(Modifier.height(7.dp))
@@ -863,10 +891,10 @@ private fun IdentityWeeklyTimeline(
             val dayCount = visibleDays.count()
             val dayWidth = (maxWidth - axisWidth) / dayCount
 
-            // Las columnas van debajo de todo: pintan el día elegido y recogen el toque en
-            // los huecos. Ni las líneas de hora ni el texto consumen el puntero, así que
-            // tocar el vacío de una columna sigue llegando aquí; encima de un bloque manda
-            // el bloque, que abre esa clase.
+            // Las columnas van debajo de todo y no pintan nada: solo recogen el toque en los
+            // huecos. Ni las líneas de hora ni el texto consumen el puntero, así que tocar el
+            // vacío de una columna sigue llegando aquí; encima de un bloque manda el bloque,
+            // que abre esa clase.
             visibleDays.forEach { day ->
                 val date = weekStart.plusDays((day - 1).toLong())
                 Box(
@@ -874,14 +902,6 @@ private fun IdentityWeeklyTimeline(
                         .offset(x = axisWidth + dayWidth * (day - visibleDays.first))
                         .width(dayWidth)
                         .fillMaxHeight()
-                        .clip(MaterialTheme.shapes.small)
-                        .background(
-                            if (date == selectedDate) {
-                                MaterialTheme.colorScheme.surfaceContainerLow
-                            } else {
-                                Color.Transparent
-                            }
-                        )
                         .clickable { onDateSelected(date) }
                 )
             }
@@ -1168,7 +1188,7 @@ private fun NextClassPanel(
                     text = nextClassDetail(date, session, use24Hour),
                     color = section.onScheduleContainer.copy(alpha = 0.88f),
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -1209,7 +1229,9 @@ private fun nextClassDetail(
 ): String {
     val time = "${formatIdentityMinute(session.startMinute, use24Hour)} - " +
         formatIdentityMinute(session.endMinute, use24Hour)
-    val room = session.identityPlace().room.ifBlank { "Sin aula" }
+    // El aula solo si la hay. «Sin aula» ocupaba el mismo sitio que un aula de verdad y
+    // empujaba la línea hasta los puntos suspensivos para no decir nada.
+    val room = session.identityPlace().room.takeIf(String::isNotBlank)
     val today = LocalDate.now()
     val lead = when {
         date == today -> {
@@ -1225,7 +1247,7 @@ private fun nextClassDetail(
         date == today.plusDays(1) -> "Mañana"
         else -> date.format(DateTimeFormatter.ofPattern("EEEE", IdentityLocale)).identityCapitalized()
     }
-    return "$lead  •  $time  •  $room"
+    return listOfNotNull(lead, time, room).joinToString("  •  ")
 }
 
 @Composable

@@ -13,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -186,6 +188,9 @@ private fun ScheduleDays(
     draft: SubjectScheduleDraft,
     onDraftChange: (SubjectScheduleDraft) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Días", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -201,6 +206,8 @@ private fun ScheduleDays(
                             MaterialTheme.shapes.medium
                         )
                         .clickable {
+                            focusManager.clearFocus()
+                            keyboard?.hide()
                             onDraftChange(draft.copy(daysOfWeek = if (selected) draft.daysOfWeek - day else draft.daysOfWeek + day))
                         },
                     contentAlignment = Alignment.Center
@@ -225,8 +232,20 @@ private fun SchedulePickerField(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Suelta el campo que tuviera el foco antes de abrir nada.
+    //
+    // `dismissKeyboardOnTapOutside`, que va en la raíz del formulario, solo ve los toques que
+    // ningún hijo consume; esta fila sí lo consume, así que el nombre de la materia se quedaba
+    // enfocado por debajo del selector de hora y, al cerrarlo, el teclado volvía a subir solo.
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
     Surface(
-        onClick = onClick,
+        onClick = {
+            focusManager.clearFocus()
+            keyboard?.hide()
+            onClick()
+        },
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,

@@ -81,6 +81,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
@@ -142,6 +144,10 @@ fun AddTaskScreen(
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    // El título y la descripción sueltan el foco antes de que se abra un selector: si no, al
+    // cerrarlo el campo lo recupera y el teclado vuelve a subir sobre el formulario.
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
     var showUnlinkConfirmation by rememberSaveable { mutableStateOf(false) }
     val estimatedMinutes = "60"
@@ -290,10 +296,14 @@ fun AddTaskScreen(
             error = null
         },
         onDateClick = {
+            focusManager.clearFocus()
+            keyboard?.hide()
             showDatePicker = true
             error = null
         },
         onTimeClick = {
+            focusManager.clearFocus()
+            keyboard?.hide()
             showTimePicker = true
             error = null
         },
