@@ -93,6 +93,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material3.Switch
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.components.UniStackBrandPill
@@ -1823,7 +1826,17 @@ private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
     if (max <= 0.0) return
     val pass = (passing ?: 0.0).coerceIn(0.0, max)
     val goal = (target ?: max).coerceIn(pass, max)
+    var explaining by rememberSaveable { mutableStateOf(false) }
+    if (explaining) {
+        ScaleZoneExplainer(
+            max = max,
+            passing = pass,
+            target = goal,
+            onDismiss = { explaining = false }
+        )
+    }
     Surface(
+        onClick = { explaining = true },
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -1845,6 +1858,13 @@ private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Icon(
+            imageVector = Icons.Rounded.HelpOutline,
+            contentDescription = "Qué significa esta franja",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
         )
     }
     val zones = listOf(
@@ -1898,6 +1918,96 @@ private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
         }
     }
     }
+    }
+}
+
+/**
+ * Qué es la franja y cómo se lee, cuando se toca.
+ *
+ * La franja resume tres cosas de golpe y, sin haberla visto antes, un bloque de color no
+ * dice qué mide ni por qué se estrecha. Se explica aquí en vez de en un pie de texto fijo
+ * porque solo hace falta la primera vez.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun ScaleZoneExplainer(
+    max: Double,
+    passing: Double,
+    target: Double,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Rounded.Insights,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        title = { Text("Cómo leer la franja") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "La barra es tu escala completa, de 0 a ${formatGradeValue(max, max)}, " +
+                        "partida en los tres tramos en los que puede caer una nota.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                ScaleZoneLegendRow(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    title = "Reprobado",
+                    detail = "Por debajo de ${formatGradeValue(passing, max)}, la nota mínima que pusiste."
+                )
+                ScaleZoneLegendRow(
+                    color = LocalSectionColors.current.atRiskContainer,
+                    title = "Aprobado",
+                    detail = "De ${formatGradeValue(passing, max)} a ${formatGradeValue(target, max)}: " +
+                        "pasas la materia, pero aún no llegas a tu meta."
+                )
+                ScaleZoneLegendRow(
+                    color = LocalSectionColors.current.onTrackContainer,
+                    title = "Meta",
+                    detail = "De ${formatGradeValue(target, max)} en adelante: el promedio que te propusiste."
+                )
+                Text(
+                    text = "El ancho de cada tramo es el sitio que ocupa en la escala. Si subes " +
+                        "la meta, el tramo verde se estrecha: te dejas menos margen.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Entendido") }
+        },
+        shape = MaterialTheme.shapes.extraLarge
+    )
+}
+
+@Composable
+private fun ScaleZoneLegendRow(color: Color, title: String, detail: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier
+                .padding(top = 3.dp)
+                .size(width = 16.dp, height = 16.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(11.dp))
+        Column {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = detail,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 
@@ -2184,14 +2294,33 @@ private fun PeriodWheelCard(
     isValid: Boolean,
     onWeightChange: (Int, String) -> Unit
 ) {
+    // El orden importa más que la lista.
+    //
+    // Estaba morado, azul, verde…, y morado y azul son vecinos: con tres cortes, los dos
+    // primeros salían casi iguales. Ahora la secuencia salta de tono en cada paso —morado,
+    // verde, ámbar, azul, rosa, rojo— así que dos cortes seguidos nunca caen cerca.
+    //
+    // Y va en este orden fijo, no al azar: un color aleatorio puede salir pegado al
+    // anterior, que es justo lo que hay que evitar.
     val palette = listOf(
         MaterialTheme.colorScheme.primary,
-        LocalSectionColors.current.schedule,
         LocalSectionColors.current.onTrack,
         LocalSectionColors.current.atRisk,
-        MaterialTheme.colorScheme.tertiary
+        LocalSectionColors.current.schedule,
+        MaterialTheme.colorScheme.tertiary,
+        MaterialTheme.colorScheme.error
     )
-    val values = weights.map { setupPercentValue(it) }
+    // Los sectores viajan hasta su tamaño nuevo en vez de saltar: con un salto seco, subir
+    // cinco puntos y bajarlos se ve igual, y no se sigue de dónde sale lo que se mueve.
+    val values = weights.mapIndexed { index, weight ->
+        val target = setupPercentValue(weight)
+        val animated by animateFloatAsState(
+            targetValue = target.toFloat(),
+            animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
+            label = "period-slice-$index"
+        )
+        animated.toDouble()
+    }
     val track = MaterialTheme.colorScheme.surfaceContainerHighest
     val totalColor = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
 
@@ -2363,7 +2492,9 @@ private fun PeriodCountSection(
     // Con un grupo cerrado en 2-5, un plan de seis cortes no cabía en la pantalla, y esa
     // es justo la clase de caso que no se puede dejar fuera de la configuración inicial.
     val options = listOf(2, 3, 4)
-    val custom = count !in options
+    // Sin cantidad elegida todavía, `count` vale cero: comparándolo contra la lista salía
+    // que era «otro» y el grupo arrancaba con esa opción marcada y un contador a cero.
+    val custom = count > 0 && count !in options
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
             text = "¿CUÁNTOS ${label.plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
@@ -2867,6 +2998,9 @@ fun SetupDoneScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // Centrado del todo quedaba alto: el bloque de acciones ocupa el pie, así
+                // que el centro real del hueco cae por encima del centro que se percibe.
+                .padding(top = 72.dp)
                 .graphicsLayer {
                     alpha = contentAlpha
                     translationY = contentShift.dp.toPx()
