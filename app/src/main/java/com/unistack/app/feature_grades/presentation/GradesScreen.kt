@@ -81,13 +81,17 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.OutlinedToggleButton
 import androidx.compose.foundation.layout.defaultMinSize
+private val SpanishLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
+
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel(),
-    embedded: Boolean = false
+    embedded: Boolean = false,
+    /** Texto por el que filtrar las materias. Vacío es no filtrar. */
+    nameQuery: String = ""
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
@@ -107,7 +111,10 @@ fun GradesScreen(
         // estados comprobables y no etiquetas que alguien tenga que mantener a mano.
         var filter by rememberSaveable { mutableStateOf(SubjectFilter.ACTIVE) }
         val calculations = subjects.associateWith(viewModel::calculationFor)
+        val query = nameQuery.trim().lowercase(SpanishLocale)
         val visible = subjects.filter { subject ->
+            query.isBlank() || subject.name.lowercase(SpanishLocale).contains(query)
+        }.filter { subject ->
             val calculation = calculations.getValue(subject)
             when (filter) {
                 SubjectFilter.ACTIVE -> !calculation.isFinished
@@ -144,6 +151,13 @@ fun GradesScreen(
                             selected = filter == option,
                             onClick = { filter = option },
                             label = { Text(option.label) },
+                            // El borde, según el estado. Por defecto seguía dibujando el
+                            // contorno del chip apagado por debajo del relleno del marcado,
+                            // y en el borde se veían las dos líneas juntas.
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = filter == option
+                            ),
                             leadingIcon = if (filter == option) {
                                 {
                                     Icon(
@@ -168,7 +182,7 @@ fun GradesScreen(
                             SubjectFilter.ACTIVE -> "No tienes materias en curso."
                             SubjectFilter.AT_RISK -> "Ninguna materia está en riesgo. Bien ahí."
                             SubjectFilter.CLOSED -> "Todavía no has cerrado ninguna materia."
-                        },
+                        }.takeIf { query.isBlank() } ?: "Ninguna materia se llama así.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp)

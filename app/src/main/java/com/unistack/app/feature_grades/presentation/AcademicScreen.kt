@@ -37,6 +37,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.feature_tasks.presentation.TasksViewModel
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material.icons.rounded.Close
 
 private enum class AcademicTab(val label: String) {
     SUBJECTS("Materias"),
@@ -66,6 +68,9 @@ fun AcademicScreen(
     val tasks by tasksViewModel.tasks.collectAsStateWithLifecycle()
     val pendingTasks = tasks.count { !it.completed }
 
+    var searching by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+
     var selectedTab by rememberSaveable(initialTab) {
         mutableStateOf(
             when (initialTab) {
@@ -92,20 +97,45 @@ fun AcademicScreen(
                         style = MaterialTheme.typography.headlineLargeEmphasized,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = { /* pendiente: buscar entre materias y tareas */ }) {
-                        Icon(
-                            Icons.Rounded.Search,
-                            contentDescription = "Buscar",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    /*
+                     * La lupa solo en Materias.
+                     *
+                     * Tareas trae su propio buscador dentro, así que aquí era un icono que
+                     * duplicaba uno y, en la otra pestaña, uno que no hacía nada.
+                     */
+                    if (selectedTab == AcademicTab.SUBJECTS) {
+                        IconButton(onClick = {
+                            searching = !searching
+                            if (!searching) query = ""
+                        }) {
+                            Icon(
+                                if (searching) Icons.Rounded.Close else Icons.Rounded.Search,
+                                contentDescription = if (searching) "Cerrar la búsqueda" else "Buscar materias",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-                Text(
-                    text = "Materias, notas y entregas en un mismo lugar.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 12.dp, bottom = 8.dp)
-                )
+                if (searching && selectedTab == AcademicTab.SUBJECTS) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = { Text("Buscar entre tus materias") },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.large,
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 12.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Materias, notas y entregas en un mismo lugar.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 12.dp, bottom = 8.dp)
+                    )
+                }
                 UniSegmentedControl(
                     selected = selectedTab,
                     options = AcademicTab.entries.map { tab ->
@@ -130,7 +160,8 @@ fun AcademicScreen(
                     AcademicTab.SUBJECTS -> GradesScreen(
                         onAddSubjectClick = onAddSubjectClick,
                         onSubjectClick = onSubjectClick,
-                        embedded = true
+                        embedded = true,
+                        nameQuery = query
                     )
                     AcademicTab.TASKS -> TasksScreen(
                         onNewTaskClick = onNewTaskClick,
