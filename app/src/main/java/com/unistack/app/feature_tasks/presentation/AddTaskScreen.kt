@@ -81,6 +81,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroup
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
@@ -559,7 +563,7 @@ private fun AddTaskContent(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
                 Column {
                     Row(
@@ -736,7 +740,7 @@ private fun SectionTitle(text: String) {
 private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
@@ -821,7 +825,7 @@ private fun CompactInfoAction(
     Surface(
         modifier = modifier.bounceClick(onClick),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
@@ -1088,7 +1092,7 @@ private fun TimePickerSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
@@ -1263,23 +1267,18 @@ private fun GradingIntentSelector(
                     modifier = Modifier
                         .weight(1f)
                         .bounceClick { onSelected(choice) },
-                    shape = MaterialTheme.shapes.large,
+                    shape = MaterialTheme.shapes.medium,
                     color = if (isSelected) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.surface
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f)
-                    )
+                        MaterialTheme.colorScheme.surfaceContainer
+                    }
                 ) {
                     Text(
                         text = choice.label,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 14.dp),
                         textAlign = TextAlign.Center,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
@@ -1823,7 +1822,7 @@ private fun TaskTypeSelector(
                 .fillMaxWidth()
                 .bounceClick { expanded = true },
             shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
@@ -1885,33 +1884,32 @@ private fun PrioritySegmentedControl(
     selected: TaskDifficulty,
     onSelected: (TaskDifficulty) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f), CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), CircleShape)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    // Un grupo conectado, el mismo que eligen Horario/Calendario o Materias/Tareas. Era una
+    // pastilla dentro de otra pastilla: fondo teñido, contorno y un relleno flotando dentro.
+    val options = TaskDifficulty.entries
+    ButtonGroup(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
-        TaskDifficulty.entries.forEach { priority ->
+        options.forEachIndexed { index, priority ->
+            val interactionSource = remember { MutableInteractionSource() }
             val isSelected = selected == priority
-            Box(
+            val shapes = when (index) {
+                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+            ToggleButton(
+                checked = isSelected,
+                onCheckedChange = { onSelected(priority) },
+                shapes = shapes,
+                interactionSource = interactionSource,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxSize()
-                    .background(
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        shape = CircleShape
-                    )
-                    .bounceClick { onSelected(priority) },
-                contentAlignment = Alignment.Center
+                    .defaultMinSize(minHeight = 50.dp)
+                    .animateWidth(interactionSource)
             ) {
-                Text(
-                    text = priority.label(),
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
+                Text(priority.label(), maxLines = 1, softWrap = false)
             }
         }
     }

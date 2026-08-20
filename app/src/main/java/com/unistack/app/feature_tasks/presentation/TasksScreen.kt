@@ -3,6 +3,10 @@
 package com.unistack.app.feature_tasks.presentation
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroup
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -591,7 +595,7 @@ private fun TaskGradeResultSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         dragHandle = null
     ) {
         Column(
@@ -861,7 +865,7 @@ private fun TaskStatCard(
         modifier = modifier
             .height(104.dp),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         onClick = onClick,
         contentPadding = PaddingValues(0.dp)
@@ -1207,9 +1211,9 @@ private fun TaskCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         color = if (awaitingGrade) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.surface
+            MaterialTheme.colorScheme.surfaceContainerLow
         },
         tonalElevation = 0.dp,
         onClick = onCardClick,
@@ -1449,7 +1453,7 @@ private fun FilteredEmptyState(onOpenFilters: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         contentPadding = PaddingValues(0.dp)
     ) {
         Column(
@@ -1844,48 +1848,36 @@ private fun PrioritySegmentedControl(
         TaskDifficulty.HARD to "Alta"
     )
 
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(46.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer
+    // Grupo conectado, como los demás selectores de uno entre varios. Era una caja con
+    // cuatro cajas dentro, y la elegida se pintaba con el acento al 88 %.
+    ButtonGroup(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            options.forEach { (priority, label) ->
-                val selected = selectedPriority == priority
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(3.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .background(if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.88f) else Color.Transparent)
-                        .cleanClickable { onPrioritySelected(priority) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
-                    ) {
-                        priority?.let {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(it.color())
-                            )
-                        }
-                        Text(
-                            text = label,
-                            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+        options.forEachIndexed { index, (priority, label) ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val selected = selectedPriority == priority
+            val shapes = when (index) {
+                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+            }
+            ToggleButton(
+                checked = selected,
+                onCheckedChange = { onPrioritySelected(priority) },
+                shapes = shapes,
+                interactionSource = interactionSource,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
+                    .animateWidth(interactionSource)
+            ) {
+                priority?.let {
+                    Box(Modifier.size(7.dp).clip(CircleShape).background(it.color()))
+                    Spacer(Modifier.width(5.dp))
                 }
+                Text(label, maxLines = 1, softWrap = false)
             }
         }
     }

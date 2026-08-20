@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -196,15 +197,11 @@ private fun ScheduleDays(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (1..7).forEach { day ->
                 val selected = day in draft.daysOfWeek
+                // Relleno y ya. El contorno de 0,7 puntos estaba para separar del fondo un chip
+                // que se pintaba justo del color del fondo; con contenedor propio, sobra.
                 Box(
-                    Modifier.weight(1f).height(42.dp).clip(MaterialTheme.shapes.medium)
-                        .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
-                        .border(
-                            0.7.dp,
-                            if (selected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.22f),
-                            MaterialTheme.shapes.medium
-                        )
+                    Modifier.weight(1f).height(46.dp).clip(CircleShape)
+                        .background(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer)
                         .clickable {
                             focusManager.clearFocus()
                             keyboard?.hide()
@@ -248,7 +245,7 @@ private fun SchedulePickerField(
         },
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(0.7.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
     ) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {

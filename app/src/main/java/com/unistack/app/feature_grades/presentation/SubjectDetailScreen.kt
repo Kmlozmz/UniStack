@@ -109,6 +109,16 @@ import java.util.Locale
 import kotlin.math.round
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material.icons.rounded.Percent
+import androidx.compose.material.icons.rounded.Flag
+import com.unistack.app.core.design.theme.contentColorOn
+import com.unistack.app.core.design.components.MetricCard
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
@@ -862,29 +872,32 @@ private fun PeriodChooser(
                 lineHeight = 17.sp
             )
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Elegir uno entre varios es un grupo conectado, igual que Horario/Calendario o
+        // Materias/Tareas. Eran tres pastillas sueltas en una fila que rodaba.
+        val ordered = periods.sortedBy { it.order }
+        ButtonGroup(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
         ) {
-            periods.sortedBy { it.order }.forEach { period ->
+            ordered.forEachIndexed { index, period ->
+                val interactionSource = remember { MutableInteractionSource() }
                 val selected = chosenPeriodId == period.id
-                Surface(
-                    modifier = Modifier.bounceClick { onChoose(period.id) },
-                    shape = MaterialTheme.shapes.small,
-                    color = if (selected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
+                val shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    ordered.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                }
+                ToggleButton(
+                    checked = selected,
+                    onCheckedChange = { onChoose(period.id) },
+                    shapes = shapes,
+                    interactionSource = interactionSource,
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
+                        .animateWidth(interactionSource)
                 ) {
-                    Text(
-                        periodDisplayName(period),
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                        color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Text(periodDisplayName(period), maxLines = 1, softWrap = false)
                 }
             }
         }
@@ -908,9 +921,12 @@ private fun SubjectOverviewCard(
     scale: GradingScale
 ) {
     val average = calculation.currentAverage
+    // La tarjeta de arriba va rellena con el color de la app, no en gris sobre gris.
+    // Es lo primero que se mira al abrir una materia y era del mismo tono que todo lo
+    // demás; ahora pesa lo que le toca, igual que el hero de Inicio y la próxima clase.
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
@@ -926,32 +942,29 @@ private fun SubjectOverviewCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        if (calculation.isFinished) "Nota final" else "Promedio de lo evaluado",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                        (if (calculation.isFinished) "Nota final" else "Promedio de lo evaluado")
+                            .uppercase(Locale.forLanguageTag("es")),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = SectionLabelStyle
                     )
                     if (average == null) {
                         Text(
                             "Sin evaluar",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.headlineSmallEmphasized
                         )
                     } else {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 GradingScaleUtils.formatGrade(average, scale),
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 42.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.displaySmallEmphasized
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
                             )
                         }
                     }
@@ -963,13 +976,13 @@ private fun SubjectOverviewCard(
                             CircularWavyProgressIndicator(
                                 progress = { 1f },
                                 modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f),
                                 trackColor = Color.Transparent
                             )
                             CircularWavyProgressIndicator(
                                 progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
                                 modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 trackColor = Color.Transparent
                             )
                             EvaluationValue(evaluated)
@@ -984,7 +997,7 @@ private fun SubjectOverviewCard(
                             EvaluationValue(evaluated)
                             EvaluationBar(
                                 fraction = evaluated / 100.0,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -998,7 +1011,7 @@ private fun SubjectOverviewCard(
                 floor == null || ceiling == null -> {
                     Text(
                         "Registra tu primera nota para saber entre qué notas puedes acabar.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -1006,7 +1019,7 @@ private fun SubjectOverviewCard(
                 calculation.isFinished -> {
                     Text(
                         "Ya no queda nada por evaluar: esta es la nota definitiva.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -1015,7 +1028,7 @@ private fun SubjectOverviewCard(
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
                             "Dónde puedes acabar",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -1029,9 +1042,9 @@ private fun SubjectOverviewCard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onSurfaceVariant)
-                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onSurface)
-                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onSurfaceVariant)
+                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
+                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onPrimaryContainer)
+                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
                         }
                     }
                 }
@@ -1091,7 +1104,7 @@ private fun OutcomeRangeBar(
                 .width(3.dp)
                 .fillMaxHeight()
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onSurface)
+                .background(MaterialTheme.colorScheme.onPrimaryContainer)
         )
     }
 }
@@ -1099,7 +1112,7 @@ private fun OutcomeRangeBar(
 @Composable
 private fun RangeLegend(label: String, value: String, valueColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
@@ -1109,13 +1122,13 @@ private fun EvaluationValue(evaluated: Double) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "${formatPercent(evaluated)}%",
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold
         )
         Text(
             "evaluado",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium
         )
@@ -1170,42 +1183,32 @@ private fun SubjectMetricsBandContent(
     targetTone: Color,
     remainingPercentage: String
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            MetricBandItem("Aprobación", passingGrade, passingTone, Modifier.weight(1f))
-            MetricDivider()
-            MetricBandItem("Objetivo", targetGrade, targetTone, Modifier.weight(1f))
-            MetricDivider()
-            MetricBandItem("Por evaluar", remainingPercentage, MaterialTheme.colorScheme.onSurface, Modifier.weight(1f))
-        }
+    // Las mismas tarjetas que cuentan Materias, Hoy y Semana en Horario. Eran tres columnas
+    // dentro de una banda separadas por dos líneas verticales, un recurso que no usa ninguna
+    // otra pantalla; con la tarjeta, tres cifras se leen igual en toda la app.
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.CheckCircle,
+            iconColor = passingTone,
+            value = passingGrade,
+            label = "Aprobación"
+        )
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.Flag,
+            iconColor = targetTone,
+            value = targetGrade,
+            label = "Objetivo"
+        )
+        MetricCard(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Rounded.Percent,
+            iconColor = MaterialTheme.colorScheme.tertiary,
+            value = remainingPercentage,
+            label = "Por evaluar"
+        )
     }
-}
-
-@Composable
-private fun MetricBandItem(label: String, value: String, color: Color, modifier: Modifier) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Normal)
-        Text(value, color = color, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun MetricDivider() {
-    Box(Modifier.fillMaxHeight().width(1.dp).background(MaterialTheme.colorScheme.outlineVariant))
 }
 
 @Composable
@@ -1510,7 +1513,7 @@ private fun PeriodSummaryCard(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(20.dp)
@@ -1523,10 +1526,9 @@ private fun PeriodSummaryCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        "Nota del corte",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                        "NOTA DEL CORTE",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = SectionLabelStyle
                     )
                     if (summary.average == null) {
                         // Sin notas se escribía la raya de «sin dato» a 42sp y en el color del
@@ -1534,24 +1536,20 @@ private fun PeriodSummaryCard(
                         // valor y no como una ausencia.
                         Text(
                             "Sin evaluar",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.headlineSmallEmphasized
                         )
                     } else {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 GradingScaleUtils.formatGrade(summary.average, scale),
-                                color = summary.status.color,
-                                fontSize = 42.sp,
-                                lineHeight = 46.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.displaySmallEmphasized
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                                style = MaterialTheme.typography.titleSmall,
                                 modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
                             )
                         }
@@ -1561,7 +1559,10 @@ private fun PeriodSummaryCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                EvaluationBar(fraction = (summary.evaluated / 100.0).coerceIn(0.0, 1.0))
+                EvaluationBar(
+                    fraction = (summary.evaluated / 100.0).coerceIn(0.0, 1.0),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
                 // Antes decía «3 de 3 notas registradas», comparando un número consigo mismo.
                 // Lo que falta por saber cuando el corte no está cerrado es cuánto peso queda
                 // libre, que es justo lo que hay que repartir en la siguiente nota.
@@ -1575,9 +1576,8 @@ private fun PeriodSummaryCard(
                             append("  ·  queda ${formatPercent(remaining)}% por repartir")
                         }
                     },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.80f),
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -1716,14 +1716,13 @@ private fun EmptyPeriodNotesInline() {
 private fun StatusBadge(status: PeriodStatus) {
     Box(
         modifier = Modifier
-            .background(status.color.copy(alpha = 0.12f), MaterialTheme.shapes.small)
-            .padding(horizontal = 10.dp, vertical = 4.dp)
+            .background(status.color, MaterialTheme.shapes.extraSmall)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Text(
-            status.label,
-            color = status.color,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.ExtraBold
+            status.label.uppercase(Locale.forLanguageTag("es")),
+            color = contentColorOn(status.color),
+            style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.5.sp)
         )
     }
 }

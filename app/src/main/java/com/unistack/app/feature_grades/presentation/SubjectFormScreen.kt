@@ -710,7 +710,7 @@ private fun SubjectColorField(
                     modifier = Modifier
                         .size(46.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f), CircleShape)
                         .clickable(
                             onClickLabel = "Abrir editor de color",
