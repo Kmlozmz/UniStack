@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
@@ -25,6 +27,13 @@ import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.feature_tasks.presentation.TasksScreen
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.ui.Alignment
+import com.unistack.app.core.design.components.UniStackFabMenu
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 
 private enum class AcademicTab(val label: String) {
     SUBJECTS("Materias"),
@@ -58,57 +67,83 @@ fun AcademicScreen(
         )
     }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
-        Column(
-            modifier = Modifier.padding(start = 20.dp, top = 22.dp, end = 20.dp, bottom = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Académico",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                text = "Materias, notas y entregas en un mismo lugar.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            UniSegmentedControl(
-                selected = selectedTab,
-                options = AcademicTab.entries.map { tab ->
-                    UniSegmentedOption(
-                        value = tab,
-                        label = tab.label,
-                        icon = if (tab == AcademicTab.SUBJECTS) {
-                            Icons.AutoMirrored.Rounded.MenuBook
-                        } else {
-                            Icons.AutoMirrored.Rounded.Assignment
-                        }
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.padding(start = 20.dp, top = 18.dp, end = 8.dp, bottom = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Académico",
+                        style = MaterialTheme.typography.headlineLargeEmphasized,
+                        modifier = Modifier.weight(1f)
                     )
-                },
-                onSelected = { selectedTab = it },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Box(modifier = Modifier.weight(1f)) {
-            when (selectedTab) {
-                AcademicTab.SUBJECTS -> GradesScreen(
-                    onAddSubjectClick = onAddSubjectClick,
-                    onSubjectClick = onSubjectClick,
-                    embedded = true
-                )
-                AcademicTab.TASKS -> TasksScreen(
-                    onNewTaskClick = onNewTaskClick,
-                    onEditTaskClick = onEditTaskClick,
-                    onCompleteHistoryClick = onCompleteHistoryClick,
-                    embedded = true
+                    IconButton(onClick = { /* pendiente: buscar entre materias y tareas */ }) {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = "Buscar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                UniSegmentedControl(
+                    selected = selectedTab,
+                    options = AcademicTab.entries.map { tab ->
+                        UniSegmentedOption(
+                            value = tab,
+                            label = tab.label,
+                            icon = if (tab == AcademicTab.SUBJECTS) {
+                                Icons.AutoMirrored.Rounded.MenuBook
+                            } else {
+                                Icons.AutoMirrored.Rounded.Assignment
+                            }
+                        )
+                    },
+                    onSelected = { selectedTab = it },
+                    modifier = Modifier.fillMaxWidth().padding(end = 12.dp)
                 )
             }
+
+            Box(modifier = Modifier.weight(1f)) {
+                when (selectedTab) {
+                    AcademicTab.SUBJECTS -> GradesScreen(
+                        onAddSubjectClick = onAddSubjectClick,
+                        onSubjectClick = onSubjectClick,
+                        embedded = true
+                    )
+                    AcademicTab.TASKS -> TasksScreen(
+                        onNewTaskClick = onNewTaskClick,
+                        onEditTaskClick = onEditTaskClick,
+                        onCompleteHistoryClick = onCompleteHistoryClick,
+                        embedded = true
+                    )
+                }
+            }
         }
+
+        /*
+         * El botón de crear, aquí a modo de prueba.
+         *
+         * Cada pestaña ya trae su propia acción anclada —«Agregar materia», «Nueva tarea»—, así
+         * que este menú repite lo que ya hay abajo y además lo tapa. Se deja puesto para verlo
+         * en el móvil y decidir; si se queda, lo que sobra es el botón anclado de cada pestaña.
+         */
+        UniStackFabMenu(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
+            onAddGradeClick = onAddSubjectClick,
+            onAddTaskClick = onNewTaskClick,
+            onAddExpenseClick = {},
+            onAddSubjectClick = onAddSubjectClick,
+            showAddGrade = false,
+            showAddTask = true,
+            showAddExpense = false,
+            showAddSubject = true
+        )
     }
 }

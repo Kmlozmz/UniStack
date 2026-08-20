@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 
 /**
  * El botón de crear, con sus opciones.
@@ -68,6 +69,10 @@ fun UniStackFabMenu(
             ToggleFloatingActionButton(
                 checked = expanded,
                 onCheckedChange = { expanded = it },
+                // El tamaño mediano de Material. El pequeño es el de una acción secundaria, y
+                // este botón es la única forma de crear algo desde Inicio: se veía menor de lo
+                // que pesa.
+                containerSize = ToggleFloatingActionButtonDefaults.containerSizeMedium(),
                 // Con el menú abierto, el lector de pantalla debe llegar antes al botón que
                 // a las opciones: es lo que las cierra.
                 modifier = Modifier.semantics { traversalIndex = -1f }

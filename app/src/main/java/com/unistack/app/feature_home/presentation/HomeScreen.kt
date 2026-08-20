@@ -233,7 +233,7 @@ fun HomeScreen(
             }
 
             UniStackFabMenu(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
                 onAddGradeClick = {
                     val subjects = summary.subjects
                     when {

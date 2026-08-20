@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
@@ -67,6 +69,15 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.TonalToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
@@ -89,19 +100,29 @@ fun GradesScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        // En curso / En riesgo / Cerradas. Sale de lo evaluado y del pronóstico, así que son
+        // estados comprobables y no etiquetas que alguien tenga que mantener a mano.
+        var filter by rememberSaveable { mutableStateOf(SubjectFilter.ACTIVE) }
+        val calculations = subjects.associateWith(viewModel::calculationFor)
+        val visible = subjects.filter { subject ->
+            val calculation = calculations.getValue(subject)
+            when (filter) {
+                SubjectFilter.ACTIVE -> !calculation.isFinished
+                SubjectFilter.AT_RISK -> calculation.outlook == TargetOutlook.AT_RISK ||
+                    calculation.outlook == TargetOutlook.UNREACHABLE
+                SubjectFilter.CLOSED -> calculation.isFinished
+            }
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = 22.dp,
-                top = if (embedded) 10.dp else 58.dp,
-                end = 22.dp,
-                // El margen del final sale de la regla, no de un número a ojo: lo que tape la
-                // barra flotante más el hueco del botón anclado. Con los 118dp fijos de antes
-                // la lista se quedaba a unos pocos dp de poder desplazarse, así que no había
-                // scroll y el botón «Agregar materia» tapaba para siempre la última tarjeta.
+                start = 20.dp,
+                top = if (embedded) 4.dp else 58.dp,
+                end = 20.dp,
                 bottom = scrollBottomRoom + anchoredButtonRoom
             ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             if (!embedded) {
                 item {
@@ -111,34 +132,62 @@ fun GradesScreen(
                     )
                 }
             }
-            item {
-                SubjectsStatsRow(
-                    subjectCount = subjects.size,
-                    generalAverage = generalAverage,
-                    evaluatedSubjects = evaluatedSubjects,
-                    gradingScale = scale
-                )
-            }
-            item {
-                Text(
-                    text = "Tus materias",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+            item("filtros") {
+                /*
+                 * Un grupo de botones de Material, con la interacción entre vecinos.
+                 *
+                 * `animateWidth` es lo que la hace: al mantener pulsado uno, ese se ensancha y
+                 * los de al lado se comprimen para dejarle sitio. Es la diferencia entre tres
+                 * botones puestos en fila y un grupo: se comportan como piezas que se tocan.
+                 *
+                 * Sin `weight` a propósito. Cada uno mide lo que ocupa su texto; forzándolos
+                 * todos al mismo ancho dentro del ancho de la pantalla, el grupo daba por
+                 * desbordado todo su contenido y no dibujaba ni un botón.
+                 */
+                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SubjectFilter.entries.forEach { option ->
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val selected = filter == option
+                        TonalToggleButton(
+                            checked = selected,
+                            onCheckedChange = { filter = option },
+                            interactionSource = interactionSource,
+                            modifier = Modifier.animateWidth(interactionSource)
+                        ) {
+                            if (selected) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ToggleButtonDefaults.IconSize)
+                                )
+                                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                            }
+                            Text(option.label)
+                        }
+                    }
+                }
             }
             if (subjects.isEmpty()) {
-                item {
-                    EmptyGradesCard()
+                item { EmptyGradesCard() }
+            } else if (visible.isEmpty()) {
+                item("vacio-filtro") {
+                    Text(
+                        text = when (filter) {
+                            SubjectFilter.ACTIVE -> "No tienes materias en curso."
+                            SubjectFilter.AT_RISK -> "Ninguna materia está en riesgo. Bien ahí."
+                            SubjectFilter.CLOSED -> "Todavía no has cerrado ninguna materia."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 24.dp)
+                    )
                 }
             } else {
-                items(subjects, key = { it.id }) { subject ->
-                    SubjectListCard(
+                items(visible, key = { it.id }) { subject ->
+                    SubjectRow(
                         subject = subject,
-                        calculation = viewModel.calculationFor(subject),
-                        classSession = classSessions.firstOrNull { it.subjectId == subject.id },
+                        calculation = calculations.getValue(subject),
                         gradingScale = scale,
-                        maxGrade = maxGrade,
                         onClick = { onSubjectClick(subject.id) }
                     )
                 }
@@ -486,4 +535,11 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
         indication = null,
         onClick = onClick
     )
+}
+
+/** Los tres estados por los que se filtra la lista de materias. */
+private enum class SubjectFilter(val label: String) {
+    ACTIVE("En curso"),
+    AT_RISK("En riesgo"),
+    CLOSED("Cerradas")
 }
