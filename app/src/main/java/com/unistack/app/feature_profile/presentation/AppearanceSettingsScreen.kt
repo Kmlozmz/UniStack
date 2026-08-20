@@ -464,7 +464,7 @@ private fun HomeSectionOrderEditor(
 
 @Composable
 fun SettingsHubScreen(
-    onBackClick: () -> Unit,
+    onBackClick: (() -> Unit)?,
     onAppearanceClick: () -> Unit,
     onAccessibilityClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -571,20 +571,26 @@ fun SettingsHubScreen(
 private fun SettingsHeader(
     title: String,
     subtitle: String,
-    onBackClick: () -> Unit
+    onBackClick: (() -> Unit)?
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+        // Sin flecha cuando la pantalla es raíz de pestaña: una flecha que no lleva a
+        // ninguna parte es peor que no tenerla.
+        if (onBackClick != null) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+        } else {
+            Spacer(Modifier.width(4.dp))
         }
-        Spacer(Modifier.width(4.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 title,

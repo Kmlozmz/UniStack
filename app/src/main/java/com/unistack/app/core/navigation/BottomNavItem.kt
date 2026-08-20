@@ -11,6 +11,8 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -132,14 +134,26 @@ data class BottomNavItem(
             selectedIcon = Icons.Rounded.AccountBalanceWallet,
             unselectedIcon = Icons.Outlined.AccountBalanceWallet
         )
-        private val profileItem = BottomNavItem(
-            route = AppRoutes.Profile,
-            label = "Perfil",
-            selectedIcon = Icons.Rounded.Person,
-            unselectedIcon = Icons.Outlined.Person
+        /*
+         * La quinta pestaña es la configuración, no el perfil.
+         *
+         * El perfil era una parada intermedia: se entraba a una tarjeta con el nombre y la
+         * foto y desde ahí se tocaba «Configuración» para llegar a lo que se venía a hacer.
+         * Ahora la pestaña abre directamente la configuración, como pantalla propia y no como
+         * subpantalla de nadie, y el perfil pasa a ser una fila más dentro de ella.
+         *
+         * El rótulo dice «Ajustes» y no «Configuración» porque en una barra de cinco no cabe:
+         * la palabra larga se corta en «Configuraci…». El título de la pantalla sí lo dice
+         * entero.
+         */
+        private val settingsItem = BottomNavItem(
+            route = AppRoutes.Settings,
+            label = "Ajustes",
+            selectedIcon = Icons.Rounded.Settings,
+            unselectedIcon = Icons.Outlined.Settings
         )
 
-        val items = listOf(homeItem, academicItem, calendarItem, expensesItem, profileItem)
+        val items = listOf(homeItem, academicItem, calendarItem, expensesItem, settingsItem)
 
         fun itemsFor(enabledModules: Set<AppModule>): List<BottomNavItem> {
             return buildList {
@@ -147,7 +161,7 @@ data class BottomNavItem(
                 if (AppModule.GRADES in enabledModules || AppModule.TASKS in enabledModules) add(academicItem)
                 add(calendarItem)
                 if (AppModule.EXPENSES in enabledModules) add(expensesItem)
-                add(profileItem)
+                add(settingsItem)
             }
         }
     }

@@ -416,11 +416,9 @@ fun MainNavGraph(
             }
             screen(AppRoutes.Settings) {
                 SettingsHubScreen(
-                    onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.go(AppRoutes.Profile)
-                        }
-                    },
+                    // Sin flecha: es la raíz de su pestaña, no se vuelve de ella a ningún
+                    // sitio. Se llega tocando «Ajustes» abajo y se sale igual.
+                    onBackClick = null,
                     onAppearanceClick = { navController.go(AppRoutes.AppearanceSettings) },
                     onAccessibilityClick = { navController.go(AppRoutes.AccessibilitySettings) },
                     onProfileClick = {
@@ -931,21 +929,21 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppRoutes.Expenses
-        routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.Settings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.AppearanceSettings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.AccessibilitySettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.Settings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AppearanceSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AccessibilitySettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.Calendar) -> AppRoutes.Calendar
         // El formulario de materia abierto desde Horario pertenece a Horario, que es a donde
         // vuelve al guardar. Sin esto se quedaría sin pestaña y la transición entraría por el
         // lado que no toca.
         routeBelongsTo(route, AppRoutes.AddSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.EditSubjectFromSchedule) -> AppRoutes.Calendar
-        routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Profile
-        routeBelongsTo(route, AppRoutes.UpdateSettings) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.UpdateSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.WhatsNew) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Resources) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Help) -> AppRoutes.Home
@@ -954,7 +952,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.QuickNotes) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.AiAssistant) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Labs) -> AppRoutes.Home
-        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Profile
+        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null
     }
