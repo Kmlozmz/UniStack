@@ -34,6 +34,9 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.ui.Alignment
 import com.unistack.app.core.design.components.UniStackFabMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.feature_tasks.presentation.TasksViewModel
 
 private enum class AcademicTab(val label: String) {
     SUBJECTS("Materias"),
@@ -53,11 +56,16 @@ fun AcademicScreen(
     onEditTaskClick: (String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    initialTab: String? = null
+    initialTab: String? = null,
+    tasksViewModel: TasksViewModel = hiltViewModel()
 ) {
     // La clave es la pestaña pedida: al volver a navegar aquí con otra distinta, el estado se
     // reinicia y manda la nueva. Sin clave, la primera elección quedaba congelada y las
     // llamadas posteriores no tenían efecto.
+    // Cuántas tareas quedan sin hacer, para la insignia del selector.
+    val tasks by tasksViewModel.tasks.collectAsStateWithLifecycle()
+    val pendingTasks = tasks.count { !it.completed }
+
     var selectedTab by rememberSaveable(initialTab) {
         mutableStateOf(
             when (initialTab) {
@@ -102,7 +110,8 @@ fun AcademicScreen(
                                 Icons.AutoMirrored.Rounded.MenuBook
                             } else {
                                 Icons.AutoMirrored.Rounded.Assignment
-                            }
+                            },
+                            badge = if (tab == AcademicTab.TASKS) pendingTasks else null
                         )
                     },
                     onSelected = { selectedTab = it },

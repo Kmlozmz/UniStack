@@ -78,6 +78,7 @@ import androidx.compose.material3.TonalToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChipDefaults
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
@@ -134,36 +135,31 @@ fun GradesScreen(
             }
             item("filtros") {
                 /*
-                 * Un grupo de botones de Material, con la interacción entre vecinos.
+                 * FilterChip, que es el componente del diseno: sin marcar va con contorno y
+                 * sin relleno, y marcado se rellena con el contenedor secundario y saca su
+                 * marca de verificacion a la izquierda.
                  *
-                 * `animateWidth` es lo que la hace: al mantener pulsado uno, ese se ensancha y
-                 * los de al lado se comprimen para dejarle sitio. Es la diferencia entre tres
-                 * botones puestos en fila y un grupo: se comportan como piezas que se tocan.
-                 *
-                 * Sin `weight` a propósito. Cada uno mide lo que ocupa su texto; forzándolos
-                 * todos al mismo ancho dentro del ancho de la pantalla, el grupo daba por
-                 * desbordado todo su contenido y no dibujaba ni un botón.
+                 * Estuvieron un momento como botones tonales grandes y quedaban como tres
+                 * pastillas moradas que competian con el selector de arriba.
                  */
-                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SubjectFilter.entries.forEach { option ->
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val selected = filter == option
-                        TonalToggleButton(
-                            checked = selected,
-                            onCheckedChange = { filter = option },
-                            interactionSource = interactionSource,
-                            modifier = Modifier.animateWidth(interactionSource)
-                        ) {
-                            if (selected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(ToggleButtonDefaults.IconSize)
-                                )
-                                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                        FilterChip(
+                            selected = filter == option,
+                            onClick = { filter = option },
+                            label = { Text(option.label) },
+                            leadingIcon = if (filter == option) {
+                                {
+                                    Icon(
+                                        Icons.Rounded.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                    )
+                                }
+                            } else {
+                                null
                             }
-                            Text(option.label)
-                        }
+                        )
                     }
                 }
             }
@@ -194,13 +190,17 @@ fun GradesScreen(
             }
         }
 
-        AddSubjectButton(
-            onClick = onAddSubjectClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
-                .padding(end = 20.dp, bottom = 20.dp)
-        )
+        if (!embedded) {
+            // Fuera de la pestaña de Académico esta pantalla no tiene menú de crear, así que
+            // conserva su botón anclado. Dentro sí lo hay, y dos formas de crear lo mismo a
+            // diez píxeles una de otra se tapaban entre ellas.
+            AddSubjectButton(
+                onClick = onAddSubjectClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 20.dp)
+            )
+        }
     }
 }
 

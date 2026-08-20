@@ -89,7 +89,7 @@ fun SubjectRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = progressLine(calculation),
+                    text = progressLine(calculation, gradingScale),
                     style = MaterialTheme.typography.bodySmall,
                     color = support,
                     maxLines = 1,
@@ -155,10 +155,23 @@ private fun SubjectMark(letter: String, color: Color) {
     }
 }
 
-/** Cuánto falta por evaluar, o lo que hace falta sacar si la meta está en riesgo. */
-private fun progressLine(calculation: SubjectGradeCalculation): String {
+/**
+ * La línea de apoyo.
+ *
+ * Con la meta en riesgo cambia de tema a propósito: cuánto queda por evaluar deja de ser lo
+ * útil, y lo que hace falta saber es qué nota hay que sacar en lo que falta para alcanzarla.
+ */
+@Composable
+private fun progressLine(
+    calculation: SubjectGradeCalculation,
+    gradingScale: GradingScale
+): String {
     val remaining = ((1.0 - calculation.evaluatedSemesterFraction) * 100).toInt().coerceIn(0, 100)
+    val needed = calculation.neededForTarget
     return when {
+        calculation.outlook == TargetOutlook.UNREACHABLE -> "La meta ya no se alcanza"
+        calculation.outlook == TargetOutlook.AT_RISK && needed != null ->
+            "Necesitas ${GradingScaleUtils.formatGrade(needed, gradingScale)} en lo que falta"
         calculation.outlook == TargetOutlook.NO_DATA -> "Sin notas todavía"
         remaining == 0 -> "Todo evaluado"
         else -> "Falta el $remaining %"
