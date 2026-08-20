@@ -51,11 +51,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.components.UniStackLogoMark
+import com.unistack.app.core.design.components.UniStackWordmark
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.notifications.NotificationHistoryStore
 import com.unistack.app.feature_home.domain.HomePriorityAction
@@ -266,7 +269,15 @@ fun HomeScreen(
     }
 }
 
-/** «Buenas tardes / Kmlo», la campana y el avatar que abre el panel. */
+/**
+ * La marca arriba y el saludo debajo.
+ *
+ * Eran dos líneas en una esquina y no se leían como la cabecera de nada: el saludo y el nombre
+ * pesaban casi lo mismo, y de la app no quedaba ni el nombre. Ahora hay dos alturas. La de
+ * arriba es de la app —el logo y la palabra en el centro, los avisos y el perfil a la
+ * derecha—; la de abajo es tuya, con el saludo en versales del acento y el nombre en grande,
+ * que es el mismo salto que usa la tarjeta de «PRÓXIMA CLASE» y el héroe de aquí al lado.
+ */
 @Composable
 private fun HomeHeader(
     name: String,
@@ -275,67 +286,87 @@ private fun HomeHeader(
     onNotificationsClick: () -> Unit,
     onAvatarClick: () -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 4.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .padding(start = 24.dp, end = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                UniStackLogoMark(size = 22.dp)
+                UniStackWordmark(fontSize = 18.sp)
+            }
+
+            Row(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(contentAlignment = Alignment.TopEnd) {
+                    androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
+                        Icon(
+                            Icons.Rounded.NotificationsNone,
+                            contentDescription = "Avisos",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (hasUnread) {
+                        Box(
+                            modifier = Modifier
+                                .offset(x = (-10).dp, y = 10.dp)
+                                .size(9.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error)
+                        )
+                    }
+                }
+                Spacer(Modifier.width(4.dp))
+                Surface(
+                    onClick = onAvatarClick,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    if (photoUrl != null) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Tu perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = name.take(1).uppercase(SpanishLocale),
+                                style = MaterialTheme.typography.titleMediumEmphasized
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
             Text(
-                text = greeting(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = greeting().uppercase(SpanishLocale),
+                style = SectionLabelStyle,
+                color = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = name,
-                style = MaterialTheme.typography.headlineMediumEmphasized,
+                style = MaterialTheme.typography.headlineLargeEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        }
-
-        Box(contentAlignment = Alignment.TopEnd) {
-            androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
-                Icon(
-                    Icons.Rounded.NotificationsNone,
-                    contentDescription = "Avisos",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (hasUnread) {
-                Box(
-                    modifier = Modifier
-                        .offset(x = (-10).dp, y = 10.dp)
-                        .size(9.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error)
-                )
-            }
-        }
-
-        Surface(
-            onClick = onAvatarClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(40.dp)
-        ) {
-            if (photoUrl != null) {
-                AsyncImage(
-                    model = photoUrl,
-                    contentDescription = "Tu perfil",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = name.take(1).uppercase(SpanishLocale),
-                        style = MaterialTheme.typography.titleMediumEmphasized
-                    )
-                }
-            }
         }
     }
 }

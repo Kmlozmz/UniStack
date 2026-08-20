@@ -1,9 +1,13 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    ExperimentalMaterial3ExpressiveApi::class
+)
 
 package com.unistack.app.feature_schedule.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -370,10 +374,19 @@ internal fun AgendaComposerSheet(
             }
 
             if (academic) {
+                // Los chips se envuelven en varias líneas en vez de rodar en horizontal.
+                //
+                // Rodando había siempre uno cortado en el borde derecho —había que adivinar
+                // que seguía habiendo opciones— y al soltar el desplazamiento aparecía el
+                // estirado del borde con un segundo de retraso, cuando la fila ya llevaba
+                // rato quieta: la fila terminaba su recorrido y la velocidad que le sobraba
+                // seguía subiendo por el desplazamiento anidado de la hoja, que la devolvía
+                // tarde. Envueltos se ven todos a la vez y no hay borde que estirar.
                 AgendaSectionLabel("TIPO ACADÉMICO")
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     taskTypesFor(kind).forEach { type ->
                         FilterChip(
@@ -385,9 +398,10 @@ internal fun AgendaComposerSheet(
                 }
 
                 AgendaSectionLabel("MATERIA (OPCIONAL)")
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
                         selectedSubjectId == null,
@@ -442,9 +456,10 @@ internal fun AgendaComposerSheet(
                 )
 
                 AgendaSectionLabel("REPETICIÓN")
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AgendaRecurrence.entries.forEach { option ->
                         FilterChip(
@@ -456,9 +471,10 @@ internal fun AgendaComposerSheet(
                 }
 
                 AgendaSectionLabel("RECORDATORIO")
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     listOf(0, 5, 15, 30, 60, 1440).forEach { minutes ->
                         FilterChip(
