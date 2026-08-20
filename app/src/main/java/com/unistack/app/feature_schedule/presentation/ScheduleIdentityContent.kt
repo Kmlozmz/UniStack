@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +49,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -93,6 +95,8 @@ import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -184,6 +188,16 @@ internal fun ScheduleIdentityContent(
                         sessions = uiState.sessions,
                         subjects = uiState.subjects,
                         use24Hour = uiState.accessibility.use24HourTime,
+                        onDateSelected = onDateSelected,
+                        onSessionClick = onSessionClick
+                    )
+                }
+                item {
+                    WeekDayClassList(
+                        selectedDate = selectedDate,
+                        sessions = uiState.sessions,
+                        subjects = uiState.subjects,
+                        use24Hour = uiState.accessibility.use24HourTime,
                         onSessionClick = onSessionClick
                     )
                 }
@@ -262,7 +276,7 @@ internal fun ScheduleIdentityContent(
 private fun FullScheduleLaunchCard(onClick: () -> Unit) {
     IdentitySurface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         onClick = onClick
     ) {
         Row(
@@ -271,16 +285,16 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
         ) {
             Box(
                 Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(IdentityAccent.copy(alpha = 0.14f)),
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Rounded.Fullscreen,
                     contentDescription = null,
-                    tint = IdentityAccent,
-                    modifier = Modifier.size(21.dp)
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             Spacer(Modifier.width(12.dp))
@@ -288,11 +302,11 @@ private fun FullScheduleLaunchCard(onClick: () -> Unit) {
                 Text(
                     "Horario completo",
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Consulta todas las horas y los 7 días",
+                    "Las 24 horas, los 7 días, semana a semana",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -420,7 +434,7 @@ private fun TimetableMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.AutoMirrored.Rounded.MenuBook,
-            iconColor = IdentityAccent,
+            iconColor = LocalSectionColors.current.schedule,
             value = subjectCount.toString(),
             label = if (subjectCount == 1) "Materia" else "Materias",
             onClick = onSubjectsClick
@@ -430,7 +444,7 @@ private fun TimetableMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Today,
-            iconColor = IdentityAccent,
+            iconColor = MaterialTheme.colorScheme.tertiary,
             value = todayCount.toString(),
             label = "Hoy",
             onClick = onTodayClick
@@ -438,7 +452,7 @@ private fun TimetableMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Schedule,
-            iconColor = IdentityAccent,
+            iconColor = LocalSectionColors.current.onTrack,
             value = weeklyHoursLabel(weekMinutes),
             label = "Semana",
             onClick = onWeekClick
@@ -481,7 +495,7 @@ private fun CalendarMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.CalendarMonth,
-            iconColor = IdentityAccent,
+            iconColor = LocalSectionColors.current.schedule,
             value = eventCount.toString(),
             label = "Eventos",
             onClick = onEventsClick
@@ -489,7 +503,7 @@ private fun CalendarMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.AutoMirrored.Rounded.Assignment,
-            iconColor = IdentityAccent,
+            iconColor = MaterialTheme.colorScheme.tertiary,
             value = deliveries.toString(),
             label = "Entregas",
             onClick = onDeliveriesClick
@@ -497,7 +511,7 @@ private fun CalendarMetrics(
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.School,
-            iconColor = IdentityAccent,
+            iconColor = LocalSectionColors.current.atRisk,
             value = exams.toString(),
             label = "Exámenes",
             onClick = onExamsClick
@@ -747,12 +761,21 @@ private fun IdentityMetricDetailsSheet(
         }
     }
 }
+/**
+ * La semana entera de un vistazo, y con un día elegido dentro.
+ *
+ * La rejilla no era más que un dibujo: se veía la semana y ahí acababa. Ahora cada columna es
+ * un objetivo táctil que elige el día, la columna elegida se pinta y debajo aparece la lista de
+ * esas clases con su nombre y su aula completos, que es lo que la rejilla no puede dar —a esta
+ * escala, un bloque de media hora no tiene sitio ni para una línea de texto.
+ */
 @Composable
 private fun IdentityWeeklyTimeline(
     selectedDate: LocalDate,
     sessions: List<ClassSession>,
     subjects: List<Subject>,
     use24Hour: Boolean,
+    onDateSelected: (LocalDate) -> Unit,
     onSessionClick: (LocalDate, ClassSession) -> Unit
 ) {
     val weekStart = selectedDate.weekStartIdentity()
@@ -786,16 +809,48 @@ private fun IdentityWeeklyTimeline(
     val axisWidth = 42.dp
     val gridHeight = timelineHeight(timelineRows, hourHeight.value, breakHeight.value).dp
 
+    // Las mismas horas que cuenta la métrica «Semana», para que las dos cifras no se
+    // contradigan cuando el fin de semana está fuera de la rejilla.
+    val weekMinutes = remember(sessions, weekStart) {
+        (0L..6L).sumOf { offset ->
+            val date = weekStart.plusDays(offset)
+            sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                .sumOf { it.endMinute - it.startMinute }
+        }
+    }
+
     Column {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = weekRangeLabel(weekStart, visibleDays.last),
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = weeklyHoursLabel(weekMinutes) + " de clase",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Spacer(Modifier.height(10.dp))
         Row(Modifier.padding(start = axisWidth)) {
             visibleDays.forEach { day ->
+                val date = weekStart.plusDays((day - 1).toLong())
+                val picked = date == selectedDate
                 Text(
                     text = identityDayLetter(DayOfWeek.of(day)),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable { onDateSelected(date) }
+                        .padding(vertical = 3.dp),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = if (picked) IdentityAccent else MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = if (picked) FontWeight.Bold else FontWeight.SemiBold
                 )
             }
         }
@@ -807,6 +862,29 @@ private fun IdentityWeeklyTimeline(
             // bloques se dibujan con el paso de cinco columnas y se salen por la derecha.
             val dayCount = visibleDays.count()
             val dayWidth = (maxWidth - axisWidth) / dayCount
+
+            // Las columnas van debajo de todo: pintan el día elegido y recogen el toque en
+            // los huecos. Ni las líneas de hora ni el texto consumen el puntero, así que
+            // tocar el vacío de una columna sigue llegando aquí; encima de un bloque manda
+            // el bloque, que abre esa clase.
+            visibleDays.forEach { day ->
+                val date = weekStart.plusDays((day - 1).toLong())
+                Box(
+                    Modifier
+                        .offset(x = axisWidth + dayWidth * (day - visibleDays.first))
+                        .width(dayWidth)
+                        .fillMaxHeight()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(
+                            if (date == selectedDate) {
+                                MaterialTheme.colorScheme.surfaceContainerLow
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                        .clickable { onDateSelected(date) }
+                )
+            }
             Column {
                 timelineRows.forEach { row ->
                     when (row) {
@@ -830,7 +908,7 @@ private fun IdentityWeeklyTimeline(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "\u22ee",
+                                text = "⋮",
                                 modifier = Modifier.width(axisWidth),
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -842,15 +920,6 @@ private fun IdentityWeeklyTimeline(
                         }
                     }
                 }
-            }
-            (0..dayCount).forEach { line ->
-                Box(
-                    Modifier
-                        .offset(x = axisWidth + dayWidth * line)
-                        .width(1.dp)
-                        .fillMaxHeight()
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
-                )
             }
             sessions.forEach { session ->
                 visibleDays.forEach { day ->
@@ -885,9 +954,125 @@ private fun IdentityWeeklyTimeline(
                 }
             }
         }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = if (hasWeekendSession) {
+                "El fin de semana aparece porque hay clase."
+            } else {
+                "De lunes a viernes. En cuanto pongas algo el fin de semana, la rejilla se abre a los siete días."
+            },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }
 
+/** «18 - 23 de agosto», y con los dos meses cuando la semana los cruza. */
+private fun weekRangeLabel(weekStart: LocalDate, lastVisibleDay: Int): String {
+    val weekEnd = weekStart.plusDays((lastVisibleDay - 1).toLong())
+    val month = DateTimeFormatter.ofPattern("MMMM", IdentityLocale)
+    val startMonth = weekStart.format(month)
+    val endMonth = weekEnd.format(month)
+    return if (weekStart.month == weekEnd.month) {
+        "${weekStart.dayOfMonth} - ${weekEnd.dayOfMonth} de $startMonth"
+    } else {
+        "${weekStart.dayOfMonth} de $startMonth - ${weekEnd.dayOfMonth} de $endMonth"
+    }
+}
+
+/**
+ * Las clases del día elegido, escritas enteras.
+ *
+ * La rejilla dice cuándo y la lista dice qué: el nombre completo de la materia y el aula, que
+ * en un bloque de doce píxeles de alto no caben. Tocar una fila abre esa clase, igual que
+ * tocar su bloque arriba.
+ */
+@Composable
+private fun WeekDayClassList(
+    selectedDate: LocalDate,
+    sessions: List<ClassSession>,
+    subjects: List<Subject>,
+    use24Hour: Boolean,
+    onSessionClick: (LocalDate, ClassSession) -> Unit
+) {
+    val daySessions = sessions
+        .filter { it.occursOn(selectedDate.toEpochDay(), selectedDate.dayOfWeek.value) }
+        .sortedBy(ClassSession::startMinute)
+    val dayName = selectedDate.format(DateTimeFormatter.ofPattern("EEEE", IdentityLocale))
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (daySessions.isEmpty()) {
+            IdentitySurface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+                Text(
+                    text = "Sin clases el $dayName.",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        daySessions.forEach { session ->
+            val subject = subjects.firstOrNull { it.id == session.subjectId }
+            val detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
+                formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
+                session.identityPlace().room.ifBlank { "Sin aula" }
+            IdentityOutlinedRow(onClick = { onSessionClick(selectedDate, session) }) {
+                Box(
+                    Modifier
+                        .width(4.dp)
+                        .height(32.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(subject.identityColor())
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = subject?.name ?: "Clase",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = detail,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** La fila con contorno del diseño: sin relleno, el borde justo y las esquinas de la maqueta. */
+@Composable
+private fun IdentityOutlinedRow(
+    onClick: (() -> Unit)? = null,
+    content: @Composable RowScope.() -> Unit
+) {
+    val shape = MaterialTheme.shapes.medium
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+            .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        content = content
+    )
+}
+
+/**
+ * Lo que se viene, con el peso visual que le corresponde.
+ *
+ * Es la única tarjeta rellena de la pantalla, y va con el color del horario, no con el acento
+ * general: en una lista de rectángulos claros, el bloque de color es lo que el ojo encuentra
+ * primero, y esto es justo lo que se viene a mirar cuando se abre la pestaña.
+ */
 @Composable
 private fun NextClassPanel(
     sessions: List<ClassSession>,
@@ -896,72 +1081,151 @@ private fun NextClassPanel(
     onSessionClick: (LocalDate, ClassSession) -> Unit
 ) {
     val next = remember(sessions) { findUpcomingClass(LocalDate.now(), sessions) }
-    IdentitySurface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        onClick = next?.let { { onSessionClick(it.first, it.second) } }
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(32.dp).clip(CircleShape).background(IdentityAccent.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
+    val section = LocalSectionColors.current
+
+    if (next == null) {
+        IdentitySurface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Rounded.Schedule, contentDescription = null, tint = IdentityAccent, modifier = Modifier.size(19.dp))
-            }
-            Spacer(Modifier.width(11.dp))
-            if (next == null) {
-                Column(Modifier.weight(1f)) {
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "Próxima clase",
-                        color = IdentityAccent,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        "PRÓXIMA CLASE",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = SectionLabelStyle
                     )
                     Text(
                         "No hay clases programadas",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            } else {
-                val session = next.second
-                val subject = subjects.firstOrNull { it.id == session.subjectId }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        "Próxima clase",
-                        color = IdentityAccent,
-                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(7.dp).clip(CircleShape).background(subject.identityColor()))
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            subject?.name ?: "Clase",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Text(
-                        "${formatIdentityMinute(session.startMinute, use24Hour)} - ${formatIdentityMinute(session.endMinute, use24Hour)}  •  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
+            }
+        }
+        return
+    }
+
+    val date = next.first
+    val session = next.second
+    val subject = subjects.firstOrNull { it.id == session.subjectId }
+    IdentitySurface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = section.scheduleContainer,
+        onClick = { onSessionClick(date, session) }
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(section.schedule),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "Abrir clase",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
+                    Icons.Rounded.Schedule,
+                    contentDescription = null,
+                    tint = section.scheduleContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    "PRÓXIMA CLASE",
+                    color = section.onScheduleContainer,
+                    style = SectionLabelStyle
+                )
+                Text(
+                    subject?.name ?: "Clase",
+                    color = section.onScheduleContainer,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = nextClassDetail(date, session, use24Hour),
+                    color = section.onScheduleContainer.copy(alpha = 0.88f),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            // La pastilla no lleva su propio clic: está dentro del área de la tarjeta, que ya
+            // abre la clase. Dos objetivos superpuestos solo servirían para que el lector de
+            // pantalla anunciara la misma acción dos veces.
+            Box(
+                Modifier
+                    .heightIn(min = 34.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(section.schedule)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Abrir",
+                    color = section.scheduleContainer,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
     }
+}
+
+/**
+ * «En 40 min · 10:00 - 11:40 · Aula 302»: cuánto falta, a qué hora y dónde, en una línea.
+ *
+ * Lo que falta va delante porque es lo que decide si hay que moverse ya. La hora exacta sigue
+ * ahí para quien la quiera; lo que no estaba antes es el «en cuánto», que es la pregunta que
+ * uno se hace de verdad al mirar esta tarjeta.
+ */
+private fun nextClassDetail(
+    date: LocalDate,
+    session: ClassSession,
+    use24Hour: Boolean
+): String {
+    val time = "${formatIdentityMinute(session.startMinute, use24Hour)} - " +
+        formatIdentityMinute(session.endMinute, use24Hour)
+    val room = session.identityPlace().room.ifBlank { "Sin aula" }
+    val today = LocalDate.now()
+    val lead = when {
+        date == today -> {
+            val now = LocalTime.now()
+            val minutesAway = session.startMinute - (now.hour * 60 + now.minute)
+            when {
+                minutesAway <= 0 -> "Ahora"
+                minutesAway < 60 -> "En $minutesAway min"
+                minutesAway < 120 -> "En 1 h"
+                else -> "En ${minutesAway / 60} h"
+            }
+        }
+        date == today.plusDays(1) -> "Mañana"
+        else -> date.format(DateTimeFormatter.ofPattern("EEEE", IdentityLocale)).identityCapitalized()
+    }
+    return "$lead  •  $time  •  $room"
 }
 
 @Composable
@@ -978,65 +1242,91 @@ private fun IdentityMonthCalendar(
     val leadingDays = month.atDay(1).dayOfWeek.value - 1
     val cellCount = ((leadingDays + month.lengthOfMonth() + 6) / 7) * 7
 
-    IdentitySurface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column {
-            Row(
-                Modifier.fillMaxWidth().height(48.dp),
-                verticalAlignment = Alignment.CenterVertically
+    // Sin caja alrededor. La rejilla ya es una forma cerrada por sí misma, y el contenedor
+    // que la envolvía solo servía para meter la cuadrícula dentro de otra cuadrícula.
+    Column {
+        Row(
+            Modifier.fillMaxWidth().height(48.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FilledTonalIconButton(
+                onClick = { onDateSelected(selectedDate.minusMonths(1).withDayOfMonth(1)) },
+                modifier = Modifier.size(38.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
             ) {
-                IconButton(onClick = { onDateSelected(selectedDate.minusMonths(1).withDayOfMonth(1)) }) {
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "Mes anterior", tint = MaterialTheme.colorScheme.onSurface)
-                }
+                Icon(
+                    Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                    contentDescription = "Mes anterior",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Text(
+                text = selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", IdentityLocale)).identityCapitalized(),
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            FilledTonalIconButton(
+                onClick = { onDateSelected(selectedDate.plusMonths(1).withDayOfMonth(1)) },
+                modifier = Modifier.size(38.dp),
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "Mes siguiente",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+        Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+            DayLabels.medium.forEach { label ->
                 Text(
-                    text = selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy", IdentityLocale)).identityCapitalized(),
+                    text = label.uppercase(IdentityLocale),
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = SectionLabelStyle.copy(fontSize = 10.sp, letterSpacing = 0.5.sp)
                 )
-                IconButton(onClick = { onDateSelected(selectedDate.plusMonths(1).withDayOfMonth(1)) }) {
-                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "Mes siguiente", tint = MaterialTheme.colorScheme.onSurface)
-                }
             }
-            Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
-                DayLabels.medium.forEach { label ->
-                    Text(
-                        text = label,
+        }
+        repeat(cellCount / 7) { row ->
+            Row(Modifier.fillMaxWidth()) {
+                repeat(7) { column ->
+                    val date = firstCell.plusDays((row * 7 + column).toLong())
+                    val daySessions = sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                    val dayTasks = tasks.filter { !it.completed && it.dueLocalDate() == date }
+                    val dayAgendaEvents = agendaEvents.filter { it.occursOn(date) }
+                    IdentityMonthCell(
                         modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold
+                        date = date,
+                        inMonth = YearMonth.from(date) == month,
+                        selected = date == selectedDate,
+                        colors = daySessions.map { session -> subjects.firstOrNull { it.id == session.subjectId }.identityColor() } +
+                            dayTasks.map { IdentityAccent } + dayAgendaEvents.map { event -> event.identityColor() },
+                        onClick = { onDateSelected(date) }
                     )
-                }
-            }
-            repeat(cellCount / 7) { row ->
-                Row(Modifier.fillMaxWidth()) {
-                    repeat(7) { column ->
-                        val date = firstCell.plusDays((row * 7 + column).toLong())
-                        val daySessions = sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
-                        val dayTasks = tasks.filter { !it.completed && it.dueLocalDate() == date }
-                        val dayAgendaEvents = agendaEvents.filter { it.occursOn(date) }
-                        IdentityMonthCell(
-                            modifier = Modifier.weight(1f),
-                            date = date,
-                            inMonth = YearMonth.from(date) == month,
-                            selected = date == selectedDate,
-                            colors = daySessions.map { session -> subjects.firstOrNull { it.id == session.subjectId }.identityColor() } +
-                                dayTasks.map { IdentityAccent } + dayAgendaEvents.map { event -> event.identityColor() },
-                            onClick = { onDateSelected(date) }
-                        )
-                    }
                 }
             }
         }
     }
 }
 
+/**
+ * Un día del mes: el número y, debajo, una barra si ese día tiene algo.
+ *
+ * Eran tres puntos y ahora es una barra, que es lo que dice la maqueta. Lo que no se pierde es
+ * cuánto hay: la barra crece en tres tramos según sean una, dos o tres cosas o más. Un punto
+ * de seis píxeles y una barra corta ocupan lo mismo, pero la barra se lee a la primera y no
+ * obliga a contar puntos dentro de una casilla de cuarenta píxeles.
+ */
 @Composable
 private fun IdentityMonthCell(
     modifier: Modifier,
@@ -1048,10 +1338,9 @@ private fun IdentityMonthCell(
 ) {
     Column(
         modifier = modifier
-            .height(47.dp)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
-            .padding(3.dp)
-            .clip(MaterialTheme.shapes.medium)
+            .height(46.dp)
+            .padding(2.dp)
+            .clip(RoundedCornerShape(13.dp))
             .background(if (selected) IdentityAccent else Color.Transparent)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -1062,27 +1351,43 @@ private fun IdentityMonthCell(
             color = when {
                 selected -> MaterialTheme.colorScheme.onPrimary
                 inMonth -> MaterialTheme.colorScheme.onSurface
-                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                else -> MaterialTheme.colorScheme.outline
             },
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
         )
-        if (colors.isNotEmpty()) {
-            Spacer(Modifier.height(5.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                colors.take(3).forEach { color ->
-                    Box(
-                        Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(if (selected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.78f) else color)
-                    )
-                }
-            }
-        }
+        Spacer(Modifier.height(4.dp))
+        Box(
+            Modifier
+                .width(
+                    when (colors.size) {
+                        0 -> 0.dp
+                        1 -> 8.dp
+                        2 -> 12.dp
+                        else -> 16.dp
+                    }
+                )
+                .height(3.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(
+                    when {
+                        colors.isEmpty() -> Color.Transparent
+                        selected -> MaterialTheme.colorScheme.onPrimary
+                        else -> colors.first()
+                    }
+                )
+        )
     }
 }
 
+/**
+ * El día elegido del calendario, con el tipo de cada cosa dicho por delante.
+ *
+ * Antes cada fila empezaba por un punto de color, que distingue una materia de otra pero no
+ * dice si eso es una clase, un examen o una entrega —y en un calendario esa es justamente la
+ * diferencia que importa—. Ahora el tipo va escrito en una etiqueta, y el color sigue estando
+ * dentro de ella, así que no se pierde nada de lo que el punto contaba.
+ */
 @Composable
 private fun SelectedDayPanel(
     date: LocalDate,
@@ -1101,63 +1406,121 @@ private fun SelectedDayPanel(
     val dayTasks = tasks.filter { !it.completed && it.dueLocalDate() == date }.sortedBy(StudentTask::dueDateMillis)
     val dayAgendaEvents = agendaEvents.filter { it.occursOn(date) }.sortedBy(AgendaEvent::startMillis)
 
-    IdentitySurface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Text(
-                text = date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized(),
-                color = IdentityAccent,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold
-            )
-            if (daySessions.isEmpty() && dayTasks.isEmpty() && dayAgendaEvents.isEmpty()) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized(),
+            modifier = Modifier.padding(start = 4.dp),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold
+        )
+        if (daySessions.isEmpty() && dayTasks.isEmpty() && dayAgendaEvents.isEmpty()) {
+            IdentitySurface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                 Text(
-                    "No hay eventos para este día",
+                    "No hay eventos para este día.",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            dayAgendaEvents.take(2).forEach { event ->
-                IdentityEventRow(
-                    color = event.identityColor(),
-                    title = event.title,
-                    detail = "${event.identityTimeText(use24Hour)}${event.location.takeIf(String::isNotBlank)?.let { "  •  $it" }.orEmpty()}",
-                    onClick = { onAgendaEventClick(event) }
-                )
-            }
-            val remainingAfterEvents = (2 - dayAgendaEvents.size).coerceAtLeast(0)
-            daySessions.take(remainingAfterEvents).forEach { session ->
-                val subject = subjects.firstOrNull { it.id == session.subjectId }
-                IdentityEventRow(
-                    color = subject.identityColor(),
-                    title = subject?.name ?: "Clase",
-                    detail = "${formatIdentityMinute(session.startMinute, use24Hour)} - ${formatIdentityMinute(session.endMinute, use24Hour)}  •  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
-                    onClick = { onSessionClick(date, session) }
-                )
-            }
-            val remainingAfterClasses = (remainingAfterEvents - daySessions.size).coerceAtLeast(0)
-            dayTasks.take(remainingAfterClasses).forEach { task ->
-                val subject = subjects.firstOrNull { it.id == task.subjectId }
-                IdentityEventRow(
-                    color = subject.identityColor(),
-                    title = task.title,
-                    detail = "${if (task.type == TaskType.EXAM || task.type == TaskType.TEST) "Examen" else "Entrega"}${subject?.name?.let { "  •  $it" }.orEmpty()}",
-                    onClick = { onTaskClick(task.id) }
-                )
-            }
-            val hidden = dayAgendaEvents.size + daySessions.size + dayTasks.size - 2
-            if (hidden > 0) {
-                Text(
-                    "+$hidden eventos más",
-                    color = IdentityAccent,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+        }
+        dayAgendaEvents.take(2).forEach { event ->
+            IdentityAgendaRow(
+                kind = event.identityKindLabel(),
+                color = event.identityColor(),
+                title = event.title,
+                detail = event.identityTimeText(use24Hour) +
+                    event.location.takeIf(String::isNotBlank)?.let { "  •  $it" }.orEmpty(),
+                onClick = { onAgendaEventClick(event) }
+            )
+        }
+        val remainingAfterEvents = (2 - dayAgendaEvents.size).coerceAtLeast(0)
+        daySessions.take(remainingAfterEvents).forEach { session ->
+            val subject = subjects.firstOrNull { it.id == session.subjectId }
+            IdentityAgendaRow(
+                kind = "CLASE",
+                color = subject.identityColor(),
+                title = subject?.name ?: "Clase",
+                detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
+                    formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
+                    session.identityPlace().room.ifBlank { "Sin aula" },
+                onClick = { onSessionClick(date, session) }
+            )
+        }
+        val remainingAfterClasses = (remainingAfterEvents - daySessions.size).coerceAtLeast(0)
+        dayTasks.take(remainingAfterClasses).forEach { task ->
+            val subject = subjects.firstOrNull { it.id == task.subjectId }
+            val isExam = task.type == TaskType.EXAM || task.type == TaskType.TEST
+            IdentityAgendaRow(
+                kind = if (isExam) "EXAMEN" else "ENTREGA",
+                color = subject.identityColor(),
+                title = task.title,
+                detail = subject?.name ?: if (isExam) "Evaluación" else "Entrega",
+                onClick = { onTaskClick(task.id) }
+            )
+        }
+        val hidden = dayAgendaEvents.size + daySessions.size + dayTasks.size - 2
+        if (hidden > 0) {
+            Text(
+                "+$hidden eventos más",
+                modifier = Modifier.padding(start = 6.dp),
+                color = IdentityAccent,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
+}
+
+/** Una fila de la agenda: la etiqueta del tipo, el nombre y el detalle. */
+@Composable
+private fun IdentityAgendaRow(
+    kind: String,
+    color: Color,
+    title: String,
+    detail: String,
+    onClick: () -> Unit
+) {
+    IdentityOutlinedRow(onClick = onClick) {
+        Box(
+            Modifier
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(color)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+        ) {
+            Text(
+                text = kind,
+                color = contentColorOn(color),
+                style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.5.sp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = detail,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/** Cómo se llama cada tipo de evento cuando cabe en una etiqueta de nueve píxeles. */
+private fun AgendaEvent.identityKindLabel(): String = when (kind) {
+    AgendaEventKind.PERSONAL -> "EVENTO"
+    AgendaEventKind.MEETING -> "REUNIÓN"
+    AgendaEventKind.REMINDER -> "AVISO"
+    AgendaEventKind.CUSTOM -> "OTRO"
 }
 
 @Composable
