@@ -105,6 +105,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.UniStackBrandPill
+import com.unistack.app.core.design.components.UniStackBrandMark
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material.icons.rounded.Balance
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxHeight
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -2243,150 +2257,334 @@ fun SetupAcademicPeriodsScreen(
             )
         }
     ) {
+        /*
+         * El reparto manda, no los campos.
+         *
+         * Era una tarjeta con un desplegable de cantidad y una rejilla de campos numéricos,
+         * y para saber si cuadraba el 100 % había que leer una cifra al final y fiarse. La
+         * rueda lo dice sin sumar: si no está cerrada, falta. Cada peso se mueve con más y
+         * menos, así que ninguno puede pasarse ni quedar vacío, y hay un atajo para repartir
+         * por igual, que es lo que hace la mayoría.
+         */
         Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            AcademicPeriodsTitle()
-            AcademicDistributionCard(
-                label = label,
-                weights = weights,
-                total = total,
-                remaining = remaining,
-                isValid = isValid,
-                countExpanded = countExpanded,
-                customCountSelected = customCountSelected,
-                onCountExpandedChange = { countExpanded = it },
-                onLabelSelected = onLabelSelected,
-                onCountSelected = { count, isCustom ->
-                    customCountSelected = isCustom
-                    countExpanded = false
-                    onCountSelected(count)
-                },
-                onWeightChange = onWeightChange
+            SetupPlainTitle(
+                title = "¿Cómo se divide tu nota final?",
+                subtitle = "Reparte el 100 % entre tus ${(label ?: AcademicPeriodLabel.CORTE).plural.lowercase()}."
             )
-        }
-    }
-}
 
-@Composable
-private fun AcademicPeriodsTitle() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "¿Cómo se divide tu nota final?",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 24.sp,
-            lineHeight = 27.sp,
-            fontWeight = FontWeight.ExtraBold,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "Elige el sistema de evaluación y distribuye\nel 100% de tu nota final.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-private fun AcademicDistributionCard(
-    label: AcademicPeriodLabel?,
-    weights: List<String>,
-    total: Double,
-    remaining: Double,
-    isValid: Boolean,
-    countExpanded: Boolean,
-    customCountSelected: Boolean,
-    onCountExpandedChange: (Boolean) -> Unit,
-    onLabelSelected: (AcademicPeriodLabel) -> Unit,
-    onCountSelected: (Int, Boolean) -> Unit,
-    onWeightChange: (Int, String) -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = "Tipo de evaluación",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp,
-                lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
             EvaluationTypeSegmentedControl(
                 selected = label,
                 onSelected = onLabelSelected
             )
-            Text(
-                // Ambas opciones se comportan igual: solo cambia el nombre. Decirlo evita
-                // que se lea como una decisión de cálculo y que se dude en elegir.
-                text = "Como los llame tu institución. Solo cambia el nombre, no el cálculo.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
-                lineHeight = 14.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
 
-            // Todo lo demás se nombra a partir del tipo, así que no aparece hasta elegirlo.
-            // Antes se mostraba de entrada un resumen «0% asignado / 100% restante» que no
-            // resumía nada, porque aún no había nada que repartir.
             AnimatedVisibility(
                 visible = label != null,
                 modifier = Modifier.revealIntoView(label != null),
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SetupDivider()
-                    Text(
-                        text = "Cantidad de ${(label ?: AcademicPeriodLabel.CORTE).plural.lowercase()}",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp,
-                        lineHeight = 17.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    PeriodCountDropdown(
-                        label = label ?: AcademicPeriodLabel.CORTE,
-                        count = weights.size,
-                        expanded = countExpanded,
-                        customCountSelected = customCountSelected,
-                        onExpandedChange = onCountExpandedChange,
-                        onCountSelected = onCountSelected
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (weights.isNotEmpty()) {
-                        SetupDivider()
-                        PeriodDistributionSection(
+                        PeriodWheelCard(
                             label = label ?: AcademicPeriodLabel.CORTE,
                             weights = weights,
                             total = total,
                             isValid = isValid,
                             onWeightChange = onWeightChange
                         )
+                        PeriodBalanceNotice(total = total, remaining = remaining, isValid = isValid)
                     }
-                    PeriodSummaryCard(
-                        total = total,
-                        remaining = remaining,
-                        isValid = isValid
+                    PeriodCountSection(
+                        label = label ?: AcademicPeriodLabel.CORTE,
+                        count = weights.size,
+                        onCountSelected = { count ->
+                            customCountSelected = false
+                            countExpanded = false
+                            onCountSelected(count)
+                        }
                     )
+                    if (weights.size > 1) {
+                        SetupEvenSplitAction(
+                            count = weights.size,
+                            onSplit = { even ->
+                                weights.indices.forEach { index -> onWeightChange(index, even[index]) }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+/**
+ * La rueda del reparto, con un peso por sector y sus pasos al lado.
+ *
+ * El agujero del centro lleva el total: cerrada y verde cuando cuadra, abierta y roja
+ * cuando no. Es el mismo dato que había en una línea de texto al final de la tarjeta, pero
+ * aquí no hay que buscarlo ni sumar de cabeza para entenderlo.
+ */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun PeriodWheelCard(
+    label: AcademicPeriodLabel,
+    weights: List<String>,
+    total: Double,
+    isValid: Boolean,
+    onWeightChange: (Int, String) -> Unit
+) {
+    val palette = listOf(
+        MaterialTheme.colorScheme.primary,
+        LocalSectionColors.current.schedule,
+        LocalSectionColors.current.onTrack,
+        LocalSectionColors.current.atRisk,
+        MaterialTheme.colorScheme.tertiary
+    )
+    val values = weights.map { setupPercentValue(it) }
+    val track = MaterialTheme.colorScheme.surfaceContainerHighest
+    val totalColor = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.error
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(112.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(112.dp)) {
+                    val stroke = 15.dp.toPx()
+                    val inset = stroke / 2f
+                    val arcSize = Size(size.width - stroke, size.height - stroke)
+                    val topLeft = Offset(inset, inset)
+                    drawArc(
+                        color = track,
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Butt)
+                    )
+                    var start = -90f
+                    values.forEachIndexed { index, value ->
+                        val sweep = (value / 100.0 * 360.0).toFloat()
+                        if (sweep <= 0f) return@forEachIndexed
+                        drawArc(
+                            color = palette[index % palette.size],
+                            startAngle = start,
+                            sweepAngle = sweep.coerceAtMost(360f - (start + 90f)),
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = Stroke(width = stroke, cap = StrokeCap.Butt)
+                        )
+                        start += sweep
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "${formatSetupPercent(total)}%",
+                        color = totalColor,
+                        style = MaterialTheme.typography.titleLargeEmphasized
+                    )
+                    Text(
+                        text = "repartido",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                weights.forEachIndexed { index, weight ->
+                    val value = setupPercentValue(weight)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .background(palette[index % palette.size])
+                        )
+                        Spacer(modifier = Modifier.width(9.dp))
+                        Text(
+                            text = "${label.singular} ${index + 1}",
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        PeriodStepButton("−") {
+                            onWeightChange(index, formatSetupPercent((value - 5.0).coerceAtLeast(0.0)))
+                        }
+                        Text(
+                            text = "${formatSetupPercent(value)}%",
+                            modifier = Modifier.width(46.dp),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        PeriodStepButton("+") {
+                            onWeightChange(index, formatSetupPercent((value + 5.0).coerceAtMost(100.0)))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PeriodStepButton(symbol: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(28.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = symbol,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+/** Cuánto falta o cuánto sobra, dicho con palabras y con el color del estado. */
+@Composable
+private fun PeriodBalanceNotice(total: Double, remaining: Double, isValid: Boolean) {
+    val over = total > 100.0
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = if (isValid) {
+            LocalSectionColors.current.onTrackContainer
+        } else {
+            MaterialTheme.colorScheme.errorContainer
+        },
+        tonalElevation = 0.dp
+    ) {
+        Text(
+            text = when {
+                isValid -> "Cuadra: el 100 % está repartido."
+                over -> "Te pasas ${formatSetupPercent(total - 100.0)} puntos. Baja alguno."
+                else -> "Te faltan ${formatSetupPercent(remaining)} puntos por repartir."
+            },
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 12.dp),
+            color = if (isValid) {
+                LocalSectionColors.current.onOnTrackContainer
+            } else {
+                MaterialTheme.colorScheme.onErrorContainer
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+/** Cuántos cortes, en el grupo conectado que usa el resto de la app. */
+@Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun PeriodCountSection(
+    label: AcademicPeriodLabel,
+    count: Int,
+    onCountSelected: (Int) -> Unit
+) {
+    val options = listOf(2, 3, 4, 5)
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text(
+            text = "¿CUÁNTOS ${label.plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = SectionLabelStyle
+        )
+        ButtonGroup(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
+        ) {
+            options.forEachIndexed { index, option ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val shapes = when (index) {
+                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                }
+                ToggleButton(
+                    checked = count == option,
+                    onCheckedChange = { onCountSelected(option) },
+                    shapes = shapes,
+                    interactionSource = interactionSource,
+                    modifier = Modifier
+                        .weight(1f)
+                        .defaultMinSize(minHeight = 48.dp)
+                        .animateWidth(interactionSource)
+                ) {
+                    Text(option.toString(), maxLines = 1, softWrap = false)
+                }
+            }
+        }
+    }
+}
+
+/** El atajo que casi todo el mundo quiere: partes iguales. */
+@Composable
+private fun SetupEvenSplitAction(count: Int, onSplit: (List<String>) -> Unit) {
+    Surface(
+        onClick = {
+            val base = 100 / count
+            val even = List(count) { index ->
+                if (index == count - 1) (100 - base * (count - 1)).toString() else base.toString()
+            }
+            onSplit(even)
+        },
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Balance,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(9.dp))
+            Text(
+                text = "Repartir en partes iguales",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+private fun setupPercentValue(text: String): Double =
+    text.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
 
 @Composable
 private fun EvaluationTypeSegmentedControl(
@@ -2465,353 +2663,6 @@ private fun EvaluationSegment(
 }
 
 @Composable
-private fun PeriodCountDropdown(
-    label: AcademicPeriodLabel,
-    count: Int,
-    expanded: Boolean,
-    customCountSelected: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    onCountSelected: (Int, Boolean) -> Unit
-) {
-    val density = LocalDensity.current
-    val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "period-count-dropdown-arrow")
-    var anchorWidth by remember { mutableIntStateOf(0) }
-    val shape = MaterialTheme.shapes.small
-    val countLabel = when {
-        count <= 0 -> "Selecciona una cantidad"
-        customCountSelected && count == 6 -> "Otro (personalizado)"
-        else -> "$count ${label.plural.lowercase()}"
-    }
-    val options = buildList {
-        (2..6).forEach { add(PeriodCountOption(it, "$it ${label.plural.lowercase()}")) }
-        add(PeriodCountOption(null, "Otro (personalizado)"))
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { anchorWidth = it.size.width }
-    ) {
-        UniCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(44.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shape = shape,
-            tonalElevation = 0.dp,
-            borderColor = if (expanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.82f else 0.92f),
-            borderWidth = if (expanded) 1.4.dp else 1.dp,
-            onClick = { onExpandedChange(!expanded) },
-            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = countLabel,
-                    color = if (count <= 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    fontSize = 13.sp,
-                    lineHeight = 16.sp,
-                    fontWeight = if (count <= 0) FontWeight.Normal else FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(1.dp)
-                        .rotate(rotation + 90f)
-                )
-            }
-        }
-
-        MaterialTheme(
-            shapes = MaterialTheme.shapes.copy(extraSmall = MaterialTheme.shapes.small),
-            colorScheme = MaterialTheme.colorScheme.copy(surface = MaterialTheme.colorScheme.surfaceContainerLow)
-        ) {
-            androidx.compose.material3.DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { onExpandedChange(false) },
-                offset = androidx.compose.ui.unit.DpOffset(0.dp, 6.dp),
-                modifier = Modifier
-                    .then(
-                        if (anchorWidth > 0) Modifier.width(with(density) { anchorWidth.toDp() }) else Modifier.fillMaxWidth()
-                    )
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        MaterialTheme.shapes.small
-                    )
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option.label,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 15.sp,
-                                lineHeight = 19.sp
-                            )
-                        },
-                        onClick = {
-                            onCountSelected(option.count ?: 6, option.count == null)
-                        },
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PeriodDistributionSection(
-    label: AcademicPeriodLabel,
-    weights: List<String>,
-    total: Double,
-    isValid: Boolean,
-    onWeightChange: (Int, String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Distribución de la nota",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f)
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "Total asignado: ${formatSetupPercent(total)}%",
-                    color = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    lineHeight = 13.sp,
-                    fontWeight = if (isValid) FontWeight.SemiBold else FontWeight.Normal
-                )
-                Icon(
-                    imageVector = if (isValid) Icons.Rounded.CheckCircle else Icons.Rounded.Lock,
-                    contentDescription = null,
-                    tint = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
-        UniCard(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.46f else 0.72f),
-            shape = MaterialTheme.shapes.small,
-            tonalElevation = 0.dp,
-            borderColor = Color.Transparent,
-            borderWidth = 0.dp,
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                weights.forEachIndexed { index, value ->
-                    PeriodWeightRow(
-                        label = "${label.singular} ${index + 1}",
-                        index = index,
-                        value = value,
-                        onValueChange = { onWeightChange(index, it) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PeriodWeightRow(
-    label: String,
-    index: Int,
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = (index + 1).toString(),
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
-            lineHeight = 16.sp,
-            modifier = Modifier.weight(1f)
-        )
-        CompactPercentField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.width(88.dp)
-        )
-    }
-}
-
-@Composable
-private fun CompactPercentField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val shape = RoundedCornerShape(9.dp)
-    Row(
-        modifier = modifier
-            .height(40.dp)
-            .clip(shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .background(Color.Transparent)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
-            modifier = Modifier.weight(1f),
-            decorationBox = { innerTextField ->
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    innerTextField()
-                }
-            }
-        )
-        Text(
-            text = "%",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 12.sp,
-            lineHeight = 14.sp
-        )
-    }
-}
-
-@Composable
-private fun PeriodSummaryCard(
-    total: Double,
-    remaining: Double,
-    isValid: Boolean
-) {
-    val accent = if (isValid) LocalSectionColors.current.onTrack else MaterialTheme.colorScheme.primary
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = if (isValid) LocalSectionColors.current.onTrackContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.small,
-        tonalElevation = 0.dp,
-        borderColor = Color.Transparent,
-        borderWidth = 0.dp,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 9.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.14f))
-                    .border(2.dp, accent, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Percent,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
-            PeriodSummaryMetric(
-                title = "Total asignado",
-                value = "${formatSetupPercent(total)}%",
-                color = accent,
-                modifier = Modifier.weight(1f)
-            )
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(34.dp)
-                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
-            )
-            PeriodSummaryMetric(
-                title = "Restante",
-                value = "${formatSetupPercent(remaining)}%",
-                color = when {
-                    isValid -> LocalSectionColors.current.onTrack
-                    remaining < 0 -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.primary
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun PeriodSummaryMetric(
-    title: String,
-    value: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp,
-            lineHeight = 13.sp
-        )
-        Text(
-            text = value,
-            color = color,
-            fontSize = 20.sp,
-            lineHeight = 23.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-    }
-}
-
-@Composable
 private fun AcademicPeriodsBottomActions(
     enabled: Boolean,
     onContinueClick: () -> Unit
@@ -2860,16 +2711,6 @@ private fun formatSetupPercent(value: Double): String {
     } else {
         String.format(java.util.Locale.US, "%.1f", normalized)
     }
-}
-
-@Composable
-private fun SetupDivider() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.72f else 0.86f))
-    )
 }
 
 @Composable
@@ -3362,107 +3203,8 @@ private fun SetupModulesInfoCard() {
 
 
 
-@Composable
-private fun SummaryDistributionRow(weights: List<String>) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "Distribución",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 12.sp,
-            lineHeight = 14.sp,
-            modifier = Modifier.weight(0.85f)
-        )
-        if (weights.isEmpty()) {
-            Text(
-                text = "Sin definir",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.End,
-                modifier = Modifier.weight(1.15f)
-            )
-        } else {
-            Row(
-                modifier = Modifier.weight(1.15f),
-                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                weights.forEach { weight ->
-                    SummaryPercentChip(label = "${weight.ifBlank { "0" }}%")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryPercentChip(label: String) {
-    Box(
-        modifier = Modifier
-            .height(21.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.88f else 1f))
-            .padding(horizontal = 7.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 11.sp,
-            lineHeight = 13.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-@Composable
-private fun SummaryModulesList(enabledModules: Set<AppModule>) {
-    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        enabledModules.sortedBy { it.ordinal }.forEach { module ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(5.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                )
-                Text(
-                    text = module.shortLabel(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                Box(
-                    modifier = Modifier
-                        .height(20.dp)
-                        .clip(CircleShape)
-                        .background(LocalSectionColors.current.onTrackContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.68f else 1f))
-                        .padding(horizontal = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Activo",
-                        color = LocalSectionColors.current.onTrack,
-                        fontSize = 11.sp,
-                        lineHeight = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
-    }
-}
-
+/** El sello del cierre, del mismo ancho que el de la animación que viene detrás. */
+private val FinishMarkWidth = 108.dp
 
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -3507,16 +3249,24 @@ private fun SetupFinishHero(name: String) {
                         )
                     )
             )
-            // La marca y no un tick de confirmación: lo que cierra el onboarding es que la
-            // app ya es tuya, y el visto lo tiene cualquier formulario guardado.
+            /*
+             * La marca de verdad, con sus tres píldoras y sus degradados.
+             *
+             * Aquí estuvo la silueta blanca del símbolo sobre un cuadrado del acento, y una
+             * silueta no es la marca: los colores son justo lo que la identifica. Es además
+             * la misma que arranca la app y la misma que se despide un segundo después en
+             * la transición de salida, así que las tres puntas del onboarding llevan el
+             * mismo sello.
+             */
             Box(
-                modifier = Modifier
-                    .size(84.dp)
-                    .clip(RoundedCornerShape(30.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.size(
+                    width = FinishMarkWidth,
+                    height = FinishMarkWidth * UniStackBrandMark.HeightRatio
+                )
             ) {
-                UniStackLogoMarkWhite(size = 44.dp)
+                UniStackBrandMark.Pills.forEach { pill ->
+                    UniStackBrandPill(pill = pill, markWidth = FinishMarkWidth)
+                }
             }
         }
         Text(
@@ -3838,59 +3588,6 @@ private enum class SetupScaleChoice {
 }
 
 @Composable
-private fun SetupHeroIcon(size: androidx.compose.ui.unit.Dp = 62.dp) {
-    Box(
-        modifier = Modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center
-    ) {
-        UniStackLogoMarkWhite(size = size * 0.56f)
-    }
-}
-
-@Composable
-private fun SetupStepHeader(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            lineHeight = 28.sp
-        )
-        if (subtitle != null) {
-            Text(
-                subtitle,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                fontSize = 13.sp,
-                lineHeight = 19.sp
-            )
-        }
-    }
-}
-
-@Composable
 private fun <T> OptionGrid(
     options: List<SetupCardOption<T>>,
     selected: T?,
@@ -3909,96 +3606,6 @@ private fun <T> OptionGrid(
                     )
                 }
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModuleOptionList(
-    options: List<ModuleOption>,
-    selectedValues: Set<AppModule>,
-    onToggle: (AppModule) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        options.forEach { option ->
-            ModuleSelectableCard(
-                option = option,
-                selected = option.module in selectedValues,
-                onClick = { onToggle(option.module) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ModuleSelectableCard(
-    option: ModuleOption,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .toggleable(
-                value = selected,
-                role = Role.Checkbox,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onValueChange = { onClick() }
-            )
-            .semantics {
-                stateDescription = if (selected) "Activo" else "Inactivo"
-            },
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = if (selected) 1.2.dp else 1.dp,
-        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(CircleShape)
-                    .background(if (selected) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = option.icon,
-                    contentDescription = null,
-                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(21.dp)
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = option.label,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = option.description,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp
-                )
-            }
-            if (selected) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
             }
         }
     }
@@ -4070,114 +3677,6 @@ private fun SelectableIconCard(
     }
 }
 
-@Composable
-private fun ScaleChoiceRow(
-    options: List<Pair<SetupScaleChoice, String>>,
-    selected: SetupScaleChoice,
-    onSelected: (SetupScaleChoice) -> Unit
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        options.forEach { (scale, label) ->
-            SetupChoiceChip(
-                label = label,
-                selected = selected == scale,
-                onClick = { onSelected(scale) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SetupChoiceChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier
-            .height(46.dp)
-            .expressiveSelection(selected)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
-        tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = if (selected) 1.2.dp else 1.dp,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
-private fun SummarySection(
-    title: String,
-    rows: List<Pair<String, String>>
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.ExtraBold
-            )
-            rows.forEach { (label, value) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Text(
-                        text = label,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        lineHeight = 15.sp,
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.weight(0.85f)
-                    )
-                    Text(
-                        text = value,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.sp,
-                        lineHeight = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.End,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1.15f)
-                    )
-                }
-            }
-        }
-    }
-}
-
 private fun EducationLevel.label(): String = when (this) {
     EducationLevel.PRIMARY -> "Primaria"
     EducationLevel.SECONDARY -> "Secundaria"
@@ -4208,42 +3707,6 @@ private fun AppModule.shortLabel(): String = when (this) {
     AppModule.TASKS -> "Tareas"
     AppModule.EXPENSES -> "Gastos"
     AppModule.ACADEMIC_TEMPLATES -> "Trabajos"
-}
-
-@Composable
-private fun ScaleChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier
-            .height(42.dp)
-            .expressiveSelection(selected)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = rememberSelectionShape(selected, extraRadiusWhenSelected = 5.dp),
-        tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = if (selected) 1.2.dp else 1.dp,
-        contentPadding = PaddingValues(0.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                label,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 13.sp
-            )
-        }
-    }
 }
 
 @Composable

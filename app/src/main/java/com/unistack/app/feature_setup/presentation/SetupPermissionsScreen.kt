@@ -197,7 +197,7 @@ fun SetupPermissionsScreen(
                 text = buildAnnotatedString {
                     append("¿Te aviso de\n")
                     withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("lo que se te viene?")
+                        append("lo que se aproxima?")
                     }
                 },
                 color = MaterialTheme.colorScheme.onSurface,
