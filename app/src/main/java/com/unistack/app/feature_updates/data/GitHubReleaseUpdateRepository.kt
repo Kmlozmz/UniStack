@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import com.unistack.app.core.utils.BuildStage
 
 private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
@@ -143,6 +144,10 @@ class GitHubReleaseUpdateRepository(
                 .mapNotNull(releases::optJSONObject)
                 .filterNot { it.optBoolean("draft", false) }
                 .mapNotNull(::parseRelease)
+                // Las alphas no se ofrecen: se prueban por el bot, con quien toque, y no
+                // tienen por qué llegarle a nadie que abra la app. Betas y definitivas sí,
+                // que es lo que se está publicando mientras la app madura.
+                .filterNot { BuildStage.of(it.versionName) == BuildStage.ALPHA }
         } finally {
             connection.disconnect()
         }

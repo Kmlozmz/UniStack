@@ -121,6 +121,9 @@ import com.unistack.app.feature_user.domain.InitialTab
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlin.math.roundToInt
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.ui.unit.IntOffset
 
 private const val MAIN_TRANSITION_MILLIS = 220
 private const val MAIN_EXIT_MILLIS = 150
@@ -205,12 +208,42 @@ fun MainNavGraph(
             bottom = innerPadding.calculateBottomPadding()
         )
         Box(modifier = Modifier.fillMaxSize()) {
+            /*
+             * El empuje: la que entra llega desde el borde, la que se va se aparta un tercio.
+             *
+             * Se apilaban unas sobre otras al cambiar rapido, y el motivo no era la curva:
+             * era que ningun destino pintaba fondo propio, asi que durante el deslizamiento
+             * se veian las dos a la vez. Cada uno va ahora dentro de una superficie opaca
+             * -ver screen()-, y con eso el problema no puede darse: lo de arriba tapa.
+             *
+             * Sin fundido. Apagarse es volverse transparente, que es exactamente lo que hay
+             * que evitar aqui. Y los muelles salen del tema, no de duraciones escritas.
+             */
+            val motionEnabled = LocalMotionDurationScale.current > 0f
+            val slide = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
+
             NavHost(
                 navController = navController,
                 startDestination = resolvedInitialRoute,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(contentPadding)
+                    .padding(contentPadding),
+                enterTransition = {
+                    if (!motionEnabled) EnterTransition.None
+                    else slideInHorizontally(animationSpec = slide) { width -> width }
+                },
+                exitTransition = {
+                    if (!motionEnabled) ExitTransition.None
+                    else slideOutHorizontally(animationSpec = slide) { width -> -width / 3 }
+                },
+                popEnterTransition = {
+                    if (!motionEnabled) EnterTransition.None
+                    else slideInHorizontally(animationSpec = slide) { width -> -width / 3 }
+                },
+                popExitTransition = {
+                    if (!motionEnabled) ExitTransition.None
+                    else slideOutHorizontally(animationSpec = slide) { width -> width }
+                }
             ) {
                 composable(AppRoutes.Home) {
                     val viewModel: HomeViewModel = hiltViewModel()
@@ -972,7 +1005,14 @@ private fun NavGraphBuilder.screen(
     content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit
 ) {
     composable(route = route, arguments = arguments) { entry ->
-        content(entry)
+        // Fondo propio y opaco. Es la condicion para que el empuje se lea: sin el, durante
+        // el deslizamiento se ve la pantalla de debajo a traves de la de encima.
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            content(entry)
+        }
     }
 }
 

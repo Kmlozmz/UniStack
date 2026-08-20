@@ -166,7 +166,9 @@ fun HomeScreen(
         Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().statusBarsPadding(),
-                contentPadding = PaddingValues(bottom = 132.dp),
+                // Lo que ocupa el boton de crear mas su margen, para que la ultima casilla no
+                // quede debajo de el.
+                contentPadding = PaddingValues(bottom = 96.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 item("cabecera") {
@@ -231,7 +233,7 @@ fun HomeScreen(
             }
 
             UniStackFabMenu(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 16.dp),
                 onAddGradeClick = {
                     val subjects = summary.subjects
                     when {

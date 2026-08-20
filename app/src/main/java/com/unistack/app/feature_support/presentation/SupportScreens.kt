@@ -89,6 +89,8 @@ import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *
@@ -296,14 +298,27 @@ private val Faq = listOf(
             "entre el peso evaluado. No proyecta notas que todavía no existen."
     ),
     FaqEntry(
-        "Cambié la escala de notas y perdí mis notas",
-        "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa lo " +
-            "mismo sobre 100. La app avisa dos veces antes de hacerlo."
+        "¿Qué son el suelo y el techo de una materia?",
+        "El suelo es con cuánto terminarías sacando 0 en todo lo que falta, y el techo con " +
+            "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
+            "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
     ),
     FaqEntry(
-        "¿Cómo recibo las versiones de prueba?",
-        "En Configuración → Actualizaciones puedes elegir canal. Beta y Alpha piden un código " +
-            "que entrega quien publica la app."
+        "Cambié la escala de notas y perdí mis notas",
+        "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa lo " +
+            "mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. La app " +
+            "avisa dos veces y te dice cuántas notas vas a perder."
+    ),
+    FaqEntry(
+        "¿Cómo recibo las actualizaciones?",
+        "En Configuración → Actualizaciones. La app mira lo último publicado y te lo ofrece; no " +
+            "hay canales ni códigos que pedir. Comprueba sola cada par de horas, así que puede " +
+            "tardar un rato en enterarse: si tienes prisa, entra y pulsa el botón de recargar."
+    ),
+    FaqEntry(
+        "¿Por qué me pide permiso para instalar?",
+        "Porque la app no viene de Play Store y se actualiza sola desde su archivo. Android pide " +
+            "autorizar a UniStack como origen una vez; luego ya no vuelve a preguntar."
     ),
     FaqEntry(
         "Perdí mi teléfono, ¿puedo recuperar todo?",
@@ -551,6 +566,11 @@ private fun TicketComposer(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                // Con el teclado abierto la hoja no cabía y había que desplazarla a mano para
+                // llegar a los botones. imePadding la levanta, y el scroll cubre las pantallas
+                // bajas o el texto en grande.
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(start = 24.dp, end = 24.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
