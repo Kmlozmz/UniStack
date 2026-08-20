@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_grades.presentation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement

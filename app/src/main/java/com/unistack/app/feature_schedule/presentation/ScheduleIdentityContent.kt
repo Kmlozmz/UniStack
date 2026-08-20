@@ -38,9 +38,7 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
-import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Fullscreen
-import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Today
 import androidx.compose.material.icons.rounded.School
@@ -65,7 +63,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,16 +71,13 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
-import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.feature_grades.domain.Subject
-import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.AgendaEvent
 import com.unistack.app.feature_schedule.domain.AgendaEventKind
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskType
-import com.unistack.app.feature_user.domain.SurfaceStyle
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate

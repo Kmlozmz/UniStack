@@ -19,8 +19,12 @@ class NavigationRulesTest {
         assertEquals(AppRoutes.Calendar, bottomRouteFor(AppRoutes.Calendar))
         assertEquals(AppRoutes.Expenses, bottomRouteFor(AppRoutes.AddExpense))
         assertEquals(AppRoutes.Expenses, bottomRouteFor("${AppRoutes.EditExpense}/expense-1"))
-        assertEquals(AppRoutes.Profile, bottomRouteFor(AppRoutes.Profile))
-        assertEquals(AppRoutes.Profile, bottomRouteFor(AppRoutes.Pro))
+        // La quinta pestaña es Configuración, y el perfil pasó a ser una pantalla dentro
+        // de ella: las dos, y todo lo que cuelga de ajustes, pertenecen a esa pestaña.
+        assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Settings))
+        assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Profile))
+        assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.AppearanceSettings))
+        assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Pro))
         assertEquals(AppRoutes.Home, bottomRouteFor(AppRoutes.AcademicTemplates))
     }
 

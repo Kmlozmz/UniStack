@@ -3,32 +3,23 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Book
-import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,45 +31,34 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.CategoricalSubjectAccents
-import com.unistack.app.core.design.theme.CategoricalSubjectBackgrounds
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
-import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_grades.domain.Subject
-import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.core.utils.bounceClick
 import java.util.Locale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
-import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.TonalToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.OutlinedToggleButton
 import androidx.compose.foundation.layout.defaultMinSize
 private val SpanishLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
@@ -352,15 +332,6 @@ fun subjectAccent(subject: Subject): Color {
     return subject.customColor?.let { Color(it) } ?: subjectAccent(subject.visualType)
 }
 
-
-@Composable
-private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
-    return clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = onClick
-    )
-}
 
 /** Los tres estados por los que se filtra la lista de materias. */
 private enum class SubjectFilter(val label: String) {

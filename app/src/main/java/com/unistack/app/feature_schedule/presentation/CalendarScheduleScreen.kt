@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_schedule.presentation
 
-import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -10,13 +9,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,7 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -35,8 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
@@ -51,12 +44,7 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material.icons.automirrored.rounded.ViewList
-import androidx.compose.material.icons.rounded.ZoomIn
-import androidx.compose.material.icons.rounded.ZoomOut
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -64,7 +52,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -75,13 +62,8 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,7 +74,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -108,16 +89,10 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
-import com.unistack.app.feature_schedule.domain.SessionPlace
-import com.unistack.app.feature_tasks.domain.StudentTask
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -890,24 +865,6 @@ private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.Im
     ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
 }
 
-@Composable
-private fun DetailActionRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(ScheduleShape).clickable(onClick = onClick).padding(vertical = 9.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(19.dp))
-        Spacer(Modifier.width(11.dp))
-        Text(label, color = color, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-
 
 private data class HistoryEntry(
     val date: LocalDate,
@@ -937,35 +894,12 @@ private fun String.shortName(): String = split(' ').filter(String::isNotBlank).t
     if (word.length <= 5) word else word.take(5) + "."
 }
 
-private fun dayLetter(day: DayOfWeek): String = DayLabels.short[day.value - 1]
-
 private fun formatMinute(value: Int, use24Hour: Boolean): String {
     val hour = value / 60
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
     return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
-}
-
-private fun findNextSession(fromDate: LocalDate, sessions: List<ClassSession>): Pair<LocalDate, ClassSession>? {
-    if (sessions.isEmpty()) return null
-    return (0L..13L).asSequence().mapNotNull { offset ->
-        val date = fromDate.plusDays(offset)
-        sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
-            .minByOrNull(ClassSession::startMinute)
-            ?.let { date to it }
-    }.firstOrNull()
-}
-
-private fun monthScheduleDates(
-    month: YearMonth,
-    sessions: List<ClassSession>
-): List<Pair<LocalDate, List<ClassSession>>> = (1..month.lengthOfMonth()).mapNotNull { day ->
-    val date = month.atDay(day)
-    val dateSessions = sessions
-        .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
-        .sortedBy(ClassSession::startMinute)
-    if (dateSessions.isNotEmpty()) date to dateSessions else null
 }
 
 private fun buildSubjectHistory(

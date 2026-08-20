@@ -28,9 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material.icons.rounded.NotificationsActive
-import androidx.compose.material.icons.rounded.School
-import androidx.compose.material.icons.rounded.TaskAlt
-import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,30 +46,23 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.unistack.app.core.design.components.AnimatedCheckmark
-import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import com.unistack.app.core.design.theme.LocalIsDarkTheme
 /**
  * ¿Existe el permiso de notificaciones como permiso de ejecución en este dispositivo?
  *

@@ -4,14 +4,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,7 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,13 +44,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -82,7 +71,6 @@ import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AcademicScreen
-import com.unistack.app.feature_grades.presentation.GradesScreen
 import com.unistack.app.feature_grades.presentation.PriorHistoryScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_grades.presentation.SubjectFormMode
@@ -108,7 +96,6 @@ import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
 import com.unistack.app.feature_support.presentation.WhatsNewScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
-import com.unistack.app.feature_tasks.presentation.TasksScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
 import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_updates.presentation.UpdateAvailableBanner

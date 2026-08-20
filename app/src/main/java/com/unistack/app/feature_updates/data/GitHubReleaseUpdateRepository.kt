@@ -10,7 +10,6 @@ import android.provider.Settings
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import com.unistack.app.BuildConfig
-import com.unistack.app.feature_updates.domain.ReleaseVersion
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateRepository
 import com.unistack.app.feature_updates.domain.UpdateState

@@ -15,9 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.theme.AppearanceRuntime
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.core.design.theme.cardRadius
 
 /**
  * Reacción de selección de Material 3 Expressive: lo seleccionado crece un poco con un

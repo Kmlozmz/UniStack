@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_tasks.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.DateRange
@@ -13,7 +12,6 @@ import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -86,6 +84,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -2078,30 +2077,11 @@ private fun filterSummaryLabel(
     }
 }
 
-private fun pendingText(tasks: List<StudentTask>): String {
-    val pending = tasks.count { !it.completed }
-    return when {
-        tasks.isEmpty() -> "sin tareas"
-        pending == 0 -> "todo listo"
-        pending == 1 -> "1 pendiente"
-        else -> "$pending pendientes"
-    }
-}
-
 private data class TaskStatDetail(
     val title: String,
     val description: String,
     val tasks: List<StudentTask>
 )
-
-@Composable
-private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
-    return clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = onClick
-    )
-}
 
 private val visibleStatusFilters = listOf(
     TaskListFilter.ALL,

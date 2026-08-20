@@ -44,7 +44,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -68,14 +67,10 @@ import com.unistack.app.feature_updates.domain.ReleaseVersion
 import com.unistack.app.feature_updates.domain.UpdateInfo
 import com.unistack.app.feature_updates.domain.UpdateState
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.platform.LocalDensity
 import com.unistack.app.core.design.components.UniCard
-import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.rounded.DeleteOutline
@@ -457,10 +452,6 @@ private fun CleanupCard(
 /** Lo que tarda la tarjeta en caer, y lo que tarda el hueco en cerrarse detrás. */
 private const val TOSS_MILLIS = 260
 private const val COLLAPSE_MILLIS = 200
-
-/** Lo que dura la salida entera, para no quitar la tarjeta de la lista antes de tiempo. */
-private fun trashMillis(motionScale: Float): Int =
-    ((TOSS_MILLIS + COLLAPSE_MILLIS) * motionScale).roundToInt().coerceAtLeast(1)
 
 @Composable
 private fun UpdateIconTile(

@@ -3,7 +3,6 @@ package com.unistack.app.core.design.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.TextUnit
 
 val UniStackTypography = Typography().run {
     copy(

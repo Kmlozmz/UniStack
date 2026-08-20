@@ -4,11 +4,8 @@ import com.unistack.app.core.utils.DayLabels
 
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +21,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -56,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -78,7 +75,6 @@ import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -91,10 +87,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 private val ExpenseFormBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
-private val ExpenseFormCard: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerLow
-private val ExpenseFormCardHigh: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val ExpenseFormBorder: Color
     @Composable get() = MaterialTheme.colorScheme.outlineVariant
 private val ExpenseFormCoral: Color
@@ -103,10 +95,6 @@ private val ExpenseFormText: Color
     @Composable get() = MaterialTheme.colorScheme.onSurface
 private val ExpenseFormMuted: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val ExpenseFormOptionText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val ExpenseFormDisabled: Color
-    @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
 private val ExpenseFormShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -668,15 +656,6 @@ private fun PremiumFieldContainer(
     }
 }
 
-@Composable
-private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
-    return clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = onClick
-    )
-}
-
 /** El mismo color que lleva la categoria en la lista de gastos. */
 @Composable
 private fun ExpenseCategory.expenseFormTone(): Color = when (this) {
@@ -775,7 +754,7 @@ private fun ExpenseCalendarMonthGrid(
     onDateSelected: (LocalDate) -> Unit
 ) {
     val firstDay = month.atDay(1)
-    val leadingEmptyCells = firstDay.dayOfWeek.isoIndex() - 1
+    val leadingEmptyCells = firstDay.dayOfWeek.value - 1
     val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
     val cells = List(leadingEmptyCells) { null } + days
     val weeks = cells.chunked(7)
@@ -824,18 +803,6 @@ private fun ExpenseCalendarMonthGrid(
                 }
             }
         }
-    }
-}
-
-private fun DayOfWeek.isoIndex(): Int {
-    return when (this) {
-        DayOfWeek.MONDAY -> 1
-        DayOfWeek.TUESDAY -> 2
-        DayOfWeek.WEDNESDAY -> 3
-        DayOfWeek.THURSDAY -> 4
-        DayOfWeek.FRIDAY -> 5
-        DayOfWeek.SATURDAY -> 6
-        DayOfWeek.SUNDAY -> 7
     }
 }
 

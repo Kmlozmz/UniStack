@@ -233,18 +233,6 @@ private fun AgendaKindRow(
     }
 }
 
-/** Un campo del formulario, con su rótulo fuera y arriba en vez de flotando dentro. */
-@Composable
-private fun AgendaFieldLabel(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(start = 4.dp)
-    )
-}
-
 /**
  * La fila de chips: rueda en horizontal y no estira el borde.
  *

@@ -1,20 +1,16 @@
 package com.unistack.app.core.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.unistack.app.feature_user.domain.AppModule
 

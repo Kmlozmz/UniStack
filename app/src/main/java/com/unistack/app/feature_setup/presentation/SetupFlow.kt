@@ -6,13 +6,9 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -21,8 +17,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,7 +28,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.WindowInsets
@@ -56,8 +49,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
@@ -77,13 +68,10 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -105,6 +93,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.components.UniStackBrandPill
 import com.unistack.app.core.design.components.UniStackBrandMark
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -128,22 +119,18 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -154,8 +141,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.unistack.app.R
-import com.unistack.app.core.design.components.AnimatedCheckmark
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
@@ -164,7 +149,6 @@ import com.unistack.app.core.design.components.rememberSelectionShape
 import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.core.design.components.revealIntoView
 import com.unistack.app.core.design.components.UniStackLogoMark
-import com.unistack.app.core.design.components.UniStackLogoMarkWhite
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
@@ -1467,11 +1451,11 @@ private fun EducationLevelCard(
             .semantics {
                 stateDescription = if (selected) "Seleccionado" else "No seleccionado"
             },
+        // Sin contorno: el relleno ya dice cuál está elegida, y el filete solo repetía lo
+        // mismo con menos fuerza mientras dibujaba una caja alrededor de cada una.
         color = cardColor,
         shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
-        borderWidth = if (selected) 1.4.dp else 1.dp,
         contentPadding = PaddingValues(14.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -2827,6 +2811,18 @@ fun SetupModulesScreen(
                 selectedValues = selectedModules,
                 onToggle = onToggleModule
             )
+            AnimatedVisibility(
+                visible = AppModule.GRADES !in selectedModules,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Text(
+                    text = "Sin notas no habrá promedios ni cortes, y el flujo se salta esos dos pasos.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                )
+            }
             SetupModulesInfoCard()
         }
     }
@@ -3089,6 +3085,7 @@ private fun SetupModuleSelectionCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(68.dp)
+            .alpha(if (selected) 1f else 0.58f)
             .expressiveSelection(selected)
             .toggleable(
                 value = selected,
@@ -3100,11 +3097,11 @@ private fun SetupModuleSelectionCard(
             .semantics {
                 stateDescription = if (selected) "Activo" else "Inactivo"
             },
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        // Un módulo apagado se atenúa entero en vez de cambiar solo de contorno: así la
+        // lista se lee de un vistazo, sin comparar bordes fila por fila.
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = rememberSelectionShape(selected),
         tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.9f),
-        borderWidth = if (selected) 1.3.dp else 1.dp,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Row(
@@ -3135,32 +3132,19 @@ private fun SetupModuleSelectionCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            SetupModuleCheckBox(selected = selected)
-        }
-    }
-}
-
-@Composable
-private fun SetupModuleCheckBox(selected: Boolean) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(shape)
-            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-            .border(
-                width = if (selected) 0.dp else 2.dp,
-                color = if (selected) Color.Transparent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
-                shape = shape
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        if (selected) {
-            Icon(
-                imageVector = Icons.Rounded.Check,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(22.dp)
+            Switch(
+                checked = selected,
+                onCheckedChange = { onClick() },
+                // El toque ya lo recoge la tarjeta entera; el interruptor solo se dibuja.
+                enabled = false,
+                colors = SwitchDefaults.colors(
+                    disabledCheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledCheckedTrackColor = MaterialTheme.colorScheme.primary,
+                    disabledUncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    disabledUncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    disabledUncheckedBorderColor = Color.Transparent,
+                    disabledCheckedBorderColor = Color.Transparent
+                )
             )
         }
     }

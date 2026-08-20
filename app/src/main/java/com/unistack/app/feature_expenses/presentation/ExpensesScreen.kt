@@ -6,7 +6,6 @@ import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,18 +46,14 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.MoreHoriz
-import androidx.compose.material.icons.rounded.Payments
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material.icons.rounded.Wallet
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -71,6 +66,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -144,8 +140,6 @@ private val ExpenseDivider: Color
     } else {
         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     }
-private val ExpenseSelectedText: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
 private val ExpenseNeutralIcon: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val ReferenceBars = listOf(28, 55, 35, 78, 32, 52, 40)
@@ -1498,15 +1492,6 @@ private fun AccentCircleIcon(
             modifier = Modifier.size(iconSize)
         )
     }
-}
-
-@Composable
-private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
-    return clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClick = onClick
-    )
 }
 
 /** Cadena vacía si no hay periodo anterior: sin nada con qué comparar no hay tendencia. */

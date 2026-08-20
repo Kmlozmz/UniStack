@@ -4,7 +4,6 @@ package com.unistack.app.feature_tasks.presentation
 
 import com.unistack.app.core.utils.DayLabels
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,7 +32,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -111,7 +109,6 @@ import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -1304,7 +1301,7 @@ private fun CalendarMonthGrid(
     onDateSelected: (LocalDate) -> Unit
 ) {
     val firstDay = month.atDay(1)
-    val leadingEmptyCells = firstDay.dayOfWeek.isoIndex() - 1
+    val leadingEmptyCells = firstDay.dayOfWeek.value - 1
     val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
     val cells = List(leadingEmptyCells) { null } + days
     val weeks = cells.chunked(7)
@@ -1986,4 +1983,3 @@ private fun TaskDifficulty.label(): String {
     }
 }
 
-private fun DayOfWeek.isoIndex(): Int = value

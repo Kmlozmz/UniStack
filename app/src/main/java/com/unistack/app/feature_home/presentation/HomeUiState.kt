@@ -1,6 +1,5 @@
 package com.unistack.app.feature_home.presentation
 
-import com.unistack.app.feature_home.domain.ExpenseSummary
 import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_home.domain.HomePrioritySummary
 import com.unistack.app.feature_home.domain.HomeSummary

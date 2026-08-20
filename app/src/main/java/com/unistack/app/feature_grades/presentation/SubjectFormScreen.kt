@@ -2,12 +2,6 @@
 
 package com.unistack.app.feature_grades.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
@@ -15,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -38,8 +31,6 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ColorLens
-import androidx.compose.material.icons.rounded.ExpandLess
-import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.ButtonDefaults
@@ -56,7 +47,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,12 +58,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.utils.toColorIntOrNull
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -85,16 +75,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.SubjectColorPalette
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
@@ -110,10 +96,8 @@ import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import kotlin.math.roundToInt
 
 import com.unistack.app.core.design.theme.contentColorOn
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -966,13 +950,6 @@ private fun SaturationValuePicker(
 }
 
 private fun Color.toHexString(): String = "#%06X".format(toArgb() and 0xFFFFFF)
-
-private fun String.toColorIntOrNull(): Int? {
-    val raw = removePrefix("#")
-    if (raw.length != 6) return null
-    val rgb = raw.toLongOrNull(16) ?: return null
-    return (0xFF000000L or rgb).toInt()
-}
 
 @Composable
 private fun ColorSwatch(
