@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
@@ -145,12 +146,12 @@ fun SubjectRow(
  * Inicio; dibujar el trazado no depende de que el recorte llegue a aplicarse.
  */
 @Composable
-private fun SubjectMark(letter: String, color: Color, seed: String) {
+internal fun SubjectMark(letter: String, color: Color, seed: String, markSize: Dp = 48.dp) {
     val polygon = remember(seed) { markShapeFor(seed) }
     val path = polygon.toPath()
 
-    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.size(48.dp)) {
+    Box(modifier = Modifier.size(markSize), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(markSize)) {
             withTransform({ scale(size.width, size.height, pivot = Offset.Zero) }) {
                 drawPath(path, color)
             }

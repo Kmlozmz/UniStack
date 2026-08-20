@@ -162,7 +162,7 @@ fun ExpensesScreen(
     var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
     var showCategorySheet by rememberSaveable { mutableStateOf(false) }
     var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.ALL) }
+    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.TODAY) }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
@@ -184,9 +184,19 @@ fun ExpensesScreen(
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
     val periodTotal = selectedPeriodExpenses.sumOf { it.amount }
     val activeBudget = when (selectedPeriod) {
+        // Un dia no tiene tope propio, asi que se mide contra el de la semana, que es el
+        // marco mas corto que el perfil guarda.
+        ExpensePeriodFilter.TODAY -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.WEEK -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.MONTH -> profile?.monthlyBudget ?: 0
         ExpensePeriodFilter.ALL -> (profile?.monthlyBudget ?: 0).takeIf { it > 0 } ?: (profile?.weeklyBudget ?: 0)
+    }
+    // Con «Hoy» el tope se compara con lo de la semana entera, no con lo de hoy: un tope
+    // semanal contra el gasto de un dia diria que llevas el 3 % usado cada lunes.
+    val budgetSpent = if (selectedPeriod == ExpensePeriodFilter.TODAY) {
+        expenses.filter { ExpensePeriodFilter.WEEK.matches(it) }.sumOf { it.amount }
+    } else {
+        periodTotal
     }
 
     BoxWithConstraints(
@@ -209,6 +219,7 @@ fun ExpensesScreen(
             recordCount = selectedPeriodExpenses.size,
             previousTotal = previousTotal,
             budget = activeBudget,
+            budgetSpent = budgetSpent,
             chartValues = chartValues,
             expenses = filteredExpenses,
             onAddExpenseClick = onAddExpenseClick,
@@ -288,6 +299,7 @@ private fun ExpensesContent(
     recordCount: Int,
     previousTotal: Int,
     budget: Int,
+    budgetSpent: Int,
     chartValues: List<Int>,
     expenses: List<Expense>,
     onAddExpenseClick: () -> Unit,
@@ -317,7 +329,7 @@ private fun ExpensesContent(
                     recordCount = recordCount,
                     trendText = trendText(periodTotal, previousTotal),
                     budget = budget,
-                    budgetProgress = if (budget > 0) (periodTotal / budget.toFloat()).coerceIn(0f, 1f) else 0f,
+                    budgetProgress = if (budget > 0) (budgetSpent / budget.toFloat()).coerceIn(0f, 1f) else 0f,
                     chartValues = chartValues,
                     onBudgetClick = onBudgetClick,
                     scale = scale
@@ -438,10 +450,17 @@ private fun ExpensesHeroCard(
                                 size = 42.dp,
                                 iconSize = 21.dp
                             )
-                            HeroPeriodSelector(
-                                selectedPeriod = selectedPeriod,
-                                onPeriodSelected = onPeriodSelected,
-                                scale = scale
+                            // Solo el rotulo del tramo. Aqui habia un segundo selector de
+                            // periodo, desplegable, que movia el mismo dato que el grupo de
+                            // filtros de debajo: dos mandos para una sola cosa, y el de
+                            // arriba tapaba media tarjeta al abrirse.
+                            Text(
+                                text = selectedPeriod.heroLabel,
+                                color = ExpenseText,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                         Text(
@@ -495,63 +514,6 @@ private fun ExpensesHeroCard(
                 onClick = onBudgetClick,
                 modifier = Modifier.fillMaxWidth()
             )
-        }
-    }
-}
-
-@Composable
-private fun HeroPeriodSelector(
-    selectedPeriod: ExpensePeriodFilter,
-    onPeriodSelected: (ExpensePeriodFilter) -> Unit,
-    scale: Float
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Row(
-            modifier = Modifier.cleanClickable { expanded = true },
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = selectedPeriod.heroLabel,
-                color = ExpenseText,
-                fontSize = scaledSp(18f, scale),
-                lineHeight = scaledSp(22f, scale),
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                softWrap = false
-            )
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = "Cambiar periodo",
-                tint = ExpenseMuted,
-                modifier = Modifier.size(scaledDp(18f, scale))
-            )
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(ExpenseCardHigh)
-        ) {
-            listOf(
-                ExpensePeriodFilter.ALL,
-                ExpensePeriodFilter.WEEK,
-                ExpensePeriodFilter.MONTH
-            ).forEach { period ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            text = period.heroLabel,
-                            color = if (period == selectedPeriod) ExpensePurple else ExpenseText,
-                            fontWeight = if (period == selectedPeriod) FontWeight.SemiBold else FontWeight.Medium
-                        )
-                    },
-                    onClick = {
-                        onPeriodSelected(period)
-                        expanded = false
-                    }
-                )
-            }
         }
     }
 }
@@ -1598,6 +1560,13 @@ private fun previousTotalForPeriod(
 ): Int {
     val today = ExpenseDateUtils.today()
     return when (period) {
+        // La tendencia de hoy se mide contra ayer, que es el tramo anterior del mismo largo.
+        ExpensePeriodFilter.TODAY -> {
+            val yesterday = today.minusDays(1)
+            expenses
+                .filter { ExpenseDateUtils.fromMillis(it.dateMillis) == yesterday }
+                .sumOf { it.amount }
+        }
         ExpensePeriodFilter.WEEK -> {
             val currentStart = ExpenseDateUtils.startOfWeek(today)
             val previousStart = currentStart.minusDays(7)
@@ -1624,7 +1593,14 @@ private fun previousTotalForPeriod(
 private fun recordCountLabel(count: Int): String =
     if (count == 1) "1 registro" else "$count registros"
 
+/**
+ * El tramo que suman la cifra, el grafico y la lista.
+ *
+ * «Hoy» es el que sale al abrir, y no «Todo»: lo primero que se viene a mirar es cuanto
+ * llevas gastado hoy, no el acumulado historico, que solo crece y nunca dice nada nuevo.
+ */
 private enum class ExpensePeriodFilter(val label: String, val heroLabel: String, val emptySuffix: String) {
+    TODAY("Hoy", "Hoy", "hoy"),
     WEEK("Semana", "Esta semana", "esta semana"),
     MONTH("Mes", "Este mes", "este mes"),
     ALL("Todo", "Todo", "todavía");
@@ -1633,6 +1609,7 @@ private enum class ExpensePeriodFilter(val label: String, val heroLabel: String,
         val today = ExpenseDateUtils.today()
         val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
         return when (this) {
+            TODAY -> date == today
             WEEK -> ExpenseDateUtils.isInCurrentWeek(expense.dateMillis, today)
             MONTH -> date.month == today.month && date.year == today.year
             ALL -> true

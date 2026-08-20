@@ -56,6 +56,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -516,19 +517,20 @@ private fun ExpenseCategoryOption(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // La elegida se rellena con el color de su categoria, el mismo que lleva despues en la
+    // lista. Antes eran seis contornos iguales y la marca era un tinte del 10 % que apenas
+    // se distinguia de las otras cinco.
+    val tone = category.expenseFormTone()
     Surface(
         modifier = modifier
             .height(56.dp)
             .cleanClickable(onClick),
-        shape = ExpenseFieldShape,
-        color = if (selected) ExpenseFormCoral.copy(alpha = 0.10f) else Color.Transparent,
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (selected) ExpenseFormCoral else ExpenseFormBorder
-        ),
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected) tone else MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
+        val content = if (selected) contentColorOn(tone) else MaterialTheme.colorScheme.onSurfaceVariant
         Row(
             modifier = Modifier.padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -537,14 +539,14 @@ private fun ExpenseCategoryOption(
             Icon(
                 imageVector = category.icon(),
                 contentDescription = null,
-                tint = if (selected) ExpenseFormCoral else ExpenseFormOptionText,
+                tint = content,
                 modifier = Modifier.size(22.dp)
             )
             Text(
                 text = category.label(),
-                color = if (selected) ExpenseFormCoral else ExpenseFormOptionText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
+                color = content,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -631,9 +633,8 @@ private fun SaveExpenseButton(
 private fun FormCard(content: @Composable () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = ExpenseFormShape,
-        color = ExpenseFormCard,
-        border = BorderStroke(1.dp, ExpenseFormBorder),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -653,9 +654,8 @@ private fun PremiumFieldContainer(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = minHeight),
-        shape = ExpenseFieldShape,
-        color = ExpenseFormCardHigh.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, ExpenseFormBorder),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -677,6 +677,18 @@ private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
     )
 }
 
+/** El mismo color que lleva la categoria en la lista de gastos. */
+@Composable
+private fun ExpenseCategory.expenseFormTone(): Color = when (this) {
+    ExpenseCategory.TRANSPORT -> LocalSectionColors.current.schedule
+    ExpenseCategory.FOOD -> LocalSectionColors.current.expenses
+    ExpenseCategory.COPIES -> LocalSectionColors.current.atRisk
+    ExpenseCategory.MATERIALS -> MaterialTheme.colorScheme.tertiary
+    ExpenseCategory.OUTINGS -> LocalSectionColors.current.onTrack
+    ExpenseCategory.OTHER -> MaterialTheme.colorScheme.outline
+}
+
+@Composable
 private fun ExpenseCategory.icon(): ImageVector {
     return when (this) {
         ExpenseCategory.TRANSPORT -> Icons.Rounded.DirectionsBus

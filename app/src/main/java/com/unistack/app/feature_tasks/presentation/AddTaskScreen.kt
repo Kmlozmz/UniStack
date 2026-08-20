@@ -81,6 +81,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_grades.presentation.SubjectMark
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ButtonGroupDefaults
@@ -1090,57 +1092,38 @@ private fun TimePickerSheet(
         is24Hour = true
     )
 
-    ModalBottomSheet(
+    // El mismo diálogo que pone hora a una materia en el horario.
+    //
+    // Aquí era una hoja que subía desde abajo con el reloj dentro, y en el horario un
+    // diálogo centrado: la misma pregunta contestada de dos formas distintas en la misma
+    // app. Se queda la del horario, y «Dejar sin hora» va debajo del reloj porque es una
+    // salida del formulario, no la acción principal.
+    AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 0.dp,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 22.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Hora límite",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "Usaremos esta hora para calcular recordatorios más oportunos.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Normal
-                )
-            }
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+        title = { Text("Hora límite") },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 TimePicker(state = pickerState)
+                TextButton(onClick = onClearTime) {
+                    Text("Dejar sin hora")
+                }
             }
-            Button(
-                shapes = UniStackButtonDefaults.shapes,
-                onClick = {
-                    onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute))
-                },
-                modifier = Modifier.fillMaxWidth()
-                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-            ) {
-                Text("Usar esta hora")
-            }
+        },
+        confirmButton = {
             TextButton(
-                onClick = onClearTime,
-                modifier = Modifier.fillMaxWidth()
+                onClick = { onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute)) }
             ) {
-                Text("Dejar sin hora")
+                Text("Aceptar")
             }
-        }
-    }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        },
+        shape = MaterialTheme.shapes.extraLarge
+    )
 }
 
 @Composable
@@ -1492,7 +1475,8 @@ private fun SubjectDropdown(
                                 onSubjectSelected(subject.id)
                                 subjectQuery = ""
                                 showSheet = false
-                            }
+                            },
+                            subject = subject
                         )
                     }
                     if (filteredSubjects.isEmpty() && subjectQuery.isNotBlank()) {
@@ -1638,7 +1622,8 @@ private fun SubjectSheetOption(
     title: String,
     subtitle: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    subject: Subject? = null
 ) {
     val shape = MaterialTheme.shapes.large
     Row(
@@ -1649,11 +1634,6 @@ private fun SubjectSheetOption(
                 color = if (selected) SubjectSheetSelectedSurface else SubjectSheetItemSurface,
                 shape = shape
             )
-            .border(
-                width = 0.8.dp,
-                color = if (selected) SubjectSheetAccent.copy(alpha = 0.62f) else MaterialTheme.colorScheme.outlineVariant,
-                shape = shape
-            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1662,21 +1642,33 @@ private fun SubjectSheetOption(
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
-                    shape = MaterialTheme.shapes.medium
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                contentDescription = null,
-                tint = if (selected) SubjectSheetSelectedIcon else SubjectSheetAccentSoft,
-                modifier = Modifier.size(23.dp)
+        // La misma marca de la lista de materias: la forma y el color con que ya reconoces
+        // esa materia en Academico. Aqui las cinco eran el mismo libro en el mismo morado,
+        // asi que habia que leer los cinco nombres para encontrar la tuya.
+        if (subject != null) {
+            SubjectMark(
+                letter = subject.name.take(1).uppercase(Locale.getDefault()),
+                color = subjectAccent(subject),
+                seed = subject.id,
+                markSize = 48.dp
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = if (selected) SubjectSheetAccent.copy(alpha = 0.22f) else SubjectSheetAccent.copy(alpha = 0.14f),
+                        shape = MaterialTheme.shapes.medium
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                    contentDescription = null,
+                    tint = if (selected) SubjectSheetSelectedIcon else SubjectSheetAccentSoft,
+                    modifier = Modifier.size(23.dp)
+                )
+            }
         }
         Spacer(modifier = Modifier.width(14.dp))
         Column(
