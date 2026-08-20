@@ -963,8 +963,7 @@ private fun TaskFilterSummaryChip(
     Surface(
         modifier = Modifier.cleanClickable(onClick),
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f),
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
@@ -1026,8 +1025,7 @@ private fun PendingGradesBanner(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.28f))
+        color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
@@ -1682,11 +1680,7 @@ private fun StatusFilterOption(
     Surface(
         modifier = modifier.cleanClickable(onClick),
         shape = MaterialTheme.shapes.medium,
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
-        border = BorderStroke(
-            width = 0.8.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.42f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
-        )
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(
             modifier = Modifier
@@ -1730,8 +1724,7 @@ private fun SubjectDropdownSelector(
                     .fillMaxWidth()
                     .cleanClickable { expanded = !expanded },
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(0.9.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.30f))
+                color = MaterialTheme.colorScheme.surfaceContainer
             ) {
                 Row(
                     modifier = Modifier
@@ -1769,8 +1762,7 @@ private fun SubjectDropdownSelector(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
@@ -1857,8 +1849,7 @@ private fun PrioritySegmentedControl(
             .fillMaxWidth()
             .height(46.dp),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.28f),
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f))
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             options.forEach { (priority, label) ->

@@ -81,6 +81,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
@@ -559,7 +560,6 @@ private fun AddTaskContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
             ) {
                 Column {
                     Row(
@@ -724,22 +724,12 @@ private fun FormSection(
 
 @Composable
 private fun SectionTitle(text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(width = 4.dp, height = 24.dp)
-                .background(MaterialTheme.colorScheme.primary, CircleShape)
-        )
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Medium
-        )
-    }
+    Text(
+        text = text.uppercase(Locale.forLanguageTag("es")),
+        color = MaterialTheme.colorScheme.primary,
+        style = SectionLabelStyle,
+        modifier = Modifier.padding(start = 4.dp)
+    )
 }
 
 @Composable
@@ -749,8 +739,6 @@ private fun FormSectionCard(content: @Composable ColumnScope.() -> Unit) {
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f),
-        borderWidth = 0.5.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
         Column(content = content)
@@ -834,7 +822,6 @@ private fun CompactInfoAction(
         modifier = modifier.bounceClick(onClick),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
@@ -1837,7 +1824,6 @@ private fun TaskTypeSelector(
                 .bounceClick { expanded = true },
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.20f))
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),

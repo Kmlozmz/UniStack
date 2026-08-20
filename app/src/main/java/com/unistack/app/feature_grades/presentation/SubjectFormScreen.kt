@@ -289,8 +289,6 @@ fun SubjectFormScreen(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     shape = MaterialTheme.shapes.large,
                     tonalElevation = 0.dp,
-                    borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-                    borderWidth = 0.5.dp
                 ) {
                     Text("Materia no encontrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

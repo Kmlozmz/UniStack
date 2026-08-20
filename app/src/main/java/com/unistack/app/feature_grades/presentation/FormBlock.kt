@@ -67,19 +67,16 @@ internal fun FormBlock(
 
     UniCard(
         modifier = modifier.fillMaxWidth(),
+        // Relleno del sistema y sin contorno. El bloque se separaba del fondo con un pelo
+        // de medio punto y un tinte al 38 %, que es como se dibujaba una tarjeta antes de
+        // que hubiera contenedores con su propio color.
         color = if (tinted) {
-            accent.copy(alpha = 0.07f)
+            accent.copy(alpha = 0.10f)
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+            MaterialTheme.colorScheme.surfaceContainerLow
         },
         shape = MaterialTheme.shapes.large,
         tonalElevation = 0.dp,
-        borderColor = if (tinted) {
-            accent.copy(alpha = 0.28f)
-        } else {
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)
-        },
-        borderWidth = 0.5.dp,
         contentPadding = PaddingValues(spacing.cardPadding)
     ) {
         // El espaciado no se condiciona a [expanded]: mientras el bloque se pliega su

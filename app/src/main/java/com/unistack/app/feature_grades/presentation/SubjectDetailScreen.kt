@@ -800,11 +800,7 @@ private fun SubjectClassFacts(session: ClassSession) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
-        )
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         FlowRow(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -882,14 +878,6 @@ private fun PeriodChooser(
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
                     },
-                    border = if (chosenPeriodId == null) {
-                        androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                        )
-                    } else {
-                        null
-                    }
                 ) {
                     Text(
                         periodDisplayName(period),
@@ -925,8 +913,6 @@ private fun SubjectOverviewCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -1187,11 +1173,7 @@ private fun SubjectMetricsBandContent(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.36f),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
-        )
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Row(
             modifier = Modifier
@@ -1319,8 +1301,6 @@ private fun SubjectInsightCard(
         modifier = modifier.fillMaxWidth(),
         color = tone.copy(alpha = 0.08f),
         shape = LargeCardShape,
-        borderColor = tone.copy(alpha = 0.2f),
-        borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Row(
@@ -1379,8 +1359,6 @@ private fun PeriodCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = if (isActive) accent.copy(alpha = 0.48f) else MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = 1.dp,
         contentPadding = PaddingValues(0.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
@@ -1535,8 +1513,6 @@ private fun PeriodSummaryCard(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
-        borderColor = MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = 1.dp,
         contentPadding = PaddingValues(20.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
