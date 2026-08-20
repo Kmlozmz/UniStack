@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -102,6 +104,10 @@ import com.unistack.app.feature_user.domain.VisualPreset
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import com.unistack.app.core.design.theme.SectionLabelStyle
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 @Composable
 fun AppearanceSettingsScreen(
     onBackClick: () -> Unit,
@@ -494,69 +500,69 @@ fun SettingsHubScreen(
             )
         }
         item {
-            SettingsDestination(
-                icon = Icons.Rounded.Palette,
-                title = "Apariencia",
-                subtitle = profile?.appearancePreferences?.summary() ?: "Tema y personalización",
-                onClick = onAppearanceClick,
-                highlighted = true
-            )
+            SettingsGroup(label = "PERSONALIZACIÓN") {
+                SettingsRow(
+                    icon = Icons.Rounded.Palette,
+                    title = "Apariencia",
+                    subtitle = profile?.appearancePreferences?.summary() ?: "Tema y personalización",
+                    onClick = onAppearanceClick
+                )
+                SettingsRowDivider()
+                SettingsRow(
+                    icon = Icons.Rounded.Accessibility,
+                    title = "Accesibilidad",
+                    subtitle = "Texto, contraste, movimiento y formatos",
+                    onClick = onAccessibilityClick
+                )
+            }
         }
         item {
-            SettingsDestination(
-                icon = Icons.Rounded.Accessibility,
-                title = "Accesibilidad",
-                subtitle = "Texto, contraste, movimiento y formatos",
-                onClick = onAccessibilityClick
-            )
+            SettingsGroup(label = "TU SEMESTRE") {
+                SettingsRow(
+                    icon = Icons.Rounded.School,
+                    title = "Configuración académica",
+                    subtitle = "Escala, metas y estructura de cortes",
+                    onClick = onAcademicClick
+                )
+                SettingsRowDivider()
+                SettingsRow(
+                    icon = Icons.Rounded.Widgets,
+                    title = "Módulos",
+                    subtitle = "Activa las áreas que quieres usar",
+                    onClick = onModulesClick
+                )
+                SettingsRowDivider()
+                SettingsRow(
+                    icon = Icons.Rounded.Person,
+                    title = "Cuenta y perfil",
+                    subtitle = "Nombre, cuenta vinculada y sincronización",
+                    onClick = onProfileClick
+                )
+            }
         }
         item {
-            SettingsDestination(
-                icon = Icons.Rounded.Person,
-                title = "Cuenta y perfil",
-                subtitle = "Nombre, cuenta vinculada y sincronización",
-                onClick = onProfileClick
-            )
-        }
-        item {
-            SettingsDestination(
-                icon = Icons.Rounded.School,
-                title = "Configuración académica",
-                subtitle = "Escala, metas y estructura de cortes",
-                onClick = onAcademicClick
-            )
-        }
-        item {
-            SettingsDestination(
-                icon = Icons.Rounded.Widgets,
-                title = "Módulos",
-                subtitle = "Activa las áreas que quieres usar",
-                onClick = onModulesClick
-            )
-        }
-        item {
-            SettingsDestination(
-                icon = Icons.Rounded.Notifications,
-                title = "Notificaciones",
-                subtitle = "Recordatorios, permisos y horario silencioso",
-                onClick = onNotificationsClick
-            )
-        }
-        item {
-            SettingsDestination(
-                icon = Icons.Rounded.Backup,
-                title = "Datos y respaldos",
-                subtitle = "Exportar, restaurar y repetir configuración inicial",
-                onClick = onDataClick
-            )
-        }
-        item {
-            SettingsDestination(
-                icon = Icons.Rounded.Refresh,
-                title = "Actualizaciones",
-                subtitle = "Verifica y descarga la última versión",
-                onClick = onUpdatesClick
-            )
+            SettingsGroup(label = "LA APP") {
+                SettingsRow(
+                    icon = Icons.Rounded.Notifications,
+                    title = "Notificaciones",
+                    subtitle = "Recordatorios, permisos y horario silencioso",
+                    onClick = onNotificationsClick
+                )
+                SettingsRowDivider()
+                SettingsRow(
+                    icon = Icons.Rounded.Backup,
+                    title = "Datos y respaldos",
+                    subtitle = "Exportar, restaurar y repetir configuración inicial",
+                    onClick = onDataClick
+                )
+                SettingsRowDivider()
+                SettingsRow(
+                    icon = Icons.Rounded.Refresh,
+                    title = "Actualizaciones",
+                    subtitle = "Verifica y descarga la última versión",
+                    onClick = onUpdatesClick
+                )
+            }
         }
     }
 }
@@ -929,50 +935,83 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun SettingsDestination(
+private fun SettingsGroup(label: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = label,
+            style = SectionLabelStyle,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 12.dp, top = 8.dp)
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerLow
+        ) {
+            Column(content = content)
+        }
+    }
+}
+
+/**
+ * Una entrada de ajustes: icono en su pastilla, titulo, apoyo y la punta de flecha.
+ *
+ * Van varias dentro de un mismo contenedor y no una tarjeta por entrada. Con una tarjeta cada
+ * una, ocho ajustes son ocho bloques del mismo peso y nada dice cuales se parecen entre si;
+ * agrupadas, el contenedor es el que agrupa y el rotulo de arriba dice de que va el grupo.
+ */
+@Composable
+private fun SettingsRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit,
-    highlighted: Boolean = false
+    onClick: () -> Unit
 ) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = if (highlighted) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow
-        },
-        borderColor = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else Color.Transparent,
-        borderWidth = if (highlighted) 1.dp else 0.dp,
-        onClick = onClick
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f)),
-                contentAlignment = Alignment.Center
+    Surface(onClick = onClick, color = Color.Transparent) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(40.dp)
             ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
+                }
             }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
+                    text = title,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline
+            )
         }
     }
+}
+
+@Composable
+private fun SettingsRowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 72.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    )
 }
 
 private fun AppearancePreferences.summary(): String =

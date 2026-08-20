@@ -51,9 +51,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.CornerRounding
-import androidx.compose.material3.toShape
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -73,8 +70,12 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.launch
-import androidx.graphics.shapes.star
 import com.unistack.app.core.utils.GradingScaleUtils
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material.icons.rounded.AutoAwesome
+import com.unistack.app.core.design.components.floatingOffset
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
@@ -358,16 +359,72 @@ private fun HomePriorityCard(
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
     ) {
         Box {
-            // Una galleta de nueve lóbulos, apenas insinuada: es la forma de Material 3
-            // Expressive, dibujada con el mismo motor de polígonos que usa MaterialShapes.
-            Box(
+            /*
+             * Los adornos del hero: dos círculos a la deriva y dos destellos.
+             *
+             * Los círculos se salen del recuadro a propósito —el recorte de la tarjeta los
+             * corta— y eso es lo que les da la sensación de estar detrás de ella. Los
+             * destellos giran y laten despacio sobre ellos, nunca sobre el texto.
+             *
+             * Antes de esto había aquí un polígono de nueve lóbulos recortando una caja, y
+             * salía un rectángulo: la forma no llegaba a aplicarse y lo que se veía era el
+             * bloque sin recortar. Se dibuja con Canvas, que no depende de recortar nada.
+             */
+            val ornament = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.07f)
+            val star = MaterialTheme.colorScheme.onPrimaryContainer
+            val circleBigFloat = floatingOffset(travel = 5f, durationMillis = 4200, label = "home-hero-circle-big")
+            val circleSmallFloat = floatingOffset(travel = 3.5f, durationMillis = 5600, label = "home-hero-circle-small")
+            val sparkleBig = floatingOffset(travel = 0.22f, durationMillis = 1500, label = "home-hero-sparkle-big")
+            val sparkleSmall = floatingOffset(travel = 0.28f, durationMillis = 1900, label = "home-hero-sparkle-small")
+
+            Canvas(modifier = Modifier.matchParentSize()) {
+                drawCircle(
+                    color = ornament,
+                    radius = size.height * 0.42f,
+                    center = Offset(
+                        x = size.width * 0.92f,
+                        y = size.height * 0.02f + circleBigFloat.dp.toPx()
+                    )
+                )
+                drawCircle(
+                    color = ornament,
+                    radius = size.height * 0.26f,
+                    center = Offset(
+                        x = size.width * 0.80f,
+                        y = size.height * 1.02f + circleSmallFloat.dp.toPx()
+                    )
+                )
+            }
+
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = star.copy(alpha = 0.62f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 58.dp, y = (-54).dp)
-                    .size(190.dp)
-                    .alpha(0.14f)
-                    .clip(cookieShape())
-                    .background(MaterialTheme.colorScheme.onPrimaryContainer)
+                    .offset(x = (-26).dp, y = 30.dp)
+                    .graphicsLayer {
+                        scaleX = 1f + sparkleBig
+                        scaleY = 1f + sparkleBig
+                        rotationZ = sparkleBig * 45f
+                        alpha = 0.72f + sparkleBig
+                    }
+                    .size(18.dp)
+            )
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = star.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-54).dp, y = 54.dp)
+                    .graphicsLayer {
+                        scaleX = 1f + sparkleSmall
+                        scaleY = 1f + sparkleSmall
+                        rotationZ = -sparkleSmall * 55f
+                        alpha = 0.66f + sparkleSmall
+                    }
+                    .size(10.dp)
             )
 
             Column(
@@ -639,20 +696,6 @@ private fun HomeTile(
             Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.CenterStart) { footer() }
         }
     }
-}
-
-/** La galleta de nueve lóbulos, construida con el motor de polígonos de Material. */
-@Composable
-private fun cookieShape(): androidx.compose.ui.graphics.Shape {
-    val polygon = remember {
-        RoundedPolygon.star(
-            numVerticesPerRadius = 9,
-            radius = 1f,
-            innerRadius = 0.85f,
-            rounding = CornerRounding(0.45f)
-        )
-    }
-    return polygon.toShape()
 }
 
 private fun primaryActionLabel(action: HomePriorityAction): String = when (action) {
