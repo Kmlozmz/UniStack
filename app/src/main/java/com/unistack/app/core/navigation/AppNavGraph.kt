@@ -84,6 +84,11 @@ import com.unistack.app.feature_profile.presentation.ProfileScreen
 import com.unistack.app.feature_profile.presentation.ProfileScreenMode
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
+import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
+import com.unistack.app.feature_profile.presentation.AccountSettingsScreen
+import com.unistack.app.feature_profile.presentation.ModuleSettingsScreen
+import com.unistack.app.feature_profile.presentation.NotificationSettingsScreen
+import com.unistack.app.feature_profile.presentation.DataSettingsScreen
 import com.unistack.app.feature_profile.presentation.AccessibilitySettingsScreen
 import com.unistack.app.feature_profile.presentation.SettingsHubScreen
 import com.unistack.app.feature_schedule.presentation.CalendarScheduleScreen
@@ -361,15 +366,13 @@ fun MainNavGraph(
                 RedirectToAcademic(navController, AppRoutes.AcademicTabTasks)
             }
             screen(AppRoutes.Profile) {
-                ProfileScreen(
-                    onOpenProClick = { navController.go(AppRoutes.Pro) },
-                    onOpenSettingsClick = { navController.go(AppRoutes.Settings) },
-                    onOpenAcademicClick = { navController.go(AppRoutes.AcademicSettings) },
-                    onOpenNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
-                    onOpenModulesClick = { navController.go(AppRoutes.ModuleSettings) },
-                    onOpenAppearanceClick = { navController.go(AppRoutes.AppearanceSettings) },
-                    onOpenDataClick = { navController.go(AppRoutes.DataSettings) },
-                    onOpenUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
+                AccountSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.Settings)
+                        }
+                    },
+                    onOpenProClick = { navController.go(AppRoutes.Pro) }
                 )
             }
             screen(
@@ -467,8 +470,7 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.AcademicSettings) {
-                ProfileScreen(
-                    mode = ProfileScreenMode.ACADEMIC,
+                AcademicSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
@@ -477,8 +479,7 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.ModuleSettings) {
-                ProfileScreen(
-                    mode = ProfileScreenMode.MODULES,
+                ModuleSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
@@ -487,8 +488,7 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.NotificationSettings) {
-                ProfileScreen(
-                    mode = ProfileScreenMode.NOTIFICATIONS,
+                NotificationSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
@@ -497,8 +497,7 @@ fun MainNavGraph(
                 )
             }
             screen(AppRoutes.DataSettings) {
-                ProfileScreen(
-                    mode = ProfileScreenMode.DATA,
+                DataSettingsScreen(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)

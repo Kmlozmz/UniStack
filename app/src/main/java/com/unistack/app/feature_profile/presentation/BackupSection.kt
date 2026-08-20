@@ -2,6 +2,12 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import androidx.compose.material.icons.automirrored.rounded.ListAlt
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import com.unistack.app.core.design.components.CookieCorner
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -137,16 +143,117 @@ internal fun BackupSection(
             .onFailure { onFeedback("No se pudo guardar el CSV.") }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // El aviso va arriba del todo y no al pie: quien entra aquí viene a poner sus datos a
-        // salvo, y tiene que saber antes de empezar que por ahora la copia la guarda él. Con
-        // icono, borde y fondo propios, porque como párrafo suelto se leía como decoración.
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        /*
+         * La copia manda arriba, con cuándo se hizo y qué lleva dentro.
+         *
+         * Antes lo primero era un párrafo explicando qué es una copia de seguridad, y el dato
+         * que uno viene a comprobar —si la última es de hoy o de hace tres meses— estaba
+         * enterrado dentro de un recuadro gris a media tarjeta.
+         */
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = LocalSectionColors.current.scheduleContainer,
+            contentColor = LocalSectionColors.current.onScheduleContainer
+        ) {
+            Box {
+                CookieCorner(
+                    color = LocalSectionColors.current.onScheduleContainer,
+                    size = 150.dp,
+                    offsetX = 250.dp,
+                    offsetY = (-50).dp,
+                    alpha = 0.16f
+                )
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text("ÚLTIMA COPIA", style = SectionLabelStyle)
+                    Text(
+                        text = lastBackup?.let { formatBackupDate(it) } ?: "Todavía ninguna",
+                        modifier = Modifier.padding(top = 6.dp),
+                        style = MaterialTheme.typography.titleLargeEmphasized,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = dataSummary,
+                        modifier = Modifier.padding(top = 3.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(
+                        modifier = Modifier.padding(top = 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Surface(
+                            onClick = { saveBackup.launch(BackupFiles.suggestedName("unistack-copia", "json")) },
+                            shape = CircleShape,
+                            color = LocalSectionColors.current.schedule,
+                            contentColor = LocalSectionColors.current.scheduleContainer
+                        ) {
+                            Text(
+                                "Guardar copia",
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Surface(
+                            onClick = {
+                                BackupFiles.shareText(
+                                    context = context,
+                                    fileName = BackupFiles.suggestedName("unistack-copia", "json"),
+                                    mimeType = "application/json",
+                                    text = viewModel.exportLocalBackup()
+                                )
+                                    .onSuccess {
+                                        BackupFiles.rememberBackupDone(context)
+                                        lastBackup = BackupFiles.lastBackupAt(context)
+                                    }
+                                    .onFailure { onFeedback("No se pudo compartir la copia.") }
+                            },
+                            shape = CircleShape,
+                            color = Color.Transparent
+                        ) {
+                            Text(
+                                "Compartir",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        SettingsGroup(label = "RESPALDOS") {
+            SettingsRow(
+                icon = Icons.Rounded.Backup,
+                title = "Restaurar desde un archivo",
+                subtitle = "Deja la app como estaba en esa copia",
+                iconColor = LocalSectionColors.current.schedule,
+                onClick = { openBackup.launch(arrayOf("application/json", "text/plain", "*/*")) }
+            )
+            SettingsRow(
+                icon = Icons.AutoMirrored.Rounded.ListAlt,
+                title = "Tareas en CSV",
+                subtitle = "Para abrirlas en una hoja de cálculo",
+                iconColor = MaterialTheme.colorScheme.tertiary,
+                onClick = { saveTasksCsv.launch(BackupFiles.suggestedName("unistack-tareas", "csv")) }
+            )
+            SettingsRow(
+                icon = Icons.Rounded.AccountBalanceWallet,
+                title = "Gastos en CSV",
+                subtitle = "Lo mismo, con tus registros de gasto",
+                iconColor = LocalSectionColors.current.expenses,
+                onClick = { saveExpensesCsv.launch(BackupFiles.suggestedName("unistack-gastos", "csv")) }
+            )
+        }
+
+        // El aviso no se va: por ahora la copia la guardas tú, y eso hay que decirlo antes de
+        // que alguien confíe en que la nube ya lo está haciendo sola.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.large)
                 .background(LocalSectionColors.current.atRisk.copy(alpha = 0.16f))
-                .border(1.dp, LocalSectionColors.current.atRisk.copy(alpha = 0.55f), MaterialTheme.shapes.large)
                 .padding(14.dp)
         ) {
             Icon(
@@ -156,91 +263,12 @@ internal fun BackupSection(
                 modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.width(11.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    "Esto es temporal",
-                    color = LocalSectionColors.current.atRisk,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    "Por ahora la copia la guardas tú, en un archivo. Pronto vas a poder " +
-                        "vincular tu cuenta de Google y que se haga sola, sin que tengas que " +
-                        "acordarte.",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp
-                )
-            }
-        }
-
-        UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackupBlockTitle(Icons.Rounded.Backup, "Copia de seguridad")
-                Text(
-                    "Un archivo con todo lo que tienes registrado. Guárdalo donde quieras y " +
-                        "úsalo para volver a dejar la app como estaba.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp
-                )
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.large)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                        .padding(12.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Contenido", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                        Text(
-                            dataSummary,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 12.sp,
-                            lineHeight = 17.sp
-                        )
-                        Text(
-                            lastBackup?.let { "Última copia: ${formatBackupDate(it)}" }
-                                ?: "Todavía no has guardado ninguna copia.",
-                            color = if (lastBackup == null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    BackupButton(
-                        label = "Guardar",
-                        icon = Icons.Rounded.Download,
-                        modifier = Modifier.weight(1f),
-                        primary = true,
-                        onClick = { saveBackup.launch(BackupFiles.suggestedName("unistack-copia", "json")) }
-                    )
-                    BackupButton(
-                        label = "Compartir",
-                        icon = Icons.Rounded.Share,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            BackupFiles.shareText(
-                                context = context,
-                                fileName = BackupFiles.suggestedName("unistack-copia", "json"),
-                                mimeType = "application/json",
-                                text = viewModel.exportLocalBackup()
-                            )
-                                .onSuccess {
-                                    BackupFiles.rememberBackupDone(context)
-                                    lastBackup = BackupFiles.lastBackupAt(context)
-                                }
-                                .onFailure { onFeedback("No se pudo compartir la copia.") }
-                        }
-                    )
-                }
-                BackupButton(
-                    label = "Restaurar desde un archivo",
-                    icon = Icons.Rounded.Backup,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { openBackup.launch(arrayOf("application/json", "text/plain", "*/*")) }
-                )
-            }
+            Text(
+                "Por ahora la copia la guardas tú, en un archivo. Pronto vas a poder vincular " +
+                    "tu cuenta de Google y que se haga sola, sin que tengas que acordarte.",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
 
         // Apagada al 45% mientras no se pueda usar: un bloque a plena luz con los botones

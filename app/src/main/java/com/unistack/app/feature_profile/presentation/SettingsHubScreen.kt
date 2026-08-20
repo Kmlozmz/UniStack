@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -36,18 +34,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.toPath
-import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.star
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.BuildConfig
+import com.unistack.app.core.design.components.CookieCorner
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -255,8 +248,6 @@ private fun settingsIdentityDetail(profile: UserProfile): String {
  */
 @Composable
 private fun SettingsProCard(isPro: Boolean, onClick: () -> Unit) {
-    val polygon = remember { proCardPolygon() }
-    val path = polygon.toPath()
     val ink = MaterialTheme.colorScheme.onPrimaryContainer
 
     Surface(
@@ -267,15 +258,7 @@ private fun SettingsProCard(isPro: Boolean, onClick: () -> Unit) {
         contentColor = ink
     ) {
         Box {
-            Canvas(
-                modifier = Modifier
-                    .size(130.dp)
-                    .offset(x = 250.dp, y = (-42).dp)
-            ) {
-                withTransform({ scale(size.width, size.height, pivot = Offset.Zero) }) {
-                    drawPath(path, ink.copy(alpha = 0.18f))
-                }
-            }
+            CookieCorner(color = ink)
             Row(
                 modifier = Modifier.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -314,13 +297,3 @@ private fun SettingsProCard(isPro: Boolean, onClick: () -> Unit) {
         }
     }
 }
-
-/** La galleta de Material 3 Expressive, la misma familia que marca las materias. */
-private fun proCardPolygon(): RoundedPolygon = RoundedPolygon.star(
-    numVerticesPerRadius = 12,
-    radius = 0.5f,
-    innerRadius = 0.5f * 0.86f,
-    rounding = CornerRounding(0.2f),
-    centerX = 0.5f,
-    centerY = 0.5f
-)

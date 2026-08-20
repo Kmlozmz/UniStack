@@ -1406,7 +1406,7 @@ private fun AppModule.description(): String {
     }
 }
 
-private fun AppUser.accountLabel(): String {
+internal fun AppUser.accountLabel(): String {
     return when (authProvider) {
         AuthProvider.LOCAL -> "Cuenta local"
         AuthProvider.GOOGLE -> "Google conectado"
@@ -1430,7 +1430,7 @@ private fun SyncStatus.label(): String {
  * siempre que sí —aunque el usuario hubiera apagado las notificaciones de la app en ajustes—.
  * `areNotificationsEnabled` responde lo que de verdad importa en todas las versiones.
  */
-private fun Context.hasNotificationPermission(): Boolean =
+internal fun Context.hasNotificationPermission(): Boolean =
     NotificationManagerCompat.from(this).areNotificationsEnabled()
 
 /**
@@ -1440,7 +1440,7 @@ private fun Context.hasNotificationPermission(): Boolean =
  * con un «no» sin que se vea nada: el botón parecía roto. Cuando se llega a ese punto, el único
  * camino son los ajustes del sistema.
  */
-private fun Context.canAskForNotificationPermission(alreadyAsked: Boolean): Boolean {
+internal fun Context.canAskForNotificationPermission(alreadyAsked: Boolean): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
     if (!alreadyAsked) return true
     val activity = this as? android.app.Activity ?: return false
@@ -1448,7 +1448,7 @@ private fun Context.canAskForNotificationPermission(alreadyAsked: Boolean): Bool
 }
 
 /** Abre los ajustes de notificaciones de la app, con el detalle de la app como respaldo. */
-private fun Context.openNotificationSettings() {
+internal fun Context.openNotificationSettings() {
     val direct = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
         .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

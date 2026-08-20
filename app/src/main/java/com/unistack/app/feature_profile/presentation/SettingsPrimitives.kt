@@ -89,12 +89,30 @@ internal fun SettingsHeader(
  * Un rótulo de sección y, bajo él, el contenedor con sus filas.
  */
 @Composable
-internal fun SettingsGroup(label: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun SettingsGroup(
+    label: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    SettingsGroup(label = label, labelColor = MaterialTheme.colorScheme.primary, content = content)
+}
+
+/**
+ * El mismo grupo, con el rótulo en otro color.
+ *
+ * Lo usa el grupo de lo irreversible: el rojo del rótulo es lo que lo separa de los grupos de
+ * arriba antes de haber leído una sola fila.
+ */
+@Composable
+internal fun SettingsGroup(
+    label: String,
+    labelColor: Color,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = label,
             style = SectionLabelStyle,
-            color = MaterialTheme.colorScheme.primary,
+            color = labelColor,
             modifier = Modifier.padding(start = 12.dp, top = 8.dp)
         )
         Surface(
