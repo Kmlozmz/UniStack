@@ -19,7 +19,6 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,6 +92,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.UniSegmentedControl
 import androidx.compose.material3.MotionScheme
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.HelpOutline
@@ -202,9 +203,6 @@ internal object SetupSteps {
 }
 
 private const val SETUP_EXIT_MILLIS = 220
-
-/** Separación entre el control segmentado y sus segmentos; define el radio concéntrico. */
-private val SEGMENT_INSET = 3.dp
 
 @Composable
 fun SetupFlow(
@@ -2618,80 +2616,31 @@ private fun SetupEvenSplitAction(count: Int, onSplit: (List<String>) -> Unit) {
 private fun setupPercentValue(text: String): Double =
     text.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
 
+/**
+ * El mismo control que Materias/Tareas o Horario/Calendario.
+ *
+ * Era una caja con borde y dos cajas dentro separadas por cuatro puntos: elegir entre dos
+ * cosas se ve distinto aquí que en el resto de la app, y es exactamente la misma pregunta.
+ * `UniSegmentedControl` trae el grupo conectado, la deformación al pulsar y el empuje al
+ * vecino, que es lo que hace Material con esto.
+ */
 @Composable
 private fun EvaluationTypeSegmentedControl(
     selected: AcademicPeriodLabel?,
     onSelected: (AcademicPeriodLabel) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.62f else 0.82f))
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.74f else 0.9f),
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(SEGMENT_INSET),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        AcademicPeriodLabel.entries.forEach { option ->
-            EvaluationSegment(
+    UniSegmentedControl(
+        selected = selected,
+        options = AcademicPeriodLabel.entries.map { option ->
+            UniSegmentedOption<AcademicPeriodLabel?>(
+                value = option,
                 label = periodLabelTitle(option),
-                selected = selected == option,
-                onClick = { onSelected(option) },
-                modifier = Modifier.weight(1f)
+                icon = Icons.Rounded.CalendarMonth
             )
-        }
-    }
-}
-
-@Composable
-private fun EvaluationSegment(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            // Escala contenida: el segmento vive dentro de un control con vecinos pegados,
-            // así que un rebote grande invadiría el de al lado.
-            .expressiveSelection(selected, selectedScale = 1.02f)
-            // Forma concéntrica con el contenedor, descontando su relleno de 3.dp. Sin
-            // esto la píldora seleccionada quedaba más redonda que el borde que la
-            // envuelve y los arcos no encajaban.
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Transparent)
-            .clickable(
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.CalendarMonth,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
+        },
+        onSelected = { value -> value?.let(onSelected) },
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable
