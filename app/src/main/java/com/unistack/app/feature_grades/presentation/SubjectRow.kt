@@ -35,6 +35,7 @@ import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_schedule.domain.ClassSession
 
 /**
  * Una materia en la lista.
@@ -53,7 +54,9 @@ fun SubjectRow(
     calculation: SubjectGradeCalculation,
     gradingScale: GradingScale,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** El bloque de clase, si lo tiene: de ahí salen el aula y el profesor. */
+    classSession: ClassSession? = null
 ) {
     val sections = LocalSectionColors.current
     val accent = subjectAccent(subject)
@@ -89,12 +92,26 @@ fun SubjectRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = progressLine(calculation, gradingScale),
+                    text = supportLine(subject, calculation, gradingScale),
                     style = MaterialTheme.typography.bodySmall,
                     color = support,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                val place = classSession?.place
+                val context = listOfNotNull(
+                    place?.room?.takeIf(String::isNotBlank),
+                    place?.professor?.takeIf(String::isNotBlank)
+                ).joinToString(" · ")
+                if (context.isNotBlank()) {
+                    Text(
+                        text = context,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = support,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 LinearWavyProgressIndicator(
                     progress = { calculation.evaluatedSemesterFraction.toFloat().coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth(),
@@ -161,20 +178,34 @@ private fun SubjectMark(letter: String, color: Color) {
  * Con la meta en riesgo cambia de tema a propósito: cuánto queda por evaluar deja de ser lo
  * útil, y lo que hace falta saber es qué nota hay que sacar en lo que falta para alcanzarla.
  */
-@Composable
-private fun progressLine(
+private fun supportLine(
+    subject: Subject,
+    calculation: SubjectGradeCalculation,
+    gradingScale: GradingScale
+): String {
+    // El corte va delante cuando el usuario ha elegido uno. Mientras no lo haya elegido no se
+    // nombra ninguno: la app no sabe en qué punto del semestre va, y suponerlo fue justo el
+    // fallo que se corrigió al dejar activePeriodId vacío de nacimiento.
+    val period = subject.chosenPeriodId
+        ?.let { id -> subject.periodScheme.periods.firstOrNull { it.id == id } }
+        ?.name
+    val state = progressState(calculation, gradingScale)
+    return listOfNotNull(period, state).joinToString(" · ")
+}
+
+private fun progressState(
     calculation: SubjectGradeCalculation,
     gradingScale: GradingScale
 ): String {
     val remaining = ((1.0 - calculation.evaluatedSemesterFraction) * 100).toInt().coerceIn(0, 100)
     val needed = calculation.neededForTarget
     return when {
-        calculation.outlook == TargetOutlook.UNREACHABLE -> "La meta ya no se alcanza"
+        calculation.outlook == TargetOutlook.UNREACHABLE -> "la meta ya no se alcanza"
         calculation.outlook == TargetOutlook.AT_RISK && needed != null ->
-            "Necesitas ${GradingScaleUtils.formatGrade(needed, gradingScale)} en lo que falta"
-        calculation.outlook == TargetOutlook.NO_DATA -> "Sin notas todavía"
-        remaining == 0 -> "Todo evaluado"
-        else -> "Falta el $remaining %"
+            "necesitas ${GradingScaleUtils.formatGrade(needed, gradingScale)} en lo que falta"
+        calculation.outlook == TargetOutlook.NO_DATA -> "sin notas todavía"
+        remaining == 0 -> "todo evaluado"
+        else -> "falta el $remaining %"
     }
 }
 

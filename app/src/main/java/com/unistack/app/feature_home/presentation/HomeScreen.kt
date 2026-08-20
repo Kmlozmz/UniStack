@@ -608,12 +608,21 @@ private fun HomeSnapshotRow(
                 onClick = onAverageClick,
                 modifier = Modifier.weight(1f)
             ) {
-                val max = GradingScaleUtils.maxGradeFor(summary.gradingScale).toFloat()
-                LinearWavyProgressIndicator(
-                    progress = { ((summary.generalAverage ?: 0.0).toFloat() / max).coerceIn(0f, 1f) },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.outlineVariant
+                /*
+                 * La referencia de la escala, no una barra.
+                 *
+                 * Aquí hubo un indicador de progreso ondulado y no quería decir nada: un
+                 * promedio de 4,0 no es «el 80 % de algo», es una nota. La barra invitaba a
+                 * leerlo como un avance que se llena, que es justo lo que no es.
+                 */
+                Text(
+                    text = "de " + GradingScaleUtils.formatGrade(
+                        GradingScaleUtils.maxGradeFor(summary.gradingScale),
+                        summary.gradingScale
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
                 )
             }
         }

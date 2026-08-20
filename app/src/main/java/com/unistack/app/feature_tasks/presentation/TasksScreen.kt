@@ -433,16 +433,20 @@ fun TasksScreen(
             }
         }
 
-        NewTaskFab(
-            onClick = {
-                clearSearchFocus()
-                onNewTaskClick()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
-                .padding(end = 20.dp, bottom = 20.dp)
-        )
+        if (!embedded) {
+            // Dentro de Académico la acción de crear la da el menú flotante, y tener los dos
+            // ponía dos formas de crear una tarea encima una de otra.
+            NewTaskFab(
+                onClick = {
+                    clearSearchFocus()
+                    onNewTaskClick()
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    // Anclado, no desplazable: sin esto la barra flotante lo tapa siempre.
+                    .padding(end = 20.dp, bottom = 20.dp)
+            )
+        }
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier

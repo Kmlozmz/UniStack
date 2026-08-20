@@ -184,7 +184,8 @@ fun GradesScreen(
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,
-                        onClick = { onSubjectClick(subject.id) }
+                        onClick = { onSubjectClick(subject.id) },
+                        classSession = classSessions.firstOrNull { it.subjectId == subject.id }
                     )
                 }
             }
