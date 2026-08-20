@@ -42,6 +42,7 @@ import com.unistack.app.core.utils.BuildStage
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import com.unistack.app.feature_home.domain.HomePriorityTimeframe
 
 internal object HomeSummaryFactory {
     fun create(
@@ -380,7 +381,19 @@ internal object HomeSummaryFactory {
             .firstOrNull() ?: return null
         val (date, session) = next
         val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu proxima clase"
-        val dayText = if (date == today) "hoy" else date.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("es"))
+        val dayText = when (date) {
+            today -> "hoy"
+            today.plusDays(1) -> "mañana"
+            else -> "el " + date.dayOfWeek.getDisplayName(
+                java.time.format.TextStyle.FULL,
+                java.util.Locale.forLanguageTag("es")
+            )
+        }
+        val timeframe = when (date) {
+            today -> HomePriorityTimeframe.TODAY
+            today.plusDays(1) -> HomePriorityTimeframe.TOMORROW
+            else -> HomePriorityTimeframe.LATER
+        }
         val timeText = formatClassMinute(session.startMinute)
         return HomePrioritySummary(
             title = "$subjectName a las $timeText",
@@ -388,7 +401,8 @@ internal object HomeSummaryFactory {
             fullDescription = "Tu horario ya esta conectado con UniStack. Desde Agenda puedes registrar asistencia, modalidad, cambios puntuales y mantener tus recordatorios alineados con la clase.",
             suggestion = "${heroActionPrefix()}: abrir el horario y preparar la siguiente clase.",
             action = HomePriorityAction.SCHEDULE,
-            subjectId = session.subjectId
+            subjectId = session.subjectId,
+            timeframe = timeframe
         )
     }
 

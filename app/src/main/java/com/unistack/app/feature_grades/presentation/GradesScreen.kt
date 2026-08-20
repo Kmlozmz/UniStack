@@ -79,6 +79,8 @@ import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.OutlinedToggleButton
+import androidx.compose.foundation.layout.defaultMinSize
 @Composable
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
@@ -135,31 +137,39 @@ fun GradesScreen(
             }
             item("filtros") {
                 /*
-                 * FilterChip, que es el componente del diseno: sin marcar va con contorno y
-                 * sin relleno, y marcado se rellena con el contenedor secundario y saca su
-                 * marca de verificacion a la izquierda.
+                 * Los filtros, dentro de un grupo de botones.
                  *
-                 * Estuvieron un momento como botones tonales grandes y quedaban como tres
-                 * pastillas moradas que competian con el selector de arriba.
+                 * `animateWidth` es lo que les da el rebote y la relación con el vecino: al
+                 * mantener pulsado uno, ese se ensancha y los de al lado se comprimen para
+                 * dejarle sitio, y al soltar vuelven con el muelle del tema. Sueltos en una
+                 * fila cada uno respondía por su cuenta y no se tocaban entre ellos.
+                 *
+                 * Sin `weight`: cada uno mide lo que ocupa su texto. Forzándolos al mismo
+                 * ancho, el grupo daba por desbordado su contenido y no dibujaba nada.
                  */
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SubjectFilter.entries.forEach { option ->
-                        FilterChip(
-                            selected = filter == option,
-                            onClick = { filter = option },
-                            label = { Text(option.label) },
-                            leadingIcon = if (filter == option) {
-                                {
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else {
-                                null
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isSelected = filter == option
+                        OutlinedToggleButton(
+                            checked = isSelected,
+                            onCheckedChange = { filter = option },
+                            interactionSource = interactionSource,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 38.dp)
+                                .animateWidth(interactionSource)
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.size(6.dp))
                             }
-                        )
+                            Text(option.label, style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                 }
             }

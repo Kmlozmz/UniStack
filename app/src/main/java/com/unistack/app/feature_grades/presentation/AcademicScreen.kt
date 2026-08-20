@@ -100,6 +100,12 @@ fun AcademicScreen(
                         )
                     }
                 }
+                Text(
+                    text = "Materias, notas y entregas en un mismo lugar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
                 UniSegmentedControl(
                     selected = selectedTab,
                     options = AcademicTab.entries.map { tab ->

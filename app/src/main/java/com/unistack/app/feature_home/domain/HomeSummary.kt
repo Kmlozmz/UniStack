@@ -35,8 +35,23 @@ data class HomePrioritySummary(
     val fullDescription: String,
     val suggestion: String,
     val action: HomePriorityAction,
-    val subjectId: String? = null
+    val subjectId: String? = null,
+    /**
+     * Cuándo es lo que anuncia.
+     *
+     * El rótulo del hero decía «lo primero de hoy» pasara lo que pasara, y la próxima clase
+     * puede caer dentro de dos días: se anunciaba como cosa de hoy algo que no lo era. Lo
+     * decide quien construye la prioridad, que es el único que sabe la fecha.
+     */
+    val timeframe: HomePriorityTimeframe = HomePriorityTimeframe.TODAY
 )
+
+/** Para cuándo es la prioridad que enseña el hero. */
+enum class HomePriorityTimeframe {
+    TODAY,
+    TOMORROW,
+    LATER
+}
 
 enum class HomePriorityAction {
     SUBJECT,

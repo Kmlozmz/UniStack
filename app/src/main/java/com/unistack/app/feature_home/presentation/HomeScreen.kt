@@ -76,6 +76,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.rounded.AutoAwesome
 import com.unistack.app.core.design.components.floatingOffset
+import com.unistack.app.feature_home.domain.HomePriorityTimeframe
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
@@ -440,7 +441,7 @@ private fun HomePriorityCard(
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.onPrimaryContainer)
                     )
-                    Text(text = "LO PRIMERO DE HOY", style = SectionLabelStyle)
+                    Text(text = heroLabel(priority.timeframe), style = SectionLabelStyle)
                 }
                 Text(
                     text = priority.title,
@@ -707,6 +708,18 @@ private fun HomeTile(
             Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.CenterStart) { footer() }
         }
     }
+}
+
+/**
+ * El rótulo del hero, según para cuándo sea lo que anuncia.
+ *
+ * Antes ponía «lo primero de hoy» siempre, y con la próxima clase a dos días vista eso era
+ * sencillamente falso.
+ */
+private fun heroLabel(timeframe: HomePriorityTimeframe): String = when (timeframe) {
+    HomePriorityTimeframe.TODAY -> "LO PRIMERO DE HOY"
+    HomePriorityTimeframe.TOMORROW -> "LO PRIMERO DE MAÑANA"
+    HomePriorityTimeframe.LATER -> "LO SIGUIENTE"
 }
 
 private fun primaryActionLabel(action: HomePriorityAction): String = when (action) {

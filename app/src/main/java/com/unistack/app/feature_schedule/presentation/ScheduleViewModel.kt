@@ -36,7 +36,15 @@ data class ScheduleUiState(
     val agendaEvents: List<AgendaEvent> = emptyList(),
     val subjects: List<Subject> = emptyList(),
     val tasks: List<StudentTask> = emptyList(),
-    val accessibility: AccessibilityPreferences = AccessibilityPreferences()
+    val accessibility: AccessibilityPreferences = AccessibilityPreferences(),
+    /**
+     * Si los datos ya llegaron.
+     *
+     * El valor inicial de un `stateIn` es un estado vacío, y la pantalla lo pintaba como si
+     * fuera la respuesta: al entrar en Horario se veía un instante «no hay clases» y acto
+     * seguido aparecía todo. Con esto la pantalla sabe distinguir «todavía no sé» de «no hay».
+     */
+    val loaded: Boolean = false
 )
 
 @HiltViewModel
@@ -65,9 +73,12 @@ class ScheduleViewModel @Inject constructor(
             agendaEvents = schedule.third,
             subjects = subjects,
             tasks = tasks,
-            accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences()
+            accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences(),
+            loaded = true
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ScheduleUiState())
+        // Eagerly y no WhileSubscribed: con la suscripción caducando a los cinco segundos,
+        // salir de Horario y volver reiniciaba el flujo y repetía el mismo parpadeo.
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, ScheduleUiState())
 
     fun delete(sessionId: String) = repository.deleteSession(sessionId)
 

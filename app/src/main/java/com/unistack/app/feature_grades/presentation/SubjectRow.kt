@@ -79,7 +79,7 @@ fun SubjectRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SubjectMark(letter = subject.name.take(1).uppercase(), color = accent)
+            SubjectMark(letter = subject.name.take(1).uppercase(), color = accent, seed = subject.id)
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -145,17 +145,8 @@ fun SubjectRow(
  * Inicio; dibujar el trazado no depende de que el recorte llegue a aplicarse.
  */
 @Composable
-private fun SubjectMark(letter: String, color: Color) {
-    val polygon = remember {
-        RoundedPolygon.star(
-            numVerticesPerRadius = 9,
-            radius = 0.5f,
-            innerRadius = 0.42f,
-            rounding = CornerRounding(0.22f),
-            centerX = 0.5f,
-            centerY = 0.5f
-        )
-    }
+private fun SubjectMark(letter: String, color: Color, seed: String) {
+    val polygon = remember(seed) { markShapeFor(seed) }
     val path = polygon.toPath()
 
     Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
@@ -170,6 +161,45 @@ private fun SubjectMark(letter: String, color: Color) {
             color = MaterialTheme.colorScheme.surface
         )
     }
+}
+
+/**
+ * La familia de formas de Material 3 Expressive, construidas con su mismo motor de polígonos.
+ *
+ * Cada una cambia en tres cosas: cuántos lóbulos tiene, cuánto se hunde entre ellos y cuánto
+ * se redondean las puntas. De ahí salen la galleta, el trébol, el estallido, el sol y la flor.
+ */
+private val MarkShapes: List<() -> RoundedPolygon> = listOf(
+    { markPolygon(vertices = 9, innerRatio = 0.84f, rounding = 0.22f) },   // galleta
+    { markPolygon(vertices = 4, innerRatio = 0.62f, rounding = 0.35f) },   // trébol
+    { markPolygon(vertices = 12, innerRatio = 0.80f, rounding = 0.12f) },  // estallido suave
+    { markPolygon(vertices = 8, innerRatio = 0.88f, rounding = 0.28f) },   // sol
+    { markPolygon(vertices = 6, innerRatio = 0.66f, rounding = 0.32f) },   // flor
+    { markPolygon(vertices = 7, innerRatio = 0.78f, rounding = 0.20f) },   // galleta de siete
+    { markPolygon(vertices = 5, innerRatio = 0.72f, rounding = 0.30f) },   // pentágono blando
+    { markPolygon(vertices = 10, innerRatio = 0.90f, rounding = 0.18f) }   // margarita
+)
+
+private fun markPolygon(vertices: Int, innerRatio: Float, rounding: Float): RoundedPolygon =
+    RoundedPolygon.star(
+        numVerticesPerRadius = vertices,
+        radius = 0.5f,
+        innerRadius = 0.5f * innerRatio,
+        rounding = CornerRounding(rounding),
+        centerX = 0.5f,
+        centerY = 0.5f
+    )
+
+/**
+ * Qué forma le toca a una materia.
+ *
+ * Sale de su identificador y no de un sorteo: así es distinta de la de al lado pero **siempre
+ * la misma** para la misma materia. Una forma que cambiara en cada recomposición dejaría de
+ * servir para reconocerla de un vistazo, que es justo para lo que está.
+ */
+private fun markShapeFor(seed: String): RoundedPolygon {
+    val index = Math.floorMod(seed.hashCode(), MarkShapes.size)
+    return MarkShapes[index]()
 }
 
 /**
@@ -190,7 +220,10 @@ private fun supportLine(
         ?.let { id -> subject.periodScheme.periods.firstOrNull { it.id == id } }
         ?.name
     val state = progressState(calculation, gradingScale)
-    return listOfNotNull(period, state).joinToString(" · ")
+    // Mayúscula al principio y en ningún otro sitio. Las piezas se escriben en minúscula
+    // porque cualquiera de ellas puede ir en medio: con el corte delante, «Falta el 35 %»
+    // quedaba como «Corte 2 · Falta el 35 %», con una mayúscula suelta a media frase.
+    return listOfNotNull(period, state).joinToString(" · ").replaceFirstChar(Char::uppercase)
 }
 
 private fun progressState(

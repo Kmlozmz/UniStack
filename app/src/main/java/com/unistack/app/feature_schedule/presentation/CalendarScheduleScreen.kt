@@ -175,6 +175,19 @@ fun CalendarScheduleScreen(
     val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
     val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }
 
+    /*
+     * Nada hasta que haya datos.
+     *
+     * El estado inicial de un `stateIn` es una copia vacía, y la pantalla la pintaba como si
+     * fuera la respuesta: al entrar en Horario se veía un fotograma de «no hay clases» y acto
+     * seguido aparecía todo. Un hueco del color del fondo durante ese fotograma no lo nota
+     * nadie; una pantalla que dice que no tienes nada, sí.
+     */
+    if (!state.loaded) {
+        Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
+        return
+    }
+
     ScheduleIdentityContent(
         view = identityView,
         selectedDate = selectedDate,
