@@ -199,12 +199,13 @@ fun ExpensesScreen(
         periodTotal
     }
 
-    BoxWithConstraints(
+    // Un Box normal: medía la pantalla solo para calcular el factor de encogimiento, y ya
+    // no hay factor. Medir para nada obliga a una pasada de composición de más.
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(ExpenseBackground)
     ) {
-        val scale = expenseScale(maxWidth)
         ExpensesContent(
             selectedPeriod = selectedPeriod,
             onPeriodSelected = { selectedPeriod = it },
@@ -226,8 +227,7 @@ fun ExpensesScreen(
             onEditExpenseClick = onEditExpenseClick,
             onDeleteExpenseClick = { expenseIdPendingDelete = it },
             onBudgetClick = { showBudgetSheet = true },
-            scale = scale,
-            bottomPadding = scaledDp(118f, scale)
+            bottomPadding = 118.dp
         )
     }
 
@@ -306,21 +306,20 @@ private fun ExpensesContent(
     onEditExpenseClick: (String) -> Unit,
     onDeleteExpenseClick: (String) -> Unit,
     onBudgetClick: () -> Unit,
-    scale: Float,
     bottomPadding: Dp
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
-                start = scaledDp(24f, scale),
-                top = scaledDp(58f, scale),
-                end = scaledDp(24f, scale),
+                start = 24.dp,
+                top = 58.dp,
+                end = 24.dp,
                 bottom = bottomPadding
             ),
-            verticalArrangement = Arrangement.spacedBy(scaledDp(20f, scale))
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { ExpensesHeader(scale = scale) }
+            item { ExpensesHeader() }
             item {
                 ExpensesHeroCard(
                     selectedPeriod = selectedPeriod,
@@ -331,8 +330,7 @@ private fun ExpensesContent(
                     budget = budget,
                     budgetProgress = if (budget > 0) (budgetSpent / budget.toFloat()).coerceIn(0f, 1f) else 0f,
                     chartValues = chartValues,
-                    onBudgetClick = onBudgetClick,
-                    scale = scale
+                    onBudgetClick = onBudgetClick
                 )
             }
             item {
@@ -342,18 +340,17 @@ private fun ExpensesContent(
                     selectedCategory = selectedCategory,
                     categories = categories,
                     onCategorySelected = onCategorySelected,
-                    onCategoryClick = onCategoryClick,
-                    scale = scale
+                    onCategoryClick = onCategoryClick
                 )
             }
             if (expenses.isEmpty()) {
-                item { ExpensesEmptyState(period = selectedPeriod, scale = scale) }
+                item { ExpensesEmptyState(period = selectedPeriod) }
             } else {
                 item {
                     Text(
                         text = "Últimos gastos",
                         color = ExpenseText,
-                        fontSize = scaledSp(20f, scale),
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -361,8 +358,7 @@ private fun ExpensesContent(
                     ExpenseListItem(
                         expense = expense,
                         onEditClick = { onEditExpenseClick(expense.id) },
-                        onDeleteClick = { onDeleteExpenseClick(expense.id) },
-                        scale = scale
+                        onDeleteClick = { onDeleteExpenseClick(expense.id) }
                     )
                 }
             }
@@ -370,7 +366,6 @@ private fun ExpensesContent(
 
         RegisterExpenseButton(
             onClick = onAddExpenseClick,
-            scale = scale,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 // Un FAB no es contenido que se desplaza: está anclado, así que la barra
@@ -381,13 +376,12 @@ private fun ExpensesContent(
 }
 
 @Composable
-private fun ExpensesHeader(scale: Float) {
-    Column(verticalArrangement = Arrangement.spacedBy(scaledDp(8f, scale))) {
+private fun ExpensesHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "Gastos",
             color = ExpenseText,
-            fontSize = scaledSp(34f, scale),
-            lineHeight = scaledSp(38f, scale),
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             softWrap = false
@@ -395,8 +389,7 @@ private fun ExpensesHeader(scale: Float) {
         Text(
             text = "Registra gastos personales y académicos.",
             color = ExpenseMuted,
-            fontSize = scaledSp(16f, scale),
-            lineHeight = scaledSp(22f, scale),
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium
         )
     }
@@ -412,36 +405,35 @@ private fun ExpensesHeroCard(
     budget: Int,
     budgetProgress: Float,
     chartValues: List<Int>,
-    onBudgetClick: () -> Unit,
-    scale: Float
+    onBudgetClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = scaledDp(250f, scale)),
+            .heightIn(min = 250.dp),
         shape = MaterialTheme.shapes.large,
         color = ExpenseCard,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(scaledDp(20f, scale))
+            modifier = Modifier.padding(20.dp)
         ) {
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val chartWidth = (maxWidth * 0.34f).coerceIn(105.dp, 115.dp)
+                val chartWidth = (maxWidth * 0.30f).coerceIn(88.dp, 104.dp)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, scale)),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(scaledDp(7f, scale))
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, scale))
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             AccentCircleIcon(
                                 icon = Icons.Rounded.AccountBalanceWallet,
@@ -466,17 +458,16 @@ private fun ExpensesHeroCard(
                         Text(
                             text = CurrencyFormatter.formatCop(amount),
                             color = ExpenseCoral,
-                            fontSize = scaledSp(40f, scale),
-                            lineHeight = scaledSp(42f, scale),
+                            style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.ExtraBold,
                             maxLines = 1,
-                            softWrap = false
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "gastados",
                             color = ExpenseMuted,
-                            fontSize = scaledSp(18f, scale),
-                            lineHeight = scaledSp(21f, scale),
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             softWrap = false
@@ -484,33 +475,30 @@ private fun ExpensesHeroCard(
                         ExpenseTrendLine(
                             recordCount = recordCount,
                             trendText = trendText,
-                            scale = scale,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                     WeeklyMiniChart(
                         values = chartValues,
-                        scale = scale,
                         modifier = Modifier
-                            .padding(top = scaledDp(44f, scale))
+                            .padding(top = 44.dp)
                             .width(chartWidth)
-                            .height(scaledDp(86f, scale))
+                            .height(86.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(scaledDp(13f, scale)))
+            Spacer(modifier = Modifier.height(13.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(scaledDp(1f, scale))
+                    .height(1.dp)
                     .background(ExpenseDivider)
             )
-            Spacer(modifier = Modifier.height(scaledDp(13f, scale)))
+            Spacer(modifier = Modifier.height(13.dp))
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
-                scale = scale,
                 onClick = onBudgetClick,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -522,7 +510,6 @@ private fun ExpensesHeroCard(
 private fun ExpenseTrendLine(
     recordCount: Int,
     trendText: String,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     val percent = trendText.substringBefore(" vs")
@@ -541,8 +528,7 @@ private fun ExpenseTrendLine(
             }
         },
         color = ExpenseMuted,
-        fontSize = scaledSp(14f, scale),
-        lineHeight = scaledSp(18f, scale),
+        style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.Medium,
         maxLines = 2,
         softWrap = true,
@@ -554,7 +540,6 @@ private fun ExpenseTrendLine(
 @Composable
 private fun WeeklyMiniChart(
     values: List<Int>,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     val labels = DayLabels.short
@@ -572,7 +557,7 @@ private fun WeeklyMiniChart(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(scaledDp(66f, scale))
+                .height(66.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -582,7 +567,7 @@ private fun WeeklyMiniChart(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(scaledDp(1f, scale))
+                            .height(1.dp)
                             .background(ExpenseDivider)
                     )
                 }
@@ -590,7 +575,7 @@ private fun WeeklyMiniChart(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = scaledDp(2f, scale)),
+                    .padding(horizontal = 2.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -598,9 +583,9 @@ private fun WeeklyMiniChart(
                     val normalized = if (hasData) value / max.toFloat() else 0.15f
                     Box(
                         modifier = Modifier
-                            .width(scaledDp(9f, scale))
-                            .height(scaledDp(16f + normalized * 42f, scale))
-                            .clip(RoundedCornerShape(scaledDp(5f, scale)))
+                            .width(9.dp)
+                            .height((16f + normalized * 42f).dp)
+                            .clip(RoundedCornerShape(5.dp))
                             .background(
                                 if (hasData) {
                                     Brush.verticalGradient(listOf(ExpenseCoral, ExpenseCoralDeep))
@@ -617,7 +602,7 @@ private fun WeeklyMiniChart(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(scaledDp(6f, scale)))
+        Spacer(modifier = Modifier.height(6.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -626,11 +611,10 @@ private fun WeeklyMiniChart(
                 Text(
                     text = label,
                     color = ExpenseMuted,
-                    fontSize = scaledSp(11f, scale),
-                    lineHeight = scaledSp(13f, scale),
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(scaledDp(9f, scale))
+                    modifier = Modifier.width(9.dp)
                 )
             }
         }
@@ -641,36 +625,34 @@ private fun WeeklyMiniChart(
 private fun BudgetRow(
     budget: Int,
     progress: Float,
-    scale: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val hasBudget = budget > 0
     BoxWithConstraints(modifier = modifier) {
-        val progressWidth = if (maxWidth < 300.dp) scaledDp(58f, scale) else scaledDp(96f, scale)
+        val progressWidth = if (maxWidth < 300.dp) 58.dp else 96.dp
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .cleanClickable(onClick),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(scaledDp(12f, scale))
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             AccentCircleIcon(
                 icon = Icons.Rounded.TrackChanges,
                 iconColor = ExpensePurple,
                 backgroundColor = ExpensePurple.copy(alpha = 0.18f),
-                size = scaledDp(40f, scale),
-                iconSize = scaledDp(21f, scale)
+                size = 40.dp,
+                iconSize = 21.dp
             )
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(scaledDp(4f, scale))
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = if (hasBudget) "Presupuesto: ${CurrencyFormatter.formatCop(budget)}" else "Sin presupuesto",
                     color = ExpenseText,
-                    fontSize = scaledSp(15f, scale),
-                    lineHeight = scaledSp(18f, scale),
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Clip
@@ -678,8 +660,7 @@ private fun BudgetRow(
                 Text(
                     text = if (hasBudget) "${(progress * 100).roundToInt()}% usado" else "Configurar presupuesto",
                     color = ExpensePurple,
-                    fontSize = scaledSp(13f, scale),
-                    lineHeight = scaledSp(16f, scale),
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Clip
@@ -688,7 +669,6 @@ private fun BudgetRow(
             if (hasBudget) {
                 BudgetProgress(
                     progress = progress,
-                    scale = scale,
                     modifier = Modifier.width(progressWidth)
                 )
             }
@@ -696,7 +676,7 @@ private fun BudgetRow(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = ExpenseText,
-                modifier = Modifier.size(scaledDp(20f, scale))
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -705,7 +685,6 @@ private fun BudgetRow(
 @Composable
 private fun BudgetProgress(
     progress: Float,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     LinearWavyProgressIndicator(
@@ -723,8 +702,7 @@ private fun ExpensesFilters(
     selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory?) -> Unit,
-    onCategoryClick: () -> Unit,
-    scale: Float
+    onCategoryClick: () -> Unit
 ) {
     // Anchos fijos de 206 y 156 puntos, y una rama aparte para pantallas de menos de 300:
     // el grupo reparte solo y el chip ocupa lo que mide su texto, asi que no hace falta ni
@@ -1039,27 +1017,26 @@ private fun ExpenseCategory.expenseSheetIcon(): ImageVector {
 
 @Composable
 private fun ExpensesEmptyState(
-    period: ExpensePeriodFilter,
-    scale: Float
+    period: ExpensePeriodFilter
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(scaledDp(250f, scale)),
+            .height(250.dp),
         shape = MaterialTheme.shapes.large,
         color = ExpenseCard,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = scaledDp(22f, scale)),
+            modifier = Modifier.padding(horizontal = 22.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(scaledDp(70f, scale))
-                    .clip(RoundedCornerShape(scaledDp(18f, scale)))
+                    .size(70.dp)
+                    .clip(RoundedCornerShape(18.dp))
                     .background(ExpenseCardHigh),
                 contentAlignment = Alignment.Center
             ) {
@@ -1067,39 +1044,37 @@ private fun ExpensesEmptyState(
                     imageVector = Icons.Rounded.Wallet,
                     contentDescription = null,
                     tint = ExpenseNeutralIcon,
-                    modifier = Modifier.size(scaledDp(34f, scale))
+                    modifier = Modifier.size(34.dp)
                 )
                 Box(
                     modifier = Modifier
-                        .offset(x = scaledDp(-7f, scale), y = scaledDp(-22f, scale))
-                        .size(width = scaledDp(4f, scale), height = scaledDp(9f, scale))
+                        .offset(x = (-7).dp, y = (-22).dp)
+                        .size(width = 4.dp, height = 9.dp)
                         .clip(CircleShape)
                         .background(ExpensePurple)
                 )
                 Box(
                     modifier = Modifier
-                        .offset(x = scaledDp(7f, scale), y = scaledDp(-23f, scale))
-                        .size(width = scaledDp(4f, scale), height = scaledDp(9f, scale))
+                        .offset(x = 7.dp, y = (-23).dp)
+                        .size(width = 4.dp, height = 9.dp)
                         .clip(CircleShape)
                         .background(ExpensePurple)
                 )
             }
-            Spacer(modifier = Modifier.height(scaledDp(22f, scale)))
+            Spacer(modifier = Modifier.height(22.dp))
             Text(
                 text = "Aún no hay gastos ${period.emptySuffix}",
                 color = ExpenseText,
-                fontSize = scaledSp(19f, scale),
-                lineHeight = scaledSp(24f, scale),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2
             )
-            Spacer(modifier = Modifier.height(scaledDp(10f, scale)))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "Registra tu primer gasto para ver\ntu resumen y categorías.",
                 color = ExpenseMuted,
-                fontSize = scaledSp(15f, scale),
-                lineHeight = scaledSp(22f, scale),
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
             )
@@ -1110,7 +1085,6 @@ private fun ExpensesEmptyState(
 @Composable
 private fun RegisterExpenseButton(
     onClick: () -> Unit,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -1312,8 +1286,7 @@ private fun BudgetInputField(
 private fun ExpenseListItem(
     expense: Expense,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    scale: Float
+    onDeleteClick: () -> Unit
 ) {
     // Editar y borrar se van a la hoja que abre la fila.
     //
@@ -1346,10 +1319,10 @@ private fun ExpenseListItem(
     ) {
         Row(
             modifier = Modifier.padding(
-                start = scaledDp(16f, scale),
-                top = scaledDp(12f, scale),
-                end = scaledDp(8f, scale),
-                bottom = scaledDp(12f, scale)
+                start = 16.dp,
+                top = 12.dp,
+                end = 8.dp,
+                bottom = 12.dp
             ),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1365,22 +1338,22 @@ private fun ExpenseListItem(
             )
             Column(
                 modifier = Modifier
-                    .padding(start = scaledDp(12f, scale))
+                    .padding(start = 12.dp)
                     .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(scaledDp(3f, scale))
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     text = expense.category.label(),
                     color = ExpenseText,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = scaledSp(16f, scale),
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = ExpenseDateUtils.formatDisplay(expense.dateMillis),
                     color = ExpenseMuted,
-                    fontSize = scaledSp(13f, scale),
+                    style = MaterialTheme.typography.bodySmall,
                     maxLines = 1
                 )
             }
@@ -1388,7 +1361,7 @@ private fun ExpenseListItem(
                 text = CurrencyFormatter.formatCop(expense.amount),
                 color = ExpenseCoral,
                 fontWeight = FontWeight.Bold,
-                fontSize = scaledSp(17f, scale),
+                style = MaterialTheme.typography.titleMedium,
                 maxLines = 1
             )
         }
@@ -1527,13 +1500,6 @@ private fun AccentCircleIcon(
     }
 }
 
-private fun expenseScale(maxWidth: Dp): Float =
-    (maxWidth.value / 430f).coerceIn(0.82f, 1f)
-
-private fun scaledDp(value: Float, scale: Float): Dp = (value * scale).dp
-
-private fun scaledSp(value: Float, scale: Float) = (value * scale).sp
-
 @Composable
 private fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
     return clickable(
@@ -1637,7 +1603,6 @@ private fun ExpensesReferencePreview(widthDp: Int) {
                 .fillMaxSize()
                 .background(ExpenseBackground)
         ) {
-            val scale = (widthDp / 430f).coerceIn(0.82f, 1f)
             ExpensesContent(
                 selectedPeriod = ExpensePeriodFilter.WEEK,
                 onPeriodSelected = {},
@@ -1656,11 +1621,9 @@ private fun ExpensesReferencePreview(widthDp: Int) {
                 onEditExpenseClick = {},
                 onDeleteExpenseClick = {},
                 onBudgetClick = {},
-                scale = scale,
-                bottomPadding = scaledDp(150f, scale)
+                bottomPadding = 150.dp
             )
             ExpensesPreviewBottomNav(
-                scale = scale,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
@@ -1686,20 +1649,19 @@ private fun ExpensesContent(
     onEditExpenseClick: (String) -> Unit,
     onDeleteExpenseClick: (String) -> Unit,
     onBudgetClick: () -> Unit,
-    scale: Float,
     bottomPadding: Dp
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            start = scaledDp(24f, scale),
-            top = scaledDp(48f, scale),
-            end = scaledDp(24f, scale),
+            start = 24.dp,
+            top = 48.dp,
+            end = 24.dp,
             bottom = bottomPadding
         ),
-        verticalArrangement = Arrangement.spacedBy(scaledDp(20f, scale))
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        item { ExpensesHeader(scale = scale) }
+        item { ExpensesHeader() }
         item {
             ExpensesHeroCard(
                 selectedPeriod = selectedPeriod,
@@ -1710,8 +1672,7 @@ private fun ExpensesContent(
                 budget = budget,
                 budgetProgress = budgetProgress,
                 chartValues = chartValues,
-                onBudgetClick = onBudgetClick,
-                scale = scale
+                onBudgetClick = onBudgetClick
             )
         }
         item {
@@ -1721,18 +1682,17 @@ private fun ExpensesContent(
                 selectedCategory = selectedCategory,
                 categories = categories,
                 onCategorySelected = onCategorySelected,
-                onCategoryClick = onCategoryClick,
-                scale = scale
+                onCategoryClick = onCategoryClick
             )
         }
         if (expenses.isEmpty()) {
-            item { ExpensesEmptyState(period = selectedPeriod, scale = scale) }
+            item { ExpensesEmptyState(period = selectedPeriod) }
         } else {
             item {
                 Text(
                     text = "Últimos gastos",
                     color = ExpenseText,
-                    fontSize = scaledSp(20f, scale),
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1740,8 +1700,7 @@ private fun ExpensesContent(
                 ExpenseListItem(
                     expense = expense,
                     onEditClick = { onEditExpenseClick(expense.id) },
-                    onDeleteClick = { onDeleteExpenseClick(expense.id) },
-                    scale = scale
+                    onDeleteClick = { onDeleteExpenseClick(expense.id) }
                 )
             }
         }
@@ -1751,8 +1710,7 @@ private fun ExpensesContent(
                 contentAlignment = Alignment.CenterEnd
             ) {
                 RegisterExpenseButton(
-                    onClick = onAddExpenseClick,
-                    scale = scale
+                    onClick = onAddExpenseClick
                 )
             }
         }
@@ -1761,15 +1719,14 @@ private fun ExpensesContent(
 
 @Composable
 private fun ExpensesPreviewBottomNav(
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .height(scaledDp(96f, scale)),
-        shape = RoundedCornerShape(topStart = scaledDp(28f, scale), topEnd = scaledDp(28f, scale)),
+            .height(96.dp),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         color = ExpenseCard,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1777,15 +1734,15 @@ private fun ExpensesPreviewBottomNav(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = scaledDp(10f, scale), vertical = scaledDp(10f, scale)),
+                .padding(horizontal = 10.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            PreviewBottomNavItem("Inicio", Icons.Rounded.Home, selected = false, scale = scale, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Materias", Icons.AutoMirrored.Rounded.MenuBook, selected = false, scale = scale, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Tareas", Icons.AutoMirrored.Rounded.Assignment, selected = false, scale = scale, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Gastos", Icons.Rounded.AccountBalanceWallet, selected = true, scale = scale, modifier = Modifier.weight(1f))
-            PreviewBottomNavItem("Perfil", Icons.Rounded.Person, selected = false, scale = scale, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem("Inicio", Icons.Rounded.Home, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem("Materias", Icons.AutoMirrored.Rounded.MenuBook, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem("Tareas", Icons.AutoMirrored.Rounded.Assignment, selected = false, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem("Gastos", Icons.Rounded.AccountBalanceWallet, selected = true, modifier = Modifier.weight(1f))
+            PreviewBottomNavItem("Perfil", Icons.Rounded.Person, selected = false, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -1795,7 +1752,6 @@ private fun PreviewBottomNavItem(
     label: String,
     icon: ImageVector,
     selected: Boolean,
-    scale: Float,
     modifier: Modifier = Modifier
 ) {
     val color = if (selected) ExpensePurple else ExpenseMuted
@@ -1808,22 +1764,21 @@ private fun PreviewBottomNavItem(
             imageVector = icon,
             contentDescription = label,
             tint = color,
-            modifier = Modifier.size(scaledDp(25f, scale))
+            modifier = Modifier.size(25.dp)
         )
         Text(
             text = label,
             color = color,
-            fontSize = scaledSp(12f, scale),
-            lineHeight = scaledSp(14f, scale),
+            style = MaterialTheme.typography.labelSmall,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
             softWrap = false,
-            modifier = Modifier.padding(top = scaledDp(5f, scale))
+            modifier = Modifier.padding(top = 5.dp)
         )
         Box(
             modifier = Modifier
-                .padding(top = scaledDp(6f, scale))
-                .size(width = scaledDp(19f, scale), height = scaledDp(4f, scale))
+                .padding(top = 6.dp)
+                .size(width = 19.dp, height = 4.dp)
                 .clip(CircleShape)
                 .background(if (selected) ExpensePurple else Color.Transparent)
         )
