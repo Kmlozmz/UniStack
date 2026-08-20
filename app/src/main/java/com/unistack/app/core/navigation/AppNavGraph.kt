@@ -229,19 +229,19 @@ fun MainNavGraph(
                     .fillMaxSize()
                     .padding(contentPadding),
                 enterTransition = {
-                    if (!motionEnabled) EnterTransition.None
+                    if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
                     else slideInHorizontally(animationSpec = slide) { width -> width }
                 },
                 exitTransition = {
-                    if (!motionEnabled) ExitTransition.None
+                    if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
                     else slideOutHorizontally(animationSpec = slide) { width -> -width / 3 }
                 },
                 popEnterTransition = {
-                    if (!motionEnabled) EnterTransition.None
+                    if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
                     else slideInHorizontally(animationSpec = slide) { width -> -width / 3 }
                 },
                 popExitTransition = {
-                    if (!motionEnabled) ExitTransition.None
+                    if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
                     else slideOutHorizontally(animationSpec = slide) { width -> width }
                 }
             ) {
@@ -877,6 +877,34 @@ internal fun routeShowsBottomBar(route: String?): Boolean {
     if (ModalRoutes.any { routeBelongsTo(route, it) }) return false
     if (ImmersiveRoutes.any { routeBelongsTo(route, it) }) return false
     return bottomRouteFor(route) != null
+}
+
+/**
+ * Si el cambio es entre dos pestañas de la barra de abajo.
+ *
+ * Esas no se empujan: la barra no es una pila, es un conmutador. Deslizar entre ellas cuenta
+ * un viaje que no ocurre —Gastos no está «a la derecha» de Inicio— y al pulsar rápido convierte
+ * la barra en un carrusel. El empuje se reserva para entrar y salir de una pantalla, que sí es
+ * ir hacia dentro y volver.
+ */
+private fun isTabSwitch(
+    initial: androidx.navigation.NavBackStackEntry,
+    target: androidx.navigation.NavBackStackEntry
+): Boolean {
+    return isBottomRoot(initial.destination.route) && isBottomRoot(target.destination.route)
+}
+
+/**
+ * Si una ruta es la raíz de una pestaña y no algo abierto dentro de ella.
+ *
+ * Se compara sin los argumentos: Académico está registrado como `academic?tab={tab}`, así que
+ * comparar la ruta entera nunca coincidía con su propia raíz y el cambio de pestaña se seguía
+ * empujando.
+ */
+private fun isBottomRoot(route: String?): Boolean {
+    if (route == null) return false
+    val base = route.substringBefore('?')
+    return bottomRouteFor(base) == base
 }
 
 internal fun bottomRouteFor(route: String?): String? {

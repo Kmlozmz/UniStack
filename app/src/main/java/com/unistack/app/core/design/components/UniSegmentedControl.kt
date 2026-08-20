@@ -1,8 +1,10 @@
 package com.unistack.app.core.design.components
 
-import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -14,19 +16,17 @@ data class UniSegmentedOption<T>(
 )
 
 /**
- * Elegir entre dos o tres vistas de lo mismo: Materias o Tareas, Semana o Mes.
+ * Elegir entre dos o tres vistas de lo mismo: Materias o Tareas, Horario o Calendario.
  *
- * Lo dibuja [ButtonGroup], el grupo conectado de Material 3 Expressive. La diferencia con lo
- * que había —una fila de cajas dentro de una tarjeta, con el seleccionado pintado de otro
- * color— es que aquí el seleccionado **cambia de forma y de anchura**: se ensancha y sus
- * esquinas se redondean, y los vecinos se estrechan para dejarle sitio. Se nota qué está
- * elegido sin depender de distinguir dos tonos, que es justo lo que falla con poca luz o con
- * daltonismo.
+ * Lo dibuja [SingleChoiceSegmentedButtonRow], que es el control de Material para exactamente
+ * esto: un grupo conectado donde solo una opción está activa, con su marca de selección y las
+ * esquinas redondeadas hacia fuera en los extremos.
  *
- * El movimiento de ese ensanchado sale del `MotionScheme` del tema, no de una duración escrita
- * aquí.
+ * **Antes estuvo hecho con `ButtonGroup` y no se dibujaba nada.** `ButtonGroup` es para una
+ * fila de acciones que puede desbordarse a un menú, no para elegir entre vistas; aquí se
+ * quedaba sin medir y la fila desaparecía de la pantalla sin dar error. El control de una sola
+ * elección es el que corresponde, y además dice en su propio nombre lo que hace.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun <T> UniSegmentedControl(
     selected: T,
@@ -34,14 +34,14 @@ fun <T> UniSegmentedControl(
     onSelected: (T) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ButtonGroup(modifier = modifier) {
-        options.forEach { option ->
-            toggleableItem(
-                checked = selected == option.value,
-                label = option.label,
-                onCheckedChange = { onSelected(option.value) },
+    SingleChoiceSegmentedButtonRow(modifier = modifier) {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = selected == option.value,
+                onClick = { onSelected(option.value) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 icon = { Icon(option.icon, contentDescription = null) },
-                weight = 1f
+                label = { Text(option.label) }
             )
         }
     }
