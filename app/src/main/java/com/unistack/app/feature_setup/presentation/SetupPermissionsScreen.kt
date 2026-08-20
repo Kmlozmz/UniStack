@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,11 +40,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import com.unistack.app.core.design.theme.SectionLabelStyle
-import com.unistack.app.core.design.components.UniStackLogoMarkWhite
+import com.unistack.app.core.design.components.UniStackBrandMark
+import com.unistack.app.core.design.components.UniStackBrandPill
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -338,14 +337,18 @@ private fun PermissionLockPreview(kind: PermissionExampleKind) {
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                // La marca de verdad, con sus degradados. La silueta blanca
+                                // sobre un cuadrado del acento no es el logo: los colores
+                                // son justo lo que lo identifica.
                                 Box(
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clip(MaterialTheme.shapes.extraSmall)
-                                        .background(MaterialTheme.colorScheme.primary),
-                                    contentAlignment = Alignment.Center
+                                    modifier = Modifier.size(
+                                        width = 16.dp,
+                                        height = 16.dp * UniStackBrandMark.HeightRatio
+                                    )
                                 ) {
-                                    UniStackLogoMarkWhite(size = 11.dp)
+                                    UniStackBrandMark.Pills.forEach { pill ->
+                                        UniStackBrandPill(pill = pill, markWidth = 16.dp)
+                                    }
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(

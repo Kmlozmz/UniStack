@@ -93,7 +93,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.components.UniStackBrandPill
@@ -1824,6 +1823,30 @@ private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
     if (max <= 0.0) return
     val pass = (passing ?: 0.0).coerceIn(0.0, max)
     val goal = (target ?: max).coerceIn(pass, max)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 0.dp
+    ) {
+    Column(modifier = Modifier.padding(16.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        Text(
+            text = "TU ESCALA, DE UN VISTAZO",
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.primary,
+            style = SectionLabelStyle
+        )
+        Text(
+            text = "0 a ${formatGradeValue(max, max)}",
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+    }
     val zones = listOf(
         Triple("Reprobado", (pass / max).toFloat(), MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer),
         Triple("Aprobado", ((goal - pass) / max).toFloat(), LocalSectionColors.current.atRiskContainer to LocalSectionColors.current.onAtRiskContainer),
@@ -1858,19 +1881,23 @@ private fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
                 }
             }
         }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = formatGradeValue(0.0, max),
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall
-            )
-            Text(
-                text = formatGradeValue(max, max),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall
-            )
+        // Los cuatro números del reparto, no solo los extremos: la gracia de la franja es
+        // ver dónde caen la nota de aprobar y la meta dentro del rango.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            listOf(0.0, pass, goal, max).forEach { value ->
+                Text(
+                    text = formatGradeValue(value, max),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
+    }
+    }
     }
 }
 
@@ -1970,199 +1997,43 @@ private fun formatGradeValue(value: Double, max: Double): String =
 
 
 @Composable
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun ScaleTypeSection(
     selectedChoice: SetupScaleChoice,
     onChoiceSelected: (SetupScaleChoice) -> Unit
 ) {
-    Column(
+    // El grupo conectado del resto de la app. Eran tres tarjetas grandes con su punto de
+    // radio, su rótulo encima y una línea extra en la personalizada: mucho mueble para
+    // elegir entre tres cosas que se nombran solas.
+    val options = listOf(
+        SetupScaleChoice.FIVE to "0 a 5.0",
+        SetupScaleChoice.HUNDRED to "0 a 100",
+        SetupScaleChoice.CUSTOM to "Otra"
+    )
+    ButtonGroup(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(7.dp)
+        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
     ) {
-        Text(
-            text = "Tipo de escala",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            lineHeight = 17.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // El rango es el nombre de la opción: repetirlo como insignia y otra vez como
-            // descripción decía tres veces lo mismo. Solo la escala personalizada necesita
-            // una línea extra, porque su título no dice cuál es el rango.
-            ScaleTypeCard(
-                option = ScaleTypeOption(
-                    choice = SetupScaleChoice.FIVE,
-                    title = "0.0 a 5.0",
-                    subtitle = null,
-                    icon = null
-                ),
-                selected = selectedChoice == SetupScaleChoice.FIVE,
-                onClick = { onChoiceSelected(SetupScaleChoice.FIVE) },
-                modifier = Modifier.weight(1f)
-            )
-            ScaleTypeCard(
-                option = ScaleTypeOption(
-                    choice = SetupScaleChoice.HUNDRED,
-                    title = "0 a 100",
-                    subtitle = null,
-                    icon = null
-                ),
-                selected = selectedChoice == SetupScaleChoice.HUNDRED,
-                onClick = { onChoiceSelected(SetupScaleChoice.HUNDRED) },
-                modifier = Modifier.weight(1f)
-            )
-            ScaleTypeCard(
-                option = ScaleTypeOption(
-                    choice = SetupScaleChoice.CUSTOM,
-                    title = "Personalizada",
-                    subtitle = "Define tu rango",
-                    icon = Icons.Rounded.AutoAwesome
-                ),
-                selected = selectedChoice == SetupScaleChoice.CUSTOM,
-                onClick = { onChoiceSelected(SetupScaleChoice.CUSTOM) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ScaleTypeCard(
-    option: ScaleTypeOption,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier
-            .height(120.dp)
-            .expressiveSelection(selected)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .semantics {
-                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
-            },
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = rememberSelectionShape(selected),
-        tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.78f else 0.9f),
-        borderWidth = if (selected) 1.4.dp else 1.dp,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 9.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            ScaleRadioDot(
-                selected = selected,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = 1.dp, y = 1.dp)
-            )
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(top = 14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                if (option.icon != null) {
-                    ScaleBadge(
-                        text = null,
-                        icon = option.icon,
-                        selected = selected
-                    )
-                }
-                Text(
-                    text = option.title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = if (option.icon == null) 17.sp else 13.sp,
-                    lineHeight = if (option.icon == null) 21.sp else 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (option.subtitle != null) {
-                    Text(
-                        text = option.subtitle,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
-                        lineHeight = 13.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+        options.forEachIndexed { index, (choice, label) ->
+            val interactionSource = remember { MutableInteractionSource() }
+            val shapes = when (index) {
+                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
             }
-        }
-    }
-}
-
-@Composable
-private fun ScaleRadioDot(
-    selected: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(18.dp)
-            .clip(CircleShape)
-            .border(
-                width = 1.6.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                shape = CircleShape
-            )
-            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
-        contentAlignment = Alignment.Center
-    ) {
-        if (selected) {
-            Box(
+            ToggleButton(
+                checked = selectedChoice == choice,
+                onCheckedChange = { onChoiceSelected(choice) },
+                shapes = shapes,
+                interactionSource = interactionSource,
+                contentPadding = PaddingValues(horizontal = 8.dp),
                 modifier = Modifier
-                    .size(9.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ScaleBadge(
-    text: String?,
-    icon: ImageVector?,
-    selected: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(9.dp))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (LocalIsDarkTheme.current) 0.88f else 1f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (LocalIsDarkTheme.current) 0.82f else 0.92f)
-            )
-            .padding(horizontal = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(18.dp)
-            )
-        } else {
-            Text(
-                text = text.orEmpty(),
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
+                    .weight(1f)
+                    .defaultMinSize(minHeight = 48.dp)
+                    .animateWidth(interactionSource)
+            ) {
+                Text(label, maxLines = 1, softWrap = false)
+            }
         }
     }
 }
@@ -2202,13 +2073,6 @@ private fun ConfirmedScaleRangeRow(
 
 
 
-
-private data class ScaleTypeOption(
-    val choice: SetupScaleChoice,
-    val title: String,
-    val subtitle: String?,
-    val icon: ImageVector?
-)
 
 @Composable
 fun SetupAcademicPeriodsScreen(
@@ -2494,7 +2358,12 @@ private fun PeriodCountSection(
     count: Int,
     onCountSelected: (Int) -> Unit
 ) {
-    val options = listOf(2, 3, 4, 5)
+    // Dos, tres, cuatro… y «Otro», que abre los pasos para cualquier número.
+    //
+    // Con un grupo cerrado en 2-5, un plan de seis cortes no cabía en la pantalla, y esa
+    // es justo la clase de caso que no se puede dejar fuera de la configuración inicial.
+    val options = listOf(2, 3, 4)
+    val custom = count !in options
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
             text = "¿CUÁNTOS ${label.plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
@@ -2507,15 +2376,14 @@ private fun PeriodCountSection(
         ) {
             options.forEachIndexed { index, option ->
                 val interactionSource = remember { MutableInteractionSource() }
-                val shapes = when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                }
                 ToggleButton(
-                    checked = count == option,
+                    checked = !custom && count == option,
                     onCheckedChange = { onCountSelected(option) },
-                    shapes = shapes,
+                    shapes = if (index == 0) {
+                        ButtonGroupDefaults.connectedLeadingButtonShapes()
+                    } else {
+                        ButtonGroupDefaults.connectedMiddleButtonShapes()
+                    },
                     interactionSource = interactionSource,
                     modifier = Modifier
                         .weight(1f)
@@ -2523,6 +2391,55 @@ private fun PeriodCountSection(
                         .animateWidth(interactionSource)
                 ) {
                     Text(option.toString(), maxLines = 1, softWrap = false)
+                }
+            }
+            val otherSource = remember { MutableInteractionSource() }
+            ToggleButton(
+                checked = custom,
+                onCheckedChange = { if (!custom) onCountSelected(5) },
+                shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
+                interactionSource = otherSource,
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                modifier = Modifier
+                    .weight(1.4f)
+                    .defaultMinSize(minHeight = 48.dp)
+                    .animateWidth(otherSource)
+            ) {
+                Text("Otro", maxLines = 1, softWrap = false)
+            }
+        }
+        AnimatedVisibility(
+            visible = custom,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 0.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = label.plural.replaceFirstChar { it.uppercase() },
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    PeriodStepButton("−") { if (count > 2) onCountSelected(count - 1) }
+                    Text(
+                        text = count.toString(),
+                        modifier = Modifier.width(46.dp),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                    PeriodStepButton("+") { if (count < 12) onCountSelected(count + 1) }
                 }
             }
         }
@@ -3132,19 +3049,15 @@ private fun SetupModuleSelectionCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            // El interruptor funciona.
+            //
+            // Estaba puesto a `enabled = false` para que solo se dibujara y dejara pasar el
+            // toque a la tarjeta, pero un control desactivado se come el puntero igual: por
+            // encima del interruptor no pasaba nada, y solo colaba algún toque en el borde.
+            // Ahora responde él, y la tarjeta sigue respondiendo por su cuenta.
             Switch(
                 checked = selected,
-                onCheckedChange = { onClick() },
-                // El toque ya lo recoge la tarjeta entera; el interruptor solo se dibuja.
-                enabled = false,
-                colors = SwitchDefaults.colors(
-                    disabledCheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledCheckedTrackColor = MaterialTheme.colorScheme.primary,
-                    disabledUncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                    disabledUncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    disabledUncheckedBorderColor = Color.Transparent,
-                    disabledCheckedBorderColor = Color.Transparent
-                )
+                onCheckedChange = { onClick() }
             )
         }
     }
