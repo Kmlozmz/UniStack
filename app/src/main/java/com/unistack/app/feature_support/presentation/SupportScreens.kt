@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_support.presentation
 
 import android.content.ActivityNotFoundException
@@ -75,6 +77,18 @@ import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.Button
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.foundation.layout.heightIn
+import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *
@@ -154,22 +168,38 @@ fun WhatsNewScreen(
             }
         } else {
             items(sections, key = { it.version }) { section ->
-                UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                /*
+                 * La fecha manda y la versión va colgada de ella.
+                 *
+                 * Antes cada sección era una tarjeta con la versión en grande y la fecha en
+                 * pequeño al lado, así que dos versiones publicadas el mismo día se leían como
+                 * dos bloques sin relación. Puesta la fecha delante, la lista se recorre como
+                 * lo que es: una línea de tiempo hacia atrás.
+                 */
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = section.date ?: "Sin fecha",
+                            style = MaterialTheme.typography.titleMediumEmphasized,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ) {
                             Text(
-                                section.version,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                text = section.version,
+                                style = MaterialTheme.typography.labelLargeEmphasized,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
                             )
-                            section.date?.let { date ->
-                                Spacer(Modifier.width(8.dp))
-                                Text(date, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            }
                         }
-                        ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
                     }
+                    ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
             }
         }
@@ -492,13 +522,18 @@ private fun openSupportTopic(context: android.content.Context, kind: TicketKind)
 /**
  * La caja de escribir el ticket.
  *
- * Sale en un diálogo y no dentro de la lista a propósito: un diálogo se aparta solo del
- * teclado, que es lo que hacía que en la lista se perdiera lo escrito por debajo.
+ * Va en una hoja inferior y no en un diálogo: el teclado la empuja hacia arriba en vez de
+ * taparla, y deja sitio para el texto largo que hace falta al describir un fallo.
  *
- * El botón copia y abre el tema. Telegram no deja rellenar el mensaje de un grupo desde un
- * enlace —solo funciona con bots—, así que el último paso lo da quien reporta: pegar. Se dice
- * antes de pulsar, para que no parezca que la app se quedó a medias.
+ * Dos salidas al pie. **El correo se ve pero está apagado**, con la opacidad de un control
+ * deshabilitado: existe como destino previsto y todavía no está montado, y esconderlo hasta
+ * entonces haría pensar que Telegram es la única vía que va a haber nunca.
+ *
+ * Telegram no deja rellenar el mensaje de un grupo desde un enlace —solo funciona con bots—,
+ * así que el último paso lo da quien reporta: pegar. Se dice antes de pulsar, para que no
+ * parezca que la app se quedó a medias.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TicketComposer(
     kind: TicketKind,
@@ -507,60 +542,103 @@ private fun TicketComposer(
 ) {
     var text by rememberSaveable(kind) { mutableStateOf("") }
     val minimumLength = 15
+    val enoughWritten = text.trim().length >= minimumLength
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Text(if (kind == TicketKind.BUG) "Reportar un fallo" else "Sugerir algo")
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 24.dp, end = 24.dp, bottom = 28.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (kind == TicketKind.BUG) {
-                        "Cuenta qué hacías, qué esperabas y qué pasó."
-                    } else {
-                        "Cuenta qué te falta y para qué lo usarías."
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp
+                    text = if (kind == TicketKind.BUG) "Reportar un fallo" else "Sugerir algo",
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it.take(1500) },
-                    label = { Text("Tu mensaje") },
-                    minLines = 4,
-                    maxLines = 8,
-                    shape = MaterialTheme.shapes.large,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    "${text.length} de 1500",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp
-                )
-                Text(
-                    "Al enviar se copia el mensaje y se abre el grupo: solo tienes que pegarlo. " +
-                        "El grupo es público, así que no escribas nada que no quieras que se lea.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp
-                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar")
+                }
             }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = text.trim().length >= minimumLength,
-                onClick = { onSend(text) }
+
+            Text(
+                text = if (kind == TicketKind.BUG) {
+                    "Cuenta qué hacías, qué esperabas y qué pasó. Puedes escribirnos por Telegram."
+                } else {
+                    "Cuenta qué te falta y para qué lo usarías. Puedes escribirnos por Telegram."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(1500) },
+                label = { Text(if (kind == TicketKind.BUG) "¿Qué falló?" else "¿Qué te falta?") },
+                placeholder = { Text("Describe el problema o tu idea…") },
+                minLines = 4,
+                maxLines = 8,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Copiar y abrir", fontWeight = FontWeight.Bold)
+                Icon(
+                    Icons.Rounded.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Tu versión y tu teléfono se añaden solos. El grupo es público, así que " +
+                        "no escribas nada que no quieras que se lea.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(
+                    shapes = UniStackButtonDefaults.shapes,
+                    onClick = { onSend(text) },
+                    enabled = enoughWritten,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
+                ) {
+                    Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Telegram")
+                }
+                Button(
+                    shapes = UniStackButtonDefaults.shapes,
+                    onClick = {},
+                    enabled = false,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
+                ) {
+                    Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Correo")
+                }
+            }
+
+            Text(
+                text = "El correo todavía no está disponible.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 /** Acerca de: qué versión llevas, de dónde salió y qué hace con tus datos. */
