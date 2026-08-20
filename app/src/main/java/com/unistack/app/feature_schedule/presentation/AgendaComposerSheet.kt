@@ -1,13 +1,15 @@
 @file:OptIn(
     androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
     ExperimentalMaterial3ExpressiveApi::class
 )
 
 package com.unistack.app.feature_schedule.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.LocalOverscrollFactory
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,6 +54,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -242,6 +245,30 @@ private fun AgendaFieldLabel(text: String) {
     )
 }
 
+/**
+ * La fila de chips: rueda en horizontal y no estira el borde.
+ *
+ * El estirado llegaba con un segundo de retraso, con la fila ya quieta. No era un retraso de
+ * la animación: al lanzar la fila, el desplazamiento llega al tope enseguida y ahí se para a
+ * la vista, pero la animación de inercia sigue viva decayendo, y Compose no le entrega la
+ * velocidad sobrante al borde hasta que esa animación termina. De ahí el segundo largo entre
+ * el final del recorrido y el estirón.
+ *
+ * Sin efecto de borde no hay nada que llegue tarde: la fila se para en el tope y ya. Se quita
+ * aquí y no en toda la app porque en una lista vertical el estirado sí cae a tiempo y es la
+ * señal de «se acabó» que Android usa en todas partes.
+ */
+@Composable
+private fun AgendaChipRow(content: @Composable RowScope.() -> Unit) {
+    CompositionLocalProvider(LocalOverscrollFactory provides null) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            content = content
+        )
+    }
+}
+
 @Composable
 internal fun AgendaComposerSheet(
     kind: AgendaCreateKind,
@@ -374,20 +401,8 @@ internal fun AgendaComposerSheet(
             }
 
             if (academic) {
-                // Los chips se envuelven en varias líneas en vez de rodar en horizontal.
-                //
-                // Rodando había siempre uno cortado en el borde derecho —había que adivinar
-                // que seguía habiendo opciones— y al soltar el desplazamiento aparecía el
-                // estirado del borde con un segundo de retraso, cuando la fila ya llevaba
-                // rato quieta: la fila terminaba su recorrido y la velocidad que le sobraba
-                // seguía subiendo por el desplazamiento anidado de la hoja, que la devolvía
-                // tarde. Envueltos se ven todos a la vez y no hay borde que estirar.
                 AgendaSectionLabel("TIPO ACADÉMICO")
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                AgendaChipRow {
                     taskTypesFor(kind).forEach { type ->
                         FilterChip(
                             selectedTaskType == type,
@@ -398,11 +413,7 @@ internal fun AgendaComposerSheet(
                 }
 
                 AgendaSectionLabel("MATERIA (OPCIONAL)")
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                AgendaChipRow {
                     FilterChip(
                         selectedSubjectId == null,
                         { releaseFocus(); selectedSubjectId = null },
@@ -456,11 +467,7 @@ internal fun AgendaComposerSheet(
                 )
 
                 AgendaSectionLabel("REPETICIÓN")
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                AgendaChipRow {
                     AgendaRecurrence.entries.forEach { option ->
                         FilterChip(
                             recurrence == option,
@@ -471,11 +478,7 @@ internal fun AgendaComposerSheet(
                 }
 
                 AgendaSectionLabel("RECORDATORIO")
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                AgendaChipRow {
                     listOf(0, 5, 15, 30, 60, 1440).forEach { minutes ->
                         FilterChip(
                             reminder == minutes,

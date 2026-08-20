@@ -513,8 +513,12 @@ private fun HomePriorityCard(
 
 @Composable
 private fun HomeSectionHeader(title: String, actionLabel: String, onActionClick: () -> Unit) {
+    // 18dp arriba dejaban un hueco: la fila ya mide 40dp por el botón de texto, y el título
+    // va centrado en ellos, así que a la separación de arriba se le sumaban seis puntos de
+    // centrado más el hombro de la letra. Entre el hero y este título se abría un vacío que
+    // no se correspondía con ninguna otra separación de la pantalla.
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 18.dp, bottom = 2.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, top = 6.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
