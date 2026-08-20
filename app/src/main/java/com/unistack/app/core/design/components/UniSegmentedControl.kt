@@ -81,7 +81,9 @@ fun <T> UniSegmentedControl(
             ) {
                 Icon(option.icon, contentDescription = null, modifier = Modifier.size(ToggleButtonDefaults.IconSize))
                 Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
-                Text(option.label)
+                // Sin ajuste de línea: mientras `animateWidth` estrecha al vecino, el
+                // rótulo cabría en menos de lo que mide y `Text` lo partiría en dos.
+                Text(text = option.label, maxLines = 1, softWrap = false)
                 if (option.badge != null && option.badge > 0) {
                     Spacer(Modifier.size(8.dp))
                     Surface(

@@ -143,33 +143,47 @@ fun GradesScreen(
                 }
             }
             item("filtros") {
-                // FilterChip a secas. Sin grupo de botones y sin animateWidth: la interacción
-                // entre vecinos se probó aquí y se descartó; vive solo en Materias/Tareas.
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                /*
+                 * Los filtros, con la interacción entre vecinos.
+                 *
+                 * `animateWidth` es el efecto: al pulsar uno se estira y los de al lado se
+                 * comprimen para dejarle sitio.
+                 *
+                 * **El texto va con `softWrap = false`, y ese es el arreglo.** Mientras dura
+                 * el estirado, el botón mide menos de lo que ocupa su rótulo por un instante,
+                 * y `Text` hacía lo que hace siempre en ese caso: partirlo en dos líneas. Se
+                 * veía «Pendient / e» durante la pulsación. Sin ajuste de línea no hay dónde
+                 * partirlo, así que la palabra aguanta entera hasta que el botón recupera su
+                 * ancho.
+                 */
+                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     SubjectFilter.entries.forEach { option ->
-                        FilterChip(
-                            selected = filter == option,
-                            onClick = { filter = option },
-                            label = { Text(option.label) },
-                            // El borde, según el estado. Por defecto seguía dibujando el
-                            // contorno del chip apagado por debajo del relleno del marcado,
-                            // y en el borde se veían las dos líneas juntas.
-                            border = FilterChipDefaults.filterChipBorder(
-                                enabled = true,
-                                selected = filter == option
-                            ),
-                            leadingIcon = if (filter == option) {
-                                {
-                                    Icon(
-                                        Icons.Rounded.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                    )
-                                }
-                            } else {
-                                null
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val isSelected = filter == option
+                        OutlinedToggleButton(
+                            checked = isSelected,
+                            onCheckedChange = { filter = option },
+                            interactionSource = interactionSource,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 38.dp)
+                                .animateWidth(interactionSource)
+                        ) {
+                            if (isSelected) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.size(6.dp))
                             }
-                        )
+                            Text(
+                                text = option.label,
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
                 }
             }
