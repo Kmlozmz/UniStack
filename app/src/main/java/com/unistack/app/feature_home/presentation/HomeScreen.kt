@@ -291,7 +291,7 @@ private fun HomeHeader(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp)
-                .padding(start = 24.dp, end = 12.dp)
+                .padding(start = 20.dp, end = 12.dp)
         ) {
             Row(
                 modifier = Modifier.align(Alignment.Center),
@@ -302,51 +302,53 @@ private fun HomeHeader(
                 UniStackWordmark(fontSize = 18.sp)
             }
 
-            Row(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                verticalAlignment = Alignment.CenterVertically
+            // El perfil a la izquierda y los avisos a la derecha, uno a cada lado de la
+            // marca. Con los dos a la derecha, la mitad izquierda de la barra quedaba vacía
+            // y el centro dejaba de leerse como centro: parecía un hueco al lado del nombre.
+            // Y el panel se abre desde la izquierda, que es de donde ahora sale su botón.
+            Surface(
+                onClick = onAvatarClick,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.align(Alignment.CenterStart).size(38.dp)
             ) {
-                Box(contentAlignment = Alignment.TopEnd) {
-                    androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
-                        Icon(
-                            Icons.Rounded.NotificationsNone,
-                            contentDescription = "Avisos",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (hasUnread) {
-                        Box(
-                            modifier = Modifier
-                                .offset(x = (-10).dp, y = 10.dp)
-                                .size(9.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.error)
+                if (photoUrl != null) {
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Tu perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = name.take(1).uppercase(SpanishLocale),
+                            style = MaterialTheme.typography.titleMediumEmphasized
                         )
                     }
                 }
-                Spacer(Modifier.width(4.dp))
-                Surface(
-                    onClick = onAvatarClick,
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    if (photoUrl != null) {
-                        AsyncImage(
-                            model = photoUrl,
-                            contentDescription = "Tu perfil",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = name.take(1).uppercase(SpanishLocale),
-                                style = MaterialTheme.typography.titleMediumEmphasized
-                            )
-                        }
-                    }
+            }
+
+            Box(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
+                    Icon(
+                        Icons.Rounded.NotificationsNone,
+                        contentDescription = "Avisos",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (hasUnread) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = (-10).dp, y = 10.dp)
+                            .size(9.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                    )
                 }
             }
         }
