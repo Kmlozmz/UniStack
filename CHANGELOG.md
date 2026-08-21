@@ -42,6 +42,47 @@ _Nada pendiente._
 
 ---
 
+## [1.3.0] — 2026-08-20
+
+**Lo importante:** la app entera pasa a Material 3 Expressive —Inicio, Académico, Horario,
+Gastos, la configuración inicial y las nueve pantallas de ajustes—, y todo queda sin límites:
+no hay plan de pago ni materias contadas.
+
+#### Sin límites
+- Se quitan el plan gratuito y sus topes. Puedes registrar todas las materias que quieras.
+- UniStack Pro ya no aparece en ninguna pantalla.
+
+#### Ajustes
+- La configuración deja de ser una subpantalla del perfil y pasa a ser su propia pestaña abajo.
+- El centro abre con tu ficha —foto, nombre y en qué semestre estás— y agrupa sus ocho destinos.
+- Apariencia enseña una vista previa de tu inicio que cambia mientras eliges, y ya no está al final.
+- Las tarjetas de inicio se encienden y se ordenan arrastrando en la misma lista.
+- La configuración académica se edita con la misma escala, los mismos pasos y la misma rueda
+  que la configuración inicial.
+- Notificaciones dice si Android permite avisarte antes que nada: sin permiso, lo de abajo se
+  apaga en vez de aparentar estar listo.
+- Datos y respaldos abre con cuándo fue tu última copia y qué lleva dentro.
+- Actualizaciones dice en qué estado está con color propio y enseña las notas sin tener que tocar.
+
+#### Configuración inicial
+- Los ocho pasos se rehacen: la escala se ve en una franja que se explica al tocarla, las notas
+  se mueven con botones en vez de teclado, y el reparto de cortes es una rueda que se anima.
+- La pantalla final trae el logo de UniStack y vibra al terminar.
+
+#### Horario, Académico y Gastos
+- Horario se rehace entero, con la próxima clase encabezando y las sheets rediseñadas.
+- Académico ordena materias y tareas con las mismas tarjetas que el resto de la app, y cada
+  materia tiene su propia forma para reconocerla de un vistazo.
+- Gastos adopta el lenguaje visual del resto sin cambiar cómo se usa.
+
+#### Corregido
+- Las versiones a partir de la décima de su peldaño se ordenan bien: `beta.10` ya no se
+  consideraba anterior a `beta.2`, y por eso podía no ofrecerse una actualización.
+- Las tarjetas con adorno en la esquina crecían de más y dejaban un hueco vacío debajo.
+- Elegir una hora ya no deja el teclado abierto encima del selector.
+
+---
+
 ## [1.2.0-beta.1] — 2026-08-19
 
 **Lo importante:** el canal de la versión que llevas puesta ya no pide código, y buscar
