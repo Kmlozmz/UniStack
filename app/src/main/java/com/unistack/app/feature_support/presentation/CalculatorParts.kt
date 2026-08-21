@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
@@ -144,8 +146,14 @@ private fun Key(
     small: Boolean = false,
     onClick: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     Surface(
-        onClick = onClick,
+        onClick = {
+            // El mismo toque que da el teclado del sistema: sin él, teclear en una superficie
+            // de cristal no acusa recibo y se acaba mirando la cifra a cada pulsación.
+            haptics.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+            onClick()
+        },
         modifier = modifier.height(height),
         shape = MaterialTheme.shapes.large,
         color = if (muted) {
@@ -195,7 +203,9 @@ internal fun RowScope.NumberSlot(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.weight(1f),
-        shape = MaterialTheme.shapes.large,
+        // Menos redondas que el resto: con el radio grande, «VALE · queda 100 %» quedaba
+        // apretado contra la curva y se leía torcido.
+        shape = MaterialTheme.shapes.medium,
         color = if (active) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
@@ -230,11 +240,19 @@ internal fun SlotAction(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
+    val haptics = LocalHapticFeedback.current
     Surface(
-        onClick = onClick,
+        onClick = {
+            // Al guardar, un toque distinto del de las teclas: es el momento en el que la nota
+            // entra en la cuenta, no una pulsación más.
+            haptics.performHapticFeedback(
+                if (isArrow) HapticFeedbackType.KeyboardTap else HapticFeedbackType.Confirm
+            )
+            onClick()
+        },
         enabled = enabled,
         modifier = Modifier.size(54.dp),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline
     ) {

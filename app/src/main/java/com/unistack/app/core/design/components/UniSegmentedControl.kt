@@ -2,6 +2,8 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +62,8 @@ fun <T> UniSegmentedControl(
     onSelected: (T) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = LocalHapticFeedback.current
+
     ButtonGroup(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
@@ -75,7 +79,14 @@ fun <T> UniSegmentedControl(
 
             ToggleButton(
                 checked = isSelected,
-                onCheckedChange = { onSelected(option.value) },
+                onCheckedChange = {
+                    // Un toque seco al cambiar de vista, y solo al cambiar: repetirlo al
+                    // volver a pulsar la que ya está elegida convierte el aviso en ruido.
+                    if (!isSelected) {
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    }
+                    onSelected(option.value)
+                },
                 shapes = shapes,
                 interactionSource = interactionSource,
                 modifier = Modifier

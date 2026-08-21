@@ -654,11 +654,14 @@ private fun CalculatorLayout(
     toast: String?,
     onToastDismiss: () -> Unit,
     /**
-     * Con el nombre en edición se esconde todo lo de abajo.
+     * Con el nombre en edición se esconden **las teclas**, no la fila de casillas.
      *
-     * Los dos teclados no pueden convivir: el de texto sube, el de números se queda encima
-     * ocupando media pantalla para nada, y la tarjeta del resultado acaba aplastada contra la
-     * cabecera. Mientras se escribe el nombre no hay ningún número que teclear.
+     * Los dos teclados no caben a la vez: la ventana encoge al subir el de texto, y con las
+     * dos rejillas puestas la tarjeta del resultado quedaba aplastada contra la cabecera.
+     *
+     * Lo que se va son las teclas —que no hacen falta mientras se escribe un nombre— y se
+     * queda la fila de casillas, para no perder de vista dónde estabas. Escondiéndolo todo,
+     * la pantalla se vaciaba de golpe y parecía que se hubiera roto algo.
      */
     typingName: Boolean,
     entry: @Composable () -> Unit,
@@ -680,19 +683,19 @@ private fun CalculatorLayout(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             content = content
         )
-        if (!typingName) {
-            Column(
-                modifier = Modifier.padding(
-                    start = spacing.screenHorizontal,
-                    end = spacing.screenHorizontal,
-                    bottom = scrollBottomRoom.coerceAtMost(20.dp)
-                ),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (toast != null) {
-                    CalculatorToast(message = toast, onDismiss = onToastDismiss)
-                }
-                entry()
+        Column(
+            modifier = Modifier.padding(
+                start = spacing.screenHorizontal,
+                end = spacing.screenHorizontal,
+                bottom = scrollBottomRoom.coerceAtMost(20.dp)
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            if (toast != null && !typingName) {
+                CalculatorToast(message = toast, onDismiss = onToastDismiss)
+            }
+            entry()
+            if (!typingName) {
                 keypad()
             }
         }
