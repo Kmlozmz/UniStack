@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -1272,7 +1273,7 @@ private fun UniStackBottomBarContent(
                     selected = selected,
                     showLabel = showLabels,
                     onClick = {
-                        if (!selected) haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        if (!selected) haptics.performSafely(HapticFeedbackType.ContextClick)
                         onNavigate(item.route)
                     },
                     modifier = Modifier.weight(1f)

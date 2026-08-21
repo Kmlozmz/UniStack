@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -147,7 +148,7 @@ fun SetupFinishTransition(
         )
         // Un toque al cerrarse el anillo. La configuración acabó y lo siguiente ya es la
         // app: el golpe marca ese corte en la mano y no solo en la pantalla.
-        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        haptics.performSafely(HapticFeedbackType.Confirm)
         latestOnFinished()
     }
 

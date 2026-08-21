@@ -8,6 +8,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
+        El táctil de los botones. Normalmente vibra el sistema por cuenta de la app y no hace
+        falta declararlo, pero MIUI/HyperOS reemplaza esa ruta por una que llama a `Vibrator`
+        dentro del proceso de la app: sin el permiso, tocar cualquier botón con háptico lanzaba
+        SecurityException y cerraba la app. Reportado el 21 ago 2026 en un Xiaomi con Android 16.
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
         Sin esto, Android 11 en adelante no deja ni ver si hay una app que entienda «tg://», así
         que abrir el grupo de soporte fallaba antes de intentarlo. Solo declara lo que la app
         necesita abrir: Telegram y una página web.

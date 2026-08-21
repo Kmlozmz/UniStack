@@ -17,6 +17,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -154,7 +155,7 @@ private fun Key(
         onClick = {
             // El mismo toque que da el teclado del sistema: sin él, teclear en una superficie
             // de cristal no acusa recibo y se acaba mirando la cifra a cada pulsación.
-            haptics.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+            haptics.performSafely(HapticFeedbackType.KeyboardTap)
             onClick()
         },
         modifier = modifier.height(height),
@@ -290,7 +291,7 @@ internal fun SlotAction(
         onClick = {
             // Al guardar, un toque distinto del de las teclas: es el momento en el que la nota
             // entra en la cuenta, no una pulsación más.
-            haptics.performHapticFeedback(
+            haptics.performSafely(
                 if (isArrow) HapticFeedbackType.KeyboardTap else HapticFeedbackType.Confirm
             )
             onClick()

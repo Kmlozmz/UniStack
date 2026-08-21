@@ -4,6 +4,7 @@ package com.unistack.app.core.design.components
 
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,7 +84,7 @@ fun <T> UniSegmentedControl(
                     // Un toque seco al cambiar de vista, y solo al cambiar: repetirlo al
                     // volver a pulsar la que ya está elegida convierte el aviso en ruido.
                     if (!isSelected) {
-                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                        haptics.performSafely(HapticFeedbackType.SegmentTick)
                     }
                     onSelected(option.value)
                 },
