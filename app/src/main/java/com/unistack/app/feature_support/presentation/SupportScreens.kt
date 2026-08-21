@@ -2,11 +2,12 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.material.icons.rounded.PrivacyTip
+import androidx.compose.material.icons.rounded.Gavel
 import com.unistack.app.core.design.components.UniStackLogoMark
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.SystemUpdateAlt
 import androidx.compose.material.icons.rounded.CloudQueue
 import androidx.compose.material.icons.rounded.VerifiedUser
@@ -951,12 +952,11 @@ private fun TicketComposer(
 fun AboutScreen(
     onBackClick: () -> Unit,
     onUpdatesClick: () -> Unit,
-    onLicensesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SupportScaffold(
         title = "Acerca de",
-        subtitle = "Versión, datos y licencias",
+        subtitle = "Versión, datos y condiciones",
         onBackClick = onBackClick,
         modifier = modifier
     ) {
@@ -985,10 +985,9 @@ fun AboutScreen(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AboutChip(BuildConfig.VERSION_NAME, highlighted = true)
-                    AboutChip("compilaci\u00f3n " + BuildConfig.VERSION_CODE)
-                }
+                // Solo la versión. El número de compilación es de uso interno —sirve para saber
+                // qué APK es cuál al depurar— y a quien usa la app no le dice nada.
+                AboutChip(BuildConfig.VERSION_NAME, highlighted = true)
             }
         }
         item(key = "datos-titulo") { AboutSectionLabel("TUS DATOS") }
@@ -1069,11 +1068,24 @@ fun AboutScreen(
                         subtitle = "Comprueba si tienes la \u00faltima versi\u00f3n",
                         onClick = onUpdatesClick
                     )
+                    /*
+                     * Los dos documentos, visibles y apagados.
+                     *
+                     * Todavía no existen: cuando la web esté en pie, estas dos filas la abrirán.
+                     * Salen igualmente, con su etiqueta, porque una app que guarda datos sin
+                     * decir bajo qué condiciones deja esa pregunta sin sitio donde hacerse.
+                     */
                     AboutRow(
-                        icon = Icons.Rounded.Description,
-                        title = "Licencias",
-                        subtitle = "El software libre que usa UniStack",
-                        onClick = onLicensesClick
+                        icon = Icons.Rounded.Gavel,
+                        title = "Términos y condiciones",
+                        subtitle = "Qué puedes esperar de la app y qué esperamos de ti",
+                        onClick = null
+                    )
+                    AboutRow(
+                        icon = Icons.Rounded.PrivacyTip,
+                        title = "Política de privacidad",
+                        subtitle = "Qué datos se guardan, dónde y para qué",
+                        onClick = null
                     )
                 }
             }
@@ -1122,30 +1134,78 @@ private fun AboutRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: (() -> Unit)?
 ) {
-    UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, onClick = onClick) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(38.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(19.dp))
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-            }
+    val enabled = onClick != null
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(
+                    if (enabled) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (enabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(Modifier.width(13.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                title,
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
+                lineHeight = 15.sp
+            )
+        }
+        if (enabled) {
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(20.dp)
             )
+        } else {
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Text(
+                    "PRONTO",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
         }
     }
 }

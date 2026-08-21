@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_home.presentation
 
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.Icon
@@ -68,7 +68,6 @@ internal fun HomeNavigationPanel(
     onGpaClick: () -> Unit,
     onQuickNotesClick: () -> Unit,
     onResourcesClick: () -> Unit,
-    onProfileClick: () -> Unit,
     onWhatsNewClick: () -> Unit,
     onHelpClick: () -> Unit,
     onAboutClick: () -> Unit,
@@ -98,12 +97,22 @@ internal fun HomeNavigationPanel(
      */
     val unfinished = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
 
-    // Lo que se hace con la app y no vive en ninguna pestaña.
+    /*
+     * Un color por fila, no un color por grupo.
+     *
+     * Las cinco herramientas iban en morado y el resto repartía tonos de sección, así que media
+     * lista era del mismo color y la otra media parecía apagada. Con la paleta entera —los
+     * cuatro tonos de sección más el primario y el terciario— cada fila se reconoce por su
+     * mancha antes de leer el nombre, que es para lo que sirve un icono en un menú.
+     *
+     * Dentro de cada grupo no se repite ninguno. Entre grupos sí, y a propósito: hay seis tonos
+     * legibles y nueve filas, y forzar un séptimo saldría de la paleta o del gris.
+     */
     val tools = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Description,
             title = "Trabajos",
-            accent = MaterialTheme.colorScheme.primary,
+            accent = LocalSectionColors.current.expenses,
             badge = if (unfinished) null else "Pronto",
             onClick = onWorksClick.takeIf { unfinished }
         ),
@@ -119,47 +128,48 @@ internal fun HomeNavigationPanel(
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
-            accent = MaterialTheme.colorScheme.primary,
+            accent = LocalSectionColors.current.atRisk,
             onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             title = "Recursos",
-            accent = MaterialTheme.colorScheme.primary,
+            accent = LocalSectionColors.current.onTrack,
             onClick = onResourcesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
-            accent = MaterialTheme.colorScheme.primary,
+            accent = MaterialTheme.colorScheme.tertiary,
             badge = if (unfinished) null else "Pronto",
             onClick = onAiClick.takeIf { unfinished }
         )
     )
 
-    // Quién eres y qué es esto.
-    //
-    // Labs cierra el grupo, y UniStack AI cierra el de arriba: las dos apagadas y con su
-    // etiqueta, como Trabajos. Estuvieron un rato saliendo solo en dev y alpha —la idea era
-    // no ocupar fila con lo que no existe— y así lo que se pierde es el aviso de que vienen.
-    // Una fila apagada que dice «Pronto» informa; una fila que no está, no.
+    /*
+     * Qué es esto y qué trae.
+     *
+     * Perfil se cayó de aquí: vive en Ajustes, que es su sitio —ahí está el resto de lo
+     * que se configura— y el panel se quedó con la regla que lo definió desde el
+     * principio: solo lo que no tiene otra puerta. El retrato de la cabecera sigue diciendo
+     * de quién es la app.
+     *
+     * Labs cierra el grupo, y UniStack AI cierra el de arriba: las dos apagadas y con su
+     * etiqueta, como Trabajos. Estuvieron un rato saliendo solo en dev y alpha —la idea
+     * era no ocupar fila con lo que no existe— y así lo que se pierde es el aviso de que
+     * vienen. Una fila apagada que dice «Pronto» informa; una fila que no está, no.
+     */
     val about = listOf(
-        DrawerPanelAction(
-            icon = Icons.Rounded.Person,
-            title = "Perfil",
-            accent = LocalSectionColors.current.schedule,
-            onClick = onProfileClick
-        ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
-            accent = LocalSectionColors.current.onTrack,
+            accent = LocalSectionColors.current.schedule,
             onClick = onWhatsNewClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
-            accent = LocalSectionColors.current.schedule,
+            accent = LocalSectionColors.current.expenses,
             onClick = onHelpClick
         ),
         DrawerPanelAction(
@@ -348,16 +358,28 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
         color = Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(start = 16.dp, end = 20.dp),
+            modifier = Modifier.padding(start = 12.dp, end = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
-            Icon(
-                imageVector = action.icon,
-                contentDescription = null,
-                tint = if (enabled) action.accent else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(24.dp)
-            )
+            // El icono va sobre su propia mancha de color: suelto sobre el fondo del panel
+            // se leía apagado, y con nueve filas seguidas el color apenas se notaba.
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (enabled) action.accent.copy(alpha = 0.16f) else Color.Transparent
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = action.icon,
+                    contentDescription = null,
+                    tint = if (enabled) action.accent else MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.size(21.dp)
+                )
+            }
             Text(
                 text = action.title,
                 modifier = Modifier.weight(1f),

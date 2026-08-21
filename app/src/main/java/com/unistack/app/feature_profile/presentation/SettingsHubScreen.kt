@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
@@ -197,7 +198,7 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             AccountAvatar(
-                photoUrl = profile?.accountPhotoUrl,
+                photoUrl = profile?.portraitUrl,
                 contentDescription = "Foto de perfil",
                 initial = name.first().uppercase(),
                 modifier = Modifier.size(52.dp)

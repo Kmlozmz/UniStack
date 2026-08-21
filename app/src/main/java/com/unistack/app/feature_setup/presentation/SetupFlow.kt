@@ -1,5 +1,6 @@
 package com.unistack.app.feature_setup.presentation
 
+import com.unistack.app.feature_user.domain.offerableModules
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.GradeStepperRow
 import com.unistack.app.core.design.components.PeriodWheelCard
@@ -2657,7 +2658,10 @@ private fun SetupInfoDot(size: androidx.compose.ui.unit.Dp) {
     }
 }
 
-private fun setupModuleOptions(): List<ModuleOption> = listOf(
+private fun setupModuleOptions(): List<ModuleOption> = allModuleOptions()
+    .filter { it.module in offerableModules() }
+
+private fun allModuleOptions(): List<ModuleOption> = listOf(
     ModuleOption(
         module = AppModule.GRADES,
         label = "Notas y materias",

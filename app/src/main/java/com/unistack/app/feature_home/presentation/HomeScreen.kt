@@ -154,7 +154,6 @@ fun HomeScreen(
                 onGpaClick = { closeAndRun(onGpaClick) },
                 onQuickNotesClick = { closeAndRun(onQuickNotesClick) },
                 onResourcesClick = { closeAndRun(onResourcesClick) },
-                onProfileClick = { closeAndRun(onProfileClick) },
                 onWhatsNewClick = { closeAndRun(onWhatsNewClick) },
                 onHelpClick = { closeAndRun(onHelpClick) },
                 onAboutClick = { closeAndRun(onAboutClick) },

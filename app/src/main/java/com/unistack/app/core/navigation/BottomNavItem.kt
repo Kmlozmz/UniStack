@@ -35,7 +35,6 @@ object AppRoutes {
     const val Resources = "resources"
     const val Help = "help"
     const val About = "about"
-    const val Licenses = "licenses"
     const val AcademicWorkArg = "workId"
     const val AcademicWork = "academic_work/{workId}"
 

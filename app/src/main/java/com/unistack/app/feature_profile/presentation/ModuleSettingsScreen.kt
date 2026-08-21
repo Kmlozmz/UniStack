@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_user.domain.offerableModules
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsToggleRow
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +59,8 @@ fun ModuleSettingsScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     val enabled = current.enabledModules
-    val off = AppModule.entries.count { it !in enabled }
+    val offerable = offerableModules()
+    val off = offerable.count { it !in enabled }
 
     LazyColumn(
         modifier = modifier
@@ -79,7 +81,7 @@ fun ModuleSettingsScreen(
                 onBackClick = onBackClick
             )
         }
-        items(AppModule.entries, key = { it.name }) { module ->
+        items(offerable, key = { it.name }) { module ->
             ModuleCard(
                 icon = module.icon(),
                 title = module.moduleLabel(),

@@ -38,6 +38,7 @@ import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_profile.presentation.educationSummary
 import com.unistack.app.feature_user.domain.UserProfile
+import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import java.time.LocalDate
@@ -129,7 +130,7 @@ internal object HomeSummaryFactory {
                 ?: user.displayName?.takeIf { it.isNotBlank() }
                 ?: "Estudiante",
             educationLine = profile?.educationSummary().orEmpty(),
-            avatarPhotoUrl = user.photoUrl,
+            avatarPhotoUrl = profile?.portraitUrl ?: user.photoUrl,
             dashboardMessage = dashboardMessage(
                 hasSubjects = subjects.isNotEmpty(),
                 overdueTasks = overdueTasks,

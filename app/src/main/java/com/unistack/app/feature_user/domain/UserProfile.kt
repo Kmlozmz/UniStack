@@ -1,6 +1,20 @@
 package com.unistack.app.feature_user.domain
 
+import com.unistack.app.BuildConfig
+import com.unistack.app.core.utils.BuildStage
+
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
+
+/**
+ * El retrato que hay que pintar, venga de donde venga.
+ *
+ * La foto propia manda sobre la de la cuenta. Vivió un rato repartido: la pantalla de perfil
+ * hacía el `?:` y el resto de la app seguía leyendo el de la cuenta a secas, así que cambiar el
+ * retrato solo se notaba en el sitio donde se cambiaba. Con una sola propiedad no hay forma de
+ * que a un lector se le olvide.
+ */
+val UserProfile.portraitUrl: String?
+    get() = localPhotoUri ?: accountPhotoUrl
 
 data class UserProfile(
     val userId: String,
@@ -147,6 +161,22 @@ enum class AppModule {
     TASKS,
     EXPENSES,
     ACADEMIC_TEMPLATES
+}
+
+/**
+ * Los módulos que esta compilación puede ofrecer para encender o apagar.
+ *
+ * Trabajos sale con su etiqueta «Pronto» y sin responder fuera de dev y alpha, así que su
+ * interruptor prometía algo que no se podía cumplir: encenderlo no daba acceso a nada, y
+ * apagarlo tampoco quitaba nada de en medio. Un interruptor que no cambia lo que ves es peor
+ * que no tener interruptor — hace dudar de si la app está rota.
+ *
+ * Quien lo encendió en una alpha se lo queda: el módulo sigue en su perfil y sus recordatorios
+ * siguen funcionando. Lo que desaparece es la fila, no el ajuste.
+ */
+fun offerableModules(): List<AppModule> {
+    val unfinished = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
+    return AppModule.entries.filter { unfinished || it != AppModule.ACADEMIC_TEMPLATES }
 }
 
 enum class VisualPreference {

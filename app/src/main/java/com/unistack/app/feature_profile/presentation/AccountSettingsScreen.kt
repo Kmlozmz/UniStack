@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.clickable
+import android.net.Uri
+import com.unistack.app.feature_user.domain.portraitUrl
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.rounded.PhotoCamera
@@ -105,13 +109,15 @@ fun AccountSettingsScreen(
      * la foto sigue siendo de la galería —si la borran de ahí, desaparece de aquí—. Copiarla
      * cuesta un archivo pequeño y quita los dos problemas.
      */
+    /*
+     * Elegir y encuadrar son dos pasos, y el segundo es el que importa.
+     *
+     * El selector devuelve la foto entera; el retrato se pinta redondo y recortado al centro,
+     * así que sin este paso el encuadre lo decidía el azar. Lo que se guarda es ya el recorte.
+     */
+    var editing by remember { mutableStateOf<Uri?>(null) }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            scope.launch {
-                val saved = ProfilePhotoFiles.copyIn(context, uri)
-                if (saved != null) viewModel.updateLocalPhoto(saved)
-            }
-        }
+        if (uri != null) editing = uri
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -138,13 +144,16 @@ fun AccountSettingsScreen(
             AccountPortrait(
                 name = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",
                 detail = current.educationSummary(),
-                // El retrato propio manda sobre el de la cuenta: vincular Google trae una foto
-                // de partida, no la última palabra.
-                photoUrl = current.localPhotoUri ?: current.accountPhotoUrl,
+                photoUrl = current.portraitUrl,
                 hasOwnPhoto = current.localPhotoUri != null,
                 onPhotoClick = {
                     picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 },
+                // Tocar el retrato reencuadra el que ya hay; la cámara elige otro. Reencuadrar
+                // parte del original guardado, no del recorte: si no está —retratos de antes, o
+                // la foto de Google— se pide una foto nueva en vez de recortar un recorte.
+                onAdjustClick = ProfilePhotoFiles.sourceOf(context, current.localPhotoUri)
+                    ?.let { origen -> { editing = origen } },
                 onRemovePhotoClick = {
                     ProfilePhotoFiles.clear(context)
                     viewModel.updateLocalPhoto(null)
@@ -260,6 +269,17 @@ fun AccountSettingsScreen(
         )
     }
 
+    editing?.let { origen ->
+        ProfilePhotoEditor(
+            source = origen,
+            onCancel = { editing = null },
+            onSave = { ruta ->
+                editing = null
+                viewModel.updateLocalPhoto(ruta)
+            }
+        )
+    }
+
     if (showUnlinkDialog) {
         AlertDialog(
             onDismissRequest = { showUnlinkDialog = false },
@@ -295,6 +315,7 @@ private fun AccountPortrait(
     photoUrl: String?,
     hasOwnPhoto: Boolean,
     onPhotoClick: () -> Unit,
+    onAdjustClick: (() -> Unit)?,
     onRemovePhotoClick: () -> Unit,
     onEditNameClick: () -> Unit
 ) {
@@ -308,7 +329,15 @@ private fun AccountPortrait(
                 photoUrl = photoUrl,
                 contentDescription = "Foto de perfil",
                 initial = name.first().uppercase(),
-                modifier = Modifier.size(96.dp)
+                modifier = Modifier
+                    .size(96.dp)
+                    .then(
+                        if (onAdjustClick != null) {
+                            Modifier.clickable(onClick = onAdjustClick)
+                        } else {
+                            Modifier
+                        }
+                    )
             )
             /*
              * Dos cosas editables, dos botones.
@@ -375,8 +404,19 @@ private fun AccountPortrait(
                 textAlign = TextAlign.Center
             )
             if (hasOwnPhoto) {
-                TextButton(onClick = onRemovePhotoClick) {
-                    Text("Quitar mi foto", style = MaterialTheme.typography.labelMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (onAdjustClick != null) {
+                        TextButton(onClick = onAdjustClick) {
+                            Text("Ajustar encuadre", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                    TextButton(onClick = onRemovePhotoClick) {
+                        Text(
+                            "Quitar mi foto",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }

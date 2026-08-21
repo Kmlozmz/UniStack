@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
 import androidx.compose.foundation.background
@@ -115,7 +116,11 @@ fun AppearanceSettingsScreen(
 
         val appearance = current.appearancePreferences
         item {
-            HomePreviewCard(name = current.preferredName, appearance = appearance)
+            HomePreviewCard(
+                name = current.preferredName,
+                photoUrl = current.portraitUrl,
+                appearance = appearance
+            )
         }
         item {
             SettingsGroupBare(label = "MODO") {
@@ -306,7 +311,11 @@ private fun SettingsGroupBare(label: String, content: @Composable () -> Unit) {
  * de abajo, y el color y la letra son los del tema que esté puesto en ese momento.
  */
 @Composable
-private fun HomePreviewCard(name: String, appearance: AppearancePreferences) {
+private fun HomePreviewCard(
+    name: String,
+    photoUrl: String?,
+    appearance: AppearancePreferences
+) {
     val shown = name.takeIf { it.isNotBlank() } ?: "Estudiante"
 
     Column {
@@ -322,20 +331,14 @@ private fun HomePreviewCard(name: String, appearance: AppearancePreferences) {
             ) {
                 Column(modifier = Modifier.padding(13.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(22.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.tertiaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = shown.first().uppercase(),
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
+                        // La maqueta enseña tu retrato, no una inicial genérica: es una vista
+                        // previa de tu Inicio, y el avatar es lo primero que se ve en él.
+                        AccountAvatar(
+                            photoUrl = photoUrl,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            initial = shown.first().uppercase()
+                        )
                         Row(
                             modifier = Modifier.weight(1f),
                             horizontalArrangement = Arrangement.Center

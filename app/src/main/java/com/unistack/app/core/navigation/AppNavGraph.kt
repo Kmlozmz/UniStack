@@ -97,7 +97,6 @@ import com.unistack.app.feature_support.presentation.AboutScreen
 import com.unistack.app.feature_support.presentation.AiAssistantScreen
 import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
 import com.unistack.app.feature_support.presentation.LabsScreen
-import com.unistack.app.feature_support.presentation.LicensesScreen
 import com.unistack.app.feature_support.presentation.QuickNotesScreen
 import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
@@ -544,13 +543,7 @@ fun MainNavGraph(
             screen(AppRoutes.About) {
                 AboutScreen(
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
-                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) },
-                    onLicensesClick = { navController.go(AppRoutes.Licenses) }
-                )
-            }
-            screen(AppRoutes.Licenses) {
-                LicensesScreen(
-                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.About) }
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
             screen(AppRoutes.GpaCalculator) {
