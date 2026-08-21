@@ -38,6 +38,15 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
+_Nada pendiente._
+
+---
+
+## [1.3.1] — 2026-08-21
+
+**Lo importante:** la calculadora se rehace entera y responde tres preguntas distintas en vez
+de mezclarlas en una tabla.
+
 #### Calculadora
 - La calculadora se parte en tres pestañas, una por pregunta: **Materia** (cada nota vale un
   porcentaje del curso), **Semestre** (cada materia pesa por sus créditos) y **Me falta**
