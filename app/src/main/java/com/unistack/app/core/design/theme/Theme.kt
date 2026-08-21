@@ -68,6 +68,7 @@ fun UniStackTheme(
 
     CompositionLocalProvider(
         LocalSectionColors provides sections,
+        LocalVividAccents provides VividAccents.Default,
         LocalIsDarkTheme provides darkTheme,
         LocalAppearancePreferences provides appearance,
         LocalAccessibilityPreferences provides accessibility,

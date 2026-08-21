@@ -16,11 +16,17 @@ enum class BuildStage {
     /**
      * Si esta compilación puede abrir lo que está a medio hacer.
      *
-     * Dev y alpha son las que se usan para probar, y ahí conviene llegar a todo. Una beta va a
-     * gente que la usa de verdad para su semestre: enseñarle una pantalla incompleta gasta la
-     * confianza que hace falta para que reporte lo que sí importa.
+     * Dev, alpha y beta. La rc y la estable no: esas dos son las que se publican.
+     * llegar a todo, incluido lo que sale apagado con su etiqueta.
+     *
+     * La beta estuvo fuera un tiempo con el argumento de que va a gente que la usa de verdad
+     * para su semestre, y que ensenarle una pantalla incompleta gasta la confianza que hace
+     * falta para que reporte lo que si importa. Hoy la beta no sale de las manos de quien hace
+     * la app, asi que lo que aportaba esa reserva era no poder probar lo propio.
+     *
+     * Si algun dia la beta vuelve a repartirse, esto es lo primero que hay que revisar.
      */
-    val allowsUnfinished: Boolean get() = this == DEV || this == ALPHA
+    val allowsUnfinished: Boolean get() = this == DEV || this == ALPHA || this == BETA
 
     companion object {
         fun of(versionName: String): BuildStage {

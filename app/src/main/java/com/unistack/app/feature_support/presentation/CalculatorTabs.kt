@@ -6,6 +6,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.ui.graphics.TransformOrigin
@@ -781,16 +782,18 @@ private fun GradeRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // El cuadro va relleno, no teñido al 18 %: es la mancha que empareja la fila con
+            // su tramo de la barra, y un lavado de color no empareja con nada.
             Box(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(MaterialTheme.shapes.small)
-                    .background(tone.copy(alpha = 0.18f)),
+                    .background(tone),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = weight,
-                    color = tone,
+                    color = LocalVividAccents.current.onVivid,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.ExtraBold
                 )

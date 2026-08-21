@@ -2,6 +2,7 @@
 
 package com.unistack.app.core.design.components
 
+import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -139,10 +140,19 @@ internal fun ScaleZoneBar(
     // que había que leer el rótulo para saber cuál era cuál, y la franja está justo para no
     // tener que leerla. El texto va en el color del fondo de la app, que contra el relleno
     // sólido es el que más contrasta en los dos temas.
+    /*
+     * Los tres tramos, en color vivo.
+     *
+     * Iban con los tonos de seccion, que son colores de contenido: en tema oscuro salen lavados
+     * porque tienen que leerse como texto. Aqui son rellenos con un rotulo corto encima, asi que
+     * pueden llevar la saturacion que hace falta para que rojo, ambar y verde se distingan de un
+     * vistazo y no parezcan tres pasteles del mismo cuadro.
+     */
+    val vivid = LocalVividAccents.current
     val zones = listOf(
-        Triple("Reprobado", (pass / max).toFloat(), MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError),
-        Triple("Aprobado", ((goal - pass) / max).toFloat(), LocalSectionColors.current.atRisk to MaterialTheme.colorScheme.surface),
-        Triple("Meta", ((max - goal) / max).toFloat(), LocalSectionColors.current.onTrack to MaterialTheme.colorScheme.surface)
+        Triple("Reprobado", (pass / max).toFloat(), vivid.coral to vivid.onVivid),
+        Triple("Aprobado", ((goal - pass) / max).toFloat(), vivid.amber to vivid.onVivid),
+        Triple("Meta", ((max - goal) / max).toFloat(), vivid.green to vivid.onVivid)
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -176,11 +186,17 @@ internal fun ScaleZoneBar(
         if (marker != null && max > 0.0) {
             // La marca de una nota concreta. Va debajo de los tramos y no encima: encima
             // taparía el rótulo del tramo en el que cae, que es justo lo que se viene a leer.
-            val share = (marker / max).toFloat().coerceIn(0f, 1f)
+            // La marca viaja a su sitio en vez de aparecer en el nuevo: es la unica cosa de la
+            // franja que se mueve, y saltando no se veia de donde a donde.
+            val share by animateFloatAsState(
+                targetValue = (marker / max).toFloat().coerceIn(0f, 1f),
+                animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                label = "marca"
+            )
             Box(modifier = Modifier.fillMaxWidth()) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(share)
+                        .fillMaxWidth(share.coerceAtLeast(0.001f))
                         .height(6.dp),
                     contentAlignment = Alignment.CenterEnd
                 ) {

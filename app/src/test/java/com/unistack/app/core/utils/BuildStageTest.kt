@@ -17,10 +17,13 @@ class BuildStageTest {
     }
 
     @Test
-    fun `solo dev y alpha abren lo que esta a medias`() {
+    fun `las compilaciones de prueba abren lo que esta a medias`() {
+        // La beta entro en el grupo el 21 ago 2026: no se reparte fuera de quien hace la app,
+        // asi que reservarla solo servia para no poder probar lo propio. La rc y la estable
+        // siguen fuera: esas dos son las que se publican.
         assertTrue(BuildStage.of("0.0.0-dev.1").allowsUnfinished)
         assertTrue(BuildStage.of("1.0.0-alpha.1").allowsUnfinished)
-        assertFalse(BuildStage.of("1.0.0-beta.1").allowsUnfinished)
+        assertTrue(BuildStage.of("1.0.0-beta.1").allowsUnfinished)
         assertFalse(BuildStage.of("1.0.0-rc.1").allowsUnfinished)
         assertFalse(BuildStage.of("1.0.0").allowsUnfinished)
     }

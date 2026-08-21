@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.material.icons.rounded.Check
@@ -216,7 +217,7 @@ internal fun RowScope.NumberSlot(
     )
     val ink by animateColorAsState(
         targetValue = if (active) {
-            MaterialTheme.colorScheme.onPrimaryContainer
+            LocalVividAccents.current.onVivid
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
@@ -225,7 +226,7 @@ internal fun RowScope.NumberSlot(
     )
     val valueInk by animateColorAsState(
         targetValue = if (active) {
-            MaterialTheme.colorScheme.onPrimaryContainer
+            LocalVividAccents.current.onVivid
         } else {
             MaterialTheme.colorScheme.onSurface
         },
@@ -277,7 +278,7 @@ internal fun SlotAction(
     )
     val container by animateColorAsState(
         targetValue = if (enabled) {
-            MaterialTheme.colorScheme.primary
+            LocalVividAccents.current.violet
         } else {
             MaterialTheme.colorScheme.surfaceContainerHigh
         },
@@ -298,7 +299,11 @@ internal fun SlotAction(
         modifier = Modifier.size(54.dp),
         shape = RoundedCornerShape(corner),
         color = container,
-        contentColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline
+        contentColor = if (enabled) {
+            LocalVividAccents.current.onVivid
+        } else {
+            MaterialTheme.colorScheme.outline
+        }
     ) {
         Box(contentAlignment = Alignment.Center) {
             AnimatedContent(

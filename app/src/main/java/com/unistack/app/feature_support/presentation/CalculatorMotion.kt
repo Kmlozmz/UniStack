@@ -2,7 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
-import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
@@ -76,7 +76,9 @@ internal fun SlotRow(
         animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
         label = "foco"
     )
-    val tone = MaterialTheme.colorScheme.primaryContainer
+    // El foco va en el violeta vivo, no en el contenedor pálido del tema: es lo que marca
+    // dónde estás escribiendo y tenía el mismo peso visual que el fondo de al lado.
+    val tone = LocalVividAccents.current.violet
 
     Row(
         modifier = modifier,
@@ -227,17 +229,13 @@ internal fun bumpScale(value: Any?): Float {
 /**
  * Los colores de los tramos de la barra de peso.
  *
- * Salen de los tonos de sección del tema, no de una lista propia: son los mismos con los que la
- * app pinta Horario, Gastos y los estados de una materia, así que la barra no estrena una
- * paleta que solo exista aquí. Seis bastan — una materia repartida en más de seis cortes es un
- * caso que no se ha visto, y si llega, se repiten en orden.
+ * Salían de los tonos de sección, que son colores de *contenido*: en tema oscuro son claros y
+ * lavados porque tienen que leerse como texto. Puestos de relleno, la barra entera parecía una
+ * caja de acuarelas gastada. Estos seis son las mismas familias con la saturación que un relleno
+ * sí puede permitirse.
+ *
+ * Seis bastan: una materia repartida en más de seis cortes es un caso que no se ha visto, y si
+ * llega, se repiten en orden.
  */
 @Composable
-internal fun weightTones(): List<Color> = listOf(
-    MaterialTheme.colorScheme.primary,
-    LocalSectionColors.current.schedule,
-    LocalSectionColors.current.onTrack,
-    LocalSectionColors.current.atRisk,
-    LocalSectionColors.current.expenses,
-    MaterialTheme.colorScheme.tertiary
-)
+internal fun weightTones(): List<Color> = LocalVividAccents.current.ordered

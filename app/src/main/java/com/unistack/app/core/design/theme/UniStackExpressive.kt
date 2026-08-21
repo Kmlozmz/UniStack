@@ -326,3 +326,47 @@ private fun relativeLuminance(color: Color): Float {
         if (value <= 0.03928f) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
     return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
 }
+
+/**
+ * Los seis acentos vivos, para rellenos que no llevan texto encima.
+ *
+ * Los tonos de sección son colores de *contenido*: tienen que leerse como texto sobre el fondo
+ * del tema, así que en oscuro son claros y lavados y en claro son oscuros y sordos. Eso está
+ * bien para una palabra o un icono, y mal para un tramo de barra o un cuadro de color, donde lo
+ * único que hacen es parecer apagados —que es exactamente la queja.
+ *
+ * Estos seis son las mismas familias de tono con la saturación que un relleno sí puede
+ * permitirse, y son los mismos en tema claro y oscuro: un relleno de color no cambia de identidad
+ * porque cambie el fondo, y así una barra se lee igual en los dos.
+ *
+ * **No se pone texto pequeño encima de ellos.** Para un número corto y en negrita sobre el
+ * relleno, [onVivid] tiene contraste de sobra; para un párrafo, no los uses.
+ */
+@androidx.compose.runtime.Immutable
+data class VividAccents(
+    val violet: Color,
+    val blue: Color,
+    val green: Color,
+    val amber: Color,
+    val coral: Color,
+    val pink: Color,
+    /** La tinta que se lee sobre cualquiera de los seis. */
+    val onVivid: Color
+) {
+    /** En orden, para lo que necesite repartir colores sin elegirlos: tramos, cuadros, chips. */
+    val ordered: List<Color> get() = listOf(violet, blue, green, amber, coral, pink)
+
+    companion object {
+        val Default = VividAccents(
+            violet = Color(0xFF7B5CFF),
+            blue = Color(0xFF2F80FF),
+            green = Color(0xFF12B76A),
+            amber = Color(0xFFF5A524),
+            coral = Color(0xFFFF6B4A),
+            pink = Color(0xFFF6339A),
+            onVivid = Color(0xFFFFFFFF)
+        )
+    }
+}
+
+val LocalVividAccents = androidx.compose.runtime.staticCompositionLocalOf { VividAccents.Default }
