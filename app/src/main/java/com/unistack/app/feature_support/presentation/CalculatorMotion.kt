@@ -168,10 +168,19 @@ internal fun WeightBar(
         weights.forEachIndexed { index, weight ->
             val share = (weight / 100.0).toFloat().coerceIn(0f, 1f)
             covered += share
-            // Cada tramo anima su propio ancho: quitar una nota del medio no salta, los demás
-            // se deslizan a su sitio nuevo.
+            /*
+             * Cada tramo crece desde cero la primera vez que aparece.
+             *
+             * `animateFloatAsState` arranca ya en su destino: el tramo nuevo salia a su ancho
+             * final de golpe y solo se animaban los cambios posteriores, asi que anadir una nota
+             * —que es justo el momento que hay que contar— no se veia. Con un objetivo que
+             * empieza en cero y salta a su parte en el efecto siguiente, la primera aparicion
+             * tambien es un crecimiento.
+             */
+            var target by remember { mutableStateOf(0f) }
+            LaunchedEffect(share) { target = share }
             val grown by animateFloatAsState(
-                targetValue = share,
+                targetValue = target,
                 animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                 label = "tramo"
             )

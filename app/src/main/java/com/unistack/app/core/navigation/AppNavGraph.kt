@@ -542,8 +542,7 @@ fun MainNavGraph(
             }
             screen(AppRoutes.About) {
                 AboutScreen(
-                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
-                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) }
                 )
             }
             screen(AppRoutes.GpaCalculator) {

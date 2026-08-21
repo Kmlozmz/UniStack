@@ -21,7 +21,30 @@ data class LocalBackupPreview(
     val academicWorks: Int,
     val agendaEvents: Int = 0
 ) {
+    /**
+     * Lo que hay dentro, contado en cristiano.
+     *
+     * Empezaba por «v10» —el número de esquema de la base—, que no significa nada fuera del
+     * código y encima ocupaba el primer sitio, que es el que se lee. Y luego encadenaba seis
+     * cifras aunque cinco fueran cero, así que una app recién instalada decía «0 materias · 0
+     * notas · 0 tareas · 0 gastos · 0 trabajos · 0 eventos»: dos líneas para decir que no hay
+     * nada.
+     *
+     * Ahora solo salen las cosas de las que hay alguna, con el singular donde toca, y cuando no
+     * hay ninguna se dice una vez.
+     */
     fun summary(): String {
-        return "v$schemaVersion · $subjects materias · $grades notas · $tasks tareas · $expenses gastos · $academicWorks trabajos · $agendaEvents eventos"
+        val partes = listOfNotNull(
+            cuenta(subjects, "materia", "materias"),
+            cuenta(grades, "nota", "notas"),
+            cuenta(tasks, "tarea", "tareas"),
+            cuenta(expenses, "gasto", "gastos"),
+            cuenta(academicWorks, "trabajo", "trabajos"),
+            cuenta(agendaEvents, "evento", "eventos")
+        )
+        return if (partes.isEmpty()) "Todavía no has registrado nada" else partes.joinToString(" · ")
     }
+
+    private fun cuenta(total: Int, singular: String, plural: String): String? =
+        if (total <= 0) null else "$total ${if (total == 1) singular else plural}"
 }

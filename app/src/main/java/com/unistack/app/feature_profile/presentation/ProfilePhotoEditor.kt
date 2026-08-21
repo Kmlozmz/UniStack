@@ -66,6 +66,9 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun ProfilePhotoEditor(
     source: Uri,
+    canRemove: Boolean,
+    onPickAnother: () -> Unit,
+    onRemove: () -> Unit,
     onCancel: () -> Unit,
     onSave: (String) -> Unit
 ) {
@@ -175,7 +178,32 @@ internal fun ProfilePhotoEditor(
                         },
                         enabled = bitmap != null && !saving
                     ) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Rounded.Refresh,
+                            contentDescription = "Volver al encuadre inicial",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                /*
+                 * Cambiar de foto y quitarla viven aquí.
+                 *
+                 * Estaban sueltas bajo el retrato, visibles siempre. Son decisiones que se toman
+                 * mirando la foto, y aquí es donde se está mirando. Quitarla solo aparece si hay
+                 * un retrato propio que quitar: con la foto de la cuenta no hay nada que borrar.
+                 */
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = onPickAnother, enabled = !saving) {
+                        Text("Elegir otra", style = MaterialTheme.typography.labelLarge)
+                    }
+                    if (canRemove) {
+                        TextButton(onClick = onRemove, enabled = !saving) {
+                            Text(
+                                "Quitar mi foto",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }

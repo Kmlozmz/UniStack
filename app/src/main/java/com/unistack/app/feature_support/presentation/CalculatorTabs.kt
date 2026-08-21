@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -220,12 +219,24 @@ internal fun SubjectCalculator(
         }
         if (entries.isNotEmpty()) {
             item("notas") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                /*
+                 * Una fila por nota, no una pastilla.
+                 *
+                 * Iban como etiquetas pequenas en una fila que se doblaba: cabian muchas, si,
+                 * pero la nota y su peso quedaban del tamano de un pie de foto en el unico sitio
+                 * donde hay que poder repasarlos. Y al entrar, una pastilla de ese tamano no da
+                 * de si para que se note que acaba de entrar.
+                 *
+                 * Cada fila lleva su peso en un cuadro del color de su tramo en la barra: se
+                 * sabe cual de los trozos es suyo sin contar de izquierda a derecha.
+                 */
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     entries.forEachIndexed { index, entry ->
                         key(index, entry.grade, entry.weightPercent) {
                             EnterOnAppear {
-                                ValueChip(
-                                    text = "${GradingScaleUtils.formatGrade(entry.grade, scale)}  ·  ${percentText(entry.weightPercent)} %",
+                                GradeRow(
+                                    grade = GradingScaleUtils.formatGrade(entry.grade, scale),
+                                    weight = percentText(entry.weightPercent),
                                     tone = weightTones()[index % weightTones().size],
                                     onRemove = {
                                         grades = grades.filterIndexed { i, _ -> i != index }
@@ -754,32 +765,58 @@ private fun ResultCard(
 }
 
 @Composable
-private fun ValueChip(
-    text: String,
+private fun GradeRow(
+    grade: String,
+    weight: String,
     tone: androidx.compose.ui.graphics.Color,
     onRemove: () -> Unit
 ) {
-    // La pastilla lleva el color del tramo que ocupa en la barra: mirando una nota se sabe cual
-    // de los trozos es suyo, sin tener que contar de izquierda a derecha.
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = tone.copy(alpha = 0.16f),
-        contentColor = tone
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(start = 13.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+            modifier = Modifier.padding(start = 11.dp, end = 11.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(text = text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(tone.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = weight,
+                    color = tone,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = grade,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = "vale un $weight % de la materia",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
             Surface(
                 onClick = onRemove,
                 shape = MaterialTheme.shapes.extraLarge,
-                color = tone.copy(alpha = 0.18f),
-                modifier = Modifier.size(22.dp)
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(28.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Quitar", modifier = Modifier.size(13.dp))
+                    Icon(Icons.Rounded.Close, contentDescription = "Quitar", modifier = Modifier.size(15.dp))
                 }
             }
         }

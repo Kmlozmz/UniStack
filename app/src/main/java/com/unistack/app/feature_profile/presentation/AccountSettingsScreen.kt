@@ -145,18 +145,26 @@ fun AccountSettingsScreen(
                 name = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",
                 detail = current.educationSummary(),
                 photoUrl = current.portraitUrl,
-                hasOwnPhoto = current.localPhotoUri != null,
+
+                /*
+                 * Un solo botón, y lo demás dentro.
+                 *
+                 * Debajo del retrato había dos enlaces sueltos, «Ajustar encuadre» y «Quitar mi
+                 * foto», permanentes. El primero era el editor, que es exactamente lo que se
+                 * abre al tocar la foto; y quitarla es algo que se decide cuando la estás
+                 * mirando, no una opción que tenga que estar ahí siempre.
+                 *
+                 * Ahora la foto se toca y se abre el editor —con el original guardado, para no
+                 * recortar un recorte—. Si no hay retrato propio, o viene de una versión sin
+                 * original, se pide una foto directamente.
+                 */
                 onPhotoClick = {
-                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                },
-                // Tocar el retrato reencuadra el que ya hay; la cámara elige otro. Reencuadrar
-                // parte del original guardado, no del recorte: si no está —retratos de antes, o
-                // la foto de Google— se pide una foto nueva en vez de recortar un recorte.
-                onAdjustClick = ProfilePhotoFiles.sourceOf(context, current.localPhotoUri)
-                    ?.let { origen -> { editing = origen } },
-                onRemovePhotoClick = {
-                    ProfilePhotoFiles.clear(context)
-                    viewModel.updateLocalPhoto(null)
+                    val origen = ProfilePhotoFiles.sourceOf(context, current.localPhotoUri)
+                    if (origen != null) {
+                        editing = origen
+                    } else {
+                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }
                 },
                 onEditNameClick = {
                     nameInput = current.preferredName
@@ -272,6 +280,16 @@ fun AccountSettingsScreen(
     editing?.let { origen ->
         ProfilePhotoEditor(
             source = origen,
+            canRemove = current.localPhotoUri != null,
+            onPickAnother = {
+                editing = null
+                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            onRemove = {
+                editing = null
+                ProfilePhotoFiles.clear(context)
+                viewModel.updateLocalPhoto(null)
+            },
             onCancel = { editing = null },
             onSave = { ruta ->
                 editing = null
@@ -313,10 +331,7 @@ private fun AccountPortrait(
     name: String,
     detail: String,
     photoUrl: String?,
-    hasOwnPhoto: Boolean,
     onPhotoClick: () -> Unit,
-    onAdjustClick: (() -> Unit)?,
-    onRemovePhotoClick: () -> Unit,
     onEditNameClick: () -> Unit
 ) {
     Column(
@@ -331,13 +346,7 @@ private fun AccountPortrait(
                 initial = name.first().uppercase(),
                 modifier = Modifier
                     .size(96.dp)
-                    .then(
-                        if (onAdjustClick != null) {
-                            Modifier.clickable(onClick = onAdjustClick)
-                        } else {
-                            Modifier
-                        }
-                    )
+                    .clickable(onClick = onPhotoClick)
             )
             /*
              * Dos cosas editables, dos botones.
@@ -403,22 +412,7 @@ private fun AccountPortrait(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            if (hasOwnPhoto) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (onAdjustClick != null) {
-                        TextButton(onClick = onAdjustClick) {
-                            Text("Ajustar encuadre", style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    TextButton(onClick = onRemovePhotoClick) {
-                        Text(
-                            "Quitar mi foto",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
+
         }
     }
 }

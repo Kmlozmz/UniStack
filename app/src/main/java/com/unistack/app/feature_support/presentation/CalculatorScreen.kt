@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.getValue
@@ -71,6 +72,7 @@ fun GpaCalculatorScreen(
     val target = profile?.targetAverage ?: (maxGrade * 0.8)
 
     var tab by rememberSaveable { mutableStateOf(CalculatorTab.SUBJECT) }
+    val holder = rememberSaveableStateHolder()
     var toast by remember { mutableStateOf<String?>(null) }
     var helpOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -99,6 +101,18 @@ fun GpaCalculatorScreen(
                 .padding(horizontal = spacing.screenHorizontal)
         )
 
+        /*
+         * Lo tecleado sobrevive al cambio de pestana.
+         *
+         * Cada pestana guarda lo suyo con `rememberSaveable`, pero al cambiar de una a otra la
+         * que se va sale de la composicion y se lleva su estado: volver a Materia despues de
+         * mirar Semestre encontraba la lista vacia. `SaveableStateHolder` guarda lo de cada una
+         * bajo su clave y se lo devuelve al volver.
+         *
+         * Solo mientras estas dentro: al salir de la calculadora se pierde todo, que es lo que
+         * tiene que pasar. Es una calculadora, no un cuaderno.
+         */
+        holder.SaveableStateProvider(tab) {
         when (tab) {
             CalculatorTab.SUBJECT -> SubjectCalculator(
                 maxGrade = maxGrade,
@@ -122,6 +136,7 @@ fun GpaCalculatorScreen(
                 toast = toast,
                 onToast = { toast = it }
             )
+        }
         }
     }
 

@@ -252,7 +252,18 @@ class SetupViewModel @Inject constructor(
         // uno. El repliegue existe solo para no arrastrar nulabilidad hasta el perfil
         // guardado, donde el nivel es obligatorio.
         val level = educationLevel ?: EducationLevel.OTHER
-        val profile = UserProfile(
+        /*
+         * Se parte de lo que ya había, no de un perfil en blanco.
+         *
+         * Construir uno nuevo desde cero funciona la primera vez, cuando no hay nada que
+         * conservar. Pero «Repetir configuración inicial» vuelve a pasar por aquí prometiendo
+         * que tus datos se quedan, y lo que salía era un perfil con todos los valores de
+         * fábrica: se perdían el retrato, la cuenta de Google vinculada, el tema y los acentos
+         * elegidos, los ajustes de accesibilidad y los recordatorios. Nada de eso lo pregunta el
+         * onboarding, así que nada de eso debería tocarlo.
+         */
+        val previous = userRepository.userProfile.value
+        val fresh = UserProfile(
             userId = UserIds.LOCAL,
             preferredName = TextValidators.normalizeText(preferredName),
             educationLevel = level,
@@ -268,11 +279,30 @@ class SetupViewModel @Inject constructor(
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
             academicPeriodScheme = buildAcademicPeriodSchemeOrNull() ?: AcademicPeriodScheme.default(),
-            visualPreference = VisualPreference.SYSTEM,
+            visualPreference = previous?.visualPreference ?: VisualPreference.SYSTEM,
             setupCompleted = true,
-            createdAt = now,
+            createdAt = previous?.createdAt ?: now,
             updatedAt = now
         )
+        // Sobre el perfil que ya estaba se pisa solo lo que el onboarding pregunta, campo por
+        // campo. Enumerarlos cuesta unas lineas y evita el fallo contrario: que anadir manana un
+        // campo nuevo al perfil lo borre en silencio cada vez que alguien repita la configuracion.
+        val profile = previous?.copy(
+            preferredName = fresh.preferredName,
+            educationLevel = fresh.educationLevel,
+            careerOrProgram = fresh.careerOrProgram,
+            studyArea = fresh.studyArea,
+            gradeLevel = fresh.gradeLevel,
+            institutionName = fresh.institutionName,
+            gradingScale = fresh.gradingScale,
+            customGradeMax = fresh.customGradeMax,
+            passingGrade = fresh.passingGrade,
+            targetAverage = fresh.targetAverage,
+            enabledModules = fresh.enabledModules,
+            academicPeriodScheme = fresh.academicPeriodScheme,
+            setupCompleted = true,
+            updatedAt = now
+        ) ?: fresh
         userRepository.saveUserProfile(profile)
     }
 

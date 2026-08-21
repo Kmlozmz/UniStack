@@ -215,12 +215,17 @@ internal fun HomeNavigationPanel(
         shadowElevation = 8.dp
     ) {
         // El fondo llega a los bordes; lo que esquiva las barras es lo que se lee.
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .navigationBarsPadding(),
-            contentPadding = PaddingValues(top = 18.dp, bottom = 14.dp),
+                .navigationBarsPadding()
+        ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = PaddingValues(top = 18.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             item {
@@ -233,14 +238,20 @@ internal fun HomeNavigationPanel(
             item { DrawerPanelDivider() }
             drawerSection("Herramientas", tools)
             drawerSection("Tu cuenta y la app", about)
-            item {
-                Text(
-                    text = "v${BuildConfig.VERSION_NAME}",
-                    color = MaterialTheme.colorScheme.outline,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(start = 30.dp, top = 14.dp)
-                )
-            }
+        }
+        /*
+         * La versión, al pie del cajón y no detrás de la última fila.
+         *
+         * Dentro de la lista se colocaba justo debajo de Labs, a media altura de la pantalla,
+         * como una fila más a la que se le hubiera olvidado el nombre. Es un pie: va abajo,
+         * separada de lo que se toca, y por encima de la barra de navegación.
+         */
+        Text(
+            text = "v${BuildConfig.VERSION_NAME}",
+            color = MaterialTheme.colorScheme.outline,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(start = 30.dp, top = 8.dp, bottom = 16.dp)
+        )
         }
     }
 }

@@ -8,7 +8,6 @@ import com.unistack.app.core.design.components.UniStackLogoMark
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.material.icons.rounded.SystemUpdateAlt
 import androidx.compose.material.icons.rounded.CloudQueue
 import androidx.compose.material.icons.rounded.VerifiedUser
 import com.unistack.app.feature_support.domain.ChangelogSection
@@ -951,7 +950,6 @@ private fun TicketComposer(
 @Composable
 fun AboutScreen(
     onBackClick: () -> Unit,
-    onUpdatesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SupportScaffold(
@@ -1060,14 +1058,10 @@ fun AboutScreen(
                 contentPadding = PaddingValues(vertical = 4.dp)
             ) {
                 Column {
-                    // \u00abNovedades\u00bb se cae de aqu\u00ed: es una de las filas del panel lateral, a un
-                    // gesto de distancia. Dos puertas a la misma pantalla no ahorran nada.
-                    AboutRow(
-                        icon = Icons.Rounded.SystemUpdateAlt,
-                        title = "Actualizaciones",
-                        subtitle = "Comprueba si tienes la \u00faltima versi\u00f3n",
-                        onClick = onUpdatesClick
-                    )
+                    // Ni \u00abNovedades\u00bb ni \u00abActualizaciones\u00bb: la primera es una fila del panel
+                    // lateral y la segunda tiene su propio apartado en Ajustes. Repetir la puerta
+                    // no ahorra un toque, solo obliga a leer dos veces para descubrir que da
+                    // igual cu\u00e1l elijas.
                     /*
                      * Los dos documentos, visibles y apagados.
                      *
