@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.Dp
 /**
  * El símbolo de marca descompuesto en sus tres píldoras, para poder animarlas por separado.
  *
- * Las medidas están sacadas del PNG original (unistack_option_a_symbol.png, 1200x1120)
+ * Las medidas están sacadas del PNG original (docs/marca/simbolo-original.png, 1200x1120)
  * escaneando su canal alfa, no aproximadas a ojo: dibujarlas a mano dejaba un logo con
  * proporciones distintas a las de la imagen que se ve en el resto de la app.
  *
@@ -57,24 +57,24 @@ object UniStackBrandMark {
             top = 112f / 1120f,
             width = PillWidth,
             height = PillHeight,
-            gradientStart = Color(0xFF7456F7),
-            gradientEnd = Color(0xFFC0AFFE)
+            gradientStart = Color(0xFFA64DFF),
+            gradientEnd = Color(0xFFD9B3FF)
         ),
         Pill(
             left = 104f / 1200f,
             top = 416f / 1120f,
             width = PillWidth,
             height = PillHeight,
-            gradientStart = Color(0xFF3E219F),
-            gradientEnd = Color(0xFF684AEF)
+            gradientStart = Color(0xFF5E00A8),
+            gradientEnd = Color(0xFF8E00FF)
         ),
         Pill(
             left = 256f / 1200f,
             top = 720f / 1120f,
             width = PillWidth,
             height = PillHeight,
-            gradientStart = Color(0xFF5C87F0),
-            gradientEnd = Color(0xFF6B52F5)
+            gradientStart = Color(0xFF7B3FE0),
+            gradientEnd = Color(0xFF8E00FF)
         )
     )
     // design-tokens-ok-end

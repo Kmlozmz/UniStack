@@ -40,10 +40,10 @@ import kotlin.math.pow
  * como una sola pieza y no como un acento de color sobre una base ajena.
  */
 internal val ExpressiveLightScheme: ColorScheme = lightColorScheme(
-    primary = Color(0xFF5645D6),
+    primary = Color(0xFF6C4DFF),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFE4DEFF),
-    onPrimaryContainer = Color(0xFF1A0080),
+    primaryContainer = Color(0xFFE6DFFF),
+    onPrimaryContainer = Color(0xFF1C0090),
 
     // El secundario es familia del primario, no un azul con significado propio.
     //
@@ -66,36 +66,42 @@ internal val ExpressiveLightScheme: ColorScheme = lightColorScheme(
     errorContainer = Color(0xFFF9DEDC),
     onErrorContainer = Color(0xFF410E0B),
 
-    background = Color(0xFFFCF8FF),
-    onBackground = Color(0xFF1B1B21),
-    surface = Color(0xFFFCF8FF),
-    onSurface = Color(0xFF1B1B21),
-    surfaceVariant = Color(0xFFE5DFEB),
-    onSurfaceVariant = Color(0xFF48454E),
+    background = Color(0xFFFBFAFF),
+    onBackground = Color(0xFF1A1A21),
+    surface = Color(0xFFFBFAFF),
+    onSurface = Color(0xFF1A1A21),
+    surfaceVariant = Color(0xFFE3E1EE),
+    onSurfaceVariant = Color(0xFF46454F),
 
+    // Los cinco niveles se recalculan desde el fondo nuevo: son escalones de profundidad, y
+    // si el fondo se mueve y ellos no, el de más abajo deja de estar por debajo de nada.
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF7F2FC),
-    surfaceContainer = Color(0xFFF1ECF7),
-    surfaceContainerHigh = Color(0xFFEBE5F1),
-    surfaceContainerHighest = Color(0xFFE5DFEB),
+    surfaceContainerLow = Color(0xFFF5F4FC),
+    surfaceContainer = Color(0xFFEFEEF8),
+    surfaceContainerHigh = Color(0xFFE9E7F3),
+    surfaceContainerHighest = Color(0xFFE3E1EE),
 
-    outline = Color(0xFF79767F),
-    outlineVariant = Color(0xFFCBC5D0),
+    outline = Color(0xFF78757F),
+    outlineVariant = Color(0xFFCAC7D6),
     scrim = Color(0xFF000000)
 )
 
 /**
  * Esquema oscuro.
  *
- * El fondo es un negro con sesgo violeta, no azulado: bajo un acento morado, un fondo que tira
- * al azul hace que los subtonos peleen entre sí. Se conserva de la paleta anterior porque esa
- * observación sigue siendo cierta.
+ * El fondo dejó de ser un negro casi puro (#131218) y pasó a un gris azulado oscuro (#1E1D2B),
+ * elegido a mano el 21 ago 2026. Contradice la nota anterior —que defendía un negro con sesgo
+ * violeta para que los subtonos no pelearan con el acento morado— y se deja escrito el cambio
+ * en vez de borrarlo: el argumento no era falso, pero un fondo más alto separa mejor las
+ * tarjetas del suelo, y eso pesa más.
+ *
+ * Quien quiera el negro de antes tiene el modo OLED, que lleva el fondo a negro puro.
  */
 internal val ExpressiveDarkScheme: ColorScheme = darkColorScheme(
-    primary = Color(0xFFC6C0FF),
-    onPrimary = Color(0xFF2A1878),
-    primaryContainer = Color(0xFF3F2F92),
-    onPrimaryContainer = Color(0xFFE4DEFF),
+    primary = Color(0xFFCFC2FF),
+    onPrimary = Color(0xFF33208A),
+    primaryContainer = Color(0xFF4B36A8),
+    onPrimaryContainer = Color(0xFFE9E2FF),
 
     secondary = Color(0xFFCAC3DB),
     onSecondary = Color(0xFF322C40),
@@ -112,21 +118,23 @@ internal val ExpressiveDarkScheme: ColorScheme = darkColorScheme(
     errorContainer = Color(0xFF8C1D18),
     onErrorContainer = Color(0xFFF9DEDC),
 
-    background = Color(0xFF131218),
-    onBackground = Color(0xFFE6E1E9),
-    surface = Color(0xFF131218),
-    onSurface = Color(0xFFE6E1E9),
-    surfaceVariant = Color(0xFF49454F),
-    onSurfaceVariant = Color(0xFFCAC4D0),
+    background = Color(0xFF1E1D2B),
+    onBackground = Color(0xFFE8E5EF),
+    surface = Color(0xFF1E1D2B),
+    onSurface = Color(0xFFE8E5EF),
+    surfaceVariant = Color(0xFF494656),
+    onSurfaceVariant = Color(0xFFCBC7D8),
 
-    surfaceContainerLowest = Color(0xFF0D0C12),
-    surfaceContainerLow = Color(0xFF1B1A21),
-    surfaceContainer = Color(0xFF1F1E25),
-    surfaceContainerHigh = Color(0xFF2A2830),
-    surfaceContainerHighest = Color(0xFF35323B),
+    // Los cinco escalones suben con el fondo. Con el fondo en #1E1D2B y los niveles antiguos,
+    // tres de los cinco quedaban por debajo del suelo: las tarjetas se veían como agujeros.
+    surfaceContainerLowest = Color(0xFF16151F),
+    surfaceContainerLow = Color(0xFF24222F),
+    surfaceContainer = Color(0xFF292736),
+    surfaceContainerHigh = Color(0xFF333140),
+    surfaceContainerHighest = Color(0xFF3E3B4C),
 
-    outline = Color(0xFF948F99),
-    outlineVariant = Color(0xFF49454F),
+    outline = Color(0xFF948FA3),
+    outlineVariant = Color(0xFF494656),
     scrim = Color(0xFF000000)
 )
 
@@ -168,47 +176,58 @@ data class SectionColors(
 ) {
     companion object {
         val Light = SectionColors(
-            schedule = Color(0xFF2A62CE),
+            // Los cuatro tonos elegidos a mano se ven en tema oscuro, que es donde se
+            // juzgaron. Aquí van sus equivalentes oscurecidos: el mismo tono, la luz que un
+            // texto necesita sobre fondo claro. #4797FF sobre blanco da 3,1 de contraste y
+            // #11C045 da 2,4 — por debajo del 4,5 que pide leerse sin esfuerzo.
+            schedule = Color(0xFF0A63D6),
             onSchedule = Color(0xFFFFFFFF),
-            scheduleContainer = Color(0xFFDCE3FF),
-            onScheduleContainer = Color(0xFF001849),
+            scheduleContainer = Color(0xFFD9E5FF),
+            onScheduleContainer = Color(0xFF001A47),
 
-            expenses = Color(0xFFB03A2E),
+            expenses = Color(0xFFD81C00),
             onExpenses = Color(0xFFFFFFFF),
-            expensesContainer = Color(0xFFFFDBD3),
-            onExpensesContainer = Color(0xFF3F0A03),
+            expensesContainer = Color(0xFFFFDCD5),
+            onExpensesContainer = Color(0xFF410800),
 
-            onTrack = Color(0xFF2C6C46),
+            onTrack = Color(0xFF0A8A31),
             onOnTrack = Color(0xFFFFFFFF),
-            onTrackContainer = Color(0xFFB6F0C7),
-            onOnTrackContainer = Color(0xFF00210F),
+            onTrackContainer = Color(0xFFB4F2C4),
+            onOnTrackContainer = Color(0xFF00230D),
 
-            atRisk = Color(0xFF7A5900),
+            atRisk = Color(0xFF8C6800),
             onAtRisk = Color(0xFFFFFFFF),
-            atRiskContainer = Color(0xFFFFDF9B),
-            onAtRiskContainer = Color(0xFF261A00)
+            atRiskContainer = Color(0xFFFFE29E),
+            onAtRiskContainer = Color(0xFF2A1D00)
         )
 
         val Dark = SectionColors(
-            schedule = Color(0xFFB3C5FF),
-            onSchedule = Color(0xFF002D7A),
-            scheduleContainer = Color(0xFF0E409F),
-            onScheduleContainer = Color(0xFFDCE3FF),
+            // Aqui van los tonos elegidos a mano, que es el tema en el que se juzgaron.
+            //
+            // Dos excepciones, y se dicen para que se puedan revertir a sabiendas. El rojo de
+            // Gastos se eligio en #FF2200, que sobre este fondo da 3,5 de contraste: se aclara
+            // a #FF5340 para llegar al 4,5 que necesita leerse como texto. Y el ambar se eligio
+            // en #8C6800, que es un tono de tema claro —sobre fondo oscuro da 2,4—, asi que
+            // aqui va su version clara con el mismo tono.
+            schedule = Color(0xFF4797FF),
+            onSchedule = Color(0xFF002A5E),
+            scheduleContainer = Color(0xFF0B4699),
+            onScheduleContainer = Color(0xFFD9E5FF),
 
-            expenses = Color(0xFFFFB4A6),
-            onExpenses = Color(0xFF5F1508),
-            expensesContainer = Color(0xFF7A2618),
-            onExpensesContainer = Color(0xFFFFDBD3),
+            expenses = Color(0xFFFF5340),
+            onExpenses = Color(0xFF5A0F00),
+            expensesContainer = Color(0xFF8C1F0A),
+            onExpensesContainer = Color(0xFFFFDCD5),
 
-            onTrack = Color(0xFF9BD4AC),
-            onOnTrack = Color(0xFF00391E),
-            onTrackContainer = Color(0xFF0E5132),
-            onOnTrackContainer = Color(0xFFB6F0C7),
+            onTrack = Color(0xFF11C045),
+            onOnTrack = Color(0xFF00320F),
+            onTrackContainer = Color(0xFF0A5C23),
+            onOnTrackContainer = Color(0xFFB4F2C4),
 
-            atRisk = Color(0xFFF2C048),
-            onAtRisk = Color(0xFF412D00),
-            atRiskContainer = Color(0xFF5C4300),
-            onAtRiskContainer = Color(0xFFFFDF9B)
+            atRisk = Color(0xFFE0A400),
+            onAtRisk = Color(0xFF3A2900),
+            atRiskContainer = Color(0xFF6B4E00),
+            onAtRiskContainer = Color(0xFFFFE29E)
         )
 
         fun forTheme(darkTheme: Boolean): SectionColors = if (darkTheme) Dark else Light
@@ -349,22 +368,29 @@ data class VividAccents(
     val green: Color,
     val amber: Color,
     val coral: Color,
-    val pink: Color,
-    /** La tinta que se lee sobre cualquiera de los seis. */
-    val onVivid: Color
+    val pink: Color
 ) {
+    /**
+     * La tinta que se lee sobre un relleno concreto.
+     *
+     * Era un blanco fijo, y funcionaba mientras los seis fueron oscuros. Con el ambar elegido
+     * a mano —#F39912— el blanco encima da 2,2 de contraste: el numero del cuadro de peso se
+     * volvia ilegible justo en uno de los seis. [contentColorOn] elige tinta clara u oscura por
+     * el contraste real de cada uno, asi que la paleta puede cambiar sin arrastrar este problema.
+     */
+    fun inkOn(fill: Color): Color = contentColorOn(fill)
+
     /** En orden, para lo que necesite repartir colores sin elegirlos: tramos, cuadros, chips. */
     val ordered: List<Color> get() = listOf(violet, blue, green, amber, coral, pink)
 
     companion object {
         val Default = VividAccents(
-            violet = Color(0xFF7B5CFF),
-            blue = Color(0xFF2F80FF),
-            green = Color(0xFF12B76A),
-            amber = Color(0xFFF5A524),
-            coral = Color(0xFFFF6B4A),
-            pink = Color(0xFFF6339A),
-            onVivid = Color(0xFFFFFFFF)
+            violet = Color(0xFF6A45E8),
+            blue = Color(0xFF1F6FE0),
+            green = Color(0xFF0DBA41),
+            amber = Color(0xFFF39912),
+            coral = Color(0xFFF3311B),
+            pink = Color(0xFFD62884)
         )
     }
 }

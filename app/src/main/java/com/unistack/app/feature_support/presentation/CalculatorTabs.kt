@@ -805,7 +805,7 @@ private fun GradeRow(
             ) {
                 Text(
                     text = weight,
-                    color = LocalVividAccents.current.onVivid,
+                    color = LocalVividAccents.current.inkOn(tone),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.ExtraBold
                 )

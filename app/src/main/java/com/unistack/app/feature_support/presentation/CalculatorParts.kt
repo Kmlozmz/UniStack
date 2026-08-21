@@ -217,7 +217,7 @@ internal fun RowScope.NumberSlot(
     )
     val ink by animateColorAsState(
         targetValue = if (active) {
-            LocalVividAccents.current.onVivid
+            LocalVividAccents.current.let { it.inkOn(it.violet) }
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
@@ -226,7 +226,7 @@ internal fun RowScope.NumberSlot(
     )
     val valueInk by animateColorAsState(
         targetValue = if (active) {
-            LocalVividAccents.current.onVivid
+            LocalVividAccents.current.let { it.inkOn(it.violet) }
         } else {
             MaterialTheme.colorScheme.onSurface
         },
@@ -300,7 +300,7 @@ internal fun SlotAction(
         shape = RoundedCornerShape(corner),
         color = container,
         contentColor = if (enabled) {
-            LocalVividAccents.current.onVivid
+            LocalVividAccents.current.let { it.inkOn(it.violet) }
         } else {
             MaterialTheme.colorScheme.outline
         }

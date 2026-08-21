@@ -151,9 +151,9 @@ internal fun ScaleZoneBar(
      */
     val vivid = LocalVividAccents.current
     val zones = listOf(
-        Triple("Reprobado", (pass / max).toFloat(), vivid.coral to vivid.onVivid),
-        Triple("Aprobado", ((goal - pass) / max).toFloat(), vivid.amber to vivid.onVivid),
-        Triple("Meta", ((max - goal) / max).toFloat(), vivid.green to vivid.onVivid)
+        Triple("Reprobado", (pass / max).toFloat(), vivid.coral to vivid.inkOn(vivid.coral)),
+        Triple("Aprobado", ((goal - pass) / max).toFloat(), vivid.amber to vivid.inkOn(vivid.amber)),
+        Triple("Meta", ((max - goal) / max).toFloat(), vivid.green to vivid.inkOn(vivid.green))
     )
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -245,7 +245,7 @@ internal fun ScaleZoneBar(
                 Surface(
                     shape = MaterialTheme.shapes.extraSmall,
                     color = zona.second,
-                    contentColor = vivid.onVivid
+                    contentColor = vivid.inkOn(zona.second)
                 ) {
                     Text(
                         text = zona.first.uppercase(),
