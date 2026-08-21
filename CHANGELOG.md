@@ -38,7 +38,17 @@ número y la fecha, y se abre una nueva.
 
 ## [Sin publicar]
 
-_Nada pendiente._
+#### Calculadora
+- La calculadora se parte en tres pestañas, una por pregunta: **Materia** (cada nota vale un
+  porcentaje del curso), **Semestre** (cada materia pesa por sus créditos) y **Me falta**
+  (qué nota necesitas en lo que queda para llegar a tu meta).
+- Se teclea en un teclado propio, abajo y fijo: se acabaron los campos de texto y el teclado
+  de Android tapando media pantalla.
+- No deja escribir una nota fuera de tu escala ni pasarte del 100 % de una materia, y **dice
+  por qué** en vez de quedarse sin responder.
+- En Semestre puedes elegir cuáles de tus materias traer y si vienen con sus notas, corregir
+  cualquiera después, y mezclarlas con las que escribas a mano.
+- Cada pestaña se explica con un ejemplo desde el botón de ayuda.
 
 ---
 

@@ -186,7 +186,13 @@ import androidx.compose.material3.CardDefaults
  */
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
+internal fun ScaleZoneBar(
+    max: Double,
+    passing: Double?,
+    target: Double?,
+    /** Una nota concreta señalada sobre la franja, para ver en qué tramo cae. */
+    marker: Double? = null
+) {
     if (max <= 0.0) return
     val pass = (passing ?: 0.0).coerceIn(0.0, max)
     val goal = (target ?: max).coerceIn(pass, max)
@@ -261,6 +267,26 @@ internal fun ScaleZoneBar(max: Double, passing: Double?, target: Double?) {
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+        if (marker != null && max > 0.0) {
+            // La marca de una nota concreta. Va debajo de los tramos y no encima: encima
+            // taparía el rótulo del tramo en el que cae, que es justo lo que se viene a leer.
+            val share = (marker / max).toFloat().coerceIn(0f, 1f)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(share)
+                        .height(6.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 3.dp, height = 6.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .background(MaterialTheme.colorScheme.onSurface)
                     )
                 }
             }

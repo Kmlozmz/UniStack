@@ -3,9 +3,7 @@ package com.unistack.app.feature_support.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.core.utils.GradeCalculator
-import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.GradesRepository
-import com.unistack.app.feature_support.domain.GpaRow
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,6 +11,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+
+/**
+ * Una materia registrada, tal y como la ve la calculadora.
+ *
+ * Trae el nombre y el promedio, y **no trae créditos**: la materia no los guarda —el modelo
+ * tiene nombre, notas, color y corte— así que los pone quien calcula. Es la clase de detalle
+ * que hay que decir en la pantalla en vez de dejar que se descubra con una casilla vacía.
+ */
+data class CalculatorSubject(
+    val id: String,
+    val name: String,
+    /** El promedio de lo evaluado, o `null` si la materia todavía no tiene notas. */
+    val average: Double?
+)
 
 @HiltViewModel
 class GpaCalculatorViewModel @Inject constructor(
@@ -23,26 +35,22 @@ class GpaCalculatorViewModel @Inject constructor(
     val profile = userRepository.userProfile
 
     /**
-     * Las materias, listas para caer en la tabla.
+     * Las materias que se pueden traer a la cuenta.
      *
-     * Solo entran las que ya tienen algo evaluado: una materia sin notas se traduciría en una
-     * fila con la nota en blanco, que no aporta nada y hay que borrar a mano.
+     * Entran **todas**, también las que aún no tienen ninguna nota. Antes se filtraban las
+     * vacías, y con eso desaparecía el caso más interesante: poner a mano la nota que esperas
+     * sacar en la materia que todavía no te han calificado.
      */
-    val subjectRows: StateFlow<List<GpaRow>> = combine(
+    val subjects: StateFlow<List<CalculatorSubject>> = combine(
         gradesRepository.subjects,
         userRepository.userProfile
     ) { subjects, profile ->
         val periods = profile?.academicPeriodScheme?.periods.orEmpty()
-        val scale = profile?.gradingScale
-        subjects.mapNotNull { subject ->
-            val average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
-                ?: return@mapNotNull null
-            GpaRow(
+        subjects.map { subject ->
+            CalculatorSubject(
                 id = subject.id,
                 name = subject.name,
-                grade = scale?.let { GradingScaleUtils.formatGrade(average, it) }
-                    ?: average.toString(),
-                credits = ""
+                average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
