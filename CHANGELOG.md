@@ -32,5 +32,5 @@ que falta para llegar a donde quieres.
 
 **Notas rápidas** para lo que no quieras olvidar y **recursos** para buscar, estudiar y citar.
 
-**Todo se guarda en tu teléfono.** Puedes exportar una copia cuando quieras, llevártela a otro
-y dejarlo como estaba. Sin cuenta y sin conexión: vincular Google sirve solo para respaldar.
+**Y una copia de todo cuando quieras.** Expórtala, llévatela a otro teléfono y deja la app
+como estaba.

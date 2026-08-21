@@ -2,6 +2,7 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.ui.graphics.Path
 import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -188,6 +189,7 @@ internal fun ScaleZoneBar(
             // taparía el rótulo del tramo en el que cae, que es justo lo que se viene a leer.
             // La marca viaja a su sitio en vez de aparecer en el nuevo: es la unica cosa de la
             // franja que se mueve, y saltando no se veia de donde a donde.
+            val marca = MaterialTheme.colorScheme.onSurface
             val share by animateFloatAsState(
                 targetValue = (marker / max).toFloat().coerceIn(0f, 1f),
                 animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
@@ -197,14 +199,59 @@ internal fun ScaleZoneBar(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(share.coerceAtLeast(0.001f))
-                        .height(6.dp),
+                        .height(8.dp),
                     contentAlignment = Alignment.CenterEnd
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 3.dp, height = 6.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(MaterialTheme.colorScheme.onSurface)
+                    // Una punta que apunta al tramo, no una rayita.
+                    //
+                    // Era una barra de 3 x 6 dp del color del texto, debajo de tres bloques de
+                    // color: se perdia. Un triangulo apuntando hacia arriba senala el tramo en
+                    // vez de quedarse al lado de el, y el rotulo de abajo dice en cual cae, que
+                    // es la pregunta de verdad: si apruebo o no.
+                    Canvas(modifier = Modifier.size(width = 13.dp, height = 8.dp)) {
+                        val punta = Path().apply {
+                            moveTo(size.width / 2f, 0f)
+                            lineTo(size.width, size.height)
+                            lineTo(0f, size.height)
+                            close()
+                        }
+                        drawPath(punta, marca)
+                    }
+                }
+            }
+            /*
+             * Y la respuesta escrita, debajo.
+             *
+             * La punta dice donde cae; esto dice que significa. Sin ello hay que mirar el
+             * triangulo, deducir sobre que bloque esta y traducirlo, que es justo el trabajo
+             * que la franja viene a ahorrar.
+             */
+            val zona = when {
+                marker < pass -> "Reprobado" to vivid.coral
+                marker < goal -> "Aprobado" to vivid.amber
+                else -> "Meta" to vivid.green
+            }
+            Row(
+                modifier = Modifier.padding(top = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = formatGradeValue(marker, max),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = zona.second,
+                    contentColor = vivid.onVivid
+                ) {
+                    Text(
+                        text = zona.first.uppercase(),
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold
                     )
                 }
             }

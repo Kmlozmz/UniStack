@@ -232,8 +232,20 @@ internal fun SubjectCalculator(
                  * sabe cual de los trozos es suyo sin contar de izquierda a derecha.
                  */
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    /*
+                     * Sin `key`: la posicion en la lista es la identidad.
+                     *
+                     * Con `key(index, ...)`, borrar la primera nota cambiaba la clave de todas
+                     * las de abajo —la que era 1 pasa a ser 0—, asi que Compose las daba por
+                     * nuevas y todas volvian a entrar a la vez. Parecia que la lista se
+                     * recargara entera por quitar una.
+                     *
+                     * Sin clave, cada hueco conserva su estado: al borrar desaparece el ultimo
+                     * hueco y los demas siguen donde estaban, quietos. Y al anadir se estrena
+                     * uno al final, que es el unico que debe animarse.
+                     */
                     entries.forEachIndexed { index, entry ->
-                        key(index, entry.grade, entry.weightPercent) {
+                        run {
                             EnterOnAppear {
                                 GradeRow(
                                     grade = GradingScaleUtils.formatGrade(entry.grade, scale),
