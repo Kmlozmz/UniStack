@@ -118,6 +118,18 @@ class ProfileViewModel @Inject constructor(
         billingRepository.refreshPurchases()
     }
 
+    /**
+     * Guarda el retrato elegido, o lo quita.
+     *
+     * Recibe una ruta a un archivo que ya está dentro de la app: la copia la hace la pantalla,
+     * porque el `content://` que devuelve el selector de fotos caduca cuando el proceso muere y
+     * el retrato tiene que seguir ahí mañana.
+     */
+    fun updateLocalPhoto(path: String?) {
+        val current = profile.value ?: return
+        save(current.copy(localPhotoUri = path))
+    }
+
     fun updatePreferredName(name: String): Boolean {
         val current = profile.value ?: return false
         if (!TextValidators.validateDisplayName(name).isValid) return false

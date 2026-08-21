@@ -2,6 +2,22 @@
 
 package com.unistack.app.feature_support.presentation
 
+import com.unistack.app.core.design.components.UniStackLogoMark
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.SystemUpdateAlt
+import androidx.compose.material.icons.rounded.CloudQueue
+import androidx.compose.material.icons.rounded.VerifiedUser
+import com.unistack.app.feature_support.domain.ChangelogSection
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.PaddingValues
 import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
@@ -18,9 +34,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -79,7 +93,6 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.foundation.layout.heightIn
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -135,84 +148,221 @@ fun WhatsNewScreen(
 
     SupportScaffold(
         title = "Novedades",
-        subtitle = "Lo que trae tu versión",
+        subtitle = "Changelog e historial de versiones",
         onBackClick = onBackClick,
         modifier = modifier
     ) {
-        item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    UniStackWordmark(fontSize = 20.sp)
-                    Text(
-                        "Tienes la ${BuildConfig.VERSION_NAME}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
+        item(key = "tuya") {
+            /*
+             * La versión que tienes, arriba y destacada.
+             *
+             * Antes era una tarjeta con el logotipo y la línea «Tienes la 1.3.2» en gris de pie
+             * de foto, del mismo peso que todo lo demás. Es el único dato de esta pantalla que
+             * alguien viene a comprobar, así que se lee sin buscarlo.
+             */
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            "TU VERSI\u00d3N",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            BuildConfig.VERSION_NAME,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.headlineMediumEmphasized,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                    sections.firstOrNull()?.date?.let { date ->
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                "Publicada",
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            Text(
+                                date,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
         }
         if (sections.isEmpty()) {
-            item {
+            item(key = "vacio") {
                 UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                     Text(
-                        "Todavía no hay nada publicado para esta versión.",
+                        "Todav\u00eda no hay nada publicado para esta versi\u00f3n.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         } else {
-            items(sections, key = { it.version }) { section ->
-                /*
-                 * La fecha manda y la versión va colgada de ella.
-                 *
-                 * Antes cada sección era una tarjeta con la versión en grande y la fecha en
-                 * pequeño al lado, así que dos versiones publicadas el mismo día se leían como
-                 * dos bloques sin relación. Puesta la fecha delante, la lista se recorre como
-                 * lo que es: una línea de tiempo hacia atrás.
-                 */
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = section.date ?: "Sin fecha",
-                            style = MaterialTheme.typography.titleMediumEmphasized,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ) {
-                            Text(
-                                text = section.version,
-                                style = MaterialTheme.typography.labelLargeEmphasized,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                            )
-                        }
-                    }
-                    ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                }
+            itemsIndexed(sections, key = { _, it -> it.version }) { index, section ->
+                ReleaseTimelineEntry(
+                    section = section,
+                    current = index == 0,
+                    last = index == sections.lastIndex
+                )
             }
         }
     }
 }
 
+/**
+ * Una versión en la línea de tiempo.
+ *
+ * Cada sección era una tarjeta suelta con la fecha en grande, así que dos versiones publicadas
+ * el mismo día se leían como dos bloques sin relación. Con el raíl a la izquierda —un punto por
+ * versión y la línea que los cose— la lista se recorre como lo que es: hacia atrás en el tiempo.
+ *
+ * La línea se dibuja con `IntrinsicSize.Min` para que mida lo que mida el texto de al lado; sin
+ * eso, `fillMaxHeight` dentro de una fila no tiene contra qué medirse y no pinta nada.
+ */
+@Composable
+private fun ReleaseTimelineEntry(
+    section: ChangelogSection,
+    current: Boolean,
+    last: Boolean
+) {
+    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Box(
+            modifier = Modifier.width(16.dp).fillMaxHeight(),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            if (!last) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .padding(top = 14.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .padding(top = 3.dp)
+                    .size(if (current) 14.dp else 10.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                    )
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(bottom = if (last) 0.dp else 20.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Text(
+                    text = section.date ?: "Sin fecha",
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = if (current) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    },
+                    contentColor = if (current) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                ) {
+                    Text(
+                        text = section.version,
+                        style = MaterialTheme.typography.labelLargeEmphasized,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                    )
+                }
+            }
+            ReleaseNotes(markdown = section.body, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
 private data class SupportLink(
+    /** Las iniciales del sitio: dos letras como mucho, para que quepan en el cuadro. */
+    val mark: String,
     val title: String,
-    val subtitle: String,
-    val url: String
+    val domain: String,
+    val url: String,
+    val tone: ResourceTone
 )
 
-private val ResourceLinks = listOf(
-    SupportLink("Google Académico", "Artículos y citas para tus trabajos", "https://scholar.google.com"),
-    SupportLink("Khan Academy", "Clases gratis de matemáticas y ciencias", "https://es.khanacademy.org"),
-    SupportLink("OpenStax", "Libros de texto universitarios abiertos", "https://openstax.org"),
-    SupportLink("Normas APA", "Cómo citar y referenciar", "https://normas-apa.org"),
-    SupportLink("Zotero", "Gestor de referencias gratuito", "https://www.zotero.org"),
-    SupportLink("Wolfram Alpha", "Resuelve y explica paso a paso", "https://www.wolframalpha.com")
+/** El color del cuadro de cada sitio, elegido por el grupo al que pertenece. */
+private enum class ResourceTone { SEARCH, STUDY, CITE }
+
+private data class ResourceGroup(
+    val label: String,
+    val help: String,
+    val links: List<SupportLink>
+)
+
+/*
+ * Seis sitios, agrupados por para qué sirven, y cada grupo con su «?».
+ *
+ * Iban los seis en fila con el mismo icono de libro repetido: una lista donde nada distingue
+ * a nada. Y un nombre como «OpenStax» no le dice nada a quien no lo conoce, así que la lista
+ * entera se quedaba sin usar por no saber qué hay detrás.
+ *
+ * La explicación va por grupo y no por sitio: con seis párrafos sería otra pared, y con tres
+ * cada uno puede contar para qué sirve el grupo y qué aporta cada sitio dentro de él.
+ */
+private val ResourceGroups = listOf(
+    ResourceGroup(
+        label = "BUSCAR",
+        help = "Para encontrar de dónde sacar lo que vas a escribir. Google Académico busca " +
+            "artículos y tesis revisados por otros investigadores —lo que puedes citar sin que " +
+            "te lo tumben— y te da la cita ya formateada. Wolfram Alpha resuelve la operación y " +
+            "enseña el procedimiento paso a paso: sirve para comprobar un ejercicio que ya hiciste.",
+        links = listOf(
+            SupportLink("GA", "Google Académico", "scholar.google.com", "https://scholar.google.com", ResourceTone.SEARCH),
+            SupportLink("W", "Wolfram Alpha", "wolframalpha.com", "https://www.wolframalpha.com", ResourceTone.SEARCH)
+        )
+    ),
+    ResourceGroup(
+        label = "ESTUDIAR",
+        help = "Para entender un tema que no te entró en clase. Khan Academy son lecciones " +
+            "cortas en vídeo con ejercicios para practicar, sobre todo de matemáticas, física y " +
+            "química. OpenStax son libros de texto universitarios completos, gratuitos y legales " +
+            "de descargar: los escriben profesores y se usan en universidades de verdad.",
+        links = listOf(
+            SupportLink("K", "Khan Academy", "es.khanacademy.org", "https://es.khanacademy.org", ResourceTone.STUDY),
+            SupportLink("OS", "OpenStax", "openstax.org", "https://openstax.org", ResourceTone.STUDY)
+        )
+    ),
+    ResourceGroup(
+        label = "CITAR",
+        help = "Para que la bibliografía no te reste puntos. Normas APA explica cómo se cita " +
+            "dentro del texto y cómo se arma la lista del final, con ejemplos de cada tipo de " +
+            "fuente. Zotero guarda cada fuente mientras investigas y luego te genera la " +
+            "bibliografía entera en el formato que te pidan.",
+        links = listOf(
+            SupportLink("A", "Normas APA", "normas-apa.org", "https://normas-apa.org", ResourceTone.CITE),
+            SupportLink("Z", "Zotero", "zotero.org", "https://www.zotero.org", ResourceTone.CITE)
+        )
+    )
 )
 
 /** Recursos: enlaces que se abren en el navegador. Nada se descarga ni se envía. */
@@ -222,100 +372,229 @@ fun ResourcesScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var openHelp by rememberSaveable { mutableStateOf<String?>(null) }
 
     SupportScaffold(
         title = "Recursos",
-        subtitle = "Enlaces útiles para el semestre",
+        subtitle = "Sitios web útiles",
         onBackClick = onBackClick,
         modifier = modifier
     ) {
-        items(ResourceLinks) { link ->
-            UniCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                onClick = {
-                    runCatching {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
-                    }
-                }
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(38.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                        contentAlignment = Alignment.Center
+        ResourceGroups.forEach { group ->
+            item(key = "sect-" + group.label) {
+                ResourceSectionHeader(
+                    label = group.label,
+                    open = openHelp == group.label,
+                    onToggle = { openHelp = if (openHelp == group.label) null else group.label }
+                )
+            }
+            item(key = "help-" + group.label) {
+                AnimatedVisibility(visible = openHelp == group.label) {
+                    UniCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.primaryContainer
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.MenuBook,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(19.dp)
+                        Text(
+                            text = group.help,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            style = MaterialTheme.typography.bodySmall,
+                            lineHeight = 18.sp
                         )
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(link.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                        Text(link.subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+            }
+            item(key = "links-" + group.label) {
+                UniCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraLarge,
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    Column {
+                        group.links.forEach { link ->
+                            ResourceRow(
+                                link = link,
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
+                                    }
+                                }
+                            )
+                        }
                     }
-                    Icon(
-                        Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
         }
     }
 }
 
+/**
+ * El rótulo del grupo, con el «?» pegado.
+ *
+ * El signo va aquí y no en la cabecera de la pantalla porque lo que explica es este grupo, y a
+ * esta altura está lo que hay que explicar. Se abre en su sitio en vez de en una hoja: es texto
+ * corto, y una hoja desde abajo taparía justo la lista sobre la que estás decidiendo.
+ */
+@Composable
+private fun ResourceSectionHeader(
+    label: String,
+    open: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier.padding(start = 2.dp, top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 1.sp
+        )
+        Surface(
+            onClick = onToggle,
+            shape = CircleShape,
+            color = if (open) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = if (open) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = "?",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResourceRow(
+    link: SupportLink,
+    onClick: () -> Unit
+) {
+    val tone = when (link.tone) {
+        ResourceTone.SEARCH -> LocalSectionColors.current.schedule
+        ResourceTone.STUDY -> LocalSectionColors.current.onTrack
+        ResourceTone.CITE -> MaterialTheme.colorScheme.primary
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // La inicial del sitio en vez del mismo icono de libro seis veces: distingue de un
+        // vistazo, y no hay que inventar un icono para cada uno.
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(tone.copy(alpha = 0.16f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = link.mark,
+                color = tone,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold
+            )
+        }
+        Spacer(Modifier.width(13.dp))
+        Column(Modifier.weight(1f)) {
+            Text(link.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+            Text(
+                link.domain,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+        // «Se va fuera de la app», que es lo que pasa. La flecha de antes decía «entras aquí
+        // dentro» y era mentira: los seis abren el navegador.
+        Icon(
+            Icons.AutoMirrored.Rounded.OpenInNew,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
 private data class FaqEntry(val question: String, val answer: String)
 
-private val Faq = listOf(
-    FaqEntry(
-        "¿Dónde se guardan mis datos?",
-        "En tu teléfono. UniStack funciona sin cuenta y sin conexión; vincular Google solo sirve " +
-            "para respaldar y recuperar lo que ya tienes."
+private data class FaqGroup(val label: String, val entries: List<FaqEntry>)
+
+/*
+ * Las ocho preguntas, repartidas en tres montones.
+ *
+ * Sueltas en una columna había que leerlas todas para encontrar la tuya, y la mitad no tenían
+ * nada que ver entre sí: dónde viven tus datos y por qué Android pide permiso para instalar son
+ * preguntas de dos personas distintas en dos momentos distintos.
+ */
+private val FaqGroups = listOf(
+    FaqGroup(
+        "TUS DATOS",
+        listOf(
+            FaqEntry(
+                "¿Dónde se guardan mis datos?",
+                "En tu teléfono. UniStack funciona sin cuenta y sin conexión; vincular Google solo " +
+                    "sirve para respaldar y recuperar lo que ya tienes."
+            ),
+            FaqEntry(
+                "Perdí mi teléfono, ¿puedo recuperar todo?",
+                "Solo si hiciste una copia. En Configuración → Datos y respaldos puedes exportar " +
+                    "un archivo y volver a importarlo en otro teléfono."
+            )
+        )
     ),
-    FaqEntry(
-        "¿Por qué mi materia no aparece en el horario?",
-        "El horario dibuja las clases que tengan días y hora. Si creaste la materia sin marcar " +
-            "días, abre la materia y añádele su horario."
+    FaqGroup(
+        "NOTAS Y HORARIO",
+        listOf(
+            FaqEntry(
+                "¿Cómo calcula la app mi promedio?",
+                "Con lo que ya está evaluado: suma los puntos confirmados de cada corte y los " +
+                    "divide entre el peso evaluado. No proyecta notas que todavía no existen."
+            ),
+            FaqEntry(
+                "¿Qué son el suelo y el techo de una materia?",
+                "El suelo es con cuánto terminarías sacando 0 en todo lo que falta, y el techo con " +
+                    "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
+                    "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
+            ),
+            FaqEntry(
+                "Cambié la escala de notas y perdí mis notas",
+                "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa " +
+                    "lo mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. " +
+                    "La app avisa dos veces y te dice cuántas notas vas a perder."
+            ),
+            FaqEntry(
+                "¿Por qué mi materia no aparece en el horario?",
+                "El horario dibuja las clases que tengan días y hora. Si creaste la materia sin " +
+                    "marcar días, abre la materia y añádele su horario."
+            )
+        )
     ),
-    FaqEntry(
-        "¿Cómo calcula la app mi promedio?",
-        "Con lo que ya está evaluado: suma los puntos confirmados de cada corte y los divide " +
-            "entre el peso evaluado. No proyecta notas que todavía no existen."
-    ),
-    FaqEntry(
-        "¿Qué son el suelo y el techo de una materia?",
-        "El suelo es con cuánto terminarías sacando 0 en todo lo que falta, y el techo con " +
-            "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
-            "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
-    ),
-    FaqEntry(
-        "Cambié la escala de notas y perdí mis notas",
-        "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa lo " +
-            "mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. La app " +
-            "avisa dos veces y te dice cuántas notas vas a perder."
-    ),
-    FaqEntry(
-        "¿Cómo recibo las actualizaciones?",
-        "En Configuración → Actualizaciones. La app mira lo último publicado y te lo ofrece; no " +
-            "hay canales ni códigos que pedir. Comprueba sola cada par de horas, así que puede " +
-            "tardar un rato en enterarse: si tienes prisa, entra y pulsa el botón de recargar."
-    ),
-    FaqEntry(
-        "¿Por qué me pide permiso para instalar?",
-        "Porque la app no viene de Play Store y se actualiza sola desde su archivo. Android pide " +
-            "autorizar a UniStack como origen una vez; luego ya no vuelve a preguntar."
-    ),
-    FaqEntry(
-        "Perdí mi teléfono, ¿puedo recuperar todo?",
-        "Solo si hiciste una copia. En Configuración → Datos y respaldos puedes exportar un " +
-            "archivo y volver a importarlo en otro teléfono."
+    FaqGroup(
+        "ACTUALIZACIONES",
+        listOf(
+            FaqEntry(
+                "¿Cómo recibo las actualizaciones?",
+                "En Configuración → Actualizaciones. La app mira lo último publicado y te lo " +
+                    "ofrece; no hay canales ni códigos que pedir. Comprueba sola cada par de horas, " +
+                    "así que puede tardar un rato en enterarse: si tienes prisa, entra y pulsa el " +
+                    "botón de recargar."
+            ),
+            FaqEntry(
+                "¿Por qué me pide permiso para instalar?",
+                "Porque la app no viene de Play Store y se actualiza sola desde su archivo. " +
+                    "Android pide autorizar a UniStack como origen una vez; luego ya no vuelve a " +
+                    "preguntar."
+            )
+        )
     )
 )
 
@@ -334,23 +613,36 @@ fun HelpScreen(
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    var expanded by rememberSaveable { mutableStateOf<Int?>(null) }
+    // La abierta se recuerda por su texto y no por su posición: con las preguntas repartidas
+    // en grupos, el índice ya no identifica a ninguna.
+    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var composing by rememberSaveable { mutableStateOf<TicketKind?>(null) }
     var opened by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     SupportScaffold(
         title = "Ayuda y soporte",
-        subtitle = "Preguntas frecuentes y sugerencias",
+        subtitle = "Resuelve las dudas más comunes",
         onBackClick = onBackClick,
         modifier = modifier.dismissKeyboardOnTapOutside()
     ) {
-        Faq.forEachIndexed { index, entry ->
-            item {
-                val isOpen = expanded == index
+        FaqGroups.forEach { group ->
+            item(key = "faq-" + group.label) {
+                Text(
+                    text = group.label,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(start = 2.dp, top = 6.dp)
+                )
+            }
+            group.entries.forEach { entry ->
+            item(key = entry.question) {
+                val isOpen = expanded == entry.question
                 UniCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.large,
-                    onClick = { expanded = if (isOpen) null else index }
+                    onClick = { expanded = if (isOpen) null else entry.question }
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -377,6 +669,7 @@ fun HelpScreen(
                         }
                     }
                 }
+            }
             }
         }
         item {
@@ -657,59 +950,130 @@ private fun TicketComposer(
 @Composable
 fun AboutScreen(
     onBackClick: () -> Unit,
-    onWhatsNewClick: () -> Unit,
     onUpdatesClick: () -> Unit,
+    onLicensesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     SupportScaffold(
         title = "Acerca de",
-        subtitle = "Versión, novedades y datos",
+        subtitle = "Versión, datos y licencias",
         onBackClick = onBackClick,
         modifier = modifier
     ) {
-        item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    UniStackWordmark(fontSize = 24.sp)
+        item(key = "marca") {
+            /*
+             * La marca de verdad, y la promesa de privacidad como contenido.
+             *
+             * El logotipo iba solo como texto —sin el símbolo— y la línea de «tus datos» quedaba
+             * al final, en gris, del tamaño de un pie de foto. Es lo único de esta pantalla que
+             * alguien necesita leer alguna vez, así que sube y se pinta como lo que es.
+             */
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                UniStackLogoMark(size = 68.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    UniStackWordmark(fontSize = 26.sp)
                     Text(
-                        "Tu semestre en un solo sitio: notas, horario, tareas y gastos.",
+                        "Tu vida acad\u00e9mica en un solo sitio.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        style = MaterialTheme.typography.bodyMedium
                     )
-                    AboutFact("Versión", BuildConfig.VERSION_NAME)
-                    AboutFact("Compilación", BuildConfig.VERSION_CODE.toString())
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AboutChip(BuildConfig.VERSION_NAME, highlighted = true)
+                    AboutChip("compilaci\u00f3n " + BuildConfig.VERSION_CODE)
                 }
             }
         }
-        item {
-            AboutRow(
-                icon = Icons.AutoMirrored.Rounded.MenuBook,
-                title = "Novedades",
-                subtitle = "Qué cambió en cada versión",
-                onClick = onWhatsNewClick
-            )
-        }
-        item {
-            AboutRow(
-                icon = Icons.Rounded.Send,
-                title = "Actualizaciones",
-                subtitle = "Canal, comprobación e instalación",
-                onClick = onUpdatesClick
-            )
-        }
-        item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Tus datos", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+        item(key = "datos-titulo") { AboutSectionLabel("TUS DATOS") }
+        item(key = "datos-local") {
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = LocalSectionColors.current.onTrackContainer
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                    Icon(
+                        Icons.Rounded.VerifiedUser,
+                        contentDescription = null,
+                        tint = LocalSectionColors.current.onOnTrackContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
                     Text(
-                        "Todo lo que registras se guarda en este teléfono. La app no manda tus " +
-                            "notas, tareas ni gastos a ningún servidor. Si vinculas una cuenta de " +
-                            "Google, se usa solo para el respaldo que tú pidas, y puedes " +
-                            "desvincularla cuando quieras desde tu perfil.",
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.ExtraBold)) {
+                                append("Tus datos se guardan localmente. ")
+                            }
+                            append(
+                                "Tu informaci\u00f3n permanece en este dispositivo y solo se sincroniza " +
+                                    "con nuestros servidores cuando una funci\u00f3n lo requiere."
+                            )
+                        },
+                        color = LocalSectionColors.current.onOnTrackContainer,
+                        style = MaterialTheme.typography.bodySmall,
+                        lineHeight = 19.sp
+                    )
+                }
+            }
+        }
+        item(key = "datos-nube") {
+            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
+                Row(horizontalArrangement = Arrangement.spacedBy(13.dp)) {
+                    Icon(
+                        Icons.Rounded.CloudQueue,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(
+                                SpanStyle(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            ) {
+                                append("Protege tus datos con un respaldo en la nube. ")
+                            }
+                            append(
+                                "Si vinculas Google, podr\u00e1s proteger y respaldar tu informaci\u00f3n. " +
+                                    "Puedes desvincular tu cuenta cuando quieras."
+                            )
+                        },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        style = MaterialTheme.typography.bodySmall,
+                        lineHeight = 19.sp
+                    )
+                }
+            }
+        }
+        item(key = "info-titulo") { AboutSectionLabel("INFORMACI\u00d3N") }
+        item(key = "info") {
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraLarge,
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                Column {
+                    // \u00abNovedades\u00bb se cae de aqu\u00ed: es una de las filas del panel lateral, a un
+                    // gesto de distancia. Dos puertas a la misma pantalla no ahorran nada.
+                    AboutRow(
+                        icon = Icons.Rounded.SystemUpdateAlt,
+                        title = "Actualizaciones",
+                        subtitle = "Comprueba si tienes la \u00faltima versi\u00f3n",
+                        onClick = onUpdatesClick
+                    )
+                    AboutRow(
+                        icon = Icons.Rounded.Description,
+                        title = "Licencias",
+                        subtitle = "El software libre que usa UniStack",
+                        onClick = onLicensesClick
                     )
                 }
             }
@@ -718,10 +1082,38 @@ fun AboutScreen(
 }
 
 @Composable
-private fun AboutFact(label: String, value: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-        Text(value, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+private fun AboutSectionLabel(text: String) {
+    Text(
+        text = text,
+        color = MaterialTheme.colorScheme.primary,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(start = 2.dp, top = 6.dp)
+    )
+}
+
+@Composable
+private fun AboutChip(text: String, highlighted: Boolean = false) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = if (highlighted) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        contentColor = if (highlighted) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }
 

@@ -2,6 +2,12 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.LaunchedEffect
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
@@ -36,12 +42,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -49,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.cookieCorner
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -93,6 +96,23 @@ fun AccountSettingsScreen(
     var editingName by rememberSaveable { mutableStateOf(false) }
     var nameInput by rememberSaveable(current.userId) { mutableStateOf(current.preferredName) }
     var showUnlinkDialog by rememberSaveable { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    /*
+     * La foto se copia dentro de la app, no se referencia.
+     *
+     * El selector devuelve un `content://` con permiso de lectura que dura lo que dure el
+     * proceso: al reabrir la app el retrato sería un hueco. Y aunque el permiso se persistiera,
+     * la foto sigue siendo de la galería —si la borran de ahí, desaparece de aquí—. Copiarla
+     * cuesta un archivo pequeño y quita los dos problemas.
+     */
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val saved = ProfilePhotoFiles.copyIn(context, uri)
+                if (saved != null) viewModel.updateLocalPhoto(saved)
+            }
+        }
+    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LazyColumn(
@@ -118,8 +138,18 @@ fun AccountSettingsScreen(
             AccountPortrait(
                 name = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",
                 detail = current.educationSummary(),
-                photoUrl = current.accountPhotoUrl,
-                onEditClick = {
+                // El retrato propio manda sobre el de la cuenta: vincular Google trae una foto
+                // de partida, no la última palabra.
+                photoUrl = current.localPhotoUri ?: current.accountPhotoUrl,
+                hasOwnPhoto = current.localPhotoUri != null,
+                onPhotoClick = {
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
+                onRemovePhotoClick = {
+                    ProfilePhotoFiles.clear(context)
+                    viewModel.updateLocalPhoto(null)
+                },
+                onEditNameClick = {
                     nameInput = current.preferredName
                     editingName = true
                 }
@@ -263,7 +293,10 @@ private fun AccountPortrait(
     name: String,
     detail: String,
     photoUrl: String?,
-    onEditClick: () -> Unit
+    hasOwnPhoto: Boolean,
+    onPhotoClick: () -> Unit,
+    onRemovePhotoClick: () -> Unit,
+    onEditNameClick: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -277,13 +310,21 @@ private fun AccountPortrait(
                 initial = name.first().uppercase(),
                 modifier = Modifier.size(96.dp)
             )
+            /*
+             * Dos cosas editables, dos botones.
+             *
+             * Había un solo lápiz, sobre el retrato, y abría el nombre. No había forma de
+             * adivinarlo —un lápiz encima de una foto promete cambiar la foto— y la foto no se
+             * podía cambiar de ninguna manera. Ahora la cámara hace lo que parece, y el nombre
+             * tiene su propio lápiz al lado.
+             */
             Surface(
-                onClick = onEditClick,
+                onClick = onPhotoClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .offset(x = 2.dp, y = 2.dp)
-                    .size(32.dp)
-                    // El borde del color del fondo separa el lápiz del retrato: sin él, dos
+                    .size(34.dp)
+                    // El borde del color del fondo separa el botón del retrato: sin él, dos
                     // círculos pegados se leen como una sola mancha con un bulto.
                     .border(3.dp, MaterialTheme.colorScheme.background, CircleShape),
                 shape = CircleShape,
@@ -292,27 +333,52 @@ private fun AccountPortrait(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Rounded.Edit,
-                        contentDescription = "Editar nombre",
-                        modifier = Modifier.size(15.dp)
+                        Icons.Rounded.PhotoCamera,
+                        contentDescription = "Cambiar foto de perfil",
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.headlineSmallEmphasized,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center
+                )
+                Surface(
+                    onClick = onEditNameClick,
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(30.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Rounded.Edit,
+                            contentDescription = "Editar nombre",
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+            }
             Text(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
+            if (hasOwnPhoto) {
+                TextButton(onClick = onRemovePhotoClick) {
+                    Text("Quitar mi foto", style = MaterialTheme.typography.labelMedium)
+                }
+            }
         }
     }
 }

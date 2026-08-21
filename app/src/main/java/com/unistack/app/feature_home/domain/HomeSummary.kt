@@ -5,6 +5,9 @@ import com.unistack.app.feature_user.domain.AppModule
 
 data class HomeSummary(
     val userName: String,
+    // En qué está estudiando, para la cabecera del panel lateral: «Universidad · Ing. de
+    // Sistemas». Vacío mientras no haya perfil, y entonces la línea no se pinta.
+    val educationLine: String = "",
     val avatarPhotoUrl: String?,
     val dashboardMessage: String,
     val priority: HomePrioritySummary,

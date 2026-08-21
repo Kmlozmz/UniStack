@@ -49,6 +49,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val ACCOUNT_PROVIDER_USER_ID = stringPreferencesKey("account_provider_user_id")
         val ACCOUNT_EMAIL = stringPreferencesKey("account_email")
         val ACCOUNT_PHOTO_URL = stringPreferencesKey("account_photo_url")
+        val LOCAL_PHOTO_URI = stringPreferencesKey("local_photo_uri")
         val SYNC_STATUS = stringPreferencesKey("sync_status")
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
         val EDUCATION_LEVEL = stringPreferencesKey("education_level")
@@ -117,6 +118,7 @@ class UserPreferencesDataSource(private val context: Context) {
             accountProviderUserId = prefs[Keys.ACCOUNT_PROVIDER_USER_ID],
             accountEmail = prefs[Keys.ACCOUNT_EMAIL],
             accountPhotoUrl = prefs[Keys.ACCOUNT_PHOTO_URL],
+            localPhotoUri = prefs[Keys.LOCAL_PHOTO_URI],
             syncStatus = syncStatus,
             lastSyncAt = prefs[Keys.LAST_SYNC_AT],
             educationLevel = educationLevel,
@@ -239,6 +241,11 @@ class UserPreferencesDataSource(private val context: Context) {
                 prefs[Keys.ACCOUNT_PHOTO_URL] = profile.accountPhotoUrl
             } else {
                 prefs.remove(Keys.ACCOUNT_PHOTO_URL)
+            }
+            if (profile.localPhotoUri != null) {
+                prefs[Keys.LOCAL_PHOTO_URI] = profile.localPhotoUri
+            } else {
+                prefs.remove(Keys.LOCAL_PHOTO_URI)
             }
 
             if (profile.studyArea != null) {

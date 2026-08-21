@@ -1,7 +1,30 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    ExperimentalMaterial3ExpressiveApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class
+)
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
@@ -19,7 +42,6 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,17 +63,14 @@ import com.unistack.app.feature_support.domain.QuickNotesStore
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
-import androidx.compose.material3.Button
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 /**
- * Calculadora de promedio.
+ * Notas rápidas: una hoja, y nada más.
  *
- * Simula: se escriben notas con su peso en créditos y sale el promedio ponderado, sin tocar
- * nada de lo que hay registrado. El botón de traer las materias rellena la tabla con lo que ya
- * llevas evaluado, que es de donde sale la pregunta de verdad —«si saco esto, ¿en cuánto
- * quedo?»— y ahorra copiarlo a mano.
+ * Era un campo con contorno de doce líneas, dentro de una tarjeta, dentro de la pantalla: tres
+ * marcos para escribir una nota. Aquí el papel es la pantalla —sin caja, sin borde— y lo único
+ * que lo acompaña es lo que hace falta saber: si está guardado y cuánto cabe.
  */
 @Composable
 fun QuickNotesScreen(
@@ -61,6 +80,7 @@ fun QuickNotesScreen(
     val context = LocalContext.current
     val stored by QuickNotesStore.observe(context).collectAsStateWithLifecycle()
     var text by remember(stored.loaded) { mutableStateOf(stored.text) }
+    var confirmingClear by rememberSaveable { mutableStateOf(false) }
 
     // Se guarda al parar de escribir, no en cada tecla: escribir en un archivo por letra es
     // trabajo de disco para nada.
@@ -71,48 +91,171 @@ fun QuickNotesScreen(
         }
     }
 
-    SupportScaffold(
-        title = "Notas rápidas",
-        subtitle = "Se guarda solo en este teléfono",
-        onBackClick = onBackClick,
-        modifier = modifier.dismissKeyboardOnTapOutside()
-    ) {
-        item {
-            UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it.take(4000) },
-                        label = { Text("Escribe aquí") },
-                        minLines = 12,
-                        shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "${text.length} de 4000",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(
-                            shapes = UniStackButtonDefaults.shapes,
-                            onClick = {
-                                text = ""
-                                QuickNotesStore.save(context, "")
-                            },
-                            enabled = text.isNotEmpty(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+    val saved = stored.loaded && text == stored.text
+
+    Scaffold(
+        modifier = modifier.fillMaxSize().dismissKeyboardOnTapOutside(),
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    /*
+                     * «Guardado», dicho en voz alta.
+                     *
+                     * La nota se escribe en disco 600 ms después de la última tecla y nada lo
+                     * indicaba: se salía de la pantalla con la duda de si se había perdido. El
+                     * aviso solo aparece cuando hay algo escrito, para no saludar a una hoja
+                     * en blanco.
+                     */
+                    AnimatedVisibility(visible = saved && text.isNotEmpty()) {
+                        Surface(
+                            shape = CircleShape,
+                            color = LocalSectionColors.current.onTrackContainer,
+                            contentColor = LocalSectionColors.current.onOnTrackContainer,
+                            modifier = Modifier.padding(end = 8.dp)
                         ) {
-                            Text("Vaciar", fontSize = 13.sp)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    "Guardado",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        bottomBar = {
+            Column(modifier = Modifier.navigationBarsPadding()) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 22.dp, end = 16.dp, top = 10.dp, bottom = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "${text.length} de 4000",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { confirmingClear = true },
+                        enabled = text.isNotEmpty(),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Rounded.DeleteOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Text("Vaciar", fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    "Notas rápidas",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.headlineMediumEmphasized,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    "Toma notas o apunta lo que no quieras olvidar.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Box(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                if (text.isEmpty()) {
+                    Text(
+                        "Escribe aquí…",
+                        color = MaterialTheme.colorScheme.outline,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 22.dp, end = 22.dp)
+                    )
+                }
+                BasicTextField(
+                    value = text,
+                    onValueChange = { text = it.take(4000) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 22.dp, end = 22.dp, bottom = 22.dp),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        lineHeight = 25.sp
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
+    }
+
+    if (confirmingClear) {
+        /*
+         * Vaciar preguntando.
+         *
+         * Borraba las cuatro mil letras de un toque, sin diálogo y sin deshacer, con el botón
+         * a un dedo del teclado. Es el único sitio de la app donde se pierde texto escrito a
+         * mano y no había copia de nada.
+         */
+        AlertDialog(
+            onDismissRequest = { confirmingClear = false },
+            title = { Text("¿Vaciar la nota?") },
+            text = {
+                Text(
+                    "Se borra todo lo que hay escrito y no se puede deshacer. " +
+                        "Son ${text.length} caracteres."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    text = ""
+                    QuickNotesStore.save(context, "")
+                    confirmingClear = false
+                }) {
+                    Text("Vaciar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingClear = false }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        )
     }
 }
 

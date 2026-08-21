@@ -35,6 +35,11 @@ object AppRoutes {
     const val Resources = "resources"
     const val Help = "help"
     const val About = "about"
+    const val Licenses = "licenses"
+    const val AcademicWorkArg = "workId"
+    const val AcademicWork = "academic_work/{workId}"
+
+    fun academicWork(workId: String): String = "academic_work/" + workId
     const val GpaCalculator = "gpa_calculator"
     const val QuickNotes = "quick_notes"
     const val AiAssistant = "ai_assistant"

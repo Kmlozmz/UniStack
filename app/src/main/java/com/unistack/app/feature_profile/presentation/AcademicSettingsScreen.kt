@@ -4,7 +4,6 @@ package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.SettingsHeader
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,7 +51,6 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.GradingScale
-import com.unistack.app.feature_user.domain.UserProfile
 
 /**
  * Tu semestre: la escala con la que se califica y cómo se reparte el peso entre cortes.

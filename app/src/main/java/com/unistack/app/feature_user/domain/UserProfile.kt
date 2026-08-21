@@ -9,6 +9,18 @@ data class UserProfile(
     val accountProviderUserId: String? = null,
     val accountEmail: String? = null,
     val accountPhotoUrl: String? = null,
+    /**
+     * El retrato que eligió quien usa la app, si eligió alguno.
+     *
+     * Va aparte de [accountPhotoUrl] y manda sobre él. Vincular Google trae la foto de esa
+     * cuenta, que es un punto de partida razonable —mejor una foto tuya que una inicial—, pero
+     * no puede ser la última palabra: hay quien tiene ahí una foto de hace seis años. Guardando
+     * las dos, cambiar el retrato no borra la de la cuenta y desvincular no borra el tuyo.
+     *
+     * Es un `content://` con permiso de lectura persistido, no una copia del archivo: la app no
+     * duplica imágenes que ya están en la galería.
+     */
+    val localPhotoUri: String? = null,
     val syncStatus: SyncStatus = SyncStatus.LOCAL_ONLY,
     val lastSyncAt: Long? = null,
     val educationLevel: EducationLevel,

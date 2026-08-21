@@ -6,9 +6,6 @@ import com.unistack.app.core.design.components.PeriodWheelCard
 import com.unistack.app.core.design.components.PeriodBalanceNotice
 import com.unistack.app.core.design.components.PeriodCountSection
 import com.unistack.app.core.design.components.SetupEvenSplitAction
-import com.unistack.app.core.design.components.formatGradeValue
-import com.unistack.app.core.design.components.formatSetupPercent
-import com.unistack.app.core.design.components.setupPercentValue
 import com.unistack.app.core.design.components.gradeValueOf
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -105,26 +102,15 @@ import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniSegmentedControl
 import androidx.compose.material3.MotionScheme
-import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material3.Switch
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.components.UniStackBrandPill
 import com.unistack.app.core.design.components.UniStackBrandMark
-import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.ToggleButton
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ButtonGroup
-import androidx.compose.material.icons.rounded.Balance
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.foundation.Canvas
-import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.fillMaxHeight
 import com.unistack.app.core.utils.GradingScaleUtils
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -170,7 +156,6 @@ import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import kotlin.math.roundToInt
 
-import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card

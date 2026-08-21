@@ -2,7 +2,20 @@
 
 package com.unistack.app.feature_templates.presentation
 
-import android.content.ClipData
+import androidx.compose.material.icons.rounded.Description
+import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.LargeTitleScaffold
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,19 +26,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Assignment
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -34,14 +42,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,19 +54,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.components.UniEmptyStateCard
 import com.unistack.app.core.design.components.UniFilterChipRow
 import com.unistack.app.core.design.components.UniFilterOption
-import com.unistack.app.core.design.components.UniScreenHeader
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.bounceClick
@@ -71,368 +72,287 @@ import com.unistack.app.feature_templates.domain.AcademicTemplateLibrary
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
-import com.unistack.app.feature_templates.domain.ApaTip
 import com.unistack.app.feature_templates.domain.ChecklistItem
 import com.unistack.app.feature_templates.domain.EssayTemplate
 import com.unistack.app.feature_templates.domain.buildApaReferenceDraft
 import com.unistack.app.feature_templates.domain.exportText
-import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.layout.heightIn
+/**
+ * Trabajos: la lista, y nada más.
+ *
+ * Venía todo apilado en una sola pantalla —la lista, el catálogo de plantillas, el detalle de
+ * la plantilla elegida, el formulario de crear, el checklist del trabajo abierto, el botón de
+ * exportar y el generador de referencias—, casi mil líneas de scroll donde la mitad hablaba de
+ * un trabajo concreto y la otra mitad de uno que aún no existía.
+ *
+ * Se parte en tres: aquí qué tienes y cómo vas; en una hoja, de qué tipo va a ser el nuevo; y en
+ * su propia pantalla, cada trabajo con lo suyo.
+ */
 @Composable
 fun AcademicTemplatesScreen(
     onBackClick: () -> Unit,
+    onWorkClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AcademicTemplatesViewModel = hiltViewModel()
 ) {
-
     val works by viewModel.works.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
-    val templates = AcademicTemplateLibrary.essayTemplates
-    val clipboard = LocalClipboard.current
-    val coroutineScope = rememberCoroutineScope()
-    fun copyToClipboard(text: String) {
-        coroutineScope.launch {
-            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", text)))
-        }
-    }
-
-    var selectedTemplateId by rememberSaveable { mutableStateOf(templates.first().id) }
-    var selectedWorkId by rememberSaveable { mutableStateOf<String?>(null) }
+    var showFinished by rememberSaveable { mutableStateOf(false) }
+    var creating by rememberSaveable { mutableStateOf(false) }
     var workIdPendingDelete by rememberSaveable { mutableStateOf<String?>(null) }
-    var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val selectedTemplate = templates.firstOrNull { it.id == selectedTemplateId } ?: templates.first()
-    val selectedWork = works.firstOrNull { it.id == selectedWorkId }
+    val open = works.filter { !it.isFinished }
+    val finished = works.filter { it.isFinished }
+    val visible = if (showFinished) finished else open
 
-    var title by rememberSaveable { mutableStateOf("") }
-    var subjectId by rememberSaveable { mutableStateOf<String?>(null) }
-    var dueDate by rememberSaveable { mutableStateOf("") }
-    var status by rememberSaveable { mutableStateOf(AcademicWorkStatus.DRAFT) }
-    var priority by rememberSaveable { mutableStateOf(AcademicWorkPriority.MEDIUM) }
-    var thesis by rememberSaveable { mutableStateOf("") }
-    var outline by rememberSaveable { mutableStateOf("") }
-    var sources by rememberSaveable { mutableStateOf("") }
-    var notes by rememberSaveable { mutableStateOf("") }
-    var error by rememberSaveable { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(selectedWork?.id, selectedTemplateId) {
-        if (selectedWork != null) {
-            selectedTemplateId = selectedWork.templateId
-            title = selectedWork.title
-            subjectId = selectedWork.subjectId
-            dueDate = selectedWork.dueDateMillis?.let { TaskDateUtils.formatInput(TaskDateUtils.fromMillis(it)) }.orEmpty()
-            status = selectedWork.status
-            priority = selectedWork.priority
-            thesis = selectedWork.thesis
-            outline = selectedWork.outline
-            sources = selectedWork.sources
-            notes = selectedWork.notes
-        } else {
-            title = selectedTemplate.title
-            subjectId = null
-            dueDate = ""
-            status = AcademicWorkStatus.DRAFT
-            priority = AcademicWorkPriority.MEDIUM
-            thesis = ""
-            outline = selectedTemplate.sections.joinToString(separator = "\n") { "- ${it.title}: ${it.prompt}" }
-            sources = ""
-            notes = selectedTemplate.description
-        }
-        error = null
-    }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = scrollBottomRoom),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+    Box(modifier = modifier.fillMaxSize()) {
+        LargeTitleScaffold(
+            title = "Trabajos",
+            subtitle = "Plantilla, checklist y entrega.",
+            onBackClick = onBackClick,
+            bottomPadding = scrollBottomRoom
         ) {
-            item {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-                }
-            }
-            item {
-                UniScreenHeader(
-                    title = "Trabajos académicos",
-                    subtitle = "Convierte plantillas en trabajos reales con checklist, materia, fecha y progreso."
+            item(key = "filtro") {
+                UniSegmentedControl(
+                    selected = showFinished,
+                    options = listOf(
+                        UniSegmentedOption(
+                            value = false,
+                            label = "En curso",
+                            icon = Icons.Rounded.Edit,
+                            badge = open.size.takeIf { it > 0 }
+                        ),
+                        UniSegmentedOption(
+                            value = true,
+                            label = "Entregados",
+                            icon = Icons.Rounded.CheckCircle,
+                            badge = finished.size.takeIf { it > 0 }
+                        )
+                    ),
+                    onSelected = { showFinished = it },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            item {
-                HeaderCard(
-                    workCount = works.size,
-                    activeCount = works.count { !it.isFinished }
-                )
-            }
-            item {
-                WorkListSection(
-                    works = works,
-                    subjects = subjects,
-                    selectedWorkId = selectedWorkId,
-                    onSelectWork = { work ->
-                        selectedWorkId = work.id
-                        feedback = null
-                    },
-                    onNewWork = {
-                        selectedWorkId = null
-                        feedback = null
-                    },
-                    onMarkSubmitted = { work ->
-                        viewModel.setStatus(work.id, AcademicWorkStatus.SUBMITTED)
-                    },
-                    onDeleteWork = { workIdPendingDelete = it.id }
-                )
-            }
-            item {
-                TemplatePicker(
-                    templates = templates,
-                    selectedTemplateId = selectedTemplateId,
-                    enabled = selectedWork == null,
-                    onTemplateSelected = {
-                        selectedTemplateId = it
-                        selectedWorkId = null
-                    }
-                )
-            }
-            item {
-                WorkEditorCard(
-                    isEditing = selectedWork != null,
-                    title = title,
-                    onTitleChange = {
-                        title = it.take(40)
-                        error = null
-                    },
-                    subjectId = subjectId,
-                    subjects = subjects,
-                    onSubjectSelected = {
-                        subjectId = it
-                        error = null
-                    },
-                    dueDate = dueDate,
-                    onDueDateChange = {
-                        dueDate = it.take(10)
-                        error = null
-                    },
-                    status = status,
-                    onStatusSelected = { status = it },
-                    priority = priority,
-                    onPrioritySelected = { priority = it },
-                    thesis = thesis,
-                    onThesisChange = { thesis = it.take(1_500) },
-                    outline = outline,
-                    onOutlineChange = { outline = it.take(2_500) },
-                    sources = sources,
-                    onSourcesChange = { sources = it.take(2_500) },
-                    notes = notes,
-                    onNotesChange = { notes = it.take(2_500) },
-                    error = error,
-                    onSave = {
-                        val editingId = selectedWork?.id
-                        if (editingId == null) {
-                            val createdId = viewModel.createWork(
-                                templateId = selectedTemplateId,
-                                title = title,
-                                subjectId = subjectId,
-                                dueDateInput = dueDate,
-                                priority = priority
-                            )
-                            if (createdId == null) {
-                                error = "Revisa título y fecha antes de crear el trabajo."
-                            } else {
-                                selectedWorkId = createdId
-                                feedback = "Trabajo creado."
-                            }
+            if (visible.isEmpty()) {
+                item(key = "vacio") {
+                    UniEmptyStateCard(
+                        title = if (showFinished) {
+                            "Todavía no has entregado ninguno."
                         } else {
-                            val saved = viewModel.updateWork(
-                                workId = editingId,
-                                templateId = selectedTemplateId,
-                                title = title,
-                                subjectId = subjectId,
-                                dueDateInput = dueDate,
-                                status = status,
-                                priority = priority,
-                                thesis = thesis,
-                                outline = outline,
-                                sources = sources,
-                                notes = notes
-                            )
-                            if (saved) {
-                                feedback = "Trabajo actualizado."
-                            } else {
-                                error = "Revisa título y fecha antes de guardar."
-                            }
-                        }
-                    }
-                )
-            }
-            if (selectedWork != null) {
-                item {
-                    PersistentChecklistCard(
-                        work = selectedWork,
-                        onToggle = { item, checked ->
-                            viewModel.toggleChecklist(selectedWork.id, item.id, checked)
-                        }
-                    )
-                }
-                item {
-                    CopyTemplateCard(
-                        title = "Exportar trabajo",
-                        body = "Copia estructura, checklist y notas persistidas para llevarlas a tu editor.",
-                        onCopyClick = {
-                            copyToClipboard(selectedWork.exportText(subjects))
-                            feedback = "Trabajo copiado al portapapeles."
-                        }
+                            "No tienes trabajos en curso."
+                        },
+                        body = if (showFinished) {
+                            "Los que marques como entregados se guardan aquí, con su checklist tal " +
+                                "como lo dejaste."
+                        } else {
+                            "Empieza uno desde una plantilla: trae los apartados y el checklist puestos."
+                        },
+                        icon = Icons.AutoMirrored.Rounded.Assignment,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        iconColor = MaterialTheme.colorScheme.primary
                     )
                 }
             } else {
-                item {
-                    TemplateDetailCard(template = selectedTemplate)
-                }
-                item {
-                    CopyTemplateCard(
-                        title = "Copiar plantilla",
-                        body = "Copia la plantilla base y úsala como borrador rápido.",
-                        onCopyClick = {
-                            copyToClipboard(selectedTemplate.exportText(emptyList()))
-                            feedback = "Plantilla copiada al portapapeles."
-                        }
+                items(visible, key = { it.id }) { work ->
+                    WorkCard(
+                        work = work,
+                        subjectName = work.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name },
+                        onSelect = { onWorkClick(work.id) },
+                        onDelete = { workIdPendingDelete = work.id }
                     )
                 }
             }
-            item {
-                Text(
-                    text = "APA básico",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-            item {
-                val apaDraft = selectedWork?.let { work ->
-                    buildApaReferenceDraft(work.sources)
-                } ?: buildApaReferenceDraft(sources)
-                ApaReferenceGeneratorCard(
-                    referenceDraft = apaDraft,
-                    onCopyClick = {
-                        copyToClipboard(apaDraft)
-                        feedback = "Referencias APA copiadas."
-                    }
-                )
-            }
-            items(AcademicTemplateLibrary.apaTips) { tip ->
-                ApaTipCard(tip = tip)
-            }
-            feedback?.let { message ->
-                item {
-                    Text(message, color = LocalSectionColors.current.onTrack, fontWeight = FontWeight.Bold)
-                }
-            }
         }
+
+        ExtendedFloatingActionButton(
+            onClick = { creating = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 20.dp, bottom = 20.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
+            text = { Text("Nuevo", fontWeight = FontWeight.Bold) }
+        )
     }
 
-    workIdPendingDelete?.let { workId ->
-        UniConfirmDeleteDialog(
-            title = "¿Eliminar trabajo?",
-            body = "Se eliminarán su checklist, notas y progreso guardado.",
-            onConfirm = {
-                viewModel.deleteWork(workId)
-                if (selectedWorkId == workId) selectedWorkId = null
-                workIdPendingDelete = null
+    if (creating) {
+        NewWorkSheet(
+            onDismiss = { creating = false },
+            onCreate = { template ->
+                creating = false
+                val id = viewModel.createWork(
+                    templateId = template.id,
+                    title = template.title,
+                    subjectId = null,
+                    dueDateInput = "",
+                    priority = AcademicWorkPriority.MEDIUM
+                )
+                if (id != null) onWorkClick(id)
+            }
+        )
+    }
+
+    workIdPendingDelete?.let { pendingId ->
+        val name = works.firstOrNull { it.id == pendingId }?.title.orEmpty()
+        AlertDialog(
+            onDismissRequest = { workIdPendingDelete = null },
+            title = { Text("¿Eliminar trabajo?") },
+            text = { Text("Se borra «" + name + "» con su checklist y sus notas. No se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteWork(pendingId)
+                    workIdPendingDelete = null
+                }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
             },
-            onDismiss = { workIdPendingDelete = null }
+            dismissButton = {
+                TextButton(onClick = { workIdPendingDelete = null }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
 
+/**
+ * ¿De qué tipo?, en una hoja.
+ *
+ * El catálogo de plantillas estaba siempre abierto en medio de la pantalla, aunque no fueras a
+ * crear nada: sitio permanente para una decisión que se toma una vez por trabajo. Aquí aparece
+ * cuando hace falta y trae lo único que se necesita para elegir: qué apartados da cada una.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderCard(workCount: Int, activeCount: Int) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = MaterialTheme.shapes.extraLarge,
-        tonalElevation = 6.dp,
-        contentPadding = PaddingValues(18.dp)
+private fun NewWorkSheet(
+    onDismiss: () -> Unit,
+    onCreate: (EssayTemplate) -> Unit
+) {
+    val templates = AcademicTemplateLibrary.essayTemplates
+    var chosenId by rememberSaveable { mutableStateOf(templates.first().id) }
+    val chosen = templates.firstOrNull { it.id == chosenId } ?: templates.first()
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(Icons.AutoMirrored.Rounded.Assignment, MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.onPrimary)
-            Column(
-                modifier = Modifier.padding(start = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 26.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "$activeCount activos",
+                    "¿De qué tipo?",
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 22.sp,
-                    lineHeight = 25.sp,
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = if (workCount == 1) "1 trabajo guardado" else "$workCount trabajos guardados",
+                    "Cada plantilla trae sus apartados y su checklist. Podrás cambiarlo todo después.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    lineHeight = 18.sp
+                    style = MaterialTheme.typography.bodyMedium
                 )
+            }
+            templates.forEach { template ->
+                TemplateChoiceCard(
+                    template = template,
+                    selected = template.id == chosenId,
+                    onClick = { chosenId = template.id }
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(
+                    shapes = UniStackButtonDefaults.shapes,
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    shapes = UniStackButtonDefaults.shapes,
+                    onClick = { onCreate(chosen) },
+                    modifier = Modifier.weight(1.4f)
+                ) {
+                    Text("Crear", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun WorkListSection(
-    works: List<AcademicWork>,
-    subjects: List<Subject>,
-    selectedWorkId: String?,
-    onSelectWork: (AcademicWork) -> Unit,
-    onNewWork: () -> Unit,
-    onMarkSubmitted: (AcademicWork) -> Unit,
-    onDeleteWork: (AcademicWork) -> Unit
+private fun TemplateChoiceCard(
+    template: EssayTemplate,
+    selected: Boolean,
+    onClick: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Trabajos guardados",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.weight(1f)
-            )
-            Button(
-                shapes = UniStackButtonDefaults.shapes,
-                onClick = onNewWork,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text("Nuevo", fontWeight = FontWeight.Bold)
-            }
-        }
-        if (works.isEmpty()) {
-            UniEmptyStateCard(
-                title = "Aún no tienes trabajos guardados.",
-                body = "Crea uno desde una plantilla para persistir checklist, fecha, materia y progreso.",
-                icon = Icons.AutoMirrored.Rounded.Assignment,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                iconColor = MaterialTheme.colorScheme.primary
-            )
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            works.forEach { work ->
-                WorkCard(
-                    work = work,
-                    subjectName = work.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name },
-                    selected = selectedWorkId == work.id,
-                    onSelect = { onSelectWork(work) },
-                    onMarkSubmitted = { onMarkSubmitted(work) },
-                    onDelete = { onDeleteWork(work) }
+            MaterialTheme.colorScheme.surfaceContainerLowest
+        },
+        shape = MaterialTheme.shapes.extraLarge,
+        borderColor = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        borderWidth = if (selected) 2.dp else 0.dp,
+        onClick = onClick,
+        contentPadding = PaddingValues(15.dp)
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            IconBadge(
+                icon = Icons.Rounded.Description,
+                background = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+            Column(
+                modifier = Modifier.padding(start = 13.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    template.title,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    template.description,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+                // Los apartados de verdad, no una promesa: es lo que distingue una plantilla de
+                // otra, y lo único que hace falta saber para elegir.
+                Text(
+                    template.sections.joinToString(" · ") { it.title.uppercase() },
+                    color = MaterialTheme.colorScheme.outline,
+                    style = MaterialTheme.typography.labelSmall,
+                    lineHeight = 15.sp
                 )
             }
         }
@@ -443,129 +363,85 @@ private fun WorkListSection(
 private fun WorkCard(
     work: AcademicWork,
     subjectName: String?,
-    selected: Boolean,
     onSelect: () -> Unit,
-    onMarkSubmitted: () -> Unit,
     onDelete: () -> Unit
 ) {
     UniCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .bounceClick(onSelect),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = if (selected) 5.dp else 2.dp,
-        contentPadding = PaddingValues(14.dp)
+        modifier = Modifier.fillMaxWidth().bounceClick(onSelect),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge,
+        contentPadding = PaddingValues(15.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(
-                    icon = Icons.Rounded.Edit,
-                    background = work.priority.color().copy(alpha = 0.18f),
-                    tint = work.priority.color()
-                )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
                 Column(
-                    modifier = Modifier
-                        .padding(start = 12.dp)
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Text(work.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
                     Text(
-                        listOfNotNull(
-                            subjectName ?: "General",
-                            work.dueDateMillis?.let(TaskDateUtils::dueText),
-                            work.status.label(),
-                            work.priority.label()
-                        ).joinToString(" · "),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
+                        work.title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        fontWeight = FontWeight.ExtraBold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                    // Materia y fecha: lo que sitúa el trabajo. La prioridad y el estado se
+                    // dicen con el color de la etiqueta y de la barra, sin repetirlos en texto.
+                    Text(
+                        listOfNotNull(
+                            subjectName ?: "General",
+                            work.dueDateMillis?.let(TaskDateUtils::dueText)
+                        ).joinToString(" · "),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Eliminar trabajo", tint = MaterialTheme.colorScheme.error)
-                }
-            }
-            LinearWavyProgressIndicator(
-                progress = { work.checklistProgress },
-                modifier = Modifier.fillMaxWidth(),
-                color = work.status.color(),
-                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-            if (!work.isFinished) {
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = onMarkSubmitted,
-                    colors = ButtonDefaults.buttonColors(containerColor = LocalSectionColors.current.onTrack),
-                    modifier = Modifier.fillMaxWidth()
-                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
+                Spacer(Modifier.width(10.dp))
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = work.priority.color().copy(alpha = 0.18f),
+                    contentColor = work.priority.color()
                 ) {
-                    Text("Marcar entregado")
+                    Text(
+                        work.status.label().uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                        maxLines = 1
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                    Icon(
+                        Icons.Rounded.Delete,
+                        contentDescription = "Eliminar trabajo",
+                        tint = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun TemplatePicker(
-    templates: List<EssayTemplate>,
-    selectedTemplateId: String,
-    enabled: Boolean,
-    onTemplateSelected: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Plantillas", color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
-        templates.forEach { template ->
-            TemplateOption(
-                template = template,
-                selected = selectedTemplateId == template.id,
-                enabled = enabled,
-                onClick = { onTemplateSelected(template.id) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun TemplateOption(
-    template: EssayTemplate,
-    selected: Boolean,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    UniCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (enabled) Modifier.bounceClick(onClick) else Modifier),
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = if (selected) 5.dp else 2.dp,
-        contentPadding = PaddingValues(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconBadge(
-                icon = if (selected) Icons.Rounded.Star else Icons.AutoMirrored.Rounded.MenuBook,
-                background = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
-                tint = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-            )
-            Column(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(template.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-                Text(template.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LinearWavyProgressIndicator(
+                    progress = { work.checklistProgress },
+                    modifier = Modifier.weight(1f),
+                    color = work.status.color(),
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                )
+                Spacer(Modifier.width(11.dp))
+                Text(
+                    work.completedChecklistIds.size.toString() + "/" +
+                        AcademicTemplateLibrary.checklist.size,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
 }
 
 @Composable
-private fun WorkEditorCard(
+internal fun WorkEditorCard(
     isEditing: Boolean,
     title: String,
     onTitleChange: (String) -> Unit,
@@ -690,7 +566,7 @@ private fun WorkEditorCard(
 }
 
 @Composable
-private fun PersistentChecklistCard(
+internal fun PersistentChecklistCard(
     work: AcademicWork,
     onToggle: (ChecklistItem, Boolean) -> Unit
 ) {
@@ -746,41 +622,7 @@ private fun ChecklistRow(
 }
 
 @Composable
-private fun TemplateDetailCard(template: EssayTemplate) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.extraLarge,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(template.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            template.sections.forEachIndexed { index, section ->
-                Row(verticalAlignment = Alignment.Top) {
-                    Box(
-                        modifier = Modifier
-                            .size(26.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("${index + 1}", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
-                    }
-                    Column(
-                        modifier = Modifier.padding(start = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(section.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                        Text(section.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 16.sp)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ApaReferenceGeneratorCard(
+internal fun ApaReferenceGeneratorCard(
     referenceDraft: String,
     onCopyClick: () -> Unit
 ) {
@@ -820,65 +662,7 @@ private fun ApaReferenceGeneratorCard(
     }
 }
 
-@Composable
-private fun ApaTipCard(tip: ApaTip) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = 3.dp,
-        contentPadding = PaddingValues(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.Top) {
-            IconBadge(Icons.Rounded.Check, LocalSectionColors.current.scheduleContainer, LocalSectionColors.current.schedule)
-            Column(
-                modifier = Modifier.padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(tip.title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-                Text(tip.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, lineHeight = 17.sp)
-            }
-        }
-    }
-}
-
-@Composable
-private fun CopyTemplateCard(
-    title: String,
-    body: String,
-    onCopyClick: () -> Unit
-) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = MaterialTheme.shapes.extraLarge,
-        tonalElevation = 0.dp,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(Icons.Rounded.AutoAwesome, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary)
-                Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-                    Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                }
-            }
-            Button(
-                shapes = UniStackButtonDefaults.shapes,
-                onClick = onCopyClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                    .testTag("copy-work-to-clipboard")
-            ) {
-                Text("Copiar al portapapeles")
-            }
-        }
-    }
-}
-
-private fun AcademicWork.exportText(subjects: List<Subject>): String {
+internal fun AcademicWork.exportText(subjects: List<Subject>): String {
     val subjectName = subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: "General"
     val checklist = AcademicTemplateLibrary.checklist.joinToString(separator = "\n") { item ->
         val mark = if (item.id in completedChecklistIds) "[x]" else "[ ]"
@@ -913,7 +697,7 @@ private fun AcademicWork.exportText(subjects: List<Subject>): String {
     """.trimIndent()
 }
 
-private fun AcademicWorkStatus.label(): String {
+internal fun AcademicWorkStatus.label(): String {
     return when (this) {
         AcademicWorkStatus.IDEA -> "Idea"
         AcademicWorkStatus.DRAFT -> "Borrador"
@@ -925,7 +709,7 @@ private fun AcademicWorkStatus.label(): String {
 
 @Composable
 @ReadOnlyComposable
-private fun AcademicWorkStatus.color(): Color {
+internal fun AcademicWorkStatus.color(): Color {
     return when (this) {
         AcademicWorkStatus.IDEA -> LocalSectionColors.current.schedule
         AcademicWorkStatus.DRAFT -> MaterialTheme.colorScheme.primary
@@ -935,7 +719,7 @@ private fun AcademicWorkStatus.color(): Color {
     }
 }
 
-private fun AcademicWorkPriority.label(): String {
+internal fun AcademicWorkPriority.label(): String {
     return when (this) {
         AcademicWorkPriority.LOW -> "Baja"
         AcademicWorkPriority.MEDIUM -> "Media"
@@ -945,7 +729,7 @@ private fun AcademicWorkPriority.label(): String {
 
 @Composable
 @ReadOnlyComposable
-private fun AcademicWorkPriority.color(): Color {
+internal fun AcademicWorkPriority.color(): Color {
     return when (this) {
         AcademicWorkPriority.LOW -> LocalSectionColors.current.onTrack
         AcademicWorkPriority.MEDIUM -> LocalSectionColors.current.atRisk
@@ -954,7 +738,7 @@ private fun AcademicWorkPriority.color(): Color {
 }
 
 @Composable
-private fun IconBadge(
+internal fun IconBadge(
     icon: ImageVector,
     background: Color,
     tint: Color

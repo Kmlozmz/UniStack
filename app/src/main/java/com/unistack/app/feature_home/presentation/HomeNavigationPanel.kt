@@ -1,6 +1,7 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_home.presentation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,46 +20,39 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Calculate
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RocketLaunch
-import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.BuildConfig
-import com.unistack.app.core.utils.BuildStage
-
 import com.unistack.app.core.design.theme.LocalSectionColors
-import com.unistack.app.core.design.theme.LocalIsDarkTheme
+import com.unistack.app.core.utils.BuildStage
+import com.unistack.app.feature_profile.presentation.AccountAvatar
+
 internal data class DrawerPanelAction(
     val icon: ImageVector,
     val title: String,
-    val subtitle: String,
     val accent: Color,
     val badge: String? = null,
     /** Nulo cuando la función todavía no existe: la fila se pinta apagada y no responde. */
@@ -68,7 +62,8 @@ internal data class DrawerPanelAction(
 @Composable
 internal fun HomeNavigationPanel(
     displayName: String,
-    subjectsCount: Int,
+    educationLine: String,
+    photoUrl: String?,
     onWorksClick: () -> Unit,
     onGpaClick: () -> Unit,
     onQuickNotesClick: () -> Unit,
@@ -90,12 +85,6 @@ internal fun HomeNavigationPanel(
      * necesita forma para no cortar en seco.
      */
     val panelShape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)
-    val drawerSurface = MaterialTheme.colorScheme.background
-    val semesterChip = when (subjectsCount) {
-        0 -> "Semestre activo"
-        1 -> "1 materia"
-        else -> "$subjectsCount materias"
-    }
 
     /*
      * Lo que no está terminado solo se abre en dev y alpha.
@@ -104,8 +93,8 @@ internal fun HomeNavigationPanel(
      * para su semestre no tiene por qué toparse con algo incompleto, y así las pruebas de
      * verdad se hacen donde toca. En dev y alpha se abre todo, que es para lo que están.
      *
-     * Se marcan sin `onClick`: la fila se pinta apagada, sin flecha y sin responder al toque,
-     * en vez de cerrar el panel como si la app hubiera fallado.
+     * Se marcan sin `onClick`: la fila se pinta apagada, sin responder al toque, en vez de
+     * cerrar el panel como si la app hubiera fallado.
      */
     val unfinished = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
 
@@ -114,7 +103,6 @@ internal fun HomeNavigationPanel(
         DrawerPanelAction(
             icon = Icons.Rounded.Description,
             title = "Trabajos",
-            subtitle = "Plantillas y exportaciones",
             accent = MaterialTheme.colorScheme.primary,
             badge = if (unfinished) null else "Pronto",
             onClick = onWorksClick.takeIf { unfinished }
@@ -125,28 +113,24 @@ internal fun HomeNavigationPanel(
             // calculadora trabaja con la escala que tengas puesta —cien, veinte, diez—, así
             // que el nombre prometía otra cosa, y encima en un idioma que no es el de la app.
             title = "Calculadora de notas",
-            subtitle = "Simula y calcula tu promedio",
             accent = MaterialTheme.colorScheme.primary,
             onClick = onGpaClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
-            subtitle = "Bloc de notas temporal",
             accent = MaterialTheme.colorScheme.primary,
             onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
             title = "Recursos",
-            subtitle = "Biblioteca y enlaces útiles",
             accent = MaterialTheme.colorScheme.primary,
             onClick = onResourcesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.AutoAwesome,
             title = "UniStack AI",
-            subtitle = "Tu asistente académico",
             accent = MaterialTheme.colorScheme.primary,
             badge = if (unfinished) null else "Pronto",
             onClick = onAiClick.takeIf { unfinished }
@@ -163,84 +147,89 @@ internal fun HomeNavigationPanel(
         DrawerPanelAction(
             icon = Icons.Rounded.Person,
             title = "Perfil",
-            subtitle = "Nombre, cuenta y sesión",
             accent = LocalSectionColors.current.schedule,
             onClick = onProfileClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
             title = "Novedades",
-            subtitle = "Qué trae cada versión",
             accent = LocalSectionColors.current.onTrack,
             onClick = onWhatsNewClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
-            subtitle = "Preguntas frecuentes y contacto",
             accent = LocalSectionColors.current.schedule,
             onClick = onHelpClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Info,
             title = "Acerca de",
-            subtitle = "Versión, datos y políticas",
             accent = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onAboutClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
             title = "Labs",
-            subtitle = "Funciones experimentales",
             accent = LocalSectionColors.current.atRisk,
             badge = if (unfinished) null else "Pronto",
             onClick = onLabsClick.takeIf { unfinished }
         )
     )
 
-    ModalDrawerSheet(
+    /*
+     * Sin `ModalDrawerSheet`: la superficie es nuestra y llega a los dos bordes.
+     *
+     * La hoja de Material aplica `DrawerDefaults.windowInsets` por dentro, y en esta versión no
+     * hay parámetro para quitarlos. El resultado era un cajón que empezaba por debajo de la
+     * barra de estado: entre el reloj y el panel asomaba Inicio, y el panel se leía cortado por
+     * arriba en vez de cubrir la pantalla.
+     *
+     * Envolver una `Surface` propia dentro de la hoja no arreglaba nada —el hueco lo dejaba la
+     * hoja, no lo de dentro— y además la hoja ya no aportaba nada: su color iba en transparente
+     * y su forma repetida. `drawerContent` acepta cualquier composable, así que va la superficie
+     * a secas, de arriba abajo, y el contenido esquiva las barras por su cuenta más abajo.
+     */
+    Surface(
         modifier = Modifier
             .fillMaxHeight()
             // Un poco más estrecho: el trozo de Inicio que queda a la vista es lo que recuerda
             // de dónde vienes, y con el 92% no quedaba nada que ver.
             .fillMaxWidth(0.86f)
             .widthIn(max = 340.dp),
-        drawerContainerColor = Color.Transparent,
-        drawerShape = panelShape
+        shape = panelShape,
+        color = MaterialTheme.colorScheme.background,
+        // Sin borde: un contorno alrededor lo volvía a convertir en una lámina pegada
+        // encima. La sombra del propio cajón ya lo separa de lo que hay detrás.
+        tonalElevation = 0.dp,
+        shadowElevation = 8.dp
     ) {
-        Surface(
-            modifier = Modifier.fillMaxHeight(),
-            shape = panelShape,
-            color = drawerSurface,
-            // Sin borde: un contorno alrededor lo volvía a convertir en una lámina pegada
-            // encima. La sombra del propio cajón ya lo separa de lo que hay detrás.
-            tonalElevation = 0.dp
+        // El fondo llega a los bordes; lo que esquiva las barras es lo que se lee.
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+            contentPadding = PaddingValues(top = 18.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                item {
-                    DrawerPanelHeader(
-                        displayName = displayName,
-                        semesterChip = semesterChip
-                    )
-                }
-                item { DrawerPanelDivider() }
-                drawerSection("Herramientas", tools)
-                drawerSection("Tu cuenta y la app", about)
-                item {
-                    Text(
-                        text = "v${BuildConfig.VERSION_NAME}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(start = 2.dp, top = 8.dp)
-                    )
-                }
+            item {
+                DrawerPanelHeader(
+                    displayName = displayName,
+                    educationLine = educationLine,
+                    photoUrl = photoUrl
+                )
+            }
+            item { DrawerPanelDivider() }
+            drawerSection("Herramientas", tools)
+            drawerSection("Tu cuenta y la app", about)
+            item {
+                Text(
+                    text = "v${BuildConfig.VERSION_NAME}",
+                    color = MaterialTheme.colorScheme.outline,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(start = 30.dp, top = 14.dp)
+                )
             }
         }
     }
@@ -256,64 +245,51 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawerSection(
     }
 }
 
+/**
+ * Quién eres, y nada más.
+ *
+ * Antes ponía «Centro UniStack» encima de tu nombre —un nombre para el propio panel, que nadie
+ * necesita— y un chip con la cuenta de materias que llevaba a la pestaña Académico, a un toque
+ * de distancia por abajo. Queda el retrato, el nombre y en qué estás estudiando.
+ */
 @Composable
 private fun DrawerPanelHeader(
     displayName: String,
-    semesterChip: String
+    educationLine: String,
+    photoUrl: String?
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Top
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 22.dp, end = 22.dp, top = 6.dp, bottom = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(58.dp)
-                .clip(MaterialTheme.shapes.large)
-                .background(
-                    SolidColor(MaterialTheme.colorScheme.primary)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Rounded.School,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(31.dp)
-            )
-        }
-        Spacer(Modifier.width(13.dp))
+        AccountAvatar(
+            photoUrl = photoUrl,
+            contentDescription = null,
+            modifier = Modifier.size(56.dp),
+            initial = displayName.firstOrNull()?.uppercase()
+        )
+        Spacer(Modifier.width(14.dp))
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             Text(
-                "Centro UniStack",
+                text = displayName,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLargeEmphasized,
                 fontWeight = FontWeight.ExtraBold,
-                maxLines = 1
-            )
-            Text(
-                "Hola, $displayName 👋",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            // La cuenta de materias es un dato, no un atajo: llevaba a la pestaña
-            // Académico, que está a un toque en la barra de abajo.
-            Surface(
-                shape = RoundedCornerShape(7.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.12f)
-            ) {
+            if (educationLine.isNotBlank()) {
                 Text(
-                    semesterChip,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    maxLines = 1
+                    text = educationLine,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -325,34 +301,39 @@ private fun DrawerPanelDivider() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(horizontal = 22.dp)
             .height(1.dp)
-            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f))
+            .background(MaterialTheme.colorScheme.outlineVariant)
     )
 }
 
 @Composable
 private fun DrawerPanelSection(text: String) {
-    Row(
-        modifier = Modifier.padding(top = 6.dp, start = 1.dp, bottom = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(7.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
-        )
-        Text(
-            text = text.uppercase(),
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.4.sp
-        )
-    }
+    Text(
+        text = text.uppercase(),
+        color = MaterialTheme.colorScheme.primary,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(start = 30.dp, top = 18.dp, bottom = 6.dp)
+    )
 }
 
+/**
+ * Una fila del cajón: media pastilla, icono y nombre.
+ *
+ * Iban como ocho tarjetas con borde, icono dentro de su cuadro de color, título, subtítulo y
+ * flecha. Ocho bloques idénticos de 58 dp, uno detrás de otro, se leen como una pared y no como
+ * un menú. Esta es la fila de cajón que describe Material 3: pastilla de 56, el icono suelto en
+ * el color de su grupo y el nombre.
+ *
+ * Sin subtítulo: con ocho nombres claros la segunda línea solo añade ruido —«Recursos» no gana
+ * nada con «Biblioteca y enlaces útiles» debajo—. Sin flecha: todas llevan a algún sitio, así
+ * que marcarlo ocho veces no informa de nada.
+ *
+ * Ninguna sale marcada como activa, y no es un olvido: el panel solo se abre desde Inicio, así
+ * que nunca estás en uno de sus destinos cuando lo abres.
+ */
 @Composable
 private fun DrawerPanelItem(action: DrawerPanelAction) {
     val enabled = action.onClick != null
@@ -361,102 +342,53 @@ private fun DrawerPanelItem(action: DrawerPanelAction) {
         enabled = enabled,
         modifier = Modifier
             .fillMaxWidth()
-            .height(58.dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(
-            alpha = when {
-                !enabled -> if (LocalIsDarkTheme.current) 0.28f else 0.45f
-                LocalIsDarkTheme.current -> 0.58f
-                else -> 0.82f
-            }
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (enabled) 0.20f else 0.10f))
+            .padding(horizontal = 8.dp)
+            .height(56.dp),
+        shape = RoundedCornerShape(28.dp),
+        color = Color.Transparent
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(start = 16.dp, end = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            DrawerIconTile(icon = action.icon, accent = action.accent)
-            Spacer(Modifier.width(11.dp))
-            Column(
+            Icon(
+                imageVector = action.icon,
+                contentDescription = null,
+                tint = if (enabled) action.accent else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = action.title,
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        action.title,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    val badge = action.badge ?: "Pronto".takeIf { !enabled }
-                    badge?.let {
-                        Spacer(Modifier.width(6.dp))
-                        DrawerBadge(text = it, accent = action.accent)
-                    }
-                }
-                Text(
-                    action.subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                    lineHeight = 14.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            if (enabled) {
-                Spacer(Modifier.width(6.dp))
-                Icon(
-                    Icons.Rounded.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+                style = MaterialTheme.typography.bodyLargeEmphasized,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            action.badge?.let { DrawerBadge(text = it) }
         }
     }
 }
 
 @Composable
-private fun DrawerIconTile(
-    icon: ImageVector,
-    accent: Color
-) {
-    Box(
-        modifier = Modifier
-            .size(42.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(
-                SolidColor(accent.copy(alpha = if (LocalIsDarkTheme.current) 0.30f else 0.18f))
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = accent,
-            modifier = Modifier.size(22.dp)
-        )
-    }
-}
-
-@Composable
-private fun DrawerBadge(
-    text: String,
-    accent: Color
-) {
+private fun DrawerBadge(text: String) {
     Surface(
-        shape = RoundedCornerShape(7.dp),
-        color = accent.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.13f)
+        shape = RoundedCornerShape(9.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Text(
-            text = text,
-            color = accent,
+            text = text.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            letterSpacing = 0.5.sp,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
             maxLines = 1
         )
     }

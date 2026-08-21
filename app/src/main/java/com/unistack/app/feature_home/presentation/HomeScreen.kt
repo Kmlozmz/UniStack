@@ -148,7 +148,8 @@ fun HomeScreen(
         drawerContent = {
             HomeNavigationPanel(
                 displayName = summary.userName,
-                subjectsCount = summary.subjectsCount,
+                educationLine = summary.educationLine,
+                photoUrl = summary.avatarPhotoUrl,
                 onWorksClick = { closeAndRun(onOpenTemplatesClick) },
                 onGpaClick = { closeAndRun(onGpaClick) },
                 onQuickNotesClick = { closeAndRun(onQuickNotesClick) },

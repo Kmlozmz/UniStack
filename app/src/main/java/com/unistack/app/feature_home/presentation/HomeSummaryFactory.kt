@@ -36,6 +36,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_profile.presentation.educationSummary
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
@@ -127,6 +128,7 @@ internal object HomeSummaryFactory {
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
                 ?: user.displayName?.takeIf { it.isNotBlank() }
                 ?: "Estudiante",
+            educationLine = profile?.educationSummary().orEmpty(),
             avatarPhotoUrl = user.photoUrl,
             dashboardMessage = dashboardMessage(
                 hasSubjects = subjects.isNotEmpty(),

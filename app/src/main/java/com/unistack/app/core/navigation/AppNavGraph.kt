@@ -97,12 +97,14 @@ import com.unistack.app.feature_support.presentation.AboutScreen
 import com.unistack.app.feature_support.presentation.AiAssistantScreen
 import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
 import com.unistack.app.feature_support.presentation.LabsScreen
+import com.unistack.app.feature_support.presentation.LicensesScreen
 import com.unistack.app.feature_support.presentation.QuickNotesScreen
 import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
 import com.unistack.app.feature_support.presentation.WhatsNewScreen
 import com.unistack.app.feature_tasks.presentation.AddTaskScreen
 import com.unistack.app.feature_templates.presentation.AcademicTemplatesScreen
+import com.unistack.app.feature_templates.presentation.AcademicWorkScreen
 import com.unistack.app.feature_updates.domain.UpdateState
 import com.unistack.app.feature_updates.presentation.UpdateAvailableBanner
 import com.unistack.app.feature_updates.presentation.UpdateDetailSheet
@@ -542,8 +544,13 @@ fun MainNavGraph(
             screen(AppRoutes.About) {
                 AboutScreen(
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
-                    onWhatsNewClick = { navController.go(AppRoutes.WhatsNew) },
-                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) },
+                    onLicensesClick = { navController.go(AppRoutes.Licenses) }
+                )
+            }
+            screen(AppRoutes.Licenses) {
+                LicensesScreen(
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.About) }
                 )
             }
             screen(AppRoutes.GpaCalculator) {
@@ -788,6 +795,20 @@ fun MainNavGraph(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Home)
+                        }
+                    },
+                    onWorkClick = { workId -> navController.go(AppRoutes.academicWork(workId)) }
+                )
+            }
+            screen(
+                route = AppRoutes.AcademicWork,
+                arguments = listOf(navArgument(AppRoutes.AcademicWorkArg) { type = NavType.StringType })
+            ) { entry ->
+                AcademicWorkScreen(
+                    workId = entry.arguments?.getString(AppRoutes.AcademicWorkArg).orEmpty(),
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicTemplates)
                         }
                     }
                 )

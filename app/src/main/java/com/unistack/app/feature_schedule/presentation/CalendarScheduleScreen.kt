@@ -2,7 +2,6 @@
 
 package com.unistack.app.feature_schedule.presentation
 
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,9 +88,7 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassSession
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -310,21 +307,6 @@ fun CalendarScheduleScreen(
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Composable
 private fun SubjectHistoryDialog(
@@ -865,7 +847,6 @@ private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.Im
     ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
 }
 
-
 private data class HistoryEntry(
     val date: LocalDate,
     val session: ClassSession,
@@ -878,21 +859,9 @@ private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 @ReadOnlyComposable
 private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let { subject -> subjectAccent(subject) } ?: ScheduleAccent
 
-private fun LocalDate.weekStart(): LocalDate = minusDays((dayOfWeek.value - 1).toLong())
-
-private fun Long.asLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
-
-private fun LocalDate.weekdayName(): String = format(DateTimeFormatter.ofPattern("EEEE", SpanishLocale)).capitalized()
-
 private fun LocalDate.longTitle(): String = format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", SpanishLocale)).capitalized()
 
-private fun LocalDate.shortDate(): String = format(DateTimeFormatter.ofPattern("d MMM yyyy", SpanishLocale))
-
 private fun String.capitalized(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(SpanishLocale) else it.toString() }
-
-private fun String.shortName(): String = split(' ').filter(String::isNotBlank).take(2).joinToString(" ") { word ->
-    if (word.length <= 5) word else word.take(5) + "."
-}
 
 private fun formatMinute(value: Int, use24Hour: Boolean): String {
     val hour = value / 60
