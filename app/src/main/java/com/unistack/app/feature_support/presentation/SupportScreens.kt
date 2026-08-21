@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,16 +37,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -82,20 +78,8 @@ import com.unistack.app.feature_updates.presentation.ReleaseNotes
 import kotlinx.coroutines.launch
 
 import com.unistack.app.core.design.theme.LocalSectionColors
-import androidx.compose.material3.Button
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Email
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.foundation.layout.heightIn
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Surface
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *
@@ -616,7 +600,7 @@ fun HelpScreen(
     // La abierta se recuerda por su texto y no por su posición: con las preguntas repartidas
     // en grupos, el índice ya no identifica a ninguna.
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
-    var composing by rememberSaveable { mutableStateOf<TicketKind?>(null) }
+    var composing by rememberSaveable { mutableStateOf(false) }
     var opened by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     SupportScaffold(
@@ -674,12 +658,12 @@ fun HelpScreen(
         }
         item {
             /*
-             * Dos filas, no dos botones.
+             * Una fila, no dos.
              *
-             * Iban como un botón relleno y otro vacío, y eso en una app se lee como «esta es la
-             * opción elegida»: parecía un selector con una respuesta ya marcada, no dos caminos
-             * que llevan a sitios distintos. Con icono, descripción y flecha, cada uno dice lo
-             * que hace y ninguno pesa más que el otro.
+             * Hubo un tiempo en que había dos —«Reportar un fallo» y «Sugerir algo»— y cada una
+             * abría su propia hoja. Obligaban a clasificar antes de contar nada, y quien tenía
+             * una duda que no era ninguna de las dos no encontraba puerta. El motivo ahora se
+             * elige dentro del formulario, donde además se puede cambiar de idea.
              */
             UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -696,18 +680,11 @@ fun HelpScreen(
                         lineHeight = 17.sp
                     )
                     SupportOptionRow(
-                        icon = Icons.Rounded.BugReport,
-                        accent = MaterialTheme.colorScheme.error,
-                        title = "Reportar un fallo",
-                        subtitle = "Algo no funciona como debería",
-                        onClick = { composing = TicketKind.BUG }
-                    )
-                    SupportOptionRow(
-                        icon = Icons.Rounded.Lightbulb,
-                        accent = LocalSectionColors.current.atRisk,
-                        title = "Sugerir algo",
-                        subtitle = "Algo que te falta o mejorarías",
-                        onClick = { composing = TicketKind.IDEA }
+                        icon = Icons.AutoMirrored.Rounded.Chat,
+                        accent = MaterialTheme.colorScheme.primary,
+                        title = "Escríbenos",
+                        subtitle = "Un fallo, una idea o cualquier otra cosa",
+                        onClick = { composing = true }
                     )
                 }
             }
@@ -737,25 +714,29 @@ fun HelpScreen(
         )
     }
 
-    composing?.let { kind ->
-        TicketComposer(
-            kind = kind,
-            onDismiss = { composing = null },
-            onSend = { text ->
+    if (composing) {
+        val ticketContext = TicketContext(
+            appVersion = BuildConfig.VERSION_NAME,
+            androidVersion = android.os.Build.VERSION.RELEASE,
+            androidSdk = android.os.Build.VERSION.SDK_INT,
+            device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
+        )
+        FeedbackSheet(
+            initialKind = TicketKind.BUG,
+            ticketContext = ticketContext,
+            onDismiss = { composing = false },
+            onSend = { kind, text, contact ->
                 val ticket = buildTicket(
                     kind = kind,
                     text = text,
-                    context = TicketContext(
-                        appVersion = BuildConfig.VERSION_NAME,
-                        androidVersion = android.os.Build.VERSION.RELEASE,
-                        device = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
-                    )
+                    contact = contact,
+                    context = ticketContext
                 )
                 scope.launch {
                     clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", ticket)))
                 }
                 opened = openSupportTopic(context, kind)
-                composing = null
+                composing = false
             }
         )
     }
@@ -817,133 +798,6 @@ private fun openSupportTopic(context: android.content.Context, kind: TicketKind)
         if (runCatching { context.startActivity(intent) }.isSuccess) return true
     }
     return false
-}
-
-/**
- * La caja de escribir el ticket.
- *
- * Va en una hoja inferior y no en un diálogo: el teclado la empuja hacia arriba en vez de
- * taparla, y deja sitio para el texto largo que hace falta al describir un fallo.
- *
- * Dos salidas al pie. **El correo se ve pero está apagado**, con la opacidad de un control
- * deshabilitado: existe como destino previsto y todavía no está montado, y esconderlo hasta
- * entonces haría pensar que Telegram es la única vía que va a haber nunca.
- *
- * Telegram no deja rellenar el mensaje de un grupo desde un enlace —solo funciona con bots—,
- * así que el último paso lo da quien reporta: pegar. Se dice antes de pulsar, para que no
- * parezca que la app se quedó a medias.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TicketComposer(
-    kind: TicketKind,
-    onDismiss: () -> Unit,
-    onSend: (String) -> Unit
-) {
-    var text by rememberSaveable(kind) { mutableStateOf("") }
-    val minimumLength = 15
-    val enoughWritten = text.trim().length >= minimumLength
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                // Con el teclado abierto la hoja no cabía y había que desplazarla a mano para
-                // llegar a los botones. imePadding la levanta, y el scroll cubre las pantallas
-                // bajas o el texto en grande.
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, end = 24.dp, bottom = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = if (kind == TicketKind.BUG) "Reportar un fallo" else "Sugerir algo",
-                    style = MaterialTheme.typography.headlineSmallEmphasized,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Cerrar")
-                }
-            }
-
-            Text(
-                text = if (kind == TicketKind.BUG) {
-                    "Cuenta qué hacías, qué esperabas y qué pasó. Puedes escribirnos por Telegram."
-                } else {
-                    "Cuenta qué te falta y para qué lo usarías. Puedes escribirnos por Telegram."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(1500) },
-                label = { Text(if (kind == TicketKind.BUG) "¿Qué falló?" else "¿Qué te falta?") },
-                placeholder = { Text("Describe el problema o tu idea…") },
-                minLines = 4,
-                maxLines = 8,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Row(
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    Icons.Rounded.Info,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "Tu versión y tu teléfono se añaden solos. El grupo es público, así que " +
-                        "no escribas nada que no quieras que se lea.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = { onSend(text) },
-                    enabled = enoughWritten,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) {
-                    Icon(Icons.AutoMirrored.Rounded.Send, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Telegram")
-                }
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) {
-                    Icon(Icons.Rounded.Email, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Correo")
-                }
-            }
-
-            Text(
-                text = "El correo todavía no está disponible.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
 }
 
 /** Acerca de: qué versión llevas, de dónde salió y qué hace con tus datos. */
