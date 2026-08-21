@@ -1,15 +1,12 @@
 package com.unistack.app.core.design.components
 
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.R
 import androidx.compose.material3.MaterialTheme
 /**
  * El morado de la marca, fijo.
@@ -32,37 +30,35 @@ import androidx.compose.material3.MaterialTheme
 private val BrandPurple = Color(0xFF8E00FF)
 
 /**
- * El simbolo, dibujado desde su definicion y no desde un PNG.
+ * El símbolo de la marca.
  *
- * Era una imagen con los degradados cocidos dentro, asi que cambiar el color de la marca movia
- * la pantalla de arranque —que si lo dibuja— y dejaba el simbolo de Acerca de con los colores
- * viejos. Dos marcas distintas segun donde mires. Con las tres barras salidas de
- * [UniStackBrandMark.Pills], el color se define una vez y lo siguen las dos.
+ * Es el PNG original, no un dibujo en código: el archivo *es* la marca. Las pantallas que la
+ * animan —arranque, final del onboarding— la recomponen desde [UniStackBrandMark] únicamente
+ * porque una imagen plana no se puede mover por piezas; el símbolo quieto sale siempre de aquí.
  */
 @Composable
 fun UniStackLogoMark(
     modifier: Modifier = Modifier,
     size: Dp = 32.dp
 ) {
-    Canvas(
-        modifier = modifier.size(width = size, height = size * UniStackBrandMark.HeightRatio)
-    ) {
-        UniStackBrandMark.Pills.forEach { pill ->
-            val ancho = pill.width * this.size.width
-            val alto = pill.height * this.size.height
-            translate(left = pill.left * this.size.width, top = pill.top * this.size.height) {
-                drawRoundRect(
-                    brush = Brush.horizontalGradient(
-                        listOf(pill.gradientStart, pill.gradientEnd),
-                        startX = 0f,
-                        endX = ancho
-                    ),
-                    size = Size(ancho, alto),
-                    cornerRadius = CornerRadius(alto / 2f)
-                )
-            }
-        }
-    }
+    Image(
+        painter = painterResource(id = R.drawable.unistack_option_a_symbol),
+        contentDescription = "UniStack",
+        modifier = modifier.size(size)
+    )
+}
+
+/** La misma marca recortada en blanco, para fondos de color. */
+@Composable
+fun UniStackLogoMarkWhite(
+    modifier: Modifier = Modifier,
+    size: Dp = 32.dp
+) {
+    Image(
+        painter = painterResource(id = R.drawable.unistack_option_a_symbol_white),
+        contentDescription = "UniStack",
+        modifier = modifier.size(size)
+    )
 }
 
 /**
