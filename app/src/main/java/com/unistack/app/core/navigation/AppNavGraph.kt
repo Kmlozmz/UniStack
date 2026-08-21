@@ -1,5 +1,6 @@
 package com.unistack.app.core.navigation
 
+import androidx.compose.foundation.layout.ime
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.slideInHorizontally
@@ -179,12 +180,22 @@ fun MainNavGraph(
         enabledModules = enabledModules
     )
 
+    val keyboardIsUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
-            if (showBottomBar) {
+            /*
+             * Con el teclado arriba, la barra se va.
+             *
+             * La ventana usa `adjustResize`, así que al abrirse el teclado el `Scaffold`
+             * encoge y su barra inferior se montaba encima del teclado: ochenta píxeles de
+             * pestañas flotando sobre las letras, robando sitio a lo que se está escribiendo
+             * y sin servir para nada —nadie cambia de pestaña a media palabra—.
+             */
+            if (showBottomBar && !keyboardIsUp) {
                 UniStackBottomBar(
                     navController = navController,
                     items = bottomItems
