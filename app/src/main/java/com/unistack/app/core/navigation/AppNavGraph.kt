@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -210,6 +211,9 @@ fun MainNavGraph(
          * No se suman. Con el teclado arriba la barra queda por detrás de él, así que contar
          * las dos alturas dejaría el contenido flotando ochenta píxeles más arriba de donde
          * empieza el teclado.
+         *
+         * Y se lee el inset crudo, que es la altura real del teclado en pantalla: aquí abajo
+         * nadie lo ha consumido todavía, porque el hueco se abre justo en la línea siguiente.
          */
         val keyboardBottom = with(LocalDensity.current) {
             WindowInsets.ime.getBottom(this).toDp()
@@ -240,6 +244,17 @@ fun MainNavGraph(
                 startDestination = resolvedInitialRoute,
                 modifier = Modifier
                     .fillMaxSize()
+                    /*
+                     * El teclado se esquiva aquí dentro, y una sola vez.
+                     *
+                     * Se declara consumido para que el imePadding() que aplican algunas
+                     * pantallas por su cuenta no vuelva a apartarlas: el hueco de arriba ya
+                     * las ha subido, y sumar el segundo las dejaba con el contenido a media
+                     * pantalla. Consumir es lo que hacía la raíz antes de que el teclado
+                     * pasara a resolverse dentro del Scaffold, y por eso aquellas pantallas
+                     * nunca contaron doble.
+                     */
+                    .consumeWindowInsets(WindowInsets.ime)
                     .padding(contentPadding),
                 enterTransition = {
                     if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None

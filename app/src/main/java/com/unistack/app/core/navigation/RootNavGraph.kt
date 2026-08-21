@@ -9,12 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -83,15 +78,6 @@ fun RootNavGraph(
         LaunchHints.setSetupCompleted(context, completed)
     }
 
-    // Con enableEdgeToEdge la ventana deja de redimensionarse sola, así que esquivar el
-    // teclado pasa a ser responsabilidad de la app. Se excluye el inset de la barra de
-    // navegación porque el del teclado ya lo incluye, y muchas pantallas aplican además
-    // navigationBarsPadding(): sin la exclusión ese espacio se contaría dos veces.
-    //
-    // Va aquí y no en la raíz porque el onboarding lo gestiona por su cuenta: su paso del
-    // nombre deja que el teclado se superponga en vez de encoger la pantalla.
-    val imeInsets = WindowInsets.ime.exclude(WindowInsets.navigationBars)
-
     // El inicio entra con su propio fundido desde el fondo de la app.
     //
     // No hay velo de color aquí a propósito: la onda del onboarding se queda dentro del
@@ -123,8 +109,7 @@ fun RootNavGraph(
                 setupCompleted == true -> MainNavGraph(
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer { alpha = mainAlpha.value }
-                        .windowInsetsPadding(imeInsets),
+                        .graphicsLayer { alpha = mainAlpha.value },
                     initialRoute = AppRoutes.Home,
                     launchRoute = launchRoute ?: setupLaunchRoute,
                     onLaunchRouteConsumed = {
