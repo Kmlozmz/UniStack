@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
 
-package com.unistack.app.feature_profile.presentation
+package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,12 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.SectionLabelStyle
 
 /*
@@ -46,10 +44,12 @@ import com.unistack.app.core.design.theme.SectionLabelStyle
  * El encabezado de una pantalla de ajustes: título grande, apoyo, y la flecha si procede.
  */
 @Composable
-internal fun SettingsHeader(
+fun SettingsHeader(
     title: String,
     subtitle: String,
-    onBackClick: (() -> Unit)?
+    onBackClick: (() -> Unit)?,
+    /** Lo que va a la derecha del título, si esa pantalla tiene algo que ofrecer ahí. */
+    action: (@Composable () -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -82,6 +82,7 @@ internal fun SettingsHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        action?.invoke()
     }
 }
 
@@ -89,7 +90,7 @@ internal fun SettingsHeader(
  * Un rótulo de sección y, bajo él, el contenedor con sus filas.
  */
 @Composable
-internal fun SettingsGroup(
+fun SettingsGroup(
     label: String,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -103,7 +104,7 @@ internal fun SettingsGroup(
  * arriba antes de haber leído una sola fila.
  */
 @Composable
-internal fun SettingsGroup(
+fun SettingsGroup(
     label: String,
     labelColor: Color,
     content: @Composable ColumnScope.() -> Unit
@@ -133,7 +134,7 @@ internal fun SettingsGroup(
  * del mismo peso, y el relleno sólido es lo que deja distinguirlos de un vistazo.
  */
 @Composable
-internal fun SettingsRowIcon(icon: ImageVector, color: Color) {
+fun SettingsRowIcon(icon: ImageVector, color: Color) {
     Surface(
         shape = MaterialTheme.shapes.small,
         color = color,
@@ -154,7 +155,7 @@ internal fun SettingsRowIcon(icon: ImageVector, color: Color) {
  * agrupadas, el contenedor es el que agrupa y el rótulo de arriba dice de qué va el grupo.
  */
 @Composable
-internal fun SettingsRow(
+fun SettingsRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -199,7 +200,7 @@ internal fun SettingsRow(
  * se lo traga, y el ajuste deja de responder justo donde el dedo va primero.
  */
 @Composable
-internal fun SettingsToggleRow(
+fun SettingsToggleRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -232,43 +233,6 @@ internal fun SettingsToggleRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-/**
- * Un interruptor suelto, sin icono, para las listas donde la fila ya se explica sola.
- */
-@Composable
-internal fun PreferenceSwitch(
-    title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .cleanClickable { onCheckedChange(!checked) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }

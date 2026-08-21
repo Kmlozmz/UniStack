@@ -2935,103 +2935,6 @@ private enum class SetupScaleChoice {
     CUSTOM
 }
 
-@Composable
-private fun <T> OptionGrid(
-    options: List<SetupCardOption<T>>,
-    selected: T?,
-    onSelected: (T) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        options.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                row.forEach { option ->
-                    SelectableIconCard(
-                        label = option.label,
-                        icon = option.icon,
-                        selected = selected == option.value,
-                        onClick = { onSelected(option.value) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun SelectableIconCard(
-    label: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    UniCard(
-        modifier = modifier
-            .height(96.dp)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .semantics {
-                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
-            },
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = 0.dp,
-        borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-        borderWidth = if (selected) 1.3.dp else 1.dp,
-        contentPadding = PaddingValues(11.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    label,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    lineHeight = 16.sp,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
-                )
-            }
-            if (selected) {
-                Icon(
-                    Icons.Rounded.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(18.dp)
-                )
-            }
-        }
-    }
-}
-
-private fun EducationLevel.label(): String = when (this) {
-    EducationLevel.PRIMARY -> "Primaria"
-    EducationLevel.SECONDARY -> "Secundaria"
-    EducationLevel.UNIVERSITY -> "Universidad"
-    EducationLevel.OTHER -> "Otro"
-}
-
 private fun resolvedProgram(
     educationLevel: EducationLevel?,
     selectedProgram: String?,
@@ -3042,19 +2945,6 @@ private fun resolvedProgram(
         return academicInfo
     }
     return if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
-}
-
-private fun GradingScale.summaryLabel(customGradeMax: Double): String = when (this) {
-    GradingScale.ZERO_TO_FIVE -> "0.0 a 5.0"
-    GradingScale.ZERO_TO_HUNDRED -> "0 a 100"
-    GradingScale.CUSTOM -> "0 a ${customGradeMax.toInt()}"
-}
-
-private fun AppModule.shortLabel(): String = when (this) {
-    AppModule.GRADES -> "Notas"
-    AppModule.TASKS -> "Tareas"
-    AppModule.EXPENSES -> "Gastos"
-    AppModule.ACADEMIC_TEMPLATES -> "Trabajos"
 }
 
 @Composable

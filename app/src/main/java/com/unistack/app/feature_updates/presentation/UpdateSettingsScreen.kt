@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_updates.presentation
 
+import com.unistack.app.core.design.theme.contentColorOn
+import com.unistack.app.core.design.theme.LocalSectionColors
+import com.unistack.app.core.design.components.SettingsHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
@@ -110,28 +113,31 @@ fun UpdateSettingsScreen(
     val installed = viewModel.currentVersionName
     val pending = releases.filter { ReleaseVersion.isNewer(it.versionName, installed) }
 
-    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
-            TopAppBar(
-                title = { Text("Actualizaciones") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = viewModel::checkForUpdates) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Volver a comprobar")
-                    }
-                },
-                scrollBehavior = scrollBehavior
-            )
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = scrollBottomRoom + 96.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding(),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = 8.dp,
+                bottom = scrollBottomRoom + 96.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+                item("cabecera") {
+                    SettingsHeader(
+                        title = "Actualizaciones",
+                        subtitle = "Comprueba y descarga",
+                        onBackClick = onBackClick,
+                        action = {
+                            IconButton(onClick = viewModel::checkForUpdates) {
+                                Icon(Icons.Rounded.Refresh, contentDescription = "Volver a comprobar")
+                            }
+                        }
+                    )
+                }
                 item("titular") { UpdateHeadline(state = state, installed = installed) }
 
                 if (state is UpdateState.Downloading) {
@@ -170,7 +176,18 @@ fun UpdateSettingsScreen(
                         onClick = viewModel::clearDownload
                     )
                 }
-            }
+
+                // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
+                // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
+                // minuto o hace una semana.
+                item("pie") {
+                    Text(
+                        text = "Tienes la $installed. Se comprueba solo una vez al día.",
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
         }
 
         UpdateActions(
@@ -185,13 +202,20 @@ fun UpdateSettingsScreen(
     }
 }
 
-/** El titular: en una línea, qué te toca hacer. */
+/**
+ * El estado, como una tarjeta con su propio color.
+ *
+ * Era un icono centrado y dos líneas de texto gris: los nueve estados se veían igual, y «no se
+ * pudo comprobar» tenía exactamente el mismo aspecto que «estás al día». Ahora el color de la
+ * tarjeta lo dice antes de leer nada.
+ */
 @Composable
 private fun UpdateHeadline(state: UpdateState, installed: String) {
+    val sections = LocalSectionColors.current
     val (icon, title, support) = when (state) {
         is UpdateState.Available -> Triple(
             Icons.Rounded.NewReleases,
-            "Hay una actualización",
+            "Hay una versión disponible",
             "Tienes la v$installed. La última publicada es la v${state.info.versionName}."
         )
         is UpdateState.ReadyToInstall -> Triple(
@@ -215,34 +239,54 @@ private fun UpdateHeadline(state: UpdateState, installed: String) {
         is UpdateState.Error -> Triple(Icons.Rounded.CloudOff, "No se pudo comprobar", state.message)
         UpdateState.Idle -> Triple(Icons.Rounded.Refresh, "Actualizaciones", "Comprueba si hay algo más nuevo.")
     }
+    val tones: Pair<Color, Color> = when (state) {
+        is UpdateState.Available, is UpdateState.ReadyToInstall ->
+            MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
+        is UpdateState.Downloading ->
+            sections.scheduleContainer to sections.schedule
+        UpdateState.UpToDate, is UpdateState.Ahead, UpdateState.NoReleases ->
+            sections.onTrackContainer to sections.onTrack
+        is UpdateState.Error ->
+            MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+        else ->
+            MaterialTheme.colorScheme.surfaceContainerLow to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val container = tones.first
+    val accent = tones.second
 
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = container,
+        contentColor = contentColorOn(container)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(64.dp)
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(30.dp))
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = accent,
+                contentColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                }
+            }
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Text(
+                    text = support,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = support,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
     }
 }
 

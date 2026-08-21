@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.Surface

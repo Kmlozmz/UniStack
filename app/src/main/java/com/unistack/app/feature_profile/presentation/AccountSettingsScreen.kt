@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import androidx.compose.runtime.LaunchedEffect
+import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsRowIcon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -76,6 +80,15 @@ fun AccountSettingsScreen(
     val spacing = LocalInterfaceSpacing.current
     val context = LocalContext.current
     val current = profile ?: return
+
+    // El estado del plan hay que ir a pedirlo: vivía en el ProfileScreen que se partió en
+    // cinco, y al desaparecer aquel se quedó sin nadie que lo refrescara. Sin esto, quien
+    // acabara de comprar Pro seguía viendo el plan gratuito hasta reinstalar.
+    LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
+        if (FeatureGate.PRO_FEATURES_ENABLED) {
+            viewModel.refreshBilling()
+        }
+    }
 
     var editingName by rememberSaveable { mutableStateOf(false) }
     var nameInput by rememberSaveable(current.userId) { mutableStateOf(current.preferredName) }

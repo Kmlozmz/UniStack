@@ -159,10 +159,6 @@ class SetupViewModel @Inject constructor(
         academicInfo = value
     }
 
-    fun updateAcademicInfo(value: String) {
-        academicInfo = value
-    }
-
     fun updateStudyArea(value: StudyArea) {
         studyArea = value
         selectedProgram = null

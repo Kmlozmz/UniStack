@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.SettingsToggleRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize

@@ -279,25 +279,6 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
-    fun applyVisualPreset(preset: VisualPreset): Boolean {
-        val current = profile.value ?: return false
-        val appearance = AppearancePreferences.preset(preset)
-        val visualPreference = when (preset) {
-            VisualPreset.OLED -> VisualPreference.OLED
-            VisualPreset.DEFAULT -> VisualPreference.SYSTEM
-            else -> current.visualPreference.takeUnless {
-                it == VisualPreference.OLED || it == VisualPreference.CUSTOM
-            } ?: VisualPreference.DARK
-        }
-        save(
-            current.copy(
-                visualPreference = visualPreference,
-                appearancePreferences = appearance
-            )
-        )
-        return true
-    }
-
     fun resetAppearance(): Boolean {
         val current = profile.value ?: return false
         save(

@@ -2,6 +2,11 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_profile.domain.FeatureGate
+import androidx.compose.runtime.LaunchedEffect
+import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +78,15 @@ fun SettingsHubScreen(
     val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val sections = LocalSectionColors.current
+
+    // El estado del plan hay que ir a pedirlo: vivía en el ProfileScreen que se partió en
+    // cinco, y al desaparecer aquel se quedó sin nadie que lo refrescara. Sin esto, quien
+    // acabara de comprar Pro seguía viendo el plan gratuito hasta reinstalar.
+    LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
+        if (FeatureGate.PRO_FEATURES_ENABLED) {
+            viewModel.refreshBilling()
+        }
+    }
 
     LazyColumn(
         modifier = modifier

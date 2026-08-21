@@ -80,8 +80,6 @@ import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
 import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
-import com.unistack.app.feature_profile.presentation.ProfileScreen
-import com.unistack.app.feature_profile.presentation.ProfileScreenMode
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
 import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
