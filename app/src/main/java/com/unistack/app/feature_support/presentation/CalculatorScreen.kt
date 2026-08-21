@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
@@ -76,6 +77,10 @@ fun GpaCalculatorScreen(
         modifier = modifier
             .fillMaxSize()
             .statusBarsPadding()
+            // El nombre de la materia abre el teclado de texto, y ese teclado tapaba el de la
+            // calculadora y aplastaba la tarjeta del resultado contra la cabecera. Con esto la
+            // zona de escritura sube por encima y la lista se queda con lo que reste.
+            .imePadding()
     ) {
         CalculatorHeader(onBackClick = onBackClick, onHelpClick = { helpOpen = true })
         UniSegmentedControl(

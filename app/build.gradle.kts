@@ -924,13 +924,18 @@ val validateReleaseReady = tasks.register("validateReleaseReady") {
 sendReleaseApkToTelegram.configure {
     dependsOn(validateReleaseReady)
     /*
-     * La condición va aquí, en el envío, y no en `assembleRelease`.
+     * Por el bot sale **cualquier APK de release**, sea del peldaño que sea.
      *
-     * Puesta allí, un `onlyIf` no silencia el aviso: **cancela la compilación**. Con una beta o
-     * una definitiva, `assembleRelease` se saltaba entero y `publishReleaseToGitHub` se quedaba
-     * sin APK que subir, o subía el que hubiera quedado de una compilación anterior.
+     * Hasta el 21 ago 2026 solo pasaban las alphas: la idea era que beta y definitiva llegaran
+     * por la propia app, a quien le tocara por su canal, y que el bot no se convirtiera en una
+     * vía de distribución paralela. En la práctica el bot es del dueño de la app y lo que hacía
+     * la condición era obligarle a ir a buscar a mano el APK que él mismo acababa de compilar.
+     *
+     * Si algún día vuelve a hacer falta filtrar por peldaño, la condición va aquí y no en
+     * `assembleRelease`: puesta allí, un `onlyIf` no silencia el aviso —**cancela la
+     * compilación**—, y `publishReleaseToGitHub` se quedaba sin APK que subir o subía el que
+     * hubiera quedado de una compilación anterior.
      */
-    onlyIf { isAlphaVersion(generatedVersionName) }
 }
 
 /**

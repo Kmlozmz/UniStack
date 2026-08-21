@@ -185,7 +185,9 @@ internal fun SubjectCalculator(
         item("resultado") {
             ResultCard(
                 label = "LLEVAS EN LA MATERIA",
-                value = average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
+                // Sin notas se enseña un cero apagado y no un guion: a ese tamaño y con ese
+                // grosor, un «—» se lee como una barra gris rota, no como «todavía nada».
+                value = GradingScaleUtils.formatGrade(average ?: 0.0, scale),
                 suffix = "/ ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
                 accent = if (average == null) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.onSurface
             ) {
@@ -386,7 +388,7 @@ internal fun SemesterCalculator(
         item("resultado") {
             ResultCard(
                 label = "PROMEDIO DEL SEMESTRE",
-                value = average?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
+                value = GradingScaleUtils.formatGrade(average ?: 0.0, scale),
                 suffix = "/ ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
                 accent = accent,
                 trailing = if (totalCredits > 0.0) "${percentText(totalCredits)} créditos" else null
@@ -581,7 +583,9 @@ internal fun NeededCalculator(
                 HalfBox(
                     label = "HECHO",
                     value = have,
-                    weight = (doneValue / 100.0).toFloat().coerceIn(0.18f, 0.82f),
+                    // El mínimo sube a un tercio: con el 18 % la caja medía 60 dp y el
+                    // rótulo salía cortado como «HEC».
+                    weight = (doneValue / 100.0).toFloat().coerceIn(0.34f, 0.72f),
                     container = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
                 HalfBox(

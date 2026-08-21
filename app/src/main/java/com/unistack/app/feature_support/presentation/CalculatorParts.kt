@@ -101,10 +101,13 @@ internal fun CalculatorKeypad(
             modifier = Modifier.width(84.dp),
             verticalArrangement = Arrangement.spacedBy(KeyGap)
         ) {
+            // `fillMaxWidth` no sobra: sin él la superficie se encoge a su contenido y las
+            // dos teclas salían como tiras estrechas con el icono y el rótulo por fuera.
             Key(
                 label = null,
                 icon = Icons.Rounded.Backspace,
                 contentDescription = "Borrar un dígito",
+                modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,
                 muted = true,
                 onClick = {
@@ -114,6 +117,7 @@ internal fun CalculatorKeypad(
             )
             Key(
                 label = "Limpiar",
+                modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,
                 small = true,
                 muted = true,
