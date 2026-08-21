@@ -329,14 +329,14 @@ private fun NotificationPermissionCard(
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
-                    text = if (granted) "Las notificaciones están activadas" else "Android no deja notificarte",
+                    text = if (granted) "Las notificaciones están activadas" else "Las notificaciones están desactivadas",
                     style = MaterialTheme.typography.titleMediumEmphasized
                 )
                 Text(
                     text = if (granted) {
                         "UniStack te notificará cuando haya novedades."
                     } else {
-                        "Sin el permiso, nada de lo de abajo llega."
+                        "Sin el permiso no te podremos enviar notificaciones."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = ink.copy(alpha = 0.85f)

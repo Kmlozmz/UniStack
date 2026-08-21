@@ -80,6 +80,7 @@ import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
 import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
+import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
 import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
@@ -418,8 +419,7 @@ fun MainNavGraph(
                     onModulesClick = { navController.go(AppRoutes.ModuleSettings) },
                     onNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
                     onDataClick = { navController.go(AppRoutes.DataSettings) },
-                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) },
-                    onProClick = { navController.go(AppRoutes.Pro) }
+                    onUpdatesClick = { navController.go(AppRoutes.UpdateSettings) }
                 )
             }
             screen(AppRoutes.UpdateSettings) {
@@ -531,6 +531,15 @@ fun MainNavGraph(
             screen(AppRoutes.Labs) {
                 LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
+            /*
+             * Pro solo se registra si está encendido.
+             *
+             * Apagado, la app va sin límites y no hay nada que vender: una ruta viva a una
+             * pantalla de compra que nadie puede alcanzar es una puerta que solo se abre por
+             * error —una notificación vieja, un enlace guardado— y aterriza en una oferta que
+             * no existe.
+             */
+            if (FeatureGate.PRO_FEATURES_ENABLED) {
             screen(AppRoutes.Pro) {
                 ProScreen(
                     onBackClick = {
@@ -539,6 +548,7 @@ fun MainNavGraph(
                         }
                     }
                 )
+            }
             }
             screen(AppRoutes.Expenses) {
                 ExpensesScreen(

@@ -2,48 +2,46 @@
 
 package com.unistack.app.core.design.components
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.toPath
-import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import androidx.graphics.shapes.toPath
 
 /**
  * La galleta de doce lóbulos que asoma por la esquina de las tarjetas con color.
  *
- * Se dibuja con [Canvas] y no recortando una caja con la forma: recortar no llega a aplicarse
- * y lo que sale es el rectángulo entero, como ya pasó una vez en el hero de Inicio y otra en
- * las marcas de materia.
+ * Va como modificador y no como hijo de un `Box`. Siendo un hijo, el lienzo de 130 dp **contaba
+ * para medir la caja**: la tarjeta crecía hasta la altura de un adorno que ni siquiera se ve
+ * entero, y debajo del contenido quedaba un hueco vacío del alto de la galleta. Se veía rota
+ * porque lo estaba. Pintado detrás, ocupa cero y la tarjeta mide lo que mida su contenido.
  *
- * Es de la misma familia que las marcas de las materias —el mismo motor de polígonos, distinto
- * número de lóbulos—, así que las superficies con color de la app se reconocen entre sí.
+ * El recorte lo pone la propia `Surface` con su forma, así que lo que se salga de las esquinas
+ * redondeadas no se pinta.
+ *
+ * Se dibuja el trazado y no se recorta una caja con la forma: recortar no llega a aplicarse y
+ * lo que sale es el rectángulo entero, como ya pasó una vez en el hero de Inicio y otra en las
+ * marcas de materia.
  */
-@Composable
-fun CookieCorner(
+fun Modifier.cookieCorner(
     color: Color,
-    modifier: Modifier = Modifier,
     size: Dp = 130.dp,
     offsetX: Dp = 250.dp,
     offsetY: Dp = (-42).dp,
     alpha: Float = 0.18f
-) {
-    val path = CookiePolygon.toPath()
-    Canvas(
-        modifier = modifier
-            .size(size)
-            .offset(x = offsetX, y = offsetY)
-    ) {
-        withTransform({ scale(this.size.width, this.size.height, pivot = Offset.Zero) }) {
-            drawPath(path, color.copy(alpha = alpha))
+): Modifier = this.drawBehind {
+    val side = size.toPx()
+    translate(left = offsetX.toPx(), top = offsetY.toPx()) {
+        withTransform({ scale(side, side, pivot = Offset.Zero) }) {
+            drawPath(CookiePath, color.copy(alpha = alpha))
         }
     }
 }
@@ -56,3 +54,7 @@ private val CookiePolygon: RoundedPolygon = RoundedPolygon.star(
     centerX = 0.5f,
     centerY = 0.5f
 )
+
+// El `toPath()` de material3 es @Composable y no vale para un valor de fichero; el del
+// motor de polígonos devuelve un trazado de Android que se convierte una sola vez.
+private val CookiePath = CookiePolygon.toPath().asComposePath()

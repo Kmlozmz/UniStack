@@ -8,7 +8,7 @@ import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material3.Surface
 import androidx.compose.ui.graphics.Color
-import com.unistack.app.core.design.components.CookieCorner
+import com.unistack.app.core.design.components.cookieCorner
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -154,75 +154,75 @@ internal fun BackupSection(
          * enterrado dentro de un recuadro gris a media tarjeta.
          */
         Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = LocalSectionColors.current.scheduleContainer,
-            contentColor = LocalSectionColors.current.onScheduleContainer
-        ) {
-            Box {
-                CookieCorner(
+            modifier = Modifier
+                .fillMaxWidth()
+                .cookieCorner(
                     color = LocalSectionColors.current.onScheduleContainer,
                     size = 150.dp,
                     offsetX = 250.dp,
                     offsetY = (-50).dp,
                     alpha = 0.16f
+                ),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = LocalSectionColors.current.scheduleContainer,
+            contentColor = LocalSectionColors.current.onScheduleContainer
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text("ÚLTIMA COPIA", style = SectionLabelStyle)
+                Text(
+                    text = lastBackup?.let { formatBackupDate(it) } ?: "Todavía ninguna",
+                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    fontWeight = FontWeight.Bold
                 )
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text("ÚLTIMA COPIA", style = SectionLabelStyle)
-                    Text(
-                        text = lastBackup?.let { formatBackupDate(it) } ?: "Todavía ninguna",
-                        modifier = Modifier.padding(top = 6.dp),
-                        style = MaterialTheme.typography.titleLargeEmphasized,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = dataSummary,
-                        modifier = Modifier.padding(top = 3.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Row(
-                        modifier = Modifier.padding(top = 14.dp),
-                        horizontalArrangement = Arrangement.spacedBy(9.dp)
+                Text(
+                    text = dataSummary,
+                    modifier = Modifier.padding(top = 3.dp),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Row(
+                    modifier = Modifier.padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                ) {
+                    Surface(
+                        onClick = { saveBackup.launch(BackupFiles.suggestedName("unistack-copia", "json")) },
+                        shape = CircleShape,
+                        color = LocalSectionColors.current.schedule,
+                        contentColor = LocalSectionColors.current.scheduleContainer
                     ) {
-                        Surface(
-                            onClick = { saveBackup.launch(BackupFiles.suggestedName("unistack-copia", "json")) },
-                            shape = CircleShape,
-                            color = LocalSectionColors.current.schedule,
-                            contentColor = LocalSectionColors.current.scheduleContainer
-                        ) {
-                            Text(
-                                "Guardar copia",
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold
+                        Text(
+                            "Guardar copia",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Surface(
+                        onClick = {
+                            BackupFiles.shareText(
+                                context = context,
+                                fileName = BackupFiles.suggestedName("unistack-copia", "json"),
+                                mimeType = "application/json",
+                                text = viewModel.exportLocalBackup()
                             )
-                        }
-                        Surface(
-                            onClick = {
-                                BackupFiles.shareText(
-                                    context = context,
-                                    fileName = BackupFiles.suggestedName("unistack-copia", "json"),
-                                    mimeType = "application/json",
-                                    text = viewModel.exportLocalBackup()
-                                )
-                                    .onSuccess {
-                                        BackupFiles.rememberBackupDone(context)
-                                        lastBackup = BackupFiles.lastBackupAt(context)
-                                    }
-                                    .onFailure { onFeedback("No se pudo compartir la copia.") }
-                            },
-                            shape = CircleShape,
-                            color = Color.Transparent
-                        ) {
-                            Text(
-                                "Compartir",
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                style = MaterialTheme.typography.labelLarge
-                            )
-                        }
+                                .onSuccess {
+                                    BackupFiles.rememberBackupDone(context)
+                                    lastBackup = BackupFiles.lastBackupAt(context)
+                                }
+                                .onFailure { onFeedback("No se pudo compartir la copia.") }
+                        },
+                        shape = CircleShape,
+                        color = Color.Transparent
+                    ) {
+                        Text(
+                            "Compartir",
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             }
+        
         }
 
         SettingsGroup(label = "RESPALDOS") {

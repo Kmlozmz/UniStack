@@ -48,7 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.CookieCorner
+import com.unistack.app.core.design.components.cookieCorner
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -381,49 +381,49 @@ private fun AccountLinkRow(
 @Composable
 private fun PlanCard(plan: UserPlan, onOpenProClick: () -> Unit) {
     val ink = MaterialTheme.colorScheme.onPrimaryContainer
+
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .cookieCorner(color = ink, size = 140.dp, offsetX = 240.dp, offsetY = (-46).dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = ink
     ) {
-        Box {
-            CookieCorner(color = ink, size = 140.dp, offsetX = 240.dp, offsetY = (-46).dp)
-            Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = if (plan.isPro) "PLAN PRO" else "PLAN ESTUDIANTE",
+                style = SectionLabelStyle
+            )
+            Text(
+                text = if (plan.hasSubjectLimit) "Hasta ${plan.maxSubjects} materias" else "Materias ilimitadas",
+                modifier = Modifier.padding(top = 6.dp),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (plan.isPro) {
+                    "Gracias por sostener la app."
+                } else {
+                    "Pro las quita y añade respaldo en la nube."
+                },
+                modifier = Modifier.padding(top = 3.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = ink.copy(alpha = 0.88f)
+            )
+            Surface(
+                onClick = onOpenProClick,
+                modifier = Modifier.padding(top = 13.dp),
+                shape = CircleShape,
+                color = ink,
+                contentColor = MaterialTheme.colorScheme.primaryContainer
+            ) {
                 Text(
-                    text = if (plan.isPro) "PLAN PRO" else "PLAN ESTUDIANTE",
-                    style = SectionLabelStyle
-                )
-                Text(
-                    text = if (plan.hasSubjectLimit) "Hasta ${plan.maxSubjects} materias" else "Materias ilimitadas",
-                    modifier = Modifier.padding(top = 6.dp),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = if (plan.isPro) "Ver tu plan" else "Ver UniStack Pro",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = if (plan.isPro) {
-                        "Gracias por sostener la app."
-                    } else {
-                        "Pro las quita y añade respaldo en la nube."
-                    },
-                    modifier = Modifier.padding(top = 3.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ink.copy(alpha = 0.88f)
-                )
-                Surface(
-                    onClick = onOpenProClick,
-                    modifier = Modifier.padding(top = 13.dp),
-                    shape = CircleShape,
-                    color = ink,
-                    contentColor = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Text(
-                        text = if (plan.isPro) "Ver tu plan" else "Ver UniStack Pro",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
         }
     }

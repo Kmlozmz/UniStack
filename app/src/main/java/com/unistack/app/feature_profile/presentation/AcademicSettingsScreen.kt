@@ -409,7 +409,7 @@ private fun buildScaleWarning() = androidx.compose.ui.text.buildAnnotatedString 
     )
     append("borra todas tus notas")
     pop()
-    append(". Se pregunta dos veces antes de hacerlo.")
+    append(". Continua solo si estás seguro de lo que haces.")
 }
 
 private fun GradingScale.shortLabel(): String = when (this) {
