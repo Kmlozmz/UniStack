@@ -2,6 +2,18 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Backspace
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -190,6 +201,38 @@ internal fun RowScope.NumberSlot(
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {
+    /*
+     * La casilla activa cede el fondo.
+     *
+     * El relleno de la que está activa lo pinta [SlotRow] por detrás, en un solo rectángulo que
+     * viaja de una a otra. Si la casilla pintara además el suyo, se verían dos: el que llega y
+     * el que ya estaba. Aquí queda el fondo de la casilla apagada, que se desvanece justo cuando
+     * el foco entra.
+     */
+    val container by animateColorAsState(
+        targetValue = if (active) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "fondo"
+    )
+    val ink by animateColorAsState(
+        targetValue = if (active) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "tinta"
+    )
+    val valueInk by animateColorAsState(
+        targetValue = if (active) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "tinta del valor"
+    )
+
     Surface(
         onClick = onClick,
         enabled = enabled,
@@ -197,27 +240,15 @@ internal fun RowScope.NumberSlot(
         // Menos redondas que el resto: con el radio grande, «VALE · queda 100 %» quedaba
         // apretado contra la curva y se leía torcido.
         shape = MaterialTheme.shapes.medium,
-        color = if (active) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        contentColor = if (active) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        }
+        color = container,
+        contentColor = ink
     ) {
         Column(modifier = Modifier.padding(horizontal = 13.dp, vertical = 8.dp)) {
             Text(text = label, style = SectionLabelStyleSmall)
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineSmallEmphasized,
-                color = if (active) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                color = valueInk,
                 maxLines = 1
             )
         }
@@ -232,6 +263,28 @@ internal fun SlotAction(
     onClick: () -> Unit
 ) {
     val haptics = LocalHapticFeedback.current
+    /*
+     * La forma cuenta el cambio antes que el icono.
+     *
+     * Al llegar al estado en que ya puede guardar, el botón se redondea del todo: de esquina de
+     * 16 a círculo. Es el mismo gesto que hace M3 Expressive con los botones que cambian de
+     * papel, y se nota con el rabillo del ojo sin tener que mirar qué icono hay dentro.
+     */
+    val corner by animateDpAsState(
+        targetValue = if (isArrow) 16.dp else 27.dp,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "esquina"
+    )
+    val container by animateColorAsState(
+        targetValue = if (enabled) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "fondo del botón"
+    )
+
     Surface(
         onClick = {
             // Al guardar, un toque distinto del de las teclas: es el momento en el que la nota
@@ -243,22 +296,34 @@ internal fun SlotAction(
         },
         enabled = enabled,
         modifier = Modifier.size(54.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(corner),
+        color = container,
         contentColor = if (enabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.outline
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(
-                // Flecha mientras falta el segundo dato, más cuando ya guarda. Un «+» que en
-                // realidad avanza promete guardar y no guarda.
-                imageVector = if (isArrow) {
-                    Icons.AutoMirrored.Rounded.ArrowForward
-                } else {
-                    Icons.Rounded.Add
+            AnimatedContent(
+                targetState = isArrow,
+                transitionSpec = {
+                    // La flecha sale por donde apuntaba y el visto entra desde el centro: el
+                    // cruce cuenta que una cosa dio paso a la otra, no que se cambió un dibujo.
+                    (scaleIn(initialScale = 0.6f) + fadeIn()) togetherWith
+                        (scaleOut(targetScale = 1.3f) + fadeOut())
                 },
-                contentDescription = if (isArrow) "Pasar al siguiente dato" else "Añadir",
-                modifier = Modifier.size(24.dp)
-            )
+                label = "icono de la acción"
+            ) { arrow ->
+                Icon(
+                    // Flecha mientras falta el segundo dato, visto cuando ya guarda. Un «+»
+                    // promete sumar algo a una lista, y lo que pasa es que la nota queda
+                    // registrada en la cuenta.
+                    imageVector = if (arrow) {
+                        Icons.AutoMirrored.Rounded.ArrowForward
+                    } else {
+                        Icons.Rounded.Check
+                    },
+                    contentDescription = if (arrow) "Pasar al siguiente dato" else "Añadir",
+                    modifier = Modifier.size(if (arrow) 24.dp else 26.dp)
+                )
+            }
         }
     }
 }

@@ -6,6 +6,11 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.key
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -100,9 +105,33 @@ internal fun SubjectCalculator(
         toast = toast,
         onToastDismiss = { onToast(null) },
         entry = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            SlotRow(
+                focused = if (slot == Slot.FIRST) 0 else 1,
+                slotCount = 2,
+                trailing = {
+                    SlotAction(
+                        isArrow = slot == Slot.FIRST,
+                        enabled = typed && !complete,
+                        onClick = {
+                            if (complete) {
+                                onToast("Ya está repartido el 100 % de la materia. Quita una nota para cambiarla.")
+                                return@SlotAction
+                            }
+                            val value = parseTyped(draft) ?: return@SlotAction
+                            if (slot == Slot.FIRST) {
+                                pending = value
+                                slot = Slot.SECOND
+                                draft = "0"
+                                fresh = true
+                            } else {
+                                grades = grades + (pending ?: 0.0)
+                                weights = weights + value
+                                reset()
+                            }
+                            onToast(null)
+                        }
+                    )
+                }
             ) {
                 NumberSlot(
                     label = "NOTA",
@@ -124,28 +153,6 @@ internal fun SubjectCalculator(
                         slot = Slot.SECOND
                         draft = "0"
                         fresh = true
-                        onToast(null)
-                    }
-                )
-                SlotAction(
-                    isArrow = slot == Slot.FIRST,
-                    enabled = typed && !complete,
-                    onClick = {
-                        if (complete) {
-                            onToast("Ya está repartido el 100 % de la materia. Quita una nota para cambiarla.")
-                            return@SlotAction
-                        }
-                        val value = parseTyped(draft) ?: return@SlotAction
-                        if (slot == Slot.FIRST) {
-                            pending = value
-                            slot = Slot.SECOND
-                            draft = "0"
-                            fresh = true
-                        } else {
-                            grades = grades + (pending ?: 0.0)
-                            weights = weights + value
-                            reset()
-                        }
                         onToast(null)
                     }
                 )
@@ -185,24 +192,19 @@ internal fun SubjectCalculator(
                 suffix = "/ ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
                 accent = if (average == null) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.onSurface
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth((used / 100.0).toFloat().coerceIn(0f, 1f))
-                            .height(8.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(
-                                if (complete) LocalSectionColors.current.onTrack
-                                else MaterialTheme.colorScheme.primary
-                            )
-                    )
-                }
+                /*
+                 * Un tramo por nota, no una barra de un color.
+                 *
+                 * Era una franja lisa que salía saltando a su nuevo largo: decía cuánto llevas
+                 * repartido, pero no de qué está hecho ese reparto. Partida en tramos, cada nota
+                 * ocupa el suyo y se ve de un vistazo si la materia va en tres cortes grandes o
+                 * en ocho pedazos. El tramo nuevo crece desde cero mientras los otros se acomodan.
+                 */
+                WeightBar(
+                    weights = entries.map { it.weightPercent },
+                    tones = weightTones(),
+                    height = 10.dp
+                )
                 Text(
                     text = if (complete) {
                         "El 100 % está repartido: esta es la nota final."
@@ -220,14 +222,19 @@ internal fun SubjectCalculator(
             item("notas") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     entries.forEachIndexed { index, entry ->
-                        ValueChip(
-                            text = "${GradingScaleUtils.formatGrade(entry.grade, scale)}  ·  ${percentText(entry.weightPercent)} %",
-                            onRemove = {
-                                grades = grades.filterIndexed { i, _ -> i != index }
-                                weights = weights.filterIndexed { i, _ -> i != index }
-                                onToast(null)
+                        key(index, entry.grade, entry.weightPercent) {
+                            EnterOnAppear {
+                                ValueChip(
+                                    text = "${GradingScaleUtils.formatGrade(entry.grade, scale)}  ·  ${percentText(entry.weightPercent)} %",
+                                    tone = weightTones()[index % weightTones().size],
+                                    onRemove = {
+                                        grades = grades.filterIndexed { i, _ -> i != index }
+                                        weights = weights.filterIndexed { i, _ -> i != index }
+                                        onToast(null)
+                                    }
+                                )
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -288,33 +295,10 @@ internal fun SemesterCalculator(
         toast = toast,
         onToastDismiss = { onToast(null) },
         entry = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
-            ) {
-                NumberSlot(
-                    label = if (editing >= 0) "CORRIGIENDO" else "NOTA FINAL",
-                    value = if (slot == Slot.FIRST) draft else pending?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
-                    active = slot == Slot.FIRST,
-                    onClick = {
-                        slot = Slot.FIRST
-                        draft = "0"
-                        fresh = true
-                        onToast(null)
-                    }
-                )
-                NumberSlot(
-                    label = "CRÉDITOS",
-                    value = if (slot == Slot.SECOND) draft else "—",
-                    active = slot == Slot.SECOND,
-                    enabled = pending != null || editing >= 0,
-                    onClick = {
-                        slot = Slot.SECOND
-                        draft = "0"
-                        fresh = true
-                        onToast(null)
-                    }
-                )
+            SlotRow(
+                focused = if (slot == Slot.FIRST) 0 else 1,
+                slotCount = 2,
+                trailing = {
                 SlotAction(
                     isArrow = slot == Slot.FIRST,
                     enabled = typed,
@@ -340,6 +324,31 @@ internal fun SemesterCalculator(
                             }
                             reset()
                         }
+                        onToast(null)
+                    }
+                )
+                }
+            ) {
+                NumberSlot(
+                    label = if (editing >= 0) "CORRIGIENDO" else "NOTA FINAL",
+                    value = if (slot == Slot.FIRST) draft else pending?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
+                    active = slot == Slot.FIRST,
+                    onClick = {
+                        slot = Slot.FIRST
+                        draft = "0"
+                        fresh = true
+                        onToast(null)
+                    }
+                )
+                NumberSlot(
+                    label = "CRÉDITOS",
+                    value = if (slot == Slot.SECOND) draft else "—",
+                    active = slot == Slot.SECOND,
+                    enabled = pending != null || editing >= 0,
+                    onClick = {
+                        slot = Slot.SECOND
+                        draft = "0"
+                        fresh = true
                         onToast(null)
                     }
                 )
@@ -398,6 +407,7 @@ internal fun SemesterCalculator(
             ScaleZoneBar(max = maxGrade, passing = passing, target = target, marker = average)
         }
         items(rows.size, key = { rows[it].name + it }) { index ->
+            EnterOnAppear {
             SemesterRow(
                 subject = rows[index],
                 scale = scale,
@@ -419,6 +429,7 @@ internal fun SemesterCalculator(
                     onToast(null)
                 }
             )
+            }
         }
         item("acciones") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -704,8 +715,18 @@ private fun ResultCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 3.dp)) {
+                // Late al cambiar el valor, no al pulsar una tecla: es la respuesta a lo que
+                // acabas de hacer, y si latiera con cada digito dejaria de significar nada.
+                val beat = bumpScale(value)
                 Text(
                     text = value,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = beat
+                        scaleY = beat
+                        // Crece desde la esquina de abajo a la izquierda: el numero esta alineado
+                        // ahi con su sufijo, y escalar desde el centro lo separaria de el.
+                        transformOrigin = TransformOrigin(0f, 1f)
+                    },
                     style = MaterialTheme.typography.displaySmallEmphasized,
                     color = accent,
                     fontWeight = FontWeight.ExtraBold
@@ -733,11 +754,17 @@ private fun ResultCard(
 }
 
 @Composable
-private fun ValueChip(text: String, onRemove: () -> Unit) {
+private fun ValueChip(
+    text: String,
+    tone: androidx.compose.ui.graphics.Color,
+    onRemove: () -> Unit
+) {
+    // La pastilla lleva el color del tramo que ocupa en la barra: mirando una nota se sabe cual
+    // de los trozos es suyo, sin tener que contar de izquierda a derecha.
     Surface(
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        color = tone.copy(alpha = 0.16f),
+        contentColor = tone
     ) {
         Row(
             modifier = Modifier.padding(start = 13.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
@@ -748,7 +775,7 @@ private fun ValueChip(text: String, onRemove: () -> Unit) {
             Surface(
                 onClick = onRemove,
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.14f),
+                color = tone.copy(alpha = 0.18f),
                 modifier = Modifier.size(22.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -907,9 +934,17 @@ private fun NeededField(
                     }
                 )
             }
+            // El relleno del campo activo entra y sale con el mismo ritmo que el foco de las
+            // otras dos pestanas: aqui no hay un rectangulo que viaje —los tres campos estan en
+            // filas distintas— pero el cambio de sitio se sigue contando, no se salta.
+            val fill by animateColorAsState(
+                targetValue = if (active) MaterialTheme.colorScheme.primary else Color.Transparent,
+                animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+                label = "relleno del campo"
+            )
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = if (active) MaterialTheme.colorScheme.primary else Color.Transparent,
+                color = fill,
                 contentColor = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                 border = if (active) {
                     null
@@ -960,13 +995,31 @@ private fun androidx.compose.foundation.layout.RowScope.HalfBox(
     weight: Float,
     container: androidx.compose.ui.graphics.Color
 ) {
+    /*
+     * El reparto se desliza mientras escribes.
+     *
+     * Las dos cajas dibujan cuanto del curso llevas evaluado y cuanto falta. Saltaban a su nuevo
+     * tamano en cuanto cambiaba un digito, asi que teclear un porcentaje daba una sacudida por
+     * cifra. Animado, el reparto se acomoda una vez y se entiende que las dos partes son la
+     * misma tarta.
+     */
+    val share by animateFloatAsState(
+        targetValue = weight,
+        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+        label = "reparto"
+    )
+    val tone by animateColorAsState(
+        targetValue = container,
+        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "color del veredicto"
+    )
     Surface(
         modifier = Modifier
-            .weight(weight)
+            .weight(share)
             .fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = container,
-        contentColor = contentColorOn(container)
+        color = tone,
+        contentColor = contentColorOn(tone)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
