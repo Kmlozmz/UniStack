@@ -237,10 +237,16 @@ internal fun ScaleZoneBar(
             modifier = Modifier.size(18.dp)
         )
     }
+    // Los tres tramos van con el color pleno, no con su contenedor.
+    //
+    // En claro los contenedores son casi blancos: los tres salían de un pastel lavado en el
+    // que había que leer el rótulo para saber cuál era cuál, y la franja está justo para no
+    // tener que leerla. El texto va en el color del fondo de la app, que contra el relleno
+    // sólido es el que más contrasta en los dos temas.
     val zones = listOf(
-        Triple("Reprobado", (pass / max).toFloat(), MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer),
-        Triple("Aprobado", ((goal - pass) / max).toFloat(), LocalSectionColors.current.atRiskContainer to LocalSectionColors.current.onAtRiskContainer),
-        Triple("Meta", ((max - goal) / max).toFloat(), LocalSectionColors.current.onTrackContainer to LocalSectionColors.current.onOnTrackContainer)
+        Triple("Reprobado", (pass / max).toFloat(), MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError),
+        Triple("Aprobado", ((goal - pass) / max).toFloat(), LocalSectionColors.current.atRisk to MaterialTheme.colorScheme.surface),
+        Triple("Meta", ((max - goal) / max).toFloat(), LocalSectionColors.current.onTrack to MaterialTheme.colorScheme.surface)
     )
     Column(
         modifier = Modifier.fillMaxWidth(),

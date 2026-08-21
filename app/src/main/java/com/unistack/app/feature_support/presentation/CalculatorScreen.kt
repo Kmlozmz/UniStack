@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -81,6 +82,9 @@ fun GpaCalculatorScreen(
             // calculadora y aplastaba la tarjeta del resultado contra la cabecera. Con esto la
             // zona de escritura sube por encima y la lista se queda con lo que reste.
             .imePadding()
+            // Tocar fuera del nombre suelta el foco y baja el teclado. Sin esto había que
+            // darle a la flecha de Android para recuperar la calculadora.
+            .dismissKeyboardOnTapOutside()
     ) {
         CalculatorHeader(onBackClick = onBackClick, onHelpClick = { helpOpen = true })
         UniSegmentedControl(

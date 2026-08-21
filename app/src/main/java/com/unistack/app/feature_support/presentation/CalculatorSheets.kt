@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
@@ -17,8 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -38,7 +38,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
@@ -130,6 +129,10 @@ internal fun CalculatorHelpSheet(
 /**
  * Cuáles de tus materias entran en la cuenta, y si vienen con sus notas.
  *
+ * Es una ventana y no una hoja que sube desde abajo: una hoja tapa la pantalla entera y aquí
+ * se está eligiendo sobre una cuenta que conviene seguir viendo. Y la elección es corta —marcar
+ * dos o tres nombres—, no un formulario que pida toda la altura.
+ *
  * Elegir de una lista y no traerlas todas: quien calcula el semestre puede querer solo las de
  * un corte, o dejar fuera la que va a repetir. Y el interruptor de las notas existe porque las
  * dos preguntas son válidas —«cómo voy» y «cómo acabaría si sacara esto»— y la segunda pide la
@@ -142,172 +145,190 @@ internal fun SubjectPickerSheet(
     onDismiss: () -> Unit,
     onConfirm: (List<CalculatorSubject>, Boolean) -> Unit
 ) {
-    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var withGrades by remember { mutableStateOf(true) }
     var picked by remember { mutableStateOf(setOf<String>()) }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
-        Column(
-            modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 30.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        title = {
             Text(
                 text = "Traer mis materias",
                 style = MaterialTheme.typography.headlineSmallEmphasized,
-                color = MaterialTheme.colorScheme.onSurface
+                fontWeight = FontWeight.Bold
             )
-            Text(
-                text = "Elige cuáles quieres en la cuenta. Lo que hagas aquí no toca nada de lo que tienes registrado.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (subjects.isEmpty()) {
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Todavía no tienes materias registradas. Cuando las tengas, aparecerán aquí.",
-                    modifier = Modifier.padding(vertical = 12.dp),
+                    text = "Elige cuáles quieres en la cuenta. Nada de esto toca lo que tienes registrado.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            } else {
-                Surface(
-                    onClick = { withGrades = !withGrades },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 15.dp, vertical = 13.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Traer también sus notas",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (withGrades) {
-                                    "Entran con el promedio que llevas. Podrás cambiarlo aquí sin tocar la materia."
-                                } else {
-                                    "Entran en blanco, para que pongas tú la nota final."
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(checked = withGrades, onCheckedChange = { withGrades = it })
-                    }
-                }
 
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 320.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(subjects.size, key = { subjects[it].id }) { index ->
-                        val subject = subjects[index]
-                        val on = subject.id in picked
-                        Surface(
-                            onClick = {
-                                picked = if (on) picked - subject.id else picked + subject.id
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.medium,
-                            color = if (on) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceContainerHigh
-                            },
-                            contentColor = if (on) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                if (subjects.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.surfaceContainerLowest
+                    ) {
+                        Text(
+                            text = "Todavía no tienes materias registradas. Cuando las tengas, aparecerán aquí " +
+                                "para traerlas de un toque.",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Surface(
+                        onClick = { withGrades = !withGrades },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        color = if (withGrades) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerLowest
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(start = 15.dp, end = 11.dp, top = 10.dp, bottom = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Traer también sus notas",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (withGrades) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                )
+                                Text(
+                                    text = if (withGrades) {
+                                        "Con el promedio que llevas. Podrás cambiarlo aquí."
+                                    } else {
+                                        "En blanco, para que pongas tú la nota final."
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (withGrades) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
+                            Switch(checked = withGrades, onCheckedChange = { withGrades = it })
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.heightIn(max = 280.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(subjects.size, key = { subjects[it].id }) { index ->
+                            val subject = subjects[index]
+                            val on = subject.id in picked
+                            Surface(
+                                onClick = {
+                                    picked = if (on) picked - subject.id else picked + subject.id
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.large,
+                                color = if (on) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerLowest
+                                },
+                                contentColor = if (on) {
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(MaterialTheme.shapes.extraSmall)
-                                        .background(
-                                            if (on) MaterialTheme.colorScheme.primary
-                                            else androidx.compose.ui.graphics.Color.Transparent
-                                        )
-                                        .border(
-                                            2.dp,
-                                            if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                            MaterialTheme.shapes.extraSmall
-                                        ),
-                                    contentAlignment = Alignment.Center
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    if (on) {
-                                        Icon(
-                                            Icons.Rounded.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onPrimary
+                                    Box(
+                                        modifier = Modifier
+                                            .size(22.dp)
+                                            .clip(MaterialTheme.shapes.extraSmall)
+                                            .background(
+                                                if (on) MaterialTheme.colorScheme.primary else Color.Transparent
+                                            )
+                                            .border(
+                                                2.dp,
+                                                if (on) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.outline
+                                                },
+                                                MaterialTheme.shapes.extraSmall
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (on) {
+                                            Icon(
+                                                Icons.Rounded.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                    }
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = subject.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1
+                                        )
+                                        Text(
+                                            text = when {
+                                                subject.average == null -> "Sin notas registradas"
+                                                withGrades -> "Entra con " + GradingScaleUtils.formatGrade(subject.average, scale)
+                                                else -> "Llevas " + GradingScaleUtils.formatGrade(subject.average, scale)
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = subject.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1
-                                    )
-                                    Text(
-                                        text = when {
-                                            subject.average == null -> "Sin notas registradas"
-                                            withGrades -> "Entra con ${GradingScaleUtils.formatGrade(subject.average, scale)}"
-                                            else -> "Llevas ${GradingScaleUtils.formatGrade(subject.average, scale)}"
-                                        },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (on) {
-                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        }
-                                    )
-                                }
                             }
                         }
                     }
-                }
 
-                Text(
-                    text = "Los créditos los tienes que poner tú: la app no los guarda por materia.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) {
-                    Text("Cancelar")
-                }
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = { onConfirm(subjects.filter { it.id in picked }, withGrades) },
-                    enabled = picked.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) {
                     Text(
-                        if (picked.isEmpty()) "Elige alguna"
-                        else if (picked.size == 1) "Traer 1 materia"
-                        else "Traer ${picked.size} materias"
+                        text = "Los créditos los pones tú: la app no los guarda por materia.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(subjects.filter { it.id in picked }, withGrades) },
+                enabled = picked.isNotEmpty()
+            ) {
+                Text(
+                    text = when (picked.size) {
+                        0 -> "Traer"
+                        1 -> "Traer 1"
+                        else -> "Traer " + picked.size
+                    },
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-    }
+    )
 }

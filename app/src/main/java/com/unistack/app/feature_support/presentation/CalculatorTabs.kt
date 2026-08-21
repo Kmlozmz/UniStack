@@ -81,6 +81,7 @@ internal fun SubjectCalculator(
     var slot by rememberSaveable { mutableStateOf(Slot.FIRST) }
     var pending by rememberSaveable { mutableStateOf<Double?>(null) }
     var fresh by rememberSaveable { mutableStateOf(true) }
+    var typingName by rememberSaveable { mutableStateOf(false) }
 
     val entries = grades.zip(weights) { g, w -> Evaluation(g, w) }
     val used = CalculatorMath.usedWeight(entries)
@@ -98,14 +99,9 @@ internal fun SubjectCalculator(
 
     CalculatorLayout(
         toast = toast,
+        typingName = typingName,
         onToastDismiss = { onToast(null) },
         entry = {
-            NameField(
-                value = name,
-                placeholder = "Nombre de la materia (opcional)",
-                onValueChange = { name = it }
-            )
-            Spacer(Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
@@ -182,6 +178,14 @@ internal fun SubjectCalculator(
             )
         }
     ) {
+        item("nombre") {
+            NameField(
+                value = name,
+                placeholder = "Nombre de la materia (opcional)",
+                onValueChange = { name = it },
+                onFocusChange = { typingName = it }
+            )
+        }
         item("resultado") {
             ResultCard(
                 label = "LLEVAS EN LA MATERIA",
@@ -268,6 +272,7 @@ internal fun SemesterCalculator(
     var fresh by rememberSaveable { mutableStateOf(true) }
     var editing by rememberSaveable { mutableStateOf(-1) }
     var pickerOpen by rememberSaveable { mutableStateOf(false) }
+    var typingName by rememberSaveable { mutableStateOf(false) }
 
     val rows = names.indices.map { i ->
         SemesterSubject(names[i], grades[i], credits[i], fromApp.getOrElse(i) { false })
@@ -294,14 +299,9 @@ internal fun SemesterCalculator(
 
     CalculatorLayout(
         toast = toast,
+        typingName = typingName,
         onToastDismiss = { onToast(null) },
         entry = {
-            NameField(
-                value = name,
-                placeholder = if (editing >= 0) "Nombre de la materia" else "Materia ${rows.size + 1}",
-                onValueChange = { name = it }
-            )
-            Spacer(Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(9.dp)
@@ -434,6 +434,14 @@ internal fun SemesterCalculator(
                 }
             )
         }
+        item("nombre") {
+            NameField(
+                value = name,
+                placeholder = if (editing >= 0) "Nombre de la materia" else "Materia ${rows.size + 1}",
+                onValueChange = { name = it },
+                onFocusChange = { typingName = it }
+            )
+        }
         item("acciones") {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlineChip(
@@ -507,6 +515,7 @@ internal fun NeededCalculator(
 
     CalculatorLayout(
         toast = toast,
+        typingName = false,
         onToastDismiss = { onToast(null) },
         entry = {},
         keypad = {
@@ -644,6 +653,14 @@ internal fun NeededCalculator(
 private fun CalculatorLayout(
     toast: String?,
     onToastDismiss: () -> Unit,
+    /**
+     * Con el nombre en edición se esconde todo lo de abajo.
+     *
+     * Los dos teclados no pueden convivir: el de texto sube, el de números se queda encima
+     * ocupando media pantalla para nada, y la tarjeta del resultado acaba aplastada contra la
+     * cabecera. Mientras se escribe el nombre no hay ningún número que teclear.
+     */
+    typingName: Boolean,
     entry: @Composable () -> Unit,
     keypad: @Composable () -> Unit,
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit
@@ -663,19 +680,21 @@ private fun CalculatorLayout(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             content = content
         )
-        Column(
-            modifier = Modifier.padding(
-                start = spacing.screenHorizontal,
-                end = spacing.screenHorizontal,
-                bottom = scrollBottomRoom.coerceAtMost(20.dp)
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            if (toast != null) {
-                CalculatorToast(message = toast, onDismiss = onToastDismiss)
+        if (!typingName) {
+            Column(
+                modifier = Modifier.padding(
+                    start = spacing.screenHorizontal,
+                    end = spacing.screenHorizontal,
+                    bottom = scrollBottomRoom.coerceAtMost(20.dp)
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (toast != null) {
+                    CalculatorToast(message = toast, onDismiss = onToastDismiss)
+                }
+                entry()
+                keypad()
             }
-            entry()
-            keypad()
         }
     }
 }

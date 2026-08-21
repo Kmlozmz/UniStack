@@ -2,6 +2,12 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -257,8 +263,12 @@ internal fun NameField(
     value: String,
     placeholder: String,
     onValueChange: (String) -> Unit,
+    onFocusChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -287,12 +297,21 @@ internal fun NameField(
                     value = value,
                     onValueChange = { onValueChange(it.take(28)) },
                     singleLine = true,
+                    // Con «Listo» se cierra el teclado en vez de dejarlo abierto tapando la
+                    // calculadora, que es lo que hacía falta tocar justo después.
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                        keyboard?.hide()
+                    }),
                     textStyle = MaterialTheme.typography.titleSmall.copy(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { onFocusChange(it.isFocused) }
                 )
             }
         }
