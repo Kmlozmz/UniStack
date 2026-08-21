@@ -10,8 +10,12 @@ package com.unistack.app.feature_updates.domain
  *
  * La regla es la de semver en lo que aquí importa: mandan los números y, a igualdad de
  * números, una versión con sufijo va **antes** que la misma sin él —`1.1.0-alpha.1` es
- * anterior a `1.1.0`—. Entre dos sufijos se comparan como texto, que basta para ordenar
- * `alpha` < `beta` < `rc`.
+ * anterior a `1.1.0`—.
+ *
+ * Los dos sufijos se comparan trozo a trozo y **el número como número**. Comparándolos como
+ * texto entero bastaba para ordenar `alpha` < `beta` < `rc`, pero dentro de un mismo peldaño
+ * mentía en cuanto se pasaba de nueve: `beta.10` salía antes que `beta.2` porque «1» va antes
+ * que «2», y la app no habría ofrecido la 10 a quien tuviera la 2.
  */
 data class ReleaseVersion(
     val numbers: List<Int>,
@@ -30,11 +34,38 @@ data class ReleaseVersion(
             // Sin sufijo es la definitiva, y va después de cualquier preestreno suyo.
             preRelease == null -> 1
             other.preRelease == null -> -1
-            else -> preRelease.compareTo(other.preRelease)
+            else -> comparePreRelease(preRelease, other.preRelease)
         }
     }
 
     companion object {
+        /**
+         * Los sufijos, trozo a trozo: `alpha.31` es `alpha` y `31`.
+         *
+         * Cada trozo se compara con el que le toca del otro. Si los dos son números, se
+         * comparan como números —de ahí que `31` gane a `9`—; si los dos son palabras, como
+         * texto, que es lo que ordena `alpha` < `beta` < `rc`. Un número va antes que una
+         * palabra, y quedarse sin trozos también: `alpha` es anterior a `alpha.1`.
+         */
+        private fun comparePreRelease(mine: String, theirs: String): Int {
+            val ours = mine.lowercase().split('.')
+            val yours = theirs.lowercase().split('.')
+            for (index in 0 until maxOf(ours.size, yours.size)) {
+                val ourPart = ours.getOrNull(index) ?: return -1
+                val yourPart = yours.getOrNull(index) ?: return 1
+                val ourNumber = ourPart.toIntOrNull()
+                val yourNumber = yourPart.toIntOrNull()
+                val comparison = when {
+                    ourNumber != null && yourNumber != null -> ourNumber.compareTo(yourNumber)
+                    ourNumber != null -> -1
+                    yourNumber != null -> 1
+                    else -> ourPart.compareTo(yourPart)
+                }
+                if (comparison != 0) return comparison
+            }
+            return 0
+        }
+
         fun parse(raw: String): ReleaseVersion {
             val cleaned = raw.trim().removePrefix("v").removePrefix("V")
             val separator = cleaned.indexOfFirst { it == '-' || it == '+' }

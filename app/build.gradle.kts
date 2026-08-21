@@ -111,6 +111,22 @@ fun isAlphaVersion(versionName: String): Boolean {
     return suffix.startsWith("alpha")
 }
 
+/**
+ * Del nombre de versión al número con el que Android decide qué APK entra sobre cuál.
+ *
+ * El reparto es `M mm pp SSS`: mayor ×10.000.000, menor ×100.000, parche ×1.000, y los tres
+ * últimos dígitos para el peldaño.
+ *
+ * Antes el peldaño ocupaba dos dígitos y solo cabían veinte iteraciones —y pasarse **no
+ * fallaba**: se recortaba en silencio—. De la `alpha.19` en adelante todas salieron con el
+ * mismo número: la 31 y la 19 son las dos `1030029`, así que doce compilaciones seguidas
+ * fueron indistinguibles para el sistema. Ahora caben cien y pasarse rompe la compilación,
+ * que es lo que tenía que haber hecho desde el principio.
+ *
+ * El reparto nuevo multiplica por diez el peso del mayor, así que **cualquier versión da un
+ * número más alto que con el reparto viejo**: lo que ya esté instalado se deja actualizar sin
+ * desinstalar nada.
+ */
 fun versionCodeFor(versionName: String): Int {
     val cleaned = versionName.trim().removePrefix("v").removePrefix("V")
     val separator = cleaned.indexOfFirst { it == '-' || it == '+' }
@@ -121,21 +137,40 @@ fun versionCodeFor(versionName: String): Int {
         ?.dropWhile { !it.isDigit() }
         ?.takeWhile(Char::isDigit)
         ?.toIntOrNull()
-        ?.coerceIn(0, 19)
         ?: 0
+    val major = parts.getOrElse(0) { 0 }
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+    // Solo los peldaños que cuentan iteraciones. El sufijo de una compilación local es un
+    // sello de fecha —`dev.26082019`—, no un número de intento: su peldaño es cero y el
+    // número que lleva detrás no entra en la cuenta.
+    val numbered = suffix != null &&
+        (suffix.startsWith("alpha") || suffix.startsWith("beta") || suffix.startsWith("rc"))
+    // Recortar en silencio es lo que dejó doce alphas con el mismo número. Si algo no cabe,
+    // que se entere quien compila y no el móvil de quien instala.
+    require(!numbered || iteration <= 99) {
+        "«$versionName»: la iteración pasa de 99 y no cabe en el peldaño. Sube el parche y " +
+            "empieza a contar de nuevo; recortarla dejaría dos versiones con el mismo versionCode."
+    }
+    require(minor <= 99 && patch <= 99) {
+        "«$versionName»: menor y parche llegan hasta 99 cada uno."
+    }
+    require(major <= 200) {
+        "«$versionName»: por encima del mayor 200 el versionCode se sale del entero de Android."
+    }
     val stage = when {
-        suffix == null -> 99
-        suffix.startsWith("alpha") -> 10 + iteration
-        suffix.startsWith("beta") -> 30 + iteration
-        suffix.startsWith("rc") -> 60 + iteration
+        suffix == null -> 999
+        suffix.startsWith("alpha") -> 100 + iteration
+        suffix.startsWith("beta") -> 300 + iteration
+        suffix.startsWith("rc") -> 600 + iteration
         // «dev» y cualquier sufijo desconocido: por debajo de todo lo publicable. Todas las
         // compilaciones locales comparten número, y reinstalar el mismo sí está permitido.
         else -> 0
-    }.coerceIn(0, 99)
+    }
     return (
-        parts.getOrElse(0) { 0 } * 1_000_000 +
-            parts.getOrElse(1) { 0 } * 10_000 +
-            parts.getOrElse(2) { 0 } * 100 +
+        major * 10_000_000 +
+            minor * 100_000 +
+            patch * 1_000 +
             stage
         ).coerceAtLeast(1)
 }

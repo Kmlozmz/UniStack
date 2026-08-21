@@ -49,4 +49,25 @@ class ReleaseVersionTest {
         assertFalse(ReleaseVersion.isNewer("1.1.0", "1.1.0"))
         assertFalse(ReleaseVersion.isNewer("1.1.0-alpha.1", "1.1.0-alpha.1"))
     }
+
+    @Test
+    fun `dentro de un peldano el numero manda de diez en adelante`() {
+        // Comparando los sufijos como texto, «beta.10» iba antes que «beta.2» porque «1» va
+        // antes que «2»: a quien tuviera la 2 no se le habría ofrecido la 10.
+        assertTrue(ReleaseVersion.isNewer("1.3.0-beta.10", "1.3.0-beta.2"))
+        assertTrue(ReleaseVersion.isNewer("1.3.0-alpha.31", "1.3.0-alpha.9"))
+        assertFalse(ReleaseVersion.isNewer("1.3.0-alpha.2", "1.3.0-alpha.10"))
+    }
+
+    @Test
+    fun `el orden de los peldanos se mantiene`() {
+        assertTrue(ReleaseVersion.isNewer("1.3.0-beta.1", "1.3.0-alpha.99"))
+        assertTrue(ReleaseVersion.isNewer("1.3.0-rc.1", "1.3.0-beta.99"))
+        assertTrue(ReleaseVersion.isNewer("1.3.0", "1.3.0-rc.99"))
+    }
+
+    @Test
+    fun `un peldano sin numero va antes que el mismo numerado`() {
+        assertTrue(ReleaseVersion.isNewer("1.3.0-alpha.1", "1.3.0-alpha"))
+    }
 }
