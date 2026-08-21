@@ -91,9 +91,12 @@ private val SpanishLocale: Locale = Locale.forLanguageTag("es")
  * estas piezas desde Apariencia, y el resultado era que la pantalla no tenía una forma: cada
  * quien veía una distinta y ninguna estaba diseñada.
  *
- * El panel lateral se abre desde el avatar. Es la única vía a Configuración, Novedades, la
- * calculadora de GPA y el resto de herramientas, así que no puede desaparecer aunque no salga
- * en el marco.
+ * El panel lateral se abre desde el avatar, y solo lleva lo que no tiene otra puerta.
+ *
+ * Tenía dieciséis filas: seis repetían una pestaña de la barra de abajo, dos acababan en la
+ * misma pantalla y tres estaban apagadas esperando a existir. Un menú que repite el menú de al
+ * lado no ahorra un toque, solo obliga a leer el doble para descubrir que da igual cuál elijas.
+ * Quedan ocho, y ninguna se alcanza de otra forma.
  */
 @Composable
 fun HomeScreen(
@@ -111,8 +114,6 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onCalendarClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-    onDataClick: () -> Unit = {},
     onWhatsNewClick: () -> Unit = {},
     onResourcesClick: () -> Unit = {},
     onHelpClick: () -> Unit = {},
@@ -148,20 +149,14 @@ fun HomeScreen(
             HomeNavigationPanel(
                 displayName = summary.userName,
                 subjectsCount = summary.subjectsCount,
-                onClose = { scope.launch { drawerState.close() } },
-                onSemesterClick = { closeAndRun(onSeeAllSubjectsClick) },
                 onWorksClick = { closeAndRun(onOpenTemplatesClick) },
-                onTasksClick = { closeAndRun(onSeeTasksClick) },
-                onNotificationsClick = { closeAndRun(onNotificationsClick) },
-                onDataClick = { closeAndRun(onDataClick) },
-                onSettingsClick = { closeAndRun(onSettingsClick) },
-                onProfileClick = { closeAndRun(onProfileClick) },
-                onWhatsNewClick = { closeAndRun(onWhatsNewClick) },
-                onResourcesClick = { closeAndRun(onResourcesClick) },
-                onHelpClick = { closeAndRun(onHelpClick) },
-                onAboutClick = { closeAndRun(onAboutClick) },
                 onGpaClick = { closeAndRun(onGpaClick) },
                 onQuickNotesClick = { closeAndRun(onQuickNotesClick) },
+                onResourcesClick = { closeAndRun(onResourcesClick) },
+                onProfileClick = { closeAndRun(onProfileClick) },
+                onWhatsNewClick = { closeAndRun(onWhatsNewClick) },
+                onHelpClick = { closeAndRun(onHelpClick) },
+                onAboutClick = { closeAndRun(onAboutClick) },
                 onAiClick = { closeAndRun(onAiClick) },
                 onLabsClick = { closeAndRun(onLabsClick) }
             )

@@ -25,18 +25,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Help
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AutoAwesome
-import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Lightbulb
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Science
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -72,20 +69,14 @@ internal data class DrawerPanelAction(
 internal fun HomeNavigationPanel(
     displayName: String,
     subjectsCount: Int,
-    onClose: () -> Unit,
-    onSemesterClick: () -> Unit,
     onWorksClick: () -> Unit,
-    onTasksClick: () -> Unit,
-    onNotificationsClick: () -> Unit,
-    onDataClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    onWhatsNewClick: () -> Unit,
-    onResourcesClick: () -> Unit,
-    onHelpClick: () -> Unit,
-    onAboutClick: () -> Unit,
     onGpaClick: () -> Unit,
     onQuickNotesClick: () -> Unit,
+    onResourcesClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onWhatsNewClick: () -> Unit,
+    onHelpClick: () -> Unit,
+    onAboutClick: () -> Unit,
     onAiClick: () -> Unit,
     onLabsClick: () -> Unit
 ) {
@@ -117,21 +108,9 @@ internal fun HomeNavigationPanel(
      * en vez de cerrar el panel como si la app hubiera fallado.
      */
     val unfinished = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
-    val productivity = listOf(
-        DrawerPanelAction(
-            icon = Icons.AutoMirrored.Rounded.MenuBook,
-            title = "Materias",
-            subtitle = "Notas, cortes y promedios",
-            accent = MaterialTheme.colorScheme.primary,
-            onClick = onSemesterClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.EditNote,
-            title = "Tareas",
-            subtitle = "Entregas y pendientes",
-            accent = MaterialTheme.colorScheme.primary,
-            onClick = onTasksClick
-        ),
+
+    // Lo que se hace con la app y no vive en ninguna pestaña.
+    val tools = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Description,
             title = "Trabajos",
@@ -142,84 +121,46 @@ internal fun HomeNavigationPanel(
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Calculate,
-            title = "Calculadora GPA",
+            // «GPA» es el promedio del sistema estadounidense, sobre cuatro puntos. Esta
+            // calculadora trabaja con la escala que tengas puesta —cien, veinte, diez—, así
+            // que el nombre prometía otra cosa, y encima en un idioma que no es el de la app.
+            title = "Calculadora de notas",
             subtitle = "Simula y calcula tu promedio",
             accent = MaterialTheme.colorScheme.primary,
             onClick = onGpaClick
-        )
-    )
-    val preferences = listOf(
-        DrawerPanelAction(
-            icon = Icons.Rounded.Settings,
-            title = "Configuración",
-            subtitle = "Apariencia, recordatorios y módulos",
-            accent = LocalSectionColors.current.schedule,
-            onClick = onSettingsClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.Backup,
-            title = "Sincronización",
-            subtitle = "Respaldos, importar y exportar",
-            accent = LocalSectionColors.current.schedule,
-            onClick = onDataClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.School,
-            title = "Tu perfil",
-            subtitle = "Nombre, cuenta y meta",
-            accent = LocalSectionColors.current.schedule,
-            onClick = onProfileClick
-        )
-    )
-    val uniPlus = listOf(
-        DrawerPanelAction(
-            icon = Icons.Rounded.AutoAwesome,
-            title = "UniStack AI",
-            subtitle = "Tu asistente académico",
-            accent = MaterialTheme.colorScheme.primary,
-            badge = if (unfinished) null else "Pronto",
-            onClick = onAiClick.takeIf { unfinished }
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.History,
-            title = "Historial",
-            subtitle = "Avisos y actividad reciente",
-            accent = LocalSectionColors.current.onTrack,
-            onClick = onNotificationsClick
-        ),
-        DrawerPanelAction(
-            icon = Icons.Rounded.RocketLaunch,
-            title = "Novedades",
-            subtitle = "Qué trae cada versión",
-            accent = LocalSectionColors.current.schedule,
-            onClick = onWhatsNewClick
-        )
-    )
-    val extras = listOf(
-        DrawerPanelAction(
-            icon = Icons.AutoMirrored.Rounded.MenuBook,
-            title = "Recursos",
-            subtitle = "Biblioteca y enlaces útiles",
-            accent = LocalSectionColors.current.onTrack,
-            onClick = onResourcesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
             title = "Notas rápidas",
             subtitle = "Bloc de notas temporal",
-            accent = LocalSectionColors.current.onTrack,
+            accent = MaterialTheme.colorScheme.primary,
             onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
-            icon = Icons.Rounded.Science,
-            title = "Labs",
-            subtitle = "Funciones experimentales",
-            accent = LocalSectionColors.current.atRisk,
-            badge = if (unfinished) null else "Pronto",
-            onClick = onLabsClick.takeIf { unfinished }
+            icon = Icons.AutoMirrored.Rounded.MenuBook,
+            title = "Recursos",
+            subtitle = "Biblioteca y enlaces útiles",
+            accent = MaterialTheme.colorScheme.primary,
+            onClick = onResourcesClick
         )
     )
-    val support = listOf(
+
+    // Quién eres y qué es esto.
+    val about = listOf(
+        DrawerPanelAction(
+            icon = Icons.Rounded.Person,
+            title = "Perfil",
+            subtitle = "Nombre, cuenta y sesión",
+            accent = LocalSectionColors.current.schedule,
+            onClick = onProfileClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.RocketLaunch,
+            title = "Novedades",
+            subtitle = "Qué trae cada versión",
+            accent = LocalSectionColors.current.onTrack,
+            onClick = onWhatsNewClick
+        ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
             title = "Ayuda y soporte",
@@ -228,20 +169,41 @@ internal fun HomeNavigationPanel(
             onClick = onHelpClick
         ),
         DrawerPanelAction(
-            icon = Icons.Rounded.Lightbulb,
-            title = "Enviar sugerencia",
-            subtitle = "Cuéntanos cómo podemos mejorar",
-            accent = LocalSectionColors.current.atRisk,
-            onClick = onHelpClick
-        ),
-        DrawerPanelAction(
             icon = Icons.Rounded.Info,
             title = "Acerca de",
             subtitle = "Versión, datos y políticas",
-            accent = MaterialTheme.colorScheme.primary,
+            accent = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onAboutClick
         )
     )
+
+    /*
+     * Lo que todavía no existe no ocupa sitio en el panel de nadie.
+     *
+     * El asistente y Labs salían siempre, apagados y con su «Pronto»: dos de dieciséis filas
+     * que no llevaban a ninguna parte. Ahora solo aparecen donde se pueden probar. Sus rutas
+     * siguen registradas, así que el día que estén basta con quitar la condición.
+     */
+    val testing = if (unfinished) {
+        listOf(
+            DrawerPanelAction(
+                icon = Icons.Rounded.AutoAwesome,
+                title = "UniStack AI",
+                subtitle = "Tu asistente académico",
+                accent = MaterialTheme.colorScheme.primary,
+                onClick = onAiClick
+            ),
+            DrawerPanelAction(
+                icon = Icons.Rounded.Science,
+                title = "Labs",
+                subtitle = "Funciones experimentales",
+                accent = LocalSectionColors.current.atRisk,
+                onClick = onLabsClick
+            )
+        )
+    } else {
+        emptyList()
+    }
 
     ModalDrawerSheet(
         modifier = Modifier
@@ -272,16 +234,15 @@ internal fun HomeNavigationPanel(
                 item {
                     DrawerPanelHeader(
                         displayName = displayName,
-                        semesterChip = semesterChip,
-                        onSemesterClick = onSemesterClick
+                        semesterChip = semesterChip
                     )
                 }
                 item { DrawerPanelDivider() }
-                drawerSection("Productividad", productivity)
-                drawerSection("Preferencias y datos", preferences)
-                drawerSection("UNI+", uniPlus)
-                drawerSection("Extras", extras)
-                drawerSection("Soporte", support)
+                drawerSection("Herramientas", tools)
+                drawerSection("Tu cuenta y la app", about)
+                if (testing.isNotEmpty()) {
+                    drawerSection("En pruebas", testing)
+                }
                 item {
                     Text(
                         text = "v${BuildConfig.VERSION_NAME}",
@@ -308,8 +269,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.drawerSection(
 @Composable
 private fun DrawerPanelHeader(
     displayName: String,
-    semesterChip: String,
-    onSemesterClick: () -> Unit
+    semesterChip: String
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -351,8 +311,9 @@ private fun DrawerPanelHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            // La cuenta de materias es un dato, no un atajo: llevaba a la pestaña
+            // Académico, que está a un toque en la barra de abajo.
             Surface(
-                onClick = onSemesterClick,
                 shape = RoundedCornerShape(7.dp),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = if (LocalIsDarkTheme.current) 0.18f else 0.12f)
             ) {

@@ -314,16 +314,6 @@ fun MainNavGraph(
                                     launchSingleTop = true
                                 }
                             },
-                            onSettingsClick = {
-                                navController.navigate(AppRoutes.Settings) {
-                                    launchSingleTop = true
-                                }
-                            },
-                            onDataClick = {
-                                navController.navigate(AppRoutes.DataSettings) {
-                                    launchSingleTop = true
-                                }
-                            },
                             onWhatsNewClick = { navController.go(AppRoutes.WhatsNew) },
                             onResourcesClick = { navController.go(AppRoutes.Resources) },
                             onHelpClick = { navController.go(AppRoutes.Help) },
