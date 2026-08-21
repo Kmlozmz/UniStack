@@ -180,22 +180,23 @@ fun MainNavGraph(
         enabledModules = enabledModules
     )
 
-    val keyboardIsUp = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             /*
-             * Con el teclado arriba, la barra se va.
+             * La barra no se mueve nunca: vive pegada al borde de la pantalla.
              *
-             * La ventana usa `adjustResize`, así que al abrirse el teclado el `Scaffold`
-             * encoge y su barra inferior se montaba encima del teclado: ochenta píxeles de
-             * pestañas flotando sobre las letras, robando sitio a lo que se está escribiendo
-             * y sin servir para nada —nadie cambia de pestaña a media palabra—.
+             * Con `adjustResize` la ventana encogía al abrirse el teclado y el `Scaffold`
+             * recolocaba su barra **encima** del teclado. Esconderla tampoco valía: una barra
+             * de pestañas que aparece y desaparece deja de ser un punto fijo.
+             *
+             * La ventana ya no encoge (`adjustNothing` en el manifiesto): el teclado se pone
+             * por delante, la barra se queda donde estaba —tapada mientras escribes— y lo que
+             * se aparta es el contenido, con el hueco que se calcula abajo.
              */
-            if (showBottomBar && !keyboardIsUp) {
+            if (showBottomBar) {
                 UniStackBottomBar(
                     navController = navController,
                     items = bottomItems
@@ -203,11 +204,21 @@ fun MainNavGraph(
             }
         }
     ) { innerPadding ->
+        /*
+         * Abajo se reserva lo que tape más: la barra o el teclado.
+         *
+         * No se suman. Con el teclado arriba la barra queda por detrás de él, así que contar
+         * las dos alturas dejaría el contenido flotando ochenta píxeles más arriba de donde
+         * empieza el teclado.
+         */
+        val keyboardBottom = with(LocalDensity.current) {
+            WindowInsets.ime.getBottom(this).toDp()
+        }
         val contentPadding = PaddingValues(
             start = innerPadding.calculateStartPadding(LocalLayoutDirection.current),
             top = innerPadding.calculateTopPadding(),
             end = innerPadding.calculateEndPadding(LocalLayoutDirection.current),
-            bottom = innerPadding.calculateBottomPadding()
+            bottom = maxOf(innerPadding.calculateBottomPadding(), keyboardBottom)
         )
         Box(modifier = Modifier.fillMaxSize()) {
             /*

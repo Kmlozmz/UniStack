@@ -6,6 +6,7 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
@@ -74,14 +75,12 @@ internal fun SubjectCalculator(
     toast: String?,
     onToast: (String?) -> Unit
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
     var grades by rememberSaveable { mutableStateOf(listOf<Double>()) }
     var weights by rememberSaveable { mutableStateOf(listOf<Double>()) }
     var draft by rememberSaveable { mutableStateOf("0") }
     var slot by rememberSaveable { mutableStateOf(Slot.FIRST) }
     var pending by rememberSaveable { mutableStateOf<Double?>(null) }
     var fresh by rememberSaveable { mutableStateOf(true) }
-    var typingName by rememberSaveable { mutableStateOf(false) }
 
     val entries = grades.zip(weights) { g, w -> Evaluation(g, w) }
     val used = CalculatorMath.usedWeight(entries)
@@ -99,7 +98,6 @@ internal fun SubjectCalculator(
 
     CalculatorLayout(
         toast = toast,
-        typingName = typingName,
         onToastDismiss = { onToast(null) },
         entry = {
             Row(
@@ -178,14 +176,6 @@ internal fun SubjectCalculator(
             )
         }
     ) {
-        item("nombre") {
-            NameField(
-                value = name,
-                placeholder = "Nombre de la materia (opcional)",
-                onValueChange = { name = it },
-                onFocusChange = { typingName = it }
-            )
-        }
         item("resultado") {
             ResultCard(
                 label = "LLEVAS EN LA MATERIA",
@@ -265,14 +255,12 @@ internal fun SemesterCalculator(
     var grades by rememberSaveable { mutableStateOf(listOf<Double>()) }
     var credits by rememberSaveable { mutableStateOf(listOf<Double>()) }
     var fromApp by rememberSaveable { mutableStateOf(listOf<Boolean>()) }
-    var name by rememberSaveable { mutableStateOf("") }
     var draft by rememberSaveable { mutableStateOf("0") }
     var slot by rememberSaveable { mutableStateOf(Slot.FIRST) }
     var pending by rememberSaveable { mutableStateOf<Double?>(null) }
     var fresh by rememberSaveable { mutableStateOf(true) }
     var editing by rememberSaveable { mutableStateOf(-1) }
     var pickerOpen by rememberSaveable { mutableStateOf(false) }
-    var typingName by rememberSaveable { mutableStateOf(false) }
 
     val rows = names.indices.map { i ->
         SemesterSubject(names[i], grades[i], credits[i], fromApp.getOrElse(i) { false })
@@ -294,12 +282,10 @@ internal fun SemesterCalculator(
         pending = null
         fresh = true
         editing = -1
-        name = ""
     }
 
     CalculatorLayout(
         toast = toast,
-        typingName = typingName,
         onToastDismiss = { onToast(null) },
         entry = {
             Row(
@@ -340,13 +326,14 @@ internal fun SemesterCalculator(
                             draft = "0"
                             fresh = true
                         } else {
-                            val finalName = name.ifBlank { "Materia ${rows.size + 1}" }
+                            // Las tecleadas a mano se numeran solas. Un campo de nombre
+                            // suelto encima del teclado no llegaba a ser de nadie, y lo que
+                            // hace falta para no perderse es el orden, no el rótulo.
                             if (editing >= 0) {
-                                names = names.mapIndexed { i, old -> if (i == editing) finalName else old }
                                 grades = grades.mapIndexed { i, old -> if (i == editing) (pending ?: old) else old }
                                 credits = credits.mapIndexed { i, old -> if (i == editing) value else old }
                             } else {
-                                names = names + finalName
+                                names = names + "Materia ${rows.count { !it.fromApp } + 1}" 
                                 grades = grades + (pending ?: 0.0)
                                 credits = credits + value
                                 fromApp = fromApp + false
@@ -417,7 +404,6 @@ internal fun SemesterCalculator(
                 editing = editing == index,
                 onEdit = {
                     editing = index
-                    name = rows[index].name
                     slot = Slot.FIRST
                     draft = GradingScaleUtils.formatGrade(rows[index].grade, scale)
                     pending = rows[index].grade
@@ -432,14 +418,6 @@ internal fun SemesterCalculator(
                     if (editing == index) reset()
                     onToast(null)
                 }
-            )
-        }
-        item("nombre") {
-            NameField(
-                value = name,
-                placeholder = if (editing >= 0) "Nombre de la materia" else "Materia ${rows.size + 1}",
-                onValueChange = { name = it },
-                onFocusChange = { typingName = it }
             )
         }
         item("acciones") {
@@ -490,22 +468,31 @@ internal fun NeededCalculator(
     toast: String?,
     onToast: (String?) -> Unit
 ) {
-    var have by rememberSaveable { mutableStateOf("0") }
-    var done by rememberSaveable { mutableStateOf("0") }
-    var goal by rememberSaveable { mutableStateOf(GradingScaleUtils.formatGrade(defaultTarget, scale)) }
+    // Las tres arrancan en blanco.
+    //
+    // Traían un cero y la meta del perfil ya puestos, y con eso la tarjeta de abajo daba una
+    // respuesta antes de que nadie hubiera escrito nada: un número inventado que parecía tuyo.
+    var have by rememberSaveable { mutableStateOf("") }
+    var done by rememberSaveable { mutableStateOf("") }
+    var goal by rememberSaveable { mutableStateOf("") }
     var field by rememberSaveable { mutableStateOf(0) }
     var fresh by rememberSaveable { mutableStateOf(true) }
 
-    val haveValue = parseTyped(have) ?: 0.0
-    val doneValue = (parseTyped(done) ?: 0.0).coerceIn(0.0, 100.0)
-    val goalValue = parseTyped(goal) ?: 0.0
-    val remaining = 100.0 - doneValue
-    val needed = CalculatorMath.neededGrade(haveValue, doneValue, goalValue)
+    val haveValue = parseTyped(have)
+    val doneValue = parseTyped(done)?.coerceIn(0.0, 100.0)
+    val goalValue = parseTyped(goal)
+    val ready = haveValue != null && doneValue != null && goalValue != null
+    val remaining = 100.0 - (doneValue ?: 0.0)
+    val needed = if (ready) {
+        CalculatorMath.neededGrade(haveValue, doneValue, goalValue)
+    } else {
+        null
+    }
     val impossible = needed != null && needed > maxGrade
     val already = needed != null && needed <= 0.0
 
     val container = when {
-        needed == null -> MaterialTheme.colorScheme.surfaceContainer
+        !ready || needed == null -> MaterialTheme.colorScheme.surfaceContainer
         already -> LocalSectionColors.current.onTrackContainer
         impossible -> MaterialTheme.colorScheme.errorContainer
         else -> MaterialTheme.colorScheme.primaryContainer
@@ -515,7 +502,6 @@ internal fun NeededCalculator(
 
     CalculatorLayout(
         toast = toast,
-        typingName = false,
         onToastDismiss = { onToast(null) },
         entry = {},
         keypad = {
@@ -539,9 +525,9 @@ internal fun NeededCalculator(
                 },
                 onClear = {
                     when (field) {
-                        0 -> have = "0"
-                        1 -> done = "0"
-                        else -> goal = "0"
+                        0 -> have = ""
+                        1 -> done = ""
+                        else -> goal = ""
                     }
                     fresh = true
                     onToast(null)
@@ -561,13 +547,15 @@ internal fun NeededCalculator(
                         label = "Mi promedio ahora",
                         hint = "Lo que llevas en la materia",
                         value = have,
+                        suffix = "",
                         active = field == 0,
                         onClick = { field = 0; fresh = true; onToast(null) }
                     )
                     NeededField(
                         label = "Del curso ya evaluado",
                         hint = "Cuánto se ha calificado, en porcentaje",
-                        value = "$done %",
+                        value = done,
+                        suffix = " %",
                         active = field == 1,
                         onClick = { field = 1; fresh = true; onToast(null) }
                     )
@@ -575,6 +563,7 @@ internal fun NeededCalculator(
                         label = "Quiero acabar con",
                         hint = "La nota con la que quieres terminar",
                         value = goal,
+                        suffix = "",
                         active = field == 2,
                         onClick = { field = 2; fresh = true; onToast(null) },
                         last = true
@@ -591,10 +580,10 @@ internal fun NeededCalculator(
             ) {
                 HalfBox(
                     label = "HECHO",
-                    value = have,
+                    value = have.ifBlank { "—" },
                     // El mínimo sube a un tercio: con el 18 % la caja medía 60 dp y el
                     // rótulo salía cortado como «HEC».
-                    weight = (doneValue / 100.0).toFloat().coerceIn(0.34f, 0.72f),
+                    weight = ((doneValue ?: 50.0) / 100.0).toFloat().coerceIn(0.34f, 0.72f),
                     container = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
                 HalfBox(
@@ -614,8 +603,12 @@ internal fun NeededCalculator(
                     .padding(top = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                CalculatorFootnote("${percentText(doneValue)} % evaluado")
-                CalculatorFootnote("${percentText(remaining)} % por evaluar")
+                CalculatorFootnote(
+                    if (doneValue == null) "sin evaluar" else "${percentText(doneValue)} % evaluado"
+                )
+                CalculatorFootnote(
+                    if (doneValue == null) "sin rellenar" else "${percentText(remaining)} % por evaluar"
+                )
             }
         }
         item("veredicto") {
@@ -627,6 +620,7 @@ internal fun NeededCalculator(
             ) {
                 Text(
                     text = when {
+                        !ready -> "Rellena los tres datos de arriba y aquí sale la nota que te hace falta."
                         needed == null -> "Con el 100 % evaluado ya no queda nota que sacar: lo que llevas es lo que hay."
                         already -> "Ya la tienes: aunque saques cero en lo que falta, acabas con tu meta o por encima."
                         impossible -> "Necesitarías más de ${GradingScaleUtils.formatGrade(maxGrade, scale)}, y eso no existe. " +
@@ -653,17 +647,6 @@ internal fun NeededCalculator(
 private fun CalculatorLayout(
     toast: String?,
     onToastDismiss: () -> Unit,
-    /**
-     * Con el nombre en edición se esconden **las teclas**, no la fila de casillas.
-     *
-     * Los dos teclados no caben a la vez: la ventana encoge al subir el de texto, y con las
-     * dos rejillas puestas la tarjeta del resultado quedaba aplastada contra la cabecera.
-     *
-     * Lo que se va son las teclas —que no hacen falta mientras se escribe un nombre— y se
-     * queda la fila de casillas, para no perder de vista dónde estabas. Escondiéndolo todo,
-     * la pantalla se vaciaba de golpe y parecía que se hubiera roto algo.
-     */
-    typingName: Boolean,
     entry: @Composable () -> Unit,
     keypad: @Composable () -> Unit,
     content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit
@@ -691,13 +674,11 @@ private fun CalculatorLayout(
             ),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            if (toast != null && !typingName) {
+            if (toast != null) {
                 CalculatorToast(message = toast, onDismiss = onToastDismiss)
             }
             entry()
-            if (!typingName) {
-                keypad()
-            }
+            keypad()
         }
     }
 }
@@ -880,11 +861,19 @@ private fun SemesterRow(
     }
 }
 
+/**
+ * Una de las tres cosas que hay que rellenar.
+ *
+ * La caja de la derecha lleva contorno y, vacía, un guion en gris: sin eso, tres números
+ * puestos parecían un resumen de algo y no tres huecos que rellenar. La activa se rellena y
+ * saca un cursor, que es lo que dice dónde va a caer lo que se teclee abajo.
+ */
 @Composable
 private fun NeededField(
     label: String,
     hint: String,
     value: String,
+    suffix: String,
     active: Boolean,
     onClick: () -> Unit,
     last: Boolean = false
@@ -919,16 +908,41 @@ private fun NeededField(
                 )
             }
             Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                shape = MaterialTheme.shapes.small,
+                color = if (active) MaterialTheme.colorScheme.primary else Color.Transparent,
+                contentColor = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                border = if (active) {
+                    null
+                } else {
+                    androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)
+                }
             ) {
-                Text(
-                    text = value,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                Row(
+                    modifier = Modifier
+                        .widthIn(min = 78.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Text(
+                        text = if (value.isBlank()) "—" else value + suffix,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = when {
+                            active -> MaterialTheme.colorScheme.onPrimary
+                            value.isBlank() -> MaterialTheme.colorScheme.outline
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                    if (active) {
+                        Spacer(Modifier.width(3.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(width = 2.dp, height = 19.dp)
+                                .background(MaterialTheme.colorScheme.onPrimary)
+                        )
+                    }
+                }
             }
         }
         if (!last) {
