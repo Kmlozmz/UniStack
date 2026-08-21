@@ -142,10 +142,23 @@ internal fun HomeNavigationPanel(
             subtitle = "Biblioteca y enlaces útiles",
             accent = MaterialTheme.colorScheme.primary,
             onClick = onResourcesClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.AutoAwesome,
+            title = "UniStack AI",
+            subtitle = "Tu asistente académico",
+            accent = MaterialTheme.colorScheme.primary,
+            badge = if (unfinished) null else "Pronto",
+            onClick = onAiClick.takeIf { unfinished }
         )
     )
 
     // Quién eres y qué es esto.
+    //
+    // Labs cierra el grupo, y UniStack AI cierra el de arriba: las dos apagadas y con su
+    // etiqueta, como Trabajos. Estuvieron un rato saliendo solo en dev y alpha —la idea era
+    // no ocupar fila con lo que no existe— y así lo que se pierde es el aviso de que vienen.
+    // Una fila apagada que dice «Pronto» informa; una fila que no está, no.
     val about = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Person,
@@ -174,36 +187,16 @@ internal fun HomeNavigationPanel(
             subtitle = "Versión, datos y políticas",
             accent = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onAboutClick
+        ),
+        DrawerPanelAction(
+            icon = Icons.Rounded.Science,
+            title = "Labs",
+            subtitle = "Funciones experimentales",
+            accent = LocalSectionColors.current.atRisk,
+            badge = if (unfinished) null else "Pronto",
+            onClick = onLabsClick.takeIf { unfinished }
         )
     )
-
-    /*
-     * Lo que todavía no existe no ocupa sitio en el panel de nadie.
-     *
-     * El asistente y Labs salían siempre, apagados y con su «Pronto»: dos de dieciséis filas
-     * que no llevaban a ninguna parte. Ahora solo aparecen donde se pueden probar. Sus rutas
-     * siguen registradas, así que el día que estén basta con quitar la condición.
-     */
-    val testing = if (unfinished) {
-        listOf(
-            DrawerPanelAction(
-                icon = Icons.Rounded.AutoAwesome,
-                title = "UniStack AI",
-                subtitle = "Tu asistente académico",
-                accent = MaterialTheme.colorScheme.primary,
-                onClick = onAiClick
-            ),
-            DrawerPanelAction(
-                icon = Icons.Rounded.Science,
-                title = "Labs",
-                subtitle = "Funciones experimentales",
-                accent = LocalSectionColors.current.atRisk,
-                onClick = onLabsClick
-            )
-        )
-    } else {
-        emptyList()
-    }
 
     ModalDrawerSheet(
         modifier = Modifier
@@ -240,9 +233,6 @@ internal fun HomeNavigationPanel(
                 item { DrawerPanelDivider() }
                 drawerSection("Herramientas", tools)
                 drawerSection("Tu cuenta y la app", about)
-                if (testing.isNotEmpty()) {
-                    drawerSection("En pruebas", testing)
-                }
                 item {
                     Text(
                         text = "v${BuildConfig.VERSION_NAME}",
