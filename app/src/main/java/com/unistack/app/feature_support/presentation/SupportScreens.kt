@@ -39,11 +39,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ExpandLess
 import androidx.compose.material.icons.rounded.ExpandMore
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -601,7 +599,6 @@ fun HelpScreen(
     // en grupos, el índice ya no identifica a ninguna.
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
     var composing by rememberSaveable { mutableStateOf(false) }
-    var opened by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     SupportScaffold(
         title = "Ayuda y soporte",
@@ -691,29 +688,6 @@ fun HelpScreen(
         }
     }
 
-    opened?.let { wasOpened ->
-        AlertDialog(
-            onDismissRequest = { opened = null },
-            title = { Text(if (wasOpened) "Ya está copiado" else "No se pudo abrir Telegram") },
-            text = {
-                Text(
-                    if (wasOpened) {
-                        "Pega el mensaje en el tema que se abrió y envíalo."
-                    } else {
-                        // El ticket ya está en el portapapeles, así que el trabajo no se
-                        // pierde aunque no haya podido abrirse nada.
-                        "El mensaje quedó copiado. Busca el grupo @${SupportChannel.HANDLE} en " +
-                            "Telegram y pégalo ahí."
-                    }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { opened = null }) { Text("Entendido") }
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        )
-    }
-
     if (composing) {
         val ticketContext = TicketContext(
             appVersion = BuildConfig.VERSION_NAME,
@@ -735,8 +709,9 @@ fun HelpScreen(
                 scope.launch {
                     clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("UniStack", ticket)))
                 }
-                opened = openSupportTopic(context, kind)
-                composing = false
+                // La hoja se queda abierta enseñando qué pasó; devolverle si Telegram llegó a
+                // abrirse es lo que le deja escribir el paso que falta.
+                openSupportTopic(context, kind)
             }
         )
     }
