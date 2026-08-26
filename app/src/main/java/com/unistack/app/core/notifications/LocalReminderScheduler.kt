@@ -190,7 +190,7 @@ class LocalReminderScheduler(private val context: Context) {
                 requestCode = DAILY_DIGEST_REQUEST_CODE,
                 triggerAtMillis = nextTriggerAt(hour = 7, minute = 30, daysFromNow = 1),
                 subText = "Resumen",
-                title = "Tu día en UniStack",
+                title = "¡Buenos días!",
                 body = smartDigestBody(currentProfile, tasks, works, subjects),
                 targetRoute = AppRoutes.Home,
                 channelId = CHANNEL_ID_DIGEST
@@ -616,7 +616,7 @@ class LocalReminderScheduler(private val context: Context) {
             SubjectHintKind.UNKNOWN_WEIGHTS -> "Faltan porcentajes"
             SubjectHintKind.NO_GRADES -> "Aún sin notas"
             SubjectHintKind.BELOW_PASSING -> "Vas por debajo de la nota mínima"
-            SubjectHintKind.TARGET_UNREACHABLE -> "Tu meta se complicó"
+            SubjectHintKind.TARGET_UNREACHABLE -> "Tu meta está en riesgo"
             SubjectHintKind.BELOW_TARGET -> "Vas por debajo de tu meta"
         }
     }
