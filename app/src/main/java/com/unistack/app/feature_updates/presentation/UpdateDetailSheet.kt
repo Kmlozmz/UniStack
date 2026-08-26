@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.SystemProgress
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -83,22 +83,19 @@ fun UpdateDetailSheet(
             if (state is UpdateState.Downloading) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val unknown = state.progress == UpdateState.UNKNOWN_PROGRESS
-                    if (unknown) {
-                        LinearWavyProgressIndicator(
-                            modifier = Modifier
-                                .fillMaxWidth()
+                    SystemProgress(
+                        percent = state.progress.takeIf { !unknown },
+                        // La altura fija solo tiene sentido con la barra: el indicador de
+                        // espera es una forma que muta y recortarla a ocho píxeles la
+                        // decapita.
+                        modifier = if (unknown) {
+                            Modifier
+                        } else {
+                            Modifier
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                        )
-                    } else {
-                        LinearWavyProgressIndicator(
-                            progress = { state.progress / 100f },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                        )
-                    }
+                        }
+                    )
                     Text(
                         if (unknown) "Descargando..." else "${state.progress}%",
                         style = MaterialTheme.typography.labelMedium,

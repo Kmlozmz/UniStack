@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.background
@@ -81,10 +82,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_grades.presentation.SubjectMark
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
+import com.unistack.app.core.design.components.UniTimePickerDialog
+import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
@@ -97,6 +96,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.UniStackDatePickerColors
@@ -374,7 +375,7 @@ fun AddTaskScreen(
     )
 
     if (showDatePicker) {
-        MonthCalendarDialog(
+        UniDatePickerDialog(
             selectedDate = parsedDueDate,
             onDateSelected = { selectedDate ->
                 dueDate = TaskDateUtils.formatInput(selectedDate)
@@ -385,19 +386,21 @@ fun AddTaskScreen(
         )
     }
     if (showTimePicker) {
-        TimePickerSheet(
+        UniTimePickerDialog(
             selectedTime = parsedDueTime,
             onTimeSelected = { selectedTime ->
                 dueTime = TaskDateUtils.formatTimeInput(selectedTime)
                 error = null
-                showTimePicker = false
             },
-            onClearTime = {
-                dueTime = ""
-                error = null
-                showTimePicker = false
-            },
-            onDismiss = { showTimePicker = false }
+            onDismiss = { showTimePicker = false },
+            title = "Hora límite",
+            extraAction = {
+                TextButton(onClick = {
+                    dueTime = ""
+                    error = null
+                    showTimePicker = false
+                }) { Text("Dejar sin hora") }
+            }
         )
     }
     if (showDeleteConfirmation) {
@@ -659,9 +662,11 @@ private fun TaskHeader(
             Spacer(modifier = Modifier.weight(1f))
             if (onDeleteClick != null || onDuplicateClick != null || onCompleteClick != null) {
                 Box {
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "Más acciones")
-                    }
+                    UniIconButton(
+                        icon = Icons.Rounded.MoreVert,
+                        contentDescription = "Más acciones",
+                        onClick = { menuExpanded = true }
+                    )
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                         onCompleteClick?.let { action ->
                             DropdownMenuItem(
@@ -989,139 +994,7 @@ private fun BasicInfoRowShell(
     }
 }
 
-@Composable
-private fun MonthCalendarDialog(
-    selectedDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val today = TaskDateUtils.today()
-    val minMonth = YearMonth.from(today)
-    val maxMonth = minMonth.plusMonths(18)
-    var visibleMonth by androidx.compose.runtime.remember(selectedDate) {
-        mutableStateOf(YearMonth.from(selectedDate ?: today))
-    }
-    val canGoBack = visibleMonth > minMonth
-    val canGoForward = visibleMonth < maxMonth
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Seleccionar fecha",
-                color = UniStackDatePickerColors.Text,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { visibleMonth = visibleMonth.minusMonths(1) },
-                        enabled = canGoBack
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronLeft,
-                            contentDescription = "Mes anterior",
-                            tint = UniStackDatePickerColors.Muted
-                        )
-                    }
-                    Text(
-                        text = visibleMonth.month.getDisplayName(TextStyle.FULL, Locale.forLanguageTag("es-CO"))
-                            .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = UniStackDatePickerColors.Text,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    IconButton(
-                        onClick = { visibleMonth = visibleMonth.plusMonths(1) },
-                        enabled = canGoForward
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = "Mes siguiente",
-                            tint = UniStackDatePickerColors.Muted
-                        )
-                    }
-                }
-                CalendarMonthGrid(
-                    month = visibleMonth,
-                    selectedDate = selectedDate,
-                    minDate = today,
-                    maxDate = maxMonth.atEndOfMonth(),
-                    onDateSelected = onDateSelected
-                )
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = "Cancelar",
-                    color = UniStackDatePickerColors.Accent,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        },
-        containerColor = UniStackDatePickerColors.Surface,
-        shape = MaterialTheme.shapes.large
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun TimePickerSheet(
-    selectedTime: LocalTime?,
-    onTimeSelected: (LocalTime) -> Unit,
-    onClearTime: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val initial = selectedTime ?: LocalTime.now().withSecond(0).withNano(0)
-    val pickerState = rememberTimePickerState(
-        initialHour = initial.hour,
-        initialMinute = initial.minute,
-        is24Hour = true
-    )
-
-    // El mismo diálogo que pone hora a una materia en el horario.
-    //
-    // Aquí era una hoja que subía desde abajo con el reloj dentro, y en el horario un
-    // diálogo centrado: la misma pregunta contestada de dos formas distintas en la misma
-    // app. Se queda la del horario, y «Dejar sin hora» va debajo del reloj porque es una
-    // salida del formulario, no la acción principal.
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Hora límite") },
-        text = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TimePicker(state = pickerState)
-                TextButton(onClick = onClearTime) {
-                    Text("Dejar sin hora")
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onTimeSelected(LocalTime.of(pickerState.hour, pickerState.minute)) }
-            ) {
-                Text("Aceptar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        },
-        shape = MaterialTheme.shapes.extraLarge
-    )
-}
 
 @Composable
 private fun LinkedGradeCard(
@@ -1292,78 +1165,6 @@ private fun TaskGradingChoice?.toInitialGradingStatus(): TaskGradingStatus {
     }
 }
 
-@Composable
-private fun CalendarMonthGrid(
-    month: YearMonth,
-    selectedDate: LocalDate?,
-    minDate: LocalDate,
-    maxDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit
-) {
-    val firstDay = month.atDay(1)
-    val leadingEmptyCells = firstDay.dayOfWeek.value - 1
-    val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
-    val cells = List(leadingEmptyCells) { null } + days
-    val weeks = cells.chunked(7)
-    val dayLabels = DayLabels.short
-
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            dayLabels.forEach { label ->
-                Text(
-                    text = label,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    color = UniStackDatePickerColors.Muted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-        weeks.forEach { week ->
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                (0 until 7).forEach { index ->
-                    val date = week.getOrNull(index)
-                    val enabledDate = date?.takeUnless { it.isBefore(minDate) || it.isAfter(maxDate) }
-                    val enabled = enabledDate != null
-                    val selected = date != null && date == selectedDate
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 34.dp)
-                            .then(
-                                if (enabledDate != null) {
-                                    Modifier.bounceClick { onDateSelected(enabledDate) }
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .background(
-                                color = when {
-                                    selected -> UniStackDatePickerColors.Accent
-                                    enabled -> UniStackDatePickerColors.DayCell
-                                    else -> Color.Transparent
-                                },
-                                shape = MaterialTheme.shapes.small
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = date?.dayOfMonth?.toString().orEmpty(),
-                            color = when {
-                                selected -> MaterialTheme.colorScheme.onPrimary
-                                enabled -> UniStackDatePickerColors.Text
-                                else -> UniStackDatePickerColors.Muted.copy(alpha = 0.35f)
-                            },
-                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1875,33 +1676,14 @@ private fun PrioritySegmentedControl(
 ) {
     // Un grupo conectado, el mismo que eligen Horario/Calendario o Materias/Tareas. Era una
     // pastilla dentro de otra pastilla: fondo teñido, contorno y un relleno flotando dentro.
-    val options = TaskDifficulty.entries
-    ButtonGroup(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-    ) {
-        options.forEachIndexed { index, priority ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isSelected = selected == priority
-            val shapes = when (index) {
-                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-            }
-            ToggleButton(
-                checked = isSelected,
-                onCheckedChange = { onSelected(priority) },
-                shapes = shapes,
-                interactionSource = interactionSource,
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 50.dp)
-                    .animateWidth(interactionSource)
-            ) {
-                Text(priority.label(), maxLines = 1, softWrap = false)
-            }
-        }
-    }
+    UniSegmentedControl(
+        selected = selected,
+        options = TaskDifficulty.entries.map {
+            UniSegmentedOption(value = it, label = it.label())
+        },
+        onSelected = onSelected,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable

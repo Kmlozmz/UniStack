@@ -1,5 +1,6 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.background
@@ -180,13 +181,11 @@ private fun FullScheduleHeader(
             .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onDismiss) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Cerrar horario completo",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Cerrar horario completo",
+            onClick = onDismiss
+        )
         Column(Modifier.weight(1f)) {
             Text(
                 "Horario completo",
@@ -200,20 +199,16 @@ private fun FullScheduleHeader(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        IconButton(onClick = onPreviousWeek) {
-            Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                contentDescription = "Semana anterior",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        IconButton(onClick = onNextWeek) {
-            Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = "Semana siguiente",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+            contentDescription = "Semana anterior",
+            onClick = onPreviousWeek
+        )
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = "Semana siguiente",
+            onClick = onNextWeek
+        )
     }
 }
 

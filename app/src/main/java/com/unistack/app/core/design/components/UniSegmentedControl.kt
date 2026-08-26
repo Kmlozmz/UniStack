@@ -5,6 +5,7 @@ package com.unistack.app.core.design.components
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.unistack.app.core.utils.performSafely
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -25,6 +27,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -36,8 +40,24 @@ data class UniSegmentedOption<T>(
      * en las listas de preferencias el rótulo ya dice todo lo que hay que decir.
      */
     val icon: ImageVector? = null,
+    /**
+     * Un punto de color delante del rótulo, en vez de un icono.
+     *
+     * Lo usan los selectores de prioridad y de estado, donde lo que distingue a una opción de
+     * otra es el color con el que esa prioridad se pinta en el resto de la pantalla; un icono
+     * ahí tendría que inventarse un símbolo para «media» que no existe.
+     */
+    val dotColor: Color? = null,
     /** Un número al lado del rótulo, si esa vista tiene algo pendiente que contar. */
-    val badge: Int? = null
+    val badge: Int? = null,
+    /**
+     * Cuánto ancho se lleva este segmento respecto a los demás.
+     *
+     * Por defecto todos valen igual. Se sube cuando un rótulo es mucho más largo que sus
+     * vecinos —«Otro» junto a «2», «3» y «4»— y con el reparto a partes iguales quedaría
+     * apretado contra sus propios bordes.
+     */
+    val weight: Float = 1f
 )
 
 /**
@@ -91,13 +111,22 @@ fun <T> UniSegmentedControl(
                 shapes = shapes,
                 interactionSource = interactionSource,
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(option.weight)
                     .defaultMinSize(minHeight = 48.dp)
                     .animateWidth(interactionSource)
             ) {
                 if (option.icon != null) {
                     Icon(option.icon, contentDescription = null, modifier = Modifier.size(ToggleButtonDefaults.IconSize))
                     Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                }
+                if (option.dotColor != null) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(option.dotColor)
+                    )
+                    Spacer(Modifier.size(5.dp))
                 }
                 // Sin ajuste de línea: mientras `animateWidth` estrecha al vecino, el
                 // rótulo cabría en menos de lo que mide y `Text` lo partiría en dos.

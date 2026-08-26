@@ -3,7 +3,6 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,6 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.Icon
@@ -26,11 +27,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.SectionHeader
+import com.unistack.app.core.design.components.UniConfirmDeleteDialog
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSelectionToolbar
+import com.unistack.app.core.design.components.UniChoiceRow
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -55,12 +61,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.ButtonGroup
-import androidx.compose.material3.ToggleButtonDefaults
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.OutlinedToggleButton
-import androidx.compose.foundation.layout.defaultMinSize
 private val SpanishLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
 
 @Composable
@@ -90,6 +91,11 @@ fun GradesScreen(
         // En curso / En riesgo / Cerradas. Sale de lo evaluado y del pronóstico, así que son
         // estados comprobables y no etiquetas que alguien tenga que mantener a mano.
         var filter by rememberSaveable { mutableStateOf(SubjectFilter.ACTIVE) }
+        // Los identificadores de lo marcado, no las materias enteras: `rememberSaveable` guarda
+        // lo que quepa en un Bundle, y una lista de textos cabe.
+        var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
+        var pendingBulkDelete by rememberSaveable { mutableStateOf(false) }
+        val selecting = selectedIds.isNotEmpty()
         val calculations = subjects.associateWith(viewModel::calculationFor)
         val query = nameQuery.trim().lowercase(SpanishLocale)
         val visible = subjects.filter { subject ->
@@ -108,7 +114,7 @@ fun GradesScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 20.dp,
-                top = if (embedded) 4.dp else 58.dp,
+                top = if (embedded) 10.dp else 58.dp,
                 end = 20.dp,
                 bottom = scrollBottomRoom + anchoredButtonRoom
             ),
@@ -124,61 +130,21 @@ fun GradesScreen(
             }
             item("filtros") {
                 /*
-                 * Los filtros, con la interacción entre vecinos.
+                 * Los filtros van con contorno, no rellenos.
                  *
-                 * `animateWidth` es el efecto: al pulsar uno se estira y los de al lado se
-                 * comprimen para dejarle sitio.
-                 *
-                 * **El texto va con `softWrap = false`, y ese es el arreglo.** Mientras dura
-                 * el estirado, el botón mide menos de lo que ocupa su rótulo por un instante,
-                 * y `Text` hacía lo que hace siempre en ese caso: partirlo en dos líneas. Se
-                 * veía «Pendient / e» durante la pulsación. Sin ajuste de línea no hay dónde
-                 * partirlo, así que la palabra aguanta entera hasta que el botón recupera su
-                 * ancho.
+                 * Justo encima está el selector de Materias/Tareas, que sí va relleno porque
+                 * cambia lo que hay debajo. Estos no: acotan la lista que ya estás mirando.
+                 * Con los dos rellenos y uno pegado al otro, la pantalla enseñaba dos barras
+                 * moradas seguidas y no se veía cuál mandaba sobre cuál.
                  */
-                ButtonGroup(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectFilter.entries.forEach { option ->
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val isSelected = filter == option
-                        OutlinedToggleButton(
-                            checked = isSelected,
-                            onCheckedChange = { filter = option },
-                            interactionSource = interactionSource,
-                            /*
-                             * Marcado, el contenedor del acento.
-                             *
-                             * Llevaba el contenedor secundario, que en esta paleta es un gris
-                             * violáceo: puesto debajo del selector de arriba —relleno con el
-                             * acento a plena fuerza— no se leía como elegido, se leía como
-                             * apagado. Con el contenedor del acento pertenece a la misma
-                             * familia sin competir con él.
-                             */
-                            colors = ToggleButtonDefaults.outlinedToggleButtonColors(
-                                checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                            modifier = Modifier
-                                .defaultMinSize(minHeight = 38.dp)
-                                .animateWidth(interactionSource)
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.size(6.dp))
-                            }
-                            Text(
-                                text = option.label,
-                                style = MaterialTheme.typography.labelLarge,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-                }
+                UniChoiceRow(
+                    selected = filter,
+                    options = SubjectFilter.entries.map {
+                        UniSegmentedOption(value = it, label = it.label)
+                    },
+                    onSelected = { filter = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
             if (subjects.isEmpty()) {
                 item { EmptyGradesCard() }
@@ -201,14 +167,81 @@ fun GradesScreen(
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,
-                        onClick = { onSubjectClick(subject.id) },
+                        onClick = {
+                            // Con una selección abierta, tocar marca y desmarca en vez de
+                            // entrar: entrar a la materia a mitad de selecciónar cinco es
+                            // perder las cinco.
+                            if (selecting) {
+                                selectedIds = if (subject.id in selectedIds) {
+                                    selectedIds - subject.id
+                                } else {
+                                    selectedIds + subject.id
+                                }
+                            } else {
+                                onSubjectClick(subject.id)
+                            }
+                        },
+                        onLongClick = {
+                            selectedIds = if (subject.id in selectedIds) {
+                                selectedIds - subject.id
+                            } else {
+                                selectedIds + subject.id
+                            }
+                        },
+                        selected = subject.id in selectedIds,
                         classSession = classSessions.firstOrNull { it.subjectId == subject.id }
                     )
                 }
             }
         }
 
-        if (!embedded) {
+        /*
+         * La barra de selección tapa el botón de crear, y eso es lo que se quiere.
+         *
+         * Mientras hay materias marcadas, crear una nueva no es lo que vas a hacer: lo que vas
+         * a hacer es algo con las que marcaste. Cuando desmarcas la última, el botón vuelve.
+         */
+        UniSelectionToolbar(
+            selectedCount = selectedIds.size,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 20.dp)
+        ) {
+            UniIconButton(
+                icon = Icons.Rounded.Close,
+                contentDescription = "Quitar la selección",
+                onClick = { selectedIds = emptyList() }
+            )
+            UniIconButton(
+                icon = Icons.Rounded.SelectAll,
+                contentDescription = "Marcar todas las de la lista",
+                onClick = { selectedIds = visible.map { it.id } }
+            )
+            UniIconButton(
+                icon = Icons.Rounded.Delete,
+                contentDescription = if (selectedIds.size == 1) "Eliminar la materia" else "Eliminar las materias",
+                onClick = { pendingBulkDelete = true }
+            )
+        }
+
+        if (pendingBulkDelete) {
+            UniConfirmDeleteDialog(
+                title = if (selectedIds.size == 1) "¿Eliminar la materia?" else "¿Eliminar ${selectedIds.size} materias?",
+                body = if (selectedIds.size == 1) {
+                    "Se borran también sus notas. No se puede deshacer."
+                } else {
+                    "Se borran también todas sus notas. No se puede deshacer."
+                },
+                onConfirm = {
+                    selectedIds.forEach(viewModel::deleteSubject)
+                    selectedIds = emptyList()
+                    pendingBulkDelete = false
+                },
+                onDismiss = { pendingBulkDelete = false }
+            )
+        }
+
+        if (!embedded && !selecting) {
             // Fuera de la pestaña de Académico esta pantalla no tiene menú de crear, así que
             // conserva su botón anclado. Dentro sí lo hay, y dos formas de crear lo mismo a
             // diez píxeles una de otra se tapaban entre ellas.
@@ -248,19 +281,7 @@ private fun EmptyGradesCard() {
 
 @Composable
 private fun FeatureHeader(title: String, subtitle: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = subtitle,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
+    SectionHeader(title = title, subtitle = subtitle)
 }
 
 @Composable

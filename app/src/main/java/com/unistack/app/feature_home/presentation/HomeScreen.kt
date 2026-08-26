@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.components.UniStackFabMenu
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -329,13 +330,11 @@ private fun HomeHeader(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 contentAlignment = Alignment.TopEnd
             ) {
-                androidx.compose.material3.IconButton(onClick = onNotificationsClick) {
-                    Icon(
-                        Icons.Rounded.NotificationsNone,
-                        contentDescription = "Avisos",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                UniIconButton(
+    icon = Icons.Rounded.NotificationsNone,
+    contentDescription = "Avisos",
+    onClick = onNotificationsClick
+)
                 if (hasUnread) {
                     Box(
                         modifier = Modifier

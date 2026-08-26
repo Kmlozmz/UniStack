@@ -1,5 +1,9 @@
 package com.unistack.app.core.navigation
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.offset
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.ime
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedContentScope
@@ -29,6 +33,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.NavigationItemIconPosition
+import androidx.compose.material3.ShortNavigationBarArrangement
+import androidx.compose.material3.ShortNavigationBarItem
+import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -1220,164 +1228,85 @@ private fun UniStackBottomBarContent(
     modifier: Modifier = Modifier
 ) {
     val appearance = LocalAppearancePreferences.current
-    val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
-    val navigationBarBottom = with(density) { WindowInsets.navigationBars.getBottom(this).toDp() }
     val showLabels = appearance.bottomBarStyle == BottomBarStyle.LABELED && items.size <= 5
+
     /*
-     * Una sola barra: acoplada al borde, a todo lo ancho y con las esquinas rectas.
+     * La barra de navegación de Material 3 Expressive.
      *
-     * Hubo una variante flotante —píldora separada de los bordes, con sombra y el contenido
-     * pasando por debajo— y se retiró: en UniStack quedaba como un elemento suelto encima de
-     * la app, y obligaba a que cada pantalla reservara a mano el hueco que tapaba.
+     * Antes era una `Surface` con una fila dentro y un item escrito a mano por cada pestaña:
+     * la pastilla del seleccionado, su animación de entrada y la altura de la barra estaban
+     * calculadas aquí a base de números —80dp con etiqueta, 64dp sin ella—. `ShortNavigationBar`
+     * trae todo eso, además del comportamiento con lector de pantalla y del hueco de la barra
+     * del sistema, que también se restaba a mano.
      *
-     * La altura sale del spec: 80dp con etiqueta, 64dp solo con iconos.
+     * Sigue acoplada al borde y a todo lo ancho: hubo una variante flotante y se retiró porque
+     * en UniStack quedaba como un elemento suelto encima de la app.
+     *
+     * **Icono arriba y reparto a partes iguales.** Con el icono al lado del rótulo, cinco
+     * pestañas no caben en un teléfono estrecho sin cortar «Académico»; en columna, cada una
+     * ocupa su quinto y el rótulo cabe entero.
      */
-    val barHeight = if (showLabels) 80.dp else 64.dp
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(barHeight + navigationBarBottom),
-        shape = RectangleShape,
-        // Flotando hace falta más contraste y una sombra de verdad. El color de barra sale
-        // de una superficie elevada, apenas un par de tonos por encima del fondo: acoplada
-        // basta, porque el borde de la pantalla ya la separa, pero suspendida sobre el
-        // contenido se confundía con lo que pasaba por detrás y se veía sucia.
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 2.dp,
-        shadowElevation = 0.dp,
-        // Sin contorno propio: el borde de la pantalla ya la delimita.
-        border = null
+    ShortNavigationBar(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        arrangement = ShortNavigationBarArrangement.EqualWeight
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 4.dp)
-                .padding(bottom = navigationBarBottom),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                /*
-                 * Un toque, un golpecito.
-                 *
-                 * Cambiar de sección es de lo poco que se hace sin mirar, con el pulgar y de
-                 * memoria: el aviso al tacto confirma que se dio en el sitio sin tener que
-                 * comprobarlo con la vista. Volver a tocar la sección en la que ya estás no
-                 * vibra, porque ahí no ha pasado nada que confirmar.
-                 */
-                val selected = selectedRoute == item.route
-                UniStackBottomBarItem(
-                    item = item,
-                    selected = selected,
-                    showLabel = showLabels,
-                    onClick = {
-                        if (!selected) haptics.performSafely(HapticFeedbackType.ContextClick)
-                        onNavigate(item.route)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun UniStackBottomBarItem(
-    item: BottomNavItem,
-    selected: Boolean,
-    showLabel: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val motionDuration = (180 * LocalMotionDurationScale.current).roundToInt().coerceAtLeast(0)
-
-    /* Un solo indicador, la píldora de 64x32 del spec. Antes había dos a la vez: un
-       rectángulo redondeado detrás del icono y además un subrayado suelto debajo de la
-       etiqueta, así que el elemento activo se marcaba por duplicado.
-
-       Usa secondaryContainer, que es lo que pide el spec. Durante mucho tiempo salió del
-       contenedor del acento porque "secondary" era un azul con identidad propia y la píldora
-       quedaba azul bajo un acento violeta; con el esquema generado desde la semilla, el
-       secundario ya es familia del primario y el motivo desapareció. */
-    val indicatorColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-        label = "bottomItemIndicator"
-    )
-    val iconColor by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.onSecondaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-        label = "bottomItemIcon"
-    )
-    val labelColor by animateColorAsState(
-        targetValue = if (selected) {
-            MaterialTheme.colorScheme.onSurface
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        },
-        animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
-        label = "bottomItemLabel"
-    )
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            // Un poco menos de compresión que en un botón: el destino se aprieta lo justo
-            // para notarse bajo el dedo sin saltar dentro de una barra tan compacta.
-            .clip(RoundedCornerShape(percent = 50))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Box(
-            modifier = Modifier
-                // Máximo, no medida fija: flotando, cada casilla baja de 64dp y un ancho
-                // rígido desbordaba la columna.
-                //
-                // Y por debajo del máximo del spec. Con 64 de ancho y 32 de alto la
-                // píldora es el doble de larga que alta, y como el icono ocupa 24dp
-                // quedan 20 de relleno a cada lado: en una barra de cinco destinos eso
-                // se lee como una mancha estirada en vez de un indicador.
-                .widthIn(max = 56.dp)
-                .fillMaxWidth()
-                .height(32.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(indicatorColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                contentDescription = item.label,
-                tint = iconColor,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        if (showLabel) {
-            Text(
-                text = item.label,
-                color = labelColor,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1,
-                softWrap = false,
-                // Antes cortaba en seco a media palabra. Si no cabe, que al menos se vea
-                // que falta texto.
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp, start = 2.dp, end = 2.dp)
+        items.forEach { item ->
+            val selected = selectedRoute == item.route
+            ShortNavigationBarItem(
+                selected = selected,
+                onClick = {
+                    /*
+                     * Un toque, un golpecito.
+                     *
+                     * Cambiar de sección es de lo poco que se hace sin mirar, con el pulgar y
+                     * de memoria: el aviso al tacto confirma que se dio en el sitio sin tener
+                     * que comprobarlo con la vista. Volver a tocar la sección en la que ya
+                     * estás no vibra, porque ahí no ha pasado nada que confirmar.
+                     */
+                    if (!selected) haptics.performSafely(HapticFeedbackType.ContextClick)
+                    onNavigate(item.route)
+                },
+                icon = {
+                    /*
+                     * El icono de la sección en la que estás sube un poco y crece un pelo.
+                     *
+                     * La pastilla de Material ya dice cuál está elegida, pero es un cambio de
+                     * color y el ojo lo pierde cuando la barra entera es del mismo tono. El
+                     * desplazamiento no compite con el color: se nota con el rabillo del ojo
+                     * aunque no estés mirando la barra.
+                     *
+                     * El muelle sale del `motionScheme` del tema, así que respeta el ajuste de
+                     * movimiento reducido: con las animaciones bajadas, salta sin rebotar.
+                     */
+                    val lift by animateDpAsState(
+                        targetValue = if (selected) (-2).dp else 0.dp,
+                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        label = "elevación del icono"
+                    )
+                    val scale by animateFloatAsState(
+                        targetValue = if (selected) 1.12f else 1f,
+                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        label = "tamaño del icono"
+                    )
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.label,
+                        modifier = Modifier
+                            .offset(y = lift)
+                            .graphicsLayer {
+                                scaleX = scale
+                                scaleY = scale
+                            }
+                    )
+                },
+                label = if (showLabels) {
+                    { Text(item.label, maxLines = 1) }
+                } else {
+                    null
+                },
+                iconPosition = NavigationItemIconPosition.Top
             )
         }
     }

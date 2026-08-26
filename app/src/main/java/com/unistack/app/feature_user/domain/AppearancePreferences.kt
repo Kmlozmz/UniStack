@@ -19,6 +19,8 @@ data class AppearancePreferences(
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
+    val switchIconStyle: SwitchIconStyle = SwitchIconStyle.BOTH,
+    val academicProgressShape: ProgressShape = ProgressShape.FLAT,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,
     val showHomeAgenda: Boolean = true,
@@ -139,6 +141,45 @@ enum class TypographyStyle {
 enum class BottomBarStyle {
     LABELED,
     ICONS_ONLY
+}
+
+/**
+ * Si el pulgar del interruptor lleva un icono dentro, y en qué estados.
+ *
+ * Material 3 Expressive lo permite con `thumbContent`, y es lo que deja leer un interruptor sin
+ * depender solo del color: quien no distingue el violeta encendido del gris apagado sí distingue
+ * un visto de un aspa.
+ *
+ * Es preferencia y no decisión cerrada porque el icono añade ruido a una lista larga de
+ * interruptores, y hay a quien le estorba. Por defecto va en los dos estados.
+ */
+enum class SwitchIconStyle {
+    /** Visto al encender, aspa al apagar. */
+    BOTH,
+
+    /** Visto solo al encender; apagado, el pulgar va liso. */
+    CHECKED_ONLY,
+
+    /** Sin icono, como estuvo hasta ahora. */
+    NONE
+}
+
+/**
+ * La forma de las barras y anillos de progreso **académico**.
+ *
+ * Solo el académico: semestre, materia, checklist de un trabajo, presupuesto. El progreso del
+ * sistema —descargas, guardado, carga de una imagen— se queda fijo en ondulado y no se ofrece,
+ * porque nadie quiere configurar cómo se ve una descarga.
+ */
+enum class ProgressShape {
+    /** La onda de Material 3 Expressive. */
+    WAVY,
+
+    /**
+     * Línea recta con indicador de parada al final. Es la de por defecto: la onda tiene
+     * gracia la primera vez y estorba en un dato que se mira todos los días.
+     */
+    FLAT
 }
 
 /**

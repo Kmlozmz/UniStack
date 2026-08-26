@@ -287,6 +287,8 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
+        .put("switchIconStyle", switchIconStyle.name)
+        .put("academicProgressShape", academicProgressShape.name)
         .put("showHomeGreeting", showHomeGreeting)
         .put("showHomeHero", showHomeHero)
         .put("showHomeAgenda", showHomeAgenda)
@@ -351,6 +353,11 @@ class UserPreferencesDataSource(private val context: Context) {
                 academicIndicatorStyle = json.enumOrDefault(
                     "academicIndicatorStyle",
                     defaults.academicIndicatorStyle
+                ),
+                switchIconStyle = json.enumOrDefault("switchIconStyle", defaults.switchIconStyle),
+                academicProgressShape = json.enumOrDefault(
+                    "academicProgressShape",
+                    defaults.academicProgressShape
                 ),
                 showHomeGreeting = json.optBoolean("showHomeGreeting", defaults.showHomeGreeting),
                 showHomeHero = json.optBoolean("showHomeHero", defaults.showHomeHero),

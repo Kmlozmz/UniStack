@@ -46,7 +46,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -372,8 +372,8 @@ private fun SubjectHistoryDialog(
                             Text("$attended asistencias  \u2022  $absent faltas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
-                            CircularWavyProgressIndicator(
-                                progress = { rate / 100f },
+                            EvaluationRing(
+                                fraction = rate / 100.0,
                                 modifier = Modifier.fillMaxSize(),
                                 color = ScheduleAccent,
                                 trackColor = MaterialTheme.colorScheme.outlineVariant

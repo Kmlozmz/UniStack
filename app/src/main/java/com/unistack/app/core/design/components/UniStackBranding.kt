@@ -27,7 +27,7 @@ import androidx.compose.material3.MaterialTheme
  * app que no responde al tema.
  */
 // design-tokens-ok: es la definicion del color de marca, no un color suelto en una pantalla
-private val BrandPurple = Color(0xFF8E00FF)
+val BrandPurple = Color(0xFF8E00FF)
 
 /**
  * El símbolo de la marca.

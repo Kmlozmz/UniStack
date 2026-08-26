@@ -20,7 +20,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.UniLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -114,7 +114,7 @@ internal fun ProfilePhotoEditor(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Arrastra para mover y pellizca para acercar. Así se verá en toda la app.",
+                    "Arrastra para mover y pellizca para acercar.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -134,7 +134,7 @@ internal fun ProfilePhotoEditor(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        image == null -> CircularWavyProgressIndicator()
+                        image == null -> UniLoadingIndicator()
                         else -> Image(
                             bitmap = image.asImageBitmap(),
                             contentDescription = null,
@@ -199,7 +199,7 @@ internal fun ProfilePhotoEditor(
                     if (canRemove) {
                         TextButton(onClick = onRemove, enabled = !saving) {
                             Text(
-                                "Quitar mi foto",
+                                "Quitar foto",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.error
                             )

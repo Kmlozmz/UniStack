@@ -16,6 +16,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +36,8 @@ fun UpdateAvailableBanner(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            // Recorta la onda del toque al propio banner.
+            .clip(RectangleShape)
             .background(backgroundColor)
             .clickable(enabled = true) { onTap() }
             .padding(16.dp)

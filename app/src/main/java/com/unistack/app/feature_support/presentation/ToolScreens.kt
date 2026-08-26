@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.feature_support.domain.QuickNotesStore
@@ -100,9 +101,11 @@ fun QuickNotesScreen(
             TopAppBar(
                 title = {},
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
-                    }
+                    UniIconButton(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Atrás",
+                        onClick = onBackClick
+                    )
                 },
                 actions = {
                     /*

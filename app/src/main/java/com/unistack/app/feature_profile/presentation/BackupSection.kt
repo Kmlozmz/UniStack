@@ -223,7 +223,7 @@ internal fun BackupSection(
         
         }
 
-        SettingsGroup(label = "RESPALDOS") {
+        SettingsGroup(label = "RESPALDOS", rowCount = 3) {
             SettingsRow(
                 icon = Icons.Rounded.Backup,
                 title = "Restaurar desde un archivo",

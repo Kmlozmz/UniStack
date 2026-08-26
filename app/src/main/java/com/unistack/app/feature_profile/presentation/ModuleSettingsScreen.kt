@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.components.SettingsSoloRow
 import com.unistack.app.feature_user.domain.offerableModules
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsToggleRow
@@ -117,11 +118,7 @@ private fun ModuleCard(
     iconColor: Color,
     onToggle: (Boolean) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
+    SettingsSoloRow {
         SettingsToggleRow(
             icon = icon,
             title = title,

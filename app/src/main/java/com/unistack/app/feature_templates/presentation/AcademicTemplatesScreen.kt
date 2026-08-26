@@ -39,7 +39,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.IconButtonDefaults
+import com.unistack.app.core.design.components.EvaluationBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -411,7 +412,7 @@ private fun WorkCard(
                         maxLines = 1
                     )
                 }
-                IconButton(onClick = onDelete, modifier = Modifier.size(34.dp)) {
+                IconButton(onClick = onDelete, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                     Icon(
                         Icons.Rounded.Delete,
                         contentDescription = "Eliminar trabajo",
@@ -421,8 +422,8 @@ private fun WorkCard(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                LinearWavyProgressIndicator(
-                    progress = { work.checklistProgress },
+                EvaluationBar(
+                    fraction = work.checklistProgress.toDouble(),
                     modifier = Modifier.weight(1f),
                     color = work.status.color(),
                     trackColor = MaterialTheme.colorScheme.surfaceContainerHigh

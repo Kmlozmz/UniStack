@@ -25,7 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -222,7 +222,7 @@ internal fun SubjectPickerSheet(
                                     }
                                 )
                             }
-                            Switch(checked = withGrades, onCheckedChange = { withGrades = it })
+                            UniSwitch(checked = withGrades, onCheckedChange = { withGrades = it })
                         }
                     }
 

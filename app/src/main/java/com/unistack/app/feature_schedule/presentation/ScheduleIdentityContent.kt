@@ -68,6 +68,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
@@ -353,23 +354,14 @@ private fun IdentitySurface(
 
 @Composable
 private fun IdentityHeader(view: IdentityScheduleView) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(
-            text = if (view == IdentityScheduleView.TIMETABLE) "Horario" else "Calendario",
-            color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Text(
-            text = if (view == IdentityScheduleView.TIMETABLE) {
-                "Clases y bloques de tu semana en un mismo lugar."
-            } else {
-                "Fechas, eventos y entregas de tu mes."
-            },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
+    SectionHeader(
+        title = if (view == IdentityScheduleView.TIMETABLE) "Horario" else "Calendario",
+        subtitle = if (view == IdentityScheduleView.TIMETABLE) {
+            "Clases y bloques de tu semana en un mismo lugar."
+        } else {
+            "Fechas, eventos y entregas de tu mes."
+        }
+    )
 }
 
 @Composable
@@ -1267,7 +1259,7 @@ private fun IdentityMonthCalendar(
         ) {
             FilledTonalIconButton(
                 onClick = { onDateSelected(selectedDate.minusMonths(1).withDayOfMonth(1)) },
-                modifier = Modifier.size(38.dp),
+                modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.onSurface
@@ -1289,7 +1281,7 @@ private fun IdentityMonthCalendar(
             )
             FilledTonalIconButton(
                 onClick = { onDateSelected(selectedDate.plusMonths(1).withDayOfMonth(1)) },
-                modifier = Modifier.size(38.dp),
+                modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.onSurface

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_notifications.presentation
 
 import androidx.compose.foundation.BorderStroke
@@ -39,6 +41,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.notifications.NotificationHistoryItem
 import com.unistack.app.core.notifications.NotificationHistoryStore
@@ -228,7 +232,7 @@ private fun NotificationHistoryHeader(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onBackClick, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
@@ -256,7 +260,7 @@ private fun NotificationHistoryHeader(
             )
         }
         Box {
-            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(40.dp)) {
+            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "Mas opciones", tint = NotificationAccentText)
             }
             DropdownMenu(
@@ -564,9 +568,11 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = NotificationAccentText)
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Volver",
+            onClick = onBackClick
+        )
         Text(
             text = "Detalle del aviso",
             color = NotificationText,

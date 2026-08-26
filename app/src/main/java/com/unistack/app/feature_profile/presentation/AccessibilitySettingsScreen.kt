@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.components.SettingsSoloRow
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsToggleRow
 import androidx.compose.foundation.layout.Arrangement
@@ -169,11 +170,7 @@ private fun AccessibilityToggleCard(
     iconColor: androidx.compose.ui.graphics.Color,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow
-    ) {
+    SettingsSoloRow {
         SettingsToggleRow(
             icon = icon,
             title = title,

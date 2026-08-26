@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -82,9 +83,11 @@ fun ProScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                IconButton(onClick = onBackClick) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-                }
+                UniIconButton(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Volver",
+                    onClick = onBackClick
+                )
             }
             item {
                 ProHeroCard(

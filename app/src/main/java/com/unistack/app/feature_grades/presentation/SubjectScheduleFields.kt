@@ -1,5 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.BorderStroke
@@ -106,13 +107,18 @@ internal fun SubjectWhenFields(
     }
 
     if (startPickerVisible) {
-        SubjectTimePicker("Hora de inicio", draft.startMinute, { startPickerVisible = false }) { chosen ->
-            startPickerVisible = false
+        UniTimePickerDialog(
+            selectedTime = java.time.LocalTime.of(draft.startMinute / 60, draft.startMinute % 60),
+            onDismiss = { startPickerVisible = false },
+            title = "Hora de inicio",
+            onTimeSelected = { picked ->
+            val chosen = picked.hour * 60 + picked.minute
             // Casi siempre que aparece una hora así es un error al girar la rueda: quien la
             // puso a la 1:00 quería las 13:00. Se pregunta en vez de impedirlo, porque clases
             // de madrugada existen.
             if (isUnusualClassHour(chosen)) unusualStart = chosen else onDraftChange(draft.copy(startMinute = chosen))
         }
+        )
     }
     unusualStart?.let { chosen ->
         AlertDialog(
@@ -144,10 +150,14 @@ internal fun SubjectWhenFields(
         )
     }
     if (endPickerVisible) {
-        SubjectTimePicker("Hora de fin", draft.endMinute, { endPickerVisible = false }) {
-            onDraftChange(draft.copy(endMinute = it))
-            endPickerVisible = false
-        }
+        UniTimePickerDialog(
+            selectedTime = java.time.LocalTime.of(draft.endMinute / 60, draft.endMinute % 60),
+            onDismiss = { endPickerVisible = false },
+            title = "Hora de fin",
+            onTimeSelected = { picked ->
+                onDraftChange(draft.copy(endMinute = picked.hour * 60 + picked.minute))
+            }
+        )
     }
 }
 
@@ -265,26 +275,6 @@ private fun SchedulePickerField(
     }
 }
 
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun SubjectTimePicker(
-    title: String,
-    minute: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
-) {
-    val state = rememberTimePickerState(initialHour = minute / 60, initialMinute = minute % 60, is24Hour = true)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { TimePicker(state) },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-        shape = MaterialTheme.shapes.extraLarge
-    )
-}
 
 internal fun ClassSession.toSubjectScheduleDraft(): SubjectScheduleDraft {
     return SubjectScheduleDraft(

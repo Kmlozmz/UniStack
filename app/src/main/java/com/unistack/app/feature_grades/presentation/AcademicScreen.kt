@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,9 +24,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.navigation.AppRoutes
@@ -97,55 +103,40 @@ fun AcademicScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // El mismo papel que Horario y Gastos. Este iba en headlineLarge, cuatro
-                    // puntos por encima de los otros dos, asi que la misma cabecera pesaba
-                    // distinto segun la pestana en la que estuvieras.
-                    Text(
-                        text = "Académico",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    /*
-                     * La lupa solo en Materias.
-                     *
-                     * Tareas trae su propio buscador dentro, así que aquí era un icono que
-                     * duplicaba uno y, en la otra pestaña, uno que no hacía nada.
-                     */
-                    if (selectedTab == AcademicTab.SUBJECTS) {
-                        IconButton(onClick = {
-                            searching = !searching
-                            if (!searching) query = ""
-                        }) {
-                            Icon(
-                                if (searching) Icons.Rounded.Close else Icons.Rounded.Search,
+                SectionHeader(
+                    title = "Académico",
+                    subtitle = "Materias, notas y entregas en un mismo lugar.",
+                    modifier = Modifier.padding(end = 12.dp),
+                    action = {
+                        /*
+                         * La lupa solo en Materias.
+                         *
+                         * Tareas trae su propio buscador dentro, así que aquí era un icono que
+                         * duplicaba uno y, en la otra pestaña, uno que no hacía nada.
+                         */
+                        if (selectedTab == AcademicTab.SUBJECTS) {
+                            UniIconButton(
+                                icon = if (searching) Icons.Rounded.Close else Icons.Rounded.Search,
                                 contentDescription = if (searching) "Cerrar la búsqueda" else "Buscar materias",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                onClick = {
+                                    searching = !searching
+                                    if (!searching) query = ""
+                                }
                             )
                         }
                     }
-                }
-                if (searching && selectedTab == AcademicTab.SUBJECTS) {
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text("Buscar entre tus materias") },
-                        singleLine = true,
-                        shape = MaterialTheme.shapes.large,
-                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 12.dp)
-                    )
-                } else {
-                    Text(
-                        text = "Materias, notas y entregas en un mismo lugar.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp, bottom = 8.dp)
+                )
+                // El buscador va debajo del apoyo, no en su sitio: sustituirlo cambiaba la
+                // altura de la cabecera y empujaba la pantalla entera al abrir la lupa.
+                AnimatedVisibility(visible = searching && selectedTab == AcademicTab.SUBJECTS) {
+                    UniSearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder = "Buscar entre tus materias",
+                        modifier = Modifier.padding(top = 8.dp, end = 12.dp)
                     )
                 }
+                Spacer(Modifier.height(8.dp))
                 UniSegmentedControl(
                     selected = selectedTab,
                     options = AcademicTab.entries.map { tab ->

@@ -33,7 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -447,7 +447,7 @@ fun AddGradeScreen(
                             )
                         }
                         Spacer(Modifier.width(8.dp))
-                        Switch(
+                        UniSwitch(
                             checked = weightUnknown,
                             onCheckedChange = {
                                 weightUnknown = it

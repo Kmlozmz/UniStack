@@ -84,7 +84,7 @@ fun DataSettingsScreen(
             )
         }
         item {
-            SettingsGroup(label = "REINICIO", labelColor = MaterialTheme.colorScheme.error) {
+            SettingsGroup(label = "REINICIO", labelColor = MaterialTheme.colorScheme.error, rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.RestartAlt,
                     title = "Repetir configuración inicial",

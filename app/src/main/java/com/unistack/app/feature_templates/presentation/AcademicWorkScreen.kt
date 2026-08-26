@@ -16,7 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -145,8 +145,8 @@ fun AcademicWorkScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    CircularWavyProgressIndicator(
-                        progress = { work.checklistProgress },
+                    EvaluationRing(
+                        fraction = work.checklistProgress.toDouble(),
                         modifier = Modifier.size(58.dp),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.24f)

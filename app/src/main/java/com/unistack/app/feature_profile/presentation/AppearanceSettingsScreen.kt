@@ -2,9 +2,13 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_user.domain.SwitchIconStyle
+import com.unistack.app.feature_user.domain.ProgressShape
+import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsGroupCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -200,6 +204,65 @@ fun AppearanceSettingsScreen(
             }
         }
         item {
+            SettingsGroupBare(label = "DETALLES DE LA INTERFAZ") {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Text(
+                        text = "Etiquetas de la barra de abajo",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.bottomBarStyle,
+                        options = BottomBarStyle.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(bottomBarStyle = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Barras de progreso de tus estudios",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.academicProgressShape,
+                        options = ProgressShape.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(academicProgressShape = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Las de descarga se quedan onduladas siempre.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = "Icono dentro del interruptor",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.switchIconStyle,
+                        options = SwitchIconStyle.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(switchIconStyle = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    UniSwitch(checked = true, onCheckedChange = {})
+                }
+            }
+        }
+        item {
             SettingsGroupBare(label = "TARJETAS DE INICIO") {
                 HomeBlocksCard(
                     appearance = appearance,
@@ -228,7 +291,7 @@ fun AppearanceSettingsScreen(
             }
         }
         item {
-            SettingsGroup(label = "QUÉ ENSEÑA LO SIGUIENTE") {
+            SettingsGroupCard(label = "QUÉ ENSEÑA LO SIGUIENTE") {
                 HomeToggleRow(
                     title = "Notas",
                     detail = "Promedios y materias en riesgo",
@@ -592,7 +655,7 @@ private fun HomeToggleRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        UniSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -639,4 +702,20 @@ private fun HomeSection.detail() = when (this) {
     HomeSection.HERO -> "La tarjeta con lo más urgente"
     HomeSection.AGENDA -> "Clases y entregas del día"
     HomeSection.SNAPSHOT -> "Promedio, pendientes y gasto"
+}
+
+private fun BottomBarStyle.label() = when (this) {
+    BottomBarStyle.LABELED -> "Con texto"
+    BottomBarStyle.ICONS_ONLY -> "Solo iconos"
+}
+
+private fun ProgressShape.label() = when (this) {
+    ProgressShape.FLAT -> "Rectas"
+    ProgressShape.WAVY -> "Onduladas"
+}
+
+private fun SwitchIconStyle.label() = when (this) {
+    SwitchIconStyle.BOTH -> "Siempre"
+    SwitchIconStyle.CHECKED_ONLY -> "Al encender"
+    SwitchIconStyle.NONE -> "Nunca"
 }
