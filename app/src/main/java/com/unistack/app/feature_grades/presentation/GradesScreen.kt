@@ -2,6 +2,14 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +26,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Close
@@ -32,6 +41,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.uniReorderable
+import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.components.UniIconButton
@@ -69,6 +80,8 @@ private val SpanishLocale: java.util.Locale = java.util.Locale.forLanguageTag("e
 fun GradesScreen(
     onAddSubjectClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
+    /** Abrir el formulario de una materia. Nulo cuando la pantalla no puede editar. */
+    onEditSubjectClick: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel(),
     embedded: Boolean = false,
@@ -95,6 +108,23 @@ fun GradesScreen(
         // Los identificadores de lo marcado, no las materias enteras: `rememberSaveable` guarda
         // lo que quepa en un Bundle, y una lista de textos cabe.
         var selectedIds by rememberSaveable { mutableStateOf(listOf<String>()) }
+        /*
+         * El orden que has elegido tú, y el arrastre que lo cambia.
+         *
+         * `order` vive aquí y no en el perfil mientras dura el gesto: permutar dos materias
+         * escribe en la lista veinte veces mientras cruzas la pantalla, y guardar en disco cada
+         * una de esas veces es una escritura por fila recorrida. Se guarda al soltar.
+         */
+        val savedOrder = profile?.appearancePreferences?.subjectOrder.orEmpty()
+        var order by remember(savedOrder, subjects) {
+            mutableStateOf(
+                // Lo guardado manda; lo que no aparezca —materias nuevas, o de antes de que
+                // esto existiera— se queda detrás, en el orden en que se creó.
+                savedOrder.filter { id -> subjects.any { it.id == id } } +
+                    subjects.map { it.id }.filterNot(savedOrder::contains)
+            )
+        }
+        val reorder = rememberUniReorderState()
         var pendingBulkDelete by rememberSaveable { mutableStateOf(false) }
         val selecting = selectedIds.isNotEmpty()
         val calculations = subjects.associateWith(viewModel::calculationFor)
@@ -109,6 +139,8 @@ fun GradesScreen(
                     calculation.outlook == TargetOutlook.UNREACHABLE
                 SubjectFilter.CLOSED -> calculation.isFinished
             }
+        }.sortedBy { subject ->
+            order.indexOf(subject.id).takeIf { it >= 0 } ?: Int.MAX_VALUE
         }
 
         LazyColumn(
@@ -165,6 +197,26 @@ fun GradesScreen(
             } else {
                 items(visible, key = { it.id }) { subject ->
                     SubjectRow(
+                        modifier = Modifier.uniReorderable(
+                            state = reorder,
+                            key = subject.id,
+                            index = { order.indexOf(subject.id) },
+                            itemCount = { order.size },
+                            onMove = { from, to ->
+                                order = order.toMutableList().apply { add(to, removeAt(from)) }
+                            },
+                            onSettle = { viewModel.saveSubjectOrder(order) },
+                            // Mantener pulsado y soltar sin mover es lo que marca. El mismo
+                            // gesto sirve para las dos cosas y cuál de ellas era se sabe por
+                            // si el dedo llegó a moverse.
+                            onLongPressWithoutMove = {
+                                selectedIds = if (subject.id in selectedIds) {
+                                    selectedIds - subject.id
+                                } else {
+                                    selectedIds + subject.id
+                                }
+                            }
+                        ),
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,
@@ -180,13 +232,6 @@ fun GradesScreen(
                                 }
                             } else {
                                 onSubjectClick(subject.id)
-                            }
-                        },
-                        onLongClick = {
-                            selectedIds = if (subject.id in selectedIds) {
-                                selectedIds - subject.id
-                            } else {
-                                selectedIds + subject.id
                             }
                         },
                         selected = subject.id in selectedIds,
@@ -216,19 +261,20 @@ fun GradesScreen(
             /*
              * Con una marcada y con varias no se ofrece lo mismo.
              *
-             * Sobre una sola materia lo útil es abrirla —es lo que ibas a hacer antes de
-             * marcarla sin querer—; sobre varias, abrir no significa nada y lo que hace falta
+             * Sobre una sola materia lo útil es editarla: abrirla ya se hace con un toque en
+             * la fila, así que ofrecerlo aquí son dos toques para lo que costaba uno. Sobre
+             * varias, editar no significa nada y lo que hace falta
              * es poder marcarlas todas de golpe. Enseñar las dos siempre obliga a mirar cuál
              * está apagada, y un botón apagado en una barra de cuatro es un estorbo.
              */
-            if (selectedIds.size == 1) {
+            if (selectedIds.size == 1 && onEditSubjectClick != null) {
                 UniIconButton(
-                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
-                    contentDescription = "Abrir la materia",
+                    icon = Icons.Rounded.Edit,
+                    contentDescription = "Editar la materia",
                     onClick = {
                         val only = selectedIds.first()
                         selectedIds = emptyList()
-                        onSubjectClick(only)
+                        onEditSubjectClick(only)
                     }
                 )
             } else {

@@ -61,6 +61,7 @@ private enum class AcademicTab(val label: String) {
 fun AcademicScreen(
     onAddSubjectClick: () -> Unit,
     onSubjectClick: (String) -> Unit,
+    onEditSubjectClick: (String) -> Unit,
     onNewTaskClick: () -> Unit,
     onEditTaskClick: (String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
@@ -161,6 +162,7 @@ fun AcademicScreen(
                     AcademicTab.SUBJECTS -> GradesScreen(
                         onAddSubjectClick = onAddSubjectClick,
                         onSubjectClick = onSubjectClick,
+                        onEditSubjectClick = onEditSubjectClick,
                         embedded = true,
                         nameQuery = query
                     )

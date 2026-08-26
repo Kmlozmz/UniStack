@@ -69,7 +69,15 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
 - **Al mantener pulsada una materia sola se ofrece abrirla**; con varias marcadas, marcarlas
   todas. Cada selección ofrece lo que tiene sentido para ella.
 
+- **Puedes ordenar tus materias a mano.** Mantén pulsada una y muévela; se queda donde la
+  dejes. Soltar sin moverla la marca, como antes.
+- Con una sola materia marcada, la barra ofrece **editarla**. Abrirla ya se hace con un toque.
+
 ### Corregido
+
+- **Arrastrar las tarjetas de Inicio para reordenarlas funcionaba mal**: la app usaba la altura
+  de una fila para calcular el salto de otra, y con filas de distinto alto unas saltaban antes
+  de tiempo y otras se quedaban pegadas dejando un hueco.
 
 - **Los menús desplegables van redondeados.** Eran la única pieza cuadrada en una app de
   esquinas suaves, y se notaba al abrirlos sobre una tarjeta.

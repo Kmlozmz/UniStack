@@ -16,7 +16,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,11 +112,7 @@ fun SubjectRow(
             // salía por las cuatro esquinas redondeadas. Recortando aquí, la onda no puede
             // pintar donde la tarjeta no llega.
             .clip(MaterialTheme.shapes.large)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-                onLongClickLabel = if (onLongClick != null) "Seleccionar materia" else null
-            ),
+            .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
         color = container,
         contentColor = onContainer

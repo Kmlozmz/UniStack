@@ -429,6 +429,9 @@ fun MainNavGraph(
                     onSubjectClick = { subjectId ->
                         navController.navigateIfModuleEnabled(AppRoutes.subjectDetail(subjectId), enabledModules)
                     },
+                    onEditSubjectClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(AppRoutes.editSubject(subjectId), enabledModules)
+                    },
                     onNewTaskClick = {
                         navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
                     },

@@ -20,6 +20,15 @@ data class AppearancePreferences(
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
     val switchIconStyle: SwitchIconStyle = SwitchIconStyle.BOTH,
+    /**
+     * El orden en el que quieres ver tus materias, por identificador.
+     *
+     * Va aquí y no en la tabla de materias para no pedir una migración de base de datos por un
+     * dato que solo mira la pantalla. Las materias que no estén en la lista —recién creadas, o
+     * de antes de que esto existiera— van al final; las que estén y ya no existan se ignoran.
+     * Vacía significa el orden en que se crearon, que es lo que había hasta ahora.
+     */
+    val subjectOrder: List<String> = emptyList(),
     val academicProgressShape: ProgressShape = ProgressShape.FLAT,
     val showHomeGreeting: Boolean = true,
     val showHomeHero: Boolean = true,

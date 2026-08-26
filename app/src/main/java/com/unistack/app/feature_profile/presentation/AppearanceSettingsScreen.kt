@@ -6,11 +6,12 @@ import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.ProgressShape
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.portraitUrl
+import com.unistack.app.core.design.components.uniReorderable
+import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsGroupCard
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,8 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -46,14 +45,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -531,11 +526,9 @@ private fun HomeBlocksCard(
     onToggleSection: (HomeSection, Boolean) -> Unit,
     onReorder: (List<HomeSection>) -> Unit
 ) {
-    var dragged by remember { mutableStateOf<HomeSection?>(null) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var rowHeight by remember { mutableIntStateOf(0) }
     val order by rememberUpdatedState(appearance.homeSectionOrder)
     val reorder by rememberUpdatedState(onReorder)
+    val dragState = rememberUniReorderState()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -551,58 +544,23 @@ private fun HomeBlocksCard(
                 onCheckedChange = onToggleGreeting
             )
             order.forEach { section ->
-                val isDragged = dragged == section
                 HomeToggleRow(
-                    modifier = Modifier
-                        .zIndex(if (isDragged) 1f else 0f)
-                        .graphicsLayer { translationY = if (isDragged) dragOffset else 0f }
-                        .onSizeChanged { rowHeight = it.height },
+                    modifier = Modifier.uniReorderable(
+                        state = dragState,
+                        key = section,
+                        index = { order.indexOf(section) },
+                        itemCount = { order.size },
+                        onMove = { from, to ->
+                            reorder(order.toMutableList().apply { add(to, removeAt(from)) })
+                        }
+                    ),
                     title = section.label(),
                     detail = section.detail(),
                     checked = appearance.showsSection(section),
                     draggable = true,
-                    // La clave del gesto es solo la sección: si dependiera del orden, la
-                    // primera permuta reiniciaría el detector y el dedo se quedaría a
-                    // medias con la fila pegada al sitio nuevo.
-                    handleModifier = Modifier.pointerInput(section) {
-                        detectDragGestures(
-                            onDragStart = {
-                                dragged = section
-                                dragOffset = 0f
-                            },
-                            onDragEnd = {
-                                dragged = null
-                                dragOffset = 0f
-                            },
-                            onDragCancel = {
-                                dragged = null
-                                dragOffset = 0f
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                dragOffset += amount.y
-                                val height = rowHeight
-                                if (height <= 0) return@detectDragGestures
-                                val index = order.indexOf(section)
-                                val step = when {
-                                    dragOffset > height / 2f && index < order.lastIndex -> 1
-                                    dragOffset < -height / 2f && index > 0 -> -1
-                                    else -> 0
-                                }
-                                if (step != 0) {
-                                    // Al permutar, la fila ya salta un hueco entero por sí
-                                    // sola: se le descuenta esa altura al arrastre para que
-                                    // siga justo debajo del dedo y no se adelante.
-                                    dragOffset -= step * height
-                                    reorder(
-                                        order.toMutableList().apply {
-                                            add(index + step, removeAt(index))
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    },
+                    // El asa sigue estando: es lo que dice que la fila se puede
+                    // mover. El gesto lo pone `uniReorderable` sobre la fila entera.
+                    handleModifier = Modifier,
                     onCheckedChange = { enabled -> onToggleSection(section, enabled) }
                 )
             }
