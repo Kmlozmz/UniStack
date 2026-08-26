@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
@@ -41,7 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.unistack.app.core.design.components.uniReorderable
+import com.unistack.app.core.utils.performSafely
+import com.unistack.app.core.design.components.uniReorderableItem
+import com.unistack.app.core.design.components.uniReorderHandle
 import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
@@ -86,7 +92,15 @@ fun GradesScreen(
     viewModel: GradesViewModel = hiltViewModel(),
     embedded: Boolean = false,
     /** Texto por el que filtrar las materias. Vacío es no filtrar. */
-    nameQuery: String = ""
+    nameQuery: String = "",
+    /**
+     * Cuántas materias hay marcadas.
+     *
+     * Lo necesita Académico para esconder su botón de crear: con la barra de selección abajo y
+     * el botón encima, los dos se pisan y el de crear no es lo que vas a pulsar mientras tienes
+     * cinco materias marcadas.
+     */
+    onSelectionChange: (Int) -> Unit = {}
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
@@ -125,6 +139,16 @@ fun GradesScreen(
             )
         }
         val reorder = rememberUniReorderState()
+        val haptics = LocalHapticFeedback.current
+
+        // Marcar y desmarcar pasa siempre por aquí: así el golpecito y el aviso a Académico no
+        // dependen de acordarse de ponerlos en cada sitio que toca la selección.
+        fun toggle(id: String) {
+            haptics.performSafely(HapticFeedbackType.LongPress)
+            selectedIds = if (id in selectedIds) selectedIds - id else selectedIds + id
+        }
+
+        LaunchedEffect(selectedIds.size) { onSelectionChange(selectedIds.size) }
         var pendingBulkDelete by rememberSaveable { mutableStateOf(false) }
         val selecting = selectedIds.isNotEmpty()
         val calculations = subjects.associateWith(viewModel::calculationFor)
@@ -197,39 +221,37 @@ fun GradesScreen(
             } else {
                 items(visible, key = { it.id }) { subject ->
                     SubjectRow(
-                        modifier = Modifier.uniReorderable(
-                            state = reorder,
-                            key = subject.id,
-                            index = { order.indexOf(subject.id) },
-                            itemCount = { order.size },
-                            onMove = { from, to ->
-                                order = order.toMutableList().apply { add(to, removeAt(from)) }
-                            },
-                            onSettle = { viewModel.saveSubjectOrder(order) },
-                            // Mantener pulsado y soltar sin mover es lo que marca. El mismo
-                            // gesto sirve para las dos cosas y cuál de ellas era se sabe por
-                            // si el dedo llegó a moverse.
-                            onLongPressWithoutMove = {
-                                selectedIds = if (subject.id in selectedIds) {
-                                    selectedIds - subject.id
-                                } else {
-                                    selectedIds + subject.id
-                                }
-                            }
-                        ),
+                        modifier = Modifier.uniReorderableItem(reorder, subject.id),
+                        dragHandle = {
+                            Icon(
+                                imageVector = Icons.Rounded.DragHandle,
+                                contentDescription = "Mover la materia",
+                                tint = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .uniReorderHandle(
+                                        state = reorder,
+                                        key = subject.id,
+                                        index = { order.indexOf(subject.id) },
+                                        itemCount = { order.size },
+                                        onMove = { from, to ->
+                                            order = order.toMutableList()
+                                                .apply { add(to, removeAt(from)) }
+                                        },
+                                        onSettle = { viewModel.saveSubjectOrder(order) }
+                                    )
+                            )
+                        },
+                        onLongClick = { toggle(subject.id) },
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,
                         onClick = {
                             // Con una selección abierta, tocar marca y desmarca en vez de
-                            // entrar: entrar a la materia a mitad de selecciónar cinco es
+                            // entrar: entrar a la materia a mitad de seleccionar cinco es
                             // perder las cinco.
                             if (selecting) {
-                                selectedIds = if (subject.id in selectedIds) {
-                                    selectedIds - subject.id
-                                } else {
-                                    selectedIds + subject.id
-                                }
+                                toggle(subject.id)
                             } else {
                                 onSubjectClick(subject.id)
                             }

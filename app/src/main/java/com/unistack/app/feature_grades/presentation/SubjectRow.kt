@@ -16,7 +16,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,18 +77,27 @@ fun SubjectRow(
     /** Marcada dentro de una selección. Solo tiene sentido con [onLongClick] puesto. */
     selected: Boolean = false,
     /**
-     * Mantener pulsado. Es lo que abre la selección múltiple: no hay botón de «selecciónar»
+     * Mantener pulsado. Es lo que abre la selección múltiple: no hay botón de «seleccionar»
      * porque un botón permanente ocupa sitio en una pantalla que casi siempre se usa para
      * mirar, no para borrar.
      */
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    /**
+     * El asa de arrastre, si la lista se puede ordenar.
+     *
+     * Se dibuja siempre y no solo con algo marcado: es lo único que dice que las materias se
+     * pueden mover de sitio. Un gesto que no deja rastro en la pantalla no lo encuentra nadie,
+     * y esa fue la primera versión de esto: mantener pulsada la fila servía para marcar y para
+     * mover a la vez, y cuál de las dos obtenías dependía de si tu dedo se movía.
+     */
+    dragHandle: (@Composable () -> Unit)? = null
 ) {
     val sections = LocalSectionColors.current
     val accent = subjectAccent(subject)
     val atRisk = calculation.outlook == TargetOutlook.AT_RISK ||
         calculation.outlook == TargetOutlook.UNREACHABLE
 
-    // Marcada manda sobre «en riesgo»: mientras selecciónas, lo que importa es cuáles llevas
+    // Marcada manda sobre «en riesgo»: mientras seleccionas, lo que importa es cuáles llevas
     // marcadas, no cuál va mal. El aviso de riesgo vuelve al salir de la selección.
     val container = when {
         selected -> MaterialTheme.colorScheme.secondaryContainer
@@ -112,7 +121,11 @@ fun SubjectRow(
             // salía por las cuatro esquinas redondeadas. Recortando aquí, la onda no puede
             // pintar donde la tarjeta no llega.
             .clip(MaterialTheme.shapes.large)
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (onLongClick != null) "Marcar la materia" else null
+            ),
         shape = MaterialTheme.shapes.large,
         color = container,
         contentColor = onContainer
@@ -213,6 +226,10 @@ fun SubjectRow(
                     color = if (atRisk) sections.onAtRiskContainer else sections.onTrack
                 )
             }
+
+            // El asa, al borde derecho. Ahí es donde la busca el pulgar, y donde la ponen las
+            // listas ordenables de otras apps.
+            dragHandle?.invoke()
         }
     }
 }

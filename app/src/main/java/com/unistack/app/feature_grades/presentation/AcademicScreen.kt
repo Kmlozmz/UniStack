@@ -2,6 +2,8 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.animation.AnimatedVisibility
@@ -74,6 +76,10 @@ fun AcademicScreen(
     // llamadas posteriores no tenían efecto.
     // Cuántas tareas quedan sin hacer, para la insignia del selector.
     val tasks by tasksViewModel.tasks.collectAsStateWithLifecycle()
+    // Cuántas materias hay marcadas abajo. Con la barra de selección puesta, el botón de crear
+    // se retira: los dos ocupan la misma esquina y crear no es lo que vas a hacer mientras
+    // tienes materias marcadas.
+    var markedSubjects by remember { mutableIntStateOf(0) }
     val pendingTasks = tasks.count { !it.completed }
 
     var searching by rememberSaveable { mutableStateOf(false) }
@@ -163,6 +169,7 @@ fun AcademicScreen(
                         onAddSubjectClick = onAddSubjectClick,
                         onSubjectClick = onSubjectClick,
                         onEditSubjectClick = onEditSubjectClick,
+                        onSelectionChange = { markedSubjects = it },
                         embedded = true,
                         nameQuery = query
                     )
@@ -183,6 +190,7 @@ fun AcademicScreen(
          * que este menú repite lo que ya hay abajo y además lo tapa. Se deja puesto para verlo
          * en el móvil y decidir; si se queda, lo que sobra es el botón anclado de cada pestaña.
          */
+        if (markedSubjects == 0) {
         UniStackFabMenu(
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 20.dp),
             onAddGradeClick = onAddSubjectClick,
@@ -194,5 +202,6 @@ fun AcademicScreen(
             showAddExpense = false,
             showAddSubject = true
         )
+        }
     }
 }

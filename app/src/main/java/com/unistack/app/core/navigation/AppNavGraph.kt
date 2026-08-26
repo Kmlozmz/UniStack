@@ -1118,7 +1118,19 @@ private fun NavHostController.navigateToBottomRoute(
             saveState = true
         }
         launchSingleTop = true
-        restoreState = targetRoute != AppRoutes.Home
+        /*
+         * Cambiar de pestaña te deja en su pantalla principal, no donde lo dejaste.
+         *
+         * Con `restoreState` puesto, la barra devolvía la pila entera de la pestaña: si salías
+         * de Ajustes estando dentro de Apariencia, al volver a Ajustes aparecía Apariencia. No
+         * es lo que promete un botón que dice «Ajustes» y lleva el icono de Ajustes, y además
+         * la transición se hacía entre dos pantallas que no están al mismo nivel, así que se
+         * veía como si la app se hubiera saltado un paso.
+         *
+         * Volver donde lo dejaste sigue funcionando dentro de la propia pestaña: tocar la
+         * pestaña en la que ya estás sube a su raíz, y el botón de atrás deshace el camino.
+         */
+        restoreState = false
     }
 }
 

@@ -6,7 +6,8 @@ import com.unistack.app.feature_user.domain.SwitchIconStyle
 import com.unistack.app.feature_user.domain.ProgressShape
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.portraitUrl
-import com.unistack.app.core.design.components.uniReorderable
+import com.unistack.app.core.design.components.uniReorderHandle
+import com.unistack.app.core.design.components.uniReorderableItem
 import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
@@ -545,7 +546,12 @@ private fun HomeBlocksCard(
             )
             order.forEach { section ->
                 HomeToggleRow(
-                    modifier = Modifier.uniReorderable(
+                    modifier = Modifier.uniReorderableItem(dragState, section),
+                    title = section.label(),
+                    detail = section.detail(),
+                    checked = appearance.showsSection(section),
+                    draggable = true,
+                    handleModifier = Modifier.uniReorderHandle(
                         state = dragState,
                         key = section,
                         index = { order.indexOf(section) },
@@ -554,13 +560,6 @@ private fun HomeBlocksCard(
                             reorder(order.toMutableList().apply { add(to, removeAt(from)) })
                         }
                     ),
-                    title = section.label(),
-                    detail = section.detail(),
-                    checked = appearance.showsSection(section),
-                    draggable = true,
-                    // El asa sigue estando: es lo que dice que la fila se puede
-                    // mover. El gesto lo pone `uniReorderable` sobre la fila entera.
-                    handleModifier = Modifier,
                     onCheckedChange = { enabled -> onToggleSection(section, enabled) }
                 )
             }

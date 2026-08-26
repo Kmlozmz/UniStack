@@ -69,11 +69,18 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
 - **Al mantener pulsada una materia sola se ofrece abrirla**; con varias marcadas, marcarlas
   todas. Cada selección ofrece lo que tiene sentido para ella.
 
-- **Puedes ordenar tus materias a mano.** Mantén pulsada una y muévela; se queda donde la
-  dejes. Soltar sin moverla la marca, como antes.
+- **Puedes ordenar tus materias a mano.** Cada una lleva un asa a la derecha: mantenla pulsada
+  y muévela. Mantener pulsada la fila, como siempre, la marca —y ahora responde con un
+  golpecito.
 - Con una sola materia marcada, la barra ofrece **editarla**. Abrirla ya se hace con un toque.
 
 ### Corregido
+
+- **La barra de abajo te devolvía a la subpantalla donde estabas.** Si salías de Ajustes estando
+  dentro de Apariencia, al volver a Ajustes aparecía Apariencia otra vez. Ahora cada pestaña te
+  deja en su pantalla principal.
+- **El botón de crear se quitaba de en medio** cuando hay materias marcadas: se pisaba con la
+  barra de selección.
 
 - **Arrastrar las tarjetas de Inicio para reordenarlas funcionaba mal**: la app usaba la altura
   de una fila para calcular el salto de otra, y con filas de distinto alto unas saltaban antes
