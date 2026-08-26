@@ -9,7 +9,7 @@ no va aquí: para eso está el historial de git.
 Lo anterior a esta versión está en `docs/changelog-historico.md`, fuera del APK. La app solo
 enseña la versión que tienes puesta.
 
-## [Sin publicar]
+## [0.10.0-beta.1] — 2026-08-26
 
 **Lo importante:** la app entera pasa a los componentes de Material 3 Expressive. Cambian la
 barra de abajo, los selectores de fecha y hora, los interruptores, las barras de progreso, los
@@ -20,9 +20,6 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
 - **Puedes elegir en Apariencia** si la barra de abajo lleva texto, si las barras de progreso de
   tus estudios van rectas u onduladas, y si el interruptor lleva un icono dentro. Están en
   «Detalles de la interfaz», con un interruptor de muestra al lado para ver cómo queda.
-- **Gastos entre dos fechas.** Además de «Todo», «Semana» y «Mes», ahora hay «Periodo»: eliges
-  el desde y el hasta en un calendario. Sirve para un corte del semestre o un viaje, que no
-  empiezan un lunes ni caben en un mes.
 - **Los botones de icono dicen qué hacen.** Mantén pulsado cualquiera y sale su nombre.
 - **La hora se escribe.** Al poner la hora límite de una tarea o la de una clase, se abre el
   teclado numérico en vez del reloj. El reloj sigue ahí, en el botón de abajo a la izquierda.
@@ -94,8 +91,6 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
 - **El selector de fecha se dibujaba a franjas** al cambiar entre calendario y teclado: la
   ventana cambiaba de alto y Android la redibujaba por tramos. Ahora reserva el alto desde el
   principio.
-- Se quitó el filtro de periodo a medida de Gastos: daba más problemas que utilidad.
-
 - **La onda gris del toque se salía de los bordes** al mantener pulsado. Pasaba en las materias,
   la foto de perfil, dos filas de Ayuda, las cabeceras de formulario y el aviso de actualización.
 - **El calendario y el reloj salían en inglés.** La app va en español entera, también en lo que
