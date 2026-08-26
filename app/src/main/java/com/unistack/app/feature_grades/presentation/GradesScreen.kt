@@ -243,7 +243,7 @@ fun GradesScreen(
                             )
                             }
                         },
-                        onLongClick = { toggle(subject.id) },
+                        onLongClick = { if (!reorder.isDragging) toggle(subject.id) },
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,
