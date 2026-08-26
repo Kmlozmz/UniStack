@@ -2,6 +2,9 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Dialog
@@ -67,46 +70,67 @@ fun UniDatePickerDialog(
         initialSelectedDateMillis = (selectedDate ?: LocalDate.now()).toUtcMillis()
     )
 
-    DatePickerDialog(
+    /*
+     * Ventana propia y a pantalla completa, con la tarjeta animando su alto por dentro.
+     *
+     * Este componente ha tenido dos problemas seguidos, y los dos venían del mismo sitio.
+     *
+     * Con `DatePickerDialog`, cambiar entre calendario y teclado cambiaba el alto de la
+     * **ventana**, y una ventana de Android que se redimensiona no lo hace de golpe: se
+     * repinta por tramos, que es ese efecto de verla dibujarse franja a franja.
+     *
+     * Fijar una altura mínima lo quitaba, pero dejaba el modo de teclado —que ocupa la
+     * cuarta parte— dentro de una caja del alto del calendario, con un vacío enorme debajo.
+     *
+     * Así que la ventana pasa a ocupar la pantalla entera y no cambia nunca de tamaño; lo que
+     * crece y encoge es la tarjeta de dentro, y eso lo anima Compose con `animateContentSize`,
+     * que sí es fluido porque no hay ninguna ventana que reajustar.
+     */
+    Dialog(
         onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { onDateSelected(it.toLocalDate()) }
-                    onDismiss()
-                },
-                // Sin fecha marcada no hay nada que aceptar, y un botón que no hace nada
-                // se pulsa igual y deja pensando que la app se ha colgado.
-                enabled = state.selectedDateMillis != null
-            ) { Text("Aceptar") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        },
-        colors = androidx.compose.material3.DatePickerDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-        )
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Sin título propio.
-        //
-        // Le pasaba uno por el hueco `title` y se dibujaba fuera de la hoja, encima del texto
-        // de la pantalla de detrás: entre el título, el titular con la fecha, el conmutador de
-        // modo y las seis filas del mes, el diálogo no cabe a lo alto en un teléfono normal, y
-        // lo primero que se sale es justo lo que menos falta hace. El titular ya dice que
-        // fecha hay elegida.
-        //
-        // **La altura mínima está fijada, y ese es el arreglo del parpadeo.**
-        //
-        // El modo de teclado mide la mitad que el calendario. Al cambiar de uno a otro, la
-        // ventana del diálogo cambiaba de tamaño, y una ventana de Android que se redimensiona
-        // no lo hace de golpe: se va redibujando por tramos, que es ese efecto de verlo pintar
-        // franja a franja. Reservando desde el principio el alto del calendario, la ventana ya
-        // no cambia de tamaño y el cambio de modo es solo el contenido.
-        DatePicker(
-            state = state,
-            modifier = Modifier.heightIn(min = 520.dp),
-            showModeToggle = true
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier.animateContentSize(
+                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
+                ),
+                shape = MaterialTheme.shapes.extraLarge,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                tonalElevation = 6.dp
+            ) {
+                Column {
+                    // Sin título propio: le pasaba uno por el hueco `title` y se dibujaba
+                    // fuera de la hoja. El titular ya dice qué fecha hay elegida.
+                    DatePicker(
+                        state = state,
+                        showModeToggle = true
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = onDismiss) { Text("Cancelar") }
+                        TextButton(
+                            onClick = {
+                                state.selectedDateMillis?.let { onDateSelected(it.toLocalDate()) }
+                                onDismiss()
+                            },
+                            // Sin fecha marcada no hay nada que aceptar, y un botón que no
+                            // hace nada se pulsa igual y deja pensando que se ha colgado.
+                            enabled = state.selectedDateMillis != null
+                        ) { Text("Aceptar") }
+                    }
+                }
+            }
+        }
     }
 }
 

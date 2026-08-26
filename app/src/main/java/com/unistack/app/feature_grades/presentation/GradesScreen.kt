@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.Delete
@@ -212,11 +213,31 @@ fun GradesScreen(
                 contentDescription = "Quitar la selección",
                 onClick = { selectedIds = emptyList() }
             )
-            UniIconButton(
-                icon = Icons.Rounded.SelectAll,
-                contentDescription = "Marcar todas las de la lista",
-                onClick = { selectedIds = visible.map { it.id } }
-            )
+            /*
+             * Con una marcada y con varias no se ofrece lo mismo.
+             *
+             * Sobre una sola materia lo útil es abrirla —es lo que ibas a hacer antes de
+             * marcarla sin querer—; sobre varias, abrir no significa nada y lo que hace falta
+             * es poder marcarlas todas de golpe. Enseñar las dos siempre obliga a mirar cuál
+             * está apagada, y un botón apagado en una barra de cuatro es un estorbo.
+             */
+            if (selectedIds.size == 1) {
+                UniIconButton(
+                    icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                    contentDescription = "Abrir la materia",
+                    onClick = {
+                        val only = selectedIds.first()
+                        selectedIds = emptyList()
+                        onSubjectClick(only)
+                    }
+                )
+            } else {
+                UniIconButton(
+                    icon = Icons.Rounded.SelectAll,
+                    contentDescription = "Marcar todas las de la lista",
+                    onClick = { selectedIds = visible.map { it.id } }
+                )
+            }
             UniIconButton(
                 icon = Icons.Rounded.Delete,
                 contentDescription = if (selectedIds.size == 1) "Eliminar la materia" else "Eliminar las materias",

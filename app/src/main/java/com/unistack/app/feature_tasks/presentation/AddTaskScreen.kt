@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.utils.DayLabels
 
@@ -667,7 +668,7 @@ private fun TaskHeader(
                         contentDescription = "Más acciones",
                         onClick = { menuExpanded = true }
                     )
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    UniDropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                         onCompleteClick?.let { action ->
                             DropdownMenuItem(
                                 text = { Text("Marcar completada") },
@@ -1646,7 +1647,7 @@ private fun TaskTypeSelector(
                 Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null)
             }
         }
-        DropdownMenu(
+        UniDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(0.88f)

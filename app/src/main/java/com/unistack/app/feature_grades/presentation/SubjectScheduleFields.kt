@@ -1,5 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.utils.DayLabels
 
@@ -84,7 +85,7 @@ internal fun SubjectWhenFields(
                 icon = Icons.Rounded.ExpandMore,
                 onClick = { recurrenceExpanded = true }
             )
-            DropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
+            UniDropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
                 (1..4).forEach { weeks ->
                     DropdownMenuItem(
                         text = { Text(if (weeks == 1) "Cada semana" else "Cada $weeks semanas") },
@@ -180,7 +181,7 @@ internal fun SubjectReminderField(
             icon = Icons.Rounded.Alarm,
             onClick = { expanded = true }
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        UniDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             listOf(0, 5, 10, 15, 30, 60).forEach { minutes ->
                 DropdownMenuItem(
                     text = { Text(if (minutes == 0) "Sin recordatorio" else "$minutes minutos antes") },

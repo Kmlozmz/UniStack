@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.notifications.NotificationHistoryItem
@@ -263,7 +264,7 @@ private fun NotificationHistoryHeader(
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "Mas opciones", tint = NotificationAccentText)
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
                 containerColor = NotificationCard

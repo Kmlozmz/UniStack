@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Today
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -1165,7 +1166,7 @@ private fun PendingGradeTaskRow(
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
@@ -1383,7 +1384,7 @@ private fun TaskCard(
                     contentDescription = "Más opciones de ${task.title}",
                     onClick = { menuExpanded = true }
                 )
-                DropdownMenu(
+                UniDropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {

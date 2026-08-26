@@ -63,7 +63,18 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
   categoría pasa de tres toques a dos, y administrar cuáles aparecen al registrar sigue estando
   al final del menú.
 
+- **Gastos abre en la semana**, no en el día. Un día es una ventana tan corta que la pantalla
+  arrancaba casi siempre en cero, y una pantalla vacía nada más entrar parece rota antes que
+  vacía.
+- **Al mantener pulsada una materia sola se ofrece abrirla**; con varias marcadas, marcarlas
+  todas. Cada selección ofrece lo que tiene sentido para ella.
+
 ### Corregido
+
+- **Los menús desplegables van redondeados.** Eran la única pieza cuadrada en una app de
+  esquinas suaves, y se notaba al abrirlos sobre una tarjeta.
+- **El modo de teclado del selector de fecha ya no ocupa la pantalla entera.** El diálogo ahora
+  ajusta su alto con una animación en vez de reservar el del calendario.
 
 - **El selector de fecha se dibujaba a franjas** al cambiar entre calendario y teclado: la
   ventana cambiaba de alto y Android la redibujaba por tramos. Ahora reserva el alto desde el

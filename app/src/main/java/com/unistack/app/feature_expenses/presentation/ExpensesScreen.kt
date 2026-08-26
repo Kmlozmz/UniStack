@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.ui.draw.rotate
@@ -174,7 +175,7 @@ fun ExpensesScreen(
     var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
     var showCategorySheet by rememberSaveable { mutableStateOf(false) }
     var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.TODAY) }
+    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.WEEK) }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
@@ -196,9 +197,7 @@ fun ExpensesScreen(
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
     val periodTotal = selectedPeriodExpenses.sumOf { it.amount }
     val activeBudget = when (selectedPeriod) {
-        // Un dia no tiene tope propio, asi que se mide contra el de la semana, que es el
-        // marco mas corto que el perfil guarda.
-        ExpensePeriodFilter.TODAY -> profile?.weeklyBudget ?: 0
+        ExpensePeriodFilter.TODAY,
         ExpensePeriodFilter.WEEK -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.MONTH -> profile?.monthlyBudget ?: 0
         ExpensePeriodFilter.ALL -> (profile?.monthlyBudget ?: 0).takeIf { it > 0 } ?: (profile?.weeklyBudget ?: 0)
@@ -808,7 +807,7 @@ private fun CategoryFilterMenu(
             border = null
         )
 
-        DropdownMenu(
+        UniDropdownMenu(
             expanded = open,
             onDismissRequest = { open = false }
         ) {
@@ -881,10 +880,14 @@ private fun PeriodSegmentedControl(
         // Tres, no cuatro. Con «Periodo» dentro, los cuatro rótulos se quedaban en «Tod»,
         // «Sem», «Mes» y «Period»: un filtro que hay que adivinar no es un filtro. El periodo
         // a medida baja a la fila de chips, donde tiene sitio para decir las fechas.
+        // Semana, mes y todo. «Hoy» estuvo aquí y era el que salía al abrir: un día es una
+        // ventana tan corta que la mayoría de las veces la pantalla arrancaba en cero, y una
+        // pantalla vacía nada más entrar parece rota antes que vacía. La semana casi siempre
+        // tiene algo que enseñar.
         options = listOf(
-            ExpensePeriodFilter.ALL,
             ExpensePeriodFilter.WEEK,
-            ExpensePeriodFilter.MONTH
+            ExpensePeriodFilter.MONTH,
+            ExpensePeriodFilter.ALL
         ).map { UniSegmentedOption(value = it, label = it.label) },
         onSelected = onPeriodSelected,
         modifier = modifier

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -715,7 +716,7 @@ private fun SubjectHeader(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = onDismissMenu,
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -1623,7 +1624,7 @@ private fun GradeRowItem(
                 contentDescription = "Opciones de nota",
                 onClick = { showMenu = true }
             )
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
