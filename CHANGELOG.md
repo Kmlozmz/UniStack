@@ -9,7 +9,7 @@ no va aquí: para eso está el historial de git.
 Lo anterior a esta versión está en `docs/changelog-historico.md`, fuera del APK. La app solo
 enseña la versión que tienes puesta.
 
-## [0.10.0-beta.1] — 2026-08-26
+## [1.5.10] — 2026-08-26
 
 **Lo importante:** la app entera pasa a los componentes de Material 3 Expressive. Cambian la
 barra de abajo, los selectores de fecha y hora, los interruptores, las barras de progreso, los
