@@ -6,7 +6,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
@@ -15,16 +15,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * El botón de crear, con sus opciones.
@@ -60,7 +60,7 @@ fun UniStackFabMenu(
         if (showAddGrade) add(Triple("Nota", Icons.Rounded.EditNote, onAddGradeClick))
         if (showAddTask) add(Triple("Tarea", Icons.Rounded.TaskAlt, onAddTaskClick))
         if (showAddExpense) add(Triple("Gasto", Icons.Rounded.AccountBalanceWallet, onAddExpenseClick))
-        if (showAddSubject) add(Triple("Materia", Icons.Rounded.MenuBook, onAddSubjectClick))
+        if (showAddSubject) add(Triple("Materia", Icons.AutoMirrored.Rounded.MenuBook, onAddSubjectClick))
     }
 
     FloatingActionButtonMenu(

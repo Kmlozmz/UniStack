@@ -6,14 +6,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.rounded.DragHandle
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,7 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.SelectAll
@@ -78,8 +70,8 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.runtime.setValue
 private val SpanishLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
 
 @Composable
@@ -222,7 +214,15 @@ fun GradesScreen(
                 items(visible, key = { it.id }) { subject ->
                     SubjectRow(
                         modifier = Modifier.uniReorderableItem(reorder, subject.id),
-                        dragHandle = {
+                        // El asa solo con la selección abierta.
+                        //
+                        // Permanente, cinco asas en la lista repetían un mando que casi nunca se
+                        // usa y le robaban ancho al nombre de la materia, que es lo que se viene
+                        // a leer: «ESTADOS FINAN...» en vez del nombre entero. Ordenar es algo
+                        // que se hace una vez al empezar el semestre, no cada vez que se abre la
+                        // pantalla.
+                        dragHandle = if (!selecting) null else {
+                            {
                             Icon(
                                 imageVector = Icons.Rounded.DragHandle,
                                 contentDescription = "Mover la materia",
@@ -241,6 +241,7 @@ fun GradesScreen(
                                         onSettle = { viewModel.saveSubjectOrder(order) }
                                     )
                             )
+                            }
                         },
                         onLongClick = { toggle(subject.id) },
                         subject = subject,

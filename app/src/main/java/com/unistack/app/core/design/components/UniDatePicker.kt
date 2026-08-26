@@ -5,7 +5,6 @@ package com.unistack.app.core.design.components
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Box
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.dp
@@ -29,8 +28,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset

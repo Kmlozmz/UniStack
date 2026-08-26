@@ -9,13 +9,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.SegmentedListItem
-import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +36,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.Icons
@@ -73,19 +66,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.unistack.app.core.design.components.shapesFor
-import com.unistack.app.core.design.components.SettingsRowPosition
-import com.unistack.app.core.design.components.UniSwitch
-import com.unistack.app.core.design.components.UniChoiceRow
 import com.unistack.app.core.design.components.SectionHeader
-import com.unistack.app.core.design.components.UniDateRangePickerDialog
 import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -123,6 +109,8 @@ import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -1030,13 +1018,6 @@ private fun ExpenseCategorySheetOption(
     }
 }
 
-/** La posición de una fila dentro de una lista de [total]. */
-private fun positionOf(index: Int, total: Int): SettingsRowPosition = when {
-    total <= 1 -> SettingsRowPosition.Only
-    index == 0 -> SettingsRowPosition.First
-    index == total - 1 -> SettingsRowPosition.Last
-    else -> SettingsRowPosition.Middle
-}
 
 
 /**

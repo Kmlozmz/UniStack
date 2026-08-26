@@ -29,6 +29,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 /**
  * Campos del bloque «Cuándo» del formulario de materia: qué días, a qué hora, dónde y cada
  * cuánto se repite.

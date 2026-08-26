@@ -92,12 +92,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -157,6 +155,8 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
     const val Name = "setup_name"

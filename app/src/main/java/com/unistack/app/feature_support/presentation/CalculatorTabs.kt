@@ -13,8 +13,6 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.key
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,6 +60,8 @@ import com.unistack.app.feature_support.domain.CalculatorMath
 import com.unistack.app.feature_support.domain.CalculatorMath.Evaluation
 import com.unistack.app.feature_support.domain.CalculatorMath.SemesterSubject
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /** Qué casilla recibe lo que se teclea. */
 private enum class Slot { FIRST, SECOND }

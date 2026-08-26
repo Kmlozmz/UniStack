@@ -38,11 +38,7 @@ import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +61,7 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
+import androidx.compose.runtime.getValue
 
 /**
  * Apariencia: la pantalla más grande de ajustes, y la única con vista previa.

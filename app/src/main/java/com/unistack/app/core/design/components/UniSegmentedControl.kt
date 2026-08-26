@@ -85,6 +85,19 @@ fun <T> UniSegmentedControl(
 ) {
     val haptics = LocalHapticFeedback.current
 
+    /*
+     * Se usa la sobrecarga marcada como obsoleta, y es a propósito.
+     *
+     * La nueva pide un `overflowIndicator` y cambia el contenido de composable a un ámbito con
+     * `customItem`, así que migrar no es cambiar una línea: es reescribir el bucle de segmentos
+     * de este control, que dibuja diecinueve sitios de la app.
+     *
+     * Lo que la nueva resuelve es el desbordamiento: cuando los segmentos no caben, ofrece un
+     * menú con los que sobran. Aquí nunca hay más de cuatro y todos caben, así que se estaría
+     * pagando una reescritura por un problema que este control no tiene. Cuando la vieja se
+     * retire de verdad habrá que hacerlo; hasta entonces, no.
+     */
+    @Suppress("DEPRECATION")
     ButtonGroup(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)

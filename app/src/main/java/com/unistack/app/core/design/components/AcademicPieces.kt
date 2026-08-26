@@ -30,14 +30,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.material.icons.rounded.Balance
@@ -57,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /*
  * Las piezas con las que se configura lo académico: la franja de la escala, las notas con
@@ -122,7 +122,7 @@ internal fun ScaleZoneBar(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
-            imageVector = Icons.Rounded.HelpOutline,
+            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
             contentDescription = "Qué significa esta franja",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)

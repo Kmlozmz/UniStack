@@ -19,26 +19,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.navigation.AppRoutes
 import com.unistack.app.feature_tasks.presentation.TasksScreen
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.ui.Alignment
 import com.unistack.app.core.design.components.UniStackFabMenu
@@ -46,8 +39,9 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.feature_tasks.presentation.TasksViewModel
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 private enum class AcademicTab(val label: String) {
     SUBJECTS("Materias"),
