@@ -4,6 +4,12 @@ package com.unistack.app.feature_expenses.presentation
 
 import com.unistack.app.core.utils.DayLabels
 
+import androidx.compose.ui.draw.rotate
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ListItemDefaults
@@ -169,24 +175,14 @@ fun ExpensesScreen(
     var showCategorySheet by rememberSaveable { mutableStateOf(false) }
     var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.TODAY) }
-    // Las dos fechas del periodo a medida, en días desde la epoca para que sobrevivan a
-    // girar la pantalla: `LocalDate` no es Parcelable y `rememberSaveable` lo rechaza.
-    var customFromDay by rememberSaveable { mutableStateOf<Long?>(null) }
-    var customToDay by rememberSaveable { mutableStateOf<Long?>(null) }
-    var showRangePicker by rememberSaveable { mutableStateOf(false) }
-    val customRange = remember(customFromDay, customToDay) {
-        val from = customFromDay?.let(java.time.LocalDate::ofEpochDay)
-        val to = customToDay?.let(java.time.LocalDate::ofEpochDay)
-        if (from != null && to != null) from..to else null
-    }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
     val filterCategories = remember(expenses, enabledCategories) {
         (enabledCategories + expenses.map { it.category }).toList().sortedBy { it.ordinal }
     }
-    val selectedPeriodExpenses = remember(expenses, selectedPeriod, customRange) {
-        expenses.filter { selectedPeriod.matches(it, customRange) }
+    val selectedPeriodExpenses = remember(expenses, selectedPeriod) {
+        expenses.filter { selectedPeriod.matches(it) }
     }
     val filteredExpenses = remember(selectedPeriodExpenses, selectedCategory) {
         selectedPeriodExpenses.filter { expense ->
@@ -205,10 +201,7 @@ fun ExpensesScreen(
         ExpensePeriodFilter.TODAY -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.WEEK -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.MONTH -> profile?.monthlyBudget ?: 0
-        ExpensePeriodFilter.ALL,
-        // Un periodo a medida no tiene tope propio: se mide contra el mensual, que es el
-        // marco más largo que el perfil guarda.
-        ExpensePeriodFilter.CUSTOM -> (profile?.monthlyBudget ?: 0).takeIf { it > 0 } ?: (profile?.weeklyBudget ?: 0)
+        ExpensePeriodFilter.ALL -> (profile?.monthlyBudget ?: 0).takeIf { it > 0 } ?: (profile?.weeklyBudget ?: 0)
     }
     // Con «Hoy» el tope se compara con lo de la semana entera, no con lo de hoy: un tope
     // semanal contra el gasto de un dia diria que llevas el 3 % usado cada lunes.
@@ -225,43 +218,7 @@ fun ExpensesScreen(
             .fillMaxSize()
             .background(ExpenseBackground)
     ) {
-        if (showRangePicker) {
-            UniDateRangePickerDialog(
-                startDate = customFromDay?.let(java.time.LocalDate::ofEpochDay),
-                endDate = customToDay?.let(java.time.LocalDate::ofEpochDay),
-                onRangeSelected = { from, to ->
-                    customFromDay = from.toEpochDay()
-                    customToDay = to.toEpochDay()
-                },
-                onDismiss = {
-                    showRangePicker = false
-                    // Cerrar el calendario sin elegir fechas deja «Periodo» puesto sin
-                    // periodo, que no filtra nada y encima parece que sí.
-                    if (customFromDay == null || customToDay == null) {
-                        if (selectedPeriod == ExpensePeriodFilter.CUSTOM) {
-                            selectedPeriod = ExpensePeriodFilter.ALL
-                        }
-                    }
-                },
-            )
-        }
-
         ExpensesContent(
-            customRangeLabel = customRange?.let { range ->
-                val fmt = java.time.format.DateTimeFormatter.ofPattern("d MMM", ExpenseChipLocale)
-                range.start.format(fmt) + " - " + range.endInclusive.format(fmt)
-            },
-            onCustomRangeClick = {
-                selectedPeriod = ExpensePeriodFilter.CUSTOM
-                showRangePicker = true
-            },
-            onCustomRangeClear = {
-                customFromDay = null
-                customToDay = null
-                if (selectedPeriod == ExpensePeriodFilter.CUSTOM) {
-                    selectedPeriod = ExpensePeriodFilter.ALL
-                }
-            },
             selectedPeriod = selectedPeriod,
             // Sin «deseleccionar» aquí, y es a propósito.
             //
@@ -272,13 +229,7 @@ fun ExpensesScreen(
             //
             // Aquí siempre hay un tramo elegido —«Todo» es el neutro— y lo que se quita y se
             // pone son los dos chips de abajo, que para eso llevan su cruz.
-            onPeriodSelected = { chosen ->
-                selectedPeriod = chosen
-                if (chosen != ExpensePeriodFilter.CUSTOM) {
-                    customFromDay = null
-                    customToDay = null
-                }
-            },
+            onPeriodSelected = { selectedPeriod = it },
             selectedCategory = selectedCategory,
             categories = filterCategories,
             onCategorySelected = { selectedCategory = it },
@@ -376,9 +327,6 @@ private fun ExpensesContent(
     onEditExpenseClick: (String) -> Unit,
     onDeleteExpenseClick: (String) -> Unit,
     onBudgetClick: () -> Unit,
-    customRangeLabel: String?,
-    onCustomRangeClick: () -> Unit,
-    onCustomRangeClear: () -> Unit,
     bottomPadding: Dp
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -408,9 +356,6 @@ private fun ExpensesContent(
             }
             item {
                 ExpensesFilters(
-                    customRangeLabel = customRangeLabel,
-                    onCustomRangeClick = onCustomRangeClick,
-                    onCustomRangeClear = onCustomRangeClear,
                     selectedPeriod = selectedPeriod,
                     onPeriodSelected = onPeriodSelected,
                     selectedCategory = selectedCategory,
@@ -787,106 +732,140 @@ private fun ExpensesFilters(
     selectedCategory: ExpenseCategory?,
     categories: List<ExpenseCategory>,
     onCategorySelected: (ExpenseCategory?) -> Unit,
-    onCategoryClick: () -> Unit,
-    customRangeLabel: String?,
-    onCustomRangeClick: () -> Unit,
-    onCustomRangeClear: () -> Unit
+    onCategoryClick: () -> Unit
 ) {
-    /*
-     * Dos filas, no una.
-     *
-     * Arriba el tramo, que es una elección entre tres y quiere el ancho entero. Abajo los dos
-     * filtros que se ponen y se quitan. Metidos todos en la misma línea, cada pieza se quedaba
-     * con setenta puntos y los rótulos salían cortados a la mitad.
-     */
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PeriodSegmentedControl(
             selectedPeriod = selectedPeriod,
             onPeriodSelected = onPeriodSelected,
             modifier = Modifier.fillMaxWidth()
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
+        CategoryFilterMenu(
+            selectedCategory = selectedCategory,
+            categories = categories,
+            onCategorySelected = onCategorySelected,
+            onManageClick = onCategoryClick
+        )
+    }
+}
+
+/**
+ * El filtro de categoría, en un desplegable.
+ *
+ * **La flecha de al lado ahora significa algo.** Era una pastilla con una flecha hacia abajo que
+ * abría una hoja a pantalla completa: la flecha prometía una lista corta debajo y lo que salía
+ * era otra pantalla. Un menú es lo que la flecha dice, y elegir una categoría pasa de tres
+ * toques a dos.
+ *
+ * Administrar cuáles aparecen al registrar sigue estando, al final del menú y detrás de una
+ * línea: es lo único de aquí que no filtra, y mezclarlo con las categorías hacía que tocar la
+ * fila equivocada cambiara algo que no querías cambiar.
+ */
+@Composable
+private fun CategoryFilterMenu(
+    selectedCategory: ExpenseCategory?,
+    categories: List<ExpenseCategory>,
+    onCategorySelected: (ExpenseCategory?) -> Unit,
+    onManageClick: () -> Unit
+) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    val active = selectedCategory != null
+    val turn by animateFloatAsState(
+        targetValue = if (open) 180f else 0f,
+        label = "flecha de la categoría"
+    )
+
+    Box {
+        FilterChip(
+            selected = active,
+            onClick = { open = true },
+            modifier = Modifier.height(44.dp),
+            shape = CircleShape,
+            label = {
+                Text(
+                    text = selectedCategory?.label() ?: "Categoría",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .rotate(turn)
+                )
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                labelColor = ExpenseMuted,
+                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            border = null
+        )
+
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false }
         ) {
-            ExpenseFilterChip(
-                label = customRangeLabel ?: "Periodo",
-                active = customRangeLabel != null,
-                leadingIcon = Icons.Rounded.DateRange,
-                onClick = onCustomRangeClick,
-                onClear = onCustomRangeClear
+            DropdownMenuItem(
+                text = { Text("Todas las categorías") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = if (selectedCategory == null) ExpensePurple else ExpenseMuted
+                    )
+                },
+                onClick = {
+                    onCategorySelected(null)
+                    open = false
+                }
             )
-            ExpenseFilterChip(
-                label = selectedCategory?.label() ?: "Categoría",
-                active = selectedCategory != null,
-                leadingIcon = null,
-                onClick = onCategoryClick,
-                onClear = { onCategorySelected(null) }
+            categories.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category.label()) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = category.expenseSheetIcon(),
+                            contentDescription = null,
+                            tint = category.expenseTone()
+                        )
+                    },
+                    trailingIcon = {
+                        if (selectedCategory == category) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = ExpensePurple
+                            )
+                        }
+                    },
+                    onClick = {
+                        onCategorySelected(category)
+                        open = false
+                    }
+                )
+            }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            DropdownMenuItem(
+                text = { Text("Administrar categorías") },
+                leadingIcon = {
+                    Icon(Icons.Rounded.Tune, contentDescription = null, tint = ExpenseMuted)
+                },
+                onClick = {
+                    open = false
+                    onManageClick()
+                }
             )
         }
     }
 }
 
-/**
- * Un filtro que se pone y se quita, con su cruz.
- *
- * La cruz solo sale cuando hay algo que quitar. Antes había que abrir la hoja, buscar «Todas» y
- * tocarla: tres pasos para deshacer uno.
- */
-@Composable
-private fun ExpenseFilterChip(
-    label: String,
-    active: Boolean,
-    leadingIcon: ImageVector?,
-    onClick: () -> Unit,
-    onClear: () -> Unit
-) {
-    FilterChip(
-        selected = active,
-        onClick = onClick,
-        modifier = Modifier.height(44.dp),
-        shape = CircleShape,
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        leadingIcon = leadingIcon?.let { icon ->
-            { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) }
-        },
-        trailingIcon = {
-            if (active) {
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = "Quitar este filtro",
-                    modifier = Modifier
-                        .size(18.dp)
-                        .cleanClickable(onClear)
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            labelColor = ExpenseMuted,
-            selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-            selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
-        ),
-        border = null
-    )
-}
 
 @Composable
 private fun PeriodSegmentedControl(
@@ -924,18 +903,13 @@ private fun ExpenseCategorySheet(
     onDismiss: () -> Unit
 ) {
     /*
-     * Una hoja con dos modos, no dos listas apiladas.
+     * Solo administrar, ya no filtrar.
      *
-     * Antes traía dos rejillas de dos columnas, una encima de otra, con cajas idénticas: la de
-     * arriba filtraba y la de abajo encendía y apagaba categorías, y nada en la pantalla decia
-     * cuál hacía qué. Tocar la caja equivocada cambiaba algo que no querías cambiar, y no era
-     * evidente qué había pasado.
-     *
-     * Ahora es una sola lista contestando a dos preguntas, y arriba se dice a cuál. Es lo mismo
-     * que se hizo en Escríbenos con fallo, sugerencia y otro.
+     * Filtrar se hace desde el desplegable del chip, que es un toque y no cambia de pantalla.
+     * Aquí queda lo otro: decidir cuáles de las seis categorías salen al registrar un gasto.
+     * Tener las dos cosas en la misma hoja, con cajas idénticas, era lo que hacía tocar la
+     * equivocada.
      */
-    var managing by rememberSaveable { mutableStateOf(false) }
-
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = ExpenseBackground,
@@ -952,78 +926,35 @@ private fun ExpenseCategorySheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Categorías",
+                    text = "Administrar categorías",
                     color = ExpenseText,
                     style = MaterialTheme.typography.headlineSmallEmphasized,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = if (managing) {
-                        "Apaga las que no uses y dejarán de salir al registrar un gasto."
-                    } else {
-                        "Elige una para ver solo esos gastos."
-                    },
+                    text = "Apaga las que no uses y dejarán de salir al registrar un gasto. " +
+                        "Los gastos que ya tengas guardados no se tocan.",
                     color = ExpenseMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
 
-            UniChoiceRow(
-                selected = managing,
-                options = listOf(
-                    UniSegmentedOption(value = false, label = "Filtrar"),
-                    UniSegmentedOption(value = true, label = "Qué aparece")
-                ),
-                onSelected = { managing = it }
-            )
-
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 320.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                if (managing) {
-                    ExpenseCategory.entries.chunked(2).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEach { category ->
-                                val enabled = category in enabledCategories
-                                ExpenseCategorySheetOption(
-                                    label = category.label(),
-                                    icon = category.expenseSheetIcon(),
-                                    selected = enabled,
-                                    accent = ExpenseCoral,
-                                    trailingCheck = enabled,
-                                    onClick = { onToggleCategory(category) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ExpenseCategory.entries.chunked(2).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { category ->
+                            val enabled = category in enabledCategories
+                            ExpenseCategorySheetOption(
+                                label = category.label(),
+                                icon = category.expenseSheetIcon(),
+                                selected = enabled,
+                                accent = ExpenseCoral,
+                                trailingCheck = enabled,
+                                onClick = { onToggleCategory(category) },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
-                    }
-                } else {
-                    ExpenseCategorySheetOption(
-                        label = "Todas las categorías",
-                        icon = Icons.Rounded.Check,
-                        selected = selectedCategory == null,
-                        accent = ExpensePurple,
-                        onClick = { onFilterSelected(null) }
-                    )
-                    filterCategories.chunked(2).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            row.forEach { category ->
-                                ExpenseCategorySheetOption(
-                                    label = category.label(),
-                                    icon = category.expenseSheetIcon(),
-                                    selected = selectedCategory == category,
-                                    accent = ExpenseCoral,
-                                    trailingCheck = selectedCategory == category,
-                                    onClick = { onFilterSelected(category) },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                            if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-                        }
+                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
@@ -1696,11 +1627,9 @@ private fun previousTotalForPeriod(
                 }
                 .sumOf { it.amount }
         }
-        ExpensePeriodFilter.ALL,
-        // «Todo» y un periodo a medida no tienen tramo anterior con el que compararse: el
-        // primero ya los incluye todos, y el segundo lo elige cada quien, así que no hay
-        // «los mismos días de antes» que calcular. Sin comparación, no se enseña tendencia.
-        ExpensePeriodFilter.CUSTOM -> 0
+        // «Todo» no tiene tramo anterior con el que compararse: ya los incluye todos. Sin
+        // comparación, no se enseña tendencia.
+        ExpensePeriodFilter.ALL -> 0
     }
 }
 
@@ -1719,22 +1648,9 @@ private enum class ExpensePeriodFilter(val label: String, val heroLabel: String,
     TODAY("Hoy", "Hoy", "hoy"),
     WEEK("Semana", "Esta semana", "esta semana"),
     MONTH("Mes", "Este mes", "este mes"),
-    ALL("Todo", "Todo", "todavía"),
+    ALL("Todo", "Todo", "todavía");
 
-    /**
-     * Dos fechas elegidas a mano.
-     *
-     * Las otras cuatro contestan la pregunta de todos los días. Esta contesta la del corte de
-     * un semestre o la de un viaje, que no empiezan un lunes ni caben en un mes natural, y
-     * hasta ahora no había forma de preguntarla.
-     */
-    CUSTOM("Periodo", "El periodo elegido", "en ese periodo");
-
-    /**
-     * @param range solo lo usa [CUSTOM]. Sin rango elegido todavía, no filtra nada: la lista
-     *   se queda como estaba hasta que se eligen las dos fechas.
-     */
-    fun matches(expense: Expense, range: ClosedRange<java.time.LocalDate>? = null): Boolean {
+    fun matches(expense: Expense): Boolean {
         val today = ExpenseDateUtils.today()
         val date = ExpenseDateUtils.fromMillis(expense.dateMillis)
         return when (this) {
@@ -1742,7 +1658,6 @@ private enum class ExpensePeriodFilter(val label: String, val heroLabel: String,
             WEEK -> ExpenseDateUtils.isInCurrentWeek(expense.dateMillis, today)
             MONTH -> date.month == today.month && date.year == today.year
             ALL -> true
-            CUSTOM -> range == null || date in range
         }
     }
 }
@@ -1846,10 +1761,7 @@ private fun ExpensesContent(
                 selectedCategory = selectedCategory,
                 categories = categories,
                 onCategorySelected = onCategorySelected,
-                onCategoryClick = onCategoryClick,
-                customRangeLabel = null,
-                onCustomRangeClick = {},
-                onCustomRangeClear = {}
+                onCategoryClick = onCategoryClick
             )
         }
         if (expenses.isEmpty()) {

@@ -52,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -149,7 +150,6 @@ internal fun FeedbackSheet(
             )
         } else if (opening == null) {
             BeforeSending(
-                onBack = { instructing = false },
                 onSend = {
                     opened = onSend(kind, text, contact.trim().takeIf { it.isNotEmpty() })
                 }
@@ -272,49 +272,81 @@ private fun FeedbackForm(
  * Telegram no deja que otra app escriba en un grupo por ti: lo máximo que se puede hacer es
  * dejar el mensaje copiado y abrir el tema. El último paso —pegar y darle a enviar— lo da quien
  * escribe, y esto lo dice mientras todavía está mirando UniStack.
+ *
+ * **Sin botón de volver.** Este paso no pregunta nada: cuenta cómo va a salir el mensaje. Si
+ * hay que cambiar algo se cierra la hoja, que es lo que hace la cruz de arriba y el gesto de
+ * bajarla; poner un «Volver» al lado del que envía hace dudar de cuál es el que sigue.
  */
 @Composable
-private fun BeforeSending(
-    onBack: () -> Unit,
-    onSend: () -> Unit
-) {
+private fun BeforeSending(onSend: () -> Unit) {
+    val entered = remember { MutableTransitionState(false).apply { targetState = true } }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 28.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        AnimatedVisibility(
+            visibleState = entered,
+            enter = scaleIn(
+                animationSpec = spring(
+                    dampingRatio = 0.45f,
+                    stiffness = Spring.StiffnessMediumLow
+                ),
+                initialScale = 0.6f
+            ) + fadeIn()
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+        }
+
         Text(
             text = "Cómo se envía",
             style = MaterialTheme.typography.headlineSmallEmphasized,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
         )
         Text(
             text = "Telegram no deja que una app escriba en un grupo por ti, así que el último " +
                 "paso lo das tú. Son dos toques:",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
-        SendingStep(number = "1", text = "Se copia tu mensaje y se abre el tema del grupo.")
-        SendingStep(number = "2", text = "Mantienes pulsado en el campo de Telegram, pegas y envías.")
 
-        Row(
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh
         ) {
-            UniStackButton(
-                text = "Volver",
-                onClick = onBack,
-                variant = UniStackButtonVariant.Outlined,
-                modifier = Modifier.weight(1f)
-            )
-            UniStackButton(
-                text = "Enviar por Telegram",
-                onClick = onSend,
-                leadingIcon = Icons.AutoMirrored.Rounded.Send,
-                modifier = Modifier.weight(1.5f)
-            )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SendingStep(number = "1", text = "Se copia tu mensaje y se abre el tema del grupo.")
+                SendingStep(number = "2", text = "Mantén pulsado en el campo de Telegram, pega y envía.")
+            }
         }
+
+        UniStackButton(
+            text = "Enviar por Telegram",
+            onClick = onSend,
+            leadingIcon = Icons.AutoMirrored.Rounded.Send
+        )
     }
 }
 

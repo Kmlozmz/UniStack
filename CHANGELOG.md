@@ -58,7 +58,17 @@ menús y las listas de ajustes. Y tres de esos cambios ya se eligen desde Aparie
 - **«Escríbenos» explica cómo se envía antes de salir de la app.** El botón dice «Enviar»,
   y el que abre Telegram aparece después, con las instrucciones delante.
 
+- **El filtro de categoría de Gastos es un desplegable.** La flechita que lleva al lado ahora
+  significa lo que parece: se abre una lista corta debajo en vez de otra pantalla. Elegir
+  categoría pasa de tres toques a dos, y administrar cuáles aparecen al registrar sigue estando
+  al final del menú.
+
 ### Corregido
+
+- **El selector de fecha se dibujaba a franjas** al cambiar entre calendario y teclado: la
+  ventana cambiaba de alto y Android la redibujaba por tramos. Ahora reserva el alto desde el
+  principio.
+- Se quitó el filtro de periodo a medida de Gastos: daba más problemas que utilidad.
 
 - **La onda gris del toque se salía de los bordes** al mantener pulsado. Pasaba en las materias,
   la foto de perfil, dos filas de Ayuda, las cabeceras de formulario y el aviso de actualización.

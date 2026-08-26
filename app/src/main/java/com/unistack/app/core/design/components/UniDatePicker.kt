@@ -2,6 +2,7 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.dp
@@ -93,8 +94,17 @@ fun UniDatePickerDialog(
         // modo y las seis filas del mes, el diálogo no cabe a lo alto en un teléfono normal, y
         // lo primero que se sale es justo lo que menos falta hace. El titular ya dice que
         // fecha hay elegida.
+        //
+        // **La altura mínima está fijada, y ese es el arreglo del parpadeo.**
+        //
+        // El modo de teclado mide la mitad que el calendario. Al cambiar de uno a otro, la
+        // ventana del diálogo cambiaba de tamaño, y una ventana de Android que se redimensiona
+        // no lo hace de golpe: se va redibujando por tramos, que es ese efecto de verlo pintar
+        // franja a franja. Reservando desde el principio el alto del calendario, la ventana ya
+        // no cambia de tamaño y el cambio de modo es solo el contenido.
         DatePicker(
             state = state,
+            modifier = Modifier.heightIn(min = 520.dp),
             showModeToggle = true
         )
     }
