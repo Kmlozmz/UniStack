@@ -1,5 +1,7 @@
 package com.unistack.app.core.design.components
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -36,10 +38,29 @@ import androidx.compose.runtime.getValue
 class UniReorderState internal constructor() {
     internal var draggedKey by mutableStateOf<Any?>(null)
     internal var offset by mutableFloatStateOf(0f)
+    internal var heldHandleKey by mutableStateOf<Any?>(null)
     private val heights = mutableStateMapOf<Any, Int>()
 
     /** Si hay algo levantado ahora mismo. Sirve para apagar el toque mientras dura. */
     val isDragging: Boolean get() = draggedKey != null
+
+    /**
+     * Si el dedo está sobre el asa de esta fila, **desde que la toca** y no desde que la
+     * levanta.
+     *
+     * Existe porque [isDragging] llega tarde. Una fila que se puede mantener pulsada para
+     * marcarla y que lleva un asa dentro tiene dos detectores de pulsación larga corriendo a la
+     * vez sobre el mismo dedo, y los dos arrancan su cuenta atrás en el mismo instante. Cuál de
+     * los dos despierta primero al cumplirse el plazo no está decidido por nada: son dos
+     * corrutinas esperando el mismo tiempo. Se intentó preguntar por [isDragging] dentro del
+     * `onLongClick` de la fila, y falla justo la mitad de las veces —cuando gana la fila, el
+     * arrastre aún no ha empezado y la marca se quita—.
+     *
+     * El evento de bajar el dedo sí está ordenado: ocurre un plazo entero antes que cualquiera
+     * de las dos pulsaciones largas. Preguntando por esto, la respuesta ya no depende de quién
+     * gane la carrera.
+     */
+    fun isHandleHeld(key: Any): Boolean = heldHandleKey == key
 
     internal fun measure(key: Any, height: Int) {
         if (height > 0) heights[key] = height
@@ -96,7 +117,31 @@ fun Modifier.uniReorderHandle(
     val at by rememberUpdatedState(index)
     val total by rememberUpdatedState(itemCount)
 
-    this.pointerInput(key) {
+    this
+        /*
+         * Apuntar el dedo en cuanto baja, antes de que nadie decida nada.
+         *
+         * No consume el evento a propósito: la fila de debajo sigue recibiéndolo y sigue
+         * pudiendo abrirse con un toque corto. Lo único que hace es dejar constancia de dónde
+         * empezó el gesto, para que quien tenga que decidir pueda mirarlo.
+         */
+        .pointerInput(key) {
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false)
+                state.heldHandleKey = key
+                try {
+                    // Hasta que se levanten todos los dedos. Se espera el evento en vez de
+                    // `waitForUpOrCancellation` porque esa se rinde en cuanto el arrastre
+                    // consume el movimiento, que es precisamente cuando hay que seguir.
+                    do {
+                        val event = awaitPointerEvent()
+                    } while (event.changes.any { it.pressed })
+                } finally {
+                    if (state.heldHandleKey == key) state.heldHandleKey = null
+                }
+            }
+        }
+        .pointerInput(key) {
         detectDragGesturesAfterLongPress(
             onDragStart = {
                 state.draggedKey = key
@@ -128,5 +173,5 @@ fun Modifier.uniReorderHandle(
                 }
             }
         )
-    }
+        }
 }

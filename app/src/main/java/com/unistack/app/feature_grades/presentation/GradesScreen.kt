@@ -243,7 +243,12 @@ fun GradesScreen(
                             )
                             }
                         },
-                        onLongClick = { if (!reorder.isDragging) toggle(subject.id) },
+                        // Mantener pulsada la fila marca; mantener pulsada el asa mueve.
+                        // Se pregunta por el asa y no por si ya está arrastrando: cuando esto
+                        // se ejecuta, el arrastre puede no haber empezado todavía.
+                        onLongClick = {
+                            if (!reorder.isHandleHeld(subject.id)) toggle(subject.id)
+                        },
                         subject = subject,
                         calculation = calculations.getValue(subject),
                         gradingScale = scale,

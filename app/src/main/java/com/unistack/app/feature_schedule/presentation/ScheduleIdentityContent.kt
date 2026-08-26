@@ -960,16 +960,6 @@ private fun IdentityWeeklyTimeline(
                 }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = if (hasWeekendSession) {
-                "El fin de semana aparece porque hay clase."
-            } else {
-                "De lunes a viernes. En cuanto pongas algo el fin de semana, la rejilla se abre a los siete días."
-            },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall
-        )
     }
 }
 
