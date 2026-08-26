@@ -16,7 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -25,12 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
@@ -50,6 +48,8 @@ import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_templates.domain.AcademicTemplateLibrary
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * Un trabajo, con lo que le pertenece.
@@ -145,8 +145,8 @@ fun AcademicWorkScreen(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    CircularWavyProgressIndicator(
-                        progress = { work.checklistProgress },
+                    EvaluationRing(
+                        fraction = work.checklistProgress.toDouble(),
                         modifier = Modifier.size(58.dp),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.24f)

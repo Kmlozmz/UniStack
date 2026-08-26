@@ -1,7 +1,22 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -57,20 +73,59 @@ fun SubjectRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     /** El bloque de clase, si lo tiene: de ahí salen el aula y el profesor. */
-    classSession: ClassSession? = null
+    classSession: ClassSession? = null,
+    /** Marcada dentro de una selección. Solo tiene sentido con [onLongClick] puesto. */
+    selected: Boolean = false,
+    /**
+     * Mantener pulsado. Es lo que abre la selección múltiple: no hay botón de «seleccionar»
+     * porque un botón permanente ocupa sitio en una pantalla que casi siempre se usa para
+     * mirar, no para borrar.
+     */
+    onLongClick: (() -> Unit)? = null,
+    /**
+     * El asa de arrastre, si la lista se puede ordenar.
+     *
+     * Se dibuja siempre y no solo con algo marcado: es lo único que dice que las materias se
+     * pueden mover de sitio. Un gesto que no deja rastro en la pantalla no lo encuentra nadie,
+     * y esa fue la primera versión de esto: mantener pulsada la fila servía para marcar y para
+     * mover a la vez, y cuál de las dos obtenías dependía de si tu dedo se movía.
+     */
+    dragHandle: (@Composable () -> Unit)? = null
 ) {
     val sections = LocalSectionColors.current
     val accent = subjectAccent(subject)
     val atRisk = calculation.outlook == TargetOutlook.AT_RISK ||
         calculation.outlook == TargetOutlook.UNREACHABLE
 
-    val container = if (atRisk) sections.atRiskContainer else MaterialTheme.colorScheme.surfaceContainerLow
-    val onContainer = if (atRisk) sections.onAtRiskContainer else MaterialTheme.colorScheme.onSurface
+    // Marcada manda sobre «en riesgo»: mientras seleccionas, lo que importa es cuáles llevas
+    // marcadas, no cuál va mal. El aviso de riesgo vuelve al salir de la selección.
+    val container = when {
+        selected -> MaterialTheme.colorScheme.secondaryContainer
+        atRisk -> sections.atRiskContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerLow
+    }
+    val onContainer = when {
+        selected -> MaterialTheme.colorScheme.onSecondaryContainer
+        atRisk -> sections.onAtRiskContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
     val support = if (atRisk) sections.onAtRiskContainer else MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            // El recorte va ANTES del toque, y ese es el arreglo.
+            //
+            // `Surface` recorta lo que lleva dentro, pero este modificador se le pasa desde
+            // fuera: la onda del toque se dibujaba en el rectángulo completo de la fila y se
+            // salía por las cuatro esquinas redondeadas. Recortando aquí, la onda no puede
+            // pintar donde la tarjeta no llega.
+            .clip(MaterialTheme.shapes.large)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (onLongClick != null) "Marcar la materia" else null
+            ),
         shape = MaterialTheme.shapes.large,
         color = container,
         contentColor = onContainer
@@ -80,7 +135,44 @@ fun SubjectRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SubjectMark(letter = subject.name.take(1).uppercase(), color = accent, seed = subject.id)
+            /*
+             * Marcada, el círculo de la inicial se convierte en un visto.
+             *
+             * El color de fondo por sí solo no bastaba: en una lista de siete materias, tres
+             * marcadas y cuatro no se distinguían por un tono, y había que compararlas entre
+             * ellas para saber cuál era cuál. El visto se lee fila a fila, sin comparar.
+             *
+             * Ocupa el sitio de la inicial en vez de añadir una casilla a un lado, porque una
+             * casilla más empuja el texto y hace que la lista entera baile al entrar y salir
+             * de la selección.
+             */
+            AnimatedContent(
+                targetState = selected,
+                transitionSpec = {
+                    (scaleIn(spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow)) + fadeIn())
+                        .togetherWith(scaleOut(targetScale = 0.7f) + fadeOut())
+                },
+                label = "marca de la materia"
+            ) { isSelected ->
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = "Marcada",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                } else {
+                    SubjectMark(letter = subject.name.take(1).uppercase(), color = accent, seed = subject.id)
+                }
+            }
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -113,8 +205,8 @@ fun SubjectRow(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                LinearWavyProgressIndicator(
-                    progress = { calculation.evaluatedSemesterFraction.toFloat().coerceIn(0f, 1f) },
+                EvaluationBar(
+                    fraction = calculation.evaluatedSemesterFraction,
                     modifier = Modifier.fillMaxWidth(),
                     color = accent,
                     trackColor = MaterialTheme.colorScheme.outlineVariant
@@ -134,6 +226,10 @@ fun SubjectRow(
                     color = if (atRisk) sections.onAtRiskContainer else sections.onTrack
                 )
             }
+
+            // El asa, al borde derecho. Ahí es donde la busca el pulgar, y donde la ponen las
+            // listas ordenables de otras apps.
+            dragHandle?.invoke()
         }
     }
 }

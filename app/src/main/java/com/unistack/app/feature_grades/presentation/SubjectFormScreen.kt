@@ -43,7 +43,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -55,7 +56,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.utils.toColorIntOrNull
@@ -101,6 +101,7 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.runtime.setValue
 /**
  * De dónde se entra al formulario de materia.
  *
@@ -348,7 +349,7 @@ fun SubjectFormScreen(
                 expanded = scheduleDraft.enabled,
                 trailing = if (scheduleIsOptional) {
                     {
-                        Switch(
+                        UniSwitch(
                             checked = scheduleDraft.enabled,
                             onCheckedChange = { scheduleDraft = scheduleDraft.copy(enabled = it) }
                         )
@@ -777,9 +778,11 @@ private fun CustomSubjectColorDialog(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Cancelar")
-                    }
+                    UniIconButton(
+                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Cancelar",
+                        onClick = onDismiss
+                    )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Color personalizado",

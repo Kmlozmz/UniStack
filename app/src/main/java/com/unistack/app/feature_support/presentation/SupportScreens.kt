@@ -5,6 +5,7 @@ package com.unistack.app.feature_support.presentation
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Gavel
 import com.unistack.app.core.design.components.UniStackLogoMark
+import com.unistack.app.core.design.components.BrandPurple
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -43,12 +44,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,6 +77,9 @@ import kotlinx.coroutines.launch
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+
 /**
  * Las pantallas que el panel lateral prometía y no existían.
  *
@@ -315,20 +317,26 @@ private val ResourceGroups = listOf(
     ResourceGroup(
         label = "BUSCAR",
         help = "Para encontrar de dónde sacar lo que vas a escribir. Google Académico busca " +
-            "artículos y tesis revisados por otros investigadores —lo que puedes citar sin que " +
-            "te lo tumben— y te da la cita ya formateada. Wolfram Alpha resuelve la operación y " +
-            "enseña el procedimiento paso a paso: sirve para comprobar un ejercicio que ya hiciste.",
+                "artículos y tesis revisados por otros investigadores —lo que puedes citar sin que " +
+                "te lo tumben— y te da la cita ya formateada. Wolfram Alpha resuelve la operación y " +
+                "enseña el procedimiento paso a paso: sirve para comprobar un ejercicio que ya hiciste.",
         links = listOf(
-            SupportLink("GA", "Google Académico", "scholar.google.com", "https://scholar.google.com", ResourceTone.SEARCH),
+            SupportLink(
+                "GA",
+                "Google Académico",
+                "scholar.google.com",
+                "https://scholar.google.com",
+                ResourceTone.SEARCH
+            ),
             SupportLink("W", "Wolfram Alpha", "wolframalpha.com", "https://www.wolframalpha.com", ResourceTone.SEARCH)
         )
     ),
     ResourceGroup(
         label = "ESTUDIAR",
         help = "Para entender un tema que no te entró en clase. Khan Academy son lecciones " +
-            "cortas en vídeo con ejercicios para practicar, sobre todo de matemáticas, física y " +
-            "química. OpenStax son libros de texto universitarios completos, gratuitos y legales " +
-            "de descargar: los escriben profesores y se usan en universidades de verdad.",
+                "cortas en vídeo con ejercicios para practicar, sobre todo de matemáticas, física y " +
+                "química. OpenStax son libros de texto universitarios completos, gratuitos y legales " +
+                "de descargar: los escriben profesores y se usan en universidades de verdad.",
         links = listOf(
             SupportLink("K", "Khan Academy", "es.khanacademy.org", "https://es.khanacademy.org", ResourceTone.STUDY),
             SupportLink("OS", "OpenStax", "openstax.org", "https://openstax.org", ResourceTone.STUDY)
@@ -337,9 +345,9 @@ private val ResourceGroups = listOf(
     ResourceGroup(
         label = "CITAR",
         help = "Para que la bibliografía no te reste puntos. Normas APA explica cómo se cita " +
-            "dentro del texto y cómo se arma la lista del final, con ejemplos de cada tipo de " +
-            "fuente. Zotero guarda cada fuente mientras investigas y luego te genera la " +
-            "bibliografía entera en el formato que te pidan.",
+                "dentro del texto y cómo se arma la lista del final, con ejemplos de cada tipo de " +
+                "fuente. Zotero guarda cada fuente mientras investigas y luego te genera la " +
+                "bibliografía entera en el formato que te pidan.",
         links = listOf(
             SupportLink("A", "Normas APA", "normas-apa.org", "https://normas-apa.org", ResourceTone.CITE),
             SupportLink("Z", "Zotero", "zotero.org", "https://www.zotero.org", ResourceTone.CITE)
@@ -466,6 +474,7 @@ private fun ResourceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -524,12 +533,12 @@ private val FaqGroups = listOf(
             FaqEntry(
                 "¿Dónde se guardan mis datos?",
                 "En tu teléfono. UniStack funciona sin cuenta y sin conexión; vincular Google solo " +
-                    "sirve para respaldar y recuperar lo que ya tienes."
+                        "sirve para respaldar y recuperar lo que ya tienes."
             ),
             FaqEntry(
                 "Perdí mi teléfono, ¿puedo recuperar todo?",
                 "Solo si hiciste una copia. En Configuración → Datos y respaldos puedes exportar " +
-                    "un archivo y volver a importarlo en otro teléfono."
+                        "un archivo y volver a importarlo en otro teléfono."
             )
         )
     ),
@@ -539,24 +548,24 @@ private val FaqGroups = listOf(
             FaqEntry(
                 "¿Cómo calcula la app mi promedio?",
                 "Con lo que ya está evaluado: suma los puntos confirmados de cada corte y los " +
-                    "divide entre el peso evaluado. No proyecta notas que todavía no existen."
+                        "divide entre el peso evaluado. No proyecta notas que todavía no existen."
             ),
             FaqEntry(
                 "¿Qué son el suelo y el techo de una materia?",
                 "El suelo es con cuánto terminarías sacando 0 en todo lo que falta, y el techo con " +
-                    "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
-                    "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
+                        "cuánto terminarías sacándolo todo. Tu nota final va a caer entre esos dos, y la " +
+                        "meta se dibuja como una marca dentro de esa franja: si queda fuera, ya no se alcanza."
             ),
             FaqEntry(
                 "Cambié la escala de notas y perdí mis notas",
                 "Cambiar de escala borra las notas registradas, porque un 4,5 sobre 5 no significa " +
-                    "lo mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. " +
-                    "La app avisa dos veces y te dice cuántas notas vas a perder."
+                        "lo mismo sobre 100. Convertirlas inventaría un número que ningún profesor puso. " +
+                        "La app avisa dos veces y te dice cuántas notas vas a perder."
             ),
             FaqEntry(
                 "¿Por qué mi materia no aparece en el horario?",
                 "El horario dibuja las clases que tengan días y hora. Si creaste la materia sin " +
-                    "marcar días, abre la materia y añádele su horario."
+                        "marcar días, abre la materia y añádele su horario."
             )
         )
     ),
@@ -566,15 +575,15 @@ private val FaqGroups = listOf(
             FaqEntry(
                 "¿Cómo recibo las actualizaciones?",
                 "En Configuración → Actualizaciones. La app mira lo último publicado y te lo " +
-                    "ofrece; no hay canales ni códigos que pedir. Comprueba sola cada par de horas, " +
-                    "así que puede tardar un rato en enterarse: si tienes prisa, entra y pulsa el " +
-                    "botón de recargar."
+                        "ofrece; no hay canales ni códigos que pedir. Comprueba sola cada par de horas, " +
+                        "así que puede tardar un rato en enterarse: si tienes prisa, entra y pulsa el " +
+                        "botón de recargar."
             ),
             FaqEntry(
                 "¿Por qué me pide permiso para instalar?",
                 "Porque la app no viene de Play Store y se actualiza sola desde su archivo. " +
-                    "Android pide autorizar a UniStack como origen una vez; luego ya no vuelve a " +
-                    "preguntar."
+                        "Android pide autorizar a UniStack como origen una vez; luego ya no vuelve a " +
+                        "preguntar."
             )
         )
     )
@@ -618,39 +627,39 @@ fun HelpScreen(
                 )
             }
             group.entries.forEach { entry ->
-            item(key = entry.question) {
-                val isOpen = expanded == entry.question
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    onClick = { expanded = if (isOpen) null else entry.question }
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                entry.question,
-                                modifier = Modifier.weight(1f),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                            Icon(
-                                if (isOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        AnimatedVisibility(visible = isOpen) {
-                            Text(
-                                entry.answer,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp,
-                                lineHeight = 18.sp
-                            )
+                item(key = entry.question) {
+                    val isOpen = expanded == entry.question
+                    UniCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        onClick = { expanded = if (isOpen) null else entry.question }
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    entry.question,
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Icon(
+                                    if (isOpen) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            AnimatedVisibility(visible = isOpen) {
+                                Text(
+                                    entry.answer,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp
+                                )
+                            }
                         }
                     }
                 }
-            }
             }
         }
         item {
@@ -671,7 +680,7 @@ fun HelpScreen(
                     )
                     Text(
                         "Escríbelo y se abre Telegram en el tema que corresponda, con tu versión " +
-                            "y tu teléfono ya apuntados.",
+                                "y tu teléfono ya apuntados.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
@@ -788,13 +797,6 @@ fun AboutScreen(
         modifier = modifier
     ) {
         item(key = "marca") {
-            /*
-             * La marca de verdad, y la promesa de privacidad como contenido.
-             *
-             * El logotipo iba solo como texto —sin el símbolo— y la línea de «tus datos» quedaba
-             * al final, en gris, del tamaño de un pie de foto. Es lo único de esta pantalla que
-             * alguien necesita leer alguna vez, así que sube y se pinta como lo que es.
-             */
             Column(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -807,13 +809,22 @@ fun AboutScreen(
                 ) {
                     UniStackWordmark(fontSize = 26.sp)
                     Text(
-                        "Tu vida acad\u00e9mica en un solo sitio.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = buildAnnotatedString {
+                            append("By ")
+
+                            withStyle(
+                                // El mismo morado de marca que «Stack» en el nombre de la app,
+                                // no un tono parecido: dos violetas distintos en la misma
+                                // pantalla se leen como un descuido, no como dos usos.
+                                style = SpanStyle(color = BrandPurple)
+                            ) {
+                                append("Kmlozmz")
+                            }
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                // Solo la versión. El número de compilación es de uso interno —sirve para saber
-                // qué APK es cuál al depurar— y a quien usa la app no le dice nada.
                 AboutChip(BuildConfig.VERSION_NAME, highlighted = true)
             }
         }
@@ -837,8 +848,8 @@ fun AboutScreen(
                                 append("Tus datos se guardan localmente. ")
                             }
                             append(
-                                "Tu informaci\u00f3n permanece en este dispositivo y solo se sincroniza " +
-                                    "con nuestros servidores cuando una funci\u00f3n lo requiere."
+                                "Tu información permanece en este dispositivo y solo se sincroniza " +
+                                        "con nuestros servidores cuando una función lo requiere."
                             )
                         },
                         color = LocalSectionColors.current.onOnTrackContainer,
@@ -868,8 +879,8 @@ fun AboutScreen(
                                 append("Protege tus datos con un respaldo en la nube. ")
                             }
                             append(
-                                "Si vinculas Google, podr\u00e1s proteger y respaldar tu informaci\u00f3n. " +
-                                    "Puedes desvincular tu cuenta cuando quieras."
+                                "Si vinculas Google, podrás proteger y respaldar tu información. " +
+                                        "Puedes desvincular tu cuenta cuando quieras."
                             )
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -879,7 +890,7 @@ fun AboutScreen(
                 }
             }
         }
-        item(key = "info-titulo") { AboutSectionLabel("INFORMACI\u00d3N") }
+        item(key = "info-titulo") { AboutSectionLabel("INFORMACIÓN") }
         item(key = "info") {
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -963,6 +974,7 @@ private fun AboutRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically

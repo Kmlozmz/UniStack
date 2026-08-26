@@ -1,9 +1,7 @@
 package com.unistack.app.feature_setup.presentation
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +18,8 @@ import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
 import com.unistack.app.core.utils.ValidationResult
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 @HiltViewModel
 class SetupViewModel @Inject constructor(

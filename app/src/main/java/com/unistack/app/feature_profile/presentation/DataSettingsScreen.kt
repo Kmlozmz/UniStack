@@ -19,10 +19,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +29,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * Datos y respaldos: dónde está tu copia y qué se puede sacar de aquí.
@@ -84,7 +84,7 @@ fun DataSettingsScreen(
             )
         }
         item {
-            SettingsGroup(label = "REINICIO", labelColor = MaterialTheme.colorScheme.error) {
+            SettingsGroup(label = "REINICIO", labelColor = MaterialTheme.colorScheme.error, rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.RestartAlt,
                     title = "Repetir configuración inicial",

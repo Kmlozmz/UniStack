@@ -7,8 +7,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
+import androidx.compose.runtime.getValue
 
 /**
  * Vaivén continuo entre `-travel` y `+travel`, para que un elemento flote en vez de quedarse

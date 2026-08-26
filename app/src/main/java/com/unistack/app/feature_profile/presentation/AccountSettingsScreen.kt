@@ -14,7 +14,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.runtime.LaunchedEffect
 import com.unistack.app.core.design.components.SettingsHeader
-import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsGroupCard
 import com.unistack.app.core.design.components.SettingsRowIcon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,12 +44,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -64,6 +63,8 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * Cuenta y perfil: quién eres y a qué cuenta está atado esto.
@@ -173,7 +174,7 @@ fun AccountSettingsScreen(
             )
         }
         item {
-            SettingsGroup(label = "CUENTA") {
+            SettingsGroupCard(label = "CUENTA") {
                 AccountLinkRow(
                     linked = currentUser.isLinked,
                     title = if (currentUser.isLinked) currentUser.accountLabel() else "Sin cuenta vinculada",
@@ -346,6 +347,9 @@ private fun AccountPortrait(
                 initial = name.first().uppercase(),
                 modifier = Modifier
                     .size(96.dp)
+                    // Sin recortar, la onda del toque salía cuadrada detrás de un retrato
+                    // redondo.
+                    .clip(CircleShape)
                     .clickable(onClick = onPhotoClick)
             )
             /*

@@ -4,8 +4,6 @@ package com.unistack.app.feature_support.presentation
 
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -41,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * Qué hace la pestaña en la que estás, con un ejemplo con números.
@@ -222,7 +222,7 @@ internal fun SubjectPickerSheet(
                                     }
                                 )
                             }
-                            Switch(checked = withGrades, onCheckedChange = { withGrades = it })
+                            UniSwitch(checked = withGrades, onCheckedChange = { withGrades = it })
                         }
                     }
 

@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_updates.presentation
 
+import com.unistack.app.core.design.components.UniStackButton
+import com.unistack.app.core.design.components.UniLoadingIndicator
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.components.SettingsHeader
@@ -22,7 +25,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -37,28 +39,23 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.NewReleases
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Schedule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.SystemProgress
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -74,6 +71,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.getValue
 
 /**
  * Actualizaciones: qué hay publicado y qué trae.
@@ -122,68 +120,66 @@ fun UpdateSettingsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-                item("cabecera") {
-                    SettingsHeader(
-                        title = "Actualizaciones",
-                        subtitle = "Comprueba y descarga",
-                        onBackClick = onBackClick,
-                        action = {
-                            IconButton(onClick = viewModel::checkForUpdates) {
-                                Icon(Icons.Rounded.Refresh, contentDescription = "Volver a comprobar")
-                            }
-                        }
-                    )
-                }
-                item("titular") { UpdateHeadline(state = state, installed = installed) }
+            item("cabecera") {
+                SettingsHeader(
+                    title = "Actualizaciones",
+                    subtitle = "Comprueba y descarga",
+                    onBackClick = onBackClick,
+                    action = {
+                        UniIconButton(
+                            icon = Icons.Rounded.Refresh,
+                            contentDescription = "Volver a comprobar",
+                            onClick = viewModel::checkForUpdates
+                        )
+                    }
+                )
+            }
+            item("titular") { UpdateHeadline(state = state, installed = installed) }
 
-                if (state is UpdateState.Downloading) {
-                    item("progreso") {
-                        val downloading = state as UpdateState.Downloading
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (downloading.progress == UpdateState.UNKNOWN_PROGRESS) {
-                                LinearWavyProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            } else {
-                                LinearWavyProgressIndicator(
-                                    progress = { downloading.progress / 100f },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                            Text(
-                                text = "Descargando la v${downloading.info.versionName}…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+            if (state is UpdateState.Downloading) {
+                item("progreso") {
+                    val downloading = state as UpdateState.Downloading
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SystemProgress(
+                            percent = downloading.progress
+                                .takeIf { it != UpdateState.UNKNOWN_PROGRESS }
+                        )
+                        Text(
+                            text = "Descargando la v${downloading.info.versionName}…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
 
-                items(pending, key = { it.versionName }) { release ->
-                    ReleaseEntry(release)
-                }
+            items(pending, key = { it.versionName }) { release ->
+                ReleaseEntry(release)
+            }
 
-                if (pending.isEmpty() && state !is UpdateState.Checking) {
-                    item("instalada") { InstalledCard(installed, viewModel.currentVersionCode) }
-                }
+            if (pending.isEmpty() && state !is UpdateState.Checking) {
+                item("instalada") { InstalledCard(installed, viewModel.currentVersionCode) }
+            }
 
-                item("limpieza") {
-                    CleanupCard(
-                        visible = pendingApks > 0,
-                        apkCount = pendingApks,
-                        onClick = viewModel::clearDownload
-                    )
-                }
+            item("limpieza") {
+                CleanupCard(
+                    visible = pendingApks > 0,
+                    apkCount = pendingApks,
+                    onClick = viewModel::clearDownload
+                )
+            }
 
-                // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
-                // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
-                // minuto o hace una semana.
-                item("pie") {
-                    Text(
-                        text = "Tienes la $installed. Se comprueba solo una vez al día.",
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
+            // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
+            // minuto o hace una semana.
+            item("pie") {
+                Text(
+                    text = "Tu versión: $installed.",
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
         UpdateActions(
@@ -212,38 +208,51 @@ private fun UpdateHeadline(state: UpdateState, installed: String) {
         is UpdateState.Available -> Triple(
             Icons.Rounded.NewReleases,
             "Hay una versión disponible",
-            "Tienes la v$installed. La última publicada es la v${state.info.versionName}."
+            "Tienes la v$installed. La versión más reciente es la v${state.info.versionName}."
         )
+
         is UpdateState.ReadyToInstall -> Triple(
             Icons.Rounded.Download,
             "Lista para instalar",
             "La v${state.info.versionName} ya está descargada."
         )
+
         is UpdateState.Downloading -> Triple(
             Icons.Rounded.Download,
             "Descargando",
             "No cierres la app hasta que termine."
         )
-        UpdateState.Checking -> Triple(Icons.Rounded.Refresh, "Comprobando…", "Consultando lo último publicado.")
-        UpdateState.UpToDate -> Triple(Icons.Rounded.CheckCircle, "Estás al día", "Tienes la última versión publicada.")
+
+        UpdateState.Checking -> Triple(Icons.Rounded.Refresh, "Comprobando…", "Buscando actualizaciones.")
+        UpdateState.UpToDate -> Triple(Icons.Rounded.CheckCircle, "Estás al día", "Tienes la versión más reciente.")
         is UpdateState.Ahead -> Triple(
             Icons.Rounded.CheckCircle,
             "Vas por delante",
-            "Tu v$installed es más nueva que la última publicada, la v${state.info.versionName}."
+            "Tu v$installed es más nueva que la última disponible, la v${state.info.versionName}."
         )
-        UpdateState.NoReleases -> Triple(Icons.Rounded.CheckCircle, "Nada que instalar", "Todavía no hay ninguna versión publicada.")
+
+        UpdateState.NoReleases -> Triple(
+            Icons.Rounded.CheckCircle,
+            "Nada que instalar",
+            "No hay actualizaciones disponibles."
+        )
+
         is UpdateState.Error -> Triple(Icons.Rounded.CloudOff, "No se pudo comprobar", state.message)
         UpdateState.Idle -> Triple(Icons.Rounded.Refresh, "Actualizaciones", "Comprueba si hay algo más nuevo.")
     }
     val tones: Pair<Color, Color> = when (state) {
         is UpdateState.Available, is UpdateState.ReadyToInstall ->
             MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary
+
         is UpdateState.Downloading ->
             sections.scheduleContainer to sections.schedule
+
         UpdateState.UpToDate, is UpdateState.Ahead, UpdateState.NoReleases ->
             sections.onTrackContainer to sections.onTrack
+
         is UpdateState.Error ->
             MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.error
+
         else ->
             MaterialTheme.colorScheme.surfaceContainerLow to MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -261,14 +270,22 @@ private fun UpdateHeadline(state: UpdateState, installed: String) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // Comprobando y descargando, el cuadro lleva el indicador de carga en vez de un
+            // icono quieto. Antes salía la flecha de recargar congelada, que es exactamente
+            // lo que se ve cuando algo se ha colgado.
+            val working = state is UpdateState.Checking || state is UpdateState.Downloading
             Surface(
                 shape = MaterialTheme.shapes.small,
-                color = accent,
-                contentColor = MaterialTheme.colorScheme.surface,
+                color = if (working) Color.Transparent else accent,
+                contentColor = if (working) accent else MaterialTheme.colorScheme.surface,
                 modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                    if (working) {
+                        UniLoadingIndicator()
+                    } else {
+                        Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+                    }
                 }
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -316,7 +333,10 @@ private fun ReleaseEntry(release: UpdateInfo) {
                         style = MaterialTheme.typography.titleLargeEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Icon(
                             Icons.Rounded.Schedule,
                             contentDescription = null,
@@ -404,18 +424,12 @@ private fun UpdateActions(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Button(
-            shapes = UniStackButtonDefaults.shapes,
+        UniStackButton(
+            text = action.first,
             onClick = action.third,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp)
-                .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-        ) {
-            Icon(action.second, contentDescription = null, modifier = Modifier.size(ButtonDefaults.MediumIconSize))
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text(action.first, style = MaterialTheme.typography.titleMediumEmphasized)
-        }
+            leadingIcon = action.second,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        )
     }
 }
 
@@ -476,9 +490,9 @@ private fun CleanupCard(
                     )
                     Text(
                         if (apkCount > 1) {
-                            "$apkCount APK ocupando espacio en el móvil"
+                            "$apkCount APK ocupando espacio en el teléfono"
                         } else {
-                            "1 APK ocupando espacio en el móvil"
+                            "1 APK ocupando espacio en el teléfono"
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall

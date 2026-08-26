@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_notifications.presentation
 
 import androidx.compose.foundation.BorderStroke
@@ -35,21 +37,19 @@ import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.TaskAlt
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -64,6 +64,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.notifications.NotificationHistoryItem
 import com.unistack.app.core.notifications.NotificationHistoryStore
@@ -77,6 +79,8 @@ import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private enum class NotificationFilter(val label: String) {
     ALL("Todas"),
     ACTIONS("Acción"),
@@ -228,7 +232,7 @@ private fun NotificationHistoryHeader(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onBackClick, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                 contentDescription = "Volver",
@@ -256,10 +260,10 @@ private fun NotificationHistoryHeader(
             )
         }
         Box {
-            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(40.dp)) {
+            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "Mas opciones", tint = NotificationAccentText)
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
                 containerColor = NotificationCard
@@ -564,9 +568,11 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = NotificationAccentText)
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Volver",
+            onClick = onBackClick
+        )
         Text(
             text = "Detalle del aviso",
             color = NotificationText,

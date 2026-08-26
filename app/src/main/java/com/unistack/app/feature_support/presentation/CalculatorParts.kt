@@ -4,7 +4,6 @@ package com.unistack.app.feature_support.presentation
 
 import com.unistack.app.core.design.theme.LocalVividAccents
 import androidx.compose.ui.graphics.Color
-import androidx.compose.runtime.getValue
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.togetherWith
@@ -30,7 +29,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Backspace
+import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -43,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
 
 /** El alto de una tecla, y de ahí sale el de las dos altas: dos teclas y el hueco. */
 private val KeyHeight = 52.dp
@@ -117,7 +117,7 @@ internal fun CalculatorKeypad(
             // dos teclas salían como tiras estrechas con el icono y el rótulo por fuera.
             Key(
                 label = null,
-                icon = Icons.Rounded.Backspace,
+                icon = Icons.AutoMirrored.Rounded.Backspace,
                 contentDescription = "Borrar un dígito",
                 modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,

@@ -3,7 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.SettingsHeader
-import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsGroupCard
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,17 +28,16 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -60,6 +59,8 @@ import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.feature_user.domain.UserProfile
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 private val LeadChoices = listOf(1, 3, 6, 12, 24, 48, 72)
 
@@ -158,7 +159,7 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroup(label = "AVISOS") {
+                SettingsGroupCard(label = "AVISOS") {
                     AlertRow(
                         title = "Tareas",
                         detail = "Antes de que venza una tarea",
@@ -245,7 +246,7 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroup(label = "NO MOLESTAR") {
+                SettingsGroupCard(label = "NO MOLESTAR") {
                     QuietHoursRow(
                         profile = current,
                         enabled = granted,
@@ -392,7 +393,7 @@ private fun AlertRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(
+        UniSwitch(
             checked = checked,
             enabled = enabled,
             onCheckedChange = { onToggle() }
@@ -441,7 +442,7 @@ private fun QuietHoursRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Switch(
+            UniSwitch(
                 checked = on,
                 enabled = enabled,
                 onCheckedChange = { onChange(it, start, end) }
@@ -517,7 +518,7 @@ private fun HourStepper(
             IconButton(
                 onClick = { onChange((hour + 23) % 24) },
                 enabled = enabled,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
             ) {
                 Icon(
                     Icons.Rounded.Remove,
@@ -537,7 +538,7 @@ private fun HourStepper(
             IconButton(
                 onClick = { onChange((hour + 1) % 24) },
                 enabled = enabled,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
             ) {
                 Icon(
                     Icons.Rounded.Add,

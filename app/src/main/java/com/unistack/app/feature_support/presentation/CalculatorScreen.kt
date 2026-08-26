@@ -3,10 +3,9 @@
 package com.unistack.app.feature_support.presentation
 
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,11 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +34,8 @@ import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /** Las tres preguntas que sabe responder la calculadora. */
 enum class CalculatorTab(val label: String) {
@@ -154,13 +153,11 @@ private fun CalculatorHeader(onBackClick: () -> Unit, onHelpClick: () -> Unit) {
             .padding(start = spacing.screenHorizontal - 12.dp, end = spacing.screenHorizontal, top = 4.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Volver",
+            onClick = onBackClick
+        )
         Text(
             text = "Calculadora",
             modifier = Modifier
@@ -172,12 +169,10 @@ private fun CalculatorHeader(onBackClick: () -> Unit, onHelpClick: () -> Unit) {
         )
         // Con rótulo no cabe, pero sin explicación un signo suelto no invita a nada: la hoja
         // que abre cuenta para qué sirve la pestaña en la que estás, con un ejemplo.
-        IconButton(onClick = onHelpClick) {
-            Icon(
-                Icons.Rounded.HelpOutline,
-                contentDescription = "Cómo funciona esta pestaña",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.HelpOutline,
+            contentDescription = "Cómo funciona esta pestaña",
+            onClick = onHelpClick
+        )
     }
 }

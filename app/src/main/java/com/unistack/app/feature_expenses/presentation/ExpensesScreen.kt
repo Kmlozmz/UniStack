@@ -2,11 +2,16 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
 
+import androidx.compose.ui.draw.rotate
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,6 +36,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -59,13 +66,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.unistack.app.core.design.components.SectionHeader
 import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -99,12 +105,12 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LinearWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationBar
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -157,7 +163,7 @@ fun ExpensesScreen(
     var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
     var showCategorySheet by rememberSaveable { mutableStateOf(false) }
     var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.TODAY) }
+    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.WEEK) }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
@@ -179,9 +185,7 @@ fun ExpensesScreen(
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
     val periodTotal = selectedPeriodExpenses.sumOf { it.amount }
     val activeBudget = when (selectedPeriod) {
-        // Un dia no tiene tope propio, asi que se mide contra el de la semana, que es el
-        // marco mas corto que el perfil guarda.
-        ExpensePeriodFilter.TODAY -> profile?.weeklyBudget ?: 0
+        ExpensePeriodFilter.TODAY,
         ExpensePeriodFilter.WEEK -> profile?.weeklyBudget ?: 0
         ExpensePeriodFilter.MONTH -> profile?.monthlyBudget ?: 0
         ExpensePeriodFilter.ALL -> (profile?.monthlyBudget ?: 0).takeIf { it > 0 } ?: (profile?.weeklyBudget ?: 0)
@@ -203,6 +207,15 @@ fun ExpensesScreen(
     ) {
         ExpensesContent(
             selectedPeriod = selectedPeriod,
+            // Sin «deseleccionar» aquí, y es a propósito.
+            //
+            // Lo tuvo un rato: volver a tocar el tramo activo lo devolvía a «Todo». Pero «Todo»
+            // es una de las tres opciones, así que deshacer era en realidad elegir otra cosa, y
+            // sobre «Todo» no hacía nada. Un gesto que unas veces hace algo y otras no es peor
+            // que no tenerlo.
+            //
+            // Aquí siempre hay un tramo elegido —«Todo» es el neutro— y lo que se quita y se
+            // pone son los dos chips de abajo, que para eso llevan su cruz.
             onPeriodSelected = { selectedPeriod = it },
             selectedCategory = selectedCategory,
             categories = filterCategories,
@@ -349,13 +362,32 @@ private fun ExpensesContent(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                items(expenses, key = { it.id }) { expense ->
-                    ExpenseListItem(
-                        expense = expense,
-                        onEditClick = { onEditExpenseClick(expense.id) },
-                        onDeleteClick = { onDeleteExpenseClick(expense.id) }
-                    )
-                }
+                /*
+                 * Un encabezado por día, y debajo lo que se gastó ese día.
+                 *
+                 * Antes cada fila repetía su propia fecha: con seis gastos del martes, la
+                 * palabra «24 ago» salía seis veces y aún así había que leerlas todas para
+                 * saber dónde acababa un día y empezaba el siguiente. Agrupando, la fecha se
+                 * dice una vez y lo de cada día se ve como un bloque.
+                 *
+                 * Cada día lleva su total al lado: es la pregunta que se hace mirando un día
+                 * suelto, y sumarla a ojo era el motivo para abrir la calculadora.
+                 */
+                expenses
+                    .sortedByDescending { it.dateMillis }
+                    .groupBy { ExpenseDateUtils.fromMillis(it.dateMillis) }
+                    .forEach { (day, ofTheDay) ->
+                        item(key = "dia-" + day.toString()) {
+                            ExpenseDayHeader(day = day, total = ofTheDay.sumOf { it.amount })
+                        }
+                        items(ofTheDay, key = { it.id }) { expense ->
+                            ExpenseListItem(
+                                expense = expense,
+                                onEditClick = { onEditExpenseClick(expense.id) },
+                                onDeleteClick = { onDeleteExpenseClick(expense.id) }
+                            )
+                        }
+                    }
             }
         }
 
@@ -372,21 +404,12 @@ private fun ExpensesContent(
 
 @Composable
 private fun ExpensesHeader() {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(
-            text = "Gastos",
-            color = ExpenseText,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold,
-            maxLines = 1,
-            softWrap = false
-        )
-        Text(
-            text = "Registra gastos personales y académicos.",
-            color = ExpenseMuted,
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
+    SectionHeader(
+        title = "Gastos",
+        subtitle = "Registra gastos personales y académicos.",
+        color = ExpenseText,
+        supportColor = ExpenseMuted
+    )
 }
 
 @Composable
@@ -681,8 +704,8 @@ private fun BudgetProgress(
     progress: Float,
     modifier: Modifier = Modifier
 ) {
-    LinearWavyProgressIndicator(
-        progress = { progress.coerceIn(0f, 1f) },
+    EvaluationBar(
+        fraction = progress.toDouble(),
         modifier = modifier,
         color = ExpensePurple,
         trackColor = ExpenseTrack
@@ -698,25 +721,138 @@ private fun ExpensesFilters(
     onCategorySelected: (ExpenseCategory?) -> Unit,
     onCategoryClick: () -> Unit
 ) {
-    // Anchos fijos de 206 y 156 puntos, y una rama aparte para pantallas de menos de 300:
-    // el grupo reparte solo y el chip ocupa lo que mide su texto, asi que no hace falta ni
-    // medir la pantalla ni escribir dos veces la misma fila.
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PeriodSegmentedControl(
             selectedPeriod = selectedPeriod,
             onPeriodSelected = onPeriodSelected,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxWidth()
         )
-        CategoryChip(
+        CategoryFilterMenu(
             selectedCategory = selectedCategory,
-            onClick = onCategoryClick
+            categories = categories,
+            onCategorySelected = onCategorySelected,
+            onManageClick = onCategoryClick
         )
     }
 }
+
+/**
+ * El filtro de categoría, en un desplegable.
+ *
+ * **La flecha de al lado ahora significa algo.** Era una pastilla con una flecha hacia abajo que
+ * abría una hoja a pantalla completa: la flecha prometía una lista corta debajo y lo que salía
+ * era otra pantalla. Un menú es lo que la flecha dice, y elegir una categoría pasa de tres
+ * toques a dos.
+ *
+ * Administrar cuáles aparecen al registrar sigue estando, al final del menú y detrás de una
+ * línea: es lo único de aquí que no filtra, y mezclarlo con las categorías hacía que tocar la
+ * fila equivocada cambiara algo que no querías cambiar.
+ */
+@Composable
+private fun CategoryFilterMenu(
+    selectedCategory: ExpenseCategory?,
+    categories: List<ExpenseCategory>,
+    onCategorySelected: (ExpenseCategory?) -> Unit,
+    onManageClick: () -> Unit
+) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    val active = selectedCategory != null
+    val turn by animateFloatAsState(
+        targetValue = if (open) 180f else 0f,
+        label = "flecha de la categoría"
+    )
+
+    Box {
+        FilterChip(
+            selected = active,
+            onClick = { open = true },
+            modifier = Modifier.height(44.dp),
+            shape = CircleShape,
+            label = {
+                Text(
+                    text = selectedCategory?.label() ?: "Categoría",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.KeyboardArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .rotate(turn)
+                )
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                labelColor = ExpenseMuted,
+                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            border = null
+        )
+
+        UniDropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Todas las categorías") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = if (selectedCategory == null) ExpensePurple else ExpenseMuted
+                    )
+                },
+                onClick = {
+                    onCategorySelected(null)
+                    open = false
+                }
+            )
+            categories.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category.label()) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = category.expenseSheetIcon(),
+                            contentDescription = null,
+                            tint = category.expenseTone()
+                        )
+                    },
+                    trailingIcon = {
+                        if (selectedCategory == category) {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = ExpensePurple
+                            )
+                        }
+                    },
+                    onClick = {
+                        onCategorySelected(category)
+                        open = false
+                    }
+                )
+            }
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            DropdownMenuItem(
+                text = { Text("Administrar categorías") },
+                leadingIcon = {
+                    Icon(Icons.Rounded.Tune, contentDescription = null, tint = ExpenseMuted)
+                },
+                onClick = {
+                    open = false
+                    onManageClick()
+                }
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun PeriodSegmentedControl(
@@ -727,89 +863,23 @@ private fun PeriodSegmentedControl(
     // El mismo grupo conectado que Horario/Calendario y Materias/Tareas. Era una caja con
     // tres cajas dentro y la elegida tenida al 28 %, que se leia mas como un resalte que
     // como una eleccion.
-    val options = listOf(
-        ExpensePeriodFilter.ALL,
-        ExpensePeriodFilter.WEEK,
-        ExpensePeriodFilter.MONTH
-    )
-    ButtonGroup(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-    ) {
-        options.forEachIndexed { index, period ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val selected = selectedPeriod == period
-            val shapes = when (index) {
-                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-            }
-            ToggleButton(
-                checked = selected,
-                onCheckedChange = { onPeriodSelected(period) },
-                shapes = shapes,
-                interactionSource = interactionSource,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 44.dp)
-                    .animateWidth(interactionSource)
-            ) {
-                Text(period.label, maxLines = 1, softWrap = false)
-            }
-        }
-    }
-}
-
-@Composable
-private fun CategoryChip(
-    selectedCategory: ExpenseCategory?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Con una categoria puesta el chip se rellena: el filtro activo se ve sin leerlo, que
-    // es justo lo que un chip de filtro tiene que hacer.
-    val active = selectedCategory != null
-    val labelColor = if (active) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
-        ExpenseMuted
-    }
-    Surface(
+    UniSegmentedControl(
+        selected = selectedPeriod,
+        // Tres, no cuatro. Con «Periodo» dentro, los cuatro rótulos se quedaban en «Tod»,
+        // «Sem», «Mes» y «Period»: un filtro que hay que adivinar no es un filtro. El periodo
+        // a medida baja a la fila de chips, donde tiene sitio para decir las fechas.
+        // Semana, mes y todo. «Hoy» estuvo aquí y era el que salía al abrir: un día es una
+        // ventana tan corta que la mayoría de las veces la pantalla arrancaba en cero, y una
+        // pantalla vacía nada más entrar parece rota antes que vacía. La semana casi siempre
+        // tiene algo que enseñar.
+        options = listOf(
+            ExpensePeriodFilter.WEEK,
+            ExpensePeriodFilter.MONTH,
+            ExpensePeriodFilter.ALL
+        ).map { UniSegmentedOption(value = it, label = it.label) },
+        onSelected = onPeriodSelected,
         modifier = modifier
-            .height(44.dp)
-            .cleanClickable(onClick),
-        shape = CircleShape,
-        color = if (active) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 14.dp, end = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = selectedCategory?.label() ?: "Categoria",
-                color = labelColor,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Clip
-            )
-            Icon(
-                imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = null,
-                tint = labelColor,
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -823,6 +893,14 @@ private fun ExpenseCategorySheet(
     onToggleCategory: (ExpenseCategory) -> Unit,
     onDismiss: () -> Unit
 ) {
+    /*
+     * Solo administrar, ya no filtrar.
+     *
+     * Filtrar se hace desde el desplegable del chip, que es un toque y no cambia de pantalla.
+     * Aquí queda lo otro: decidir cuáles de las seis categorías salen al registrar un gasto.
+     * Tener las dos cosas en la misma hoja, con cajas idénticas, era lo que hacía tocar la
+     * equivocada.
+     */
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = ExpenseBackground,
@@ -835,65 +913,24 @@ private fun ExpenseCategorySheet(
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = 22.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Categorías",
+                    text = "Administrar categorías",
                     color = ExpenseText,
-                    fontSize = 22.sp,
-                    lineHeight = 26.sp,
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Filtra tus gastos o decide qué categorías aparecen al registrar.",
+                    text = "Apaga las que no uses y dejarán de salir al registrar un gasto. " +
+                        "Los gastos que ya tengas guardados no se tocan.",
                     color = ExpenseMuted,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Filtro actual",
-                    color = ExpenseText,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                ExpenseCategorySheetOption(
-                    label = "Todas las categorías",
-                    icon = Icons.Rounded.Check,
-                    selected = selectedCategory == null,
-                    accent = ExpensePurple,
-                    onClick = { onFilterSelected(null) }
-                )
-                filterCategories.chunked(2).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { category ->
-                            ExpenseCategorySheetOption(
-                                label = category.label(),
-                                icon = category.expenseSheetIcon(),
-                                selected = selectedCategory == category,
-                                accent = ExpenseCoral,
-                                onClick = { onFilterSelected(category) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (row.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Administrar categorías",
-                    color = ExpenseText,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
                 ExpenseCategory.entries.chunked(2).forEach { row ->
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { category ->
@@ -908,17 +945,17 @@ private fun ExpenseCategorySheet(
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-                feedback?.let { message ->
-                    Text(
-                        text = message,
-                        color = if (message.startsWith("Debe")) ExpenseCoral else ExpenseMuted,
-                        fontSize = 12.sp,
-                        lineHeight = 17.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+            }
+
+            feedback?.let { message ->
+                Text(
+                    text = message,
+                    color = if (message.startsWith("Debe")) ExpenseCoral else ExpenseMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             Spacer(modifier = Modifier.height(4.dp))
         }
@@ -980,6 +1017,8 @@ private fun ExpenseCategorySheetOption(
         }
     }
 }
+
+
 
 /**
  * Un color por categoría, sacado de los tonos del tema.
@@ -1276,6 +1315,46 @@ private fun BudgetInputField(
     }
 }
 
+/**
+ * El día y lo que se gastó en él.
+ *
+ * «Hoy» y «Ayer» en vez de la fecha para los dos días que se miran de verdad: quien abre Gastos
+ * a las once de la noche está mirando hoy, y leer «26 ago» obliga a comprobar qué día es hoy
+ * antes de saber si eso es lo de hoy.
+ */
+@Composable
+private fun ExpenseDayHeader(day: java.time.LocalDate, total: Int) {
+    val today = ExpenseDateUtils.today()
+    val label = when (day) {
+        today -> "Hoy"
+        today.minusDays(1) -> "Ayer"
+        else -> day.format(
+            java.time.format.DateTimeFormatter.ofPattern(
+                if (day.year == today.year) "EEEE, d 'de' MMMM" else "d 'de' MMMM 'de' yyyy",
+                ExpenseChipLocale
+            )
+        ).replaceFirstChar { it.uppercase(ExpenseChipLocale) }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            color = ExpenseText,
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = CurrencyFormatter.formatCop(total),
+            color = ExpenseMuted,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
+
 @Composable
 private fun ExpenseListItem(
     expense: Expense,
@@ -1333,8 +1412,7 @@ private fun ExpenseListItem(
             Column(
                 modifier = Modifier
                     .padding(start = 12.dp)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                    .weight(1f)
             ) {
                 Text(
                     text = expense.category.label(),
@@ -1344,12 +1422,8 @@ private fun ExpenseListItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = ExpenseDateUtils.formatDisplay(expense.dateMillis),
-                    color = ExpenseMuted,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1
-                )
+                // Sin segunda línea: la fecha la dice ahora el encabezado del día, y un gasto
+                // no guarda nada más que su categoría y su importe.
             }
             Text(
                 text = CurrencyFormatter.formatCop(expense.amount),
@@ -1537,6 +1611,8 @@ private fun previousTotalForPeriod(
                 }
                 .sumOf { it.amount }
         }
+        // «Todo» no tiene tramo anterior con el que compararse: ya los incluye todos. Sin
+        // comparación, no se enseña tendencia.
         ExpensePeriodFilter.ALL -> 0
     }
 }
@@ -1550,6 +1626,8 @@ private fun recordCountLabel(count: Int): String =
  * «Hoy» es el que sale al abrir, y no «Todo»: lo primero que se viene a mirar es cuanto
  * llevas gastado hoy, no el acumulado historico, que solo crece y nunca dice nada nuevo.
  */
+private val ExpenseChipLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
+
 private enum class ExpensePeriodFilter(val label: String, val heroLabel: String, val emptySuffix: String) {
     TODAY("Hoy", "Hoy", "hoy"),
     WEEK("Semana", "Esta semana", "esta semana"),

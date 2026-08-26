@@ -1,5 +1,8 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniStackButton
+import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -8,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,21 +22,16 @@ import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.HistoryEdu
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +48,8 @@ import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.GradingScale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 @Composable
 fun PriorHistoryScreen(
     subjectId: String,
@@ -86,13 +85,11 @@ fun PriorHistoryScreen(
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                UniIconButton(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = "Volver",
+                    onClick = onBackClick
+                )
                 Column(modifier = Modifier.padding(start = 4.dp)) {
                     Text(
                         "Completar historial",
@@ -233,15 +230,24 @@ private fun HistoryPeriodCard(
                     Text(resultLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Button(onClick = onFinalResultClick, modifier = Modifier.fillMaxWidth()) {
-                Text("Registrar nota final del corte")
-            }
-            OutlinedButton(onClick = onActivitiesClick, modifier = Modifier.fillMaxWidth()) {
-                Text("Registrar actividades individuales")
-            }
-            TextButton(onClick = onUnknownClick, modifier = Modifier.fillMaxWidth()) {
-                Text(if (unknown) "Volver a completar este corte" else "No tengo esta información")
-            }
+            // Las tres van al wrapper, y con la jerarquía que les toca: registrar la nota es
+            // la acción principal, desglosarla en actividades es la alternativa, y decir que
+            // no tienes el dato es salir sin registrar nada.
+            UniStackButton(
+                text = "Registrar nota final del corte",
+                onClick = onFinalResultClick,
+                variant = UniStackButtonVariant.Filled
+            )
+            UniStackButton(
+                text = "Registrar actividades individuales",
+                onClick = onActivitiesClick,
+                variant = UniStackButtonVariant.Tonal
+            )
+            UniStackButton(
+                text = if (unknown) "Volver a completar este corte" else "No tengo esta información",
+                onClick = onUnknownClick,
+                variant = UniStackButtonVariant.Outlined
+            )
         }
     }
 }

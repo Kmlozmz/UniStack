@@ -14,7 +14,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,22 +30,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.rounded.Insights
-import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.theme.SectionLabelStyle
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material.icons.rounded.Balance
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -64,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /*
  * Las piezas con las que se configura lo académico: la franja de la escala, las notas con
@@ -129,7 +122,7 @@ internal fun ScaleZoneBar(
         )
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
-            imageVector = Icons.Rounded.HelpOutline,
+            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
             contentDescription = "Qué significa esta franja",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
@@ -653,44 +646,21 @@ internal fun PeriodCountSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = SectionLabelStyle
         )
-        ButtonGroup(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-        ) {
-            options.forEachIndexed { index, option ->
-                val interactionSource = remember { MutableInteractionSource() }
-                ToggleButton(
-                    checked = !custom && count == option,
-                    onCheckedChange = { onCountSelected(option) },
-                    shapes = if (index == 0) {
-                        ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    } else {
-                        ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    },
-                    interactionSource = interactionSource,
-                    modifier = Modifier
-                        .weight(1f)
-                        .defaultMinSize(minHeight = 48.dp)
-                        .animateWidth(interactionSource)
-                ) {
-                    Text(option.toString(), maxLines = 1, softWrap = false)
+        // «Otro» se modela como el valor nulo: es la única opción que no es un número, y
+        // así la selección sigue siendo una comparación y no dos condiciones cruzadas.
+        UniSegmentedControl(
+            selected = if (custom) null else count,
+            options = options.map { UniSegmentedOption<Int?>(value = it, label = it.toString()) } +
+                UniSegmentedOption<Int?>(value = null, label = "Otro", weight = 1.4f),
+            onSelected = { chosen ->
+                if (chosen == null) {
+                    if (!custom) onCountSelected(5)
+                } else {
+                    onCountSelected(chosen)
                 }
-            }
-            val otherSource = remember { MutableInteractionSource() }
-            ToggleButton(
-                checked = custom,
-                onCheckedChange = { if (!custom) onCountSelected(5) },
-                shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                interactionSource = otherSource,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier
-                    .weight(1.4f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .animateWidth(otherSource)
-            ) {
-                Text("Otro", maxLines = 1, softWrap = false)
-            }
-        }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
         AnimatedVisibility(
             visible = custom,
             enter = fadeIn() + expandVertically(),

@@ -50,6 +50,22 @@ class GradesViewModel @Inject constructor(
         return GradingScaleUtils.maxGradeFor(profile)
     }
 
+    /**
+     * Guarda el orden en el que quieres ver tus materias.
+     *
+     * Se llama al soltar, no mientras arrastras: mientras el dedo se mueve, la lista permuta en
+     * pantalla y escribir en disco en cada permuta sería una escritura por cada fila que cruzas.
+     */
+    fun saveSubjectOrder(ids: List<String>) {
+        val profile = userProfile.value ?: return
+        userRepository.saveUserProfile(
+            profile.copy(
+                appearancePreferences = profile.appearancePreferences.copy(subjectOrder = ids),
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
     fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
 
     fun addSubject(

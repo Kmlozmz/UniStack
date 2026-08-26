@@ -1,5 +1,7 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.utils.DayLabels
 
 import androidx.compose.foundation.BorderStroke
@@ -27,6 +29,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 /**
  * Campos del bloque «Cuándo» del formulario de materia: qué días, a qué hora, dónde y cada
  * cuánto se repite.
@@ -83,7 +87,7 @@ internal fun SubjectWhenFields(
                 icon = Icons.Rounded.ExpandMore,
                 onClick = { recurrenceExpanded = true }
             )
-            DropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
+            UniDropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
                 (1..4).forEach { weeks ->
                     DropdownMenuItem(
                         text = { Text(if (weeks == 1) "Cada semana" else "Cada $weeks semanas") },
@@ -106,13 +110,18 @@ internal fun SubjectWhenFields(
     }
 
     if (startPickerVisible) {
-        SubjectTimePicker("Hora de inicio", draft.startMinute, { startPickerVisible = false }) { chosen ->
-            startPickerVisible = false
+        UniTimePickerDialog(
+            selectedTime = java.time.LocalTime.of(draft.startMinute / 60, draft.startMinute % 60),
+            onDismiss = { startPickerVisible = false },
+            title = "Hora de inicio",
+            onTimeSelected = { picked ->
+            val chosen = picked.hour * 60 + picked.minute
             // Casi siempre que aparece una hora así es un error al girar la rueda: quien la
             // puso a la 1:00 quería las 13:00. Se pregunta en vez de impedirlo, porque clases
             // de madrugada existen.
             if (isUnusualClassHour(chosen)) unusualStart = chosen else onDraftChange(draft.copy(startMinute = chosen))
         }
+        )
     }
     unusualStart?.let { chosen ->
         AlertDialog(
@@ -144,10 +153,14 @@ internal fun SubjectWhenFields(
         )
     }
     if (endPickerVisible) {
-        SubjectTimePicker("Hora de fin", draft.endMinute, { endPickerVisible = false }) {
-            onDraftChange(draft.copy(endMinute = it))
-            endPickerVisible = false
-        }
+        UniTimePickerDialog(
+            selectedTime = java.time.LocalTime.of(draft.endMinute / 60, draft.endMinute % 60),
+            onDismiss = { endPickerVisible = false },
+            title = "Hora de fin",
+            onTimeSelected = { picked ->
+                onDraftChange(draft.copy(endMinute = picked.hour * 60 + picked.minute))
+            }
+        )
     }
 }
 
@@ -170,7 +183,7 @@ internal fun SubjectReminderField(
             icon = Icons.Rounded.Alarm,
             onClick = { expanded = true }
         )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        UniDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             listOf(0, 5, 10, 15, 30, 60).forEach { minutes ->
                 DropdownMenuItem(
                     text = { Text(if (minutes == 0) "Sin recordatorio" else "$minutes minutos antes") },
@@ -265,26 +278,6 @@ private fun SchedulePickerField(
     }
 }
 
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun SubjectTimePicker(
-    title: String,
-    minute: Int,
-    onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
-) {
-    val state = rememberTimePickerState(initialHour = minute / 60, initialMinute = minute % 60, is24Hour = true)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { TimePicker(state) },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) { Text("Aceptar") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-        shape = MaterialTheme.shapes.extraLarge
-    )
-}
 
 internal fun ClassSession.toSubjectScheduleDraft(): SubjectScheduleDraft {
     return SubjectScheduleDraft(

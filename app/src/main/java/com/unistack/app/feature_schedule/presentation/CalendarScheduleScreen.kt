@@ -46,7 +46,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,11 +64,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,6 +98,8 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 /* Estos nombres describían un color («Green», «Purple») pero devolvían un rol del tema,
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
@@ -372,8 +372,8 @@ private fun SubjectHistoryDialog(
                             Text("$attended asistencias  \u2022  $absent faltas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
-                            CircularWavyProgressIndicator(
-                                progress = { rate / 100f },
+                            EvaluationRing(
+                                fraction = rate / 100.0,
                                 modifier = Modifier.fillMaxSize(),
                                 color = ScheduleAccent,
                                 trackColor = MaterialTheme.colorScheme.outlineVariant
@@ -534,6 +534,10 @@ private fun ClassDetailsSheet(
             // Un grupo conectado, como el de Horario y Calendario arriba: tres piezas que se
             // tocan y una sola elegida. Eran tres rectángulos sueltos con borde, que es la
             // forma que tenía la app antes de este diseño.
+            // La sobrecarga obsoleta, por el mismo motivo que en `UniSegmentedControl`: la
+            // nueva cambia el contenido a un ámbito con `customItem` y resuelve un
+            // desbordamiento que aquí, con tres estados, no ocurre.
+            @Suppress("DEPRECATION")
             ButtonGroup(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)

@@ -53,11 +53,13 @@ object InstitutionCatalog {
         "Universidad Católica de Colombia",
         "Universidad Manuela Beltrán",
         "Universidad Cooperativa de Colombia",
-        "Servicio Nacional de Aprendizaje (SENA)",
+        
+/*      "Servicio Nacional de Aprendizaje (SENA)",
         "Politécnico Grancolombiano",
         "Fundación Universitaria del Área Andina",
         "Corporación Universitaria Minuto de Dios (UNIMINUTO)",
         "Escuela Colombiana de Ingeniería Julio Garavito"
+*/        
     )
 
     /**

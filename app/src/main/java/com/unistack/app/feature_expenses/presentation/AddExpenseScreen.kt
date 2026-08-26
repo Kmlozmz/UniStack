@@ -1,7 +1,9 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+
 package com.unistack.app.feature_expenses.presentation
 
-import com.unistack.app.core.utils.DayLabels
 
+import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
 import androidx.compose.foundation.BorderStroke
@@ -30,26 +32,20 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Celebration
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DirectionsBus
-import androidx.compose.material.icons.rounded.HelpOutline
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.MoreHoriz
 import androidx.compose.material.icons.rounded.Restaurant
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
@@ -61,7 +57,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -69,22 +64,21 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniStackButton
-import com.unistack.app.core.design.theme.UniStackDatePickerColors
 import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle as JavaTextStyle
 import java.util.Locale
 
 import androidx.compose.material3.MaterialTheme
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private val ExpenseFormBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseFormBorder: Color
@@ -95,10 +89,6 @@ private val ExpenseFormText: Color
     @Composable get() = MaterialTheme.colorScheme.onSurface
 private val ExpenseFormMuted: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val ExpenseFormShape: Shape
-    @Composable
-    @ReadOnlyComposable
-    get() = MaterialTheme.shapes.large
 private val ExpenseFieldShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -219,7 +209,7 @@ fun AddExpenseScreen(
     )
 
     if (showDatePicker) {
-        ExpenseMonthCalendarDialog(
+        UniDatePickerDialog(
             selectedDate = parsedDate ?: ExpenseDateUtils.today(),
             onDateSelected = { selected ->
                 date = ExpenseDateUtils.formatInput(selected)
@@ -260,7 +250,7 @@ private fun AddExpenseContent(
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -578,7 +568,7 @@ private fun ExpensePreviewCard(
                     Icon(
                         // Sin categoría elegida la vista previa no se inventa una: enseña
                         // un hueco, que es exactamente lo que falta por decidir.
-                        imageVector = category?.icon() ?: Icons.Rounded.HelpOutline,
+                        imageVector = category?.icon() ?: Icons.AutoMirrored.Rounded.HelpOutline,
                         contentDescription = null,
                         tint = if (category != null) ExpenseFormCoral else ExpenseFormMuted,
                         modifier = Modifier.size(22.dp)
@@ -679,132 +669,7 @@ private fun ExpenseCategory.icon(): ImageVector {
     }
 }
 
-@Composable
-private fun ExpenseMonthCalendarDialog(
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var visibleMonth by remember(selectedDate) {
-        mutableStateOf(YearMonth.from(selectedDate))
-    }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Seleccionar fecha",
-                color = UniStackDatePickerColors.Text,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { visibleMonth = visibleMonth.minusMonths(1) }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronLeft,
-                            contentDescription = "Mes anterior",
-                            tint = UniStackDatePickerColors.Muted
-                        )
-                    }
-                    Text(
-                        text = visibleMonth.month.getDisplayName(JavaTextStyle.FULL, Locale.forLanguageTag("es-CO"))
-                            .replaceFirstChar { it.uppercase() } + " ${visibleMonth.year}",
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = UniStackDatePickerColors.Text,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    IconButton(onClick = { visibleMonth = visibleMonth.plusMonths(1) }) {
-                        Icon(
-                            imageVector = Icons.Rounded.ChevronRight,
-                            contentDescription = "Mes siguiente",
-                            tint = UniStackDatePickerColors.Muted
-                        )
-                    }
-                }
-                ExpenseCalendarMonthGrid(
-                    month = visibleMonth,
-                    selectedDate = selectedDate,
-                    onDateSelected = onDateSelected
-                )
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = UniStackDatePickerColors.Accent, fontWeight = FontWeight.Medium)
-            }
-        },
-        containerColor = UniStackDatePickerColors.Surface,
-        shape = ExpenseFormShape
-    )
-}
-
-@Composable
-private fun ExpenseCalendarMonthGrid(
-    month: YearMonth,
-    selectedDate: LocalDate,
-    onDateSelected: (LocalDate) -> Unit
-) {
-    val firstDay = month.atDay(1)
-    val leadingEmptyCells = firstDay.dayOfWeek.value - 1
-    val days = (1..month.lengthOfMonth()).map { month.atDay(it) }
-    val cells = List(leadingEmptyCells) { null } + days
-    val weeks = cells.chunked(7)
-    val dayLabels = DayLabels.short
-
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            dayLabels.forEach { label ->
-                Text(
-                    text = label,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    color = UniStackDatePickerColors.Muted,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
-        weeks.forEach { week ->
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                (0 until 7).forEach { index ->
-                    val date = week.getOrNull(index)
-                    val selected = date == selectedDate
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 34.dp)
-                            .then(if (date != null) Modifier.cleanClickable { onDateSelected(date) } else Modifier)
-                            .background(
-                                color = when {
-                                    selected -> UniStackDatePickerColors.Accent
-                                    date != null -> UniStackDatePickerColors.DayCell
-                                    else -> Color.Transparent
-                                },
-                                shape = MaterialTheme.shapes.small
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = date?.dayOfMonth?.toString().orEmpty(),
-                            color = if (selected) MaterialTheme.colorScheme.onPrimary else UniStackDatePickerColors.Text,
-                            fontSize = 12.sp,
-                            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 fun ExpenseCategory.label(): String {
     return when (this) {

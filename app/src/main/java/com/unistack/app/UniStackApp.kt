@@ -3,7 +3,6 @@ package com.unistack.app
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.di.rememberUniStackEntryPoint
@@ -13,6 +12,7 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.VisualPreference
+import androidx.compose.runtime.getValue
 
 @Composable
 fun UniStackApp(

@@ -44,22 +44,24 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -103,11 +105,6 @@ import java.util.Locale
 import kotlin.math.round
 
 import com.unistack.app.core.design.theme.LocalSectionColors
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material.icons.rounded.Percent
 import androidx.compose.material.icons.rounded.Flag
 import com.unistack.app.core.design.theme.contentColorOn
@@ -118,6 +115,8 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private val LargeCardShape: Shape
     @Composable
     @ReadOnlyComposable
@@ -626,9 +625,11 @@ private fun MissingSubjectState(onBackClick: () -> Unit, modifier: Modifier = Mo
             .statusBarsPadding()
             .padding(20.dp)
     ) {
-        IconButton(onClick = onBackClick) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onSurface)
-        }
+        UniIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Volver",
+            onClick = onBackClick
+        )
         Text("Materia no encontrada", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
@@ -653,7 +654,7 @@ private fun SubjectHeader(
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
         ) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
@@ -706,7 +707,7 @@ private fun SubjectHeader(
         Box {
             IconButton(
                 onClick = onMenuClick,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
             ) {
                 Icon(
                     Icons.Rounded.MoreVert,
@@ -714,7 +715,7 @@ private fun SubjectHeader(
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = onDismissMenu,
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -733,6 +734,9 @@ private fun SubjectHeader(
                         onClick = action
                     )
                 }
+                // Borrar una materia se lleva por delante sus notas: la línea la separa de
+                // las opciones que solo abren otra pantalla.
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
                     text = { Text("Eliminar materia", color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
@@ -753,7 +757,7 @@ private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Uni
     ) {
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
         ) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
@@ -869,32 +873,14 @@ private fun PeriodChooser(
         // Elegir uno entre varios es un grupo conectado, igual que Horario/Calendario o
         // Materias/Tareas. Eran tres pastillas sueltas en una fila que rodaba.
         val ordered = periods.sortedBy { it.order }
-        ButtonGroup(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-        ) {
-            ordered.forEachIndexed { index, period ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val selected = chosenPeriodId == period.id
-                val shapes = when (index) {
-                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    ordered.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                }
-                ToggleButton(
-                    checked = selected,
-                    onCheckedChange = { onChoose(period.id) },
-                    shapes = shapes,
-                    interactionSource = interactionSource,
-                    modifier = Modifier
-                        .weight(1f)
-                        .defaultMinSize(minHeight = 48.dp)
-                        .animateWidth(interactionSource)
-                ) {
-                    Text(periodDisplayName(period), maxLines = 1, softWrap = false)
-                }
-            }
-        }
+        UniSegmentedControl<String>(
+            selected = chosenPeriodId.orEmpty(),
+            options = ordered.map {
+                UniSegmentedOption(value = it.id, label = periodDisplayName(it))
+            },
+            onSelected = onChoose,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
@@ -967,17 +953,16 @@ private fun SubjectOverviewCard(
                 when (indicatorStyle) {
                     AcademicIndicatorStyle.RINGS -> {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                            CircularWavyProgressIndicator(
-                                progress = { 1f },
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f),
-                                trackColor = Color.Transparent
-                            )
-                            CircularWavyProgressIndicator(
-                                progress = { (evaluated / 100.0).coerceIn(0.0, 1.0).toFloat() },
+                            // El aro de fondo sale de `trackColor`, no de una segunda copia
+                            // del indicador con el progreso al 100 %. Apilar dos era lo que
+                            // había, y costaba el doble de nodos para dibujar una pista que
+                            // el componente ya sabe pintar solo.
+                            EvaluationRing(
+                                fraction = evaluated / 100.0,
                                 modifier = Modifier.fillMaxSize(),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                trackColor = Color.Transparent
+                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    .copy(alpha = 0.18f)
                             )
                             EvaluationValue(evaluated)
                         }
@@ -1633,14 +1618,12 @@ private fun GradeRowItem(
             fontWeight = FontWeight.ExtraBold
         )
         Box {
-            IconButton(onClick = { showMenu = true }) {
-                Icon(
-                    Icons.Rounded.MoreVert,
-                    contentDescription = "Opciones de nota",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            DropdownMenu(
+            UniIconButton(
+                icon = Icons.Rounded.MoreVert,
+                contentDescription = "Opciones de nota",
+                onClick = { showMenu = true }
+            )
+            UniDropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
@@ -1650,6 +1633,7 @@ private fun GradeRowItem(
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = { showMenu = false; onEditClick() }
                 )
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
                     text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },

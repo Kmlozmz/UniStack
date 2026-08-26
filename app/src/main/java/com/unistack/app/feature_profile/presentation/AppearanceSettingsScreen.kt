@@ -2,11 +2,17 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.feature_user.domain.SwitchIconStyle
+import com.unistack.app.feature_user.domain.ProgressShape
+import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.portraitUrl
+import com.unistack.app.core.design.components.uniReorderHandle
+import com.unistack.app.core.design.components.uniReorderableItem
+import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
+import com.unistack.app.core.design.components.SettingsGroupCard
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,28 +34,18 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -65,6 +61,7 @@ import com.unistack.app.feature_user.domain.HomeSection
 import com.unistack.app.feature_user.domain.InterfaceDensity
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.VisualPreference
+import androidx.compose.runtime.getValue
 
 /**
  * Apariencia: la pantalla más grande de ajustes, y la única con vista previa.
@@ -200,6 +197,65 @@ fun AppearanceSettingsScreen(
             }
         }
         item {
+            SettingsGroupBare(label = "DETALLES DE LA INTERFAZ") {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Text(
+                        text = "Etiquetas de la barra de abajo",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.bottomBarStyle,
+                        options = BottomBarStyle.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(bottomBarStyle = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Barras de progreso de tus estudios",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.academicProgressShape,
+                        options = ProgressShape.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(academicProgressShape = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = "Las de descarga se quedan onduladas siempre.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+
+                    Text(
+                        text = "Icono dentro del interruptor",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    UniSegmentedControl(
+                        selected = appearance.switchIconStyle,
+                        options = SwitchIconStyle.entries.map { option ->
+                            UniSegmentedOption(value = option, label = option.label())
+                        },
+                        onSelected = { value ->
+                            viewModel.updateAppearance { it.copy(switchIconStyle = value) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    UniSwitch(checked = true, onCheckedChange = {})
+                }
+            }
+        }
+        item {
             SettingsGroupBare(label = "TARJETAS DE INICIO") {
                 HomeBlocksCard(
                     appearance = appearance,
@@ -228,7 +284,7 @@ fun AppearanceSettingsScreen(
             }
         }
         item {
-            SettingsGroup(label = "QUÉ ENSEÑA LO SIGUIENTE") {
+            SettingsGroupCard(label = "QUÉ ENSEÑA LO SIGUIENTE") {
                 HomeToggleRow(
                     title = "Notas",
                     detail = "Promedios y materias en riesgo",
@@ -468,11 +524,9 @@ private fun HomeBlocksCard(
     onToggleSection: (HomeSection, Boolean) -> Unit,
     onReorder: (List<HomeSection>) -> Unit
 ) {
-    var dragged by remember { mutableStateOf<HomeSection?>(null) }
-    var dragOffset by remember { mutableFloatStateOf(0f) }
-    var rowHeight by remember { mutableIntStateOf(0) }
     val order by rememberUpdatedState(appearance.homeSectionOrder)
     val reorder by rememberUpdatedState(onReorder)
+    val dragState = rememberUniReorderState()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -488,58 +542,21 @@ private fun HomeBlocksCard(
                 onCheckedChange = onToggleGreeting
             )
             order.forEach { section ->
-                val isDragged = dragged == section
                 HomeToggleRow(
-                    modifier = Modifier
-                        .zIndex(if (isDragged) 1f else 0f)
-                        .graphicsLayer { translationY = if (isDragged) dragOffset else 0f }
-                        .onSizeChanged { rowHeight = it.height },
+                    modifier = Modifier.uniReorderableItem(dragState, section),
                     title = section.label(),
                     detail = section.detail(),
                     checked = appearance.showsSection(section),
                     draggable = true,
-                    // La clave del gesto es solo la sección: si dependiera del orden, la
-                    // primera permuta reiniciaría el detector y el dedo se quedaría a
-                    // medias con la fila pegada al sitio nuevo.
-                    handleModifier = Modifier.pointerInput(section) {
-                        detectDragGestures(
-                            onDragStart = {
-                                dragged = section
-                                dragOffset = 0f
-                            },
-                            onDragEnd = {
-                                dragged = null
-                                dragOffset = 0f
-                            },
-                            onDragCancel = {
-                                dragged = null
-                                dragOffset = 0f
-                            },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                dragOffset += amount.y
-                                val height = rowHeight
-                                if (height <= 0) return@detectDragGestures
-                                val index = order.indexOf(section)
-                                val step = when {
-                                    dragOffset > height / 2f && index < order.lastIndex -> 1
-                                    dragOffset < -height / 2f && index > 0 -> -1
-                                    else -> 0
-                                }
-                                if (step != 0) {
-                                    // Al permutar, la fila ya salta un hueco entero por sí
-                                    // sola: se le descuenta esa altura al arrastre para que
-                                    // siga justo debajo del dedo y no se adelante.
-                                    dragOffset -= step * height
-                                    reorder(
-                                        order.toMutableList().apply {
-                                            add(index + step, removeAt(index))
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    },
+                    handleModifier = Modifier.uniReorderHandle(
+                        state = dragState,
+                        key = section,
+                        index = { order.indexOf(section) },
+                        itemCount = { order.size },
+                        onMove = { from, to ->
+                            reorder(order.toMutableList().apply { add(to, removeAt(from)) })
+                        }
+                    ),
                     onCheckedChange = { enabled -> onToggleSection(section, enabled) }
                 )
             }
@@ -592,7 +609,7 @@ private fun HomeToggleRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        UniSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -639,4 +656,20 @@ private fun HomeSection.detail() = when (this) {
     HomeSection.HERO -> "La tarjeta con lo más urgente"
     HomeSection.AGENDA -> "Clases y entregas del día"
     HomeSection.SNAPSHOT -> "Promedio, pendientes y gasto"
+}
+
+private fun BottomBarStyle.label() = when (this) {
+    BottomBarStyle.LABELED -> "Con texto"
+    BottomBarStyle.ICONS_ONLY -> "Solo iconos"
+}
+
+private fun ProgressShape.label() = when (this) {
+    ProgressShape.FLAT -> "Rectas"
+    ProgressShape.WAVY -> "Onduladas"
+}
+
+private fun SwitchIconStyle.label() = when (this) {
+    SwitchIconStyle.BOTH -> "Siempre"
+    SwitchIconStyle.CHECKED_ONLY -> "Al encender"
+    SwitchIconStyle.NONE -> "Nunca"
 }

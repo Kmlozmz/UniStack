@@ -20,7 +20,7 @@ import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
+import com.unistack.app.core.design.components.UniLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -28,12 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +50,8 @@ import kotlin.math.min
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /**
  * Elegir qué parte de la foto se ve.
@@ -114,7 +114,7 @@ internal fun ProfilePhotoEditor(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Arrastra para mover y pellizca para acercar. Así se verá en toda la app.",
+                    "Arrastra para mover y pellizca para acercar.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -134,7 +134,7 @@ internal fun ProfilePhotoEditor(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        image == null -> CircularWavyProgressIndicator()
+                        image == null -> UniLoadingIndicator()
                         else -> Image(
                             bitmap = image.asImageBitmap(),
                             contentDescription = null,
@@ -199,7 +199,7 @@ internal fun ProfilePhotoEditor(
                     if (canRemove) {
                         TextButton(onClick = onRemove, enabled = !saving) {
                             Text(
-                                "Quitar mi foto",
+                                "Quitar foto",
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.error
                             )

@@ -2,6 +2,13 @@
 
 package com.unistack.app.feature_support.presentation
 
+import androidx.compose.runtime.remember
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -20,7 +27,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,22 +43,19 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,11 +68,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unistack.app.core.design.components.UniStackButtonDefaults
+import com.unistack.app.core.design.components.UniStackButton
+import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_support.domain.SupportChannel
 import com.unistack.app.feature_support.domain.TicketContext
 import com.unistack.app.feature_support.domain.TicketKind
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 /** Lo mínimo que hay que escribir para que el mensaje diga algo. */
 private const val MinimumLength = 15
@@ -104,6 +110,17 @@ internal fun FeedbackSheet(
     var kind by rememberSaveable { mutableStateOf(initialKind) }
     var text by rememberSaveable { mutableStateOf("") }
     var contact by rememberSaveable { mutableStateOf("") }
+    /*
+     * Tres pasos, no dos: escribir, leer como va a salir, y mandarlo.
+     *
+     * Antes «Enviar» copiaba el mensaje y abría Telegram de golpe, y solo después aparecia un
+     * cartel explicando que faltaba pegarlo. Quien pulsaba ya estaba en otra app cuando se le
+     * decía lo que tenía que hacer allí, así que volvía, leía, y volvia a salir.
+     *
+     * Ahora el paso de en medio se lee antes de salir de UniStack: dice qué va a pasar y el
+     * botón lleva el nombre de lo que hace.
+     */
+    var instructing by rememberSaveable { mutableStateOf(false) }
     var opened by rememberSaveable { mutableStateOf<Boolean?>(null) }
 
     ModalBottomSheet(
@@ -112,7 +129,7 @@ internal fun FeedbackSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         val opening = opened
-        if (opening == null) {
+        if (opening == null && !instructing) {
             FeedbackForm(
                 kind = kind,
                 onKindChange = { kind = it },
@@ -122,6 +139,10 @@ internal fun FeedbackSheet(
                 onContactChange = { contact = it },
                 ticketContext = ticketContext,
                 onDismiss = onDismiss,
+                onSend = { instructing = true }
+            )
+        } else if (opening == null) {
+            BeforeSending(
                 onSend = {
                     opened = onSend(kind, text, contact.trim().takeIf { it.isNotEmpty() })
                 }
@@ -164,9 +185,11 @@ private fun FeedbackForm(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.Rounded.Close, contentDescription = "Cerrar")
-            }
+            UniIconButton(
+                icon = Icons.Rounded.Close,
+                contentDescription = "Cerrar",
+                onClick = onDismiss
+            )
         }
 
         Text(
@@ -225,24 +248,128 @@ private fun FeedbackForm(
             )
         }
 
-        // Un solo botón, y con el destino escrito. Al lado hubo otro de correo, apagado,
-        // enseñando un camino que no existía: ocupaba la mitad del ancho para no hacer nada.
-        Button(
-            shapes = UniStackButtonDefaults.shapes,
+        // Dice «Enviar» y no «Enviar por Telegram»: este botón no abre Telegram todavía,
+        // lleva al paso donde se explica lo que va a pasar. Prometer el destino aquí y llevar
+        // a otro sitio es justo lo que hacía dudar de si el mensaje había salido.
+        UniStackButton(
+            text = "Enviar",
             onClick = onSend,
-            enabled = enoughWritten,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
+            enabled = enoughWritten
+        )
+    }
+}
+
+/**
+ * Lo que va a pasar al pulsar, antes de que pase.
+ *
+ * Telegram no deja que otra app escriba en un grupo por ti: lo máximo que se puede hacer es
+ * dejar el mensaje copiado y abrir el tema. El último paso —pegar y darle a enviar— lo da quien
+ * escribe, y esto lo dice mientras todavía está mirando UniStack.
+ *
+ * **Sin botón de volver.** Este paso no pregunta nada: cuenta cómo va a salir el mensaje. Si
+ * hay que cambiar algo se cierra la hoja, que es lo que hace la cruz de arriba y el gesto de
+ * bajarla; poner un «Volver» al lado del que envía hace dudar de cuál es el que sigue.
+ */
+@Composable
+private fun BeforeSending(onSend: () -> Unit) {
+    val entered = remember { MutableTransitionState(false).apply { targetState = true } }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        AnimatedVisibility(
+            visibleState = entered,
+            enter = scaleIn(
+                animationSpec = spring(
+                    dampingRatio = 0.45f,
+                    stiffness = Spring.StiffnessMediumLow
+                ),
+                initialScale = 0.6f
+            ) + fadeIn()
         ) {
-            Icon(
-                Icons.AutoMirrored.Rounded.Send,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(Modifier.width(8.dp))
-            Text("Enviar por Telegram")
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Send,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
         }
+
+        Text(
+            text = "Cómo se envía",
+            style = MaterialTheme.typography.headlineSmallEmphasized,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "Telegram no deja que una app escriba en un grupo por ti, así que el último " +
+                "paso lo das tú. Son dos toques:",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SendingStep(number = "1", text = "Se copia tu mensaje y se abre el tema del grupo.")
+                SendingStep(number = "2", text = "Mantén pulsado en el campo de Telegram, pega y envía.")
+            }
+        }
+
+        UniStackButton(
+            text = "Enviar por Telegram",
+            onClick = onSend,
+            leadingIcon = Icons.AutoMirrored.Rounded.Send
+        )
+    }
+}
+
+/** Un paso numerado de las instrucciones. */
+@Composable
+private fun SendingStep(number: String, text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = number,
+                style = MaterialTheme.typography.labelLargeEmphasized,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -270,7 +397,7 @@ private fun KindChooser(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(44.dp)
             .clip(shape)
             .border(width = 1.dp, color = line, shape = shape)
     ) {
@@ -319,11 +446,24 @@ private fun KindChooser(
                 AnimatedVisibility(
                     visible = chosen,
                     enter = expandHorizontally(
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        // Un muelle con rebote de verdad, no el del tema.
+                        //
+                        // `defaultSpatialSpec` está amortiguado casi al máximo: entra recto y
+                        // no se nota que sea un muelle. Bajando la amortiguación, el rótulo se
+                        // pasa un pelo de su sitio y vuelve, que es el gesto que se pedía.
+                        animationSpec = spring(
+                            dampingRatio = 0.45f,
+                            stiffness = Spring.StiffnessMediumLow,
+                            visibilityThreshold = IntSize.VisibilityThreshold
+                        ),
                         expandFrom = Alignment.Start
                     ) + fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
                     exit = shrinkHorizontally(
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        animationSpec = spring(
+                            dampingRatio = 0.45f,
+                            stiffness = Spring.StiffnessMediumLow,
+                            visibilityThreshold = IntSize.VisibilityThreshold
+                        ),
                         shrinkTowards = Alignment.Start
                     ) + fadeOut(MaterialTheme.motionScheme.defaultEffectsSpec())
                 ) {
@@ -434,40 +574,64 @@ private fun SentRow(label: String, value: String) {
  */
 @Composable
 private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
+    /*
+     * El acuse de recibo, con el círculo grande y el visto dentro.
+     *
+     * El círculo entra con un muelle: aparecer de golpe no se lee como «ha pasado algo», se lee
+     * como que la pantalla ha cambiado sin más.
+     *
+     * El titular no dice «enviado» cuando Telegram se abrió, dice que falta un paso. Telegram no
+     * deja que una app escriba en un grupo por ti, así que el mensaje está copiado y esperando a
+     * que lo pegues. Decir «enviado» aquí sería mentir, y la gente cerraría la hoja creyendo que
+     * ya está.
+     */
+    val visible = remember { MutableTransitionState(false).apply { targetState = true } }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 28.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 20.dp, bottom = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
-                .background(
-                    if (telegramOpened) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    }
+        AnimatedVisibility(
+            visibleState = visible,
+            enter = scaleIn(
+                animationSpec = spring(
+                    dampingRatio = 0.45f,
+                    stiffness = Spring.StiffnessMediumLow
                 ),
-            contentAlignment = Alignment.Center
+                initialScale = 0.6f
+            ) + fadeIn()
         ) {
-            Icon(
-                imageVector = if (telegramOpened) Icons.Rounded.Check else Icons.Rounded.ContentPaste,
-                contentDescription = null,
-                tint = if (telegramOpened) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                modifier = Modifier.size(30.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (telegramOpened) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (telegramOpened) Icons.Rounded.Check else Icons.Rounded.ContentPaste,
+                    contentDescription = null,
+                    tint = if (telegramOpened) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.size(38.dp)
+                )
+            }
         }
 
         Text(
-            text = if (telegramOpened) "Ya casi está" else "Telegram no se abrió",
+            text = if (telegramOpened) "Copiado y abierto" else "Telegram no se abrió",
             style = MaterialTheme.typography.headlineSmallEmphasized,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
@@ -475,8 +639,7 @@ private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
 
         Text(
             text = if (telegramOpened) {
-                "Tu mensaje quedó copiado y se abrió el tema del grupo. Solo falta pegarlo " +
-                    "y enviarlo: Telegram no deja que la app lo mande por ti."
+                "Ya sabes el resto: mantén pulsado en el campo de Telegram, pega y envía."
             } else {
                 "Tu mensaje quedó copiado, pero no se pudo abrir Telegram. Busca el grupo " +
                     "@${SupportChannel.HANDLE}, pega el mensaje y envíalo."
@@ -486,14 +649,9 @@ private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
             textAlign = TextAlign.Center
         )
 
-        Button(
-            shapes = UniStackButtonDefaults.shapes,
-            onClick = onClose,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-        ) {
-            Text("Entendido")
-        }
+        UniStackButton(
+            text = "Cerrar",
+            onClick = onClose
+        )
     }
 }

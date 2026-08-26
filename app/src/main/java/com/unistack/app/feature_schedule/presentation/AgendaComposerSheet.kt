@@ -50,15 +50,13 @@ import androidx.compose.ui.text.style.TextAlign
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +77,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 internal enum class AgendaCreateKind(
     val title: String,
@@ -336,7 +336,7 @@ internal fun AgendaComposerSheet(
                 ) {
                     FilledTonalIconButton(
                         onClick = { releaseFocus(); dateEpochDay-- },
-                        modifier = Modifier.size(38.dp),
+                        modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurface
@@ -354,7 +354,7 @@ internal fun AgendaComposerSheet(
                     )
                     FilledTonalIconButton(
                         onClick = { releaseFocus(); dateEpochDay++ },
-                        modifier = Modifier.size(38.dp),
+                        modifier = Modifier.size(IconButtonDefaults.smallContainerSize()),
                         colors = IconButtonDefaults.filledTonalIconButtonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                             contentColor = MaterialTheme.colorScheme.onSurface
@@ -441,7 +441,7 @@ internal fun AgendaComposerSheet(
                             )
                         }
                         Spacer(Modifier.width(10.dp))
-                        Switch(generatesGrade, { releaseFocus(); generatesGrade = it })
+                        UniSwitch(generatesGrade, { releaseFocus(); generatesGrade = it })
                     }
                 }
             } else {

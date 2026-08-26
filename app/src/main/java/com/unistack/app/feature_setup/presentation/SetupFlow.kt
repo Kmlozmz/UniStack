@@ -92,26 +92,20 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniSegmentedControl
 import androidx.compose.material3.MotionScheme
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.ui.draw.alpha
 import com.unistack.app.core.design.components.UniStackBrandPill
 import com.unistack.app.core.design.components.UniStackBrandMark
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
 import com.unistack.app.core.utils.GradingScaleUtils
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -161,6 +155,8 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 private object SetupRoutes {
     const val Welcome = "setup_welcome"
     const val Name = "setup_name"
@@ -503,7 +499,7 @@ private fun WelcomeHeroCard() {
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                text = "Unas preguntas rápidas y UniStack estará listo desde el primer día.",
+                text = "Unas preguntas rápidas y UniStack estará listo para empezar a organizar tu vida académica.",
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
                 fontSize = 13.sp,
                 lineHeight = 19.sp,
@@ -539,7 +535,7 @@ private fun WelcomeFeaturesGrid() {
                 icon = Icons.Rounded.Percent,
                 label = "Seguir tus notas",
                 description = "Anota tus calificaciones por corte y UniStack calcula tu promedio " +
-                    "y cuánto necesitas en lo que falta para llegar a tu meta."
+                    "y cuánto necesitas en lo que falta para llegar a tu meta. ¡UniStack lo hace por ti!"
             ),
             WelcomeFeature(
                 icon = Icons.Rounded.GridView,
@@ -938,7 +934,7 @@ private fun SetupNameTitle() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Usaremos tu nombre para saludarte\ny personalizar tu panel.",
+            text = "UniStack usará tu nombre para saludarte\ny personalizar tu panel.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -1246,7 +1242,7 @@ fun SetupProfileScreen(
                     InstitutionField(
                         value = institutionName,
                         label = "¿Dónde estudias?",
-                        placeholder = "Instituto, academia, plataforma…",
+                        placeholder = "Instituto, corporación, academia…",
                         onValueChange = onInstitutionNameChange
                     )
                 }
@@ -1561,7 +1557,7 @@ private fun AcademicProgramHelpCard(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Podrás agregarla manualmente.",
+                    text = "Puedes agregarla manualmente.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 16.sp
@@ -1816,37 +1812,16 @@ private fun ScaleTypeSection(
     // El grupo conectado del resto de la app. Eran tres tarjetas grandes con su punto de
     // radio, su rótulo encima y una línea extra en la personalizada: mucho mueble para
     // elegir entre tres cosas que se nombran solas.
-    val options = listOf(
-        SetupScaleChoice.FIVE to "0 a 5.0",
-        SetupScaleChoice.HUNDRED to "0 a 100",
-        SetupScaleChoice.CUSTOM to "Otra"
+    UniSegmentedControl(
+        selected = selectedChoice,
+        options = listOf(
+            SetupScaleChoice.FIVE to "0 a 5.0",
+            SetupScaleChoice.HUNDRED to "0 a 100",
+            SetupScaleChoice.CUSTOM to "Otra"
+        ).map { (choice, label) -> UniSegmentedOption(value = choice, label = label) },
+        onSelected = onChoiceSelected,
+        modifier = Modifier.fillMaxWidth()
     )
-    ButtonGroup(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-    ) {
-        options.forEachIndexed { index, (choice, label) ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val shapes = when (index) {
-                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-            }
-            ToggleButton(
-                checked = selectedChoice == choice,
-                onCheckedChange = { onChoiceSelected(choice) },
-                shapes = shapes,
-                interactionSource = interactionSource,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .animateWidth(interactionSource)
-            ) {
-                Text(label, maxLines = 1, softWrap = false)
-            }
-        }
-    }
 }
 
 @Composable
@@ -2492,7 +2467,7 @@ private fun SetupModuleSelectionCard(
             // toque a la tarjeta, pero un control desactivado se come el puntero igual: por
             // encima del interruptor no pasaba nada, y solo colaba algún toque en el borde.
             // Ahora responde él, y la tarjeta sigue respondiendo por su cuenta.
-            Switch(
+            UniSwitch(
                 checked = selected,
                 onCheckedChange = { onClick() }
             )

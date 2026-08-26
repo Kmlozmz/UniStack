@@ -6,13 +6,13 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Today
+import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSearchField
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,20 +49,20 @@ import androidx.compose.material.icons.rounded.Grade
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -74,14 +74,12 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Switch
+import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
@@ -93,12 +91,10 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -126,6 +122,8 @@ import com.unistack.app.core.design.theme.contentColorOn
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.UniStackButtonDefaults
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TasksScreen(
@@ -681,7 +679,7 @@ private fun TaskGradeResultSheet(
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Switch(
+                    UniSwitch(
                         checked = weightUnknown,
                         onCheckedChange = {
                             weightUnknown = it
@@ -752,33 +750,11 @@ private fun TaskSearchBar(
     onQueryChange: (String) -> Unit,
     onSearchDone: () -> Unit
 ) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        singleLine = true,
-        shape = MaterialTheme.shapes.large,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(
-            onSearch = { onSearchDone() },
-            onDone = { onSearchDone() }
-        ),
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Rounded.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        placeholder = {
-            Text(
-                text = "Buscar tarea, materia o tipo",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
+    UniSearchField(
+        query = query,
+        onQueryChange = onQueryChange,
+        placeholder = "Buscar tarea, materia o tipo",
+        onSearchDone = onSearchDone
     )
 }
 
@@ -1183,10 +1159,10 @@ private fun PendingGradeTaskRow(
             Text("Registrar", fontWeight = FontWeight.Bold)
         }
         Box {
-            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(34.dp)) {
+            IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
                 Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
             }
-            DropdownMenu(
+            UniDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
@@ -1206,9 +1182,19 @@ private fun PendingGradeTaskRow(
                         onNoGradeClick()
                     }
                 )
+                // Eliminar va detrás de una línea, y no seguido de lo demás.
+                //
+                // Las tres opciones tenían el mismo peso y estaban pegadas, así que el dedo
+                // que iba a «No tuvo nota» caía en «Eliminar» con un centímetro de error. La
+                // línea no impide el toque, pero rompe la lista en dos y obliga a mirar.
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
                     text = { Text("Eliminar") },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
+                    colors = MenuDefaults.itemColors(
+                        textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error
+                    ),
                     onClick = {
                         menuExpanded = false
                         onDeleteClick()
@@ -1389,14 +1375,12 @@ private fun TaskCard(
                 }
             }
             Box(modifier = Modifier.padding(top = 8.dp, end = 6.dp)) {
-                IconButton(onClick = { menuExpanded = true }) {
-                    Icon(
-                        imageVector = Icons.Rounded.MoreVert,
-                        contentDescription = "Más opciones de ${task.title}",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                DropdownMenu(
+                UniIconButton(
+                    icon = Icons.Rounded.MoreVert,
+                    contentDescription = "Más opciones de ${task.title}",
+                    onClick = { menuExpanded = true }
+                )
+                UniDropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false }
                 ) {
@@ -1434,6 +1418,7 @@ private fun TaskCard(
                             }
                         )
                     }
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
                     DropdownMenuItem(
                         text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
@@ -1881,46 +1866,25 @@ private fun PrioritySegmentedControl(
     selectedPriority: TaskDifficulty?,
     onPrioritySelected: (TaskDifficulty?) -> Unit
 ) {
-    val options = listOf<Pair<TaskDifficulty?, String>>(
-        null to "Todas",
-        TaskDifficulty.EASY to "Baja",
-        TaskDifficulty.MEDIUM to "Media",
-        TaskDifficulty.HARD to "Alta"
-    )
-
     // Grupo conectado, como los demás selectores de uno entre varios. Era una caja con
     // cuatro cajas dentro, y la elegida se pintaba con el acento al 88 %.
-    ButtonGroup(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-    ) {
-        options.forEachIndexed { index, (priority, label) ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val selected = selectedPriority == priority
-            val shapes = when (index) {
-                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-            }
-            ToggleButton(
-                checked = selected,
-                onCheckedChange = { onPrioritySelected(priority) },
-                shapes = shapes,
-                interactionSource = interactionSource,
-                contentPadding = PaddingValues(horizontal = 8.dp),
-                modifier = Modifier
-                    .weight(1f)
-                    .defaultMinSize(minHeight = 48.dp)
-                    .animateWidth(interactionSource)
-            ) {
-                priority?.let {
-                    Box(Modifier.size(7.dp).clip(CircleShape).background(it.color()))
-                    Spacer(Modifier.width(5.dp))
-                }
-                Text(label, maxLines = 1, softWrap = false)
-            }
-        }
-    }
+    UniSegmentedControl(
+        selected = selectedPriority,
+        options = listOf<Pair<TaskDifficulty?, String>>(
+            null to "Todas",
+            TaskDifficulty.EASY to "Baja",
+            TaskDifficulty.MEDIUM to "Media",
+            TaskDifficulty.HARD to "Alta"
+        ).map { (priority, label) ->
+            UniSegmentedOption(
+                value = priority,
+                label = label,
+                dotColor = priority?.color()
+            )
+        },
+        onSelected = onPrioritySelected,
+        modifier = Modifier.fillMaxWidth()
+    )
 }
 
 @Composable

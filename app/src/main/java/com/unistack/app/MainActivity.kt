@@ -1,5 +1,7 @@
 package com.unistack.app
 
+import java.util.Locale
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
@@ -15,6 +17,26 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val pendingLaunchRoute = mutableStateOf<String?>(null)
+
+    /*
+     * La app va en español, también la parte que no escribimos nosotros.
+     *
+     * Todo el texto de UniStack está escrito a mano en español, pero los componentes de Material
+     * traen los suyos y esos siguen el idioma del teléfono: en un móvil en inglés, el selector de
+     * fecha decía «Select dates», «Start date» y ponía los días como S M T W T F S en mitad de
+     * una pantalla que en la línea de arriba dice «Elige el periodo». Fijando el idioma del
+     * contexto, los textos de la libreria salen en el mismo idioma que los nuestros.
+     *
+     * Va aquí y no en un ajuste porque hoy no hay traducción que elegir: la app existe en un
+     * solo idioma. Cuando `AppLanguage` sirva para algo, este es el sitio donde leerlo.
+     */
+    override fun attachBaseContext(newBase: Context) {
+        val spanish = Locale.forLanguageTag("es")
+        Locale.setDefault(spanish)
+        val configuration = Configuration(newBase.resources.configuration)
+        configuration.setLocale(spanish)
+        super.attachBaseContext(newBase.createConfigurationContext(configuration))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
