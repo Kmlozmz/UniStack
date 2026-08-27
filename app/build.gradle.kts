@@ -698,9 +698,15 @@ fun telegramSay(text: String) {
     }.onFailure { println("Telegram: no se pudo avisar (\"$text\"): ${it.message}") }
 }
 
-/** Reescribe el ultimo mensaje. Si no hay ninguno vivo, manda uno nuevo. */
-fun telegramRewrite(text: String) {
-    val id = telegramLiveMessageId ?: return telegramSay(text)
+/**
+ * Retira el mensaje de «enviando», que es lo que el propio APK viene a sustituir.
+ *
+ * Telegram no deja convertir un mensaje de texto en documento —`editMessageMedia` exige que
+ * el mensaje ya llevara media—, asi que lo mas cercano a que uno se convierta en otro es
+ * mandar el APK y quitar el aviso. En el chat queda «cocinando» y debajo el archivo.
+ */
+fun telegramRemove(messageId: String?) {
+    val id = messageId ?: return
     val (token, chat) = telegramCredentials() ?: return
     runCatching {
         providers.exec {
@@ -708,13 +714,12 @@ fun telegramRewrite(text: String) {
                 "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
                 "--form-string", "chat_id=$chat",
                 "--form-string", "message_id=$id",
-                "--form-string", "text=$text",
-                "https://api.telegram.org/bot$token/editMessageText"
+                "https://api.telegram.org/bot$token/deleteMessage"
             )
         }.result.get().assertNormalExitValue()
-        println("Telegram: \"$text\" (editado)")
-    }.onFailure { println("Telegram: no se pudo editar (\"$text\"): ${it.message}") }
+    }.onFailure { println("Telegram: no se pudo retirar el aviso de envio: ${it.message}") }
 }
+
 
 
 /** Quita las negritas de Markdown: en el mensaje del bot no pintan nada. */
@@ -776,9 +781,11 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
          */
         val tipo = apkType()
         val numero = nextTelegramCount(tipo)
-        val caption = "($tipo) #$numero"
+        // En `code`, como iba el changelog: el numero se distingue del resto del chat.
+        val caption = "<code>($tipo) #$numero</code>"
 
-        telegramRewrite("Build completed! Sending...")
+        telegramSay("Build completed! Sending...")
+        val avisoDeEnvio = telegramLiveMessageId
         println("Sending ${apkPath.name} to Telegram as $caption...")
         providers.exec {
             commandLine(
@@ -802,10 +809,13 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
                 "document=@${apkPath.absolutePath}",
                 "--form-string",
                 "caption=$caption",
+                "--form-string",
+                "parse_mode=HTML",
                 "https://api.telegram.org/bot$botToken/sendDocument"
             )
         }.result.get().assertNormalExitValue()
-        println("Telegram upload completed: $caption")
+        telegramRemove(avisoDeEnvio)
+        println("Telegram upload completed: ($tipo) #$numero")
     }
 }
 
