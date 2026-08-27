@@ -37,7 +37,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -575,7 +575,6 @@ class FirebaseCloudBackupRepository(
     }
 
     private fun periodSchemeMap(scheme: AcademicPeriodScheme): Map<String, Any?> = mapOf(
-        "label" to scheme.label.name,
         "periods" to scheme.periods.map { period ->
             mapOf(
                 "id" to period.id,
@@ -589,19 +588,16 @@ class FirebaseCloudBackupRepository(
     private fun parsePeriodScheme(value: Any?): AcademicPeriodScheme {
         @Suppress("UNCHECKED_CAST")
         val root = value as? Map<String, Any?> ?: return AcademicPeriodScheme.default()
-        val label = root.string("label")
-            ?.let { runCatching { AcademicPeriodLabel.valueOf(it) }.getOrNull() }
-            ?: AcademicPeriodLabel.CORTE
         val periods = asMapList(root["periods"]).mapIndexedNotNull { index, item ->
             val weight = item.double("weight") ?: return@mapIndexedNotNull null
             AcademicPeriod(
                 id = item.string("id") ?: "period-${index + 1}",
-                name = item.string("name") ?: "${label.singular} ${index + 1}",
+                name = item.string("name") ?: "${Corte.Singular} ${index + 1}",
                 weight = weight,
                 order = item.int("order") ?: index + 1
             )
         }
-        return AcademicPeriodScheme(label, periods).takeIf { it.isValid }
+        return AcademicPeriodScheme(periods).takeIf { it.isValid }
             ?: AcademicPeriodScheme.default()
     }
 

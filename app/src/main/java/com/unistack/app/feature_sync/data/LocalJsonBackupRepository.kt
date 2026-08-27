@@ -39,7 +39,7 @@ import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
@@ -404,7 +404,6 @@ class LocalJsonBackupRepository(
 
     private fun AcademicPeriodScheme.toJsonObject(): JSONObject {
         return JSONObject()
-            .put("label", label.name)
             .put(
                 "periods",
                 JSONArray(
@@ -421,9 +420,6 @@ class LocalJsonBackupRepository(
 
     private fun JSONObject?.toAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
         val root = this ?: return null
-        val label = runCatching {
-            AcademicPeriodLabel.valueOf(root.optString("label", AcademicPeriodLabel.CORTE.name))
-        }.getOrDefault(AcademicPeriodLabel.CORTE)
         val periodsArray = root.optJSONArray("periods") ?: return null
         val periods = periodsArray.objects()
             .mapIndexedNotNull { index, item ->
@@ -432,13 +428,13 @@ class LocalJsonBackupRepository(
                 if (weight <= 0.0) return@mapIndexedNotNull null
                 AcademicPeriod(
                     id = item.optString("id", "period-$order"),
-                    name = item.optString("name", "${label.singular} $order"),
+                    name = item.optString("name", "${Corte.Singular} $order"),
                     weight = weight,
                     order = order
                 )
             }
             .sortedBy { it.order }
-        return AcademicPeriodScheme(label = label, periods = periods).takeIf { it.isValid }
+        return AcademicPeriodScheme(periods = periods).takeIf { it.isValid }
     }
 
     private fun String.toGradingScaleOrNull(): GradingScale? {

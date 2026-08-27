@@ -17,7 +17,7 @@ import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
@@ -503,9 +503,6 @@ class UserPreferencesDataSource(private val context: Context) {
         if (json.isNullOrBlank()) return AcademicPeriodScheme.default()
         return runCatching {
             val root = JSONObject(json)
-            val label = runCatching {
-                AcademicPeriodLabel.valueOf(root.optString("label", AcademicPeriodLabel.CORTE.name))
-            }.getOrDefault(AcademicPeriodLabel.CORTE)
             val array = root.optJSONArray("periods") ?: JSONArray()
             val periods = buildList {
                 for (index in 0 until array.length()) {
@@ -516,7 +513,7 @@ class UserPreferencesDataSource(private val context: Context) {
                         add(
                             AcademicPeriod(
                                 id = item.optString("id", "period-$order"),
-                                name = item.optString("name", "${label.singular} $order"),
+                                name = item.optString("name", "${Corte.Singular} $order"),
                                 weight = weight,
                                 order = order
                             )
@@ -524,7 +521,7 @@ class UserPreferencesDataSource(private val context: Context) {
                     }
                 }
             }.sortedBy { it.order }
-            AcademicPeriodScheme(label = label, periods = periods)
+            AcademicPeriodScheme(periods = periods)
                 .takeIf { it.isValid }
                 ?: AcademicPeriodScheme.default()
         }.getOrDefault(AcademicPeriodScheme.default())
@@ -542,7 +539,6 @@ class UserPreferencesDataSource(private val context: Context) {
             )
         }
         return JSONObject()
-            .put("label", label.name)
             .put("periods", array)
             .toString()
     }

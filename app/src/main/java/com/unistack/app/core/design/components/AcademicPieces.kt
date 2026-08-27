@@ -52,7 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import kotlin.math.roundToInt
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.runtime.setValue
@@ -453,7 +453,6 @@ internal fun GradeStepperButton(
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal fun PeriodWheelCard(
-    label: AcademicPeriodLabel,
     weights: List<String>,
     total: Double,
     isValid: Boolean,
@@ -563,7 +562,7 @@ internal fun PeriodWheelCard(
                         )
                         Spacer(modifier = Modifier.width(9.dp))
                         Text(
-                            text = "${label.singular} ${index + 1}",
+                            text = "${Corte.Singular} ${index + 1}",
                             modifier = Modifier.weight(1f),
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium,
@@ -628,7 +627,6 @@ internal fun PeriodBalanceNotice(total: Double, remaining: Double, isValid: Bool
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal fun PeriodCountSection(
-    label: AcademicPeriodLabel,
     count: Int,
     onCountSelected: (Int) -> Unit
 ) {
@@ -642,7 +640,7 @@ internal fun PeriodCountSection(
     val custom = count > 0 && count !in options
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
-            text = "¿CUÁNTOS ${label.plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
+            text = "¿CUÁNTOS ${Corte.Plural.uppercase(java.util.Locale.forLanguageTag("es"))}?",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = SectionLabelStyle
         )
@@ -677,7 +675,7 @@ internal fun PeriodCountSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = label.plural.replaceFirstChar { it.uppercase() },
+                        text = Corte.Plural,
                         modifier = Modifier.weight(1f),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyMedium,

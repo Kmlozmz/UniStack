@@ -95,7 +95,6 @@ data class SavedGradeScenario(
 )
 
 data class AcademicPeriodScheme(
-    val label: AcademicPeriodLabel = AcademicPeriodLabel.CORTE,
     val periods: List<AcademicPeriod> = defaultPeriods()
 ) {
     val totalWeight: Double
@@ -109,14 +108,11 @@ data class AcademicPeriodScheme(
     fun periodName(periodId: String?): String {
         return periods.firstOrNull { it.id == periodId }?.name
             ?: periods.firstOrNull()?.name
-            ?: label.singular
+            ?: Corte.Singular
     }
 
     companion object {
-        fun default(): AcademicPeriodScheme = AcademicPeriodScheme(
-            label = AcademicPeriodLabel.CORTE,
-            periods = defaultPeriods()
-        )
+        fun default(): AcademicPeriodScheme = AcademicPeriodScheme(periods = defaultPeriods())
 
         fun defaultPeriods(): List<AcademicPeriod> = listOf(
             AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
@@ -133,9 +129,17 @@ data class AcademicPeriod(
     val order: Int
 )
 
-enum class AcademicPeriodLabel(val singular: String, val plural: String) {
-    PERIOD("Periodo", "Periodos"),
-    CORTE("Corte", "Cortes")
+/**
+ * Como se nombra un corte en la interfaz.
+ *
+ * Era un enum de dos valores —«Corte» y «Periodo»— que el usuario elegia al configurarse, y esa
+ * eleccion existia por primaria y secundaria: en el colegio se dice periodo y en la universidad
+ * corte. Sin esos niveles queda una sola forma de decirlo, asi que es una constante y no una
+ * pregunta. Ademas libera la palabra «periodo», que pasa a significar el semestre.
+ */
+object Corte {
+    const val Singular = "Corte"
+    const val Plural = "Cortes"
 }
 
 enum class GradingScale {

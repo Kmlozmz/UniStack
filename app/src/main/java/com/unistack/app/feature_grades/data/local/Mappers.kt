@@ -8,7 +8,7 @@ import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import org.json.JSONArray
 import org.json.JSONObject
@@ -86,7 +86,6 @@ fun GradeItem.toEntity(subjectId: String): GradeEntity {
 }
 
 private fun AcademicPeriodScheme.toJson(): String = JSONObject()
-    .put("label", label.name)
     .put(
         "periods",
         JSONArray(
@@ -105,7 +104,6 @@ private fun String.toPeriodScheme(): AcademicPeriodScheme {
     if (isBlank()) return AcademicPeriodScheme.default()
     return runCatching {
         val root = JSONObject(this)
-        val label = root.optString("label").toEnum(AcademicPeriodLabel.CORTE)
         val array = root.optJSONArray("periods") ?: return@runCatching AcademicPeriodScheme.default()
         val periods = (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
@@ -113,12 +111,12 @@ private fun String.toPeriodScheme(): AcademicPeriodScheme {
             if (weight <= 0.0) return@mapNotNull null
             AcademicPeriod(
                 id = item.optString("id", "period-${index + 1}"),
-                name = item.optString("name", "${label.singular} ${index + 1}"),
+                name = item.optString("name", "${Corte.Singular} ${index + 1}"),
                 weight = weight,
                 order = item.optInt("order", index + 1)
             )
         }.sortedBy { it.order }
-        AcademicPeriodScheme(label, periods).takeIf { it.isValid } ?: AcademicPeriodScheme.default()
+        AcademicPeriodScheme(periods).takeIf { it.isValid } ?: AcademicPeriodScheme.default()
     }.getOrDefault(AcademicPeriodScheme.default())
 }
 

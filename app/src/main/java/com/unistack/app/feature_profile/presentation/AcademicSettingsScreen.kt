@@ -47,7 +47,6 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
@@ -76,9 +75,6 @@ fun AcademicSettingsScreen(
     }
     var targetInput by rememberSaveable(current.userId) {
         mutableStateOf(academicGradeInput(current.targetAverage, current.gradingScale))
-    }
-    var periodLabel by rememberSaveable(current.userId) {
-        mutableStateOf(current.academicPeriodScheme.label)
     }
     var weights by rememberSaveable(current.userId) {
         mutableStateOf(current.academicPeriodScheme.periods.map { academicPercentInput(it.weight) })
@@ -204,7 +200,6 @@ fun AcademicSettingsScreen(
         item {
             AcademicGroupLabel("TUS CORTES")
             PeriodCountSection(
-                label = periodLabel,
                 count = weights.size,
                 onCountSelected = { count ->
                     weights = academicWeightsFor(count, weights)
@@ -213,21 +208,7 @@ fun AcademicSettingsScreen(
             )
         }
         item {
-            UniSegmentedControl(
-                selected = periodLabel,
-                options = AcademicPeriodLabel.entries.map { option ->
-                    UniSegmentedOption(value = option, label = option.singular)
-                },
-                onSelected = {
-                    periodLabel = it
-                    feedback = null
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
             PeriodWheelCard(
-                label = periodLabel,
                 weights = weights,
                 total = total,
                 isValid = weightsAreValid,
@@ -256,7 +237,7 @@ fun AcademicSettingsScreen(
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    feedback = if (viewModel.updateAcademicPeriodSettings(periodLabel, weights)) {
+                    feedback = if (viewModel.updateAcademicPeriodSettings(weights)) {
                         "Cortes actualizados."
                     } else {
                         "Revisa que los pesos sumen 100%."

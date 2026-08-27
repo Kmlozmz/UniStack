@@ -139,10 +139,9 @@ import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.components.expressiveSelection
 import com.unistack.app.core.design.components.rememberSelectionShape
 import com.unistack.app.core.design.components.floatingOffset
-import com.unistack.app.core.design.components.revealIntoView
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
@@ -310,11 +309,9 @@ fun SetupFlow(
         }
         composable(SetupRoutes.Periods) {
             SetupAcademicPeriodsScreen(
-                label = viewModel.academicPeriodLabel,
                 weights = viewModel.academicPeriodWeights,
                 isValid = viewModel.isAcademicPeriodsValid,
                 totalSteps = totalSteps,
-                onLabelSelected = viewModel::updateAcademicPeriodLabel,
                 onCountSelected = viewModel::updateAcademicPeriodCount,
                 onWeightChange = viewModel::updateAcademicPeriodWeight,
                 onBackClick = { navController.navigateUp() },
@@ -353,7 +350,6 @@ fun SetupFlow(
                 customGradeMax = viewModel.customGradeMax,
                 passingGrade = viewModel.passingGradeText,
                 targetAverage = viewModel.targetAverageText,
-                periodLabel = viewModel.academicPeriodLabel,
                 periodWeights = viewModel.academicPeriodWeights,
                 enabledModules = viewModel.enabledModules,
                 gradesEnabled = gradesEnabled,
@@ -1607,10 +1603,8 @@ private fun ConfirmedScaleRangeRow(
 
 @Composable
 fun SetupAcademicPeriodsScreen(
-    label: AcademicPeriodLabel?,
     weights: List<String>,
     isValid: Boolean,
-    onLabelSelected: (AcademicPeriodLabel) -> Unit,
     onCountSelected: (Int) -> Unit,
     onWeightChange: (Int, String) -> Unit,
     onBackClick: () -> Unit,
@@ -1651,24 +1645,19 @@ fun SetupAcademicPeriodsScreen(
         ) {
             SetupPlainTitle(
                 title = "¿Cómo se divide tu nota final?",
-                subtitle = "Reparte el 100 % entre tus ${(label ?: AcademicPeriodLabel.CORTE).plural.lowercase()}."
+                subtitle = "Reparte el 100 % entre tus ${Corte.Plural.lowercase()}."
             )
 
-            EvaluationTypeSegmentedControl(
-                selected = label,
-                onSelected = onLabelSelected
-            )
-
-            AnimatedVisibility(
-                visible = label != null,
-                modifier = Modifier.revealIntoView(label != null),
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            /*
+             * El reparto sale de entrada, sin esperar a nada.
+             *
+             * Estaba escondido tras elegir «Corte» o «Periodo», que era la pregunta que se
+             * hacia por primaria y secundaria. Sin esa eleccion no hay nada que esperar, asi
+             * que el bloque deja de aparecer y desaparecer y se queda puesto.
+             */
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (weights.isNotEmpty()) {
                         PeriodWheelCard(
-                            label = label ?: AcademicPeriodLabel.CORTE,
                             weights = weights,
                             total = total,
                             isValid = isValid,
@@ -1677,7 +1666,6 @@ fun SetupAcademicPeriodsScreen(
                         PeriodBalanceNotice(total = total, remaining = remaining, isValid = isValid)
                     }
                     PeriodCountSection(
-                        label = label ?: AcademicPeriodLabel.CORTE,
                         count = weights.size,
                         onCountSelected = { count ->
                             customCountSelected = false
@@ -1697,34 +1685,6 @@ fun SetupAcademicPeriodsScreen(
             }
         }
     }
-}
-
-/**
- * El mismo control que Materias/Tareas o Horario/Calendario.
- *
- * Era una caja con borde y dos cajas dentro separadas por cuatro puntos: elegir entre dos
- * cosas se ve distinto aquí que en el resto de la app, y es exactamente la misma pregunta.
- * `UniSegmentedControl` trae el grupo conectado, la deformación al pulsar y el empuje al
- * vecino, que es lo que hace Material con esto.
- */
-@Composable
-private fun EvaluationTypeSegmentedControl(
-    selected: AcademicPeriodLabel?,
-    onSelected: (AcademicPeriodLabel) -> Unit
-) {
-    UniSegmentedControl(
-        selected = selected,
-        options = AcademicPeriodLabel.entries.map { option ->
-            UniSegmentedOption<AcademicPeriodLabel?>(
-                value = option,
-                label = periodLabelTitle(option),
-                icon = Icons.Rounded.CalendarMonth
-            )
-        },
-        onSelected = { value -> value?.let(onSelected) },
-        modifier = Modifier.fillMaxWidth()
-    )
-}
 
 @Composable
 private fun AcademicPeriodsBottomActions(
@@ -1762,11 +1722,6 @@ private data class PeriodCountOption(
     val count: Int?,
     val label: String
 )
-
-private fun periodLabelTitle(label: AcademicPeriodLabel): String = when (label) {
-    AcademicPeriodLabel.PERIOD -> "Períodos"
-    AcademicPeriodLabel.CORTE -> "Cortes"
-}
 
 @Composable
 private fun CustomGradeRangeSelector(
@@ -1920,7 +1875,6 @@ fun SetupDoneScreen(
     customGradeMax: Double,
     passingGrade: String,
     targetAverage: String,
-    periodLabel: AcademicPeriodLabel?,
     periodWeights: List<String>,
     enabledModules: Set<AppModule>,
     onBackClick: () -> Unit,

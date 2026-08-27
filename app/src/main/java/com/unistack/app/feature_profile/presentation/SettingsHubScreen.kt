@@ -43,6 +43,7 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.UserProfile
 import androidx.compose.runtime.getValue
 
@@ -232,6 +233,6 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
 private fun settingsIdentityDetail(profile: UserProfile): String {
     val scheme = profile.academicPeriodScheme
     val count = scheme.periods.size
-    val periodLabel = if (count == 1) scheme.label.singular else scheme.label.plural
+    val periodLabel = if (count == 1) Corte.Singular else Corte.Plural
     return profile.educationSummary() + " · " + count + " " + periodLabel.lowercase()
 }

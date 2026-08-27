@@ -8,7 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
@@ -54,8 +54,6 @@ class SetupViewModel @Inject constructor(
      * Sin elegir de partida: preseleccionar «Cortes» daba por hecho una nomenclatura que no
      * es la de todo el mundo, y al venir ya marcada era fácil pasar de largo sin leerla.
      */
-    var academicPeriodLabel by mutableStateOf<AcademicPeriodLabel?>(null)
-        private set
     var academicPeriodWeights by mutableStateOf(emptyList<String>())
         private set
 
@@ -174,17 +172,6 @@ class SetupViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Alterna el tipo igual que el nivel de estudio: volver a tocar el elegido lo suelta.
-     * Al soltarlo se descarta la distribución, porque sus tramos se nombran a partir de él.
-     */
-    fun updateAcademicPeriodLabel(label: AcademicPeriodLabel) {
-        academicPeriodLabel = if (academicPeriodLabel == label) null else label
-        if (academicPeriodLabel == null) {
-            academicPeriodWeights = emptyList()
-        }
-    }
-
     fun updateAcademicPeriodCount(count: Int) {
         val safeCount = count.coerceIn(0, 6)
         academicPeriodWeights = suggestedAcademicWeights(safeCount)
@@ -260,18 +247,23 @@ class SetupViewModel @Inject constructor(
     }
 
     private fun buildAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
-        // Sin tipo elegido el paso no está resuelto, y de paso deja el botón bloqueado.
-        val label = academicPeriodLabel ?: return null
+        /*
+         * Sin pesos no hay esquema, y el boton se queda bloqueado.
+         *
+         * Antes lo primero que se miraba era el tipo elegido —«Corte» o «Periodo»—, que hacia
+         * de centinela ademas de dar nombre a los tramos. Ya no se pregunta, asi que el
+         * centinela es la lista de pesos y el nombre sale de la constante.
+         */
         val weights = academicPeriodWeights.map { it.toDoubleOrNull()?.div(100.0) ?: return null }
+        if (weights.isEmpty()) return null
         if (weights.any { it <= 0.0 }) return null
         if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return null
         return AcademicPeriodScheme(
-            label = label,
             periods = weights.mapIndexed { index, weight ->
                 val order = index + 1
                 AcademicPeriod(
                     id = "period-$order",
-                    name = "${label.singular} $order",
+                    name = "${Corte.Singular} $order",
                     weight = weight,
                     order = order
                 )

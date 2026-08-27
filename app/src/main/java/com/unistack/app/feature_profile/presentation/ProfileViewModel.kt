@@ -12,7 +12,7 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.BuildConfig
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodLabel
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppearancePreferences
@@ -215,21 +215,17 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
-    fun updateAcademicPeriodSettings(
-        label: AcademicPeriodLabel,
-        weightInputs: List<String>
-    ): Boolean {
+    fun updateAcademicPeriodSettings(weightInputs: List<String>): Boolean {
         val current = profile.value ?: return false
         val weights = weightInputs.map { it.toDoubleOrNull()?.div(100.0) ?: return false }
         if (weights.isEmpty() || weights.any { it <= 0.0 }) return false
         if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return false
         val scheme = AcademicPeriodScheme(
-            label = label,
             periods = weights.mapIndexed { index, weight ->
                 val order = index + 1
                 AcademicPeriod(
                     id = "period-$order",
-                    name = "${label.singular} $order",
+                    name = "${Corte.Singular} $order",
                     weight = weight,
                     order = order
                 )
