@@ -48,11 +48,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.cookieCorner
@@ -177,8 +179,14 @@ fun AccountSettingsScreen(
             SettingsGroupCard(label = "CUENTA") {
                 AccountLinkRow(
                     linked = currentUser.isLinked,
+                    available = viewModel.accountLinkAvailable,
                     title = if (currentUser.isLinked) currentUser.accountLabel() else "Sin cuenta vinculada",
-                    detail = currentUser.email ?: "Vincula una para respaldar en la nube",
+                    detail = currentUser.email
+                        ?: if (viewModel.accountLinkAvailable) {
+                            "Vincula una para respaldar en la nube"
+                        } else {
+                            "Podrás respaldar tus datos y recuperarlos"
+                        },
                     isBusy = actionState.isAccountBusy,
                     onClick = {
                         if (currentUser.isLinked) showUnlinkDialog = true else viewModel.connectGoogle(context)
@@ -427,15 +435,20 @@ private fun AccountPortrait(
 @Composable
 private fun AccountLinkRow(
     linked: Boolean,
+    available: Boolean,
     title: String,
     detail: String,
     isBusy: Boolean,
     onClick: () -> Unit
 ) {
     val sections = LocalSectionColors.current
+    // Apagada al 45% mientras no haya proyecto configurado, igual que el bloque de copia en
+    // la nube de Datos. Antes se veía a plena luz y se dejaba pulsar: fallaba siempre, y
+    // encima prometía un respaldo que todavía no existe.
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(if (available) 1f else 0.45f)
             .padding(horizontal = 15.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(13.dp)
@@ -445,12 +458,32 @@ private fun AccountLinkRow(
             color = if (linked) sections.onTrack else sections.schedule
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMediumEmphasized,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                if (!available) {
+                    Box(
+                        Modifier
+                            .clip(CircleShape)
+                            .background(sections.atRisk.copy(alpha = 0.22f))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            "Pronto",
+                            color = sections.atRisk,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
             Text(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
@@ -460,7 +493,7 @@ private fun AccountLinkRow(
         }
         Surface(
             onClick = onClick,
-            enabled = !isBusy,
+            enabled = available && !isBusy,
             shape = CircleShape,
             color = if (linked) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.primary,
             contentColor = if (linked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onPrimary

@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.BuildConfig
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
@@ -427,6 +428,17 @@ class ProfileViewModel @Inject constructor(
 
     /** Si la copia en la nube está disponible en esta compilación. */
     val cloudAvailable: Boolean get() = cloudBackupRepository.isConfigured
+
+    /**
+     * Si vincular una cuenta puede llegar a funcionar en esta compilación.
+     *
+     * Son dos condiciones y no una: el proyecto de Firebase —que es lo que mira
+     * [cloudAvailable]— y el identificador de cliente web, que es lo que pide Credential
+     * Manager para iniciar sesión. Con el proyecto puesto y el identificador vacío el botón se
+     * vería encendido y seguiría fallando al pulsarlo, que es exactamente lo que hacía antes.
+     */
+    val accountLinkAvailable: Boolean
+        get() = cloudAvailable && BuildConfig.GOOGLE_WEB_CLIENT_ID.isNotBlank()
 
     fun exportLocalBackup(): String = localBackupRepository.exportBackupJson()
 
