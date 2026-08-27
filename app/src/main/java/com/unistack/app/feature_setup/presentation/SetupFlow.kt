@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,7 +51,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -146,13 +144,11 @@ import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import kotlin.math.roundToInt
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.setValue
@@ -274,20 +270,14 @@ fun SetupFlow(
         }
         composable(SetupRoutes.Profile) {
             SetupProfileScreen(
-                educationLevel = viewModel.educationLevel,
                 studyArea = viewModel.studyArea,
                 selectedProgram = viewModel.selectedProgram,
                 customProgram = viewModel.customProgram,
                 canContinue = viewModel.canContinueFromProfile,
                 customProgramValidation = viewModel.customProgramValidation,
                 totalSteps = totalSteps,
-                isSchoolLevel = viewModel.isSchoolLevel,
-                gradeOptions = viewModel.gradeOptions,
-                selectedGrade = viewModel.selectedGrade,
-                onGradeSelected = viewModel::updateGradeLevel,
                 institutionName = viewModel.institutionName,
                 onInstitutionNameChange = viewModel::updateInstitutionName,
-                onEducationLevelSelected = viewModel::updateEducationLevel,
                 onStudyAreaSelected = viewModel::updateStudyArea,
                 onProgramSelected = viewModel::updateSelectedProgram,
                 onCustomProgramChange = viewModel::updateCustomProgram,
@@ -355,7 +345,6 @@ fun SetupFlow(
         composable(SetupRoutes.Done) {
             SetupDoneScreen(
                 name = viewModel.preferredName,
-                educationLevel = viewModel.educationLevel,
                 studyArea = viewModel.studyArea,
                 selectedProgram = viewModel.selectedProgram,
                 customProgram = viewModel.customProgram,
@@ -370,7 +359,6 @@ fun SetupFlow(
                 gradesEnabled = gradesEnabled,
                 permissionsNeeded = permissionsNeeded,
                 totalSteps = totalSteps,
-                isSchoolLevel = viewModel.isSchoolLevel,
                 institutionName = viewModel.institutionName,
                 onBackClick = { navController.navigateUp() },
                 onCreateSubjectClick = {
@@ -1067,12 +1055,10 @@ private fun SetupNameInfoCard() {
  */
 @Composable
 fun SetupProfileScreen(
-    educationLevel: EducationLevel?,
     studyArea: StudyArea?,
     selectedProgram: String?,
     customProgram: String,
     canContinue: Boolean,
-    onEducationLevelSelected: (EducationLevel) -> Unit,
     onStudyAreaSelected: (StudyArea) -> Unit,
     onProgramSelected: (String) -> Unit,
     onCustomProgramChange: (String) -> Unit,
@@ -1082,17 +1068,11 @@ fun SetupProfileScreen(
     modifier: Modifier = Modifier,
     customProgramValidation: ValidationResult? = null,
     totalSteps: Int = 6,
-    isSchoolLevel: Boolean = false,
-    gradeOptions: List<String> = emptyList(),
-    selectedGrade: String = "",
-    onGradeSelected: (String) -> Unit = {},
     institutionName: String = "",
     onInstitutionNameChange: (String) -> Unit = {}
 ) {
     var areaExpanded by remember { mutableStateOf(false) }
     var programExpanded by remember { mutableStateOf(false) }
-    val isUniversity = educationLevel == EducationLevel.UNIVERSITY
-    val isOther = educationLevel == EducationLevel.OTHER
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
@@ -1107,13 +1087,11 @@ fun SetupProfileScreen(
                 enabled = canContinue,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
-            if (isUniversity) {
-                UniStackButton(
-                    text = "Prefiero hacerlo después",
-                    onClick = onSkipClick,
-                    variant = UniStackButtonVariant.Outlined
-                )
-            }
+            UniStackButton(
+                text = "Prefiero hacerlo después",
+                onClick = onSkipClick,
+                variant = UniStackButtonVariant.Outlined
+            )
         }
     ) {
         Column(
@@ -1123,130 +1101,66 @@ fun SetupProfileScreen(
         ) {
             SetupEducationHero()
             SetupEducationTitle()
-            EducationLevelGrid(
-                selected = educationLevel,
-                onSelected = onEducationLevelSelected
+
+            /*
+             * Una sola rama, sin rejilla de niveles delante.
+             *
+             * Aqui habia cuatro tarjetas —primaria, secundaria, universidad, otro— y tres
+             * bloques que aparecian y desaparecian segun cual se tocara. La app es de
+             * educacion superior, asi que preguntar el nivel era ofrecer una sola respuesta
+             * util y tres caminos muertos. Lo que queda es lo que siempre se rellenaba.
+             */
+            SetupProfileSectionTitle("¿Qué estudias?")
+            SetupDropdownField(
+                label = "Área de estudio",
+                value = studyArea?.let(::labelFor).orEmpty(),
+                options = StudyArea.entries.map(::labelFor),
+                enabled = true,
+                expanded = areaExpanded,
+                leadingIcon = studyArea?.let(::studyAreaIcon) ?: Icons.Rounded.School,
+                optionIcon = { option -> studyAreaForLabel(option)?.let(::studyAreaIcon) ?: Icons.Rounded.GridView },
+                onExpandedChange = { expanded ->
+                    areaExpanded = expanded
+                    if (expanded) programExpanded = false
+                },
+                onOptionSelected = { selectedLabel ->
+                    StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
+                }
             )
-
-            // Primaria y secundaria: grado, no carrera.
-            AnimatedVisibility(
-                visible = isSchoolLevel,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .revealIntoView(isSchoolLevel),
-                    verticalArrangement = Arrangement.spacedBy(13.dp)
-                ) {
-                    SetupProfileSectionTitle("¿En qué grado vas?")
-                    GradeLevelChips(
-                        options = gradeOptions,
-                        selected = selectedGrade,
-                        onSelected = onGradeSelected
-                    )
-                    InstitutionField(
-                        value = institutionName,
-                        label = "Colegio",
-                        placeholder = "Nombre de tu colegio",
-                        onValueChange = onInstitutionNameChange
-                    )
+            SetupDropdownField(
+                label = "Programa o carrera",
+                value = selectedProgram.orEmpty(),
+                options = studyArea?.let(::programsFor).orEmpty(),
+                enabled = studyArea != null,
+                expanded = programExpanded,
+                leadingIcon = Icons.Rounded.School,
+                optionIcon = { option -> programIcon(option) },
+                onExpandedChange = { expanded ->
+                    programExpanded = expanded
+                    if (expanded) areaExpanded = false
+                },
+                onOptionSelected = onProgramSelected
+            )
+            AcademicProgramHelpCard(
+                selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
+                onClick = {
+                    onStudyAreaSelected(StudyArea.OTHER)
+                    onProgramSelected(OTHER_OPTION)
                 }
+            )
+            if (studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
+                SetupCustomProgramField(
+                    value = customProgram,
+                    validation = customProgramValidation,
+                    onValueChange = onCustomProgramChange
+                )
             }
-
-            // Universidad: área y programa del catálogo.
-            AnimatedVisibility(
-                visible = isUniversity,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .revealIntoView(isUniversity),
-                    verticalArrangement = Arrangement.spacedBy(13.dp)
-                ) {
-                    SetupProfileSectionTitle("¿Qué estudias?")
-                    SetupDropdownField(
-                        label = "Área de estudio",
-                        value = studyArea?.let(::labelFor).orEmpty(),
-                        options = StudyArea.entries.map(::labelFor),
-                        enabled = true,
-                        expanded = areaExpanded,
-                        leadingIcon = studyArea?.let(::studyAreaIcon) ?: Icons.Rounded.School,
-                        optionIcon = { option -> studyAreaForLabel(option)?.let(::studyAreaIcon) ?: Icons.Rounded.GridView },
-                        onExpandedChange = { expanded ->
-                            areaExpanded = expanded
-                            if (expanded) programExpanded = false
-                        },
-                        onOptionSelected = { selectedLabel ->
-                            StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
-                        }
-                    )
-                    SetupDropdownField(
-                        label = "Programa o carrera",
-                        value = selectedProgram.orEmpty(),
-                        options = studyArea?.let(::programsFor).orEmpty(),
-                        enabled = studyArea != null,
-                        expanded = programExpanded,
-                        leadingIcon = Icons.Rounded.School,
-                        optionIcon = { option -> programIcon(option) },
-                        onExpandedChange = { expanded ->
-                            programExpanded = expanded
-                            if (expanded) areaExpanded = false
-                        },
-                        onOptionSelected = onProgramSelected
-                    )
-                    AcademicProgramHelpCard(
-                        selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
-                        onClick = {
-                            onStudyAreaSelected(StudyArea.OTHER)
-                            onProgramSelected(OTHER_OPTION)
-                        }
-                    )
-                    if (studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
-                        SetupCustomProgramField(
-                            value = customProgram,
-                            validation = customProgramValidation,
-                            onValueChange = onCustomProgramChange
-                        )
-                    }
-                    InstitutionField(
-                        value = institutionName,
-                        label = "Universidad",
-                        placeholder = "Nombre de tu universidad",
-                        onValueChange = onInstitutionNameChange
-                    )
-                }
-            }
-
-            // Otro: texto libre, sin taxonomía de entidades.
-            AnimatedVisibility(
-                visible = isOther,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .revealIntoView(isOther),
-                    verticalArrangement = Arrangement.spacedBy(13.dp)
-                ) {
-                    SetupProfileSectionTitle("¿Qué estás estudiando?")
-                    SetupCustomProgramField(
-                        value = customProgram,
-                        validation = customProgramValidation,
-                        onValueChange = onCustomProgramChange
-                    )
-                    InstitutionField(
-                        value = institutionName,
-                        label = "¿Dónde estudias?",
-                        placeholder = "Instituto, corporación, academia…",
-                        onValueChange = onInstitutionNameChange
-                    )
-                }
-            }
+            InstitutionField(
+                value = institutionName,
+                label = "Universidad",
+                placeholder = "Nombre de tu universidad",
+                onValueChange = onInstitutionNameChange
+            )
         }
     }
 }
@@ -1261,31 +1175,6 @@ private fun SetupProfileSectionTitle(text: String) {
         fontWeight = FontWeight.ExtraBold,
         modifier = Modifier.fillMaxWidth()
     )
-}
-
-/** Selector de grado escolar. Chips en lugar de desplegable: son pocos y caben a la vista. */
-@Composable
-private fun GradeLevelChips(
-    options: List<String>,
-    selected: String,
-    onSelected: (String) -> Unit
-) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        options.forEach { option ->
-            // FilterChip de Material: la marca de selección aparece a la izquierda y el
-            // relleno cambia solo. Antes eran tres animaciones escritas a mano -relleno,
-            // contenido y un escalado del 6%- sobre una caja pulsable.
-            FilterChip(
-                selected = option == selected,
-                onClick = { onSelected(option) },
-                label = { Text(option) }
-            )
-        }
-    }
 }
 
 @Composable
@@ -1365,150 +1254,6 @@ private fun SetupEducationTitle() {
         )
     }
 }
-
-@Composable
-private fun EducationLevelGrid(
-    selected: EducationLevel?,
-    onSelected: (EducationLevel) -> Unit
-) {
-    val options = listOf(
-        EducationLevel.PRIMARY to EducationLevelCardContent(
-            title = "Primaria",
-            caption = "Etapa básica",
-            icon = Icons.AutoMirrored.Rounded.MenuBook
-        ),
-        EducationLevel.SECONDARY to EducationLevelCardContent(
-            title = "Secundaria",
-            caption = "Colegio",
-            icon = Icons.AutoMirrored.Rounded.Assignment
-        ),
-        EducationLevel.UNIVERSITY to EducationLevelCardContent(
-            title = "Universidad",
-            caption = "Educación superior",
-            icon = Icons.Rounded.School
-        ),
-        EducationLevel.OTHER to EducationLevelCardContent(
-            title = "Otro",
-            caption = "Personalizado",
-            icon = Icons.Rounded.GridView
-        )
-    )
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        options.chunked(2).forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                row.forEach { (level, content) ->
-                    EducationLevelCard(
-                        content = content,
-                        selected = selected == level,
-                        onClick = { onSelected(level) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EducationLevelCard(
-    content: EducationLevelCardContent,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val cardColor = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerLow
-    }
-
-    UniCard(
-        modifier = modifier
-            .height(136.dp)
-            .expressiveSelection(selected)
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .semantics {
-                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
-            },
-        // Sin contorno: el relleno ya dice cuál está elegida, y el filete solo repetía lo
-        // mismo con menos fuerza mientras dibujaba una caja alrededor de cada una.
-        color = cardColor,
-        shape = rememberSelectionShape(selected),
-        tonalElevation = 0.dp,
-        contentPadding = PaddingValues(14.dp)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    imageVector = content.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(34.dp)
-                )
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    Text(
-                        text = content.title,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 15.sp,
-                        lineHeight = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = content.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        lineHeight = 15.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-}
-
-private data class EducationLevelCardContent(
-    val title: String,
-    val caption: String,
-    val icon: ImageVector
-)
 
 @Composable
 private fun AcademicProgramHelpCard(
@@ -2167,7 +1912,6 @@ fun SetupModulesScreen(
 @Composable
 fun SetupDoneScreen(
     name: String,
-    educationLevel: EducationLevel?,
     studyArea: StudyArea?,
     selectedProgram: String?,
     customProgram: String,
@@ -2186,12 +1930,11 @@ fun SetupDoneScreen(
     gradesEnabled: Boolean = true,
     permissionsNeeded: Boolean = true,
     totalSteps: Int = 7,
-    isSchoolLevel: Boolean = false,
     institutionName: String = ""
 ) {
     BackHandler(onBack = onBackClick)
     val displayName = name.ifBlank { "Usuario" }
-    val program = resolvedProgram(educationLevel, selectedProgram, customProgram, academicInfo)
+    val program = resolvedProgram(selectedProgram, customProgram)
     val weights = periodWeights.filter { it.isNotBlank() }
 
     // La celebración es la misma se pulse el botón que se pulse: lo que se celebra es haber
@@ -2899,17 +2642,13 @@ private enum class SetupScaleChoice {
     CUSTOM
 }
 
-private fun resolvedProgram(
-    educationLevel: EducationLevel?,
-    selectedProgram: String?,
-    customProgram: String,
-    academicInfo: String
-): String {
-    if (educationLevel == EducationLevel.PRIMARY || educationLevel == EducationLevel.SECONDARY) {
-        return academicInfo
-    }
-    return if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
-}
+/*
+ * En primaria y secundaria esto devolvia el curso en lugar de la carrera. Sin esos niveles
+ * queda una sola linea: la carrera elegida, o la escrita a mano cuando no estaba en el
+ * catalogo.
+ */
+private fun resolvedProgram(selectedProgram: String?, customProgram: String): String =
+    if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
 
 @Composable
 private fun SetupDropdownField(

@@ -37,10 +37,8 @@ data class UserProfile(
     val localPhotoUri: String? = null,
     val syncStatus: SyncStatus = SyncStatus.LOCAL_ONLY,
     val lastSyncAt: Long? = null,
-    val educationLevel: EducationLevel,
     val careerOrProgram: String?,
     val studyArea: StudyArea?,
-    val gradeLevel: String?,
     /**
      * Nombre de la institución tal y como lo escribió el usuario, sin normalizar.
      *
@@ -138,13 +136,6 @@ data class AcademicPeriod(
 enum class AcademicPeriodLabel(val singular: String, val plural: String) {
     PERIOD("Periodo", "Periodos"),
     CORTE("Corte", "Cortes")
-}
-
-enum class EducationLevel {
-    PRIMARY,
-    SECONDARY,
-    UNIVERSITY,
-    OTHER
 }
 
 enum class GradingScale {

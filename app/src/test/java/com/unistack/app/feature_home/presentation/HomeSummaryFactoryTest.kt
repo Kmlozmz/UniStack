@@ -15,7 +15,6 @@ import com.unistack.app.feature_home.domain.HomePriorityAction
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AuthProvider
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SyncStatus
@@ -147,10 +146,8 @@ class HomeSummaryFactoryTest {
         return UserProfile(
             userId = "local-user",
             preferredName = "",
-            educationLevel = EducationLevel.UNIVERSITY,
             careerOrProgram = "Ingeniería",
             studyArea = StudyArea.ENGINEERING_TECHNOLOGY,
-            gradeLevel = null,
             gradingScale = GradingScale.ZERO_TO_FIVE,
             passingGrade = 3.0,
             targetAverage = 4.0,

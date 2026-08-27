@@ -30,7 +30,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import coil.compose.AsyncImage
 import com.unistack.app.feature_user.domain.AppUser
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_user.domain.UserProfile
 import kotlinx.coroutines.launch
@@ -87,15 +86,22 @@ internal fun AccountAvatar(
     }
 }
 
+/**
+ * La linea bajo el nombre en el perfil.
+ *
+ * Antes empezaba por el nivel de estudios —«Universidad · Ingenieria»—, que dejo de existir
+ * cuando la app se centro en educacion superior: repetirle a todo el mundo la unica opcion que
+ * queda no informa de nada. Ahora manda la carrera, y la institucion la acompana cuando esta.
+ */
 internal fun UserProfile.educationSummary(): String {
-    val level = when (educationLevel) {
-        EducationLevel.PRIMARY -> "Primaria"
-        EducationLevel.SECONDARY -> "Secundaria"
-        EducationLevel.UNIVERSITY -> "Universidad"
-        EducationLevel.OTHER -> "Otro"
+    val programa = careerOrProgram?.takeIf { it.isNotBlank() }
+    val centro = institutionName?.takeIf { it.isNotBlank() }
+    return when {
+        programa != null && centro != null -> "$programa · $centro"
+        programa != null -> programa
+        centro != null -> centro
+        else -> "Estudiante"
     }
-    val detail = gradeLevel ?: careerOrProgram
-    return if (detail.isNullOrBlank()) level else "$level · $detail"
 }
 
 internal fun AppUser.accountLabel(): String {

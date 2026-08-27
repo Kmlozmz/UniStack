@@ -178,10 +178,8 @@ class FirebaseCloudBackupRepository(
         val profile = userRepository.userProfile.value ?: return emptyMap()
         return mapOf(
             "preferredName" to profile.preferredName,
-            "educationLevel" to profile.educationLevel.name,
             "careerOrProgram" to profile.careerOrProgram,
             "studyArea" to profile.studyArea?.name,
-            "gradeLevel" to profile.gradeLevel,
             "gradingScale" to profile.gradingScale.name,
             "customGradeMax" to profile.customGradeMax,
             "passingGrade" to profile.passingGrade,

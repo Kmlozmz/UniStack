@@ -20,7 +20,6 @@ import com.unistack.app.feature_user.domain.AcademicPeriod
 import com.unistack.app.feature_user.domain.AcademicPeriodLabel
 import com.unistack.app.feature_user.domain.AcademicPeriodScheme
 import com.unistack.app.feature_user.domain.AuthProvider
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.HomeSection
@@ -52,10 +51,8 @@ class UserPreferencesDataSource(private val context: Context) {
         val LOCAL_PHOTO_URI = stringPreferencesKey("local_photo_uri")
         val SYNC_STATUS = stringPreferencesKey("sync_status")
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
-        val EDUCATION_LEVEL = stringPreferencesKey("education_level")
         val STUDY_AREA = stringPreferencesKey("study_area")
         val CAREER_OR_PROGRAM = stringPreferencesKey("career_or_program")
-        val GRADE_LEVEL = stringPreferencesKey("grade_level")
         val INSTITUTION_NAME = stringPreferencesKey("institution_name")
         val GRADING_SCALE = stringPreferencesKey("grading_scale")
         val CUSTOM_GRADE_MAX = doublePreferencesKey("custom_grade_max")
@@ -90,11 +87,14 @@ class UserPreferencesDataSource(private val context: Context) {
 
     val userProfileFlow: Flow<UserProfile?> = context.dataStore.data.map { prefs ->
         val userId = UserIds.normalize(prefs[Keys.USER_ID] ?: return@map null)
-        val educationLevelStr = prefs[Keys.EDUCATION_LEVEL] ?: return@map null
+        /*
+         * La escala hace de centinela: sin ella no hay perfil que devolver.
+         *
+         * Antes ese papel lo compartia el nivel de estudios, que ya no existe —la app es de
+         * educacion superior y preguntarlo era ofrecer una sola respuesta—. La escala sirve
+         * igual: se elige en el mismo paso y sin ella no se puede calcular nada.
+         */
         val gradingScaleStr = prefs[Keys.GRADING_SCALE] ?: return@map null
-
-        val educationLevel = educationLevelStr.toEducationLevelOrNull()
-            ?: return@map null
         val gradingScale = gradingScaleStr.toGradingScaleOrNull()
             ?: return@map null
         val studyArea = prefs[Keys.STUDY_AREA]?.let {
@@ -124,10 +124,8 @@ class UserPreferencesDataSource(private val context: Context) {
             localPhotoUri = prefs[Keys.LOCAL_PHOTO_URI],
             syncStatus = syncStatus,
             lastSyncAt = prefs[Keys.LAST_SYNC_AT],
-            educationLevel = educationLevel,
             studyArea = studyArea,
             careerOrProgram = prefs[Keys.CAREER_OR_PROGRAM],
-            gradeLevel = prefs[Keys.GRADE_LEVEL],
             institutionName = prefs[Keys.INSTITUTION_NAME],
             gradingScale = gradingScale,
             customGradeMax = prefs[Keys.CUSTOM_GRADE_MAX]?.coerceIn(1.0, 100.0) ?: 100.0,
@@ -203,7 +201,6 @@ class UserPreferencesDataSource(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[Keys.USER_ID] = UserIds.normalize(profile.userId)
             prefs[Keys.PREFERRED_NAME] = profile.preferredName
-            prefs[Keys.EDUCATION_LEVEL] = profile.educationLevel.name
             prefs[Keys.GRADING_SCALE] = profile.gradingScale.name
             prefs[Keys.CUSTOM_GRADE_MAX] = profile.customGradeMax.coerceIn(1.0, 100.0)
             prefs[Keys.PASSING_GRADE] = profile.passingGrade
@@ -279,11 +276,6 @@ class UserPreferencesDataSource(private val context: Context) {
                 prefs[Keys.CAREER_OR_PROGRAM] = profile.careerOrProgram
             } else {
                 prefs.remove(Keys.CAREER_OR_PROGRAM)
-            }
-            if (profile.gradeLevel != null) {
-                prefs[Keys.GRADE_LEVEL] = profile.gradeLevel
-            } else {
-                prefs.remove(Keys.GRADE_LEVEL)
             }
             if (profile.institutionName != null) {
                 prefs[Keys.INSTITUTION_NAME] = profile.institutionName
@@ -553,14 +545,6 @@ class UserPreferencesDataSource(private val context: Context) {
             .put("label", label.name)
             .put("periods", array)
             .toString()
-    }
-
-    private fun String.toEducationLevelOrNull(): EducationLevel? {
-        return when (this) {
-            "SCHOOL" -> EducationLevel.SECONDARY
-            "TECHNICAL", "INDEPENDENT_COURSE" -> EducationLevel.OTHER
-            else -> runCatching { EducationLevel.valueOf(this) }.getOrNull()
-        }
     }
 
     private fun String.toGradingScaleOrNull(): GradingScale? {

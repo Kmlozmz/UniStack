@@ -1,7 +1,6 @@
 package com.unistack.app.core.notifications
 
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserProfile
 import java.time.LocalDateTime
@@ -32,10 +31,8 @@ class ReminderTimingTest {
     ) = UserProfile(
         userId = "u",
         preferredName = "Estudiante",
-        educationLevel = EducationLevel.UNIVERSITY,
         careerOrProgram = "Ingenieria",
         studyArea = null,
-        gradeLevel = null,
         gradingScale = GradingScale.ZERO_TO_FIVE,
         passingGrade = 3.0,
         targetAverage = 4.0,

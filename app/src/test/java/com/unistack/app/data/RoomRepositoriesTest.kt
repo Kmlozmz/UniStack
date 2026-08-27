@@ -22,7 +22,6 @@ import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_user.data.InMemoryUserRepository
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.UserProfile
@@ -249,10 +248,8 @@ class RoomRepositoriesTest {
         return UserProfile(
             userId = UserIds.LOCAL,
             preferredName = "Tester",
-            educationLevel = EducationLevel.UNIVERSITY,
             careerOrProgram = "Ingenieria",
             studyArea = null,
-            gradeLevel = null,
             gradingScale = GradingScale.ZERO_TO_FIVE,
             passingGrade = 3.0,
             targetAverage = 4.0,

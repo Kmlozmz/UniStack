@@ -5,7 +5,6 @@ import com.unistack.app.feature_expenses.data.InMemoryExpensesRepository
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.data.InMemoryUserRepository
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.EducationLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
@@ -182,10 +181,8 @@ class ExpensesViewModelTest {
     private fun testProfile() = UserProfile(
         userId = "local-user",
         preferredName = "Estudiante",
-        educationLevel = EducationLevel.UNIVERSITY,
         careerOrProgram = "Ingeniería",
         studyArea = StudyArea.ENGINEERING_TECHNOLOGY,
-        gradeLevel = null,
         gradingScale = GradingScale.ZERO_TO_FIVE,
         passingGrade = 3.0,
         targetAverage = 4.0,
