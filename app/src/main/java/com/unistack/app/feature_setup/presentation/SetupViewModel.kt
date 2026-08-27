@@ -128,6 +128,15 @@ class SetupViewModel @Inject constructor(
     var cutEndDates by mutableStateOf<List<LocalDate>>(emptyList())
         private set
 
+    /** Si dijo que sabe las fechas de corte. Nulo: todavia no ha contestado. */
+    var knowsCutDates by mutableStateOf<Boolean?>(null)
+        private set
+
+    fun updateKnowsCutDates(value: Boolean) {
+        knowsCutDates = value
+        if (value) suggestCutEndDates() else clearCutEndDates()
+    }
+
     val termCutCount: Int get() = gradingCutWeights.size
 
     /** Elegir tipo es lo unico obligatorio aqui; las fechas vienen sugeridas y editables. */
@@ -151,6 +160,7 @@ class SetupViewModel @Inject constructor(
 
     fun updateTermType(value: AcademicTermType) {
         termType = value
+        knowsCutDates = null
         // Al elegir tipo se proponen fechas y nombre; siguen siendo editables.
         val inicio = termStart ?: LocalDate.now()
         termStart = inicio

@@ -160,6 +160,8 @@ private object SetupRoutes {
     const val Scale = "setup_scale"
     const val Periods = "setup_periods"
     const val Term = "setup_term"
+    const val TermDates = "setup_term_dates"
+    const val TermCutDates = "setup_term_cut_dates"
     const val Permissions = "setup_permissions"
     const val Done = "setup_done"
 }
@@ -187,16 +189,28 @@ internal object SetupSteps {
      * necesitan saber ya cuántos cortes hay.
      */
     const val Term = 6
+    const val TermDates = 7
+    const val TermCutDates = 8
 
-    /** Escala, cortes y periodo solo existen con el módulo de notas activo. */
-    fun permissions(gradesEnabled: Boolean): Int = if (gradesEnabled) 7 else 4
+    /**
+     * Escala, cortes y periodo solo existen con el módulo de notas activo.
+     *
+     * Y las fechas de corte solo cuando alguien dice que las sabe, así que la longitud del
+     * flujo depende de esa respuesta: prometer un paso que luego no llega deja la barra de
+     * progreso mintiendo.
+     */
+    fun permissions(gradesEnabled: Boolean, cutDates: Boolean = false): Int = when {
+        gradesEnabled && cutDates -> 9
+        gradesEnabled -> 8
+        else -> 4
+    }
 
     /** El paso final siempre es el último, tenga el flujo la longitud que tenga. */
-    fun done(gradesEnabled: Boolean, permissionsNeeded: Boolean): Int =
-        permissions(gradesEnabled) + if (permissionsNeeded) 1 else 0
+    fun done(gradesEnabled: Boolean, permissionsNeeded: Boolean, cutDates: Boolean = false): Int =
+        permissions(gradesEnabled, cutDates) + if (permissionsNeeded) 1 else 0
 
-    fun total(gradesEnabled: Boolean, permissionsNeeded: Boolean): Int =
-        done(gradesEnabled, permissionsNeeded)
+    fun total(gradesEnabled: Boolean, permissionsNeeded: Boolean, cutDates: Boolean = false): Int =
+        done(gradesEnabled, permissionsNeeded, cutDates)
 }
 
 private const val SETUP_EXIT_MILLIS = 220
@@ -212,7 +226,7 @@ fun SetupFlow(
     // este Android pide el permiso de notificaciones en ejecución.
     val gradesEnabled = AppModule.GRADES in viewModel.enabledModules
     val permissionsNeeded = notificationPermissionRequired()
-    val totalSteps = SetupSteps.total(gradesEnabled, permissionsNeeded)
+    val totalSteps = SetupSteps.total(gradesEnabled, permissionsNeeded, viewModel.knowsCutDates == true)
     val afterEvaluation = if (permissionsNeeded) SetupRoutes.Permissions else SetupRoutes.Done
 
     NavHost(
@@ -329,28 +343,63 @@ fun SetupFlow(
             )
         }
         composable(SetupRoutes.Term) {
-            SetupTermScreen(
+            SetupTermTypeScreen(
                 type = viewModel.termType,
-                name = viewModel.termName,
-                start = viewModel.termStart,
-                plannedEnd = viewModel.termPlannedEnd,
-                cutEndDates = viewModel.cutEndDates,
                 cutCount = viewModel.termCutCount,
-                isValid = viewModel.isTermValid,
+                cutWeights = viewModel.gradingCutWeights,
                 totalSteps = totalSteps,
                 onTypeSelected = viewModel::updateTermType,
-                onNameChange = viewModel::updateTermName,
-                onStartChange = viewModel::updateTermStart,
-                onPlannedEndChange = viewModel::updateTermPlannedEnd,
-                onSuggestCutDates = viewModel::suggestCutEndDates,
-                onClearCutDates = viewModel::clearCutEndDates,
-                onCutDateChange = viewModel::updateCutEndDate,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(afterEvaluation) },
-                // Saltarse el periodo es valido: la app sabe vivir sin uno activo, y
-                // ponerlo despues desde Ajustes es una pantalla, no un rehacer.
-                onSkipClick = { navController.navigate(afterEvaluation) }
+                onContinueClick = { navController.navigate(SetupRoutes.TermDates) }
             )
+        }
+        composable(SetupRoutes.TermDates) {
+            val tipo = viewModel.termType
+            val inicio = viewModel.termStart
+            // Sin tipo no se llega aqui por navegacion normal, pero un proceso recreado si
+            // puede aterrizar: se vuelve en vez de reventar.
+            if (tipo == null || inicio == null) {
+                LaunchedEffect(Unit) { navController.navigateUp() }
+            } else {
+                SetupTermDatesScreen(
+                    type = tipo,
+                    name = viewModel.termName,
+                    cutCount = viewModel.termCutCount,
+                    start = inicio,
+                    plannedEnd = viewModel.termPlannedEnd,
+                    knowsCutDates = if (viewModel.termCutCount > 1) viewModel.knowsCutDates else false,
+                    totalSteps = totalSteps,
+                    onStartChange = viewModel::updateTermStart,
+                    onPlannedEndChange = viewModel::updateTermPlannedEnd,
+                    onKnowsCutDatesChange = viewModel::updateKnowsCutDates,
+                    onBackClick = { navController.navigateUp() },
+                    onContinueClick = {
+                        if (viewModel.knowsCutDates == true) {
+                            navController.navigate(SetupRoutes.TermCutDates)
+                        } else {
+                            navController.navigate(afterEvaluation)
+                        }
+                    }
+                )
+            }
+        }
+        composable(SetupRoutes.TermCutDates) {
+            val inicio = viewModel.termStart
+            if (inicio == null) {
+                LaunchedEffect(Unit) { navController.navigateUp() }
+            } else {
+                SetupTermCutDatesScreen(
+                    start = inicio,
+                    plannedEnd = viewModel.termPlannedEnd,
+                    cutWeights = viewModel.gradingCutWeights,
+                    cutEndDates = viewModel.cutEndDates,
+                    isValid = viewModel.isTermValid,
+                    totalSteps = totalSteps,
+                    onCutDateChange = viewModel::updateCutEndDate,
+                    onBackClick = { navController.navigateUp() },
+                    onContinueClick = { navController.navigate(afterEvaluation) }
+                )
+            }
         }
         composable(SetupRoutes.Permissions) {
             SetupPermissionsScreen(

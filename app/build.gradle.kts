@@ -650,33 +650,72 @@ fun nextTelegramCount(type: String): Int {
     return siguiente
 }
 
-/** Un mensaje suelto al bot. No corta el build si falla: avisar no es la tarea. */
-fun telegramNotify(text: String) {
+/*
+ * El bot manda un mensaje y luego lo reescribe, en vez de encadenar tres.
+ *
+ * Telegram no deja convertir un mensaje de texto en documento —`editMessageMedia` exige que
+ * el mensaje ya llevara media—, asi que el APK llega aparte por fuerza. Lo que si se puede es
+ * que «cocinando» se convierta en «completado» en el sitio, y eso deja dos mensajes en el
+ * chat en lugar de tres.
+ */
+fun telegramCredentials(): Pair<String, String>? {
     val env = readTelegramEnv()
     val token = providers.environmentVariable("TELEGRAM_BOT_TOKEN")
         .orElse(env["TELEGRAM_BOT_TOKEN"] ?: "").get()
     val chat = providers.environmentVariable("TELEGRAM_CHAT_ID")
         .orElse(env["TELEGRAM_CHAT_ID"] ?: "").get()
-    if (token.isBlank() || chat.isBlank()) {
+    return if (token.isBlank() || chat.isBlank()) null else token to chat
+}
+
+/** El identificador del mensaje que se esta reescribiendo. Nulo: no hay ninguno vivo. */
+var telegramLiveMessageId: String? = null
+
+/**
+ * Manda un mensaje y se queda con su identificador para poder reescribirlo.
+ *
+ * Fallar avisando no puede tumbar el build —avisar no es la tarea— pero tampoco puede pasar en
+ * silencio: un aviso que no llega y no se queja es un aviso que nadie arregla.
+ */
+fun telegramSay(text: String) {
+    val (token, chat) = telegramCredentials() ?: run {
         println("Telegram: sin credenciales, no se avisa.")
         return
     }
-    /*
-     * Fallar avisando no puede tumbar el build —avisar no es la tarea—, pero tampoco puede
-     * pasar en silencio: un aviso que no llega y no se queja es un aviso que nadie arregla.
-     */
     runCatching {
-        providers.exec {
+        val salida = providers.exec {
             commandLine(
                 "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
                 "--form-string", "chat_id=$chat",
                 "--form-string", "text=$text",
                 "https://api.telegram.org/bot$token/sendMessage"
             )
-        }.result.get().assertNormalExitValue()
+        }.standardOutput.asText.get()
+        // Sin barras ni comillas escapadas: para sacar el numero que sigue a
+        // "message_id" no hace falta describir el JSON entero.
+        telegramLiveMessageId = Regex("message_id[^0-9]+([0-9]+)")
+            .find(salida)?.groupValues?.get(1)
         println("Telegram: \"$text\"")
     }.onFailure { println("Telegram: no se pudo avisar (\"$text\"): ${it.message}") }
 }
+
+/** Reescribe el ultimo mensaje. Si no hay ninguno vivo, manda uno nuevo. */
+fun telegramRewrite(text: String) {
+    val id = telegramLiveMessageId ?: return telegramSay(text)
+    val (token, chat) = telegramCredentials() ?: return
+    runCatching {
+        providers.exec {
+            commandLine(
+                "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
+                "--form-string", "chat_id=$chat",
+                "--form-string", "message_id=$id",
+                "--form-string", "text=$text",
+                "https://api.telegram.org/bot$token/editMessageText"
+            )
+        }.result.get().assertNormalExitValue()
+        println("Telegram: \"$text\" (editado)")
+    }.onFailure { println("Telegram: no se pudo editar (\"$text\"): ${it.message}") }
+}
+
 
 /** Quita las negritas de Markdown: en el mensaje del bot no pintan nada. */
 fun String.plainText(): String = replace("**", "")
@@ -739,7 +778,7 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
         val numero = nextTelegramCount(tipo)
         val caption = "($tipo) #$numero"
 
-        telegramNotify("Build completed! Sending...")
+        telegramRewrite("Build completed! Sending...")
         println("Sending ${apkPath.name} to Telegram as $caption...")
         providers.exec {
             commandLine(
@@ -782,7 +821,7 @@ val sendReleaseApkToTelegram = registerTelegramApkTask("release")
  */
 gradle.taskGraph.whenReady {
     if (hasTask(sendReleaseApkToTelegram.get())) {
-        telegramNotify("The chef is cooking... (${apkType()})")
+        telegramSay("The chef is cooking... (${apkType()})")
     }
 }
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
