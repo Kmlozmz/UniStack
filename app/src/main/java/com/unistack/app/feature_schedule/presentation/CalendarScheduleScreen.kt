@@ -322,7 +322,14 @@ private fun SubjectHistoryDialog(
     val attended = entries.count { it.status == ClassAttendanceStatus.ATTENDED }
     val absent = entries.count { it.status == ClassAttendanceStatus.ABSENT }
     val decided = attended + absent
-    val rate = if (decided == 0) 0 else (attended.toFloat() / decided * 100).roundToInt()
+    /*
+     * Sin nada marcado no hay porcentaje, y decir «0%» es mentir.
+     *
+     * Devolvia cero, asi que una materia recien creada se abria anunciando «Asistencia
+     * general 0%» con el anillo vacio: se lee como haber faltado a todo cuando lo cierto es
+     * que no hay un solo dato. Nulo obliga a que cada sitio que lo pinta diga la verdad.
+     */
+    val rate: Int? = if (decided == 0) null else (attended.toFloat() / decided * 100).roundToInt()
     val pending = entries
         .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(LocalDate.now()) }
         .maxByOrNull(HistoryEntry::date)
@@ -368,17 +375,35 @@ private fun SubjectHistoryDialog(
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Asistencia general", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            Text("$rate%", color = MaterialTheme.colorScheme.onSurface, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold)
-                            Text("$attended asistencias  \u2022  $absent faltas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            Text(
+                                text = if (rate == null) "\u2014" else "$rate%",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 23.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = if (rate == null) {
+                                    "Marca tus clases y aparece aqui"
+                                } else {
+                                    "$attended asistencias  \u2022  $absent faltas"
+                                },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 10.sp
+                            )
                         }
                         Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
                             EvaluationRing(
-                                fraction = rate / 100.0,
+                                fraction = (rate ?: 0) / 100.0,
                                 modifier = Modifier.fillMaxSize(),
                                 color = ScheduleAccent,
                                 trackColor = MaterialTheme.colorScheme.outlineVariant
                             )
-                            Text("$rate%", color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = if (rate == null) "\u2014" else "$rate%",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }

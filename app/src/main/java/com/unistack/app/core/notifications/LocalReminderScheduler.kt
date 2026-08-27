@@ -75,6 +75,9 @@ private const val REARM_REQUEST_CODE = 910060002
 /* De madrugada: a esa hora la ventana del dia siguiente ya esta completa y no compite con
    ningun aviso real. */
 private const val REARM_HOUR = 3
+
+/* Lo que se espera tras el final de una clase antes de preguntar si asististe. */
+private const val ATTENDANCE_PROMPT_DELAY_MINUTES = 20L
 private const val EXTRA_TITLE = "title"
 private const val EXTRA_BODY = "body"
 private const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -307,9 +310,16 @@ class LocalReminderScheduler(private val context: Context) {
             .sortedBy { it.second }
             .forEach { (session, start, epochDay) ->
                 val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "tu clase"
+                /*
+                 * Veinte minutos despues de acabar, no diez.
+                 *
+                 * A los diez todavia se esta recogiendo o saliendo del aula, y el aviso llega
+                 * cuando no se puede atender: se descarta sin leer y la asistencia se queda
+                 * sin registrar, que es justo lo que este aviso venia a evitar.
+                 */
                 val trigger = start.toLocalDate()
                     .atStartOfDay()
-                    .plusMinutes(session.endMinute.toLong() + 10L)
+                    .plusMinutes(session.endMinute.toLong() + ATTENDANCE_PROMPT_DELAY_MINUTES)
                 scheduleReminder(
                     profile = profile,
                     requestCode = "${session.id}:$epochDay".stableRequestCode("class-attendance"),
