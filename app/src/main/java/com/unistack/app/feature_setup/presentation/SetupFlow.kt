@@ -1034,20 +1034,14 @@ private fun SetupNameInfoCard() {
 }
 
 /**
- * Perfil académico: nivel de estudio y lo que ese nivel hace pertinente preguntar.
+ * Perfil academico: que estudias y donde.
  *
- * Antes eran dos pasos seguidos. Se fusionan porque forman una única cascada —el nivel
- * determina qué se pregunta después— y porque el segundo era saltable, es decir, un dato
- * opcional ocupando una pantalla entera.
+ * Antes empezaba preguntando el nivel —primaria, secundaria, universidad, otro— y de esa
+ * respuesta dependia lo que se preguntaba despues. La app es de educacion superior, asi que
+ * el nivel dejo de ser una pregunta y este paso quedo en lo unico que siempre se rellenaba:
+ * area, carrera e institucion.
  *
- * Cada nivel pregunta lo suyo, y nada más:
- *  - Primaria y secundaria: grado o curso. No existe la carrera todavía.
- *  - Universidad: área y programa, del catálogo.
- *  - Otro: texto libre. No se intenta clasificar al usuario dentro de una taxonomía de
- *    entidades (instituto, corporación, fundación…): siempre habría casos fuera, y ese
- *    dato no cambia el comportamiento de la app.
- *
- * El nombre de la institución es opcional y común a todos los niveles.
+ * La institucion es opcional. El area y la carrera no: alimentan el catalogo de materias.
  */
 @Composable
 fun SetupProfileScreen(
@@ -1230,9 +1224,9 @@ private fun SetupEducationTitle() {
     ) {
         Text(
             text = buildAnnotatedString {
-                append("¿Cuál es tu\n")
+                append("¿Qué estás\n")
                 withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("nivel de estudio?")
+                    append("estudiando?")
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -1242,7 +1236,7 @@ private fun SetupEducationTitle() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Esto nos ayuda a adaptar UniStack\na tu etapa académica.",
+            text = "Con tu carrera preparo el catálogo\nde materias que vas a usar.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 19.sp,

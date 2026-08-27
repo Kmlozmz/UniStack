@@ -181,7 +181,7 @@ fun SetupFinishTransition(
             }
             Spacer(modifier = Modifier.height(22.dp))
             Text(
-                // Sirve para cualquier nivel: primaria, secundaria, universidad y «otro».
+                // Sirve para cualquier carrera, la diga el catalogo o la escriba el usuario.
                 // Hablar de «semestre» habría dejado fuera a media app.
                 text = "Mucho éxito en tus estudios",
                 color = MaterialTheme.colorScheme.onSurface,
