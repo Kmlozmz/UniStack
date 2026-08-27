@@ -282,7 +282,10 @@ class LocalReminderScheduler(private val context: Context) {
                     body = session.location.takeIf(String::isNotBlank)?.let { "Nos vemos en $it." }
                         ?: "Alista lo que necesites antes de entrar.",
                     targetRoute = AppRoutes.Calendar,
-                    eventAtMillis = comienzo.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    eventAtMillis = comienzo.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    // Si sale con retraso, los minutos del titulo se cuentan de nuevo: el
+                    // numero es justo el dato por el que se lee este aviso.
+                    lateTitle = { minutos -> "$subjectName empieza en $minutos min" }
                 )
             }
 
@@ -514,34 +517,48 @@ class LocalReminderScheduler(private val context: Context) {
         targetRoute: String? = null,
         subText: String? = null,
         channelId: String = CHANNEL_ID_ALERTS,
-        eventAtMillis: Long? = null
+        eventAtMillis: Long? = null,
+        lateTitle: ((minutosRestantes: Long) -> String)? = null
     ) {
-        val adjustedTrigger = adjustForQuietHours(profile, triggerAtMillis)
+        val adjustedTrigger = ReminderTiming.adjustForQuietHours(profile, triggerAtMillis)
         val now = System.currentTimeMillis()
-        val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId)
+        val accion = ReminderTiming.decide(
+            triggerAtMillis = adjustedTrigger,
+            eventAtMillis = eventAtMillis,
+            now = now,
+            windowMillis = SCHEDULING_WINDOW_MILLIS
+        )
+        if (accion == ReminderAction.SKIP) return
 
-        if (adjustedTrigger <= now) {
+        if (accion == ReminderAction.SEND_NOW) {
             /*
-             * Se paso la hora. Si lo que anunciaba todavia no ha ocurrido, sale ahora mismo.
+             * Sale con retraso, y se apunta que salio.
              *
-             * Y se apunta que salio: por aqui se vuelve a pasar en cada cambio de datos, asi
-             * que sin la marca el mismo aviso se reenviaria una y otra vez durante todas las
-             * horas que queden hasta la clase. La marca lleva la hora prevista dentro, de modo
-             * que si el usuario mueve la clase el aviso nuevo se considera otro y si puede
-             * sonar.
+             * Por aqui se vuelve a pasar en cada cambio de datos, asi que sin la marca el
+             * mismo aviso se reenviaria una y otra vez durante todas las horas que queden
+             * hasta la clase. La marca lleva la hora prevista dentro, de modo que si el
+             * usuario mueve la clase el aviso nuevo cuenta como otro y si puede sonar.
+             *
+             * El titulo se rehace: el que venia dado decia «empieza en 10 min» porque asi se
+             * calculo al programarlo, y publicarlo tal cual cuando quedan tres es repetir el
+             * problema que este arreglo venia a quitar.
              */
-            if (eventAtMillis != null && eventAtMillis > now) {
-                val marca = "$requestCode@$adjustedTrigger"
-                if (marca !in storedDeliveredLate()) {
-                    showNotification(context, intent)
-                    rememberDeliveredLate(marca, now)
-                }
+            val marca = "$requestCode@$adjustedTrigger"
+            if (marca in storedDeliveredLate()) return
+            val tituloReal = if (lateTitle != null && eventAtMillis != null) {
+                lateTitle(ReminderTiming.minutesUntil(eventAtMillis, now))
+            } else {
+                title
             }
+            showNotification(
+                context,
+                reminderIntent(requestCode, tituloReal, body, targetRoute, subText, channelId)
+            )
+            rememberDeliveredLate(marca, now)
             return
         }
-        // Fuera de la ventana no se arma nada: ya lo recogera el rearmado de madrugada.
-        if (adjustedTrigger - now > SCHEDULING_WINDOW_MILLIS) return
 
+        val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -645,30 +662,6 @@ class LocalReminderScheduler(private val context: Context) {
             trigger = trigger.plusDays(1)
         }
         return trigger.toInstant().toEpochMilli()
-    }
-
-    private fun adjustForQuietHours(profile: UserProfile, triggerAtMillis: Long): Long {
-        if (!profile.quietHoursEnabled) return triggerAtMillis
-        val start = profile.quietHoursStartHour ?: return triggerAtMillis
-        val end = profile.quietHoursEndHour ?: return triggerAtMillis
-        if (start == end) return triggerAtMillis
-
-        val zone = ZoneId.systemDefault()
-        val trigger = Instant.ofEpochMilli(triggerAtMillis).atZone(zone)
-        val hour = trigger.hour
-        val isQuiet = if (start < end) {
-            hour in start until end
-        } else {
-            hour >= start || hour < end
-        }
-        if (!isQuiet) return triggerAtMillis
-
-        val endDate = when {
-            start < end -> trigger.toLocalDate()
-            hour >= start -> trigger.toLocalDate().plusDays(1)
-            else -> trigger.toLocalDate()
-        }
-        return endDate.atTime(end, 0).atZone(zone).toInstant().toEpochMilli()
     }
 
     private fun Long.isToday(): Boolean {
