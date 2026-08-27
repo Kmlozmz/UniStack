@@ -174,6 +174,48 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationThirteenToFourteenCreatesTermsAndLinksSubjects() {
+        val database = createDatabaseWithSchema(version = 13)
+
+        UniStackDatabase.MIGRATION_13_14.migrate(database)
+
+        assertTrue(database.hasTable("academic_terms"))
+        assertTrue(database.hasIndex("index_academic_terms_userId"))
+        assertTrue(database.hasIndex("index_academic_terms_status"))
+        assertTrue(database.hasIndex("index_academic_terms_startEpochDay"))
+        // La columna que hace que todo lo academico herede el periodo por la materia.
+        assertTrue(database.hasColumn("subjects", "termId"))
+        assertTrue(database.hasIndex("index_subjects_termId"))
+        database.close()
+    }
+
+    /**
+     * Las materias que ya existian sobreviven, y sin periodo.
+     *
+     * Nulo significa «de antes de que hubiera periodos». Rellenarlo en la migracion —con el
+     * primer periodo, o con uno inventado a partir de la fecha de creacion— seria darle al
+     * usuario un semestre que nunca declaro, que es justo lo que este trabajo viene a quitar.
+     */
+    @Test
+    fun migrationThirteenToFourteenLeavesExistingSubjectsWithoutTerm() {
+        val database = createDatabaseWithSchema(version = 13)
+        database.execSQL(
+            """
+            INSERT INTO subjects (id, userId, name, targetAverage, visualType, createdAt, updatedAt)
+            VALUES ('s1', 'local', 'Calculo II', 4.0, 'TEAL', 0, 0)
+            """.trimIndent()
+        )
+
+        UniStackDatabase.MIGRATION_13_14.migrate(database)
+
+        database.query("SELECT termId FROM subjects WHERE id = 's1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertTrue(cursor.isNull(0))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -219,6 +261,7 @@ class RoomMigrationTest {
         if (targetVersion >= 11) UniStackDatabase.MIGRATION_10_11.migrate(db)
         if (targetVersion >= 12) UniStackDatabase.MIGRATION_11_12.migrate(db)
         if (targetVersion >= 13) UniStackDatabase.MIGRATION_12_13.migrate(db)
+        if (targetVersion >= 14) UniStackDatabase.MIGRATION_13_14.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

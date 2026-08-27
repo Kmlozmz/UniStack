@@ -11,6 +11,9 @@ import com.unistack.app.feature_grades.data.local.SubjectDao
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_schedule.data.RoomScheduleRepository
 import com.unistack.app.feature_schedule.data.local.AgendaEventDao
+import com.unistack.app.feature_terms.data.RoomAcademicTermRepository
+import com.unistack.app.feature_terms.data.local.AcademicTermDao
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionDao
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
@@ -81,6 +84,16 @@ object RepositoriesModule {
         userRepository: UserRepository
     ): AcademicWorksRepository = RoomAcademicWorksRepository(
         academicWorkDao = academicWorkDao,
+        userRepository = userRepository
+    )
+
+    @Provides
+    @Singleton
+    fun provideAcademicTermRepository(
+        academicTermDao: AcademicTermDao,
+        userRepository: UserRepository
+    ): AcademicTermRepository = RoomAcademicTermRepository(
+        dao = academicTermDao,
         userRepository = userRepository
     )
 

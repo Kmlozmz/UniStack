@@ -17,6 +17,8 @@ import com.unistack.app.feature_schedule.data.local.ClassSessionEntity
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventDao
+import com.unistack.app.feature_terms.data.local.AcademicTermDao
+import com.unistack.app.feature_terms.data.local.AcademicTermEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
 
 @Database(
@@ -28,9 +30,10 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         AcademicWorkEntity::class,
         ClassSessionEntity::class,
         ClassOccurrenceEntity::class,
-        AgendaEventEntity::class
+        AgendaEventEntity::class,
+        AcademicTermEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -42,6 +45,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun classSessionDao(): ClassSessionDao
     abstract fun classOccurrenceDao(): ClassOccurrenceDao
     abstract fun agendaEventDao(): AgendaEventDao
+    abstract fun academicTermDao(): AcademicTermDao
 
     companion object {
         @Volatile
@@ -262,6 +266,45 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /*
+         * El periodo academico entra en escena, y las materias aprenden a que ciclo pertenecen.
+         *
+         * `termId` es lo unico que se anade a `subjects`, y con eso basta: todo lo academico
+         * cuelga de la materia —notas, clases, ocurrencias, y las tareas y trabajos que tengan
+         * materia—, asi que hereda el periodo por el camino sin tocar sus tablas.
+         *
+         * Nace en NULL para todas las materias que ya existen. Ese nulo significa «de antes de
+         * que hubiera periodos» y no se rellena aqui a la fuerza: inventar una fecha de inicio
+         * para un semestre que nadie declaro seria exactamente la suposicion que este trabajo
+         * viene a quitar. Quien tenga datos previos elegira, y hasta entonces siguen visibles.
+         */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS academic_terms (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        startEpochDay INTEGER NOT NULL,
+                        plannedEndEpochDay INTEGER,
+                        closedEpochDay INTEGER,
+                        status TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_terms_userId ON academic_terms(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_terms_status ON academic_terms(status)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_terms_startEpochDay ON academic_terms(startEpochDay)")
+                db.execSQL("ALTER TABLE subjects ADD COLUMN termId TEXT DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_subjects_termId ON subjects(termId)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -287,7 +330,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_9_10,
             MIGRATION_10_11,
             MIGRATION_11_12,
-            MIGRATION_12_13
+            MIGRATION_12_13,
+            MIGRATION_13_14
         )
     }
 }

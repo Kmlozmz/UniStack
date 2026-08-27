@@ -7,6 +7,7 @@ import com.unistack.app.feature_grades.data.local.GradeDao
 import com.unistack.app.feature_grades.data.local.SubjectDao
 import com.unistack.app.feature_grades.data.local.UniStackDatabase
 import com.unistack.app.feature_schedule.data.local.AgendaEventDao
+import com.unistack.app.feature_terms.data.local.AcademicTermDao
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionDao
 import com.unistack.app.feature_tasks.data.local.TaskDao
@@ -63,4 +64,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAgendaEventDao(db: UniStackDatabase): AgendaEventDao = db.agendaEventDao()
+
+    @Provides
+    @Singleton
+    fun provideAcademicTermDao(db: UniStackDatabase): AcademicTermDao = db.academicTermDao()
 }

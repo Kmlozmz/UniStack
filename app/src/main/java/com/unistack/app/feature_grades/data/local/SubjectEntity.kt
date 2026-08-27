@@ -1,9 +1,10 @@
 package com.unistack.app.feature_grades.data.local
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "subjects")
+@Entity(tableName = "subjects", indices = [Index("termId")])
 data class SubjectEntity(
     @PrimaryKey val id: String,
     val userId: String,
@@ -15,6 +16,14 @@ data class SubjectEntity(
     val activePeriodId: String = "period-1",
     val historyPromptStatus: String = "NOT_SHOWN",
     val unknownPeriodIdsJson: String = "[]",
+    /*
+     * A que periodo academico pertenece esta materia.
+     *
+     * Nulo significa «de antes de que hubiera periodos», no «sin asignar»: son las materias
+     * que ya existian cuando llego este concepto. No se rellenan solas porque inventarles un
+     * semestre seria inventarle al usuario un dato que nunca dio.
+     */
+    val termId: String? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

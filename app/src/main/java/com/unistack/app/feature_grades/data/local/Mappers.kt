@@ -29,7 +29,8 @@ fun SubjectEntity.toDomain(grades: List<GradeItem>): Subject {
         // por elegido el primer corte de toda materia nueva.
         activeCutId = activePeriodId,
         historyPromptStatus = historyPromptStatus.toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
-        unknownCutIds = unknownPeriodIdsJson.toStringSet()
+        unknownCutIds = unknownPeriodIdsJson.toStringSet(),
+        termId = termId
     )
 }
 
@@ -46,6 +47,7 @@ fun Subject.toEntity(userId: String): SubjectEntity {
         activePeriodId = activeCutId,
         historyPromptStatus = historyPromptStatus.name,
         unknownPeriodIdsJson = JSONArray(unknownCutIds.toList()).toString(),
+        termId = termId,
         createdAt = now,
         updatedAt = now
     )

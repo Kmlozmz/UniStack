@@ -21,7 +21,9 @@ data class Subject(
      */
     val activeCutId: String = "",
     val historyPromptStatus: PriorHistoryPromptStatus = PriorHistoryPromptStatus.NOT_SHOWN,
-    val unknownCutIds: Set<String> = emptySet()
+    val unknownCutIds: Set<String> = emptySet(),
+    /** El periodo academico al que pertenece, o nulo si es anterior a que existieran. */
+    val termId: String? = null
 ) {
     /** El corte que el usuario eligió, o null si todavía no ha elegido. */
     val chosenCutId: String?
