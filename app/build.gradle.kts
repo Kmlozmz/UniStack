@@ -781,11 +781,19 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
          */
         val tipo = apkType()
         val numero = nextTelegramCount(tipo)
-        // En `code`, como iba el changelog: el numero se distingue del resto del chat.
-        val caption = "<code>($tipo) #$numero</code>"
+        // Bloque de codigo, no monospace suelto: es lo que Telegram pinta con la barra
+        // vertical al lado, como iba el changelog.
+        val caption = "<pre>($tipo) #$numero</pre>"
 
+        /*
+         * El aviso se retira antes de mandar el archivo, no despues.
+         *
+         * Quitarlo cuando el APK ya esta en el chat se lee como una retractacion: parece que
+         * algo salio mal y el bot borro lo que habia dicho. Retirandolo antes, lo que se ve es
+         * un aviso que cumple su funcion y deja sitio.
+         */
         telegramSay("Build completed! Sending...")
-        val avisoDeEnvio = telegramLiveMessageId
+        telegramRemove(telegramLiveMessageId)
         println("Sending ${apkPath.name} to Telegram as $caption...")
         providers.exec {
             commandLine(
@@ -814,7 +822,6 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
                 "https://api.telegram.org/bot$botToken/sendDocument"
             )
         }.result.get().assertNormalExitValue()
-        telegramRemove(avisoDeEnvio)
         println("Telegram upload completed: ($tipo) #$numero")
     }
 }
