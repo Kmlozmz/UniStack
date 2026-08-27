@@ -550,66 +550,6 @@ fun findApkForVariant(variant: String): File {
         ?: throw GradleException("$variant APK not found under ${outputDir.absolutePath}")
 }
 
-fun summarizeChangeFiles(files: List<String>): List<String> {
-    val normalized = files.map { it.replace('\\', '/') }.distinct()
-    val hasSetupChanges = normalized.any { it.contains("feature_setup/") || it.contains("welcome_unistack_hero") }
-
-    return buildList {
-        if (hasSetupChanges) {
-            add("Setup: pasos de modulos, resumen y cierre del onboarding redisenados.")
-        }
-        if (normalized.any { it.contains("core/design/theme/Type.kt") }) {
-            add("Diseno: pesos tipograficos normalizados para textos y labels.")
-        }
-        if (normalized.any { it.contains("feature_grades/presentation/GradesScreen") }) {
-            add("Materias: lista con progreso, estado y siguiente accion por materia.")
-        } else if (normalized.any { it.contains("feature_grades/") || it.contains("core/utils/GradeCalculator") }) {
-            add("Materias: detalle de cortes y editor de apariencia/corte actual redisenados.")
-        }
-        if (normalized.any { it.contains("feature_home/") }) {
-            add("Home: hero inteligente actualizado con resultados, historial y porcentajes pendientes.")
-        }
-        if (normalized.any { it.contains("feature_tasks/") }) {
-            add("Tareas: resultados pendientes agrupados y editor compacto con nota vinculada.")
-        }
-        if (normalized.any { it.contains("feature_profile/") }) {
-            add("Configuracion: Perfil simplificado y ajustes separados por categoria.")
-            add("Apariencia: tema, fondos, colores, densidad, Home y navegacion personalizables.")
-        }
-        if (normalized.any { it.contains("feature_schedule/") }) {
-            add("Agenda: calendario y horario semanal conectados con materias y tareas.")
-        }
-        if (normalized.any { it.contains("AccessibilityPreferences") || it.contains("AccessibilitySettings") }) {
-            add("Accesibilidad: idioma, contraste, texto, formato horario y movimiento centralizados.")
-        }
-        if (normalized.any { it.contains("feature_sync/") || it.contains("FirebaseGoogleAuthService") }) {
-            add("Cuenta: Google y respaldos local/nube preparados para datos academicos y horario.")
-        }
-        if (normalized.any { it.contains("core/notifications/") }) {
-            add("Recordatorios: clases, tareas y seguimiento academico integrados al historial real.")
-        }
-        val hasProductChanges = normalized.any { it.startsWith("app/src/") }
-        if (!hasSetupChanges && !hasProductChanges && normalized.any { it == "app/build.gradle.kts" || it.startsWith("scripts/") || it.endsWith("send_apk.sh") }) {
-            add("Build/release: changelog Telegram y validacion release afinados.")
-        }
-        if (normalized.any { it.contains("androidTest/") || it.contains("src/test/") }) {
-            add("QA: pruebas conectadas/unitarias actualizadas.")
-        }
-        if (normalized.any { it == ".editorconfig" }) {
-            add("Texto: configuracion UTF-8 fijada para evitar mojibake.")
-        }
-        if (normalized.any { it.endsWith(".md") }) {
-            add("Limpieza: documentacion obsoleta retirada o actualizada.")
-        }
-        if (normalized.any { it.contains("core/navigation/") }) {
-            add("Navegacion/setup: flujo principal ajustado.")
-        }
-        if (normalized.isNotEmpty() && isEmpty()) {
-            add("Cambios locales: archivos del proyecto actualizados.")
-        }
-    }
-}
-
 fun projectSnapshotFiles(): List<File> {
     val excludedDirectories = setOf(
         ".git",
@@ -670,75 +610,72 @@ fun sha256(file: File): String {
     return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }
 
-fun currentProjectSnapshot(): Map<String, String> {
-    val rootPath = rootProject.rootDir.toPath()
-    return projectSnapshotFiles().associate { file ->
-        val relativePath = rootPath.relativize(file.toPath()).toString().replace('\\', '/')
-        relativePath to sha256(file)
-    }
-}
-
-fun telegramSnapshotFile(variant: String): File =
-    rootProject.file(".gradle/telegram-apk-$variant.snapshot.properties")
-
-fun readTelegramSnapshot(variant: String): Map<String, String> {
-    val file = telegramSnapshotFile(variant)
-    if (!file.exists()) return emptyMap()
-
-    return Properties().apply {
-        file.inputStream().use(::load)
-    }.entries.associate { (key, value) -> key.toString() to value.toString() }
-}
-
-fun writeTelegramSnapshot(variant: String, snapshot: Map<String, String>) {
-    val file = telegramSnapshotFile(variant)
-    file.parentFile.mkdirs()
-    Properties().apply {
-        snapshot.forEach { (path, hash) -> setProperty(path, hash) }
-        file.outputStream().use { store(it, "Last UniStack Telegram APK snapshot for $variant") }
-    }
-}
-
-fun changedFilesSinceSnapshot(previous: Map<String, String>, current: Map<String, String>): List<String> {
-    return (previous.keys + current.keys)
-        .filter { previous[it] != current[it] }
-        .sorted()
-}
-
 /**
- * Los titulares del registro de cambios, para el mensaje del bot.
+ * El tipo de APK que se anuncia: dev, alpha, beta, release...
  *
- * El mensaje se armaba con los archivos que habían cambiado desde el APK anterior —«Build:
- * feature_profile, core/design»—, que no dice nada de lo que hay que probar. Esto lee la sección
- * que corresponde de `CHANGELOG.md` y se queda con la primera frase en negrita de cada viñeta,
- * que es justo el titular escrito para quien usa la app.
- *
- * Un APK de trabajo se compila muchas veces sobre la misma sección, así que debajo van también
- * los commits nuevos desde el envío anterior: eso sí cambia en cada build.
+ * Se puede fijar con `-PapkType=dev`. Sin eso sale del sufijo de la version, que es donde ya
+ * vive esa informacion: `1.6.0-beta.2` es una beta y `1.5.11` es una release.
  */
-fun changelogHighlights(section: String, maxItems: Int = 10): List<String> {
-    val heading = Regex("""^#{3,4}\s+(.+)$""")
-    val bullet = Regex("""^\s*[-*]\s+(.+)$""")
-    val result = mutableListOf<String>()
-    var currentHeading: String? = null
-
-    section.lines().forEach { line ->
-        val trimmed = line.trim()
-        heading.find(trimmed)?.let { match ->
-            currentHeading = match.groupValues[1].trim()
-            return@forEach
-        }
-        // Los destacados abren la lista: son la frase que resume la versión entera.
-        if (trimmed.startsWith("**Lo importante:**")) {
-            if (result.size < maxItems) result += trimmed.plainText().removePrefix("Lo importante:").trim()
-            return@forEach
-        }
-        val item = bullet.find(trimmed)?.groupValues?.get(1)?.trim()?.plainText()?.trimEnd('.')
-        if (!item.isNullOrBlank() && result.size < maxItems) {
-            result += currentHeading?.let { "$it: $item" } ?: item
-        }
+fun apkType(): String {
+    val explicito = providers.gradleProperty("apkType").orNull
+        ?: providers.environmentVariable("APK_TYPE").orNull
+    if (!explicito.isNullOrBlank()) return explicito.trim().lowercase()
+    val sufijo = generatedVersionName.substringAfter('-', "").lowercase()
+    return when {
+        sufijo.startsWith("dev") -> "dev"
+        sufijo.startsWith("alpha") -> "alpha"
+        sufijo.startsWith("beta") -> "beta"
+        sufijo.startsWith("rc") -> "rc"
+        else -> "release"
     }
-    return result
+}
+
+/*
+ * El contador vive en `.gradle/`, que no se versiona.
+ *
+ * Es una cuenta de envios desde esta maquina, no un dato del proyecto: llevarla en un fichero
+ * versionado ensuciaria el arbol en cada compilacion y chocaria entre ramas. El precio es que
+ * un clon nuevo empieza otra vez en el uno.
+ */
+fun telegramCounterFile(): File = rootProject.file(".gradle/telegram-apk-counters.properties")
+
+fun nextTelegramCount(type: String): Int {
+    val file = telegramCounterFile()
+    val props = Properties()
+    if (file.exists()) file.inputStream().use(props::load)
+    val siguiente = (props.getProperty(type)?.toIntOrNull() ?: 0) + 1
+    props.setProperty(type, siguiente.toString())
+    file.parentFile.mkdirs()
+    file.outputStream().use { props.store(it, "Cuantos APK de cada tipo se han enviado desde aqui") }
+    return siguiente
+}
+
+/** Un mensaje suelto al bot. No corta el build si falla: avisar no es la tarea. */
+fun telegramNotify(text: String) {
+    val env = readTelegramEnv()
+    val token = providers.environmentVariable("TELEGRAM_BOT_TOKEN")
+        .orElse(env["TELEGRAM_BOT_TOKEN"] ?: "").get()
+    val chat = providers.environmentVariable("TELEGRAM_CHAT_ID")
+        .orElse(env["TELEGRAM_CHAT_ID"] ?: "").get()
+    if (token.isBlank() || chat.isBlank()) {
+        println("Telegram: sin credenciales, no se avisa.")
+        return
+    }
+    /*
+     * Fallar avisando no puede tumbar el build —avisar no es la tarea—, pero tampoco puede
+     * pasar en silencio: un aviso que no llega y no se queja es un aviso que nadie arregla.
+     */
+    runCatching {
+        providers.exec {
+            commandLine(
+                "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
+                "--form-string", "chat_id=$chat",
+                "--form-string", "text=$text",
+                "https://api.telegram.org/bot$token/sendMessage"
+            )
+        }.result.get().assertNormalExitValue()
+        println("Telegram: \"$text\"")
+    }.onFailure { println("Telegram: no se pudo avisar (\"$text\"): ${it.message}") }
 }
 
 /** Quita las negritas de Markdown: en el mensaje del bot no pintan nada. */
@@ -760,57 +697,10 @@ fun changelogSectionForBuild(versionName: String): String? {
     return (if (end < 0) rest else rest.take(end)).joinToString("\n").trim()
 }
 
-fun gitOutput(vararg args: String): String = runCatching {
-    providers.exec {
-        workingDir = rootProject.rootDir
-        commandLine(*args)
-    }.standardOutput.asText.get().trim()
-}.getOrDefault("")
-
-fun currentGitHead(): String = gitOutput("git", "rev-parse", "HEAD")
-
-/** Los asuntos de los commits nuevos desde el APK anterior. */
-fun commitsSince(previousHead: String?, maxItems: Int = 5): List<String> {
-    if (previousHead.isNullOrBlank()) return emptyList()
-    val log = gitOutput("git", "log", "--format=%s", "$previousHead..HEAD")
-    if (log.isBlank()) return emptyList()
-    return log.lines().filter { it.isNotBlank() }.take(maxItems)
-}
-
-fun telegramChangelogLinesForVariant(
-    variant: String,
-    currentSnapshot: Map<String, String> = currentProjectSnapshot()
-): List<String> {
-    val section = changelogSectionForBuild(generatedVersionName)
-    val highlights = section?.let { changelogHighlights(it) }.orEmpty()
-    if (highlights.isNotEmpty()) return highlights
-
-    // Sin sección utilizable se cae a lo de antes, que al menos dice que algo cambió.
-    val previousSnapshot = readTelegramSnapshot(variant)
-    if (previousSnapshot.isEmpty()) return listOf("Primer envio de este canal.")
-    return summarizeChangeFiles(changedFilesSinceSnapshot(previousSnapshot, currentSnapshot))
-        .ifEmpty { listOf("Sin cambios de codigo desde el APK anterior.") }
-}
-
 fun String.htmlEscape(): String {
     return replace("&", "&amp;")
         .replace("<", "&lt;")
         .replace(">", "&gt;")
-}
-
-fun telegramChangelogBlock(lines: List<String>, maxChars: Int = 480): String {
-    val selected = mutableListOf<String>()
-    var usedChars = 0
-    for (line in lines) {
-        val next = "- ${line.htmlEscape()}"
-        if (usedChars + next.length + 1 > maxChars) {
-            selected += "- ..."
-            break
-        }
-        selected += next
-        usedChars += next.length + 1
-    }
-    return selected.ifEmpty { listOf("- Build local generado.") }.joinToString("\n")
 }
 
 fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.replaceFirstChar { it.uppercase() }}ApkToTelegram") {
@@ -838,33 +728,19 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
             throw GradleException("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set in environment variables or .env")
         }
 
-        val sizeMb = apkPath.length().toDouble() / 1024.0 / 1024.0
-        val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        val currentSnapshot = currentProjectSnapshot()
-        val previousSnapshot = readTelegramSnapshot(variant)
-        val changelog = telegramChangelogBlock(
-            lines = telegramChangelogLinesForVariant(variant, currentSnapshot),
-            maxChars = 620
-        )
-        val commits = commitsSince(previousSnapshot["git.head"])
-        val commitBlock = if (commits.isEmpty()) {
-            ""
-        } else {
-            val text = telegramChangelogBlock(commits, maxChars = 240)
-            "\n<b>Commits nuevos</b>\n<blockquote>$text</blockquote>"
-        }
-        val variantTitle = variant.replaceFirstChar { it.uppercase() }
-        val sizeText = String.format(Locale.US, "%.2f", sizeMb)
-        val caption = """
-            <b>Nuevo APK de ${rootProject.name.htmlEscape()}</b>
-            <blockquote>$variantTitle - ${apkPath.name.htmlEscape()} - $sizeText MB
-            v${generatedVersionName.htmlEscape()} ($generatedVersionCode)
-            $timestamp</blockquote>
-            <b>Que probar</b>
-            <blockquote>$changelog</blockquote>$commitBlock
-        """.trimIndent()
+        /*
+         * El mensaje del APK lleva el tipo y su numero, y nada mas.
+         *
+         * Antes iba con changelog, lista de commits, tamano, version y fecha, y todo eso ya
+         * esta en el propio fichero o en el repositorio. Lo unico que no se puede deducir
+         * mirando el APK es cual de la serie es, y para eso sirve el numero.
+         */
+        val tipo = apkType()
+        val numero = nextTelegramCount(tipo)
+        val caption = "($tipo) #$numero"
 
-        println("Sending ${apkPath.name} to Telegram...")
+        telegramNotify("Build completed! Sending...")
+        println("Sending ${apkPath.name} to Telegram as $caption...")
         providers.exec {
             commandLine(
                 "curl",
@@ -887,17 +763,28 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
                 "document=@${apkPath.absolutePath}",
                 "--form-string",
                 "caption=$caption",
-                "--form-string",
-                "parse_mode=HTML",
                 "https://api.telegram.org/bot$botToken/sendDocument"
             )
         }.result.get().assertNormalExitValue()
-        writeTelegramSnapshot(variant, currentSnapshot + ("git.head" to currentGitHead()))
-        println("Telegram upload completed.")
+        println("Telegram upload completed: $caption")
     }
 }
 
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
+
+/*
+ * El aviso de que se empieza a cocinar.
+ *
+ * Se dispara al armarse el grafo de tareas y solo si el envio esta dentro, que es la unica
+ * forma de saber que **esta compilacion va a terminar mandando un APK**. Colgarlo de
+ * `assemble` avisaria en cada compilacion normal, y colgarlo de la propia tarea de envio
+ * llegaria cuando el build ya ha terminado, que es justo lo contrario de lo que se pide.
+ */
+gradle.taskGraph.whenReady {
+    if (hasTask(sendReleaseApkToTelegram.get())) {
+        telegramNotify("The chef is cooking... (${apkType()})")
+    }
+}
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
     .map { it.toBoolean() }
