@@ -1,5 +1,7 @@
 package com.unistack.app.feature_user.domain
 
+import java.time.LocalDate
+
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 
@@ -103,7 +105,47 @@ data class GradingCutScheme(
     val isValid: Boolean
         get() = cuts.isNotEmpty() &&
             cuts.all { it.weight > 0.0 } &&
-            kotlin.math.abs(totalWeight - 1.0) <= 0.0001
+            kotlin.math.abs(totalWeight - 1.0) <= 0.0001 &&
+            datesAreSound
+
+    /**
+     * Si hay fechas puestas, y si tienen sentido.
+     *
+     * Los cortes son **contiguos por construccion**: se pide solo el dia en que acaba cada uno,
+     * el siguiente empieza al dia posterior, y el ultimo acaba con el periodo. Por eso el
+     * ultimo no lleva fecha, y por eso solapes y huecos no pueden existir: no hay forma de
+     * escribirlos. Lo unico que queda por comprobar es que las fechas suban.
+     */
+    private val datesAreSound: Boolean
+        get() {
+            val ordenados = cuts.sortedBy { it.order }
+            // El ultimo acaba con el periodo, asi que no puede llevar fecha propia.
+            if (ordenados.lastOrNull()?.endEpochDay != null) return false
+            val puestas = ordenados.dropLast(1).map { it.endEpochDay }
+            // O todos los cortes intermedios tienen fecha, o ninguno: a medias no sirve.
+            if (puestas.any { it == null } && puestas.any { it != null }) return false
+            val fechas = puestas.filterNotNull()
+            return fechas.zipWithNext().all { (a, b) -> b > a }
+        }
+
+    /** Si el esquema puede elegir corte a partir de una fecha. */
+    val hasDates: Boolean
+        get() = cuts.size == 1 || cuts.sortedBy { it.order }.dropLast(1).all { it.endEpochDay != null }
+
+    /**
+     * En que corte cae [date], o nulo si este esquema no tiene fechas.
+     *
+     * Nulo significa «pregunta a mano», no «no hay corte»: el selector manual sigue existiendo
+     * y es lo que aparece cuando esto no puede responder.
+     */
+    fun cutForDate(date: LocalDate): GradingCut? {
+        if (!hasDates) return null
+        val ordenados = cuts.sortedBy { it.order }
+        val dia = date.toEpochDay()
+        // El primero cuyo cierre no ha llegado todavia. Si ninguno, es el ultimo: acaba con
+        // el periodo y por tanto recoge todo lo que venga despues.
+        return ordenados.firstOrNull { it.endEpochDay != null && dia <= it.endEpochDay } ?: ordenados.last()
+    }
 
     fun cutName(cutId: String?): String {
         return cuts.firstOrNull { it.id == cutId }?.name
@@ -126,7 +168,19 @@ data class GradingCut(
     val id: String,
     val name: String,
     val weight: Double,
-    val order: Int
+    val order: Int,
+    /**
+     * El dia en que cierra este corte, o nulo.
+     *
+     * Nulo en el **ultimo** corte es lo normal: acaba cuando acaba el periodo. Nulo en los
+     * demas significa que el usuario todavia no ha dado las fechas, y entonces el corte de
+     * cada nota se elige a mano, como siempre.
+     *
+     * No hay fecha de inicio: la del primero es la del periodo y la de cada siguiente es el
+     * dia posterior al cierre del anterior. Guardar los dos extremos permitiria escribir
+     * solapes y huecos; guardar solo el corte los hace imposibles.
+     */
+    val endEpochDay: Long? = null
 )
 
 /**

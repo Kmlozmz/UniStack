@@ -40,6 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import java.time.LocalDate
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.unistack.app.core.design.components.UniCard
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -155,6 +158,21 @@ fun AddGradeScreen(
         ?: profile?.gradingCutScheme
         ?: com.unistack.app.feature_user.domain.GradingCutScheme.default()
     val lockedCut = initialCutId?.let { id -> cutScheme.cuts.firstOrNull { it.id == id } }
+    /*
+     * El corte sale de la fecha, cuando el esquema tiene fechas.
+     *
+     * Es lo que compran las fechas de corte: un paso menos, y un dato que deja de depender de
+     * que el usuario acierte al elegir. Solo aplica al crear —editando manda lo que ya se
+     * guardo— y solo si nadie ha fijado el corte al abrir la pantalla.
+     *
+     * Nulo significa «pregunta a mano»: sin fechas, aqui sale el selector de siempre.
+     */
+    val cutByDate = if (!isEditing && lockedCut == null) {
+        cutScheme.cutForDate(LocalDate.now())
+    } else {
+        null
+    }
+    var changingCut by rememberSaveable { mutableStateOf(false) }
     val selectedPeriod = cutScheme.cuts.firstOrNull { it.id == selectedCutId }
         ?: lockedCut
         ?: cutScheme.cuts.firstOrNull { it.id == subject?.activeCutId }
@@ -220,7 +238,10 @@ fun AddGradeScreen(
             weightUnknown = grade.weightStatus == GradeWeightStatus.UNKNOWN
             initialized = true
         } else if (!isEditing) {
-            selectedCutId = lockedCut?.id ?: subject?.chosenCutId ?: cutScheme.cuts.first().id
+            selectedCutId = lockedCut?.id
+                ?: cutByDate?.id
+                ?: subject?.chosenCutId
+                ?: cutScheme.cuts.first().id
             initialized = true
         }
     }
@@ -322,7 +343,41 @@ fun AddGradeScreen(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
-                if (!isEditing && lockedCut == null) {
+                if (!isEditing && lockedCut == null && cutByDate != null && !changingCut) {
+                    // Lo eligio la fecha. Se dice cual y por que, y se deja salida a mano.
+                    UniCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        borderColor = MaterialTheme.colorScheme.primary,
+                        borderWidth = 1.dp
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(
+                                text = "Va al",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                text = cutDisplayName(cutByDate),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = "Elegido por la fecha de hoy.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp
+                            )
+                            TextButton(
+                                onClick = { changingCut = true },
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
+                            ) {
+                                Text("Cambiar corte")
+                            }
+                        }
+                    }
+                }
+                if (!isEditing && lockedCut == null && (cutByDate == null || changingCut)) {
                     Text(
                         text = "Corte",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

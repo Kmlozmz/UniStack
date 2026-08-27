@@ -580,7 +580,8 @@ class FirebaseCloudBackupRepository(
                 "id" to cut.id,
                 "name" to cut.name,
                 "weight" to cut.weight,
-                "order" to cut.order
+                "order" to cut.order,
+                "endEpochDay" to cut.endEpochDay
             )
         }
     )
@@ -594,7 +595,8 @@ class FirebaseCloudBackupRepository(
                 id = item.string("id") ?: "period-${index + 1}",
                 name = item.string("name") ?: "${Corte.Singular} ${index + 1}",
                 weight = weight,
-                order = item.int("order") ?: index + 1
+                order = item.int("order") ?: index + 1,
+                endEpochDay = item.long("endEpochDay")
             )
         }
         return GradingCutScheme(cuts).takeIf { it.isValid }

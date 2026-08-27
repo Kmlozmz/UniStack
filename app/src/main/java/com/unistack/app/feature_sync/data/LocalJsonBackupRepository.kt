@@ -413,6 +413,7 @@ class LocalJsonBackupRepository(
                             .put("name", cut.name)
                             .put("weight", cut.weight)
                             .put("order", cut.order)
+                            .put("endEpochDay", cut.endEpochDay)
                     }
                 )
             )
@@ -430,7 +431,12 @@ class LocalJsonBackupRepository(
                     id = item.optString("id", "period-$order"),
                     name = item.optString("name", "${Corte.Singular} $order"),
                     weight = weight,
-                    order = order
+                    order = order,
+                    endEpochDay = if (item.has("endEpochDay") && !item.isNull("endEpochDay")) {
+                        item.optLong("endEpochDay")
+                    } else {
+                        null
+                    }
                 )
             }
             .sortedBy { it.order }

@@ -97,6 +97,7 @@ private fun GradingCutScheme.toJson(): String = JSONObject()
                     .put("name", cut.name)
                     .put("weight", cut.weight)
                     .put("order", cut.order)
+                    .put("endEpochDay", cut.endEpochDay)
             }
         )
     )
@@ -115,7 +116,12 @@ private fun String.toCutScheme(): GradingCutScheme {
                 id = item.optString("id", "period-${index + 1}"),
                 name = item.optString("name", "${Corte.Singular} ${index + 1}"),
                 weight = weight,
-                order = item.optInt("order", index + 1)
+                order = item.optInt("order", index + 1),
+                endEpochDay = if (item.has("endEpochDay") && !item.isNull("endEpochDay")) {
+                    item.optLong("endEpochDay")
+                } else {
+                    null
+                }
             )
         }.sortedBy { it.order }
         GradingCutScheme(cuts).takeIf { it.isValid } ?: GradingCutScheme.default()

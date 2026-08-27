@@ -2,12 +2,18 @@ package com.unistack.app.feature_setup.presentation
 
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import androidx.lifecycle.ViewModel
 import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.GradingCut
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.AcademicTermType
+import java.time.LocalDate
 import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.GradingScale
@@ -22,7 +28,8 @@ import androidx.compose.runtime.getValue
 
 @HiltViewModel
 class SetupViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val termRepository: AcademicTermRepository
 ) : ViewModel() {
     var preferredName by mutableStateOf("")
         private set
@@ -99,6 +106,99 @@ class SetupViewModel @Inject constructor(
 
     val areGradingCutsValid: Boolean
         get() = buildGradingCutSchemeOrNull() != null
+
+    // ---- El periodo academico ----
+
+    var termType by mutableStateOf<AcademicTermType?>(null)
+        private set
+    var termStart by mutableStateOf<LocalDate?>(null)
+        private set
+    var termPlannedEnd by mutableStateOf<LocalDate?>(null)
+        private set
+    var termName by mutableStateOf("")
+        private set
+
+    /**
+     * Los dias en que cierra cada corte, uno menos que cortes hay.
+     *
+     * Vacio significa «todavia no las se», que es una respuesta valida: sin ellas el corte de
+     * cada nota se sigue eligiendo a mano. El ultimo corte no aparece porque acaba con el
+     * periodo, y por eso guardar solo los cortes hace imposibles los solapes y los huecos.
+     */
+    var cutEndDates by mutableStateOf<List<LocalDate>>(emptyList())
+        private set
+
+    val termCutCount: Int get() = gradingCutWeights.size
+
+    /** Elegir tipo es lo unico obligatorio aqui; las fechas vienen sugeridas y editables. */
+    val isTermValid: Boolean
+        get() {
+            val tipo = termType ?: return false
+            val inicio = termStart ?: return false
+            val fin = termPlannedEnd
+            if (fin != null && !fin.isAfter(inicio)) return false
+            if (termName.isBlank()) return false
+            // O estan todas las fechas de corte, o ninguna.
+            if (cutEndDates.isNotEmpty()) {
+                if (cutEndDates.size != (termCutCount - 1).coerceAtLeast(0)) return false
+                if (cutEndDates.zipWithNext().any { (a, b) -> !b.isAfter(a) }) return false
+                if (cutEndDates.first().isBefore(inicio)) return false
+                if (fin != null && cutEndDates.last().isAfter(fin)) return false
+            }
+            @Suppress("UNUSED_EXPRESSION") tipo
+            return true
+        }
+
+    fun updateTermType(value: AcademicTermType) {
+        termType = value
+        // Al elegir tipo se proponen fechas y nombre; siguen siendo editables.
+        val inicio = termStart ?: LocalDate.now()
+        termStart = inicio
+        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(value, inicio)
+        termName = AcademicTerm.suggestedName(value, inicio)
+        cutEndDates = emptyList()
+    }
+
+    fun updateTermStart(value: LocalDate) {
+        termStart = value
+        val tipo = termType ?: return
+        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(tipo, value)
+        termName = AcademicTerm.suggestedName(tipo, value)
+        cutEndDates = emptyList()
+    }
+
+    fun updateTermPlannedEnd(value: LocalDate) {
+        termPlannedEnd = value
+        cutEndDates = emptyList()
+    }
+
+    fun updateTermName(value: String) {
+        termName = value.take(40)
+    }
+
+    /**
+     * Reparte los cortes por igual entre el inicio y el fin previsto, como punto de partida.
+     *
+     * Es una sugerencia, no una imposicion: cada fecha se mueve despues. Sin fin previsto no
+     * hay tramo que repartir, asi que no se propone nada.
+     */
+    fun suggestCutEndDates() {
+        val inicio = termStart ?: return
+        val fin = termPlannedEnd ?: return
+        val tramos = termCutCount
+        if (tramos < 2) return
+        val dias = java.time.temporal.ChronoUnit.DAYS.between(inicio, fin)
+        if (dias < tramos) return
+        cutEndDates = (1 until tramos).map { i -> inicio.plusDays(dias * i / tramos) }
+    }
+
+    fun clearCutEndDates() {
+        cutEndDates = emptyList()
+    }
+
+    fun updateCutEndDate(index: Int, value: LocalDate) {
+        cutEndDates = cutEndDates.mapIndexed { i, actual -> if (i == index) value else actual }
+    }
 
     fun updatePreferredName(value: String) {
         preferredName = value.take(30)
@@ -184,6 +284,7 @@ class SetupViewModel @Inject constructor(
     }
 
     fun finishSetup() {
+        crearPeriodoSiSeConfiguro()
         val now = System.currentTimeMillis()
         val info = academicInfoValue()
         /*
@@ -236,6 +337,29 @@ class SetupViewModel @Inject constructor(
         userRepository.saveUserProfile(profile)
     }
 
+    /**
+     * Deja creado el periodo con el que arranca la app.
+     *
+     * Si el usuario se salto el paso —o desactivo el modulo de notas— no se inventa ninguno:
+     * un periodo sin fechas declaradas seria exactamente la suposicion que este trabajo viene
+     * a quitar, y la app sabe vivir sin periodo activo.
+     *
+     * El fallo tampoco se propaga: quedarse sin periodo es recuperable desde Ajustes, y tumbar
+     * el final del onboarding por ello seria peor que seguir.
+     */
+    private fun crearPeriodoSiSeConfiguro() {
+        val tipo = termType ?: return
+        val inicio = termStart ?: return
+        viewModelScope.launch {
+            termRepository.create(
+                name = termName.trim().ifBlank { AcademicTerm.suggestedName(tipo, inicio) },
+                type = tipo,
+                start = inicio,
+                plannedEnd = termPlannedEnd
+            )
+        }
+    }
+
     private fun academicInfoValue(): String? {
         val area = studyArea ?: return null
         val program = selectedProgram ?: return null
@@ -265,7 +389,9 @@ class SetupViewModel @Inject constructor(
                     id = "period-$order",
                     name = "${Corte.Singular} $order",
                     weight = weight,
-                    order = order
+                    order = order,
+                    // El ultimo no lleva fecha: acaba cuando acaba el periodo.
+                    endEpochDay = cutEndDates.getOrNull(index)?.toEpochDay()
                 )
             }
         )

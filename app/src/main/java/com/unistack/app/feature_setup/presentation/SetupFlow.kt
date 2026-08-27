@@ -159,6 +159,7 @@ private object SetupRoutes {
     const val Modules = "setup_modules"
     const val Scale = "setup_scale"
     const val Periods = "setup_periods"
+    const val Term = "setup_term"
     const val Permissions = "setup_permissions"
     const val Done = "setup_done"
 }
@@ -178,8 +179,17 @@ internal object SetupSteps {
     const val Scale = 4
     const val Periods = 5
 
-    /** Escala y periodos solo existen con el módulo de notas activo. */
-    fun permissions(gradesEnabled: Boolean): Int = if (gradesEnabled) 6 else 4
+    /**
+     * El periodo académico: cuándo empieza y cuándo acaba.
+     *
+     * Va después de los cortes porque se lee como lo que es —primero cómo se reparte la nota,
+     * luego en qué tramo de calendario—, y porque las fechas de corte que se piden aquí
+     * necesitan saber ya cuántos cortes hay.
+     */
+    const val Term = 6
+
+    /** Escala, cortes y periodo solo existen con el módulo de notas activo. */
+    fun permissions(gradesEnabled: Boolean): Int = if (gradesEnabled) 7 else 4
 
     /** El paso final siempre es el último, tenga el flujo la longitud que tenga. */
     fun done(gradesEnabled: Boolean, permissionsNeeded: Boolean): Int =
@@ -315,7 +325,31 @@ fun SetupFlow(
                 onCountSelected = viewModel::updateGradingCutCount,
                 onWeightChange = viewModel::updateGradingCutWeight,
                 onBackClick = { navController.navigateUp() },
-                onContinueClick = { navController.navigate(afterEvaluation) }
+                onContinueClick = { navController.navigate(SetupRoutes.Term) }
+            )
+        }
+        composable(SetupRoutes.Term) {
+            SetupTermScreen(
+                type = viewModel.termType,
+                name = viewModel.termName,
+                start = viewModel.termStart,
+                plannedEnd = viewModel.termPlannedEnd,
+                cutEndDates = viewModel.cutEndDates,
+                cutCount = viewModel.termCutCount,
+                isValid = viewModel.isTermValid,
+                totalSteps = totalSteps,
+                onTypeSelected = viewModel::updateTermType,
+                onNameChange = viewModel::updateTermName,
+                onStartChange = viewModel::updateTermStart,
+                onPlannedEndChange = viewModel::updateTermPlannedEnd,
+                onSuggestCutDates = viewModel::suggestCutEndDates,
+                onClearCutDates = viewModel::clearCutEndDates,
+                onCutDateChange = viewModel::updateCutEndDate,
+                onBackClick = { navController.navigateUp() },
+                onContinueClick = { navController.navigate(afterEvaluation) },
+                // Saltarse el periodo es valido: la app sabe vivir sin uno activo, y
+                // ponerlo despues desde Ajustes es una pantalla, no un rehacer.
+                onSkipClick = { navController.navigate(afterEvaluation) }
             )
         }
         composable(SetupRoutes.Permissions) {
@@ -1523,7 +1557,7 @@ fun SetupGradingScaleScreen(
 /** El título de un paso, alineado a la izquierda como en el resto de la app. */
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private fun SetupPlainTitle(title: String, subtitle: String) {
+internal fun SetupPlainTitle(title: String, subtitle: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(5.dp)
