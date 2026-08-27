@@ -51,17 +51,37 @@ private const val CHANNEL_NAME_DIGEST = "Resumen y seguimiento"
 
 private const val BRAND_COLOR = 0xFF5B46E0.toInt()
 
-private const val MAX_REMINDERS_PER_KIND = 8
+/*
+ * Se programa por tiempo, no por cantidad.
+ *
+ * Antes se cogian los 8 primeros de cada tipo y el resto no avisaba nunca: con horario cargado
+ * te quedabas sin recordatorio de las clases del final del dia. Pero quitar el tope a secas
+ * tampoco vale, porque un semestre entero son cientos de alarmas vivas y cada cambio de datos
+ * las cancela y las vuelve a poner todas.
+ *
+ * La ventana son 48 horas y el rearmado es diario, asi que hay un dia entero de margen: si un
+ * rearmado se pierde, el siguiente todavia llega a tiempo.
+ */
+private const val SCHEDULING_WINDOW_MILLIS = 48L * 60L * 60L * 1000L
+
+/* Cuantas materias pueden darte consejo el mismo dia. Esto si es cantidad: son avisos que no
+   se pierden por no darse hoy, y cinco seguidos serian ruido. */
 private const val MAX_SMART_SUBJECT_REMINDERS = 3
 private const val REQUEST_CODE_PREFS = "unistack_scheduled_notifications"
 private const val REQUEST_CODE_SET = "request_codes"
+private const val DELIVERED_LATE_SET = "delivered_late"
 private const val DAILY_DIGEST_REQUEST_CODE = 910060001
+private const val REARM_REQUEST_CODE = 910060002
+/* De madrugada: a esa hora la ventana del dia siguiente ya esta completa y no compite con
+   ningun aviso real. */
+private const val REARM_HOUR = 3
 private const val EXTRA_TITLE = "title"
 private const val EXTRA_BODY = "body"
 private const val EXTRA_NOTIFICATION_ID = "notification_id"
 private const val EXTRA_TARGET_ROUTE = "target_route"
 private const val EXTRA_SUBTEXT = "subtext"
 private const val EXTRA_CHANNEL_ID = "channel_id"
+internal const val EXTRA_REARM = "rearm"
 
 class LocalReminderScheduler(private val context: Context) {
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -89,7 +109,6 @@ class LocalReminderScheduler(private val context: Context) {
             tasks
                 .filter { !it.completed && TaskDateUtils.hasExplicitTime(it.dueDateMillis) }
                 .sortedBy { it.dueDateMillis }
-                .take(MAX_REMINDERS_PER_KIND)
                 .forEach { task ->
                     // El nombre de la materia va en el subtítulo, junto al de la
                     // app: se lee de un vistazo sin robarle sitio al título, que
@@ -102,7 +121,8 @@ class LocalReminderScheduler(private val context: Context) {
                         subText = subjectLabel,
                         title = task.title,
                         body = "${TaskDateUtils.dueText(task.dueDateMillis).sentenceCase()}.",
-                        targetRoute = AppRoutes.editTask(task.id)
+                        targetRoute = AppRoutes.editTask(task.id),
+                        eventAtMillis = task.dueDateMillis
                     )
                     if (currentProfile.overdueRemindersEnabled) {
                         scheduleReminder(
@@ -127,7 +147,6 @@ class LocalReminderScheduler(private val context: Context) {
                         it.completedAt != null
                 }
                 .sortedByDescending { it.completedAt }
-                .take(MAX_REMINDERS_PER_KIND)
                 .forEach { task ->
                     scheduleReminder(
                         profile = currentProfile,
@@ -146,7 +165,6 @@ class LocalReminderScheduler(private val context: Context) {
             works.filterNot { it.status == AcademicWorkStatus.SUBMITTED }
                 .filter { it.dueDateMillis != null }
                 .sortedBy { it.dueDateMillis ?: Long.MAX_VALUE }
-                .take(MAX_REMINDERS_PER_KIND)
                 .forEach { work ->
                     val dueDateMillis = work.dueDateMillis ?: return@forEach
                     scheduleReminder(
@@ -156,7 +174,8 @@ class LocalReminderScheduler(private val context: Context) {
                         subText = "Trabajo",
                         title = work.title,
                         body = "${TaskDateUtils.dueText(dueDateMillis).sentenceCase()}.",
-                        targetRoute = AppRoutes.AcademicTemplates
+                        targetRoute = AppRoutes.AcademicTemplates,
+                        eventAtMillis = dueDateMillis
                     )
                     if (currentProfile.overdueRemindersEnabled) {
                         scheduleReminder(
@@ -179,16 +198,24 @@ class LocalReminderScheduler(private val context: Context) {
         scheduleClassReminders(currentProfile, subjects, classSessions, classOccurrences)
         scheduleAgendaEventReminders(currentProfile, agendaEvents)
 
-        if (currentProfile.taskRemindersEnabled ||
-            currentProfile.academicWorkRemindersEnabled ||
-            currentProfile.overdueRemindersEnabled ||
-            currentProfile.gradeInsightRemindersEnabled ||
-            currentProfile.pendingGradeRemindersEnabled
-        ) {
+        /*
+         * El resumen se apaga solo, no arrastrado por los demas.
+         *
+         * Antes salia si estaba encendido cualquiera de los cinco tipos de aviso, asi que
+         * quien queria los recordatorios de clase se comia el resumen sin poder evitarlo.
+         * Y `daysFromNow = 1` lo mandaba siempre a manana: instalar la app a las seis de la
+         * manana significaba no ver el primero hasta el dia siguiente. Con cero, nextTriggerAt
+         * ya se encarga de saltar a manana solo si la hora de hoy ha pasado.
+         */
+        if (currentProfile.dailyDigestEnabled) {
             scheduleReminder(
                 profile = currentProfile,
                 requestCode = DAILY_DIGEST_REQUEST_CODE,
-                triggerAtMillis = nextTriggerAt(hour = 7, minute = 30, daysFromNow = 1),
+                triggerAtMillis = nextTriggerAt(
+                    hour = currentProfile.dailyDigestHour.coerceIn(0, 23),
+                    minute = currentProfile.dailyDigestMinute.coerceIn(0, 59),
+                    daysFromNow = 0
+                ),
                 subText = "Resumen",
                 title = "¡Buenos días!",
                 body = smartDigestBody(currentProfile, tasks, works, subjects),
@@ -197,7 +224,31 @@ class LocalReminderScheduler(private val context: Context) {
             )
         }
 
+        scheduleRearm()
         persistScheduledRequestCodes()
+    }
+
+    /**
+     * El despertador interno que hace deslizar la ventana.
+     *
+     * Sin esto, quien no abra la app ni reinicie el teléfono se queda sin avisos en cuanto
+     * pasan las 48 horas ya programadas. No lleva notificación: su intent va marcado con
+     * [EXTRA_REARM] y el receptor, al verlo, se limita a pedir un recálculo.
+     *
+     * Se rearma en cada pasada porque `cancelPrevious()` también lo cancela a él.
+     */
+    private fun scheduleRearm() {
+        val intent = Intent(context, ReminderReceiver::class.java).putExtra(EXTRA_REARM, true)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            REARM_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val cuando = nextTriggerAt(hour = REARM_HOUR, minute = 0, daysFromNow = 0)
+        // Aproximada a propósito: no la ve nadie y da igual media hora arriba o abajo.
+        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cuando, pendingIntent)
+        scheduledRequestCodes.add(REARM_REQUEST_CODE)
     }
 
     private fun scheduleClassReminders(
@@ -206,17 +257,19 @@ class LocalReminderScheduler(private val context: Context) {
         sessions: List<ClassSession>,
         occurrences: List<ClassOccurrence>
     ) {
+        /*
+         * Aqui habia un filtro que tiraba los avisos cuya hora ya habia pasado, y era el que
+         * remataba el fallo: ni siquiera llegaban a scheduleReminder, que es quien ahora sabe
+         * distinguir entre un aviso que aun sirve y uno que ya no. Se quita a proposito; el
+         * descarte lo decide alli, comparando con el comienzo real de la clase.
+         */
         sessions
             .filter { it.reminderMinutes > 0 && it.isValid }
             .mapNotNull { session ->
-                nextClassOccurrence(session)?.let { trigger ->
-                    session to trigger.minusMinutes(session.reminderMinutes.toLong())
-                }
+                nextClassOccurrence(session)?.let { comienzo -> Triple(session, comienzo, comienzo.minusMinutes(session.reminderMinutes.toLong())) }
             }
-            .filter { (_, trigger) -> trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() > System.currentTimeMillis() }
-            .sortedBy { (_, trigger) -> trigger }
-            .take(MAX_REMINDERS_PER_KIND)
-            .forEach { (session, trigger) ->
+            .sortedBy { (_, _, trigger) -> trigger }
+            .forEach { (session, comienzo, trigger) ->
                 val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu clase"
                 scheduleReminder(
                     profile = profile,
@@ -228,7 +281,8 @@ class LocalReminderScheduler(private val context: Context) {
                     title = "$subjectName empieza en ${session.reminderMinutes} min",
                     body = session.location.takeIf(String::isNotBlank)?.let { "Nos vemos en $it." }
                         ?: "Alista lo que necesites antes de entrar.",
-                    targetRoute = AppRoutes.Calendar
+                    targetRoute = AppRoutes.Calendar,
+                    eventAtMillis = comienzo.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 )
             }
 
@@ -248,7 +302,6 @@ class LocalReminderScheduler(private val context: Context) {
                 }
             }
             .sortedBy { it.second }
-            .take(MAX_REMINDERS_PER_KIND)
             .forEach { (session, start, epochDay) ->
                 val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "tu clase"
                 val trigger = start.toLocalDate()
@@ -286,7 +339,6 @@ class LocalReminderScheduler(private val context: Context) {
             }
             .filter { (_, trigger) -> trigger.isAfter(now) }
             .sortedBy { it.second }
-            .take(MAX_REMINDERS_PER_KIND)
             .forEach { (event, trigger) ->
                 scheduleReminder(
                     profile = profile,
@@ -440,6 +492,19 @@ class LocalReminderScheduler(private val context: Context) {
         }
     }
 
+    /**
+     * Deja puesto un aviso, lo manda ya si llega tarde, o lo aparca para el proximo rearmado.
+     *
+     * [eventAtMillis] es cuando ocurre lo que se anuncia —la clase, la entrega—, y no es lo
+     * mismo que [triggerAtMillis], que es cuando toca avisar. La diferencia importa cuando el
+     * momento del aviso ya ha pasado: un «empieza en 10 min» que sale con tres minutos de
+     * retraso sigue sirviendo, y uno que sale cuando la clase lleva media hora es basura.
+     *
+     * Antes los dos casos acababan igual, en un `return` mudo, y por ahi se perdian avisos:
+     * cualquier cambio de datos —marcar una tarea, mirar una nota— vuelve a pasar por aqui
+     * cancelando primero todas las alarmas, asi que bastaba con que el usuario tocara la app
+     * en el minuto equivocado para que su recordatorio desapareciera sin dejar rastro.
+     */
     private fun scheduleReminder(
         profile: UserProfile,
         requestCode: Int,
@@ -448,20 +513,61 @@ class LocalReminderScheduler(private val context: Context) {
         body: String,
         targetRoute: String? = null,
         subText: String? = null,
-        channelId: String = CHANNEL_ID_ALERTS
+        channelId: String = CHANNEL_ID_ALERTS,
+        eventAtMillis: Long? = null
     ) {
         val adjustedTrigger = adjustForQuietHours(profile, triggerAtMillis)
-        if (adjustedTrigger <= System.currentTimeMillis()) return
+        val now = System.currentTimeMillis()
         val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId)
+
+        if (adjustedTrigger <= now) {
+            /*
+             * Se paso la hora. Si lo que anunciaba todavia no ha ocurrido, sale ahora mismo.
+             *
+             * Y se apunta que salio: por aqui se vuelve a pasar en cada cambio de datos, asi
+             * que sin la marca el mismo aviso se reenviaria una y otra vez durante todas las
+             * horas que queden hasta la clase. La marca lleva la hora prevista dentro, de modo
+             * que si el usuario mueve la clase el aviso nuevo se considera otro y si puede
+             * sonar.
+             */
+            if (eventAtMillis != null && eventAtMillis > now) {
+                val marca = "$requestCode@$adjustedTrigger"
+                if (marca !in storedDeliveredLate()) {
+                    showNotification(context, intent)
+                    rememberDeliveredLate(marca, now)
+                }
+            }
+            return
+        }
+        // Fuera de la ventana no se arma nada: ya lo recogera el rearmado de madrugada.
+        if (adjustedTrigger - now > SCHEDULING_WINDOW_MILLIS) return
+
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, adjustedTrigger, pendingIntent)
+        /*
+         * Exacta cuando se puede, aproximada cuando no.
+         *
+         * `setAndAllowWhileIdle` respeta el reposo agrupando alarmas, y con el movil dormido
+         * las suelta cada nueve o quince minutos: el aviso que dice «empieza en 10 min» podia
+         * llegar cuando la clase ya habia empezado. El manifest declara USE_EXACT_ALARM, que
+         * se concede sola al instalar, pero se comprueba igualmente: sin permiso
+         * `setExactAndAllowWhileIdle` lanza SecurityException, y quedarse sin aviso es mejor
+         * que tumbar la app.
+         */
+        if (canScheduleExact()) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, adjustedTrigger, pendingIntent)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, adjustedTrigger, pendingIntent)
+        }
         scheduledRequestCodes.add(requestCode)
     }
+
+    private fun canScheduleExact(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
 
     private fun cancelPrevious() {
         (scheduledRequestCodes + storedScheduledRequestCodes()).forEach(::cancel)
@@ -581,6 +687,24 @@ class LocalReminderScheduler(private val context: Context) {
         prefs.edit {
             putStringSet(REQUEST_CODE_SET, scheduledRequestCodes.map(Int::toString).toSet())
         }
+    }
+
+    private fun storedDeliveredLate(): Set<String> =
+        prefs.getStringSet(DELIVERED_LATE_SET, emptySet<String>()).orEmpty()
+
+    /**
+     * Apunta un aviso ya enviado con retraso, y de paso barre los viejos.
+     *
+     * Sin la barrida el conjunto crecería para siempre. Se conserva lo de la última ventana:
+     * pasado ese plazo la hora prevista ya no puede volver a salir en ningún cálculo, así que
+     * la marca no protege de nada.
+     */
+    private fun rememberDeliveredLate(marca: String, now: Long) {
+        val vigentes = (storedDeliveredLate() + marca).filter { entrada ->
+            val previsto = entrada.substringAfterLast('@').toLongOrNull() ?: return@filter false
+            now - previsto <= SCHEDULING_WINDOW_MILLIS
+        }.toSet()
+        prefs.edit { putStringSet(DELIVERED_LATE_SET, vigentes) }
     }
 
     private fun String.stableRequestCode(kind: String): Int {

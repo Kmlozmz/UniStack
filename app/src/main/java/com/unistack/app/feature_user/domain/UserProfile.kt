@@ -63,6 +63,15 @@ data class UserProfile(
     val gradeInsightRemindersEnabled: Boolean = true,
     val pendingGradeRemindersEnabled: Boolean = true,
     val reminderLeadHours: Int = 24,
+    /*
+     * El resumen de la manana se apaga y se pone a la hora que cada uno quiera.
+     * Antes salia siempre a las 7:30 clavadas y solo se podia silenciar apagando todos
+     * los demas avisos, porque iba atado a ellos: quien queria los de clase se comia el
+     * resumen a la fuerza.
+     */
+    val dailyDigestEnabled: Boolean = true,
+    val dailyDigestHour: Int = 7,
+    val dailyDigestMinute: Int = 30,
     val quietHoursEnabled: Boolean = false,
     val quietHoursStartHour: Int? = null,
     val quietHoursEndHour: Int? = null,

@@ -336,6 +336,18 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
+    /** Enciende o apaga el resumen de la manana, y a que hora sale. */
+    fun updateDailyDigest(enabled: Boolean, hour: Int, minute: Int) {
+        val current = profile.value ?: return
+        save(
+            current.copy(
+                dailyDigestEnabled = enabled,
+                dailyDigestHour = hour.coerceIn(0, 23),
+                dailyDigestMinute = minute.coerceIn(0, 59)
+            )
+        )
+    }
+
     fun updateQuietHours(
         enabled: Boolean,
         startHour: Int?,

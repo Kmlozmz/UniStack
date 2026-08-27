@@ -8,6 +8,20 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
+        Alarmas exactas para los recordatorios.
+
+        Sin esto Android agrupa los avisos para ahorrar bateria y con el movil dormido los
+        suelta cada nueve o quince minutos: el aviso que dice «empieza en 10 min» llegaba
+        cuando la clase ya habia empezado.
+
+        Se usa USE_EXACT_ALARM y no SCHEDULE_EXACT_ALARM porque la segunda viene denegada de
+        fabrica en Android 14 y obliga a mandar al usuario a los ajustes del sistema. La
+        primera se concede al instalar, pero Play solo la admite en apps de alarma, reloj o
+        calendario: si UniStack llega algun dia a Play Store, hay que revisar esta linea.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!--
         El táctil de los botones. Normalmente vibra el sistema por cuenta de la app y no hace
         falta declararlo, pero MIUI/HyperOS reemplaza esa ruta por una que llama a `Vibrator`
         dentro del proceso de la app: sin el permiso, tocar cualquier botón con háptico lanzaba

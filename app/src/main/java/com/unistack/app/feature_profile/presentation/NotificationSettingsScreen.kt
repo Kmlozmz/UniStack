@@ -246,6 +246,20 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
+                SettingsGroupCard(label = "RESUMEN DIARIO") {
+                    DailyDigestRow(
+                        profile = current,
+                        enabled = granted,
+                        onChange = { on, hour, minute ->
+                            granted = context.hasNotificationPermission()
+                            viewModel.updateDailyDigest(on, hour, minute)
+                        }
+                    )
+                }
+            }
+        }
+        item {
+            Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
                 SettingsGroupCard(label = "NO MOLESTAR") {
                     QuietHoursRow(
                         profile = current,
@@ -409,6 +423,68 @@ private fun AlertRow(
  * avisos suenan a cualquier hora.
  */
 @Composable
+private fun DailyDigestRow(
+    profile: UserProfile,
+    enabled: Boolean,
+    onChange: (Boolean, Int, Int) -> Unit
+) {
+    val on = profile.dailyDigestEnabled
+    val hour = profile.dailyDigestHour
+    val minute = profile.dailyDigestMinute
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (enabled) Modifier.cleanClickable { onChange(!on, hour, minute) } else Modifier)
+                .padding(horizontal = 15.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(13.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Resumen de la mañana",
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = if (on) {
+                        "Cada día a las %02d:%02d, con lo que tienes por delante.".format(hour, minute)
+                    } else {
+                        "Enciéndelo para elegir la hora"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            UniSwitch(
+                checked = on,
+                enabled = enabled,
+                onCheckedChange = { onChange(it, hour, minute) }
+            )
+        }
+        if (on) {
+            Row(
+                modifier = Modifier.padding(start = 15.dp, end = 15.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                HourStepper(
+                    label = "Hora",
+                    hour = hour,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f)
+                ) { onChange(true, it, minute) }
+                MinuteStepper(
+                    label = "Minutos",
+                    minute = minute,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f)
+                ) { onChange(true, hour, it) }
+            }
+        }
+    }
+}
+
+@Composable
 private fun QuietHoursRow(
     profile: UserProfile,
     enabled: Boolean,
@@ -505,6 +581,56 @@ private fun HourStepper(
     modifier: Modifier = Modifier,
     onChange: (Int) -> Unit
 ) {
+    ValueStepper(
+        label = label,
+        value = hourLabel(hour),
+        enabled = enabled,
+        lessDescription = "Una hora menos en $label",
+        moreDescription = "Una hora más en $label",
+        modifier = modifier,
+        onLess = { onChange((hour + 23) % 24) },
+        onMore = { onChange((hour + 1) % 24) }
+    )
+}
+
+/**
+ * Los minutos van de cinco en cinco.
+ *
+ * De uno en uno serían sesenta pulsaciones para cruzar la hora, y nadie necesita que su
+ * resumen salga a las 7:37 en vez de a las 7:35.
+ */
+@Composable
+private fun MinuteStepper(
+    label: String,
+    minute: Int,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit
+) {
+    ValueStepper(
+        label = label,
+        value = "%02d".format(minute),
+        enabled = enabled,
+        lessDescription = "Cinco minutos menos en $label",
+        moreDescription = "Cinco minutos más en $label",
+        modifier = modifier,
+        onLess = { onChange((minute + 55) % 60) },
+        onMore = { onChange((minute + 5) % 60) }
+    )
+}
+
+/** El menos, el número y el más. Lo comparten las horas y los minutos. */
+@Composable
+private fun ValueStepper(
+    label: String,
+    value: String,
+    enabled: Boolean,
+    lessDescription: String,
+    moreDescription: String,
+    modifier: Modifier = Modifier,
+    onLess: () -> Unit,
+    onMore: () -> Unit
+) {
     Column(
         modifier = modifier
             .clip(MaterialTheme.shapes.large)
@@ -516,19 +642,19 @@ private fun HourStepper(
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                onClick = { onChange((hour + 23) % 24) },
+                onClick = onLess,
                 enabled = enabled,
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
             ) {
                 Icon(
                     Icons.Rounded.Remove,
-                    contentDescription = "Una hora menos en $label",
+                    contentDescription = lessDescription,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(17.dp)
                 )
             }
             Text(
-                hourLabel(hour),
+                value,
                 modifier = Modifier.width(58.dp),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
@@ -536,13 +662,13 @@ private fun HourStepper(
                 textAlign = TextAlign.Center
             )
             IconButton(
-                onClick = { onChange((hour + 1) % 24) },
+                onClick = onMore,
                 enabled = enabled,
                 modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
             ) {
                 Icon(
                     Icons.Rounded.Add,
-                    contentDescription = "Una hora más en $label",
+                    contentDescription = moreDescription,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(17.dp)
                 )

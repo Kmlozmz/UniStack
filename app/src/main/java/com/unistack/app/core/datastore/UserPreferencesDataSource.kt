@@ -71,6 +71,9 @@ class UserPreferencesDataSource(private val context: Context) {
         val GRADE_INSIGHT_REMINDERS_ENABLED = booleanPreferencesKey("grade_insight_reminders_enabled")
         val PENDING_GRADE_REMINDERS_ENABLED = booleanPreferencesKey("pending_grade_reminders_enabled")
         val REMINDER_LEAD_HOURS = intPreferencesKey("reminder_lead_hours")
+        val DAILY_DIGEST_ENABLED = booleanPreferencesKey("daily_digest_enabled")
+        val DAILY_DIGEST_HOUR = intPreferencesKey("daily_digest_hour")
+        val DAILY_DIGEST_MINUTE = intPreferencesKey("daily_digest_minute")
         val QUIET_HOURS_ENABLED = booleanPreferencesKey("quiet_hours_enabled")
         val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
@@ -140,6 +143,22 @@ class UserPreferencesDataSource(private val context: Context) {
             gradeInsightRemindersEnabled = prefs[Keys.GRADE_INSIGHT_REMINDERS_ENABLED] ?: true,
             pendingGradeRemindersEnabled = prefs[Keys.PENDING_GRADE_REMINDERS_ENABLED] ?: true,
             reminderLeadHours = prefs[Keys.REMINDER_LEAD_HOURS] ?: 24,
+            /*
+             * Sin valor guardado se hereda el comportamiento viejo, no un «si» a secas.
+             *
+             * Antes el resumen salia cuando estaba encendido cualquiera de los cinco avisos, y
+             * no tenia interruptor propio. Poner true por defecto le encenderia el resumen a
+             * quien los habia apagado todos justamente para no recibir nada.
+             */
+            dailyDigestEnabled = prefs[Keys.DAILY_DIGEST_ENABLED] ?: (
+                (prefs[Keys.TASK_REMINDERS_ENABLED] ?: true) ||
+                    (prefs[Keys.ACADEMIC_WORK_REMINDERS_ENABLED] ?: true) ||
+                    (prefs[Keys.OVERDUE_REMINDERS_ENABLED] ?: true) ||
+                    (prefs[Keys.GRADE_INSIGHT_REMINDERS_ENABLED] ?: true) ||
+                    (prefs[Keys.PENDING_GRADE_REMINDERS_ENABLED] ?: true)
+                ),
+            dailyDigestHour = prefs[Keys.DAILY_DIGEST_HOUR]?.takeIf { it in 0..23 } ?: 7,
+            dailyDigestMinute = prefs[Keys.DAILY_DIGEST_MINUTE]?.takeIf { it in 0..59 } ?: 30,
             quietHoursEnabled = prefs[Keys.QUIET_HOURS_ENABLED] ?: false,
             quietHoursStartHour = prefs[Keys.QUIET_HOURS_START]?.takeIf { it in 0..23 },
             quietHoursEndHour = prefs[Keys.QUIET_HOURS_END]?.takeIf { it in 0..23 },
@@ -202,6 +221,9 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.GRADE_INSIGHT_REMINDERS_ENABLED] = profile.gradeInsightRemindersEnabled
             prefs[Keys.PENDING_GRADE_REMINDERS_ENABLED] = profile.pendingGradeRemindersEnabled
             prefs[Keys.REMINDER_LEAD_HOURS] = profile.reminderLeadHours
+            prefs[Keys.DAILY_DIGEST_ENABLED] = profile.dailyDigestEnabled
+            prefs[Keys.DAILY_DIGEST_HOUR] = profile.dailyDigestHour
+            prefs[Keys.DAILY_DIGEST_MINUTE] = profile.dailyDigestMinute
             prefs[Keys.QUIET_HOURS_ENABLED] = profile.quietHoursEnabled
             if (profile.quietHoursStartHour != null) {
                 prefs[Keys.QUIET_HOURS_START] = profile.quietHoursStartHour

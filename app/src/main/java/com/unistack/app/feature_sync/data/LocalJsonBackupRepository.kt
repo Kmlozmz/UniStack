@@ -219,6 +219,9 @@ class LocalJsonBackupRepository(
             .put("gradeInsightRemindersEnabled", profile?.gradeInsightRemindersEnabled ?: true)
             .put("pendingGradeRemindersEnabled", profile?.pendingGradeRemindersEnabled ?: true)
             .put("reminderLeadHours", profile?.reminderLeadHours ?: 24)
+            .put("dailyDigestEnabled", profile?.dailyDigestEnabled ?: true)
+            .put("dailyDigestHour", profile?.dailyDigestHour ?: 7)
+            .put("dailyDigestMinute", profile?.dailyDigestMinute ?: 30)
             .put("quietHoursEnabled", profile?.quietHoursEnabled ?: false)
             .put("quietHoursStartHour", profile?.quietHoursStartHour)
             .put("quietHoursEndHour", profile?.quietHoursEndHour)
@@ -279,6 +282,15 @@ class LocalJsonBackupRepository(
                     current.pendingGradeRemindersEnabled
                 ),
                 reminderLeadHours = profileJson.optInt("reminderLeadHours", current.reminderLeadHours),
+                dailyDigestEnabled = profileJson.optBoolean(
+                    "dailyDigestEnabled",
+                    current.dailyDigestEnabled
+                ),
+                dailyDigestHour = profileJson.optInt("dailyDigestHour", current.dailyDigestHour),
+                dailyDigestMinute = profileJson.optInt(
+                    "dailyDigestMinute",
+                    current.dailyDigestMinute
+                ),
                 quietHoursEnabled = profileJson.optBoolean("quietHoursEnabled", current.quietHoursEnabled),
                 quietHoursStartHour = if (profileJson.has("quietHoursStartHour")) {
                     profileJson.optIntOrNull("quietHoursStartHour")
