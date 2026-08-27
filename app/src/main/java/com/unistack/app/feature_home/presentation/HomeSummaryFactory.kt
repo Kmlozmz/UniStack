@@ -171,13 +171,13 @@ internal object HomeSummaryFactory {
     }
 
     private fun subjectSummary(subject: Subject): SubjectSummary {
-        val periods = subject.periodScheme.periods
+        val cuts = subject.cutScheme.cuts
         val evaluatedPercentage =
-            GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods) / 100.0
+            GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, cuts) / 100.0
         return SubjectSummary(
             id = subject.id,
             name = subject.name,
-            average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods),
+            average = GradeCalculator.calculateCurrentAverageByCuts(subject.grades, cuts),
             targetAverage = subject.targetAverage,
             progress = evaluatedPercentage.toFloat(),
             type = subject.visualType
@@ -189,9 +189,9 @@ internal object HomeSummaryFactory {
         if (subjectsWithGrades.isEmpty()) return null
 
         val validGrades = subjectsWithGrades.mapNotNull { subject ->
-            GradeCalculator.calculateCurrentAverageByPeriods(
+            GradeCalculator.calculateCurrentAverageByCuts(
                 subject.grades,
-                subject.periodScheme.periods
+                subject.cutScheme.cuts
             )?.let { average ->
                 GradeItem(
                     id = subject.id,
@@ -209,7 +209,7 @@ internal object HomeSummaryFactory {
         val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
         val calculation = GradeCalculator.calculateSubject(
             grades = focusSubject.grades,
-            periods = focusSubject.periodScheme.periods,
+            cuts = focusSubject.cutScheme.cuts,
             targetAverage = focusSubject.targetAverage,
             maxGrade = maxGrade
         )
@@ -310,18 +310,18 @@ internal object HomeSummaryFactory {
         }
 
         val incompleteHistory = subjects.firstOrNull { subject ->
-            val activeOrder = subject.periodScheme.periods
-                .firstOrNull { it.id == subject.activePeriodId }
+            val activeOrder = subject.cutScheme.cuts
+                .firstOrNull { it.id == subject.activeCutId }
                 ?.order
                 ?: 1
             activeOrder > 1 &&
                 subject.historyPromptStatus != com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus.COMPLETED &&
                 subject.historyPromptStatus != com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus.DISMISSED &&
-                subject.periodScheme.periods
+                subject.cutScheme.cuts
                     .filter { it.order < activeOrder }
-                    .any { period ->
-                        period.id !in subject.unknownPeriodIds &&
-                            subject.grades.none { it.periodId == period.id }
+                    .any { cut ->
+                        cut.id !in subject.unknownCutIds &&
+                            subject.grades.none { it.cutId == cut.id }
                     }
         }
         if (incompleteHistory != null) {
@@ -471,9 +471,9 @@ internal object HomeSummaryFactory {
         if (subjects.isEmpty()) return null
         return subjects
             .map { subject ->
-                val periods = subject.periodScheme.periods
-                val average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
-                val evaluated = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods)
+                val cuts = subject.cutScheme.cuts
+                val average = GradeCalculator.calculateCurrentAverageByCuts(subject.grades, cuts)
+                val evaluated = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, cuts)
                 AcademicFocusSummary(
                     subjectId = subject.id,
                     subjectName = subject.name,
@@ -630,7 +630,7 @@ internal object HomeSummaryFactory {
         val candidates = subjects.mapNotNull { subject ->
             val calculation = GradeCalculator.calculateSubject(
                 grades = subject.grades,
-                periods = subject.periodScheme.periods,
+                cuts = subject.cutScheme.cuts,
                 targetAverage = subject.targetAverage,
                 maxGrade = maxGrade
             )

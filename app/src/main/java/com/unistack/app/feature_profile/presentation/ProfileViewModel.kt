@@ -11,9 +11,9 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.BuildConfig
 import com.unistack.app.feature_profile.domain.FeatureGate
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
@@ -93,10 +93,10 @@ class ProfileViewModel @Inject constructor(
         gradesRepository.subjects,
         userRepository.userProfile
     ) { subjects, profile ->
-        val periods = profile?.academicPeriodScheme?.periods.orEmpty()
+        val cuts = profile?.gradingCutScheme?.cuts.orEmpty()
         val passing = profile?.passingGrade
         val averages = subjects.map { subject ->
-            GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
+            GradeCalculator.calculateCurrentAverageByCuts(subject.grades, cuts)
         }
         val evaluated = averages.filterNotNull()
         AcademicSnapshot(
@@ -170,11 +170,11 @@ class ProfileViewModel @Inject constructor(
             if (subject.grades.isNotEmpty()) {
                 gradesRepository.clearGrades(subject.id)
             }
-            if (subject.targetAverage != newTargetAverage || subject.unknownPeriodIds.isNotEmpty()) {
+            if (subject.targetAverage != newTargetAverage || subject.unknownCutIds.isNotEmpty()) {
                 gradesRepository.updateSubject(
                     subject.copy(
                         targetAverage = newTargetAverage,
-                        unknownPeriodIds = emptySet()
+                        unknownCutIds = emptySet()
                     )
                 )
             }
@@ -215,15 +215,15 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
-    fun updateAcademicPeriodSettings(weightInputs: List<String>): Boolean {
+    fun updateGradingCutSettings(weightInputs: List<String>): Boolean {
         val current = profile.value ?: return false
         val weights = weightInputs.map { it.toDoubleOrNull()?.div(100.0) ?: return false }
         if (weights.isEmpty() || weights.any { it <= 0.0 }) return false
         if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return false
-        val scheme = AcademicPeriodScheme(
-            periods = weights.mapIndexed { index, weight ->
+        val scheme = GradingCutScheme(
+            cuts = weights.mapIndexed { index, weight ->
                 val order = index + 1
-                AcademicPeriod(
+                GradingCut(
                     id = "period-$order",
                     name = "${Corte.Singular} $order",
                     weight = weight,
@@ -231,7 +231,7 @@ class ProfileViewModel @Inject constructor(
                 )
             }
         )
-        save(current.copy(academicPeriodScheme = scheme))
+        save(current.copy(gradingCutScheme = scheme))
         return true
     }
 

@@ -48,9 +48,9 @@ class LocalJsonBackupRepositoryTest {
                     targetAverage = 4.0,
                     visualType = SubjectVisualType.BLUE,
                     grades = emptyList(),
-                    activePeriodId = "period-2",
+                    activeCutId = "period-2",
                     historyPromptStatus = PriorHistoryPromptStatus.SNOOZED,
-                    unknownPeriodIds = setOf("period-3")
+                    unknownCutIds = setOf("period-3")
                 )
             )
             repository.addGrade(
@@ -60,7 +60,7 @@ class LocalJsonBackupRepositoryTest {
                     name = "Resultado Corte 1",
                     value = 4.5,
                     percentage = 1.0,
-                    periodId = "period-1",
+                    cutId = "period-1",
                     source = GradeSource.PERIOD_FINAL,
                     taskId = "task-1",
                     recordedAt = 1234
@@ -94,9 +94,9 @@ class LocalJsonBackupRepositoryTest {
         assertTrue(json.contains("\"schemaVersion\""))
         assertEquals(1, gradesRepository.subjects.value.size)
         assertEquals(1, gradesRepository.subjects.value.single().grades.size)
-        assertEquals("period-2", gradesRepository.subjects.value.single().activePeriodId)
+        assertEquals("period-2", gradesRepository.subjects.value.single().activeCutId)
         assertEquals(PriorHistoryPromptStatus.SNOOZED, gradesRepository.subjects.value.single().historyPromptStatus)
-        assertEquals(setOf("period-3"), gradesRepository.subjects.value.single().unknownPeriodIds)
+        assertEquals(setOf("period-3"), gradesRepository.subjects.value.single().unknownCutIds)
         assertEquals(GradeSource.PERIOD_FINAL, gradesRepository.subjects.value.single().grades.single().source)
         assertEquals("task-1", gradesRepository.subjects.value.single().grades.single().taskId)
         assertEquals(1, tasksRepository.tasks.value.size)
@@ -155,7 +155,7 @@ class LocalJsonBackupRepositoryTest {
         completed = true,
         createdAt = 10,
         updatedAt = 10,
-        periodId = "period-1",
+        cutId = "period-1",
         gradingStatus = TaskGradingStatus.GRADED,
         linkedGradeId = "grade-1",
         completedAt = 11

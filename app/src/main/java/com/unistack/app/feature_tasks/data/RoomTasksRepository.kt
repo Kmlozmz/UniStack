@@ -65,7 +65,7 @@ class RoomTasksRepository(
                 difficulty = task.difficulty.name,
                 estimatedMinutes = task.estimatedMinutes,
                 completed = task.completed,
-                periodId = task.periodId,
+                cutId = task.cutId,
                 gradingStatus = task.gradingStatus.name,
                 linkedGradeId = task.linkedGradeId,
                 completedAt = task.completedAt,

@@ -7,9 +7,9 @@ import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.feature_user.domain.AppModule
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.UserProfile
@@ -54,7 +54,7 @@ class SetupViewModel @Inject constructor(
      * Sin elegir de partida: preseleccionar «Cortes» daba por hecho una nomenclatura que no
      * es la de todo el mundo, y al venir ya marcada era fácil pasar de largo sin leerla.
      */
-    var academicPeriodWeights by mutableStateOf(emptyList<String>())
+    var gradingCutWeights by mutableStateOf(emptyList<String>())
         private set
 
     val nameValidation: ValidationResult
@@ -97,8 +97,8 @@ class SetupViewModel @Inject constructor(
                 target >= passing
         }
 
-    val isAcademicPeriodsValid: Boolean
-        get() = buildAcademicPeriodSchemeOrNull() != null
+    val areGradingCutsValid: Boolean
+        get() = buildGradingCutSchemeOrNull() != null
 
     fun updatePreferredName(value: String) {
         preferredName = value.take(30)
@@ -172,13 +172,13 @@ class SetupViewModel @Inject constructor(
         }
     }
 
-    fun updateAcademicPeriodCount(count: Int) {
+    fun updateGradingCutCount(count: Int) {
         val safeCount = count.coerceIn(0, 6)
-        academicPeriodWeights = suggestedAcademicWeights(safeCount)
+        gradingCutWeights = suggestedAcademicWeights(safeCount)
     }
 
-    fun updateAcademicPeriodWeight(index: Int, value: String) {
-        academicPeriodWeights = academicPeriodWeights.mapIndexed { currentIndex, currentValue ->
+    fun updateGradingCutWeight(index: Int, value: String) {
+        gradingCutWeights = gradingCutWeights.mapIndexed { currentIndex, currentValue ->
             if (currentIndex == index) value.filter { it.isDigit() || it == '.' }.take(5) else currentValue
         }
     }
@@ -210,7 +210,7 @@ class SetupViewModel @Inject constructor(
             passingGrade = passingGradeText.toDoubleOrNull() ?: gradingScale.defaultPassingGrade,
             targetAverage = targetAverageText.toDoubleOrNull() ?: gradingScale.defaultTargetAverage,
             enabledModules = enabledModules,
-            academicPeriodScheme = buildAcademicPeriodSchemeOrNull() ?: AcademicPeriodScheme.default(),
+            gradingCutScheme = buildGradingCutSchemeOrNull() ?: GradingCutScheme.default(),
             visualPreference = previous?.visualPreference ?: VisualPreference.SYSTEM,
             setupCompleted = true,
             createdAt = previous?.createdAt ?: now,
@@ -229,7 +229,7 @@ class SetupViewModel @Inject constructor(
             passingGrade = fresh.passingGrade,
             targetAverage = fresh.targetAverage,
             enabledModules = fresh.enabledModules,
-            academicPeriodScheme = fresh.academicPeriodScheme,
+            gradingCutScheme = fresh.gradingCutScheme,
             setupCompleted = true,
             updatedAt = now
         ) ?: fresh
@@ -246,7 +246,7 @@ class SetupViewModel @Inject constructor(
         }
     }
 
-    private fun buildAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
+    private fun buildGradingCutSchemeOrNull(): GradingCutScheme? {
         /*
          * Sin pesos no hay esquema, y el boton se queda bloqueado.
          *
@@ -254,14 +254,14 @@ class SetupViewModel @Inject constructor(
          * de centinela ademas de dar nombre a los tramos. Ya no se pregunta, asi que el
          * centinela es la lista de pesos y el nombre sale de la constante.
          */
-        val weights = academicPeriodWeights.map { it.toDoubleOrNull()?.div(100.0) ?: return null }
+        val weights = gradingCutWeights.map { it.toDoubleOrNull()?.div(100.0) ?: return null }
         if (weights.isEmpty()) return null
         if (weights.any { it <= 0.0 }) return null
         if (kotlin.math.abs(weights.sum() - 1.0) > 0.0001) return null
-        return AcademicPeriodScheme(
-            periods = weights.mapIndexed { index, weight ->
+        return GradingCutScheme(
+            cuts = weights.mapIndexed { index, weight ->
                 val order = index + 1
-                AcademicPeriod(
+                GradingCut(
                     id = "period-$order",
                     name = "${Corte.Singular} $order",
                     weight = weight,

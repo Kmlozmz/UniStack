@@ -13,7 +13,7 @@ class NavigationRulesTest {
     @Test
     fun bottomRouteForMapsNestedRoutesToTheirTab() {
         assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectDetail}/subject-1"))
-        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectPeriodDetail}/subject-1/period-1"))
+        assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.SubjectCutDetail}/subject-1/period-1"))
         assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.EditGrade}/subject-1/grade-1"))
         assertEquals(AppRoutes.Academic, bottomRouteFor("${AppRoutes.EditTask}/task-1"))
         assertEquals(AppRoutes.Calendar, bottomRouteFor(AppRoutes.Calendar))
@@ -54,7 +54,7 @@ class NavigationRulesTest {
         assertTrue(routeShowsBottomBar(AppRoutes.Home))
         assertTrue(routeShowsBottomBar(AppRoutes.Academic))
         assertTrue(routeShowsBottomBar("${AppRoutes.SubjectDetail}/subject-1"))
-        assertTrue(routeShowsBottomBar("${AppRoutes.SubjectPeriodDetail}/subject-1/period-1"))
+        assertTrue(routeShowsBottomBar("${AppRoutes.SubjectCutDetail}/subject-1/period-1"))
         assertTrue(routeShowsBottomBar(AppRoutes.PriorHistory))
         assertTrue(routeShowsBottomBar(AppRoutes.Notifications))
         assertTrue(routeShowsBottomBar(AppRoutes.AcademicTemplates))
@@ -123,7 +123,7 @@ class NavigationRulesTest {
     @Test
     fun moduleForRouteMapsProtectedRoutes() {
         assertEquals(AppModule.GRADES, moduleForRoute("${AppRoutes.AddGrade}/subject-1"))
-        assertEquals(AppModule.GRADES, moduleForRoute("${AppRoutes.SubjectPeriodDetail}/subject-1/period-1"))
+        assertEquals(AppModule.GRADES, moduleForRoute("${AppRoutes.SubjectCutDetail}/subject-1/period-1"))
         assertEquals(AppModule.TASKS, moduleForRoute(AppRoutes.AddTask))
         assertEquals(AppModule.EXPENSES, moduleForRoute("${AppRoutes.EditExpense}/expense-1"))
         assertEquals(AppModule.ACADEMIC_TEMPLATES, moduleForRoute(AppRoutes.AcademicTemplates))

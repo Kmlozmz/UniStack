@@ -62,7 +62,7 @@ import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.GradingScale
 
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
@@ -127,7 +127,7 @@ fun AddGradeScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel(),
     gradeId: String? = null,
-    initialPeriodId: String? = null,
+    initialCutId: String? = null,
     onCompleteHistoryClick: (String) -> Unit = {}
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
@@ -140,7 +140,7 @@ fun AddGradeScreen(
     // Nulo de entrada: el bloque se titula «(opcional)» y llegaba con «Taller» marcado, así
     // que quien no tocaba nada guardaba un taller sin haberlo dicho.
     var selectedType by remember { mutableStateOf<GradeType?>(null) }
-    var selectedPeriodId by remember { mutableStateOf(initialPeriodId.orEmpty()) }
+    var selectedCutId by remember { mutableStateOf(initialCutId.orEmpty()) }
     var selectedSource by remember { mutableStateOf(GradeSource.ACTIVITY) }
     var weightUnknown by remember { mutableStateOf(false) }
     var initialized by remember(subjectId, gradeId) { mutableStateOf(false) }
@@ -151,14 +151,14 @@ fun AddGradeScreen(
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: GradingScaleUtils.maxGradeFor(scale)
     val maxGradeLabel = GradingScaleUtils.formatGrade(maxGrade, scale)
-    val periodScheme = subject?.periodScheme
-        ?: profile?.academicPeriodScheme
-        ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
-    val lockedPeriod = initialPeriodId?.let { id -> periodScheme.periods.firstOrNull { it.id == id } }
-    val selectedPeriod = periodScheme.periods.firstOrNull { it.id == selectedPeriodId }
-        ?: lockedPeriod
-        ?: periodScheme.periods.firstOrNull { it.id == subject?.activePeriodId }
-        ?: periodScheme.periods.first()
+    val cutScheme = subject?.cutScheme
+        ?: profile?.gradingCutScheme
+        ?: com.unistack.app.feature_user.domain.GradingCutScheme.default()
+    val lockedCut = initialCutId?.let { id -> cutScheme.cuts.firstOrNull { it.id == id } }
+    val selectedPeriod = cutScheme.cuts.firstOrNull { it.id == selectedCutId }
+        ?: lockedCut
+        ?: cutScheme.cuts.firstOrNull { it.id == subject?.activeCutId }
+        ?: cutScheme.cuts.first()
 
     val hasUnsavedChanges = if (grade == null) {
         name.isNotBlank() || value.isNotBlank() || percentage.isNotBlank() || selectedType != null
@@ -182,7 +182,7 @@ fun AddGradeScreen(
     val currentPercentage = subject?.grades
         ?.filterNot { it.id == gradeId }
         ?.filter {
-            it.periodId == selectedPeriod.id &&
+            it.cutId == selectedPeriod.id &&
                 it.source == GradeSource.ACTIVITY &&
                 it.weightStatus == GradeWeightStatus.KNOWN
         }
@@ -215,12 +215,12 @@ fun AddGradeScreen(
             value = GradingScaleUtils.formatGrade(grade.value, scale)
             percentage = String.format(java.util.Locale.US, "%.0f", grade.percentage * 100)
             selectedType = grade.type
-            selectedPeriodId = grade.periodId
+            selectedCutId = grade.cutId
             selectedSource = grade.source
             weightUnknown = grade.weightStatus == GradeWeightStatus.UNKNOWN
             initialized = true
         } else if (!isEditing) {
-            selectedPeriodId = lockedPeriod?.id ?: subject?.chosenPeriodId ?: periodScheme.periods.first().id
+            selectedCutId = lockedCut?.id ?: subject?.chosenCutId ?: cutScheme.cuts.first().id
             initialized = true
         }
     }
@@ -228,7 +228,7 @@ fun AddGradeScreen(
     val remainingWeight = ((1.0 - currentPercentage) * 100.0).coerceAtLeast(0.0)
     // El nombre que se pone solo cuando registras la nota final del corte. Se compara
     // con lo escrito para saber si sigue siendo automático o si el usuario lo cambió.
-    val periodFinalName = "Resultado final ${periodDisplayName(selectedPeriod)}"
+    val cutFinalName = "Resultado final ${cutDisplayName(selectedPeriod)}"
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
@@ -271,7 +271,7 @@ fun AddGradeScreen(
                     // color que había a mano.
                     text = listOfNotNull(
                         subject?.name,
-                        periodDisplayName(selectedPeriod),
+                        cutDisplayName(selectedPeriod),
                         "${formatPercent(selectedPeriod.weight * 100)}% de la materia"
                     ).joinToString("  ·  "),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -296,7 +296,7 @@ fun AddGradeScreen(
                             // Al volver aquí se retira el nombre que puso la otra opción. Se
                             // quedaba puesto, así que la actividad nacía llamándose
                             // «Resultado final Corte 1» sin que nadie lo hubiera escrito.
-                            if (name == periodFinalName) name = ""
+                            if (name == cutFinalName) name = ""
                             error = null
                         }
                     )
@@ -307,7 +307,7 @@ fun AddGradeScreen(
                             selectedSource = GradeSource.PERIOD_FINAL
                             weightUnknown = false
                             percentage = "100"
-                            if (name.isBlank()) name = periodFinalName
+                            if (name.isBlank()) name = cutFinalName
                             error = null
                         }
                     )
@@ -322,7 +322,7 @@ fun AddGradeScreen(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
-                if (!isEditing && lockedPeriod == null) {
+                if (!isEditing && lockedCut == null) {
                     Text(
                         text = "Corte",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -333,12 +333,12 @@ fun AddGradeScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                        cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
                             ActivityChip(
-                                label = periodDisplayName(period),
-                                isSelected = selectedPeriod.id == period.id,
+                                label = cutDisplayName(cut),
+                                isSelected = selectedPeriod.id == cut.id,
                                 onClick = {
-                                    selectedPeriodId = period.id
+                                    selectedCutId = cut.id
                                     error = null
                                 }
                             )
@@ -464,7 +464,7 @@ fun AddGradeScreen(
                             percentage = it
                             error = null
                         },
-                        label = { Text("Peso dentro de ${periodDisplayName(selectedPeriod)}") },
+                        label = { Text("Peso dentro de ${cutDisplayName(selectedPeriod)}") },
                         placeholder = { Text("0") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -485,13 +485,13 @@ fun AddGradeScreen(
                             Text(
                                 text = when {
                                     percentage.isNotBlank() && !isPercentageValid ->
-                                        "Te pasas del 100%: en ${periodDisplayName(selectedPeriod)} solo queda " +
+                                        "Te pasas del 100%: en ${cutDisplayName(selectedPeriod)} solo queda " +
                                             "${formatPercent(remainingWeight)}% por repartir."
                                     remainingWeight <= 0.05 ->
-                                        "${periodDisplayName(selectedPeriod)} ya tiene repartido el 100%."
+                                        "${cutDisplayName(selectedPeriod)} ya tiene repartido el 100%."
                                     else ->
                                         "Queda ${formatPercent(remainingWeight)}% por repartir en " +
-                                            "${periodDisplayName(selectedPeriod)}."
+                                            "${cutDisplayName(selectedPeriod)}."
                                 },
                                 color = if (percentage.isNotBlank() && !isPercentageValid) {
                                     MaterialTheme.colorScheme.error
@@ -539,7 +539,7 @@ fun AddGradeScreen(
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
                             type = selectedType ?: GradeType.OTHER,
-                            periodId = selectedPeriod.id,
+                            cutId = selectedPeriod.id,
                             source = selectedSource,
                             weightStatus = if (weightUnknown) {
                                 GradeWeightStatus.UNKNOWN
@@ -554,7 +554,7 @@ fun AddGradeScreen(
                             value = gradeValue ?: 0.0,
                             percentageInput = percentageValue ?: 0.0,
                             type = selectedType ?: GradeType.OTHER,
-                            periodId = selectedPeriod.id,
+                            cutId = selectedPeriod.id,
                             source = selectedSource,
                             weightStatus = if (weightUnknown) {
                                 GradeWeightStatus.UNKNOWN
@@ -574,7 +574,7 @@ fun AddGradeScreen(
                             onBackClick()
                         }
                     } else {
-                        error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el peso acumulado no supere 100% en ${periodDisplayName(selectedPeriod)}."
+                        error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el peso acumulado no supere 100% en ${cutDisplayName(selectedPeriod)}."
                     }
                 },
                 enabled = isValid,
@@ -667,6 +667,6 @@ private fun ActivityChip(
     }
 }
 
-private fun periodDisplayName(period: AcademicPeriod): String = "Corte ${period.order}"
+private fun cutDisplayName(cut: GradingCut): String = "Corte ${cut.order}"
 
 private fun formatPercent(value: Double): String = String.format(Locale.US, "%.0f", value)

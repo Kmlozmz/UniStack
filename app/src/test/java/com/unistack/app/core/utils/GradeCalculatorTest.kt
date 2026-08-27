@@ -3,7 +3,7 @@ package com.unistack.app.core.utils
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.GradingScale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -39,32 +39,32 @@ class GradeCalculatorTest {
     }
 
     @Test
-    fun `period projection uses internal grade weights and period weights`() {
-        val periods = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+    fun `cut projection uses internal grade weights and cut weights`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
         val grades = listOf(
-            GradeItem(id = "1", name = "Taller", value = 5.0, percentage = 0.20, periodId = "period-1"),
-            GradeItem(id = "2", name = "Exposición", value = 4.0, percentage = 0.20, periodId = "period-1"),
-            GradeItem(id = "3", name = "Parcial", value = 4.5, percentage = 0.60, periodId = "period-1")
+            GradeItem(id = "1", name = "Taller", value = 5.0, percentage = 0.20, cutId = "period-1"),
+            GradeItem(id = "2", name = "Exposición", value = 4.0, percentage = 0.20, cutId = "period-1"),
+            GradeItem(id = "3", name = "Parcial", value = 4.5, percentage = 0.60, cutId = "period-1")
         )
 
-        assertEquals(4.5, GradeCalculator.calculatePeriodAverage(grades)!!, 0.0)
-        assertEquals(1.35, GradeCalculator.calculateWeightedPointsByPeriods(grades, periods), 0.0001)
-        assertEquals(30.0, GradeCalculator.calculateEvaluatedSemesterPercentage(grades, periods), 0.0)
-        assertEquals(4.5, GradeCalculator.calculateCurrentAverageByPeriods(grades, periods)!!, 0.0)
+        assertEquals(4.5, GradeCalculator.calculateCutAverage(grades)!!, 0.0)
+        assertEquals(1.35, GradeCalculator.calculateWeightedPointsByCuts(grades, cuts), 0.0001)
+        assertEquals(30.0, GradeCalculator.calculateEvaluatedSemesterPercentage(grades, cuts), 0.0)
+        assertEquals(4.5, GradeCalculator.calculateCurrentAverageByCuts(grades, cuts)!!, 0.0)
     }
 
     @Test
-    fun `official period result overrides incomplete activity detail`() {
+    fun `official cut result overrides incomplete activity detail`() {
         val grades = listOf(
             GradeItem(id = "1", name = "Quiz", value = 3.0, percentage = 0.20),
             GradeItem(id = "2", name = "Nota final del corte", value = 4.1, percentage = 1.0, source = GradeSource.PERIOD_FINAL)
         )
 
-        val result = GradeCalculator.calculatePeriod(grades)
+        val result = GradeCalculator.calculateCut(grades)
 
         assertEquals(4.1, result.average!!, 0.0)
         assertEquals(1.0, result.evaluatedFraction, 0.0)
@@ -85,7 +85,7 @@ class GradeCalculatorTest {
             )
         )
 
-        val result = GradeCalculator.calculatePeriod(grades)
+        val result = GradeCalculator.calculateCut(grades)
 
         assertEquals(4.0, result.average!!, 0.0)
         assertEquals(0.50, result.evaluatedFraction, 0.0)
@@ -95,10 +95,10 @@ class GradeCalculatorTest {
 
     @Test
     fun `late start with prior official result calculates remaining target correctly`() {
-        val periods = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
         val grades = listOf(
             GradeItem(
@@ -106,14 +106,14 @@ class GradeCalculatorTest {
                 name = "Resultado Corte 1",
                 value = 4.1,
                 percentage = 1.0,
-                periodId = "period-1",
+                cutId = "period-1",
                 source = GradeSource.PERIOD_FINAL
             )
         )
 
         val result = GradeCalculator.calculateSubject(
             grades = grades,
-            periods = periods,
+            cuts = cuts,
             targetAverage = 4.5,
             maxGrade = 5.0
         )
@@ -194,7 +194,7 @@ class GradeCalculatorTest {
             GradeItem(id = "3", name = "Quiz", value = 5.0, percentage = 0.5)
         )
 
-        val calculation = GradeCalculator.calculatePeriod(grades)
+        val calculation = GradeCalculator.calculateCut(grades)
 
         assertEquals(5.0, calculation.average!!, 0.0001)
         assertTrue("el corte queda marcado como sobreasignado", calculation.isOverAllocated)
@@ -210,38 +210,38 @@ class GradeCalculatorTest {
         )
 
         // (4.0*0.6 + 2.0*0.6) / 1.2 = 3.0
-        assertEquals(3.0, GradeCalculator.calculatePeriod(grades).average!!, 0.0001)
+        assertEquals(3.0, GradeCalculator.calculateCut(grades).average!!, 0.0001)
     }
 
     @Test
-    fun `the subject does not inflate what an over allocated period already corrected`() {
+    fun `the subject does not inflate what an over allocated cut already corrected`() {
         // Tres actividades del 50% con 5.0: el corte ya devolvía 5.0, pero la materia sumaba
         // los puntos crudos (7.5) y los dividía entre la fracción recortada a 1.0, así que la
         // tarjeta del corte decía 5.0 y la de la materia 7.5 con los mismos datos.
-        val periods = listOf(AcademicPeriod(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
+        val cuts = listOf(GradingCut(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
         val grades = listOf(
             GradeItem(id = "1", name = "Parcial", value = 5.0, percentage = 0.5),
             GradeItem(id = "2", name = "Taller", value = 5.0, percentage = 0.5),
             GradeItem(id = "3", name = "Quiz", value = 5.0, percentage = 0.5)
         )
 
-        assertEquals(5.0, GradeCalculator.calculateCurrentAverageByPeriods(grades, periods)!!, 0.0001)
-        assertEquals(5.0, GradeCalculator.calculateWeightedPointsByPeriods(grades, periods), 0.0001)
+        assertEquals(5.0, GradeCalculator.calculateCurrentAverageByCuts(grades, cuts)!!, 0.0001)
+        assertEquals(5.0, GradeCalculator.calculateWeightedPointsByCuts(grades, cuts), 0.0001)
     }
 
     @Test
     fun `floor and ceiling frame the target without guessing the future`() {
-        val periods = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
         // Corte 1 cerrado en 60 sobre 100. Queda el 70% del semestre.
         val grades = listOf(
-            GradeItem(id = "1", name = "Parcial", value = 60.0, percentage = 1.0, periodId = "period-1")
+            GradeItem(id = "1", name = "Parcial", value = 60.0, percentage = 1.0, cutId = "period-1")
         )
 
-        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+        val result = GradeCalculator.calculateSubject(grades, cuts, targetAverage = 80.0, maxGrade = 100.0)
 
         assertEquals("promedio de lo evaluado", 60.0, result.currentAverage!!, 0.0001)
         assertEquals("si saca 0 en lo que falta", 18.0, result.guaranteedMinimum!!, 0.0001)
@@ -251,20 +251,20 @@ class GradeCalculatorTest {
     }
 
     @Test
-    fun `a barely started period no longer swings the subject number`() {
+    fun `a barely started cut no longer swings the subject number`() {
         // Este era el caso que rompía el detalle de materia: contaba el Corte 2 entero al
         // ritmo de su única nota, así que un quiz del 5% sacado en 100 disparaba la cifra.
-        val periods = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
         val grades = listOf(
-            GradeItem(id = "1", name = "Corte 1", value = 60.0, percentage = 1.0, periodId = "period-1"),
-            GradeItem(id = "2", name = "Quiz", value = 100.0, percentage = 0.05, periodId = "period-2")
+            GradeItem(id = "1", name = "Corte 1", value = 60.0, percentage = 1.0, cutId = "period-1"),
+            GradeItem(id = "2", name = "Quiz", value = 100.0, percentage = 0.05, cutId = "period-2")
         )
 
-        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+        val result = GradeCalculator.calculateSubject(grades, cuts, targetAverage = 80.0, maxGrade = 100.0)
 
         // (60*0.30 + 100*0.05*0.40) / (0.30 + 0.05*0.40) = 20 / 0.32 = 62.5
         assertEquals(62.5, result.currentAverage!!, 0.0001)
@@ -272,12 +272,12 @@ class GradeCalculatorTest {
 
     @Test
     fun `a finished subject reports its final grade instead of asking for more`() {
-        val periods = listOf(AcademicPeriod(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
+        val cuts = listOf(GradingCut(id = "period-1", name = "Corte 1", weight = 1.0, order = 1))
         val grades = listOf(
-            GradeItem(id = "1", name = "Final", value = 84.0, percentage = 1.0, periodId = "period-1")
+            GradeItem(id = "1", name = "Final", value = 84.0, percentage = 1.0, cutId = "period-1")
         )
 
-        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+        val result = GradeCalculator.calculateSubject(grades, cuts, targetAverage = 80.0, maxGrade = 100.0)
 
         assertTrue(result.isFinished)
         assertEquals(84.0, result.guaranteedMinimum!!, 0.0001)
@@ -288,15 +288,15 @@ class GradeCalculatorTest {
 
     @Test
     fun `an unreachable target is called unreachable and not just hard`() {
-        val periods = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.70, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.30, order = 2)
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.70, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.30, order = 2)
         )
         val grades = listOf(
-            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, periodId = "period-1")
+            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, cutId = "period-1")
         )
 
-        val result = GradeCalculator.calculateSubject(grades, periods, targetAverage = 80.0, maxGrade = 100.0)
+        val result = GradeCalculator.calculateSubject(grades, cuts, targetAverage = 80.0, maxGrade = 100.0)
 
         // 28 + 0.30*100 = 58, por debajo de 80 aunque saque 100 en todo lo que queda.
         assertEquals(58.0, result.bestPossible!!, 0.0001)
@@ -311,13 +311,13 @@ class GradeCalculatorTest {
     }
 
     @Test
-    fun `well formed periods are not flagged as over allocated`() {
+    fun `well formed cuts are not flagged as over allocated`() {
         val grades = listOf(
             GradeItem(id = "1", name = "Parcial", value = 4.0, percentage = 0.5),
             GradeItem(id = "2", name = "Quiz", value = 3.0, percentage = 0.25)
         )
 
-        val calculation = GradeCalculator.calculatePeriod(grades)
+        val calculation = GradeCalculator.calculateCut(grades)
 
         assertTrue(!calculation.isOverAllocated)
         assertEquals(0.75, calculation.allocatedFraction, 0.0001)

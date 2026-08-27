@@ -131,7 +131,7 @@ fun AddTaskScreen(
     var dueDate by rememberSaveable(taskId) { mutableStateOf("") }
     var dueTime by rememberSaveable(taskId) { mutableStateOf("") }
     var selectedSubjectId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
-    var selectedPeriodId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
+    var selectedCutId by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var selectedType by rememberSaveable(taskId) { mutableStateOf(TaskType.WORKSHOP) }
     var difficulty by rememberSaveable(taskId) { mutableStateOf(TaskDifficulty.MEDIUM) }
     var gradingChoice by rememberSaveable(taskId) { mutableStateOf<TaskGradingChoice?>(null) }
@@ -188,7 +188,7 @@ fun AddTaskScreen(
     val linkedGradeChanged = task != null && linkedGrade != null && (
         title.trim() != task.title ||
             selectedSubjectId != task.subjectId ||
-            selectedPeriodId != task.periodId ||
+            selectedCutId != task.cutId ||
             selectedType != task.type
         )
 
@@ -203,7 +203,7 @@ fun AddTaskScreen(
                 ?.let(TaskDateUtils::formatTimeInput)
                 .orEmpty()
             selectedSubjectId = task.subjectId
-            selectedPeriodId = task.periodId
+            selectedCutId = task.cutId
             selectedType = task.type
             difficulty = task.difficulty
             gradingChoice = when (task.gradingStatus) {
@@ -229,7 +229,7 @@ fun AddTaskScreen(
         dueTimeLabel = dueTime.ifBlank { "Sin hora" },
         subjects = subjects,
         selectedSubjectId = selectedSubjectId,
-        selectedPeriodId = selectedPeriodId,
+        selectedCutId = selectedCutId,
         selectedType = selectedType,
         selectedPriority = difficulty,
         gradingChoice = gradingChoice,
@@ -239,8 +239,8 @@ fun AddTaskScreen(
                 profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE
             )
         },
-        linkedGradePeriod = linkedGrade?.let { grade ->
-            linkedSubject?.periodScheme?.periodName(grade.periodId)
+        linkedGradeCut = linkedGrade?.let { grade ->
+            linkedSubject?.cutScheme?.cutName(grade.cutId)
         },
         linkedGradeWeight = linkedGrade?.let { grade ->
             if (grade.weightStatus == com.unistack.app.feature_grades.domain.GradeWeightStatus.UNKNOWN) {
@@ -308,11 +308,11 @@ fun AddTaskScreen(
         },
         onSubjectSelected = {
             selectedSubjectId = it
-            selectedPeriodId = subjects.firstOrNull { subject -> subject.id == it }?.defaultPeriodId
+            selectedCutId = subjects.firstOrNull { subject -> subject.id == it }?.defaultCutId
             error = null
         },
-        onPeriodSelected = {
-            selectedPeriodId = it
+        onCutSelected = {
+            selectedCutId = it
             error = null
         },
         onCreateSubjectClick = onCreateSubjectClick,
@@ -337,7 +337,7 @@ fun AddTaskScreen(
                     dueTimeInput = dueTime,
                     estimatedMinutesInput = estimatedMinutes,
                     difficulty = difficulty,
-                    periodId = selectedPeriodId,
+                    cutId = selectedCutId,
                     gradingStatus = gradingChoice.toInitialGradingStatus()
                 )
             } else {
@@ -350,7 +350,7 @@ fun AddTaskScreen(
                     dueTimeInput = dueTime,
                     estimatedMinutesInput = estimatedMinutes,
                     difficulty = difficulty,
-                    periodId = selectedPeriodId,
+                    cutId = selectedCutId,
                     gradingStatus = gradingChoice.toInitialGradingStatus()
                 )
             }
@@ -452,12 +452,12 @@ private fun AddTaskContent(
     dueTimeLabel: String,
     subjects: List<Subject>,
     selectedSubjectId: String?,
-    selectedPeriodId: String?,
+    selectedCutId: String?,
     selectedType: TaskType,
     selectedPriority: TaskDifficulty,
     gradingChoice: TaskGradingChoice?,
     linkedGradeValue: String?,
-    linkedGradePeriod: String?,
+    linkedGradeCut: String?,
     linkedGradeWeight: String?,
     linkedGradeChanged: Boolean,
     isSaveEnabled: Boolean,
@@ -474,7 +474,7 @@ private fun AddTaskContent(
     onTimeClick: () -> Unit,
     onTypeSelected: (TaskType) -> Unit,
     onSubjectSelected: (String?) -> Unit,
-    onPeriodSelected: (String) -> Unit,
+    onCutSelected: (String) -> Unit,
     onCreateSubjectClick: () -> Unit,
     onPrioritySelected: (TaskDifficulty) -> Unit,
     onGradingChoiceSelected: (TaskGradingChoice) -> Unit,
@@ -519,12 +519,12 @@ private fun AddTaskContent(
                     dueTimeLabel = dueTimeLabel,
                     subjects = subjects,
                     selectedSubjectId = selectedSubjectId,
-                    selectedPeriodId = selectedPeriodId,
+                    selectedCutId = selectedCutId,
                     onTitleChange = onTitleChange,
                     onDateClick = onDateClick,
                     onTimeClick = onTimeClick,
                     onSubjectSelected = onSubjectSelected,
-                    onPeriodSelected = onPeriodSelected,
+                    onCutSelected = onCutSelected,
                     onCreateSubjectClick = onCreateSubjectClick
                 )
             }
@@ -538,7 +538,7 @@ private fun AddTaskContent(
                 if (linkedGradeValue != null) {
                     LinkedGradeCard(
                         value = linkedGradeValue,
-                        period = linkedGradePeriod,
+                        cut = linkedGradeCut,
                         weight = linkedGradeWeight,
                         changed = linkedGradeChanged,
                         onEditClick = onEditLinkedGrade,
@@ -752,12 +752,12 @@ private fun BasicInfoCard(
     dueTimeLabel: String,
     subjects: List<Subject>,
     selectedSubjectId: String?,
-    selectedPeriodId: String?,
+    selectedCutId: String?,
     onTitleChange: (String) -> Unit,
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
     onSubjectSelected: (String?) -> Unit,
-    onPeriodSelected: (String) -> Unit,
+    onCutSelected: (String) -> Unit,
     onCreateSubjectClick: () -> Unit
 ) {
     FormSectionCard {
@@ -799,10 +799,10 @@ private fun BasicInfoCard(
         val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
         if (selectedSubject != null) {
             FormDivider()
-            PeriodDropdown(
+            CutDropdown(
                 subject = selectedSubject,
-                selectedPeriodId = selectedPeriodId ?: selectedSubject.defaultPeriodId,
-                onPeriodSelected = onPeriodSelected
+                selectedCutId = selectedCutId ?: selectedSubject.defaultCutId,
+                onCutSelected = onCutSelected
             )
         }
     }
@@ -989,7 +989,7 @@ private fun BasicInfoRowShell(
 @Composable
 private fun LinkedGradeCard(
     value: String,
-    period: String?,
+    cut: String?,
     weight: String?,
     changed: Boolean,
     onEditClick: (() -> Unit)?,
@@ -1021,7 +1021,7 @@ private fun LinkedGradeCard(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = listOfNotNull(period, weight).joinToString(" · "),
+                    text = listOfNotNull(cut, weight).joinToString(" · "),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Normal
@@ -1294,14 +1294,14 @@ private fun SubjectDropdown(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PeriodDropdown(
+private fun CutDropdown(
     subject: Subject,
-    selectedPeriodId: String,
-    onPeriodSelected: (String) -> Unit
+    selectedCutId: String,
+    onCutSelected: (String) -> Unit
 ) {
     var showSheet by rememberSaveable(subject.id) { mutableStateOf(false) }
-    val selected = subject.periodScheme.periods.firstOrNull { it.id == selectedPeriodId }
-        ?: subject.periodScheme.periods.firstOrNull()
+    val selected = subject.cutScheme.cuts.firstOrNull { it.id == selectedCutId }
+        ?: subject.cutScheme.cuts.firstOrNull()
 
     BasicInfoActionRow(
         icon = Icons.Rounded.CalendarMonth,
@@ -1337,13 +1337,13 @@ private fun PeriodDropdown(
                     color = SubjectSheetMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
-                subject.periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                subject.cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
                     SubjectSheetOption(
-                        title = period.name,
-                        subtitle = "${(period.weight * 100).toInt()}% de la materia",
-                        selected = period.id == selected?.id,
+                        title = cut.name,
+                        subtitle = "${(cut.weight * 100).toInt()}% de la materia",
+                        selected = cut.id == selected?.id,
                         onClick = {
-                            onPeriodSelected(period.id)
+                            onCutSelected(cut.id)
                             showSheet = false
                         }
                     )

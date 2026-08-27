@@ -29,7 +29,7 @@ interface SubjectDao {
             visualType = :visualType,
             customColor = :customColor,
             periodSchemeJson = :periodSchemeJson,
-            activePeriodId = :activePeriodId,
+            activePeriodId = :activeCutId,
             historyPromptStatus = :historyPromptStatus,
             unknownPeriodIdsJson = :unknownPeriodIdsJson,
             updatedAt = :updatedAt
@@ -44,7 +44,7 @@ interface SubjectDao {
         visualType: String,
         customColor: Int?,
         periodSchemeJson: String,
-        activePeriodId: String,
+        activeCutId: String,
         historyPromptStatus: String,
         unknownPeriodIdsJson: String,
         updatedAt: Long

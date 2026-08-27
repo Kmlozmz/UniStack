@@ -5,7 +5,7 @@ import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.core.utils.GradeCalculator
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.feature_grades.domain.GradeItem
@@ -73,13 +73,13 @@ class GradesViewModel @Inject constructor(
         targetAverage: Double,
         visualType: SubjectVisualType,
         customColor: Int? = null,
-        activePeriodId: String? = null
+        activeCutId: String? = null
     ): Subject? {
         if (!FeatureGate.canCreateSubject(currentPlan(), subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
-        val periodScheme = userProfile.value?.academicPeriodScheme
-            ?: com.unistack.app.feature_user.domain.AcademicPeriodScheme.default()
+        val cutScheme = userProfile.value?.gradingCutScheme
+            ?: com.unistack.app.feature_user.domain.GradingCutScheme.default()
         val subject = Subject(
             id = "subject-${UUID.randomUUID()}",
             name = TextValidators.normalizeText(name),
@@ -87,11 +87,11 @@ class GradesViewModel @Inject constructor(
             grades = emptyList(),
             visualType = visualType,
             customColor = customColor,
-            periodScheme = periodScheme,
+            cutScheme = cutScheme,
             // Vacío si no llega uno válido: una materia nueva no tiene corte elegido hasta
             // que alguien lo elige.
-            activePeriodId = activePeriodId
-                ?.takeIf { id -> periodScheme.periods.any { it.id == id } }
+            activeCutId = activeCutId
+                ?.takeIf { id -> cutScheme.cuts.any { it.id == id } }
                 .orEmpty()
         )
         repository.addSubject(subject)
@@ -104,7 +104,7 @@ class GradesViewModel @Inject constructor(
         targetAverage: Double,
         visualType: SubjectVisualType,
         customColor: Int? = null,
-        activePeriodId: String? = null
+        activeCutId: String? = null
     ): Boolean {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return false
         if (!TextValidators.validateSubjectName(name).isValid) return false
@@ -116,9 +116,9 @@ class GradesViewModel @Inject constructor(
                 targetAverage = targetAverage,
                 visualType = visualType,
                 customColor = customColor,
-                activePeriodId = activePeriodId
-                    ?.takeIf { id -> subject.periodScheme.periods.any { it.id == id } }
-                    ?: subject.activePeriodId
+                activeCutId = activeCutId
+                    ?.takeIf { id -> subject.cutScheme.cuts.any { it.id == id } }
+                    ?: subject.activeCutId
             )
         )
         return true
@@ -162,7 +162,7 @@ class GradesViewModel @Inject constructor(
                 tasksRepository.updateTask(
                     task.copy(
                         subjectId = null,
-                        periodId = null,
+                        cutId = null,
                         gradingStatus = if (task.linkedGradeId != null) {
                             TaskGradingStatus.NOT_GRADED
                         } else {
@@ -186,7 +186,7 @@ class GradesViewModel @Inject constructor(
         value: Double,
         percentageInput: Double,
         type: GradeType = GradeType.WORKSHOP,
-        periodId: String = "period-1",
+        cutId: String = "period-1",
         source: GradeSource = GradeSource.ACTIVITY,
         weightStatus: GradeWeightStatus = GradeWeightStatus.KNOWN,
         taskId: String? = null
@@ -197,7 +197,7 @@ class GradesViewModel @Inject constructor(
             value = value,
             percentageInput = percentageInput,
             type = type,
-            periodId = periodId,
+            cutId = cutId,
             source = source,
             weightStatus = weightStatus,
             taskId = taskId
@@ -210,7 +210,7 @@ class GradesViewModel @Inject constructor(
         value: Double,
         percentageInput: Double,
         type: GradeType = GradeType.WORKSHOP,
-        periodId: String = "period-1",
+        cutId: String = "period-1",
         source: GradeSource = GradeSource.ACTIVITY,
         weightStatus: GradeWeightStatus = GradeWeightStatus.KNOWN,
         taskId: String? = null
@@ -224,7 +224,7 @@ class GradesViewModel @Inject constructor(
             else -> percentageInput / 100.0
         }
         val existingKnownWeight = subject.grades
-            .filter { it.periodId == periodId }
+            .filter { it.cutId == cutId }
             .filter { it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.KNOWN }
             .sumOf { it.percentage }
         val total = existingKnownWeight +
@@ -239,7 +239,7 @@ class GradesViewModel @Inject constructor(
 
         if (source == GradeSource.PERIOD_FINAL) {
             subject.grades
-                .filter { it.periodId == periodId && it.source == GradeSource.PERIOD_FINAL }
+                .filter { it.cutId == cutId && it.source == GradeSource.PERIOD_FINAL }
                 .forEach { repository.deleteGrade(subjectId, it.id) }
         }
 
@@ -249,7 +249,7 @@ class GradesViewModel @Inject constructor(
             value = value,
             percentage = percentage,
             type = type,
-            periodId = periodId,
+            cutId = cutId,
             source = source,
             weightStatus = weightStatus,
             taskId = taskId,
@@ -258,12 +258,12 @@ class GradesViewModel @Inject constructor(
         repository.addGrade(subjectId = subjectId, grade = newGrade)
         val shouldSuggestHistory = subject.grades.isEmpty() &&
             subject.historyPromptStatus == PriorHistoryPromptStatus.NOT_SHOWN &&
-            subject.periodScheme.periods.firstOrNull { it.id == periodId }?.order?.let { it > 1 } == true
+            subject.cutScheme.cuts.firstOrNull { it.id == cutId }?.order?.let { it > 1 } == true
         // Se calcula sobre la lista de aquí y no sobre el flujo del repositorio: con Room la
         // consulta puede no haber emitido todavía cuando volvemos de addGrade.
-        val nextActive = periodAfterSaving(subject, subject.grades + newGrade, periodId)
-        if (nextActive != subject.activePeriodId) {
-            repository.updateSubject(subject.copy(activePeriodId = nextActive))
+        val nextActive = cutAfterSaving(subject, subject.grades + newGrade, cutId)
+        if (nextActive != subject.activeCutId) {
+            repository.updateSubject(subject.copy(activeCutId = nextActive))
         }
         return GradeSaveOutcome(saved = true, suggestPriorHistory = shouldSuggestHistory)
     }
@@ -279,18 +279,18 @@ class GradesViewModel @Inject constructor(
      * Solo hacia delante. Si por detrás quedó un corte a medias, saltar hacia atrás sería otra
      * suposición sobre en qué punto del semestre va el usuario, y eso lo decide él.
      */
-    private fun periodAfterSaving(
+    private fun cutAfterSaving(
         subject: Subject,
         gradesAfterSaving: List<GradeItem>,
-        savedPeriodId: String
+        savedCutId: String
     ): String {
-        val periods = subject.periodScheme.periods.sortedBy { it.order }
-        val saved = periods.firstOrNull { it.id == savedPeriodId } ?: return savedPeriodId
-        fun isComplete(period: AcademicPeriod): Boolean =
-            GradeCalculator.calculatePeriod(gradesAfterSaving.filter { it.periodId == period.id }).isComplete
+        val cuts = subject.cutScheme.cuts.sortedBy { it.order }
+        val saved = cuts.firstOrNull { it.id == savedCutId } ?: return savedCutId
+        fun isComplete(cut: GradingCut): Boolean =
+            GradeCalculator.calculateCut(gradesAfterSaving.filter { it.cutId == cut.id }).isComplete
 
-        if (!isComplete(saved)) return savedPeriodId
-        return periods.firstOrNull { it.order > saved.order && !isComplete(it) }?.id ?: savedPeriodId
+        if (!isComplete(saved)) return savedCutId
+        return cuts.firstOrNull { it.order > saved.order && !isComplete(it) }?.id ?: savedCutId
     }
 
     fun updateGrade(
@@ -300,7 +300,7 @@ class GradesViewModel @Inject constructor(
         value: Double,
         percentageInput: Double,
         type: GradeType = GradeType.WORKSHOP,
-        periodId: String = "period-1",
+        cutId: String = "period-1",
         source: GradeSource = GradeSource.ACTIVITY,
         weightStatus: GradeWeightStatus = GradeWeightStatus.KNOWN
     ): Boolean {
@@ -315,7 +315,7 @@ class GradesViewModel @Inject constructor(
         }
         val existingKnownWeight = subject.grades
             .filterNot { it.id == gradeId }
-            .filter { it.periodId == periodId }
+            .filter { it.cutId == cutId }
             .filter { it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.KNOWN }
             .sumOf { it.percentage }
         val total = existingKnownWeight +
@@ -330,7 +330,7 @@ class GradesViewModel @Inject constructor(
             subject.grades
                 .filter {
                     it.id != gradeId &&
-                        it.periodId == periodId &&
+                        it.cutId == cutId &&
                         it.source == GradeSource.PERIOD_FINAL
                 }
                 .forEach { repository.deleteGrade(subjectId, it.id) }
@@ -343,7 +343,7 @@ class GradesViewModel @Inject constructor(
                 value = value,
                 percentage = percentage,
                 type = type,
-                periodId = periodId,
+                cutId = cutId,
                 source = source,
                 weightStatus = weightStatus,
                 recordedAt = System.currentTimeMillis()
@@ -353,7 +353,7 @@ class GradesViewModel @Inject constructor(
             tasksRepository.tasks.value.firstOrNull { it.id == taskId }?.let { task ->
                 tasksRepository.updateTask(
                     task.copy(
-                        periodId = periodId,
+                        cutId = cutId,
                         updatedAt = System.currentTimeMillis()
                     )
                 )
@@ -396,7 +396,7 @@ class GradesViewModel @Inject constructor(
     fun calculationFor(subject: Subject): SubjectGradeCalculation {
         return GradeCalculator.calculateSubject(
             grades = subject.grades,
-            periods = subject.periodScheme.periods,
+            cuts = subject.cutScheme.cuts,
             targetAverage = subject.targetAverage,
             maxGrade = getMaxGrade()
         )
@@ -405,7 +405,7 @@ class GradesViewModel @Inject constructor(
     fun currentAverage(subject: Subject): Double? = calculationFor(subject).currentAverage
 
     fun evaluatedPercentage(subject: Subject): Double =
-        GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, subject.periodScheme.periods)
+        GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, subject.cutScheme.cuts)
 
     fun neededGrade(subject: Subject): Double? {
         if (subject.grades.isEmpty()) return null
@@ -416,10 +416,10 @@ class GradesViewModel @Inject constructor(
         return calculationFor(subject).neededForTarget
     }
 
-    fun setActivePeriod(subjectId: String, periodId: String): Boolean {
+    fun setActiveCut(subjectId: String, cutId: String): Boolean {
         val subject = subjectById(subjectId) ?: return false
-        if (subject.periodScheme.periods.none { it.id == periodId }) return false
-        repository.updateSubject(subject.copy(activePeriodId = periodId))
+        if (subject.cutScheme.cuts.none { it.id == cutId }) return false
+        repository.updateSubject(subject.copy(activeCutId = cutId))
         return true
     }
 
@@ -432,45 +432,45 @@ class GradesViewModel @Inject constructor(
         return true
     }
 
-    fun markPeriodUnknown(subjectId: String, periodId: String): Boolean {
+    fun markCutUnknown(subjectId: String, cutId: String): Boolean {
         val subject = subjectById(subjectId) ?: return false
-        if (subject.periodScheme.periods.none { it.id == periodId }) return false
-        val unknown = subject.unknownPeriodIds + periodId
-        val previousPeriods = subject.previousPeriods()
-        val status = if (previousPeriods.all { period ->
-                period.id in unknown || subject.grades.any { it.periodId == period.id }
+        if (subject.cutScheme.cuts.none { it.id == cutId }) return false
+        val unknown = subject.unknownCutIds + cutId
+        val previousCuts = subject.previousCuts()
+        val status = if (previousCuts.all { cut ->
+                cut.id in unknown || subject.grades.any { it.cutId == cut.id }
             }
         ) PriorHistoryPromptStatus.COMPLETED else PriorHistoryPromptStatus.SNOOZED
         repository.updateSubject(
             subject.copy(
-                unknownPeriodIds = unknown,
+                unknownCutIds = unknown,
                 historyPromptStatus = status
             )
         )
         return true
     }
 
-    fun clearPeriodUnknown(subjectId: String, periodId: String): Boolean {
+    fun clearCutUnknown(subjectId: String, cutId: String): Boolean {
         val subject = subjectById(subjectId) ?: return false
-        repository.updateSubject(subject.copy(unknownPeriodIds = subject.unknownPeriodIds - periodId))
+        repository.updateSubject(subject.copy(unknownCutIds = subject.unknownCutIds - cutId))
         return true
     }
 
     fun refreshHistoryCompletion(subjectId: String) {
         val subject = subjectById(subjectId) ?: return
-        val previousPeriods = subject.previousPeriods()
-        if (previousPeriods.isNotEmpty() && previousPeriods.all { period ->
-                period.id in subject.unknownPeriodIds || subject.grades.any { it.periodId == period.id }
+        val previousCuts = subject.previousCuts()
+        if (previousCuts.isNotEmpty() && previousCuts.all { cut ->
+                cut.id in subject.unknownCutIds || subject.grades.any { it.cutId == cut.id }
             }
         ) {
             repository.updateSubject(subject.copy(historyPromptStatus = PriorHistoryPromptStatus.COMPLETED))
         }
     }
 
-    private fun Subject.previousPeriods() = periodScheme.periods
-        .filter { period ->
-            val activeOrder = periodScheme.periods.firstOrNull { it.id == activePeriodId }?.order ?: 1
-            period.order < activeOrder
+    private fun Subject.previousCuts() = cutScheme.cuts
+        .filter { cut ->
+            val activeOrder = cutScheme.cuts.firstOrNull { it.id == activeCutId }?.order ?: 1
+            cut.order < activeOrder
         }
 }
 

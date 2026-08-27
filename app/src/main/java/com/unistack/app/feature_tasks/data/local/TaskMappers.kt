@@ -23,7 +23,7 @@ fun TaskEntity.toDomain(): StudentTask {
         completed = completed,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        periodId = periodId,
+        cutId = periodId,
         gradingStatus = runCatching { TaskGradingStatus.valueOf(gradingStatus) }
             .getOrDefault(TaskGradingStatus.UNDECIDED),
         linkedGradeId = linkedGradeId,
@@ -43,7 +43,7 @@ fun StudentTask.toEntity(userId: String): TaskEntity {
         difficulty = difficulty.name,
         estimatedMinutes = estimatedMinutes,
         completed = completed,
-        periodId = periodId,
+        periodId = cutId,
         gradingStatus = gradingStatus.name,
         linkedGradeId = linkedGradeId,
         completedAt = completedAt,

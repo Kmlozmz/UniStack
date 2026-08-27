@@ -78,7 +78,7 @@ data class UserProfile(
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
     val gradeScenarios: List<SavedGradeScenario> = emptyList(),
-    val academicPeriodScheme: AcademicPeriodScheme = AcademicPeriodScheme.default(),
+    val gradingCutScheme: GradingCutScheme = GradingCutScheme.default(),
     val setupCompleted: Boolean,
     val createdAt: Long,
     val updatedAt: Long
@@ -94,35 +94,35 @@ data class SavedGradeScenario(
     val createdAt: Long
 )
 
-data class AcademicPeriodScheme(
-    val periods: List<AcademicPeriod> = defaultPeriods()
+data class GradingCutScheme(
+    val cuts: List<GradingCut> = defaultCuts()
 ) {
     val totalWeight: Double
-        get() = periods.sumOf { it.weight }
+        get() = cuts.sumOf { it.weight }
 
     val isValid: Boolean
-        get() = periods.isNotEmpty() &&
-            periods.all { it.weight > 0.0 } &&
+        get() = cuts.isNotEmpty() &&
+            cuts.all { it.weight > 0.0 } &&
             kotlin.math.abs(totalWeight - 1.0) <= 0.0001
 
-    fun periodName(periodId: String?): String {
-        return periods.firstOrNull { it.id == periodId }?.name
-            ?: periods.firstOrNull()?.name
+    fun cutName(cutId: String?): String {
+        return cuts.firstOrNull { it.id == cutId }?.name
+            ?: cuts.firstOrNull()?.name
             ?: Corte.Singular
     }
 
     companion object {
-        fun default(): AcademicPeriodScheme = AcademicPeriodScheme(periods = defaultPeriods())
+        fun default(): GradingCutScheme = GradingCutScheme(cuts = defaultCuts())
 
-        fun defaultPeriods(): List<AcademicPeriod> = listOf(
-            AcademicPeriod(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
-            AcademicPeriod(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
-            AcademicPeriod(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
+        fun defaultCuts(): List<GradingCut> = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.30, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.40, order = 2),
+            GradingCut(id = "period-3", name = "Corte 3", weight = 0.30, order = 3)
         )
     }
 }
 
-data class AcademicPeriod(
+data class GradingCut(
     val id: String,
     val name: String,
     val weight: Double,

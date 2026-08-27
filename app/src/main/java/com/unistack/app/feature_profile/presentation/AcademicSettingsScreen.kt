@@ -33,9 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.GradeStepperRow
-import com.unistack.app.core.design.components.PeriodBalanceNotice
-import com.unistack.app.core.design.components.PeriodCountSection
-import com.unistack.app.core.design.components.PeriodWheelCard
+import com.unistack.app.core.design.components.CutBalanceNotice
+import com.unistack.app.core.design.components.CutCountSection
+import com.unistack.app.core.design.components.CutWheelCard
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.SetupEvenSplitAction
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -77,7 +77,7 @@ fun AcademicSettingsScreen(
         mutableStateOf(academicGradeInput(current.targetAverage, current.gradingScale))
     }
     var weights by rememberSaveable(current.userId) {
-        mutableStateOf(current.academicPeriodScheme.periods.map { academicPercentInput(it.weight) })
+        mutableStateOf(current.gradingCutScheme.cuts.map { academicPercentInput(it.weight) })
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
@@ -199,7 +199,7 @@ fun AcademicSettingsScreen(
         }
         item {
             AcademicGroupLabel("TUS CORTES")
-            PeriodCountSection(
+            CutCountSection(
                 count = weights.size,
                 onCountSelected = { count ->
                     weights = academicWeightsFor(count, weights)
@@ -208,7 +208,7 @@ fun AcademicSettingsScreen(
             )
         }
         item {
-            PeriodWheelCard(
+            CutWheelCard(
                 weights = weights,
                 total = total,
                 isValid = weightsAreValid,
@@ -221,7 +221,7 @@ fun AcademicSettingsScreen(
             )
         }
         item {
-            PeriodBalanceNotice(
+            CutBalanceNotice(
                 total = total,
                 remaining = (100.0 - total).coerceAtLeast(0.0),
                 isValid = weightsAreValid
@@ -237,7 +237,7 @@ fun AcademicSettingsScreen(
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    feedback = if (viewModel.updateAcademicPeriodSettings(weights)) {
+                    feedback = if (viewModel.updateGradingCutSettings(weights)) {
                         "Cortes actualizados."
                     } else {
                         "Revisa que los pesos sumen 100%."

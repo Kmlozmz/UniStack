@@ -61,7 +61,7 @@ object AppRoutes {
     const val AddSubjectFromSchedule = "add_subject_from_schedule"
     const val EditSubjectFromSchedule = "edit_subject_from_schedule"
     const val SubjectDetail = "subject_detail"
-    const val SubjectPeriodDetail = "subject_period_detail"
+    const val SubjectCutDetail = "subject_period_detail"
     const val PriorHistory = "prior_history"
     const val AddGrade = "add_grade"
     const val AddGradeFromHistory = "add_grade_from_history"
@@ -89,12 +89,12 @@ object AppRoutes {
     fun academic(tab: String) = "$Academic?$AcademicTabArg=$tab"
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
-    fun subjectPeriodDetail(subjectId: String, periodId: String) = "$SubjectPeriodDetail/$subjectId/$periodId"
+    fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
-    fun addGrade(subjectId: String, periodId: String? = null) =
-        if (periodId == null) "$AddGrade/$subjectId" else "$AddGrade/$subjectId/$periodId"
-    fun addGradeFromHistory(subjectId: String, periodId: String) =
-        "$AddGradeFromHistory/$subjectId/$periodId"
+    fun addGrade(subjectId: String, cutId: String? = null) =
+        if (cutId == null) "$AddGrade/$subjectId" else "$AddGrade/$subjectId/$cutId"
+    fun addGradeFromHistory(subjectId: String, cutId: String) =
+        "$AddGradeFromHistory/$subjectId/$cutId"
     fun editSubject(subjectId: String) = "$EditSubject/$subjectId"
     fun editSubjectFromSchedule(subjectId: String) = "$EditSubjectFromSchedule/$subjectId"
     fun editGrade(subjectId: String, gradeId: String) = "$EditGrade/$subjectId/$gradeId"

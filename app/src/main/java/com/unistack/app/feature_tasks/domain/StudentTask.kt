@@ -12,7 +12,7 @@ data class StudentTask(
     val completed: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-    val periodId: String? = null,
+    val cutId: String? = null,
     val gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED,
     val linkedGradeId: String? = null,
     val completedAt: Long? = null

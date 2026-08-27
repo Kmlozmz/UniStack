@@ -3,10 +3,10 @@ package com.unistack.app.core.utils
 import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import kotlin.math.round
 
-data class PeriodGradeCalculation(
+data class CutGradeCalculation(
     val average: Double?,
     val evaluatedFraction: Double,
     val weightedPoints: Double,
@@ -91,25 +91,25 @@ data class SubjectGradeCalculation(
 
 object GradeCalculator {
     fun calculateCurrentAverage(grades: List<GradeItem>): Double? {
-        return calculatePeriod(grades).average
+        return calculateCut(grades).average
     }
 
     fun calculateEvaluatedPercentage(grades: List<GradeItem>): Double {
-        return roundToOneDecimal(calculatePeriod(grades).evaluatedFraction * 100.0)
+        return roundToOneDecimal(calculateCut(grades).evaluatedFraction * 100.0)
     }
 
     fun calculateWeightedPoints(grades: List<GradeItem>): Double {
-        return calculatePeriod(grades).weightedPoints
+        return calculateCut(grades).weightedPoints
     }
 
-    fun calculatePeriodAverage(grades: List<GradeItem>): Double? = calculatePeriod(grades).average
+    fun calculateCutAverage(grades: List<GradeItem>): Double? = calculateCut(grades).average
 
-    fun calculatePeriod(grades: List<GradeItem>): PeriodGradeCalculation {
+    fun calculateCut(grades: List<GradeItem>): CutGradeCalculation {
         val officialResult = grades
             .filter { it.source == GradeSource.PERIOD_FINAL }
             .maxByOrNull { it.recordedAt }
         if (officialResult != null) {
-            return PeriodGradeCalculation(
+            return CutGradeCalculation(
                 average = roundToOneDecimal(officialResult.value),
                 evaluatedFraction = 1.0,
                 weightedPoints = officialResult.value,
@@ -139,7 +139,7 @@ object GradeCalculator {
         } else {
             roundToOneDecimal(weightedPoints / allocatedFraction)
         }
-        return PeriodGradeCalculation(
+        return CutGradeCalculation(
             average = average,
             evaluatedFraction = evaluatedFraction,
             weightedPoints = weightedPoints,
@@ -150,12 +150,12 @@ object GradeCalculator {
         )
     }
 
-    fun calculateWeightedPointsByPeriods(
+    fun calculateWeightedPointsByCuts(
         grades: List<GradeItem>,
-        periods: List<AcademicPeriod>
+        cuts: List<GradingCut>
     ): Double {
-        return periods.sumOf { period ->
-            calculatePeriod(grades.filter { it.periodId == period.id }).normalizedPoints * period.weight
+        return cuts.sumOf { cut ->
+            calculateCut(grades.filter { it.cutId == cut.id }).normalizedPoints * cut.weight
         }
     }
 
@@ -167,13 +167,13 @@ object GradeCalculator {
      * antiguo invitaba a colocar al lado una segunda proyección calculada de otra forma, que
      * es exactamente lo que había en el detalle de materia dando un número distinto.
      */
-    fun calculateCurrentAverageByPeriods(
+    fun calculateCurrentAverageByCuts(
         grades: List<GradeItem>,
-        periods: List<AcademicPeriod>
+        cuts: List<GradingCut>
     ): Double? {
-        val evaluatedWeight = evaluatedSemesterFraction(grades, periods)
+        val evaluatedWeight = evaluatedSemesterFraction(grades, cuts)
         if (evaluatedWeight <= 0.0) return null
-        return roundToOneDecimal(calculateWeightedPointsByPeriods(grades, periods) / evaluatedWeight)
+        return roundToOneDecimal(calculateWeightedPointsByCuts(grades, cuts) / evaluatedWeight)
     }
 
     /**
@@ -187,20 +187,20 @@ object GradeCalculator {
 
     fun calculateEvaluatedSemesterPercentage(
         grades: List<GradeItem>,
-        periods: List<AcademicPeriod>
+        cuts: List<GradingCut>
     ): Double {
-        return roundToOneDecimal(evaluatedSemesterFraction(grades, periods) * 100.0)
+        return roundToOneDecimal(evaluatedSemesterFraction(grades, cuts) * 100.0)
     }
 
     fun calculateSubject(
         grades: List<GradeItem>,
-        periods: List<AcademicPeriod>,
+        cuts: List<GradingCut>,
         targetAverage: Double,
         maxGrade: Double
     ): SubjectGradeCalculation {
-        val evaluated = evaluatedSemesterFraction(grades, periods)
+        val evaluated = evaluatedSemesterFraction(grades, cuts)
         val remaining = (1.0 - evaluated).coerceAtLeast(0.0)
-        val weightedPoints = calculateWeightedPointsByPeriods(grades, periods)
+        val weightedPoints = calculateWeightedPointsByCuts(grades, cuts)
         val current = if (evaluated > 0.0) roundToOneDecimal(weightedPoints / evaluated) else null
         val needed = calculateNeededGrade(weightedPoints, remaining, targetAverage, maxGrade)
         val unknownWeights = grades.count {
@@ -248,10 +248,10 @@ object GradeCalculator {
 
     private fun evaluatedSemesterFraction(
         grades: List<GradeItem>,
-        periods: List<AcademicPeriod>
+        cuts: List<GradingCut>
     ): Double {
-        return periods.sumOf { period ->
-            calculatePeriod(grades.filter { it.periodId == period.id }).evaluatedFraction * period.weight
+        return cuts.sumOf { cut ->
+            calculateCut(grades.filter { it.cutId == cut.id }).evaluatedFraction * cut.weight
         }.coerceIn(0.0, 1.0)
     }
 

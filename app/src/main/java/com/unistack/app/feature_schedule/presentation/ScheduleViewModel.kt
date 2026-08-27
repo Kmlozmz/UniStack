@@ -163,7 +163,7 @@ class ScheduleViewModel @Inject constructor(
                 completed = false,
                 createdAt = now,
                 updatedAt = now,
-                periodId = subject?.chosenPeriodId,
+                cutId = subject?.chosenCutId,
                 gradingStatus = if (generatesGrade) TaskGradingStatus.UNDECIDED else TaskGradingStatus.NOT_GRADED
             )
         )

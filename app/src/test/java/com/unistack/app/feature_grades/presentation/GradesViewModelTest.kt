@@ -18,7 +18,6 @@ import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
 import com.unistack.app.feature_templates.domain.AcademicWork
-import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.data.InMemoryUserRepository
@@ -69,8 +68,8 @@ class GradesViewModelTest {
     fun `una materia nueva no trae corte elegido`() {
         val subject = viewModel.addSubject("Cálculo", 4.0, SubjectVisualType.TEAL)!!
 
-        assertNull("nadie ha dicho todavía en qué corte va", subject.chosenPeriodId)
-        assertEquals("pero hay dónde escribir si hace falta", "period-1", subject.defaultPeriodId)
+        assertNull("nadie ha dicho todavía en qué corte va", subject.chosenCutId)
+        assertEquals("pero hay dónde escribir si hace falta", "period-1", subject.defaultCutId)
     }
 
     @Test
@@ -83,12 +82,12 @@ class GradesViewModelTest {
             name = "Parcial",
             value = 4.0,
             percentageInput = 50.0,
-            periodId = "period-1"
+            cutId = "period-1"
         )
         assertEquals(
             "con el corte a medias se queda donde está",
             "period-1",
-            viewModel.subjectById(subject.id)!!.chosenPeriodId
+            viewModel.subjectById(subject.id)!!.chosenCutId
         )
 
         // La otra mitad lo cierra.
@@ -97,12 +96,12 @@ class GradesViewModelTest {
             name = "Final",
             value = 4.0,
             percentageInput = 50.0,
-            periodId = "period-1"
+            cutId = "period-1"
         )
         assertEquals(
             "cerrado el corte 1, lo nuevo entra en el 2",
             "period-2",
-            viewModel.subjectById(subject.id)!!.chosenPeriodId
+            viewModel.subjectById(subject.id)!!.chosenCutId
         )
     }
 
@@ -115,13 +114,13 @@ class GradesViewModelTest {
             name = "Final",
             value = 4.0,
             percentageInput = 100.0,
-            periodId = "period-3"
+            cutId = "period-3"
         )
 
         assertEquals(
             "no hay corte posterior al que pasar",
             "period-3",
-            viewModel.subjectById(subject.id)!!.chosenPeriodId
+            viewModel.subjectById(subject.id)!!.chosenCutId
         )
     }
 
@@ -181,7 +180,7 @@ class GradesViewModelTest {
             name = "Parcial 1",
             value = 4.2,
             percentageInput = 30.0,
-            periodId = subject.activePeriodId
+            cutId = subject.activeCutId
         )
 
         assertTrue(saved)
@@ -199,7 +198,7 @@ class GradesViewModelTest {
             name = "Examen",
             value = 6.0,
             percentageInput = 30.0,
-            periodId = subject.activePeriodId
+            cutId = subject.activeCutId
         )
 
         assertFalse(saved)
@@ -216,14 +215,14 @@ class GradesViewModelTest {
             name = "Parcial 1",
             value = 3.5,
             percentageInput = 70.0,
-            periodId = subject.activePeriodId
+            cutId = subject.activeCutId
         )
         val secondSaved = viewModel.addGrade(
             subjectId = subject.id,
             name = "Parcial 2",
             value = 4.0,
             percentageInput = 50.0,
-            periodId = subject.activePeriodId
+            cutId = subject.activeCutId
         )
 
         assertFalse(secondSaved)
@@ -285,36 +284,36 @@ class GradesViewModelTest {
     }
 
     @Test
-    fun `setActivePeriod cambia el período activo`() {
+    fun `setActiveCut cambia el período activo`() {
         val subject = viewModel.addSubject("Inglés", 4.0, SubjectVisualType.TEAL)!!
-        val secondPeriod = subject.periodScheme.periods.getOrNull(1)
+        val secondCut = subject.cutScheme.cuts.getOrNull(1)
 
-        if (secondPeriod != null) {
-            val result = viewModel.setActivePeriod(subject.id, secondPeriod.id)
+        if (secondCut != null) {
+            val result = viewModel.setActiveCut(subject.id, secondCut.id)
             assertTrue(result)
             val stored = viewModel.subjects.value.first { it.id == subject.id }
-            assertEquals(secondPeriod.id, stored.activePeriodId)
+            assertEquals(secondCut.id, stored.activeCutId)
         }
     }
 
     @Test
     fun `saveGrade sugiere historial cuando se agrega nota en período no inicial`() {
         val subject = viewModel.addSubject("Economía", 4.0, SubjectVisualType.TEAL)!!
-        val periods = subject.periodScheme.periods
-        if (periods.size < 2) return
+        val cuts = subject.cutScheme.cuts
+        if (cuts.size < 2) return
 
-        // Set active period to the last period so history suggestion triggers
-        val laterPeriod = periods.maxByOrNull { it.order }!!
-        viewModel.setActivePeriod(subject.id, laterPeriod.id)
+        // Set active cut to the last cut so history suggestion triggers
+        val laterCut = cuts.maxByOrNull { it.order }!!
+        viewModel.setActiveCut(subject.id, laterCut.id)
 
-        // Save grade in second period (order=2 > 1) while grades are still empty
-        val secondPeriod = periods.sortedBy { it.order }[1]
+        // Save grade in second cut (order=2 > 1) while grades are still empty
+        val secondCut = cuts.sortedBy { it.order }[1]
         val outcome = viewModel.saveGrade(
             subjectId = subject.id,
             name = "Parcial histórico",
             value = 3.5,
             percentageInput = 100.0,
-            periodId = secondPeriod.id,
+            cutId = secondCut.id,
             source = GradeSource.ACTIVITY,
             weightStatus = GradeWeightStatus.KNOWN
         )

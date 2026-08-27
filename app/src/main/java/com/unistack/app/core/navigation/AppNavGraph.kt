@@ -66,7 +66,7 @@ import com.unistack.app.feature_grades.presentation.PriorHistoryScreen
 import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_grades.presentation.SubjectFormMode
 import com.unistack.app.feature_grades.presentation.SubjectFormScreen
-import com.unistack.app.feature_grades.presentation.SubjectPeriodDetailScreen
+import com.unistack.app.feature_grades.presentation.SubjectCutDetailScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
@@ -630,8 +630,8 @@ fun MainNavGraph(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
-                    onAddGradeClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, periodId), enabledModules) },
-                    onPeriodClick = { id, periodId -> navController.navigateIfModuleEnabled(AppRoutes.subjectPeriodDetail(id, periodId), enabledModules) },
+                    onAddGradeClick = { id, cutId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, cutId), enabledModules) },
+                    onCutClick = { id, cutId -> navController.navigateIfModuleEnabled(AppRoutes.subjectCutDetail(id, cutId), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
                     onCompleteHistoryClick = { id ->
@@ -656,24 +656,24 @@ fun MainNavGraph(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     },
-                    onAddActivitiesClick = { id, periodId ->
+                    onAddActivitiesClick = { id, cutId ->
                         navController.navigateIfModuleEnabled(
-                            AppRoutes.addGradeFromHistory(id, periodId),
+                            AppRoutes.addGradeFromHistory(id, cutId),
                             enabledModules
                         )
                     }
                 )
             }
-            screen("${AppRoutes.SubjectPeriodDetail}/{subjectId}/{periodId}") { backStackEntry ->
+            screen("${AppRoutes.SubjectCutDetail}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
-                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
-                SubjectPeriodDetailScreen(
+                val cutId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                SubjectCutDetailScreen(
                     subjectId = subjectId,
-                    periodId = periodId,
+                    cutId = cutId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     },
-                    onAddGradeClick = { id, selectedPeriodId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, selectedPeriodId), enabledModules) },
+                    onAddGradeClick = { id, selectedCutId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, selectedCutId), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) }
                 )
             }
@@ -707,12 +707,12 @@ fun MainNavGraph(
             }
             screen("${AppRoutes.AddGrade}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
-                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                val cutId = backStackEntry.arguments?.getString("periodId").orEmpty()
                 AddGradeScreen(
                     subjectId = subjectId,
-                    initialPeriodId = periodId,
+                    initialCutId = cutId,
                     onBackClick = {
-                        navController.navigateBackOr(AppRoutes.subjectPeriodDetail(subjectId, periodId), enabledModules)
+                        navController.navigateBackOr(AppRoutes.subjectCutDetail(subjectId, cutId), enabledModules)
                     },
                     onCompleteHistoryClick = { id ->
                         navController.go(AppRoutes.priorHistory(id))
@@ -721,10 +721,10 @@ fun MainNavGraph(
             }
             screen("${AppRoutes.AddGradeFromHistory}/{subjectId}/{periodId}") { backStackEntry ->
                 val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
-                val periodId = backStackEntry.arguments?.getString("periodId").orEmpty()
+                val cutId = backStackEntry.arguments?.getString("periodId").orEmpty()
                 AddGradeScreen(
                     subjectId = subjectId,
-                    initialPeriodId = periodId,
+                    initialCutId = cutId,
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.priorHistory(subjectId), enabledModules)
                     }
@@ -943,7 +943,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Academic
-        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.SubjectCutDetail) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddGradeFromHistory) -> AppRoutes.Academic
@@ -1000,7 +1000,7 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
-        routeBelongsTo(route, AppRoutes.SubjectPeriodDetail) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.SubjectCutDetail) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditGrade) -> AppModule.GRADES

@@ -312,15 +312,15 @@ private fun supportLine(
 ): String {
     // El corte va delante cuando el usuario ha elegido uno. Mientras no lo haya elegido no se
     // nombra ninguno: la app no sabe en qué punto del semestre va, y suponerlo fue justo el
-    // fallo que se corrigió al dejar activePeriodId vacío de nacimiento.
-    val period = subject.chosenPeriodId
-        ?.let { id -> subject.periodScheme.periods.firstOrNull { it.id == id } }
+    // fallo que se corrigió al dejar activeCutId vacío de nacimiento.
+    val cut = subject.chosenCutId
+        ?.let { id -> subject.cutScheme.cuts.firstOrNull { it.id == id } }
         ?.name
     val state = progressState(calculation, gradingScale)
     // Mayúscula al principio y en ningún otro sitio. Las piezas se escriben en minúscula
     // porque cualquiera de ellas puede ir en medio: con el corte delante, «Falta el 35 %»
     // quedaba como «Corte 2 · Falta el 35 %», con una mayúscula suelta a media frase.
-    return listOfNotNull(period, state).joinToString(" · ").replaceFirstChar(Char::uppercase)
+    return listOfNotNull(cut, state).joinToString(" · ").replaceFirstChar(Char::uppercase)
 }
 
 private fun progressState(

@@ -452,7 +452,7 @@ internal fun GradeStepperButton(
  */
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun PeriodWheelCard(
+internal fun CutWheelCard(
     weights: List<String>,
     total: Double,
     isValid: Boolean,
@@ -481,7 +481,7 @@ internal fun PeriodWheelCard(
         val animated by animateFloatAsState(
             targetValue = target.toFloat(),
             animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
-            label = "period-slice-$index"
+            label = "cut-slice-$index"
         )
         animated.toDouble()
     }
@@ -570,7 +570,7 @@ internal fun PeriodWheelCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        PeriodStepButton("−") {
+                        CutStepButton("−") {
                             onWeightChange(index, formatSetupPercent((value - 5.0).coerceAtLeast(0.0)))
                         }
                         Text(
@@ -581,7 +581,7 @@ internal fun PeriodWheelCard(
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center
                         )
-                        PeriodStepButton("+") {
+                        CutStepButton("+") {
                             onWeightChange(index, formatSetupPercent((value + 5.0).coerceAtMost(100.0)))
                         }
                     }
@@ -593,7 +593,7 @@ internal fun PeriodWheelCard(
 
 /** Cuánto falta o cuánto sobra, dicho con palabras y con el color del estado. */
 @Composable
-internal fun PeriodBalanceNotice(total: Double, remaining: Double, isValid: Boolean) {
+internal fun CutBalanceNotice(total: Double, remaining: Double, isValid: Boolean) {
     val over = total > 100.0
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -626,7 +626,7 @@ internal fun PeriodBalanceNotice(total: Double, remaining: Double, isValid: Bool
 /** Cuántos cortes, en el grupo conectado que usa el resto de la app. */
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun PeriodCountSection(
+internal fun CutCountSection(
     count: Int,
     onCountSelected: (Int) -> Unit
 ) {
@@ -681,7 +681,7 @@ internal fun PeriodCountSection(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    PeriodStepButton("−") { if (count > 2) onCountSelected(count - 1) }
+                    CutStepButton("−") { if (count > 2) onCountSelected(count - 1) }
                     Text(
                         text = count.toString(),
                         modifier = Modifier.width(46.dp),
@@ -690,7 +690,7 @@ internal fun PeriodCountSection(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
-                    PeriodStepButton("+") { if (count < 12) onCountSelected(count + 1) }
+                    CutStepButton("+") { if (count < 12) onCountSelected(count + 1) }
                 }
             }
         }
@@ -757,7 +757,7 @@ internal fun setupPercentValue(text: String): Double =
     text.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
 
 @Composable
-internal fun PeriodStepButton(symbol: String, onClick: () -> Unit) {
+internal fun CutStepButton(symbol: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier.size(28.dp),

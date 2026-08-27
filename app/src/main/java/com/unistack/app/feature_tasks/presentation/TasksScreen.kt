@@ -499,12 +499,12 @@ fun TasksScreen(
                     viewModel.markTaskAsNotGraded(prompt.task.id)
                     completionPrompt = null
                 },
-                onSaveGrade = { value, percentage, periodId ->
+                onSaveGrade = { value, percentage, cutId ->
                     val outcome = viewModel.saveTaskGrade(
                         taskId = prompt.task.id,
                         value = value,
                         percentageInput = percentage,
-                        periodId = periodId
+                        cutId = cutId
                     )
                     if (outcome.saved) {
                         completionPrompt = null
@@ -591,8 +591,8 @@ private fun TaskGradeResultSheet(
     var valueInput by remember(task.id) { mutableStateOf("") }
     var percentageInput by remember(task.id) { mutableStateOf("") }
     var weightUnknown by remember(task.id) { mutableStateOf(false) }
-    var selectedPeriodId by remember(task.id, subject.activePeriodId) {
-        mutableStateOf(task.periodId ?: subject.defaultPeriodId)
+    var selectedCutId by remember(task.id, subject.activeCutId) {
+        mutableStateOf(task.cutId ?: subject.defaultCutId)
     }
     var error by remember(task.id) { mutableStateOf<String?>(null) }
 
@@ -638,10 +638,10 @@ private fun TaskGradeResultSheet(
             } else {
                 Text("Corte", fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    subject.periodScheme.periods.sortedBy { it.order }.forEach { period ->
+                    subject.cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
                         Surface(
-                            onClick = { selectedPeriodId = period.id },
-                            color = if (selectedPeriodId == period.id) {
+                            onClick = { selectedCutId = cut.id },
+                            color = if (selectedCutId == cut.id) {
                                 MaterialTheme.colorScheme.primaryContainer
                             } else {
                                 MaterialTheme.colorScheme.surfaceVariant
@@ -649,7 +649,7 @@ private fun TaskGradeResultSheet(
                             shape = MaterialTheme.shapes.small
                         ) {
                             Text(
-                                period.name,
+                                cut.name,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -711,7 +711,7 @@ private fun TaskGradeResultSheet(
                         val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
                         if (value == null || (!weightUnknown && percentage == null)) {
                             error = "Revisa la nota y el porcentaje."
-                        } else if (!onSaveGrade(value, percentage, selectedPeriodId)) {
+                        } else if (!onSaveGrade(value, percentage, selectedCutId)) {
                             error = "No fue posible guardar. Revisa el rango y el peso acumulado."
                         }
                     },
@@ -1224,8 +1224,8 @@ private fun TaskCard(
         subject?.grades?.firstOrNull { it.id == gradeId }
     }
     val gradeSummary = linkedGrade?.let { grade ->
-        val periodName = subject?.periodScheme?.periodName(grade.periodId) ?: "Corte"
-        "${GradingScaleUtils.formatGrade(grade.value, gradingScale)} · $periodName"
+        val cutName = subject?.cutScheme?.cutName(grade.cutId) ?: "Corte"
+        "${GradingScaleUtils.formatGrade(grade.value, gradingScale)} · $cutName"
     }
     val awaitingGrade = task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
     val titleDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None

@@ -6,7 +6,7 @@ data class GradeItem(
     val value: Double,
     val percentage: Double,
     val type: GradeType = GradeType.WORKSHOP,
-    val periodId: String = "period-1",
+    val cutId: String = "period-1",
     val source: GradeSource = GradeSource.ACTIVITY,
     val weightStatus: GradeWeightStatus = GradeWeightStatus.KNOWN,
     val taskId: String? = null,

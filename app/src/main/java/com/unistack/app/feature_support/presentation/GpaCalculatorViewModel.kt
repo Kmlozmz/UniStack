@@ -45,12 +45,12 @@ class GpaCalculatorViewModel @Inject constructor(
         gradesRepository.subjects,
         userRepository.userProfile
     ) { subjects, profile ->
-        val periods = profile?.academicPeriodScheme?.periods.orEmpty()
+        val cuts = profile?.gradingCutScheme?.cuts.orEmpty()
         subjects.map { subject ->
             CalculatorSubject(
                 id = subject.id,
                 name = subject.name,
-                average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
+                average = GradeCalculator.calculateCurrentAverageByCuts(subject.grades, cuts)
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

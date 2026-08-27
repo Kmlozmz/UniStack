@@ -405,10 +405,10 @@ class LocalReminderScheduler(private val context: Context) {
     private fun gradeNotificationHints(profile: UserProfile, subjects: List<Subject>): List<SubjectNotificationHint> {
         val maxGrade = GradingScaleUtils.maxGradeFor(profile)
         return subjects.mapNotNull { subject ->
-            val periods = subject.periodScheme.periods
-            val average = GradeCalculator.calculateCurrentAverageByPeriods(subject.grades, periods)
-            val evaluatedPercentage = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, periods)
-            val weightedPoints = GradeCalculator.calculateWeightedPointsByPeriods(subject.grades, periods)
+            val cuts = subject.cutScheme.cuts
+            val average = GradeCalculator.calculateCurrentAverageByCuts(subject.grades, cuts)
+            val evaluatedPercentage = GradeCalculator.calculateEvaluatedSemesterPercentage(subject.grades, cuts)
+            val weightedPoints = GradeCalculator.calculateWeightedPointsByCuts(subject.grades, cuts)
             val remainingPercentage = (1.0 - evaluatedPercentage / 100.0).coerceAtLeast(0.0)
             val neededGrade = GradeCalculator.calculateNeededGrade(
                 currentWeightedPoints = weightedPoints,
@@ -416,23 +416,23 @@ class LocalReminderScheduler(private val context: Context) {
                 targetAverage = subject.targetAverage,
                 maxGrade = maxGrade
             )
-            val activeOrder = periods.firstOrNull { it.id == subject.activePeriodId }?.order ?: 1
-            val missingPriorPeriods = periods
+            val activeOrder = cuts.firstOrNull { it.id == subject.activeCutId }?.order ?: 1
+            val missingPriorCuts = cuts
                 .filter { it.order < activeOrder }
-                .count { period ->
-                    subject.grades.none { it.periodId == period.id } &&
-                        period.id !in subject.unknownPeriodIds
+                .count { cut ->
+                    subject.grades.none { it.cutId == cut.id } &&
+                        cut.id !in subject.unknownCutIds
                 }
             val unknownWeights = subject.grades.count {
                 it.source == com.unistack.app.feature_grades.domain.GradeSource.ACTIVITY &&
                     it.weightStatus == com.unistack.app.feature_grades.domain.GradeWeightStatus.UNKNOWN
             }
             when {
-                missingPriorPeriods > 0 -> SubjectNotificationHint(
+                missingPriorCuts > 0 -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.MISSING_PERIODS,
                     severity = 3,
-                    message = "Falta ${if (missingPriorPeriods == 1) "un corte anterior" else "$missingPriorPeriods cortes anteriores"} en ${subject.name}. Complétalo para afinar tu meta."
+                    message = "Falta ${if (missingPriorCuts == 1) "un corte anterior" else "$missingPriorCuts cortes anteriores"} en ${subject.name}. Complétalo para afinar tu meta."
                 )
                 unknownWeights > 0 -> SubjectNotificationHint(
                     subject = subject,

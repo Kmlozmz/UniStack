@@ -231,8 +231,8 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
  * Nivel, programa y cuántos cortes, en una línea.
  */
 private fun settingsIdentityDetail(profile: UserProfile): String {
-    val scheme = profile.academicPeriodScheme
-    val count = scheme.periods.size
+    val scheme = profile.gradingCutScheme
+    val count = scheme.cuts.size
     val periodLabel = if (count == 1) Corte.Singular else Corte.Plural
     return profile.educationSummary() + " · " + count + " " + periodLabel.lowercase()
 }

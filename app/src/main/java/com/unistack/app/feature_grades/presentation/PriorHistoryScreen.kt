@@ -44,7 +44,7 @@ import com.unistack.app.core.utils.GradeCalculator
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.GradingScale
 
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -61,17 +61,17 @@ fun PriorHistoryScreen(
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
-    val activeOrder = subject?.periodScheme?.periods
-        ?.firstOrNull { it.id == subject.activePeriodId }
+    val activeOrder = subject?.cutScheme?.cuts
+        ?.firstOrNull { it.id == subject.activeCutId }
         ?.order
         ?: 1
-    val previousPeriods = subject?.periodScheme?.periods
+    val previousCuts = subject?.cutScheme?.cuts
         ?.filter { it.order < activeOrder }
         ?.sortedBy { it.order }
         .orEmpty()
-    var periodForFinalResult by remember { mutableStateOf<AcademicPeriod?>(null) }
+    var cutForFinalResult by remember { mutableStateOf<GradingCut?>(null) }
 
-    LaunchedEffect(subject?.grades, subject?.unknownPeriodIds) {
+    LaunchedEffect(subject?.grades, subject?.unknownCutIds) {
         if (subject != null) viewModel.refreshHistoryCompletion(subject.id)
     }
 
@@ -127,7 +127,7 @@ fun PriorHistoryScreen(
                 }
             }
         }
-        if (subject == null || previousPeriods.isEmpty()) {
+        if (subject == null || previousCuts.isEmpty()) {
             item {
                 Text(
                     "No hay cortes anteriores pendientes.",
@@ -136,13 +136,13 @@ fun PriorHistoryScreen(
                 )
             }
         } else {
-            previousPeriods.forEach { period ->
-                item(key = period.id) {
-                    val grades = subject.grades.filter { it.periodId == period.id }
-                    val calculation = GradeCalculator.calculatePeriod(grades)
-                    val unknown = period.id in subject.unknownPeriodIds
-                    HistoryPeriodCard(
-                        period = period,
+            previousCuts.forEach { cut ->
+                item(key = cut.id) {
+                    val grades = subject.grades.filter { it.cutId == cut.id }
+                    val calculation = GradeCalculator.calculateCut(grades)
+                    val unknown = cut.id in subject.unknownCutIds
+                    HistoryCutCard(
+                        cut = cut,
                         resultLabel = when {
                             calculation.usesOfficialResult ->
                                 "Nota final: ${GradingScaleUtils.formatGrade(calculation.average, profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE)}"
@@ -152,13 +152,13 @@ fun PriorHistoryScreen(
                             else -> "Sin información"
                         },
                         resolved = calculation.average != null || unknown,
-                        onFinalResultClick = { periodForFinalResult = period },
-                        onActivitiesClick = { onAddActivitiesClick(subject.id, period.id) },
+                        onFinalResultClick = { cutForFinalResult = cut },
+                        onActivitiesClick = { onAddActivitiesClick(subject.id, cut.id) },
                         onUnknownClick = {
                             if (unknown) {
-                                viewModel.clearPeriodUnknown(subject.id, period.id)
+                                viewModel.clearCutUnknown(subject.id, cut.id)
                             } else {
-                                viewModel.markPeriodUnknown(subject.id, period.id)
+                                viewModel.markCutUnknown(subject.id, cut.id)
                             }
                         },
                         unknown = unknown
@@ -171,24 +171,24 @@ fun PriorHistoryScreen(
         }
     }
 
-    periodForFinalResult?.let { period ->
-        FinalPeriodGradeDialog(
-            period = period,
+    cutForFinalResult?.let { cut ->
+        FinalCutGradeDialog(
+            cut = cut,
             maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0,
-            onDismiss = { periodForFinalResult = null },
+            onDismiss = { cutForFinalResult = null },
             onSave = { value ->
                 val outcome = viewModel.saveGrade(
                     subjectId = subjectId,
-                    name = "Resultado final ${period.name}",
+                    name = "Resultado final ${cut.name}",
                     value = value,
                     percentageInput = 100.0,
-                    periodId = period.id,
+                    cutId = cut.id,
                     source = GradeSource.PERIOD_FINAL
                 )
                 if (outcome.saved) {
-                    viewModel.clearPeriodUnknown(subjectId, period.id)
+                    viewModel.clearCutUnknown(subjectId, cut.id)
                     viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
-                    periodForFinalResult = null
+                    cutForFinalResult = null
                 }
                 outcome.saved
             }
@@ -197,8 +197,8 @@ fun PriorHistoryScreen(
 }
 
 @Composable
-private fun HistoryPeriodCard(
-    period: AcademicPeriod,
+private fun HistoryCutCard(
+    cut: GradingCut,
     resultLabel: String,
     resolved: Boolean,
     onFinalResultClick: () -> Unit,
@@ -223,7 +223,7 @@ private fun HistoryPeriodCard(
                 )
                 Column(modifier = Modifier.padding(start = 10.dp)) {
                     Text(
-                        period.name,
+                        cut.name,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -253,17 +253,17 @@ private fun HistoryPeriodCard(
 }
 
 @Composable
-private fun FinalPeriodGradeDialog(
-    period: AcademicPeriod,
+private fun FinalCutGradeDialog(
+    cut: GradingCut,
     maxGrade: Double,
     onDismiss: () -> Unit,
     onSave: (Double) -> Boolean
 ) {
-    var value by remember(period.id) { mutableStateOf("") }
-    var error by remember(period.id) { mutableStateOf<String?>(null) }
+    var value by remember(cut.id) { mutableStateOf("") }
+    var error by remember(cut.id) { mutableStateOf<String?>(null) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nota final de ${period.name}") },
+        title = { Text("Nota final de ${cut.name}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Esta nota representará el corte completo y tendrá prioridad sobre sus actividades.")

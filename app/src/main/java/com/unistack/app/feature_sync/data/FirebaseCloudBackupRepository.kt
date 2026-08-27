@@ -36,9 +36,9 @@ import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_user.domain.UserRepository
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -258,10 +258,10 @@ class FirebaseCloudBackupRepository(
         "targetAverage" to subject.targetAverage,
         "visualType" to subject.visualType.name,
         "customColor" to subject.customColor,
-        "periodScheme" to periodSchemeMap(subject.periodScheme),
-        "activePeriodId" to subject.activePeriodId,
+        "periodScheme" to cutSchemeMap(subject.cutScheme),
+        "activePeriodId" to subject.activeCutId,
         "historyPromptStatus" to subject.historyPromptStatus.name,
-        "unknownPeriodIds" to subject.unknownPeriodIds.toList(),
+        "unknownCutIds" to subject.unknownCutIds.toList(),
         "grades" to subject.grades.map(::gradeMap)
     )
 
@@ -271,7 +271,7 @@ class FirebaseCloudBackupRepository(
         "value" to grade.value,
         "percentage" to grade.percentage,
         "type" to grade.type.name,
-        "periodId" to grade.periodId,
+        "periodId" to grade.cutId,
         "source" to grade.source.name,
         "weightStatus" to grade.weightStatus.name,
         "taskId" to grade.taskId,
@@ -288,7 +288,7 @@ class FirebaseCloudBackupRepository(
         "difficulty" to task.difficulty.name,
         "estimatedMinutes" to task.estimatedMinutes,
         "completed" to task.completed,
-        "periodId" to task.periodId,
+        "periodId" to task.cutId,
         "gradingStatus" to task.gradingStatus.name,
         "linkedGradeId" to task.linkedGradeId,
         "completedAt" to task.completedAt,
@@ -384,12 +384,12 @@ class FirebaseCloudBackupRepository(
                 visualType = visualType,
                 customColor = customColor,
                 grades = grades,
-                periodScheme = parsePeriodScheme(map["periodScheme"]),
-                activePeriodId = map.string("activePeriodId").orEmpty(),
+                cutScheme = parseCutScheme(map["periodScheme"]),
+                activeCutId = map.string("activePeriodId").orEmpty(),
                 historyPromptStatus = map.string("historyPromptStatus")
                     ?.let { runCatching { PriorHistoryPromptStatus.valueOf(it) }.getOrNull() }
                     ?: PriorHistoryPromptStatus.NOT_SHOWN,
-                unknownPeriodIds = (map["unknownPeriodIds"] as? List<*>)
+                unknownCutIds = (map["unknownCutIds"] as? List<*>)
                     ?.mapNotNull { it as? String }
                     ?.toSet()
                     .orEmpty()
@@ -407,7 +407,7 @@ class FirebaseCloudBackupRepository(
                 type = map.string("type")
                     ?.let { runCatching { GradeType.valueOf(it) }.getOrNull() }
                     ?: GradeType.WORKSHOP,
-                periodId = map.string("periodId") ?: "period-1",
+                cutId = map.string("periodId") ?: "period-1",
                 source = map.string("source")
                     ?.let { runCatching { GradeSource.valueOf(it) }.getOrNull() }
                     ?: GradeSource.ACTIVITY,
@@ -439,7 +439,7 @@ class FirebaseCloudBackupRepository(
                 completed = map.boolean("completed") ?: false,
                 createdAt = map.long("createdAt") ?: System.currentTimeMillis(),
                 updatedAt = map.long("updatedAt") ?: System.currentTimeMillis(),
-                periodId = map.string("periodId"),
+                cutId = map.string("periodId"),
                 gradingStatus = map.string("gradingStatus")
                     ?.let { runCatching { TaskGradingStatus.valueOf(it) }.getOrNull() }
                     ?: TaskGradingStatus.UNDECIDED,
@@ -574,31 +574,31 @@ class FirebaseCloudBackupRepository(
             .orEmpty()
     }
 
-    private fun periodSchemeMap(scheme: AcademicPeriodScheme): Map<String, Any?> = mapOf(
-        "periods" to scheme.periods.map { period ->
+    private fun cutSchemeMap(scheme: GradingCutScheme): Map<String, Any?> = mapOf(
+        "periods" to scheme.cuts.map { cut ->
             mapOf(
-                "id" to period.id,
-                "name" to period.name,
-                "weight" to period.weight,
-                "order" to period.order
+                "id" to cut.id,
+                "name" to cut.name,
+                "weight" to cut.weight,
+                "order" to cut.order
             )
         }
     )
 
-    private fun parsePeriodScheme(value: Any?): AcademicPeriodScheme {
+    private fun parseCutScheme(value: Any?): GradingCutScheme {
         @Suppress("UNCHECKED_CAST")
-        val root = value as? Map<String, Any?> ?: return AcademicPeriodScheme.default()
-        val periods = asMapList(root["periods"]).mapIndexedNotNull { index, item ->
+        val root = value as? Map<String, Any?> ?: return GradingCutScheme.default()
+        val cuts = asMapList(root["periods"]).mapIndexedNotNull { index, item ->
             val weight = item.double("weight") ?: return@mapIndexedNotNull null
-            AcademicPeriod(
+            GradingCut(
                 id = item.string("id") ?: "period-${index + 1}",
                 name = item.string("name") ?: "${Corte.Singular} ${index + 1}",
                 weight = weight,
                 order = item.int("order") ?: index + 1
             )
         }
-        return AcademicPeriodScheme(periods).takeIf { it.isValid }
-            ?: AcademicPeriodScheme.default()
+        return GradingCutScheme(cuts).takeIf { it.isValid }
+            ?: GradingCutScheme.default()
     }
 
     private fun Map<String, Any?>.string(key: String): String? = this[key] as? String

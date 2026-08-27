@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -464,9 +465,14 @@ private fun AccountLinkRow(
             ) {
                 Text(
                     text = title,
+                    // Cede el ancho que necesite la insignia en lugar de quedarselo todo.
+                    // Sin esto «Pronto» se quedaba sin sitio y se partia letra a letra, en
+                    // vertical, empujando el resto de la fila fuera de la tarjeta.
+                    modifier = Modifier.weight(1f, fill = false),
                     style = MaterialTheme.typography.titleMediumEmphasized,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 if (!available) {
                     Box(

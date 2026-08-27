@@ -16,9 +16,9 @@ import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppLanguage
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AuthProvider
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_user.domain.GradingScale
@@ -79,7 +79,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val EXPENSE_ALERT_THRESHOLD_PERCENT = intPreferencesKey("expense_alert_threshold_percent")
         val ENABLED_EXPENSE_CATEGORIES = stringSetPreferencesKey("enabled_expense_categories")
         val GRADE_SCENARIOS_JSON = stringPreferencesKey("grade_scenarios_json")
-        val ACADEMIC_PERIOD_SCHEME_JSON = stringPreferencesKey("academic_period_scheme_json")
+        val GRADING_CUT_SCHEME_JSON = stringPreferencesKey("academic_period_scheme_json")
         val SETUP_COMPLETED = booleanPreferencesKey("setup_completed")
         val CREATED_AT = longPreferencesKey("created_at")
         val UPDATED_AT = longPreferencesKey("updated_at")
@@ -169,7 +169,7 @@ class UserPreferencesDataSource(private val context: Context) {
                 ?.ifEmpty { ExpenseCategory.entries.toSet() }
                 ?: ExpenseCategory.entries.toSet(),
             gradeScenarios = parseGradeScenarios(prefs[Keys.GRADE_SCENARIOS_JSON]),
-            academicPeriodScheme = parseAcademicPeriodScheme(prefs[Keys.ACADEMIC_PERIOD_SCHEME_JSON]),
+            gradingCutScheme = parseGradingCutScheme(prefs[Keys.GRADING_CUT_SCHEME_JSON]),
             setupCompleted = prefs[Keys.SETUP_COMPLETED] ?: false,
             createdAt = prefs[Keys.CREATED_AT] ?: 0L,
             updatedAt = prefs[Keys.UPDATED_AT] ?: 0L
@@ -237,7 +237,7 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] = profile.expenseAlertThresholdPercent
             prefs[Keys.ENABLED_EXPENSE_CATEGORIES] = profile.enabledExpenseCategories.map { it.name }.toSet()
             prefs[Keys.GRADE_SCENARIOS_JSON] = profile.gradeScenarios.toJsonArrayString()
-            prefs[Keys.ACADEMIC_PERIOD_SCHEME_JSON] = profile.academicPeriodScheme.toJsonString()
+            prefs[Keys.GRADING_CUT_SCHEME_JSON] = profile.gradingCutScheme.toJsonString()
             prefs[Keys.ACCOUNT_PROVIDER] = profile.accountProvider.name
             prefs[Keys.SYNC_STATUS] = profile.syncStatus.name
 
@@ -499,19 +499,19 @@ class UserPreferencesDataSource(private val context: Context) {
         return array.toString()
     }
 
-    private fun parseAcademicPeriodScheme(json: String?): AcademicPeriodScheme {
-        if (json.isNullOrBlank()) return AcademicPeriodScheme.default()
+    private fun parseGradingCutScheme(json: String?): GradingCutScheme {
+        if (json.isNullOrBlank()) return GradingCutScheme.default()
         return runCatching {
             val root = JSONObject(json)
             val array = root.optJSONArray("periods") ?: JSONArray()
-            val periods = buildList {
+            val cuts = buildList {
                 for (index in 0 until array.length()) {
                     val item = array.optJSONObject(index) ?: continue
                     val order = item.optInt("order", index + 1)
                     val weight = item.optDouble("weight", 0.0)
                     if (weight > 0.0) {
                         add(
-                            AcademicPeriod(
+                            GradingCut(
                                 id = item.optString("id", "period-$order"),
                                 name = item.optString("name", "${Corte.Singular} $order"),
                                 weight = weight,
@@ -521,21 +521,21 @@ class UserPreferencesDataSource(private val context: Context) {
                     }
                 }
             }.sortedBy { it.order }
-            AcademicPeriodScheme(periods = periods)
+            GradingCutScheme(cuts = cuts)
                 .takeIf { it.isValid }
-                ?: AcademicPeriodScheme.default()
-        }.getOrDefault(AcademicPeriodScheme.default())
+                ?: GradingCutScheme.default()
+        }.getOrDefault(GradingCutScheme.default())
     }
 
-    private fun AcademicPeriodScheme.toJsonString(): String {
+    private fun GradingCutScheme.toJsonString(): String {
         val array = JSONArray()
-        periods.sortedBy { it.order }.forEach { period ->
+        cuts.sortedBy { it.order }.forEach { cut ->
             array.put(
                 JSONObject()
-                    .put("id", period.id)
-                    .put("name", period.name)
-                    .put("weight", period.weight)
-                    .put("order", period.order)
+                    .put("id", cut.id)
+                    .put("name", cut.name)
+                    .put("weight", cut.weight)
+                    .put("order", cut.order)
             )
         }
         return JSONObject()

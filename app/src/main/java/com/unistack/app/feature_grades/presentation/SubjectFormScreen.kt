@@ -90,7 +90,7 @@ import com.unistack.app.core.utils.NO_DATA
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
@@ -139,7 +139,7 @@ fun SubjectFormScreen(
     val isEditing = subjectId != null
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
     val subjectSchedule = subjectId?.let { id -> classSessions.firstOrNull { it.subjectId == id } }
-    val defaultPeriodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
+    val defaultCutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
     val userPlan = FeatureGate.planFor(isPro = false)
     val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
     // Desde Horario no tiene sentido guardar una materia sin clase: es justo lo que se venía
@@ -157,7 +157,7 @@ fun SubjectFormScreen(
     var customColor by remember { mutableStateOf<Int?>(accentArgbByType.getValue(SubjectVisualType.TEAL)) }
     // Vacío mientras nadie lo elija. En edición se carga el que ya tuviera la materia,
     // para no borrar una elección hecha desde su pantalla.
-    var activePeriodId by remember { mutableStateOf("") }
+    var activeCutId by remember { mutableStateOf("") }
     var scheduleDraft by remember(subjectId) { mutableStateOf(defaultSubjectScheduleDraft()) }
     var scheduleInitialized by remember(subjectId) { mutableStateOf(false) }
     var initialized by remember(subjectId) { mutableStateOf(false) }
@@ -215,12 +215,12 @@ fun SubjectFormScreen(
             targetAverage = GradingScaleUtils.formatGrade(subject.targetAverage, scale)
             visualType = subject.visualType
             customColor = subject.customColor ?: accentArgbByType.getValue(subject.visualType)
-            activePeriodId = subject.activePeriodId
+            activeCutId = subject.activeCutId
             initialized = true
         } else if (!isEditing) {
             targetAverage = GradingScaleUtils.formatGrade(defaultAverage, scale)
             customColor = accentArgbByType.getValue(visualType)
-            activePeriodId = ""
+            activeCutId = ""
             initialized = true
         }
     }
@@ -373,8 +373,8 @@ fun SubjectFormScreen(
                 accent = accent,
                 summary = academicSummary(
                     targetAverage = targetAverage,
-                    periodScheme = defaultPeriodScheme,
-                    activePeriodId = activePeriodId,
+                    cutScheme = defaultCutScheme,
+                    activeCutId = activeCutId,
                     reminderMinutes = scheduleDraft.reminderMinutes
                 ),
                 expanded = academicExpanded || targetBlocksSave,
@@ -445,7 +445,7 @@ fun SubjectFormScreen(
                             targetAverage = targetValue ?: defaultAverage,
                             visualType = visualType,
                             customColor = customColor,
-                            activePeriodId = activePeriodId
+                            activeCutId = activeCutId
                         )
                         if (saved) editingSubjectId else null
                     } else {
@@ -454,7 +454,7 @@ fun SubjectFormScreen(
                             targetAverage = targetValue ?: defaultAverage,
                             visualType = visualType,
                             customColor = customColor,
-                            activePeriodId = activePeriodId
+                            activeCutId = activeCutId
                         )?.id
                     }
 
@@ -509,14 +509,14 @@ fun SubjectFormScreen(
 /** Resumen del bloque académico, para leerlo de un vistazo cuando llega plegado. */
 private fun academicSummary(
     targetAverage: String,
-    periodScheme: AcademicPeriodScheme,
-    activePeriodId: String,
+    cutScheme: GradingCutScheme,
+    activeCutId: String,
     reminderMinutes: Int
 ): String {
-    val period = periodScheme.periods.firstOrNull { it.id == activePeriodId }
+    val cut = cutScheme.cuts.firstOrNull { it.id == activeCutId }
     return buildList {
         add("Meta ${targetAverage.ifBlank { NO_DATA }}")
-        if (periodScheme.periods.size > 1 && period != null) add("Corte ${period.order}")
+        if (cutScheme.cuts.size > 1 && cut != null) add("Corte ${cut.order}")
         if (reminderMinutes > 0) add("Aviso $reminderMinutes min")
     }.joinToString("  ·  ")
 }

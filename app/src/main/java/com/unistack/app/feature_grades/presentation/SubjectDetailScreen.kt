@@ -97,8 +97,8 @@ import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.GradeType
 import com.unistack.app.feature_schedule.domain.ClassSession
-import com.unistack.app.feature_user.domain.AcademicPeriod
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCut
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AcademicIndicatorStyle
 import com.unistack.app.feature_user.domain.GradingScale
 import java.util.Locale
@@ -128,7 +128,7 @@ fun SubjectDetailScreen(
     subjectId: String,
     onBackClick: () -> Unit,
     onAddGradeClick: (String, String) -> Unit,
-    onPeriodClick: (String, String) -> Unit,
+    onCutClick: (String, String) -> Unit,
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
@@ -143,7 +143,7 @@ fun SubjectDetailScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
-    val periodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
+    val cutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
     val passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
     var showSubjectMenu by remember { mutableStateOf(false) }
     var showDeleteSubjectDialog by remember { mutableStateOf(false) }
@@ -156,47 +156,47 @@ fun SubjectDetailScreen(
     // Mientras el usuario no diga en qué corte va, la pantalla no lo supone: no marca ningún
     // corte como actual y no reclama el historial de los anteriores. Reclamarlo exige saber
     // que esos cortes ya pasaron, y eso solo lo sabe él.
-    val chosenPeriod = subject.chosenPeriodId?.let { id ->
-        periodScheme.periods.firstOrNull { it.id == id }
+    val chosenCut = subject.chosenCutId?.let { id ->
+        cutScheme.cuts.firstOrNull { it.id == id }
     }
-    val activePeriodOrder = chosenPeriod?.order ?: 1
-    val hasIncompletePriorHistory = chosenPeriod != null &&
-        activePeriodOrder > 1 &&
-        periodScheme.periods
-            .filter { it.order < activePeriodOrder }
-            .any { period ->
-                subject.grades.none { it.periodId == period.id } &&
-                    period.id !in subject.unknownPeriodIds
+    val activeCutOrder = chosenCut?.order ?: 1
+    val hasIncompletePriorHistory = chosenCut != null &&
+        activeCutOrder > 1 &&
+        cutScheme.cuts
+            .filter { it.order < activeCutOrder }
+            .any { cut ->
+                subject.grades.none { it.cutId == cut.id } &&
+                    cut.id !in subject.unknownCutIds
             }
 
-    val periodSummaries = remember(subject, periodScheme) {
-        periodScheme.periods.map { period ->
-            val grades = subject.grades.filter { it.periodId == period.id }
-            period.toSummary(grades)
+    val cutSummaries = remember(subject, cutScheme) {
+        cutScheme.cuts.map { cut ->
+            val grades = subject.grades.filter { it.cutId == cut.id }
+            cut.toSummary(grades)
         }
     }
-    val orderedPeriodSummaries = remember(periodSummaries, subject.activePeriodId) {
-        periodSummaries.sortedWith(
-            compareByDescending<PeriodSummary> { it.period.id == subject.activePeriodId }
-                .thenBy { it.period.order }
+    val orderedCutSummaries = remember(cutSummaries, subject.activeCutId) {
+        cutSummaries.sortedWith(
+            compareByDescending<CutSummary> { it.cut.id == subject.activeCutId }
+                .thenBy { it.cut.order }
         )
     }
     // Los cortes cerrados se apartan: ni se pueden elegir como destino de notas nuevas ni
     // compiten por la atención con los que aún están en juego.
-    val openPeriodSummaries = orderedPeriodSummaries.filter { it.status != PeriodStatus.COMPLETED }
-    val completedPeriodSummaries = periodSummaries
-        .filter { it.status == PeriodStatus.COMPLETED }
-        .sortedBy { it.period.order }
+    val openCutSummaries = orderedCutSummaries.filter { it.status != CutStatus.COMPLETED }
+    val completedCutSummaries = cutSummaries
+        .filter { it.status == CutStatus.COMPLETED }
+        .sortedBy { it.cut.order }
 
     // Una sola cuenta para toda la pantalla. Antes había tres: el promedio salía del
     // calculador, la proyección final se calculaba aquí a mano con otra fórmula —contaba un
     // corte apenas empezado con su peso completo— y lo necesario para la meta volvía a pasar
     // por el porcentaje ya redondeado. La tarjeta llegaba a enseñar dos cifras distintas
     // para lo mismo, una encima de la otra.
-    val calculation = remember(subject.grades, periodScheme, subject.targetAverage, maxGrade) {
+    val calculation = remember(subject.grades, cutScheme, subject.targetAverage, maxGrade) {
         GradeCalculator.calculateSubject(
             grades = subject.grades,
-            periods = periodScheme.periods,
+            cuts = cutScheme.cuts,
             targetAverage = subject.targetAverage,
             maxGrade = maxGrade
         )
@@ -297,47 +297,47 @@ fun SubjectDetailScreen(
                     // tarjeta del corte lo repite otra vez. Eran tres formas de decir lo mismo
                     // seguidas.
                     Text(
-                        "${periodScheme.periods.size} cortes",
+                        "${cutScheme.cuts.size} cortes",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                 }
             }
             item {
-                PeriodChooser(
+                CutChooser(
                     // Un corte con el 100% repartido ya no admite más notas, así que sale de
                     // la lista de destinos. Seguir ofreciéndolo era ofrecer un sitio donde
                     // cualquier peso nuevo iba a ser rechazado al guardar.
-                    periods = openPeriodSummaries.map { it.period },
-                    chosenPeriodId = subject.chosenPeriodId,
-                    onChoose = { viewModel.setActivePeriod(subject.id, it) }
+                    cuts = openCutSummaries.map { it.cut },
+                    chosenCutId = subject.chosenCutId,
+                    onChoose = { viewModel.setActiveCut(subject.id, it) }
                 )
             }
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    openPeriodSummaries.forEach { summary ->
-                        val needsHistory = chosenPeriod != null &&
-                            summary.period.order < activePeriodOrder &&
+                    openCutSummaries.forEach { summary ->
+                        val needsHistory = chosenCut != null &&
+                            summary.cut.order < activeCutOrder &&
                             summary.grades.isEmpty() &&
-                            summary.period.id !in subject.unknownPeriodIds
-                        PeriodCard(
+                            summary.cut.id !in subject.unknownCutIds
+                        CutCard(
                             summary = summary,
                             maxGrade = maxGrade,
                             scale = scale,
-                            isActive = summary.period.id == subject.chosenPeriodId,
+                            isActive = summary.cut.id == subject.chosenCutId,
                             needsHistory = needsHistory,
                             onClick = {
                                 if (needsHistory) {
                                     onCompleteHistoryClick(subject.id)
                                 } else {
-                                    onPeriodClick(subject.id, summary.period.id)
+                                    onCutClick(subject.id, summary.cut.id)
                                 }
                             }
                         )
                     }
                 }
             }
-            if (completedPeriodSummaries.isNotEmpty()) {
+            if (completedCutSummaries.isNotEmpty()) {
                 item {
                     Text(
                         "Completados",
@@ -348,16 +348,16 @@ fun SubjectDetailScreen(
                 }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        completedPeriodSummaries.forEach { summary ->
+                        completedCutSummaries.forEach { summary ->
                             // Siguen siendo tarjetas normales: se entra a consultarlas y, si
                             // hace falta corregir algo, a editar sus notas desde dentro.
-                            PeriodCard(
+                            CutCard(
                                 summary = summary,
                                 maxGrade = maxGrade,
                                 scale = scale,
                                 isActive = false,
                                 needsHistory = false,
-                                onClick = { onPeriodClick(subject.id, summary.period.id) },
+                                onClick = { onCutClick(subject.id, summary.cut.id) },
                                 dimmed = true
                             )
                         }
@@ -389,8 +389,8 @@ fun SubjectDetailScreen(
             // la nota. Queda apagado y dice qué falta, en vez de mandar la nota al primero.
             // Además de «sin elegir», el botón se apaga cuando el corte elegido ya está
             // cerrado y no queda ninguno abierto: no hay dónde meter la nota.
-            val addTarget = chosenPeriod?.takeIf { period ->
-                openPeriodSummaries.any { it.period.id == period.id }
+            val addTarget = chosenCut?.takeIf { cut ->
+                openCutSummaries.any { it.cut.id == cut.id }
             }
             Button(
                 shapes = UniStackButtonDefaults.shapes,
@@ -420,8 +420,8 @@ fun SubjectDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         when {
-                            addTarget != null -> "Agregar nota a ${periodDisplayName(addTarget)}"
-                            openPeriodSummaries.isEmpty() -> "Todos los cortes están completos"
+                            addTarget != null -> "Agregar nota a ${cutDisplayName(addTarget)}"
+                            openCutSummaries.isEmpty() -> "Todos los cortes están completos"
                             else -> "Elige un corte para agregar notas"
                         },
                         fontWeight = FontWeight.Bold,
@@ -459,9 +459,9 @@ fun SubjectDetailScreen(
 }
 
 @Composable
-fun SubjectPeriodDetailScreen(
+fun SubjectCutDetailScreen(
     subjectId: String,
-    periodId: String,
+    cutId: String,
     onBackClick: () -> Unit,
     onAddGradeClick: (String, String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
@@ -473,17 +473,17 @@ fun SubjectPeriodDetailScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
     val maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0
-    val periodScheme = subject?.periodScheme ?: profile?.academicPeriodScheme ?: AcademicPeriodScheme.default()
-    val period = periodScheme.periods.firstOrNull { it.id == periodId }
+    val cutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
+    val cut = cutScheme.cuts.firstOrNull { it.id == cutId }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
 
-    if (subject == null || period == null) {
+    if (subject == null || cut == null) {
         MissingSubjectState(onBackClick = onBackClick, modifier = modifier)
         return
     }
 
-    val grades = subject.grades.filter { it.periodId == period.id }
-    val summary = period.toSummary(grades)
+    val grades = subject.grades.filter { it.cutId == cut.id }
+    val summary = cut.toSummary(grades)
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
@@ -505,14 +505,14 @@ fun SubjectPeriodDetailScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                PeriodHeader(
-                    title = periodDisplayName(period),
-                    subtitle = "${subject.name}  ·  ${formatPercent(period.weight * 100)}% de la materia",
+                CutHeader(
+                    title = cutDisplayName(cut),
+                    subtitle = "${subject.name}  ·  ${formatPercent(cut.weight * 100)}% de la materia",
                     onBackClick = onBackClick
                 )
             }
             item {
-                PeriodSummaryCard(summary = summary, maxGrade = maxGrade, scale = scale)
+                CutSummaryCard(summary = summary, maxGrade = maxGrade, scale = scale)
             }
             if (grades.isEmpty()) {
                 item {
@@ -520,7 +520,7 @@ fun SubjectPeriodDetailScreen(
                     // diciendo casi lo mismo: «Aún no hay notas», el botón, y una tarjeta de
                     // «Información» con una frase fija que nunca cambiaba y ocupaba tanto como
                     // el contenido. La frase explica algo útil solo aquí, así que vive aquí.
-                    EmptyPeriodNotesInline()
+                    EmptyCutNotesInline()
                 }
             } else {
                 item {
@@ -567,7 +567,7 @@ fun SubjectPeriodDetailScreen(
         ) {
             Button(
                 shapes = UniStackButtonDefaults.shapes,
-                onClick = { onAddGradeClick(subject.id, period.id) },
+                onClick = { onAddGradeClick(subject.id, cut.id) },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -581,7 +581,7 @@ fun SubjectPeriodDetailScreen(
                 Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Agregar nota a ${periodDisplayName(period)}",
+                    "Agregar nota a ${cutDisplayName(cut)}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -748,7 +748,7 @@ private fun SubjectHeader(
 }
 
 @Composable
-private fun PeriodHeader(title: String, subtitle: String, onBackClick: () -> Unit) {
+private fun CutHeader(title: String, subtitle: String, onBackClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -842,12 +842,12 @@ private fun SubjectClassFacts(session: ClassSession) {
  * de unos cortes anteriores que el usuario nunca dijo haber cursado.
  */
 @Composable
-private fun PeriodChooser(
-    periods: List<AcademicPeriod>,
-    chosenPeriodId: String?,
+private fun CutChooser(
+    cuts: List<GradingCut>,
+    chosenCutId: String?,
     onChoose: (String) -> Unit
 ) {
-    if (periods.isEmpty()) {
+    if (cuts.isEmpty()) {
         Text(
             "Todos los cortes están completos.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -857,12 +857,12 @@ private fun PeriodChooser(
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            if (chosenPeriodId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",
-            color = if (chosenPeriodId == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = if (chosenPeriodId == null) 15.sp else 13.sp,
-            fontWeight = if (chosenPeriodId == null) FontWeight.ExtraBold else FontWeight.SemiBold
+            if (chosenCutId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",
+            color = if (chosenCutId == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = if (chosenCutId == null) 15.sp else 13.sp,
+            fontWeight = if (chosenCutId == null) FontWeight.ExtraBold else FontWeight.SemiBold
         )
-        if (chosenPeriodId == null) {
+        if (chosenCutId == null) {
             Text(
                 "Elígelo para saber dónde entran tus notas y qué cortes ya pasaron.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -872,11 +872,11 @@ private fun PeriodChooser(
         }
         // Elegir uno entre varios es un grupo conectado, igual que Horario/Calendario o
         // Materias/Tareas. Eran tres pastillas sueltas en una fila que rodaba.
-        val ordered = periods.sortedBy { it.order }
+        val ordered = cuts.sortedBy { it.order }
         UniSegmentedControl<String>(
-            selected = chosenPeriodId.orEmpty(),
+            selected = chosenCutId.orEmpty(),
             options = ordered.map {
-                UniSegmentedOption(value = it.id, label = periodDisplayName(it))
+                UniSegmentedOption(value = it.id, label = cutDisplayName(it))
             },
             onSelected = onChoose,
             modifier = Modifier.fillMaxWidth()
@@ -1313,8 +1313,8 @@ private fun SubjectInsightCard(
 }
 
 @Composable
-private fun PeriodCard(
-    summary: PeriodSummary,
+private fun CutCard(
+    summary: CutSummary,
     maxGrade: Double,
     scale: GradingScale,
     isActive: Boolean,
@@ -1370,7 +1370,7 @@ private fun PeriodCard(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                periodDisplayName(summary.period),
+                                cutDisplayName(summary.cut),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.ExtraBold
@@ -1387,7 +1387,7 @@ private fun PeriodCard(
                         }
                         Text(
                             buildString {
-                                append("${formatPercent(summary.period.weight * 100)}% de la materia")
+                                append("${formatPercent(summary.cut.weight * 100)}% de la materia")
                                 if (isActive) append("  ·  Corte actual")
                             },
                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1485,8 +1485,8 @@ private fun PeriodCard(
  * El color del estado se queda donde significa algo: la insignia y la cifra.
  */
 @Composable
-private fun PeriodSummaryCard(
-    summary: PeriodSummary,
+private fun CutSummaryCard(
+    summary: CutSummary,
     maxGrade: Double,
     scale: GradingScale
 ) {
@@ -1654,7 +1654,7 @@ private fun GradeItem.contextLabel(): String {
 }
 
 @Composable
-private fun EmptyPeriodNotesInline() {
+private fun EmptyCutNotesInline() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1691,7 +1691,7 @@ private fun EmptyPeriodNotesInline() {
 
 
 @Composable
-private fun StatusBadge(status: PeriodStatus) {
+private fun StatusBadge(status: CutStatus) {
     Box(
         modifier = Modifier
             .background(status.color, MaterialTheme.shapes.extraSmall)
@@ -1721,45 +1721,45 @@ private fun CustomStatusBadge(label: String, color: Color) {
     }
 }
 
-private data class PeriodSummary(
-    val period: AcademicPeriod,
+private data class CutSummary(
+    val cut: GradingCut,
     val grades: List<GradeItem>,
     val average: Double?,
     val evaluated: Double,
-    val status: PeriodStatus
+    val status: CutStatus
 )
 
-private enum class PeriodStatus(val label: String) {
+private enum class CutStatus(val label: String) {
     COMPLETED("Completado"),
     IN_PROGRESS("En curso"),
     PENDING("Pendiente")
 }
 
-private val PeriodStatus.color: Color
+private val CutStatus.color: Color
     @Composable get() = when (this) {
-        PeriodStatus.COMPLETED -> LocalSectionColors.current.onTrack
-        PeriodStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
-        PeriodStatus.PENDING -> LocalSectionColors.current.atRisk
+        CutStatus.COMPLETED -> LocalSectionColors.current.onTrack
+        CutStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary
+        CutStatus.PENDING -> LocalSectionColors.current.atRisk
     }
 
-private fun PeriodStatus.icon(): ImageVector {
+private fun CutStatus.icon(): ImageVector {
     return when (this) {
-        PeriodStatus.COMPLETED -> Icons.Rounded.CheckCircle
-        PeriodStatus.IN_PROGRESS -> Icons.AutoMirrored.Rounded.Assignment
-        PeriodStatus.PENDING -> Icons.AutoMirrored.Rounded.Assignment
+        CutStatus.COMPLETED -> Icons.Rounded.CheckCircle
+        CutStatus.IN_PROGRESS -> Icons.AutoMirrored.Rounded.Assignment
+        CutStatus.PENDING -> Icons.AutoMirrored.Rounded.Assignment
     }
 }
 
-private fun AcademicPeriod.toSummary(grades: List<GradeItem>): PeriodSummary {
-    val calculation = GradeCalculator.calculatePeriod(grades)
+private fun GradingCut.toSummary(grades: List<GradeItem>): CutSummary {
+    val calculation = GradeCalculator.calculateCut(grades)
     val evaluated = round(calculation.evaluatedFraction * 100.0 * 10.0) / 10.0
     val status = when {
-        evaluated <= 0.001 -> PeriodStatus.PENDING
-        evaluated >= 99.9 -> PeriodStatus.COMPLETED
-        else -> PeriodStatus.IN_PROGRESS
+        evaluated <= 0.001 -> CutStatus.PENDING
+        evaluated >= 99.9 -> CutStatus.COMPLETED
+        else -> CutStatus.IN_PROGRESS
     }
-    return PeriodSummary(
-        period = this,
+    return CutSummary(
+        cut = this,
         grades = grades,
         average = calculation.average,
         evaluated = evaluated,
@@ -1767,7 +1767,7 @@ private fun AcademicPeriod.toSummary(grades: List<GradeItem>): PeriodSummary {
     )
 }
 
-private fun periodDisplayName(period: AcademicPeriod): String = "Corte ${period.order}"
+private fun cutDisplayName(cut: GradingCut): String = "Corte ${cut.order}"
 
 private fun gradeCountLabel(count: Int): String = "$count ${if (count == 1) "nota" else "notas"}"
 

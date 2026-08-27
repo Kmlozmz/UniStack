@@ -3,9 +3,9 @@ package com.unistack.app.feature_setup.presentation
 import com.unistack.app.feature_user.domain.offerableModules
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.GradeStepperRow
-import com.unistack.app.core.design.components.PeriodWheelCard
-import com.unistack.app.core.design.components.PeriodBalanceNotice
-import com.unistack.app.core.design.components.PeriodCountSection
+import com.unistack.app.core.design.components.CutWheelCard
+import com.unistack.app.core.design.components.CutBalanceNotice
+import com.unistack.app.core.design.components.CutCountSection
 import com.unistack.app.core.design.components.SetupEvenSplitAction
 import com.unistack.app.core.design.components.gradeValueOf
 import androidx.compose.animation.AnimatedVisibility
@@ -308,12 +308,12 @@ fun SetupFlow(
             )
         }
         composable(SetupRoutes.Periods) {
-            SetupAcademicPeriodsScreen(
-                weights = viewModel.academicPeriodWeights,
-                isValid = viewModel.isAcademicPeriodsValid,
+            SetupGradingCutsScreen(
+                weights = viewModel.gradingCutWeights,
+                isValid = viewModel.areGradingCutsValid,
                 totalSteps = totalSteps,
-                onCountSelected = viewModel::updateAcademicPeriodCount,
-                onWeightChange = viewModel::updateAcademicPeriodWeight,
+                onCountSelected = viewModel::updateGradingCutCount,
+                onWeightChange = viewModel::updateGradingCutWeight,
                 onBackClick = { navController.navigateUp() },
                 onContinueClick = { navController.navigate(afterEvaluation) }
             )
@@ -350,7 +350,7 @@ fun SetupFlow(
                 customGradeMax = viewModel.customGradeMax,
                 passingGrade = viewModel.passingGradeText,
                 targetAverage = viewModel.targetAverageText,
-                periodWeights = viewModel.academicPeriodWeights,
+                cutWeights = viewModel.gradingCutWeights,
                 enabledModules = viewModel.enabledModules,
                 gradesEnabled = gradesEnabled,
                 permissionsNeeded = permissionsNeeded,
@@ -1099,8 +1099,11 @@ fun SetupProfileScreen(
              * bloques que aparecian y desaparecian segun cual se tocara. La app es de
              * educacion superior, asi que preguntar el nivel era ofrecer una sola respuesta
              * util y tres caminos muertos. Lo que queda es lo que siempre se rellenaba.
+             *
+             * Y sin la rejilla delante sobra el rotulo «¿Que estudias?» que separaba una cosa
+             * de otra: el titulo de la pantalla ya dice eso mismo, y dos preguntas casi
+             * identicas apiladas se leen como un error.
              */
-            SetupProfileSectionTitle("¿Qué estudias?")
             SetupDropdownField(
                 label = "Área de estudio",
                 value = studyArea?.let(::labelFor).orEmpty(),
@@ -1596,7 +1599,7 @@ private fun ConfirmedScaleRangeRow(
 
 
 @Composable
-fun SetupAcademicPeriodsScreen(
+fun SetupGradingCutsScreen(
     weights: List<String>,
     isValid: Boolean,
     onCountSelected: (Int) -> Unit,
@@ -1618,7 +1621,7 @@ fun SetupAcademicPeriodsScreen(
         totalSteps = totalSteps,
         modifier = modifier,
         actions = {
-            AcademicPeriodsBottomActions(
+            GradingCutsBottomActions(
                 enabled = isValid,
                 onContinueClick = onContinueClick
             )
@@ -1651,15 +1654,15 @@ fun SetupAcademicPeriodsScreen(
              */
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     if (weights.isNotEmpty()) {
-                        PeriodWheelCard(
+                        CutWheelCard(
                             weights = weights,
                             total = total,
                             isValid = isValid,
                             onWeightChange = onWeightChange
                         )
-                        PeriodBalanceNotice(total = total, remaining = remaining, isValid = isValid)
+                        CutBalanceNotice(total = total, remaining = remaining, isValid = isValid)
                     }
-                    PeriodCountSection(
+                    CutCountSection(
                         count = weights.size,
                         onCountSelected = { count ->
                             customCountSelected = false
@@ -1681,7 +1684,7 @@ fun SetupAcademicPeriodsScreen(
     }
 
 @Composable
-private fun AcademicPeriodsBottomActions(
+private fun GradingCutsBottomActions(
     enabled: Boolean,
     onContinueClick: () -> Unit
 ) {
@@ -1712,7 +1715,7 @@ private fun AcademicPeriodsBottomActions(
     }
 }
 
-private data class PeriodCountOption(
+private data class CutCountOption(
     val count: Int?,
     val label: String
 )
@@ -1869,7 +1872,7 @@ fun SetupDoneScreen(
     customGradeMax: Double,
     passingGrade: String,
     targetAverage: String,
-    periodWeights: List<String>,
+    cutWeights: List<String>,
     enabledModules: Set<AppModule>,
     onBackClick: () -> Unit,
     onCreateSubjectClick: () -> Unit,
@@ -1883,7 +1886,7 @@ fun SetupDoneScreen(
     BackHandler(onBack = onBackClick)
     val displayName = name.ifBlank { "Usuario" }
     val program = resolvedProgram(selectedProgram, customProgram)
-    val weights = periodWeights.filter { it.isNotBlank() }
+    val weights = cutWeights.filter { it.isNotBlank() }
 
     // La celebración es la misma se pulse el botón que se pulse: lo que se celebra es haber
     // terminado, no a dónde se va. Se recuerda cuál se pulsó y la ruta se resuelve al final.

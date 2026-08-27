@@ -7,9 +7,9 @@ import com.unistack.app.feature_grades.domain.GradeWeightStatus
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,13 +23,13 @@ fun SubjectEntity.toDomain(grades: List<GradeItem>): Subject {
         grades = grades,
         visualType = type,
         customColor = customColor,
-        periodScheme = periodSchemeJson.toPeriodScheme(),
+        cutScheme = periodSchemeJson.toCutScheme(),
         // Sin `ifBlank`: el vacío es un valor con significado —«el usuario no ha elegido
-        // corte»— y convertirlo aquí en «period-1» era justo lo que hacía que la app diera
+        // corte»— y convertirlo aquí en «cut-1» era justo lo que hacía que la app diera
         // por elegido el primer corte de toda materia nueva.
-        activePeriodId = activePeriodId,
+        activeCutId = activePeriodId,
         historyPromptStatus = historyPromptStatus.toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
-        unknownPeriodIds = unknownPeriodIdsJson.toStringSet()
+        unknownCutIds = unknownPeriodIdsJson.toStringSet()
     )
 }
 
@@ -42,10 +42,10 @@ fun Subject.toEntity(userId: String): SubjectEntity {
         targetAverage = targetAverage,
         visualType = visualType.name,
         customColor = customColor,
-        periodSchemeJson = periodScheme.toJson(),
-        activePeriodId = activePeriodId,
+        periodSchemeJson = cutScheme.toJson(),
+        activePeriodId = activeCutId,
         historyPromptStatus = historyPromptStatus.name,
-        unknownPeriodIdsJson = JSONArray(unknownPeriodIds.toList()).toString(),
+        unknownPeriodIdsJson = JSONArray(unknownCutIds.toList()).toString(),
         createdAt = now,
         updatedAt = now
     )
@@ -60,7 +60,7 @@ fun GradeEntity.toDomain(): GradeItem {
         value = value,
         percentage = percentage,
         type = gradeType,
-        periodId = periodId.ifBlank { "period-1" },
+        cutId = periodId.ifBlank { "period-1" },
         source = source.toEnum(GradeSource.ACTIVITY),
         weightStatus = weightStatus.toEnum(GradeWeightStatus.KNOWN),
         taskId = taskId,
@@ -76,7 +76,7 @@ fun GradeItem.toEntity(subjectId: String): GradeEntity {
         value = value,
         percentage = percentage,
         type = type.name,
-        periodId = periodId,
+        periodId = cutId,
         source = source.name,
         weightStatus = weightStatus.name,
         taskId = taskId,
@@ -85,39 +85,39 @@ fun GradeItem.toEntity(subjectId: String): GradeEntity {
     )
 }
 
-private fun AcademicPeriodScheme.toJson(): String = JSONObject()
+private fun GradingCutScheme.toJson(): String = JSONObject()
     .put(
         "periods",
         JSONArray(
-            periods.sortedBy { it.order }.map { period ->
+            cuts.sortedBy { it.order }.map { cut ->
                 JSONObject()
-                    .put("id", period.id)
-                    .put("name", period.name)
-                    .put("weight", period.weight)
-                    .put("order", period.order)
+                    .put("id", cut.id)
+                    .put("name", cut.name)
+                    .put("weight", cut.weight)
+                    .put("order", cut.order)
             }
         )
     )
     .toString()
 
-private fun String.toPeriodScheme(): AcademicPeriodScheme {
-    if (isBlank()) return AcademicPeriodScheme.default()
+private fun String.toCutScheme(): GradingCutScheme {
+    if (isBlank()) return GradingCutScheme.default()
     return runCatching {
         val root = JSONObject(this)
-        val array = root.optJSONArray("periods") ?: return@runCatching AcademicPeriodScheme.default()
-        val periods = (0 until array.length()).mapNotNull { index ->
+        val array = root.optJSONArray("periods") ?: return@runCatching GradingCutScheme.default()
+        val cuts = (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             val weight = item.optDouble("weight", 0.0)
             if (weight <= 0.0) return@mapNotNull null
-            AcademicPeriod(
+            GradingCut(
                 id = item.optString("id", "period-${index + 1}"),
                 name = item.optString("name", "${Corte.Singular} ${index + 1}"),
                 weight = weight,
                 order = item.optInt("order", index + 1)
             )
         }.sortedBy { it.order }
-        AcademicPeriodScheme(periods).takeIf { it.isValid } ?: AcademicPeriodScheme.default()
-    }.getOrDefault(AcademicPeriodScheme.default())
+        GradingCutScheme(cuts).takeIf { it.isValid } ?: GradingCutScheme.default()
+    }.getOrDefault(GradingCutScheme.default())
 }
 
 private fun String.toStringSet(): Set<String> = runCatching {

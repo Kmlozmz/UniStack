@@ -81,9 +81,9 @@ class RoomGradesRepository(
                 visualType = subject.visualType.name,
                 customColor = subject.customColor,
                 periodSchemeJson = subject.toEntity(userId).periodSchemeJson,
-                activePeriodId = subject.activePeriodId,
+                activeCutId = subject.activeCutId,
                 historyPromptStatus = subject.historyPromptStatus.name,
-                unknownPeriodIdsJson = JSONArray(subject.unknownPeriodIds.toList()).toString(),
+                unknownPeriodIdsJson = JSONArray(subject.unknownCutIds.toList()).toString(),
                 updatedAt = System.currentTimeMillis()
             )
         }
@@ -113,7 +113,7 @@ class RoomGradesRepository(
                 value = grade.value,
                 percentage = grade.percentage,
                 type = grade.type.name,
-                periodId = grade.periodId,
+                cutId = grade.cutId,
                 source = grade.source.name,
                 weightStatus = grade.weightStatus.name,
                 taskId = grade.taskId,

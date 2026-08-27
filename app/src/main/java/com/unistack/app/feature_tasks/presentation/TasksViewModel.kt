@@ -49,7 +49,7 @@ class TasksViewModel @Inject constructor(
         dueTimeInput: String,
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty,
-        periodId: String? = null,
+        cutId: String? = null,
         gradingStatus: TaskGradingStatus = TaskGradingStatus.UNDECIDED
     ): Boolean {
         val parsed = validatedTaskInput(
@@ -73,7 +73,7 @@ class TasksViewModel @Inject constructor(
                 completed = false,
                 createdAt = now,
                 updatedAt = now,
-                periodId = resolvedPeriodId(subjectId, periodId),
+                cutId = resolvedCutId(subjectId, cutId),
                 gradingStatus = gradingStatus
             )
         )
@@ -90,7 +90,7 @@ class TasksViewModel @Inject constructor(
         dueTimeInput: String,
         estimatedMinutesInput: String,
         difficulty: TaskDifficulty,
-        periodId: String? = null,
+        cutId: String? = null,
         gradingStatus: TaskGradingStatus = existingGradingStatus(taskId)
     ): Boolean {
         val existing = taskById(taskId) ?: return false
@@ -102,7 +102,7 @@ class TasksViewModel @Inject constructor(
         ) ?: return false
 
         val resolvedSubjectId = subjectId.takeIf { id -> subjects.value.any { it.id == id } }
-        val resolvedPeriodId = resolvedPeriodId(resolvedSubjectId, periodId ?: existing.periodId)
+        val resolvedCutId = resolvedCutId(resolvedSubjectId, cutId ?: existing.cutId)
         val linkedGrade = existing.linkedGradeId?.let { gradeId ->
             subjects.value
                 .firstOrNull { subject -> subject.grades.any { it.id == gradeId } }
@@ -136,17 +136,17 @@ class TasksViewModel @Inject constructor(
                         grade.copy(
                             name = TextValidators.normalizeText(title),
                             type = type.toGradeType(),
-                            periodId = resolvedPeriodId ?: grade.periodId,
+                            cutId = resolvedCutId ?: grade.cutId,
                             recordedAt = System.currentTimeMillis()
                         )
                     )
                 }
                 else -> {
                     val newSubject = subjects.value.first { it.id == resolvedSubjectId }
-                    val destinationPeriod = resolvedPeriodId ?: newSubject.defaultPeriodId
+                    val destinationCut = resolvedCutId ?: newSubject.defaultCutId
                     val destinationWeight = newSubject.grades
                         .filter {
-                            it.periodId == destinationPeriod &&
+                            it.cutId == destinationCut &&
                                 it.source == GradeSource.ACTIVITY &&
                                 it.weightStatus == GradeWeightStatus.KNOWN
                         }
@@ -163,7 +163,7 @@ class TasksViewModel @Inject constructor(
                         grade.copy(
                             name = TextValidators.normalizeText(title),
                             type = type.toGradeType(),
-                            periodId = destinationPeriod,
+                            cutId = destinationCut,
                             recordedAt = System.currentTimeMillis()
                         )
                     )
@@ -181,7 +181,7 @@ class TasksViewModel @Inject constructor(
                 difficulty = difficulty,
                 estimatedMinutes = parsed.estimatedMinutes,
                 updatedAt = System.currentTimeMillis(),
-                periodId = resolvedPeriodId,
+                cutId = resolvedCutId,
                 gradingStatus = resolvedGradingStatus,
                 linkedGradeId = linkedGradeId
             )
@@ -298,7 +298,7 @@ class TasksViewModel @Inject constructor(
         taskId: String,
         value: Double,
         percentageInput: Double?,
-        periodId: String
+        cutId: String
     ): TaskGradeSaveOutcome {
         val task = taskById(taskId) ?: return TaskGradeSaveOutcome(false)
         val subjectId = task.subjectId ?: return TaskGradeSaveOutcome(false)
@@ -310,7 +310,7 @@ class TasksViewModel @Inject constructor(
         val percentage = percentageInput?.div(100.0) ?: 0.0
         val currentWeight = subject.grades
             .filter {
-                it.periodId == periodId &&
+                it.cutId == cutId &&
                     it.source == GradeSource.ACTIVITY &&
                     it.weightStatus == GradeWeightStatus.KNOWN
             }
@@ -327,7 +327,7 @@ class TasksViewModel @Inject constructor(
                 value = value,
                 percentage = percentage,
                 type = task.type.toGradeType(),
-                periodId = periodId,
+                cutId = cutId,
                 source = GradeSource.ACTIVITY,
                 weightStatus = weightStatus,
                 taskId = task.id,
@@ -336,7 +336,7 @@ class TasksViewModel @Inject constructor(
         )
         tasksRepository.updateTask(
             task.copy(
-                periodId = periodId,
+                cutId = cutId,
                 gradingStatus = TaskGradingStatus.GRADED,
                 linkedGradeId = gradeId,
                 completed = true,
@@ -346,9 +346,9 @@ class TasksViewModel @Inject constructor(
         )
         val shouldSuggestHistory = subject.grades.isEmpty() &&
             subject.historyPromptStatus == PriorHistoryPromptStatus.NOT_SHOWN &&
-            subject.periodScheme.periods.firstOrNull { it.id == periodId }?.order?.let { it > 1 } == true
-        if (periodId != subject.activePeriodId) {
-            gradesRepository.updateSubject(subject.copy(activePeriodId = periodId))
+            subject.cutScheme.cuts.firstOrNull { it.id == cutId }?.order?.let { it > 1 } == true
+        if (cutId != subject.activeCutId) {
+            gradesRepository.updateSubject(subject.copy(activeCutId = cutId))
         }
         return TaskGradeSaveOutcome(true, shouldSuggestHistory, subjectId, gradeId)
     }
@@ -420,11 +420,11 @@ class TasksViewModel @Inject constructor(
         )
     }
 
-    private fun resolvedPeriodId(subjectId: String?, requestedPeriodId: String?): String? {
+    private fun resolvedCutId(subjectId: String?, requestedCutId: String?): String? {
         val subject = subjects.value.firstOrNull { it.id == subjectId } ?: return null
-        return requestedPeriodId
-            ?.takeIf { id -> subject.periodScheme.periods.any { it.id == id } }
-            ?: subject.defaultPeriodId
+        return requestedCutId
+            ?.takeIf { id -> subject.cutScheme.cuts.any { it.id == id } }
+            ?: subject.defaultCutId
     }
 
     private fun existingGradingStatus(taskId: String): TaskGradingStatus {

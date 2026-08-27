@@ -38,9 +38,9 @@ import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorkPriority
 import com.unistack.app.feature_templates.domain.AcademicWorkStatus
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
-import com.unistack.app.feature_user.domain.AcademicPeriod
+import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
-import com.unistack.app.feature_user.domain.AcademicPeriodScheme
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppModule
@@ -133,9 +133,9 @@ class LocalJsonBackupRepository(
             appendLine("Estudiante: ${profile?.preferredName?.takeIf { it.isNotBlank() } ?: "Estudiante"}")
             appendLine()
             gradesRepository.subjects.value.forEach { subject ->
-                val average = GradeCalculator.calculateCurrentAverageByPeriods(
+                val average = GradeCalculator.calculateCurrentAverageByCuts(
                     subject.grades,
-                    subject.periodScheme.periods
+                    subject.cutScheme.cuts
                 )
                 appendLine("${subject.name} · Promedio ${GradingScaleUtils.formatGrade(average, scale ?: profile?.gradingScale ?: com.unistack.app.feature_user.domain.GradingScale.ZERO_TO_FIVE)}")
                 subject.grades.forEach { grade ->
@@ -212,7 +212,7 @@ class LocalJsonBackupRepository(
                 "accessibilityPreferences",
                 accessibilityJson(profile?.accessibilityPreferences ?: AccessibilityPreferences())
             )
-            .put("academicPeriodScheme", profile?.academicPeriodScheme?.toJsonObject() ?: AcademicPeriodScheme.default().toJsonObject())
+            .put("academicPeriodScheme", profile?.gradingCutScheme?.toJsonObject() ?: GradingCutScheme.default().toJsonObject())
             .put("taskRemindersEnabled", profile?.taskRemindersEnabled ?: true)
             .put("academicWorkRemindersEnabled", profile?.academicWorkRemindersEnabled ?: true)
             .put("overdueRemindersEnabled", profile?.overdueRemindersEnabled ?: true)
@@ -262,8 +262,8 @@ class LocalJsonBackupRepository(
                     profileJson.optJSONObject("accessibilityPreferences"),
                     current.accessibilityPreferences
                 ),
-                academicPeriodScheme = profileJson.optJSONObject("academicPeriodScheme").toAcademicPeriodSchemeOrNull()
-                    ?: current.academicPeriodScheme,
+                gradingCutScheme = profileJson.optJSONObject("academicPeriodScheme").toGradingCutSchemeOrNull()
+                    ?: current.gradingCutScheme,
                 taskRemindersEnabled = profileJson.optBoolean("taskRemindersEnabled", current.taskRemindersEnabled),
                 academicWorkRemindersEnabled = profileJson.optBoolean(
                     "academicWorkRemindersEnabled",
@@ -402,31 +402,31 @@ class LocalJsonBackupRepository(
         ).normalized()
     }
 
-    private fun AcademicPeriodScheme.toJsonObject(): JSONObject {
+    private fun GradingCutScheme.toJsonObject(): JSONObject {
         return JSONObject()
             .put(
                 "periods",
                 JSONArray(
-                    periods.sortedBy { it.order }.map { period ->
+                    cuts.sortedBy { it.order }.map { cut ->
                         JSONObject()
-                            .put("id", period.id)
-                            .put("name", period.name)
-                            .put("weight", period.weight)
-                            .put("order", period.order)
+                            .put("id", cut.id)
+                            .put("name", cut.name)
+                            .put("weight", cut.weight)
+                            .put("order", cut.order)
                     }
                 )
             )
     }
 
-    private fun JSONObject?.toAcademicPeriodSchemeOrNull(): AcademicPeriodScheme? {
+    private fun JSONObject?.toGradingCutSchemeOrNull(): GradingCutScheme? {
         val root = this ?: return null
         val periodsArray = root.optJSONArray("periods") ?: return null
-        val periods = periodsArray.objects()
+        val cuts = periodsArray.objects()
             .mapIndexedNotNull { index, item ->
                 val order = item.optInt("order", index + 1)
                 val weight = item.optDouble("weight", 0.0)
                 if (weight <= 0.0) return@mapIndexedNotNull null
-                AcademicPeriod(
+                GradingCut(
                     id = item.optString("id", "period-$order"),
                     name = item.optString("name", "${Corte.Singular} $order"),
                     weight = weight,
@@ -434,7 +434,7 @@ class LocalJsonBackupRepository(
                 )
             }
             .sortedBy { it.order }
-        return AcademicPeriodScheme(periods = periods).takeIf { it.isValid }
+        return GradingCutScheme(cuts = cuts).takeIf { it.isValid }
     }
 
     private fun String.toGradingScaleOrNull(): GradingScale? {
@@ -451,10 +451,10 @@ class LocalJsonBackupRepository(
         .put("targetAverage", subject.targetAverage)
         .put("visualType", subject.visualType.name)
         .put("customColor", subject.customColor)
-        .put("periodScheme", subject.periodScheme.toJsonObject())
-        .put("activePeriodId", subject.activePeriodId)
+        .put("periodScheme", subject.cutScheme.toJsonObject())
+        .put("activePeriodId", subject.activeCutId)
         .put("historyPromptStatus", subject.historyPromptStatus.name)
-        .put("unknownPeriodIds", JSONArray(subject.unknownPeriodIds.toList()))
+        .put("unknownCutIds", JSONArray(subject.unknownCutIds.toList()))
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
     private fun gradeJson(grade: GradeItem): JSONObject = JSONObject()
@@ -463,7 +463,7 @@ class LocalJsonBackupRepository(
         .put("value", grade.value)
         .put("percentage", grade.percentage)
         .put("type", grade.type.name)
-        .put("periodId", grade.periodId)
+        .put("periodId", grade.cutId)
         .put("source", grade.source.name)
         .put("weightStatus", grade.weightStatus.name)
         .put("taskId", grade.taskId)
@@ -479,7 +479,7 @@ class LocalJsonBackupRepository(
         .put("difficulty", task.difficulty.name)
         .put("estimatedMinutes", task.estimatedMinutes)
         .put("completed", task.completed)
-        .put("periodId", task.periodId)
+        .put("periodId", task.cutId)
         .put("gradingStatus", task.gradingStatus.name)
         .put("linkedGradeId", task.linkedGradeId)
         .put("completedAt", task.completedAt)
@@ -560,12 +560,12 @@ class LocalJsonBackupRepository(
             visualType = item.optString("visualType").toEnum(SubjectVisualType.TEAL),
             customColor = if (item.isNull("customColor")) null else item.optInt("customColor"),
             grades = parseGrades(item.optJSONArray("grades")),
-            periodScheme = item.optJSONObject("periodScheme").toAcademicPeriodSchemeOrNull()
-                ?: AcademicPeriodScheme.default(),
-            activePeriodId = item.optString("activePeriodId", ""),
+            cutScheme = item.optJSONObject("periodScheme").toGradingCutSchemeOrNull()
+                ?: GradingCutScheme.default(),
+            activeCutId = item.optString("activePeriodId", ""),
             historyPromptStatus = item.optString("historyPromptStatus")
                 .toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
-            unknownPeriodIds = item.optJSONArray("unknownPeriodIds").strings().toSet()
+            unknownCutIds = item.optJSONArray("unknownCutIds").strings().toSet()
         )
     }
 
@@ -576,7 +576,7 @@ class LocalJsonBackupRepository(
             value = item.optDouble("value"),
             percentage = item.optDouble("percentage"),
             type = item.optString("type").toEnum(GradeType.WORKSHOP),
-            periodId = item.optString("periodId", "period-1").ifBlank { "period-1" },
+            cutId = item.optString("periodId", "period-1").ifBlank { "period-1" },
             source = item.optString("source").toEnum(GradeSource.ACTIVITY),
             weightStatus = item.optString("weightStatus").toEnum(GradeWeightStatus.KNOWN),
             taskId = item.optNullableString("taskId"),
@@ -597,7 +597,7 @@ class LocalJsonBackupRepository(
             completed = item.optBoolean("completed"),
             createdAt = item.optLong("createdAt", System.currentTimeMillis()),
             updatedAt = item.optLong("updatedAt", System.currentTimeMillis()),
-            periodId = item.optNullableString("periodId"),
+            cutId = item.optNullableString("periodId"),
             gradingStatus = item.optString("gradingStatus").toEnum(TaskGradingStatus.UNDECIDED),
             linkedGradeId = item.optNullableString("linkedGradeId"),
             completedAt = if (item.isNull("completedAt")) null else item.optLong("completedAt")
