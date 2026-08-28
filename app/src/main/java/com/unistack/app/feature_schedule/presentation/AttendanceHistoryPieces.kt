@@ -44,15 +44,15 @@ private val DiaMes = DateTimeFormatter.ofPattern("d MMM", Espanol)
 private val SoloDia = DateTimeFormatter.ofPattern("d", Espanol)
 private val Mes = DateTimeFormatter.ofPattern("MMMM", Espanol)
 
-/** El color con que se pinta cada estado en la tira y en las semanas. */
+/**
+ * El color con que se pinta cada estado en la tira y en las semanas.
+ *
+ * Sale de [attendanceColor] y no del tema: ver [AttendanceAttended]. Lo pendiente sí toma el
+ * gris de la superficie, porque no es un hecho sino la falta de uno.
+ */
 @Composable
-private fun ClassAttendanceStatus.cuadro(): Color = when (this) {
-    ClassAttendanceStatus.ATTENDED -> ScheduleAccent
-    ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error
-    ClassAttendanceStatus.CANCELLED -> ScheduleCancelled
-    ClassAttendanceStatus.RESCHEDULED -> ScheduleRescheduled
-    ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.surfaceContainerHighest
-}
+private fun ClassAttendanceStatus.cuadro(): Color =
+    attendanceColor() ?: MaterialTheme.colorScheme.surfaceContainerHighest
 
 /**
  * La cabecera del historial: faltas que quedan, y las clases dibujadas.
@@ -79,7 +79,7 @@ internal fun AttendanceSummaryCard(
     val restantes = summary.remainingAbsences
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = ScheduleShape,
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -98,13 +98,14 @@ internal fun AttendanceSummaryCard(
                                 summary.rate != null -> "${summary.rate}%"
                                 else -> "—"
                             },
+                            letterSpacing = (-0.02).em,
                             color = if (summary.atLimit) {
                                 MaterialTheme.colorScheme.error
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontSize = 33.sp,
+                            fontWeight = FontWeight.Black
                         )
                         if (restantes != null) {
                             Spacer(Modifier.width(6.dp))
@@ -124,8 +125,9 @@ internal fun AttendanceSummaryCard(
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
-                        fontSize = 10.5.sp,
-                        lineHeight = 14.sp
+                        fontSize = 11.5.sp,
+                        lineHeight = 15.sp,
+                        modifier = Modifier.padding(top = 2.dp)
                     )
                 }
                 if (summary.streak > 1) {
@@ -151,7 +153,7 @@ internal fun AttendanceSummaryCard(
                     .clickable(onClick = onLimitClick)
                     .padding(vertical = 2.dp),
                 color = ScheduleAccent,
-                fontSize = 11.5.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold
             )
 
@@ -183,9 +185,9 @@ private fun RachaChip(racha: Int) {
     ) {
         Text(
             text = "🔥 $racha seguidas",
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             color = ScheduleAccent,
-            fontSize = 11.sp,
+            fontSize = 11.5.sp,
             fontWeight = FontWeight.Bold
         )
     }
@@ -240,9 +242,10 @@ private fun TiraDeClases(entries: List<AttendanceHistoryEntry>, today: LocalDate
 private fun Rotulo(text: String) {
     Text(
         text = text.uppercase(Espanol),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 9.5.sp,
-        fontWeight = FontWeight.ExtraBold,
+        // `outline` y no `onSurfaceVariant`: es un rotulo de seccion, el escalon mas tenue.
+        color = MaterialTheme.colorScheme.outline,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Black,
         letterSpacing = 0.13.em
     )
 }
@@ -258,22 +261,22 @@ private fun Rotulo(text: String) {
 private fun Leyenda(visibles: List<AttendanceHistoryEntry>) {
     val presentes = visibles.map { it.status }.toSet()
     val orden = listOf(
-        ClassAttendanceStatus.ATTENDED to "asistí",
-        ClassAttendanceStatus.ABSENT to "falta",
-        ClassAttendanceStatus.CANCELLED to "cancelada",
-        ClassAttendanceStatus.RESCHEDULED to "reprogramada",
-        ClassAttendanceStatus.PENDING to "sin marcar"
-    ).filter { it.first in presentes }
+        ClassAttendanceStatus.ATTENDED,
+        ClassAttendanceStatus.ABSENT,
+        ClassAttendanceStatus.CANCELLED,
+        ClassAttendanceStatus.RESCHEDULED,
+        ClassAttendanceStatus.PENDING
+    ).filter { it in presentes }
     if (orden.size < 2) return
 
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(13.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        orden.forEach { (estado, nombre) ->
+        orden.forEach { estado ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Box(
                     Modifier
@@ -282,9 +285,9 @@ private fun Leyenda(visibles: List<AttendanceHistoryEntry>) {
                         .background(estado.cuadro())
                 )
                 Text(
-                    text = nombre,
+                    text = estado.legendName(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp
+                    fontSize = 10.5.sp
                 )
             }
         }
@@ -313,22 +316,23 @@ internal fun AttendanceWeekList(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable { onPick(entrada) }
-                        .padding(horizontal = 11.dp, vertical = 7.dp),
+                        .padding(horizontal = 11.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = entrada.date.format(DiaMes),
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Normal
                     )
                     Text(
                         text = formatoDeHora(entrada.session.startMinute),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
+                        fontSize = 11.5.sp
                     )
                 }
             }
@@ -369,7 +373,7 @@ private fun FilaDeSemana(
             text = "${semana.start.format(SoloDia)}–${semana.end.format(SoloDia)}",
             modifier = Modifier.width(46.dp),
             color = if (esLaDeHoy) ScheduleAccent else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp,
+            fontSize = 11.5.sp,
             fontWeight = if (esLaDeHoy) FontWeight.Bold else FontWeight.Normal
         )
         /*

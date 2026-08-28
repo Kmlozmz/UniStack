@@ -75,6 +75,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -424,32 +425,40 @@ private fun SubjectHistoryDialog(
     ) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(88.dp).background(ScheduleAccent)
+                /*
+                 * Una barra fina, no una banda de color.
+                 *
+                 * Habia 88 dp del acento de la seccion con un medallon encima, y eso metia un
+                 * bloque saturado justo antes de la unica tarjeta que aqui importa: la vista
+                 * empezaba por el adorno. Con el nombre al lado de la flecha, la pantalla
+                 * arranca en el dato.
+                 */
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.align(Alignment.TopStart).padding(4.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onPrimary)
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Box(
-                        modifier = Modifier.align(Alignment.BottomCenter).offset(y = 22.dp).size(50.dp)
-                            .clip(CircleShape).background(MaterialTheme.colorScheme.background)
-                            .border(1.dp, ScheduleAccent.copy(alpha = 0.35f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.AutoMirrored.Rounded.MenuBook, contentDescription = null, tint = ScheduleAccent)
-                    }
+                    Text(
+                        text = subject.name,
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp,
+                        lineHeight = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = (-0.01).em,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                Spacer(Modifier.height(30.dp))
-                Text(
-                    subject.name,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 18.sp,
-                    lineHeight = 21.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(8.dp))
                 AttendanceSummaryCard(
                     summary = summary,
                     entries = entries,
@@ -458,15 +467,16 @@ private fun SubjectHistoryDialog(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 Text(
-                    "Historial",
-                    modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 7.dp),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    text = "HISTORIAL",
+                    modifier = Modifier.padding(start = 18.dp, top = 14.dp, bottom = 7.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.13.em
                 )
                 Surface(
                     modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
-                    shape = ScheduleShape,
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
@@ -1053,10 +1063,6 @@ private fun ClassAttendanceStatus.label(): String = when (this) {
 }
 
 @Composable
-private fun ClassAttendanceStatus.color(): Color = when (this) {
-    ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant
-    ClassAttendanceStatus.ATTENDED -> ScheduleAccent
-    ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error
-    ClassAttendanceStatus.CANCELLED -> ScheduleCancelled
-    ClassAttendanceStatus.RESCHEDULED -> ScheduleRescheduled
-}
+private fun ClassAttendanceStatus.color(): Color =
+    // Los mismos tres colores que la tira del historial: ver `AttendanceColors`.
+    attendanceColor() ?: MaterialTheme.colorScheme.onSurfaceVariant
