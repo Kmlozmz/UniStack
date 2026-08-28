@@ -87,6 +87,7 @@ import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
+import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_schedule.domain.ClassSession
 import java.time.LocalDate
@@ -300,6 +301,7 @@ fun CalendarScheduleScreen(
                 sessions = state.sessions.filter { it.subjectId == subjectId },
                 occurrences = state.occurrences,
                 term = state.activeTerm,
+                breaks = state.breaks,
                 onDismiss = { historySubjectId = null },
                 onMarkAttendance = { date, session ->
                     historySubjectId = null
@@ -318,16 +320,18 @@ private fun SubjectHistoryDialog(
     sessions: List<ClassSession>,
     occurrences: List<ClassOccurrence>,
     term: AcademicTerm?,
+    breaks: List<AcademicBreak>,
     onDismiss: () -> Unit,
     onMarkAttendance: (LocalDate, ClassSession) -> Unit
 ) {
-    val entries = remember(sessions, occurrences, term) {
+    val entries = remember(sessions, occurrences, term, breaks) {
         SubjectAttendanceHistory.build(
             sessions = sessions,
             occurrences = occurrences,
             today = LocalDate.now(),
             termStart = term?.start,
-            termEnd = term?.plannedEnd
+            termEnd = term?.plannedEnd,
+            breaks = breaks.map { it.range }
         )
     }
     val attended = entries.count { it.status == ClassAttendanceStatus.ATTENDED }

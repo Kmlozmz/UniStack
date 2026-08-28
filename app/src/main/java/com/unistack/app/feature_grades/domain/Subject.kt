@@ -23,7 +23,15 @@ data class Subject(
     val historyPromptStatus: PriorHistoryPromptStatus = PriorHistoryPromptStatus.NOT_SHOWN,
     val unknownCutIds: Set<String> = emptySet(),
     /** El periodo academico al que pertenece, o nulo si es anterior a que existieran. */
-    val termId: String? = null
+    val termId: String? = null,
+    /**
+     * Cuántas faltas puedes acumular antes de perder la materia, o nulo si no lo has dicho.
+     *
+     * Es **el** número que se mira en la universidad, y cambia por materia: un laboratorio
+     * perdona menos que una teórica. Nulo no es «no hay tope», es «no lo sé», que es distinto:
+     * con nulo la app no puede prometer «te quedan 4», así que enseña lo que sí sabe.
+     */
+    val absenceLimit: Int? = null
 ) {
     /** El corte que el usuario eligió, o null si todavía no ha elegido. */
     val chosenCutId: String?

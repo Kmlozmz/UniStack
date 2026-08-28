@@ -42,13 +42,15 @@ object SubjectAttendanceHistory {
     /**
      * @param termStart primer día del periodo, o nulo si no hay periodo configurado.
      * @param termEnd último día del periodo, o nulo si no tiene fin previsto.
+     * @param breaks tramos en que la universidad estuvo cerrada; sus días no cuentan.
      */
     fun build(
         sessions: List<ClassSession>,
         occurrences: List<ClassOccurrence>,
         today: LocalDate,
         termStart: LocalDate? = null,
-        termEnd: LocalDate? = null
+        termEnd: LocalDate? = null,
+        breaks: List<ClosedRange<LocalDate>> = emptyList()
     ): List<AttendanceHistoryEntry> {
         val desde = maxOf(today.minusDays(LOOKBACK_DAYS), termStart ?: LocalDate.MIN)
         val hasta = minOf(today.plusDays(LOOKAHEAD_DAYS), termEnd ?: LocalDate.MAX)
@@ -58,6 +60,15 @@ object SubjectAttendanceHistory {
         val porClave = occurrences.associateBy { it.sessionId to it.dateEpochDay }
         val todas = generateSequence(desde) { dia ->
             dia.plusDays(1).takeIf { !it.isAfter(hasta) }
+        }.filter { fecha ->
+            /*
+             * Un festivo no es una clase que no diste.
+             *
+             * Sin esto la app apunta pendientes los días que la universidad estaba cerrada, y
+             * al no marcarlos se leen igual que los que se te olvidaron. Peor aún con el tope
+             * de faltas delante: contaría hacia perder la materia algo que nunca ocurrió.
+             */
+            breaks.none { fecha in it }
         }.flatMap { fecha ->
             sessions
                 .filter { it.occursOn(fecha.toEpochDay(), fecha.dayOfWeek.value) }
@@ -83,4 +94,81 @@ object SubjectAttendanceHistory {
     private val masRecientePrimero =
         compareByDescending<AttendanceHistoryEntry> { it.date }
             .thenByDescending { it.session.startMinute }
+
+    /**
+     * Las cuentas que abren el historial, en un solo sitio.
+     *
+     * Se calculaban en la pantalla, y por eso el porcentaje podía decir «100 %» apoyado en una
+     * sola clase sin que nada obligara a contarlo. Aquí el número de clases decididas viaja
+     * junto al porcentaje, así que quien lo pinta no puede enseñar uno sin el otro.
+     */
+    fun summarize(entries: List<AttendanceHistoryEntry>, absenceLimit: Int? = null): AttendanceSummary {
+        val pasadas = entries.filter { it.status != ClassAttendanceStatus.PENDING }
+        val asistidas = pasadas.count { it.status == ClassAttendanceStatus.ATTENDED }
+        val faltas = pasadas.count { it.status == ClassAttendanceStatus.ABSENT }
+        val decididas = asistidas + faltas
+        return AttendanceSummary(
+            attended = asistidas,
+            absent = faltas,
+            // Canceladas y reprogramadas no las diste, pero tampoco faltaste: fuera del reparto.
+            decided = decididas,
+            rate = if (decididas == 0) null else Math.round(asistidas * 100f / decididas),
+            absenceLimit = absenceLimit,
+            streak = rachaDesdeElFinal(entries)
+        )
+    }
+
+    /**
+     * Cuántas clases seguidas llevas sin faltar, contando hacia atrás desde la última dada.
+     *
+     * Una cancelada no rompe la racha ni la alarga: ese día no hubo nada a lo que faltar. Una
+     * pendiente sí la corta, porque no sabemos qué pasó y dar por buena una clase sin marcar
+     * sería inventarse el dato.
+     */
+    private fun rachaDesdeElFinal(entries: List<AttendanceHistoryEntry>): Int {
+        var cuenta = 0
+        for (entrada in entries.sortedWith(masRecientePrimero)) {
+            when (entrada.status) {
+                ClassAttendanceStatus.ATTENDED -> cuenta++
+                ClassAttendanceStatus.CANCELLED,
+                ClassAttendanceStatus.RESCHEDULED -> Unit
+                ClassAttendanceStatus.ABSENT -> return cuenta
+                // Las futuras todavía no cuentan; las pasadas sin marcar cortan.
+                ClassAttendanceStatus.PENDING -> if (cuenta > 0) return cuenta
+            }
+        }
+        return cuenta
+    }
+}
+
+/**
+ * Lo que se enseña arriba del historial.
+ *
+ * [rate] es nulo cuando no hay ni una clase decidida: devolver cero decía «faltaste a todo»
+ * cuando lo cierto es que no hay un solo dato. [remainingAbsences] es nulo mientras la materia
+ * no tenga tope, porque prometer «te quedan N» sin saber N es peor que no decir nada.
+ */
+data class AttendanceSummary(
+    val attended: Int,
+    val absent: Int,
+    val decided: Int,
+    val rate: Int?,
+    val absenceLimit: Int?,
+    val streak: Int
+) {
+    val remainingAbsences: Int?
+        get() = absenceLimit?.let { (it - absent).coerceAtLeast(0) }
+
+    /** Si ya no cabe ni una falta más. */
+    val atLimit: Boolean get() = remainingAbsences == 0
+
+    /** Si queda una sola: el momento en que este dato cambia lo que haces. */
+    val oneLeft: Boolean get() = remainingAbsences == 1
+
+    /**
+     * Si el porcentaje se apoya en tan pocas clases que decirlo a secas engaña.
+     *
+     * «100 %» sobre una clase es ruido con formato de dato.
+     */
+    val tooFewToTrust: Boolean get() = decided in 1..3
 }

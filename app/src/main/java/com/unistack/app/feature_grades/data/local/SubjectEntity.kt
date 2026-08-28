@@ -24,6 +24,8 @@ data class SubjectEntity(
      * semestre seria inventarle al usuario un dato que nunca dio.
      */
     val termId: String? = null,
+    /** El tope de faltas de la materia. Nulo es «no lo ha dicho», no «no hay». */
+    val absenceLimit: Int? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

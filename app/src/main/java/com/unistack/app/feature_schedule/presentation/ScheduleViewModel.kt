@@ -24,6 +24,8 @@ import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import com.unistack.app.feature_terms.domain.AcademicBreak
+import com.unistack.app.feature_terms.domain.AcademicBreakRepository
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,6 +49,8 @@ data class ScheduleUiState(
      * olvido marcar.
      */
     val activeTerm: AcademicTerm? = null,
+    /** Festivos, paros y recesos: sus días no cuentan como clase perdida. */
+    val breaks: List<AcademicBreak> = emptyList(),
     /**
      * Si los datos ya llegaron.
      *
@@ -63,14 +67,31 @@ class ScheduleViewModel @Inject constructor(
     private val gradesRepository: GradesRepository,
     private val tasksRepository: TasksRepository,
     private val userRepository: UserRepository,
-    private val termRepository: AcademicTermRepository
+    private val termRepository: AcademicTermRepository,
+    private val breakRepository: AcademicBreakRepository
 ) : ViewModel() {
+
+    /*
+     * Los cuatro flujos del calendario en uno.
+     *
+     * Van juntos porque `combine` acepta cinco argumentos con tipos, y el estado ya gasta
+     * cuatro. Agrupar aqui deja sitio para el periodo sin perder los tipos por el camino.
+     */
+    private data class DatosCalendario(
+        val sessions: List<ClassSession>,
+        val occurrences: List<ClassOccurrence>,
+        val agendaEvents: List<AgendaEvent>,
+        val breaks: List<AcademicBreak>
+    )
 
     private val scheduleData = combine(
         repository.sessions,
         repository.occurrences,
-        repository.agendaEvents
-    ) { sessions, occurrences, agendaEvents -> Triple(sessions, occurrences, agendaEvents) }
+        repository.agendaEvents,
+        breakRepository.breaks
+    ) { sessions, occurrences, agendaEvents, breaks ->
+        DatosCalendario(sessions, occurrences, agendaEvents, breaks)
+    }
 
     val uiState: StateFlow<ScheduleUiState> = combine(
         scheduleData,
@@ -80,9 +101,10 @@ class ScheduleViewModel @Inject constructor(
         termRepository.activeTerm
     ) { schedule, subjects, tasks, profile, term ->
         ScheduleUiState(
-            sessions = schedule.first,
-            occurrences = schedule.second,
-            agendaEvents = schedule.third,
+            sessions = schedule.sessions,
+            occurrences = schedule.occurrences,
+            agendaEvents = schedule.agendaEvents,
+            breaks = schedule.breaks,
             subjects = subjects,
             tasks = tasks,
             accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences(),

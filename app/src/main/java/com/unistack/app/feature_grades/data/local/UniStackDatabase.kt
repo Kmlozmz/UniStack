@@ -17,6 +17,8 @@ import com.unistack.app.feature_schedule.data.local.ClassSessionEntity
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventDao
+import com.unistack.app.feature_terms.data.local.AcademicBreakDao
+import com.unistack.app.feature_terms.data.local.AcademicBreakEntity
 import com.unistack.app.feature_terms.data.local.AcademicTermDao
 import com.unistack.app.feature_terms.data.local.AcademicTermEntity
 import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
@@ -31,9 +33,10 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         ClassSessionEntity::class,
         ClassOccurrenceEntity::class,
         AgendaEventEntity::class,
-        AcademicTermEntity::class
+        AcademicTermEntity::class,
+        AcademicBreakEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -46,6 +49,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun classOccurrenceDao(): ClassOccurrenceDao
     abstract fun agendaEventDao(): AgendaEventDao
     abstract fun academicTermDao(): AcademicTermDao
+    abstract fun academicBreakDao(): AcademicBreakDao
 
     companion object {
         @Volatile
@@ -305,6 +309,38 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Los dias sin clase y el tope de faltas.
+         *
+         * Las dos cosas existen por lo mismo: sin ellas la asistencia cuenta mal. El tope
+         * entra como columna anulable porque nulo significa «no lo ha dicho» —no hay valor
+         * honesto que inventar— y los tramos como tabla propia porque son del calendario y no
+         * de una materia: un festivo lo es para todas.
+         */
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS academic_breaks (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        startEpochDay INTEGER NOT NULL,
+                        endEpochDay INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_academic_breaks_userId ON academic_breaks(userId)")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_academic_breaks_startEpochDay ON academic_breaks(startEpochDay)"
+                )
+                db.execSQL("ALTER TABLE subjects ADD COLUMN absenceLimit INTEGER DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -331,7 +367,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_10_11,
             MIGRATION_11_12,
             MIGRATION_12_13,
-            MIGRATION_13_14
+            MIGRATION_13_14,
+            MIGRATION_14_15
         )
     }
 }
