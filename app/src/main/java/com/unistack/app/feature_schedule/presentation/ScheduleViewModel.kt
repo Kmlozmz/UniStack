@@ -22,6 +22,8 @@ import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +40,14 @@ data class ScheduleUiState(
     val tasks: List<StudentTask> = emptyList(),
     val accessibility: AccessibilityPreferences = AccessibilityPreferences(),
     /**
+     * El periodo que se esta cursando, o nulo si no hay ninguno configurado.
+     *
+     * Lo necesita la asistencia: sin el, el historial de una materia se saca de la regla de
+     * repeticion y no hay forma de distinguir una clase anterior al periodo de una que se
+     * olvido marcar.
+     */
+    val activeTerm: AcademicTerm? = null,
+    /**
      * Si los datos ya llegaron.
      *
      * El valor inicial de un `stateIn` es un estado vacío, y la pantalla lo pintaba como si
@@ -52,7 +62,8 @@ class ScheduleViewModel @Inject constructor(
     private val repository: ScheduleRepository,
     private val gradesRepository: GradesRepository,
     private val tasksRepository: TasksRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val termRepository: AcademicTermRepository
 ) : ViewModel() {
 
     private val scheduleData = combine(
@@ -65,8 +76,9 @@ class ScheduleViewModel @Inject constructor(
         scheduleData,
         gradesRepository.subjects,
         tasksRepository.tasks,
-        userRepository.userProfile
-    ) { schedule, subjects, tasks, profile ->
+        userRepository.userProfile,
+        termRepository.activeTerm
+    ) { schedule, subjects, tasks, profile, term ->
         ScheduleUiState(
             sessions = schedule.first,
             occurrences = schedule.second,
@@ -74,6 +86,7 @@ class ScheduleViewModel @Inject constructor(
             subjects = subjects,
             tasks = tasks,
             accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences(),
+            activeTerm = term,
             loaded = true
         )
         // Eagerly y no WhileSubscribed: con la suscripción caducando a los cinco segundos,

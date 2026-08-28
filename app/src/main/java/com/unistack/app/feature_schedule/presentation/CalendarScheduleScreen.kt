@@ -85,6 +85,9 @@ import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
+import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
+import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_schedule.domain.ClassSession
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -296,6 +299,7 @@ fun CalendarScheduleScreen(
                 subject = subject,
                 sessions = state.sessions.filter { it.subjectId == subjectId },
                 occurrences = state.occurrences,
+                term = state.activeTerm,
                 onDismiss = { historySubjectId = null },
                 onMarkAttendance = { date, session ->
                     historySubjectId = null
@@ -313,11 +317,18 @@ private fun SubjectHistoryDialog(
     subject: Subject,
     sessions: List<ClassSession>,
     occurrences: List<ClassOccurrence>,
+    term: AcademicTerm?,
     onDismiss: () -> Unit,
     onMarkAttendance: (LocalDate, ClassSession) -> Unit
 ) {
-    val entries = remember(sessions, occurrences) {
-        buildSubjectHistory(sessions, occurrences, LocalDate.now())
+    val entries = remember(sessions, occurrences, term) {
+        SubjectAttendanceHistory.build(
+            sessions = sessions,
+            occurrences = occurrences,
+            today = LocalDate.now(),
+            termStart = term?.start,
+            termEnd = term?.plannedEnd
+        )
     }
     val attended = entries.count { it.status == ClassAttendanceStatus.ATTENDED }
     val absent = entries.count { it.status == ClassAttendanceStatus.ABSENT }
@@ -332,7 +343,7 @@ private fun SubjectHistoryDialog(
     val rate: Int? = if (decided == 0) null else (attended.toFloat() / decided * 100).roundToInt()
     val pending = entries
         .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(LocalDate.now()) }
-        .maxByOrNull(HistoryEntry::date)
+        .maxByOrNull(AttendanceHistoryEntry::date)
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -448,7 +459,7 @@ private fun SubjectHistoryDialog(
 }
 
 @Composable
-private fun HistoryRow(entry: HistoryEntry) {
+private fun HistoryRow(entry: AttendanceHistoryEntry) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -876,12 +887,6 @@ private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.Im
     ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
 }
 
-private data class HistoryEntry(
-    val date: LocalDate,
-    val session: ClassSession,
-    val status: ClassAttendanceStatus
-)
-
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
 @Composable
@@ -898,33 +903,6 @@ private fun formatMinute(value: Int, use24Hour: Boolean): String {
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
     return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
-}
-
-private fun buildSubjectHistory(
-    sessions: List<ClassSession>,
-    occurrences: List<ClassOccurrence>,
-    today: LocalDate
-): List<HistoryEntry> {
-    val occurrenceByKey = occurrences.associateBy { it.sessionId to it.dateEpochDay }
-    val allEntries = (-120L..30L).flatMap { offset ->
-        val date = today.plusDays(offset)
-        sessions.filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }.map { session ->
-            HistoryEntry(
-                date = date,
-                session = session,
-                status = occurrenceByKey[session.id to date.toEpochDay()]?.status ?: ClassAttendanceStatus.PENDING
-            )
-        }
-    }
-    val future = allEntries.filter { it.date.isAfter(today) }
-        .sortedBy(HistoryEntry::date)
-        .take(2)
-    val recent = allEntries.filter { !it.date.isAfter(today) }
-        .sortedWith(compareByDescending<HistoryEntry> { it.date }.thenByDescending { it.session.startMinute })
-        .take(22)
-    return (future + recent).sortedWith(
-        compareByDescending<HistoryEntry> { it.date }.thenByDescending { it.session.startMinute }
-    )
 }
 
 private fun ClassAttendanceStatus.label(): String = when (this) {
