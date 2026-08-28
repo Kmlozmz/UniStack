@@ -91,7 +91,8 @@ import com.unistack.app.feature_support.presentation.AboutScreen
 import com.unistack.app.feature_support.presentation.AiAssistantScreen
 import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
 import com.unistack.app.feature_support.presentation.LabsScreen
-import com.unistack.app.feature_support.presentation.QuickNotesScreen
+import com.unistack.app.feature_notes.presentation.NoteEditorScreen
+import com.unistack.app.feature_notes.presentation.NotesListScreen
 import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
 import com.unistack.app.feature_support.presentation.WhatsNewScreen
@@ -617,7 +618,23 @@ fun MainNavGraph(
                 GpaCalculatorScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
             screen(AppRoutes.QuickNotes) {
-                QuickNotesScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
+                NotesListScreen(
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
+                    onNoteClick = { noteId -> navController.go(AppRoutes.noteEditor(noteId)) },
+                    onNewNoteClick = { navController.go(AppRoutes.NewNote) }
+                )
+            }
+            screen(AppRoutes.NewNote) {
+                NoteEditorScreen(
+                    noteId = null,
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.QuickNotes) }
+                )
+            }
+            screen("${AppRoutes.NoteEditor}/{noteId}") { backStackEntry ->
+                NoteEditorScreen(
+                    noteId = backStackEntry.arguments?.getString("noteId"),
+                    onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.QuickNotes) }
+                )
             }
             screen(AppRoutes.AiAssistant) {
                 AiAssistantScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
@@ -944,6 +961,8 @@ private val ImmersiveRoutes = setOf(
     AppRoutes.About,
     AppRoutes.GpaCalculator,
     AppRoutes.QuickNotes,
+    AppRoutes.NewNote,
+    AppRoutes.NoteEditor,
     AppRoutes.AiAssistant,
     AppRoutes.Labs
 )
@@ -1057,6 +1076,8 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.About) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.GpaCalculator) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.QuickNotes) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.NewNote) -> AppRoutes.Home
+        routeBelongsTo(route, AppRoutes.NoteEditor) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.AiAssistant) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Labs) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Settings

@@ -19,7 +19,8 @@ data class LocalBackupPreview(
     val tasks: Int,
     val expenses: Int,
     val academicWorks: Int,
-    val agendaEvents: Int = 0
+    val agendaEvents: Int = 0,
+    val notes: Int = 0
 ) {
     /**
      * Lo que hay dentro, contado en cristiano.
@@ -40,7 +41,10 @@ data class LocalBackupPreview(
             cuenta(tasks, "tarea", "tareas"),
             cuenta(expenses, "gasto", "gastos"),
             cuenta(academicWorks, "trabajo", "trabajos"),
-            cuenta(agendaEvents, "evento", "eventos")
+            cuenta(agendaEvents, "evento", "eventos"),
+            // «Apunte» y no «nota»: en esta app una nota es una calificación, y decir
+            // «12 notas» al lado de «8 notas» sería contar dos cosas distintas igual.
+            cuenta(notes, "apunte", "apuntes")
         )
         return if (partes.isEmpty()) "Todavía no has registrado nada" else partes.joinToString(" · ")
     }

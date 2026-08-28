@@ -216,6 +216,42 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationSixteenToSeventeenCreatesNotesTableAndIndexes() {
+        val database = createDatabaseWithSchema(version = 16)
+
+        UniStackDatabase.MIGRATION_16_17.migrate(database)
+
+        assertTrue(database.hasTable("notes"))
+        assertTrue(database.hasIndex("index_notes_userId"))
+        assertTrue(database.hasIndex("index_notes_subjectId"))
+        assertTrue(database.hasIndex("index_notes_updatedAt"))
+        // `pinned` y `format` entran ya aunque todavia no se puedan cambiar desde ninguna
+        // pantalla: anadirlas mas tarde obligaria a volver a mover la tabla.
+        assertTrue(database.hasColumn("notes", "pinned"))
+        assertTrue(database.hasColumn("notes", "format"))
+        database.close()
+    }
+
+    /**
+     * La migracion no toca lo que ya habia.
+     *
+     * Las notas nacen en una tabla nueva y vacia; lo que estuviera escrito en la hoja vieja vive
+     * en las preferencias del telefono y lo rescata el repositorio, no SQL.
+     */
+    @Test
+    fun migrationSixteenToSeventeenLeavesTheNotesTableEmpty() {
+        val database = createDatabaseWithSchema(version = 16)
+
+        UniStackDatabase.MIGRATION_16_17.migrate(database)
+
+        database.query("SELECT COUNT(*) FROM notes").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -262,6 +298,9 @@ class RoomMigrationTest {
         if (targetVersion >= 12) UniStackDatabase.MIGRATION_11_12.migrate(db)
         if (targetVersion >= 13) UniStackDatabase.MIGRATION_12_13.migrate(db)
         if (targetVersion >= 14) UniStackDatabase.MIGRATION_13_14.migrate(db)
+        if (targetVersion >= 15) UniStackDatabase.MIGRATION_14_15.migrate(db)
+        if (targetVersion >= 16) UniStackDatabase.MIGRATION_15_16.migrate(db)
+        if (targetVersion >= 17) UniStackDatabase.MIGRATION_16_17.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

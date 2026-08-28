@@ -6,6 +6,7 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
+import com.unistack.app.feature_notes.domain.NotesLayout
 
 /**
  * El retrato que hay que pintar, venga de donde venga.
@@ -90,6 +91,7 @@ data class UserProfile(
     val monthlyBudget: Int = 0,
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
+    val notesLayout: NotesLayout = NotesLayout.MOSAICO,
     val gradeScenarios: List<SavedGradeScenario> = emptyList(),
     val gradingCutScheme: GradingCutScheme = GradingCutScheme.default(),
     val setupCompleted: Boolean,

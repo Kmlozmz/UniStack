@@ -9,6 +9,10 @@ import com.unistack.app.feature_grades.data.RoomGradesRepository
 import com.unistack.app.feature_grades.data.local.GradeDao
 import com.unistack.app.feature_grades.data.local.SubjectDao
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_notes.data.LegacyNoteSheet
+import com.unistack.app.feature_notes.data.RoomNotesRepository
+import com.unistack.app.feature_notes.data.local.NoteDao
+import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.data.RoomScheduleRepository
 import com.unistack.app.feature_schedule.data.local.AgendaEventDao
 import com.unistack.app.feature_terms.data.RoomAcademicBreakRepository
@@ -74,6 +78,18 @@ object RepositoriesModule {
 
     @Provides
     @Singleton
+    fun provideNotesRepository(
+        noteDao: NoteDao,
+        userRepository: UserRepository,
+        @ApplicationContext context: Context
+    ): NotesRepository = RoomNotesRepository(
+        noteDao = noteDao,
+        userRepository = userRepository,
+        legacySheet = { LegacyNoteSheet.take(context) }
+    )
+
+    @Provides
+    @Singleton
     fun provideExpensesRepository(
         expenseDao: ExpenseDao,
         userRepository: UserRepository
@@ -135,7 +151,8 @@ object RepositoriesModule {
         tasksRepository: TasksRepository,
         expensesRepository: ExpensesRepository,
         academicWorksRepository: AcademicWorksRepository,
-        scheduleRepository: ScheduleRepository
+        scheduleRepository: ScheduleRepository,
+        notesRepository: NotesRepository
     ): CloudBackupRepository = FirebaseCloudBackupRepository(
         context = context,
         userRepository = userRepository,
@@ -143,7 +160,8 @@ object RepositoriesModule {
         tasksRepository = tasksRepository,
         expensesRepository = expensesRepository,
         academicWorksRepository = academicWorksRepository,
-        scheduleRepository = scheduleRepository
+        scheduleRepository = scheduleRepository,
+        notesRepository = notesRepository
     )
 
     @Provides
@@ -154,13 +172,15 @@ object RepositoriesModule {
         tasksRepository: TasksRepository,
         expensesRepository: ExpensesRepository,
         academicWorksRepository: AcademicWorksRepository,
-        scheduleRepository: ScheduleRepository
+        scheduleRepository: ScheduleRepository,
+        notesRepository: NotesRepository
     ): LocalBackupRepository = LocalJsonBackupRepository(
         userRepository = userRepository,
         gradesRepository = gradesRepository,
         tasksRepository = tasksRepository,
         expensesRepository = expensesRepository,
         academicWorksRepository = academicWorksRepository,
-        scheduleRepository = scheduleRepository
+        scheduleRepository = scheduleRepository,
+        notesRepository = notesRepository
     )
 }

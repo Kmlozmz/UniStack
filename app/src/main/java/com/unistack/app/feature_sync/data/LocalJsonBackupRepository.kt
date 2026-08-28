@@ -17,6 +17,10 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_notes.domain.NoteFormat
+import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import com.unistack.app.feature_sync.domain.LocalBackupRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
@@ -59,7 +63,8 @@ class LocalJsonBackupRepository(
     private val tasksRepository: TasksRepository,
     private val expensesRepository: ExpensesRepository,
     private val academicWorksRepository: AcademicWorksRepository,
-    private val scheduleRepository: ScheduleRepository
+    private val scheduleRepository: ScheduleRepository,
+    private val notesRepository: NotesRepository
 ) : LocalBackupRepository {
 
     override fun exportBackupJson(): String {
@@ -74,6 +79,7 @@ class LocalJsonBackupRepository(
             .put("classSessions", JSONArray(scheduleRepository.sessions.value.map(::classSessionJson)))
             .put("classOccurrences", JSONArray(scheduleRepository.occurrences.value.map(::classOccurrenceJson)))
             .put("agendaEvents", JSONArray(scheduleRepository.agendaEvents.value.map(::agendaEventJson)))
+            .put("notes", JSONArray(notesRepository.notes.value.map(::noteJson)))
             .toString(2)
     }
 
@@ -91,7 +97,8 @@ class LocalJsonBackupRepository(
             tasks = root.optJSONArray("tasks")?.length() ?: 0,
             expenses = root.optJSONArray("expenses")?.length() ?: 0,
             academicWorks = root.optJSONArray("academicWorks")?.length() ?: 0,
-            agendaEvents = root.optJSONArray("agendaEvents")?.length() ?: 0
+            agendaEvents = root.optJSONArray("agendaEvents")?.length() ?: 0,
+            notes = root.optJSONArray("notes")?.length() ?: 0
         )
     }
 
@@ -122,6 +129,13 @@ class LocalJsonBackupRepository(
         parseClassSessions(root.optJSONArray("classSessions")).forEach(scheduleRepository::saveSession)
         parseClassOccurrences(root.optJSONArray("classOccurrences")).forEach(scheduleRepository::saveOccurrence)
         parseAgendaEvents(root.optJSONArray("agendaEvents")).forEach(scheduleRepository::saveAgendaEvent)
+        parseNotes(root.optJSONArray("notes")).forEach { note ->
+            if (notesRepository.notes.value.any { it.id == note.id }) {
+                notesRepository.updateNote(note)
+            } else {
+                notesRepository.addNote(note)
+            }
+        }
         preview
     }
 
@@ -231,6 +245,7 @@ class LocalJsonBackupRepository(
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
             .put("enabledExpenseCategories", JSONArray(profile?.enabledExpenseCategories?.map { it.name }.orEmpty()))
             .put("enabledModules", JSONArray(profile?.enabledModules?.map { it.name }.orEmpty()))
+            .put("notesLayout", (profile?.notesLayout ?: NotesLayout.MOSAICO).name)
     }
 
     private fun restoreProfile(profileJson: JSONObject?) {
@@ -313,6 +328,9 @@ class LocalJsonBackupRepository(
                 expenseAlertThresholdPercent = profileJson.optInt("expenseAlertThresholdPercent", current.expenseAlertThresholdPercent),
                 enabledExpenseCategories = expenseCategories,
                 enabledModules = modules,
+                notesLayout = profileJson.optString("notesLayout")
+                    .let { name -> runCatching { NotesLayout.valueOf(name) }.getOrNull() }
+                    ?: current.notesLayout,
                 updatedAt = System.currentTimeMillis()
             )
         )
@@ -549,6 +567,38 @@ class LocalJsonBackupRepository(
         .put("createdAt", event.createdAt)
         .put("updatedAt", event.updatedAt)
 
+    /*
+     * Los apuntes viajan enteros, con su materia y su formato.
+     *
+     * Cuando eran una hoja en las preferencias del telefono no entraban en la copia: restaurar
+     * un respaldo devolvia las materias, las tareas y los gastos, y dejaba las notas donde
+     * estaban, que en un telefono nuevo es en ninguna parte.
+     */
+    private fun noteJson(note: QuickNote): JSONObject = JSONObject()
+        .put("id", note.id)
+        .put("body", note.body)
+        .put("subjectId", note.subjectId)
+        .put("format", note.format.name)
+        .put("pinned", note.pinned)
+        .put("createdAt", note.createdAt)
+        .put("updatedAt", note.updatedAt)
+
+    private fun parseNotes(array: JSONArray?): List<QuickNote> = array.objects().mapNotNull { item ->
+        val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        val body = item.optString("body")
+        if (body.isBlank()) return@mapNotNull null
+        val created = item.optLong("createdAt", System.currentTimeMillis())
+        QuickNote(
+            id = id,
+            body = body,
+            subjectId = item.optString("subjectId").takeIf { it.isNotBlank() },
+            format = item.optString("format").toEnum(NoteFormat.PLAIN),
+            pinned = item.optBoolean("pinned", false),
+            createdAt = created,
+            updatedAt = item.optLong("updatedAt", created)
+        )
+    }
+
     private fun expenseJson(expense: Expense): JSONObject = JSONObject()
         .put("id", expense.id)
         .put("category", expense.category.name)
@@ -737,6 +787,6 @@ class LocalJsonBackupRepository(
     private fun String.csvEscape(): String = "\"${replace("\"", "\"\"")}\""
 
     private companion object {
-        const val SCHEMA_VERSION = 10
+        const val SCHEMA_VERSION = 11
     }
 }

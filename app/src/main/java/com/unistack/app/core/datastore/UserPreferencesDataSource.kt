@@ -29,6 +29,7 @@ import com.unistack.app.feature_user.domain.SavedGradeScenario
 import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.TextScalePreference
+import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
@@ -60,6 +61,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val ABSENCE_LIMIT = intPreferencesKey("absence_limit")
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
+        val NOTES_LAYOUT = stringPreferencesKey("notes_layout")
         val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
         val APPEARANCE_PREFERENCES_JSON = stringPreferencesKey("appearance_preferences_json")
         val ACCESSIBILITY_PREFERENCES_JSON = stringPreferencesKey("accessibility_preferences_json")
@@ -105,6 +107,9 @@ class UserPreferencesDataSource(private val context: Context) {
             ?.mapNotNull { runCatching { AppModule.valueOf(it) }.getOrNull() }
             ?.toSet()
             ?: setOf(AppModule.GRADES, AppModule.TASKS)
+        val notesLayout = prefs[Keys.NOTES_LAYOUT]
+            ?.let { runCatching { NotesLayout.valueOf(it) }.getOrNull() }
+            ?: NotesLayout.MOSAICO
         val visualPreference = prefs[Keys.VISUAL_PREFERENCE]
             ?.let { runCatching { VisualPreference.valueOf(it) }.getOrNull() }
             ?: VisualPreference.SYSTEM
@@ -134,6 +139,7 @@ class UserPreferencesDataSource(private val context: Context) {
             absenceLimit = prefs[Keys.ABSENCE_LIMIT]?.takeIf { it > 0 },
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
+            notesLayout = notesLayout,
             visualPreference = visualPreference,
             appearancePreferences = parseAppearancePreferences(prefs[Keys.APPEARANCE_PREFERENCES_JSON]),
             accessibilityPreferences = parseAccessibilityPreferences(prefs[Keys.ACCESSIBILITY_PREFERENCES_JSON]),
@@ -214,6 +220,7 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.CREATED_AT] = profile.createdAt
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
+            prefs[Keys.NOTES_LAYOUT] = profile.notesLayout.name
             prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
             prefs[Keys.APPEARANCE_PREFERENCES_JSON] = profile.appearancePreferences.normalized().toJsonString()
             prefs[Keys.ACCESSIBILITY_PREFERENCES_JSON] = profile.accessibilityPreferences.toJsonString()

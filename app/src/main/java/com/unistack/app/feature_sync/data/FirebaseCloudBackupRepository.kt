@@ -17,6 +17,10 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.CloudBackupState
+import com.unistack.app.feature_notes.domain.NoteFormat
+import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -51,7 +55,8 @@ class FirebaseCloudBackupRepository(
     private val tasksRepository: TasksRepository,
     private val expensesRepository: ExpensesRepository,
     private val academicWorksRepository: AcademicWorksRepository,
-    private val scheduleRepository: ScheduleRepository
+    private val scheduleRepository: ScheduleRepository,
+    private val notesRepository: NotesRepository
 ) : CloudBackupRepository {
 
     private val _state = MutableStateFlow(CloudBackupState())
@@ -70,7 +75,7 @@ class FirebaseCloudBackupRepository(
 
         val now = System.currentTimeMillis()
         val payload = mapOf(
-            "schemaVersion" to 6,
+            "schemaVersion" to 7,
             "updatedAt" to now,
             "profile" to profileMap(),
             "subjects" to gradesRepository.subjects.value.map(::subjectMap),
@@ -79,7 +84,8 @@ class FirebaseCloudBackupRepository(
             "academicWorks" to academicWorksRepository.works.value.map(::academicWorkMap),
             "classSessions" to scheduleRepository.sessions.value.map(::classSessionMap),
             "classOccurrences" to scheduleRepository.occurrences.value.map(::classOccurrenceMap),
-            "agendaEvents" to scheduleRepository.agendaEvents.value.map(::agendaEventMap)
+            "agendaEvents" to scheduleRepository.agendaEvents.value.map(::agendaEventMap),
+            "notes" to notesRepository.notes.value.map(::noteMap)
         )
 
         Firebase.firestore
@@ -136,6 +142,7 @@ class FirebaseCloudBackupRepository(
         parseClassSessions(data["classSessions"]).forEach(scheduleRepository::saveSession)
         parseClassOccurrences(data["classOccurrences"]).forEach(scheduleRepository::saveOccurrence)
         parseAgendaEvents(data["agendaEvents"]).forEach(scheduleRepository::saveAgendaEvent)
+        parseNotes(data["notes"]).forEach(notesRepository::addNote)
 
         val now = System.currentTimeMillis()
         _state.update {
@@ -186,6 +193,7 @@ class FirebaseCloudBackupRepository(
             "absenceLimit" to profile.absenceLimit,
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },
+            "notesLayout" to profile.notesLayout.name,
             "visualPreference" to profile.visualPreference.name,
             "appearancePreferences" to mapOf(
                 "backgroundStyle" to profile.appearancePreferences.backgroundStyle.name,
@@ -281,6 +289,35 @@ class FirebaseCloudBackupRepository(
         "taskId" to grade.taskId,
         "recordedAt" to grade.recordedAt
     )
+
+    private fun noteMap(note: QuickNote): Map<String, Any?> = mapOf(
+        "id" to note.id,
+        "body" to note.body,
+        "subjectId" to note.subjectId,
+        "format" to note.format.name,
+        "pinned" to note.pinned,
+        "createdAt" to note.createdAt,
+        "updatedAt" to note.updatedAt
+    )
+
+    private fun parseNotes(value: Any?): List<QuickNote> {
+        return asMapList(value).mapNotNull { map ->
+            val body = map.string("body") ?: return@mapNotNull null
+            if (body.isBlank()) return@mapNotNull null
+            val created = map.long("createdAt") ?: System.currentTimeMillis()
+            QuickNote(
+                id = map.string("id") ?: return@mapNotNull null,
+                body = body,
+                subjectId = map.string("subjectId"),
+                format = map.string("format")
+                    ?.let { runCatching { NoteFormat.valueOf(it) }.getOrNull() }
+                    ?: NoteFormat.PLAIN,
+                pinned = map.boolean("pinned") ?: false,
+                createdAt = created,
+                updatedAt = map.long("updatedAt") ?: created
+            )
+        }
+    }
 
     private fun taskMap(task: StudentTask): Map<String, Any?> = mapOf(
         "id" to task.id,

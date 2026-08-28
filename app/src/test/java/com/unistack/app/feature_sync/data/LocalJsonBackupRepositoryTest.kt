@@ -9,6 +9,10 @@ import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_notes.domain.NoteFormat
+import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.StudentTask
@@ -71,6 +75,8 @@ class LocalJsonBackupRepositoryTest {
         val expensesRepository = FakeExpensesRepository()
         val worksRepository = FakeAcademicWorksRepository()
         val scheduleRepository = FakeScheduleRepository()
+        val notesRepository = FakeNotesRepository()
+        notesRepository.addNote(testNote())
         tasksRepository.addTask(testTask())
         expensesRepository.addExpense(testExpense())
         worksRepository.addWork(testWork())
@@ -82,7 +88,8 @@ class LocalJsonBackupRepositoryTest {
             tasksRepository = tasksRepository,
             expensesRepository = expensesRepository,
             academicWorksRepository = worksRepository,
-            scheduleRepository = scheduleRepository
+            scheduleRepository = scheduleRepository,
+            notesRepository = notesRepository
         )
 
         val json = repository.exportBackupJson()
@@ -108,6 +115,19 @@ class LocalJsonBackupRepositoryTest {
         assertEquals(1, expensesRepository.expenses.value.size)
         assertEquals(1, worksRepository.works.value.size)
         assertEquals(1, scheduleRepository.sessions.value.size)
+        /*
+         * Los apuntes viajan en la copia, con su materia y su formato.
+         *
+         * Cuando eran una hoja en las preferencias del telefono no entraban: restaurar un
+         * respaldo devolvia todo lo demas y dejaba las notas donde estaban, que en un telefono
+         * nuevo es en ninguna parte.
+         */
+        assertEquals(1, preview.notes)
+        assertEquals(1, notesRepository.notes.value.size)
+        assertEquals("subject-1", notesRepository.notes.value.single().subjectId)
+        assertEquals(NoteFormat.MARKDOWN, notesRepository.notes.value.single().format)
+        assertTrue(notesRepository.notes.value.single().pinned)
+        assertEquals(NotesLayout.CUADERNO, userRepository.userProfile.value?.notesLayout)
     }
 
     @Test
@@ -118,7 +138,8 @@ class LocalJsonBackupRepositoryTest {
             tasksRepository = FakeTasksRepository(),
             expensesRepository = FakeExpensesRepository(),
             academicWorksRepository = FakeAcademicWorksRepository(),
-            scheduleRepository = FakeScheduleRepository()
+            scheduleRepository = FakeScheduleRepository(),
+            notesRepository = FakeNotesRepository()
         )
 
         assertTrue(repository.previewBackupJson("{bad json").isFailure)
@@ -134,6 +155,7 @@ class LocalJsonBackupRepositoryTest {
             passingGrade = 3.0,
             targetAverage = 4.0,
             enabledModules = setOf(AppModule.GRADES, AppModule.TASKS, AppModule.EXPENSES, AppModule.ACADEMIC_TEMPLATES),
+            notesLayout = NotesLayout.CUADERNO,
             quietHoursEnabled = true,
             quietHoursStartHour = 22,
             quietHoursEndHour = 7,
@@ -142,6 +164,16 @@ class LocalJsonBackupRepositoryTest {
             updatedAt = 10
         )
     }
+
+    private fun testNote() = QuickNote(
+        id = "note-1",
+        body = "Parcial 2 el martes, salon 302",
+        subjectId = "subject-1",
+        format = NoteFormat.MARKDOWN,
+        pinned = true,
+        createdAt = 20,
+        updatedAt = 30
+    )
 
     private fun testTask() = StudentTask(
         id = "task-1",
@@ -198,6 +230,23 @@ class LocalJsonBackupRepositoryTest {
         createdAt = 10,
         updatedAt = 10
     )
+}
+
+private class FakeNotesRepository : NotesRepository {
+    private val state = MutableStateFlow<List<QuickNote>>(emptyList())
+    override val notes: StateFlow<List<QuickNote>> = state
+    override fun addNote(note: QuickNote) {
+        state.value = if (state.value.any { it.id == note.id }) state.value else state.value + note
+    }
+    override fun updateNote(note: QuickNote) {
+        state.value = state.value.map { if (it.id == note.id) note else it }
+    }
+    override fun deleteNote(noteId: String) {
+        state.value = state.value.filterNot { it.id == noteId }
+    }
+    override fun setPinned(noteId: String, pinned: Boolean) {
+        state.value = state.value.map { if (it.id == noteId) it.copy(pinned = pinned) else it }
+    }
 }
 
 private class FakeTasksRepository : TasksRepository {

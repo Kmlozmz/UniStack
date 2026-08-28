@@ -8,6 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.unistack.app.feature_expenses.data.local.ExpenseDao
 import com.unistack.app.feature_expenses.data.local.ExpenseEntity
+import com.unistack.app.feature_notes.data.local.NoteDao
+import com.unistack.app.feature_notes.data.local.NoteEntity
 import com.unistack.app.feature_templates.data.local.AcademicWorkDao
 import com.unistack.app.feature_templates.data.local.AcademicWorkEntity
 import com.unistack.app.feature_tasks.data.local.TaskDao
@@ -34,9 +36,10 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         ClassOccurrenceEntity::class,
         AgendaEventEntity::class,
         AcademicTermEntity::class,
-        AcademicBreakEntity::class
+        AcademicBreakEntity::class,
+        NoteEntity::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -50,6 +53,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun agendaEventDao(): AgendaEventDao
     abstract fun academicTermDao(): AcademicTermDao
     abstract fun academicBreakDao(): AcademicBreakDao
+    abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile
@@ -354,6 +358,41 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Las notas dejan de ser una hoja y pasan a ser filas.
+         *
+         * Hasta aqui las notas rapidas vivian en las preferencias del telefono: un unico texto
+         * de cuatro mil caracteres, fuera de la base de datos y por tanto fuera del respaldo.
+         * Restaurar una copia no las traia porque nunca estuvieron dentro.
+         *
+         * `format` nace en PLAIN y no en el formato que el usuario prefiera: la preferencia
+         * dice con que nacen las notas nuevas, y lo ya escrito se escribio sin marcas. `pinned`
+         * nace apagado y todavia no se puede tocar desde ninguna pantalla; esta la columna
+         * puesta desde el principio para no volver a mover la tabla cuando se pueda.
+         */
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS notes (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        body TEXT NOT NULL,
+                        subjectId TEXT,
+                        format TEXT NOT NULL,
+                        pinned INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_userId ON notes(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_subjectId ON notes(subjectId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_updatedAt ON notes(updatedAt)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -382,7 +421,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_12_13,
             MIGRATION_13_14,
             MIGRATION_14_15,
-            MIGRATION_15_16
+            MIGRATION_15_16,
+            MIGRATION_16_17
         )
     }
 }

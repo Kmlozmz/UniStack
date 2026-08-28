@@ -45,6 +45,16 @@ object AppRoutes {
     fun academicWork(workId: String): String = "academic_work/" + workId
     const val GpaCalculator = "gpa_calculator"
     const val QuickNotes = "quick_notes"
+
+    /**
+     * Escribir una nota, con su ruta propia y a pantalla completa.
+     *
+     * Sin argumento se abre en blanco; con el identificador, sobre una nota que ya existe.
+     * Son dos rutas y no un argumento opcional porque asi la de escribir no hereda el
+     * historial de la que se estaba leyendo.
+     */
+    const val NewNote = "new_note"
+    const val NoteEditor = "note_editor"
     const val AiAssistant = "ai_assistant"
     const val Labs = "labs"
     const val Pro = "pro"
@@ -93,6 +103,7 @@ object AppRoutes {
     fun academic(tab: String) = "$Academic?$AcademicTabArg=$tab"
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
+    fun noteEditor(noteId: String) = "$NoteEditor/$noteId"
     fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
