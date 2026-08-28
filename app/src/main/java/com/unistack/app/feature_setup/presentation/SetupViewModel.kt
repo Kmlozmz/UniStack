@@ -10,6 +10,7 @@ import com.unistack.app.core.utils.TextValidators
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.unistack.app.feature_user.domain.AppModule
+import com.unistack.app.feature_user.domain.CutDateRules
 import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermType
@@ -170,15 +171,8 @@ class SetupViewModel @Inject constructor(
             val fin = termPlannedEnd
             if (fin != null && !fin.isAfter(inicio)) return false
             if (termName.isBlank()) return false
-            // O estan todas las fechas de corte, o ninguna: media tabla no ordena nada.
-            val puestas = cutEndDates.filterNotNull()
-            if (puestas.isNotEmpty()) {
-                if (puestas.size != (termCutCount - 1).coerceAtLeast(0)) return false
-                if (puestas.zipWithNext().any { (a, b) -> !b.isAfter(a) }) return false
-                if (puestas.first().isBefore(inicio)) return false
-                // El ultimo va del dia siguiente al final del periodo: sin dias no es un corte.
-                if (fin != null && !fin.isAfter(puestas.last())) return false
-            }
+            // Las mismas reglas que en Ajustes, escritas en un solo sitio.
+            if (!CutDateRules.areSound(cutEndDates, termCutCount, inicio, fin)) return false
             @Suppress("UNUSED_EXPRESSION") tipo
             return true
         }

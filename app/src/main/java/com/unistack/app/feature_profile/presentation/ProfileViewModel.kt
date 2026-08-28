@@ -22,6 +22,8 @@ import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicBreakRepository
+import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import java.time.LocalDate
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_billing.domain.BillingRepository
@@ -86,8 +88,19 @@ class ProfileViewModel @Inject constructor(
     private val accountAuthService: AccountAuthService,
     private val localBackupRepository: LocalBackupRepository,
     private val cloudBackupRepository: CloudBackupRepository,
-    private val breakRepository: AcademicBreakRepository
+    private val breakRepository: AcademicBreakRepository,
+    private val termRepository: AcademicTermRepository
 ) : ViewModel() {
+    /**
+     * El periodo que se está cursando, o nulo entre uno y otro.
+     *
+     * Aquí sirve para una sola cosa: dibujar los tramos de los cortes. El primero empieza
+     * cuando empieza el periodo y el último acaba con él, así que sin esto las dos fechas de
+     * los extremos saldrían vacías. Nulo no bloquea nada: las fechas de corte se pueden poner
+     * igual, solo que sin los extremos escritos.
+     */
+    val activeTerm: StateFlow<AcademicTerm?> = termRepository.activeTerm
+
     /**
      * Los días en que la universidad estuvo cerrada.
      *
@@ -235,7 +248,20 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
-    fun updateGradingCutSettings(weightInputs: List<String>): Boolean {
+    /**
+     * Guarda el reparto de los cortes **y sus fechas**.
+     *
+     * Antes esto solo recibía los pesos y construía los cortes de cero, así que cada vez que
+     * alguien entraba aquí y tocaba «Guardar cortes» se llevaba por delante las fechas puestas
+     * en el onboarding sin decir nada. No era que no se pudieran editar: es que se borraban.
+     *
+     * [cutEndDates] va en paralelo a [weightInputs] y solo cuentan las posiciones anteriores a
+     * la última: el último corte acaba con el periodo y por eso nunca lleva fecha propia.
+     */
+    fun updateGradingCutSettings(
+        weightInputs: List<String>,
+        cutEndDates: List<LocalDate?> = emptyList()
+    ): Boolean {
         val current = profile.value ?: return false
         val weights = weightInputs.map { it.toDoubleOrNull()?.div(100.0) ?: return false }
         if (weights.isEmpty() || weights.any { it <= 0.0 }) return false
@@ -247,10 +273,19 @@ class ProfileViewModel @Inject constructor(
                     id = "period-$order",
                     name = "${Corte.Singular} $order",
                     weight = weight,
-                    order = order
+                    order = order,
+                    // El ultimo acaba con el periodo, asi que su fecha no existe.
+                    endEpochDay = if (index == weights.lastIndex) {
+                        null
+                    } else {
+                        cutEndDates.getOrNull(index)?.toEpochDay()
+                    }
                 )
             }
         )
+        // Fechas que no suben, o puestas a medias, no se guardan: el esquema entero deja de
+        // poder decidir el corte de una nota y es peor que no tener fechas.
+        if (!scheme.isValid) return false
         save(current.copy(gradingCutScheme = scheme))
         return true
     }

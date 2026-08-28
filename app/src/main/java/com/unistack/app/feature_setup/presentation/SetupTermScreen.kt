@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.CutDatesSection
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -536,9 +537,6 @@ fun SetupTermCutDatesScreen(
     modifier: Modifier = Modifier,
     totalSteps: Int = 9
 ) {
-    var picking by remember { mutableStateOf<Int?>(null) }
-    val total = cutWeights.size
-
     BackHandler(onBack = onBackClick)
     SetupScaffold(
         step = SetupSteps.TermCutDates,
@@ -590,105 +588,14 @@ fun SetupTermCutDatesScreen(
                 }
             }
 
-            cutWeights.forEachIndexed { indice, peso ->
-                val ultimo = indice == total - 1
-                // El tramo se calcula: empieza donde acabo el anterior, o con el periodo.
-                val desde = if (indice == 0) start else cutEndDates.getOrNull(indice - 1)?.plusDays(1)
-                val hasta = if (ultimo) plannedEnd else cutEndDates.getOrNull(indice)
-
-                UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                Modifier
-                                    .size(30.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "${indice + 1}",
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 13.sp
-                                )
-                            }
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    text = "${Corte.Singular} ${indice + 1}",
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.titleSmallEmphasized
-                                )
-                                Text(
-                                    text = "$peso% de la nota",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-
-                        /*
-                         * Los dos extremos a la vista, aunque solo uno se toque.
-                         *
-                         * Se pedia el final y el principio habia que deducirlo del corte
-                         * anterior. Ensenar los dos hace evidente el encadenado sin permitir
-                         * escribirlo: el que no se toca sale apagado.
-                         */
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TermDateField(
-                                label = "Empieza",
-                                date = desde,
-                                vacio = "—",
-                                enabled = false,
-                                modifier = Modifier.weight(1f),
-                                onClick = {}
-                            )
-                            if (ultimo) {
-                                TermDateField(
-                                    label = "Acaba",
-                                    date = hasta,
-                                    vacio = "con el periodo",
-                                    enabled = false,
-                                    modifier = Modifier.weight(1f),
-                                    onClick = {}
-                                )
-                            } else {
-                                TermDateField(
-                                    label = "Acaba",
-                                    date = cutEndDates.getOrNull(indice),
-                                    modifier = Modifier.weight(1f),
-                                    onClick = { picking = indice }
-                                )
-                            }
-                        }
-
-                        Revelado(visible = desde != null && hasta != null) {
-                            if (desde != null && hasta != null) {
-                                Text(
-                                    text = "${semanasEntre(desde, hasta)} semanas",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            CutDatesSection(
+                termStart = start,
+                termPlannedEnd = plannedEnd,
+                cutWeights = cutWeights,
+                cutEndDates = cutEndDates,
+                onCutDateChange = onCutDateChange
+            )
         }
-    }
-
-    picking?.let { indice ->
-        UniDatePickerDialog(
-            selectedDate = cutEndDates.getOrNull(indice) ?: start,
-            onDateSelected = { fecha ->
-                onCutDateChange(indice, fecha)
-                picking = null
-            },
-            onDismiss = { picking = null }
-        )
     }
 }
 

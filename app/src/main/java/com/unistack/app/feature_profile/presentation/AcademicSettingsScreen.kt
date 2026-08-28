@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.GradeStepperRow
 import com.unistack.app.core.design.components.CutBalanceNotice
 import com.unistack.app.core.design.components.CutCountSection
+import com.unistack.app.core.design.components.CutDatesSection
 import com.unistack.app.core.design.components.CutWheelCard
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.SetupEvenSplitAction
@@ -47,7 +48,12 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_user.domain.Corte
+import com.unistack.app.feature_user.domain.CutDateProblem
+import com.unistack.app.feature_user.domain.CutDateRules
 import com.unistack.app.feature_user.domain.GradingScale
+import androidx.compose.runtime.saveable.listSaver
+import java.time.LocalDate
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 
@@ -79,8 +85,26 @@ fun AcademicSettingsScreen(
     var weights by rememberSaveable(current.userId) {
         mutableStateOf(current.gradingCutScheme.cuts.map { academicPercentInput(it.weight) })
     }
+    /*
+     * Las fechas de corte, que hasta ahora solo se podian poner una vez.
+     *
+     * El onboarding ofrece dejarlas para luego y dice, textualmente, que se anaden «en Ajustes
+     * › Configuracion academica». Aqui no habia donde: no es que estuvieran escondidas, es que
+     * guardar los cortes las borraba. Son las mismas tarjetas del onboarding, la misma pieza.
+     */
+    var cutDates by rememberSaveable(current.userId, stateSaver = CutDatesSaver) {
+        mutableStateOf(
+            CutDateRules.resize(
+                current.gradingCutScheme.cuts.sortedBy { it.order }.map { corte ->
+                    corte.endEpochDay?.let(LocalDate::ofEpochDay)
+                },
+                current.gradingCutScheme.cuts.size
+            )
+        )
+    }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
+    val term by viewModel.activeTerm.collectAsStateWithLifecycle()
     var pendingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var confirmingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
 
@@ -96,6 +120,12 @@ fun AcademicSettingsScreen(
 
     val total = weights.sumOf { setupPercentValue(it) }
     val weightsAreValid = kotlin.math.abs(total - 100.0) < 0.01
+    val dateProblem = CutDateRules.problemFor(
+        cutEndDates = cutDates,
+        cutCount = weights.size,
+        termStart = term?.start,
+        termPlannedEnd = term?.plannedEnd
+    )
 
     fun saveScale() {
         val impact = viewModel.gradingScaleChangeImpact()
@@ -214,6 +244,8 @@ fun AcademicSettingsScreen(
                 count = weights.size,
                 onCountSelected = { count ->
                     weights = academicWeightsFor(count, weights)
+                    // Subir de tres a cuatro no borra las dos fechas que ya estaban.
+                    cutDates = CutDateRules.resize(cutDates, count)
                     feedback = null
                 }
             )
@@ -244,17 +276,52 @@ fun AcademicSettingsScreen(
                 feedback = null
             }
         }
+        if (weights.size > 1) {
+            item {
+                AcademicGroupLabel("CUÁNDO CIERRA CADA ${Corte.Singular.uppercase()}")
+                CutDatesExplainer(hasDates = cutDates.any { it != null })
+            }
+            item {
+                CutDatesSection(
+                    termStart = term?.start,
+                    termPlannedEnd = term?.plannedEnd,
+                    cutWeights = weights,
+                    cutEndDates = cutDates,
+                    onCutDateChange = { indice, fecha ->
+                        cutDates = cutDates.mapIndexed { posicion, actual ->
+                            if (posicion == indice) fecha else actual
+                        }
+                        feedback = null
+                    }
+                )
+            }
+            dateProblem?.let { problema ->
+                item { CutDatesProblemNote(problema) }
+            }
+            if (cutDates.any { it != null }) {
+                item {
+                    TextButton(
+                        onClick = {
+                            cutDates = cutDates.map { null }
+                            feedback = null
+                        }
+                    ) {
+                        Text("Quitar las fechas", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
         item {
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
-                    feedback = if (viewModel.updateGradingCutSettings(weights)) {
+                    feedback = if (viewModel.updateGradingCutSettings(weights, cutDates)) {
                         "Cortes actualizados."
                     } else {
                         "Revisa que los pesos sumen 100%."
                     }
                 },
-                enabled = weightsAreValid,
+                enabled = weightsAreValid && dateProblem == null,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -347,6 +414,56 @@ fun AcademicSettingsScreen(
         )
     }
 }
+
+/**
+ * Que cambia segun haya fechas o no, dicho antes de tocarlas.
+ *
+ * Sin esto la seccion es una lista de dias sin consecuencia visible. Lo que se gana es
+ * concreto: cada nota se va sola a su corte por la fecha en vez de elegirse a mano.
+ */
+@Composable
+private fun CutDatesExplainer(hasDates: Boolean) {
+    Text(
+        text = if (hasDates) {
+            "Cada nota que registres se va sola al ${Corte.Singular.lowercase()} que le toca " +
+                "por su fecha."
+        } else {
+            "Si escribes el último día de cada ${Corte.Singular.lowercase()}, cada nota se va " +
+                "sola al que le toca por su fecha. Mientras no estén, lo eliges tú en cada nota."
+        },
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.bodySmall
+    )
+}
+
+/** Por que estas fechas no se pueden guardar, en una linea. */
+@Composable
+private fun CutDatesProblemNote(problem: CutDateProblem) {
+    val corte = Corte.Singular.lowercase()
+    Text(
+        text = when (problem) {
+            CutDateProblem.INCOMPLETAS ->
+                "Faltan fechas. O están todas, o ninguna: a medias no se puede repartir."
+            CutDateProblem.DESORDENADAS ->
+                "Cada $corte tiene que acabar después del anterior."
+            CutDateProblem.ANTES_DEL_INICIO ->
+                "El primer $corte no puede acabar antes de que empiece el periodo."
+            CutDateProblem.DESPUES_DEL_FINAL ->
+                "El último $corte se queda sin días: acaba con el periodo."
+        },
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Bold
+    )
+}
+
+/** Las fechas sobreviven a un giro de pantalla; el `Bundle` solo entiende texto. */
+private val CutDatesSaver = listSaver<List<LocalDate?>, String>(
+    save = { fechas -> fechas.map { it?.toString() ?: "" } },
+    restore = { textos -> textos.map { texto -> texto.takeIf { it.isNotEmpty() }?.let(LocalDate::parse) } }
+)
 
 @Composable
 private fun AcademicGroupLabel(text: String) {
