@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -152,9 +153,17 @@ fun SetupFinishTransition(
         latestOnFinished()
     }
 
+    /*
+     * El logo manda, y la frase cuelga de él.
+     *
+     * Centrando el par entero, el símbolo queda por encima del centro y la frase por debajo,
+     * y el conjunto se lee caído: el ojo toma el logo por el sujeto de la pantalla y lo ve
+     * fuera de sitio. Centrando el logo —y subiéndolo el pelo que pide el centro óptico, que
+     * siempre está algo más arriba que el geométrico— la despedida queda donde se espera.
+     */
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = -0.12f)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box(

@@ -153,12 +153,72 @@ private fun AnoPartido(type: AcademicTermType) {
     // El tramo que se ilumina es en el que estas hoy, no el primero del año.
     val actual = type.blockFor(hoy).coerceIn(1, cuantos)
     UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = "Así queda tu año:",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
+            /*
+             * El rotulo va encima del tramo y apunta hacia abajo.
+             *
+             * Debajo funcionaba, pero dejaba el aire de la tarjeta partido en dos: el hueco
+             * util quedaba encima de la barra, vacio, y el rotulo empujaba hacia abajo a los
+             * meses y a la explicacion. Arriba ocupa un sitio que ya estaba libre.
+             *
+             * Sigue colgando del propio recuadro —misma fila de pesos que la barra, asi que
+             * cae siempre sobre el que toca— y por eso senala sin explicarse. El rotulo no se
+             * recorta con seis tramos porque no se le deja partir y la casilla no recorta a
+             * sus hijos: se desborda sobre las vecinas, que estan vacias.
+             */
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                repeat(cuantos) { indice ->
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) {
+                        if (indice + 1 == actual) {
+                            Column(
+                                modifier = Modifier
+                                    .clip(MaterialTheme.shapes.small)
+                                    .clickable { porqueVisible = !porqueVisible }
+                                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Text(
+                                        text = "Estás aquí",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Visible
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
+                                        contentDescription = if (porqueVisible) {
+                                            "Ocultar el porqué"
+                                        } else {
+                                            "Por qué este tramo"
+                                        },
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "▼",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 9.sp,
+                                    lineHeight = 10.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -191,64 +251,6 @@ private fun AnoPartido(type: AcademicTermType) {
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
-                    }
-                }
-            }
-            /*
-             * Una flecha bajo el recuadro encendido, no un rotulo en la esquina.
-             *
-             * Estaba arriba a la derecha, lejos de lo que nombraba, asi que habia que atar los
-             * dos por tu cuenta. Colgada del propio recuadro —misma fila de pesos que la barra,
-             * asi que cae siempre debajo del que toca— senala sin necesidad de explicarse.
-             *
-             * El rotulo no se recorta con seis tramos porque no se le deja partir y la casilla
-             * no recorta a sus hijos: se desborda sobre las vecinas, que estan vacias.
-             */
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                repeat(cuantos) { indice ->
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
-                        if (indice + 1 == actual) {
-                            Column(
-                                modifier = Modifier
-                                    .clip(MaterialTheme.shapes.small)
-                                    .clickable { porqueVisible = !porqueVisible }
-                                    .padding(horizontal = 4.dp, vertical = 2.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "▲",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 9.sp,
-                                    lineHeight = 10.sp
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                                ) {
-                                    Text(
-                                        text = "Estás aquí",
-                                        color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        softWrap = false,
-                                        overflow = TextOverflow.Visible
-                                    )
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-                                        contentDescription = if (porqueVisible) {
-                                            "Ocultar el porqué"
-                                        } else {
-                                            "Por qué este tramo"
-                                        },
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }
