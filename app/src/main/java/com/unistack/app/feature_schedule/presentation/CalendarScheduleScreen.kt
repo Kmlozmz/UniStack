@@ -65,6 +65,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -93,6 +94,7 @@ import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_user.domain.Corte
+import com.unistack.app.core.notifications.AttendanceDeepLink
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_schedule.domain.ClassSession
 import java.time.LocalDateTime
@@ -160,6 +162,25 @@ fun CalendarScheduleScreen(
     var showAddClassSheet by rememberSaveable { mutableStateOf(false) }
     var agendaCreateKind by remember { mutableStateOf<AgendaCreateKind?>(null) }
     var editingAgendaEvent by remember { mutableStateOf<com.unistack.app.feature_schedule.domain.AgendaEvent?>(null) }
+
+    /*
+     * El aviso de asistencia abre la clase por la que pregunta.
+     *
+     * Se espera a que los datos hayan llegado: en el primer fotograma la lista de clases esta
+     * vacia y buscar en ella daria «no existe» para una clase que si existe. Si de verdad ya
+     * no esta —se borro la materia entre el aviso y el toque— el dato se descarta igual, para
+     * que no quede esperando a reabrirse solo la proxima vez que se entre en Horario.
+     */
+    val avisoDeClase by AttendanceDeepLink.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(avisoDeClase, state.loaded) {
+        val aviso = avisoDeClase ?: return@LaunchedEffect
+        if (!state.loaded) return@LaunchedEffect
+        state.sessions.firstOrNull { it.id == aviso.sessionId }?.let { sesion ->
+            selectedEpochDay = aviso.epochDay
+            selectedSession = sesion
+        }
+        AttendanceDeepLink.consume()
+    }
 
     val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
     val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }

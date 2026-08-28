@@ -327,7 +327,7 @@ class LocalReminderScheduler(private val context: Context) {
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     subText = "Asistencia",
                     title = "¿Asististe a $subjectName?",
-                    body = "Déjalo registrado para llevar la cuenta de tus faltas.",
+                    body = "Contesta aquí mismo, o toca para abrir la clase.",
                     targetRoute = AppRoutes.Calendar,
                     channelId = CHANNEL_ID_DIGEST,
                     /*
@@ -844,11 +844,25 @@ class LocalReminderScheduler(private val context: Context) {
                 body = body,
                 targetRoute = targetRoute
             ) ?: return
+            val sessionId = intent.getStringExtra(EXTRA_ATTENDANCE_SESSION_ID)
+            val epochDay = intent.getLongExtra(EXTRA_ATTENDANCE_EPOCH_DAY, -1L)
             val launchIntent = Intent(context, MainActivity::class.java).apply {
                 putExtra(
                     MainActivity.EXTRA_LAUNCH_ROUTE,
                     targetRoute ?: AppRoutes.notificationDetail(historyItem.id)
                 )
+                /*
+                 * Tocar el aviso abre la clase por la que pregunta.
+                 *
+                 * Dejaba en Horario y desde ahi habia que buscar el dia, dar con la clase y
+                 * abrir su panel: tres pasos para contestar lo que el aviso acababa de
+                 * preguntar. La ruta sigue siendo el calendario —es donde vive el panel— y
+                 * estos dos datos le dicen cual abrir.
+                 */
+                if (sessionId != null && epochDay >= 0L) {
+                    putExtra(EXTRA_ATTENDANCE_SESSION_ID, sessionId)
+                    putExtra(EXTRA_ATTENDANCE_EPOCH_DAY, epochDay)
+                }
             }
             val contentIntent = PendingIntent.getActivity(
                 context,
@@ -859,8 +873,6 @@ class LocalReminderScheduler(private val context: Context) {
             val channelId = intent.getStringExtra(EXTRA_CHANNEL_ID) ?: CHANNEL_ID_ALERTS
             val subText = intent.getStringExtra(EXTRA_SUBTEXT)
             val isAlert = channelId == CHANNEL_ID_ALERTS
-            val sessionId = intent.getStringExtra(EXTRA_ATTENDANCE_SESSION_ID)
-            val epochDay = intent.getLongExtra(EXTRA_ATTENDANCE_EPOCH_DAY, -1L)
             val builder = NotificationCompat.Builder(context, channelId)
                 // Un mipmap de lanzador no sirve aquí: el sistema se queda solo
                 // con su alfa y, al ser una imagen opaca de borde a borde, sale

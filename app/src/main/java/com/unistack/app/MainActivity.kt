@@ -12,6 +12,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
+import com.unistack.app.core.notifications.AttendanceDeepLink
+import com.unistack.app.core.notifications.EXTRA_ATTENDANCE_EPOCH_DAY
+import com.unistack.app.core.notifications.EXTRA_ATTENDANCE_SESSION_ID
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -41,6 +44,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
+        intent.offerAttendance()
         applyEdgeToEdge(darkTheme = isSystemInDarkMode())
         // El permiso de notificaciones ya no se pide aquí: saltaba nada más instalar, sin
         // que el usuario supiera para qué. Ahora se pide en su paso del onboarding, después
@@ -60,6 +64,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingLaunchRoute.value = intent.resolveLaunchRoute()
+        intent.offerAttendance()
     }
 
     private fun applyEdgeToEdge(darkTheme: Boolean) {
@@ -83,6 +88,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun Intent.launchRoute(): String? = getStringExtra(EXTRA_LAUNCH_ROUTE)
+
+    /**
+     * Si el aviso preguntaba por una clase, se apunta para que Horario la abra.
+     *
+     * No viaja en la ruta: `calendar` es una pestaña de la barra inferior y colgarle
+     * argumentos obliga a tocar cómo se decide la pestaña activa. Ver [AttendanceDeepLink].
+     */
+    private fun Intent.offerAttendance() {
+        val sessionId = getStringExtra(EXTRA_ATTENDANCE_SESSION_ID) ?: return
+        AttendanceDeepLink.offer(sessionId, getLongExtra(EXTRA_ATTENDANCE_EPOCH_DAY, -1L))
+    }
 
     private fun Intent.resolveLaunchRoute(): String? {
         val explicit = launchRoute()
