@@ -26,6 +26,8 @@ data class SubjectEntity(
     val termId: String? = null,
     /** El tope de faltas de la materia. Nulo es «no lo ha dicho», no «no hay». */
     val absenceLimit: Int? = null,
+    /** La materia de la que viene esta, si se trajo para repetirla. */
+    val repeatedFromSubjectId: String? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

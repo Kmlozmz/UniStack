@@ -36,7 +36,7 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         AcademicTermEntity::class,
         AcademicBreakEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -341,6 +341,19 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * De donde viene una materia que se repite.
+         *
+         * Sin la columna, «repitiendo» habria que deducirlo buscando por nombre en periodos
+         * anteriores, y eso se rompe al renombrar. Nula en todo lo existente: nadie ha
+         * repetido nada todavia porque hasta ahora no habia periodos que cerrar.
+         */
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE subjects ADD COLUMN repeatedFromSubjectId TEXT DEFAULT NULL")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -368,7 +381,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_11_12,
             MIGRATION_12_13,
             MIGRATION_13_14,
-            MIGRATION_14_15
+            MIGRATION_14_15,
+            MIGRATION_15_16
         )
     }
 }

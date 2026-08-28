@@ -105,6 +105,52 @@ class RoomRepositoriesTest {
         }
     }
 
+    /**
+     * Al cerrar un periodo, las materias sueltas se quedan con el.
+     *
+     * Son las de antes de que existieran los periodos. Sin estampar, el historico las perderia
+     * justo en el momento en que empieza a haber historico.
+     */
+    @Test
+    fun cerrarUnPeriodoEstampaLasMateriasQueNoLoTienen() {
+        runBlocking {
+            val repository = RoomGradesRepository(
+                subjectDao = database.subjectDao(),
+                gradeDao = database.gradeDao(),
+                userRepository = userRepository
+            )
+            repository.addSubject(
+                Subject(
+                    id = "sin-periodo",
+                    name = "Historia",
+                    targetAverage = 4.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE
+                )
+            )
+            repository.addSubject(
+                Subject(
+                    id = "con-periodo",
+                    name = "Algebra",
+                    targetAverage = 4.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE,
+                    termId = "term-viejo"
+                )
+            )
+            repository.subjects.awaitValue { it.size == 2 }
+
+            repository.stampTerm("term-que-cierra")
+
+            val despues = repository.subjects.awaitValue { lista ->
+                lista.firstOrNull { it.id == "sin-periodo" }?.termId == "term-que-cierra"
+            }
+            assertEquals("term-que-cierra", despues.first { it.id == "sin-periodo" }.termId)
+            // La que ya tenia periodo no se toca: pertenece a otro semestre.
+            assertEquals("term-viejo", despues.first { it.id == "con-periodo" }.termId)
+        }
+    }
+
     /** Una materia nueva nace en el periodo que se esta cursando. */
     @Test
     fun laMateriaNuevaSeEstampaConElPeriodoActivo() {

@@ -262,6 +262,10 @@ class FirebaseCloudBackupRepository(
         "activePeriodId" to subject.activeCutId,
         "historyPromptStatus" to subject.historyPromptStatus.name,
         "unknownCutIds" to subject.unknownCutIds.toList(),
+        // Sin estos, restaurar deja el historico sin poder colocar ninguna materia.
+        "termId" to subject.termId,
+        "absenceLimit" to subject.absenceLimit,
+        "repeatedFromSubjectId" to subject.repeatedFromSubjectId,
         "grades" to subject.grades.map(::gradeMap)
     )
 
@@ -392,7 +396,10 @@ class FirebaseCloudBackupRepository(
                 unknownCutIds = (map["unknownCutIds"] as? List<*>)
                     ?.mapNotNull { it as? String }
                     ?.toSet()
-                    .orEmpty()
+                    .orEmpty(),
+                termId = map.string("termId"),
+                absenceLimit = (map["absenceLimit"] as? Number)?.toInt(),
+                repeatedFromSubjectId = map.string("repeatedFromSubjectId")
             )
         }
     }

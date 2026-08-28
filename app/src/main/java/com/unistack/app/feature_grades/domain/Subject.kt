@@ -25,6 +25,18 @@ data class Subject(
     /** El periodo academico al que pertenece, o nulo si es anterior a que existieran. */
     val termId: String? = null,
     /**
+     * De qué materia viene esta, cuando se trae para repetirla.
+     *
+     * Es lo que permite decir «repitiendo» sin adivinarlo. La alternativa era buscar por
+     * nombre en los periodos anteriores, y eso se rompe en cuanto alguien renombra la materia
+     * —o acierta de más, si dos asignaturas distintas se llaman igual—. Aquí la etiqueta es un
+     * dato guardado, no una coincidencia de texto, y por eso tampoco se mete en el nombre.
+     *
+     * La copia se crea **vacía**: sin notas y sin el horario del anterior. Repetir es cursarla
+     * otra vez, no arrastrar lo que salió mal.
+     */
+    val repeatedFromSubjectId: String? = null,
+    /**
      * Cuántas faltas puedes acumular antes de perder la materia, o nulo si no lo has dicho.
      *
      * Es **el** número que se mira en la universidad, y cambia por materia: un laboratorio

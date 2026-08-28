@@ -461,6 +461,16 @@ class LocalJsonBackupRepository(
         .put("activePeriodId", subject.activeCutId)
         .put("historyPromptStatus", subject.historyPromptStatus.name)
         .put("unknownCutIds", JSONArray(subject.unknownCutIds.toList()))
+        /*
+         * Estos tres viajan porque si no, restaurar los pierde.
+         *
+         * `termId` es a que semestre pertenece la materia: sin el, una copia restaurada deja
+         * el historico entero sin poder colocar nada. `absenceLimit` es el tope que puso el
+         * usuario, y `repeatedFromSubjectId` la marca de que la esta repitiendo.
+         */
+        .put("termId", subject.termId)
+        .put("absenceLimit", subject.absenceLimit)
+        .put("repeatedFromSubjectId", subject.repeatedFromSubjectId)
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
     private fun gradeJson(grade: GradeItem): JSONObject = JSONObject()
@@ -571,7 +581,15 @@ class LocalJsonBackupRepository(
             activeCutId = item.optString("activePeriodId", ""),
             historyPromptStatus = item.optString("historyPromptStatus")
                 .toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
-            unknownCutIds = item.optJSONArray("unknownCutIds").strings().toSet()
+            unknownCutIds = item.optJSONArray("unknownCutIds").strings().toSet(),
+            // Ausentes en copias viejas: nulo es exactamente lo que significaban entonces.
+            termId = if (item.isNull("termId")) null else item.optString("termId").takeIf { it.isNotBlank() },
+            absenceLimit = if (item.isNull("absenceLimit")) null else item.optInt("absenceLimit").takeIf { it > 0 },
+            repeatedFromSubjectId = if (item.isNull("repeatedFromSubjectId")) {
+                null
+            } else {
+                item.optString("repeatedFromSubjectId").takeIf { it.isNotBlank() }
+            }
         )
     }
 

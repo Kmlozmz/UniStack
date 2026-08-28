@@ -42,6 +42,7 @@ interface SubjectDao {
             unknownPeriodIdsJson = :unknownPeriodIdsJson,
             termId = :termId,
             absenceLimit = :absenceLimit,
+            repeatedFromSubjectId = :repeatedFromSubjectId,
             updatedAt = :updatedAt
         WHERE id = :subjectId AND userId IN (:userIds)
         """
@@ -59,6 +60,7 @@ interface SubjectDao {
         unknownPeriodIdsJson: String,
         termId: String?,
         absenceLimit: Int?,
+        repeatedFromSubjectId: String?,
         updatedAt: Long
     )
 

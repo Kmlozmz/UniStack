@@ -74,6 +74,8 @@ import com.unistack.app.feature_notifications.presentation.NotificationHistorySc
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
+import com.unistack.app.feature_terms.presentation.NewTermScreen
+import com.unistack.app.feature_terms.presentation.TermsViewModel
 import com.unistack.app.feature_terms.presentation.AcademicHistoryScreen
 import com.unistack.app.feature_terms.presentation.ClosedTermDetailScreen
 import com.unistack.app.feature_terms.presentation.TermCloseScreen
@@ -271,6 +273,11 @@ fun MainNavGraph(
                     val viewModel: HomeViewModel = hiltViewModel()
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+                    // Para saber si hay periodo en curso. Inicio no puede quedarse en blanco
+                    // entre un semestre y el siguiente.
+                    val termsViewModel: TermsViewModel = hiltViewModel()
+                    val termsState by termsViewModel.uiState.collectAsStateWithLifecycle()
+
                     val updateViewModel: UpdateViewModel = hiltViewModel()
                     val updateState by updateViewModel.state.collectAsStateWithLifecycle()
                     val updateInfo = when (val current = updateState) {
@@ -296,6 +303,14 @@ fun MainNavGraph(
 
                         HomeScreen(
                             uiState = uiState,
+                            noActiveTerm = if (termsState.activeTerm == null) {
+                                termsState.lastClosed
+                            } else {
+                                null
+                            },
+                            inheritedCutCount = termsState.inheritance?.cutCount ?: 0,
+                            onStartNewTermClick = { navController.go(AppRoutes.NewTerm) },
+                            onOpenHistoryClick = { navController.go(AppRoutes.AcademicHistory) },
                             onAddSubjectClick = { navController.navigateIfModuleEnabled(AppRoutes.AddSubject, enabledModules) },
                             onSeeAllSubjectsClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules) },
                             onSeeTasksClick = { navController.navigateIfModuleEnabled(AppRoutes.academic(AppRoutes.AcademicTabTasks), enabledModules) },
@@ -499,6 +514,16 @@ fun MainNavGraph(
                             navController.go(AppRoutes.Settings)
                         }
                     }
+                )
+            }
+            screen(AppRoutes.NewTerm) {
+                NewTermScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.Home)
+                        }
+                    },
+                    onCreated = { navController.go(AppRoutes.Home) }
                 )
             }
             screen(AppRoutes.AcademicHistory) {
@@ -1021,6 +1046,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AcademicHistory) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.ClosedTerm) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.TermClose) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.NewTerm) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Settings

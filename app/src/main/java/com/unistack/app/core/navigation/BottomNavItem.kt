@@ -29,6 +29,7 @@ object AppRoutes {
     const val AcademicSettings = "academic_settings"
     const val AcademicHistory = "academic_history"
     const val TermClose = "term_close"
+    const val NewTerm = "new_term"
     const val ClosedTerm = "closed_term"
     const val ModuleSettings = "module_settings"
     const val NotificationSettings = "notification_settings"

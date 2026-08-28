@@ -3,7 +3,9 @@ package com.unistack.app.feature_terms.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.unistack.app.core.utils.GradeCalculator
+import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
@@ -25,6 +27,7 @@ import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -67,6 +70,21 @@ data class SubjectInTerm(
     val passed: Boolean?
 )
 
+/**
+ * Lo que el periodo nuevo trae del anterior sin preguntar.
+ *
+ * Se hereda lo que no cambia de un semestre a otro —la escala, el aprobado, los cortes y su
+ * reparto— y no se hereda lo que cambia siempre: las fechas, las materias y el horario. Verlo
+ * escrito antes de empezar es lo que hace que empezar no dé pereza.
+ */
+data class TermInheritance(
+    val scaleLabel: String,
+    val passingLabel: String,
+    val cutCount: Int,
+    val cutWeights: List<Int>,
+    val type: AcademicTermType
+)
+
 data class TermsUiState(
     val activeTerm: AcademicTerm? = null,
     val summaries: List<TermSummary> = emptyList(),
@@ -75,6 +93,7 @@ data class TermsUiState(
     val cumulativeAverage: Double? = null,
     val closedCount: Int = 0,
     val subjectsInHistory: Int = 0,
+    val inheritance: TermInheritance? = null,
     val loaded: Boolean = false
 ) {
     /** El último que se cerró, que es el que se resume cuando no hay ninguno activo. */
@@ -174,6 +193,20 @@ class TermsViewModel @Inject constructor(
             },
             closedCount = cerrados.size,
             subjectsInHistory = cerrados.sumOf { it.subjectCount },
+            inheritance = profile?.let { perfil ->
+                TermInheritance(
+                    scaleLabel = "0 a " + GradingScaleUtils.formatGrade(
+                        GradingScaleUtils.maxGradeFor(perfil.gradingScale),
+                        perfil.gradingScale
+                    ),
+                    passingLabel = GradingScaleUtils.formatGrade(perfil.passingGrade, perfil.gradingScale),
+                    cutCount = esquema.cuts.size,
+                    cutWeights = esquema.cuts.sortedBy { it.order }
+                        .map { Math.round(it.weight * 100.0).toInt() },
+                    // El tipo del ultimo periodo: la universidad no cambia de calendario.
+                    type = terms.maxByOrNull { it.startEpochDay }?.type ?: AcademicTermType.SEMESTER
+                )
+            },
             loaded = true
         )
     }
@@ -286,23 +319,52 @@ class TermsViewModel @Inject constructor(
         }
     }
 
-    /** Empieza el siguiente, heredando de lo anterior lo que no cambia. */
+    /**
+     * Empieza el siguiente, heredando de lo anterior lo que no cambia.
+     *
+     * [repeatSubjectIds] son las materias que se traen para repetirlas. Se crean **vacías**:
+     * sin notas y sin el horario del periodo anterior. Repetir es cursarla otra vez, no
+     * arrastrar lo que salió mal —y las clases cambian de hora entre semestres, así que
+     * copiarlas dejaría un horario falso el primer día—.
+     */
     fun startTerm(
         name: String,
         type: AcademicTermType,
         start: LocalDate,
         plannedEnd: LocalDate?,
+        repeatSubjectIds: Set<String> = emptySet(),
         onDone: () -> Unit = {}
     ) {
         viewModelScope.launch {
             termRepository.create(name, type, start, plannedEnd)
-                .onSuccess {
-                    _message.value = "Empezaste ${it.name}."
+                .onSuccess { periodo ->
+                    repetirMaterias(repeatSubjectIds, periodo.id)
+                    _message.value = "Empezaste ${periodo.name}."
                     onDone()
                 }
                 .onFailure { error ->
                     _message.value = error.message ?: "No se pudo crear el periodo."
                 }
+        }
+    }
+
+    private fun repetirMaterias(ids: Set<String>, termId: String) {
+        if (ids.isEmpty()) return
+        val existentes = gradesRepository.subjects.value
+        ids.forEach { id ->
+            val original = existentes.firstOrNull { it.id == id } ?: return@forEach
+            gradesRepository.addSubject(
+                original.copy(
+                    id = "subject-" + UUID.randomUUID().toString(),
+                    grades = emptyList(),
+                    termId = termId,
+                    repeatedFromSubjectId = original.id,
+                    // El corte elegido y lo que se dio por perdido eran del intento anterior.
+                    activeCutId = "",
+                    unknownCutIds = emptySet(),
+                    historyPromptStatus = PriorHistoryPromptStatus.NOT_SHOWN
+                )
+            )
         }
     }
 }

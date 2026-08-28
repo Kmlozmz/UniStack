@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import com.unistack.app.feature_terms.presentation.NoActiveTermCard
+import com.unistack.app.feature_terms.presentation.TermSummary
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -123,7 +125,18 @@ fun HomeScreen(
     onQuickNotesClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
     onLabsClick: () -> Unit = {},
-    onDrawerOpenChange: (Boolean) -> Unit = {}
+    onDrawerOpenChange: (Boolean) -> Unit = {},
+    /**
+     * El último periodo cerrado, **solo cuando no hay ninguno activo**.
+     *
+     * Nulo es el caso normal: hay periodo en curso, o todavía no ha habido ninguno. Cuando
+     * llega con valor, Inicio abre con el resumen de lo que se acaba de cerrar y una acción
+     * única, porque cerrar no vacía la app: la cambia de estado.
+     */
+    noActiveTerm: TermSummary? = null,
+    inheritedCutCount: Int = 0,
+    onStartNewTermClick: () -> Unit = {},
+    onOpenHistoryClick: () -> Unit = {}
 ) {
     val summary = uiState.summary
     val appearance = LocalAppearancePreferences.current
@@ -179,6 +192,18 @@ fun HomeScreen(
                         onNotificationsClick = onNotificationsClick,
                         onAvatarClick = { scope.launch { drawerState.open() } }
                     )
+                }
+
+                noActiveTerm?.let { ultimo ->
+                    item("sin-periodo") {
+                        NoActiveTermCard(
+                            lastClosed = ultimo,
+                            cutCount = inheritedCutCount,
+                            onStartNewTerm = onStartNewTermClick,
+                            onOpenHistory = onOpenHistoryClick,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+                        )
+                    }
                 }
 
                 if (appearance.showHomeHero) {
