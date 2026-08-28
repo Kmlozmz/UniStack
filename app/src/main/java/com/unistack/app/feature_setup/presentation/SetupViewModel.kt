@@ -142,6 +142,7 @@ class SetupViewModel @Inject constructor(
     /** Elegir tipo es lo unico obligatorio aqui; las fechas vienen sugeridas y editables. */
     val isTermValid: Boolean
         get() {
+            if (termAlreadyStarted == null) return false
             val tipo = termType ?: return false
             val inicio = termStart ?: return false
             val fin = termPlannedEnd
@@ -158,14 +159,42 @@ class SetupViewModel @Inject constructor(
             return true
         }
 
+    /**
+     * Si el periodo ya arranco o esta por arrancar. Nulo: todavia no lo ha dicho.
+     *
+     * Se pregunta esto antes que la fecha porque cualquiera sabe contestarlo sin mirar un
+     * calendario, y de la respuesta sale una propuesta —hacia atras o hacia delante— que ya
+     * cae cerca. Antes la fecha venia puesta con la de hoy, asi que la pantalla no preguntaba:
+     * afirmaba, y casi nadie configura la app el dia exacto en que empieza su semestre.
+     */
+    var termAlreadyStarted by mutableStateOf<Boolean?>(null)
+        private set
+
     fun updateTermType(value: AcademicTermType) {
         termType = value
         knowsCutDates = null
-        // Al elegir tipo se proponen fechas y nombre; siguen siendo editables.
-        val inicio = termStart ?: LocalDate.now()
+        // La fecha no se supone: se espera a que diga si ya empezo.
+        termAlreadyStarted = null
+        termStart = null
+        termPlannedEnd = null
+        termName = ""
+        cutEndDates = emptyList()
+    }
+
+    /**
+     * Propone unas fechas a partir de si ya empezo, y deja las dos editables.
+     *
+     * Tres semanas atras o dos hacia delante no son numeros con autoridad: son un punto de
+     * partida cercano para que mover la fecha cueste dos toques en vez de veinte.
+     */
+    fun updateTermAlreadyStarted(value: Boolean) {
+        termAlreadyStarted = value
+        val tipo = termType ?: return
+        val hoy = LocalDate.now()
+        val inicio = if (value) hoy.minusWeeks(3) else hoy.plusWeeks(2)
         termStart = inicio
-        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(value, inicio)
-        termName = AcademicTerm.suggestedName(value, inicio)
+        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(tipo, inicio)
+        termName = AcademicTerm.suggestedName(tipo, inicio)
         cutEndDates = emptyList()
     }
 

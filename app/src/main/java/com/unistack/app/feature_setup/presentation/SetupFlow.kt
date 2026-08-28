@@ -355,20 +355,22 @@ fun SetupFlow(
         }
         composable(SetupRoutes.TermDates) {
             val tipo = viewModel.termType
-            val inicio = viewModel.termStart
             // Sin tipo no se llega aqui por navegacion normal, pero un proceso recreado si
-            // puede aterrizar: se vuelve en vez de reventar.
-            if (tipo == null || inicio == null) {
+            // puede aterrizar: se vuelve en vez de reventar. La fecha de inicio, en cambio,
+            // es nula a proposito hasta que diga si su periodo ya empezo.
+            if (tipo == null) {
                 LaunchedEffect(Unit) { navController.navigateUp() }
             } else {
                 SetupTermDatesScreen(
                     type = tipo,
                     name = viewModel.termName,
                     cutCount = viewModel.termCutCount,
-                    start = inicio,
+                    alreadyStarted = viewModel.termAlreadyStarted,
+                    start = viewModel.termStart,
                     plannedEnd = viewModel.termPlannedEnd,
                     knowsCutDates = if (viewModel.termCutCount > 1) viewModel.knowsCutDates else false,
                     totalSteps = totalSteps,
+                    onAlreadyStartedChange = viewModel::updateTermAlreadyStarted,
                     onStartChange = viewModel::updateTermStart,
                     onPlannedEndChange = viewModel::updateTermPlannedEnd,
                     onKnowsCutDatesChange = viewModel::updateKnowsCutDates,
@@ -1154,6 +1156,14 @@ fun SetupProfileScreen(
         totalSteps = totalSteps,
         modifier = modifier,
         actions = {
+            /*
+             * Los botones salen cuando hay algo que continuar, no antes.
+             *
+             * Con las tres preguntas a la vista desde el principio, el boton llevaba ahi
+             * apagado desde que se abria la pantalla. Apareciendo al elegir carrera, marca el
+             * final de la conversacion en lugar de anunciarlo desde el principio.
+             */
+            if (selectedProgram == null) return@SetupScaffold
             UniStackButton(
                 text = "Continuar",
                 onClick = onContinueClick,
@@ -1203,7 +1213,9 @@ fun SetupProfileScreen(
                     StudyArea.entries.firstOrNull { labelFor(it) == selectedLabel }?.let(onStudyAreaSelected)
                 }
             )
-            SetupDropdownField(
+            // La carrera solo aparece cuando ya hay area: sin ella su lista estaria vacia,
+            // y un desplegable vacio invita a tocarlo para nada.
+            if (studyArea != null) SetupDropdownField(
                 label = "Programa o carrera",
                 value = selectedProgram.orEmpty(),
                 options = studyArea?.let(::programsFor).orEmpty(),
@@ -1217,13 +1229,17 @@ fun SetupProfileScreen(
                 },
                 onOptionSelected = onProgramSelected
             )
-            AcademicProgramHelpCard(
-                selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
-                onClick = {
-                    onStudyAreaSelected(StudyArea.OTHER)
-                    onProgramSelected(OTHER_OPTION)
-                }
-            )
+            // El atajo de «no encuentro la mia» acompana a la lista de carreras, asi que
+            // aparece con ella.
+            if (studyArea != null) {
+                AcademicProgramHelpCard(
+                    selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
+                    onClick = {
+                        onStudyAreaSelected(StudyArea.OTHER)
+                        onProgramSelected(OTHER_OPTION)
+                    }
+                )
+            }
             if (studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
                 SetupCustomProgramField(
                     value = customProgram,
@@ -1231,26 +1247,17 @@ fun SetupProfileScreen(
                     onValueChange = onCustomProgramChange
                 )
             }
-            InstitutionField(
-                value = institutionName,
-                label = "Universidad",
-                placeholder = "Nombre de tu universidad",
-                onValueChange = onInstitutionNameChange
-            )
+            // Y la universidad, que es opcional, solo tras haber contestado lo obligatorio.
+            if (selectedProgram != null) {
+                InstitutionField(
+                    value = institutionName,
+                    label = "Universidad",
+                    placeholder = "Nombre de tu universidad",
+                    onValueChange = onInstitutionNameChange
+                )
+            }
         }
     }
-}
-
-@Composable
-private fun SetupProfileSectionTitle(text: String) {
-    Text(
-        text = text,
-        color = MaterialTheme.colorScheme.onSurface,
-        fontSize = 18.sp,
-        lineHeight = 22.sp,
-        fontWeight = FontWeight.ExtraBold,
-        modifier = Modifier.fillMaxWidth()
-    )
 }
 
 @Composable
