@@ -187,14 +187,7 @@ internal fun AttendanceSummaryCard(
             }
 
             val pasadas = entries.filter { !it.date.isAfter(today) }
-            /*
-             * Con dos clases no hay mapa que enseñar.
-             *
-             * Un cuadro suelto bajo un rotulo no se lee como un resumen del periodo: se lee
-             * como algo a medio pintar. Y abrirlo a «una fila por semana» para enseñar la
-             * misma fila tampoco da nada. El mapa aparece cuando hay algo que mapear.
-             */
-            if (pasadas.size >= MINIMO_PARA_EL_MAPA) {
+            if (pasadas.isNotEmpty()) {
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
                 if (mapaAbierto) {
                     AlternaMapa(
@@ -260,10 +253,18 @@ private fun TiraDeClases(pasadas: List<AttendanceHistoryEntry>, onClick: () -> U
     val ordenadas = pasadas.sortedBy { it.date }
     // Con un semestre entero la tira no cabe; las últimas veinte cuentan la historia igual.
     val visibles = ordenadas.takeLast(20)
+    /*
+     * El relleno no sobra: sin el, el cuadro sale cortado.
+     *
+     * La columna entera se recorta con esquinas de 10 dp para que el toque tenga forma, y con
+     * una sola clase el cuadro cae justo en la esquina de abajo a la izquierda: la curva le
+     * mordia un pico. Separandolo del borde, la esquina redondea aire en vez de dato.
+     */
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .padding(vertical = 5.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         /*
@@ -377,9 +378,6 @@ private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
         )
     }
 }
-
-/** A partir de cuántas clases el mapa dice algo que no diga ya la lista de abajo. */
-private const val MINIMO_PARA_EL_MAPA = 3
 
 /** El rótulo pequeño en versales que separa los bloques, como en el diseño aprobado. */
 @Composable

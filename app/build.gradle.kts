@@ -678,58 +678,7 @@ fun telegramCredentials(): Pair<String, String>? {
     return if (token.isBlank() || chat.isBlank()) null else token to chat
 }
 
-/** El identificador del mensaje que se esta reescribiendo. Nulo: no hay ninguno vivo. */
-var telegramLiveMessageId: String? = null
 
-/**
- * Manda un mensaje y se queda con su identificador para poder reescribirlo.
- *
- * Fallar avisando no puede tumbar el build —avisar no es la tarea— pero tampoco puede pasar en
- * silencio: un aviso que no llega y no se queja es un aviso que nadie arregla.
- */
-fun telegramSay(text: String) {
-    val (token, chat) = telegramCredentials() ?: run {
-        println("Telegram: sin credenciales, no se avisa.")
-        return
-    }
-    runCatching {
-        val salida = providers.exec {
-            commandLine(
-                "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
-                "--form-string", "chat_id=$chat",
-                "--form-string", "text=$text",
-                "https://api.telegram.org/bot$token/sendMessage"
-            )
-        }.standardOutput.asText.get()
-        // Sin barras ni comillas escapadas: para sacar el numero que sigue a
-        // "message_id" no hace falta describir el JSON entero.
-        telegramLiveMessageId = Regex("message_id[^0-9]+([0-9]+)")
-            .find(salida)?.groupValues?.get(1)
-        println("Telegram: \"$text\"")
-    }.onFailure { println("Telegram: no se pudo avisar (\"$text\"): ${it.message}") }
-}
-
-/**
- * Retira el mensaje de «enviando», que es lo que el propio APK viene a sustituir.
- *
- * Telegram no deja convertir un mensaje de texto en documento —`editMessageMedia` exige que
- * el mensaje ya llevara media—, asi que lo mas cercano a que uno se convierta en otro es
- * mandar el APK y quitar el aviso. En el chat queda «cocinando» y debajo el archivo.
- */
-fun telegramRemove(messageId: String?) {
-    val id = messageId ?: return
-    val (token, chat) = telegramCredentials() ?: return
-    runCatching {
-        providers.exec {
-            commandLine(
-                "curl", "--silent", "--show-error", "--fail-with-body", "--max-time", "20",
-                "--form-string", "chat_id=$chat",
-                "--form-string", "message_id=$id",
-                "https://api.telegram.org/bot$token/deleteMessage"
-            )
-        }.result.get().assertNormalExitValue()
-    }.onFailure { println("Telegram: no se pudo retirar el aviso de envio: ${it.message}") }
-}
 
 
 
@@ -797,14 +746,12 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
         val caption = "<pre>($tipo) #$numero</pre>"
 
         /*
-         * El aviso se retira antes de mandar el archivo, no despues.
+         * El chat recibe el APK y nada mas.
          *
-         * Quitarlo cuando el APK ya esta en el chat se lee como una retractacion: parece que
-         * algo salio mal y el bot borro lo que habia dicho. Retirandolo antes, lo que se ve es
-         * un aviso que cumple su funcion y deja sitio.
+         * Hubo un aviso al empezar y otro al terminar, y con varias compilaciones seguidas el
+         * hilo eran tres mensajes por cada archivo: el ruido tapaba justo lo que se venia a
+         * buscar. Se fueron los dos, y con ellos el emisor de avisos entero.
          */
-        telegramSay("Build completed! Sending...")
-        telegramRemove(telegramLiveMessageId)
         println("Sending ${apkPath.name} to Telegram as $caption...")
         providers.exec {
             commandLine(
@@ -839,19 +786,6 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
 
 val sendReleaseApkToTelegram = registerTelegramApkTask("release")
 
-/*
- * El aviso de que se empieza a cocinar.
- *
- * Se dispara al armarse el grafo de tareas y solo si el envio esta dentro, que es la unica
- * forma de saber que **esta compilacion va a terminar mandando un APK**. Colgarlo de
- * `assemble` avisaria en cada compilacion normal, y colgarlo de la propia tarea de envio
- * llegaria cuando el build ya ha terminado, que es justo lo contrario de lo que se pide.
- */
-gradle.taskGraph.whenReady {
-    if (hasTask(sendReleaseApkToTelegram.get())) {
-        telegramSay("The chef is cooking... (${apkType()})")
-    }
-}
 val skipTelegramApk = providers.gradleProperty("skipTelegramApk")
     .orElse(providers.environmentVariable("SKIP_TELEGRAM_APK"))
     .map { it.toBoolean() }
