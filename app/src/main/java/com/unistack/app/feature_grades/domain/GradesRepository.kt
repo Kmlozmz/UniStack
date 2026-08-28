@@ -20,4 +20,13 @@ interface GradesRepository {
 
     /** Borra de una vez todas las notas de una materia, dejándola en pie. */
     fun clearGrades(subjectId: String)
+
+    /**
+     * Marca con [termId] las materias que todavía no tienen periodo.
+     *
+     * Se llama al cerrar uno. Son las materias de antes de que existieran los periodos: si se
+     * quedaran sin él, el histórico las perdería justo en el momento en que empieza a haber
+     * histórico. Las que ya tienen periodo no se tocan.
+     */
+    suspend fun stampTerm(termId: String)
 }

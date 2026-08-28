@@ -27,6 +27,9 @@ object AppRoutes {
     const val AccessibilitySettings = "accessibility_settings"
     const val Calendar = "calendar"
     const val AcademicSettings = "academic_settings"
+    const val AcademicHistory = "academic_history"
+    const val TermClose = "term_close"
+    const val ClosedTerm = "closed_term"
     const val ModuleSettings = "module_settings"
     const val NotificationSettings = "notification_settings"
     const val DataSettings = "data_settings"
@@ -89,6 +92,7 @@ object AppRoutes {
     fun academic(tab: String) = "$Academic?$AcademicTabArg=$tab"
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
+    fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
     fun addGrade(subjectId: String, cutId: String? = null) =

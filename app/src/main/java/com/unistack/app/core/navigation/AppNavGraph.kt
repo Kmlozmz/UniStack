@@ -74,6 +74,9 @@ import com.unistack.app.feature_notifications.presentation.NotificationHistorySc
 import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
+import com.unistack.app.feature_terms.presentation.AcademicHistoryScreen
+import com.unistack.app.feature_terms.presentation.ClosedTermDetailScreen
+import com.unistack.app.feature_terms.presentation.TermCloseScreen
 import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
 import com.unistack.app.feature_profile.presentation.AccountSettingsScreen
 import com.unistack.app.feature_profile.presentation.ModuleSettingsScreen
@@ -437,6 +440,7 @@ fun MainNavGraph(
                         }
                     },
                     onAcademicClick = { navController.go(AppRoutes.AcademicSettings) },
+                    onAcademicHistoryClick = { navController.go(AppRoutes.AcademicHistory) },
                     onModulesClick = { navController.go(AppRoutes.ModuleSettings) },
                     onNotificationsClick = { navController.go(AppRoutes.NotificationSettings) },
                     onDataClick = { navController.go(AppRoutes.DataSettings) },
@@ -494,6 +498,52 @@ fun MainNavGraph(
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
                         }
+                    }
+                )
+            }
+            screen(AppRoutes.AcademicHistory) {
+                AcademicHistoryScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.Settings)
+                        }
+                    },
+                    onTermClick = { termId ->
+                        navController.navigate(AppRoutes.closedTerm(termId)) {
+                            launchSingleTop = true
+                        }
+                    },
+                    onCloseTermClick = {
+                        navController.navigate(AppRoutes.TermClose) { launchSingleTop = true }
+                    }
+                )
+            }
+            screen(AppRoutes.TermClose) {
+                TermCloseScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicHistory)
+                        }
+                    },
+                    // Lo que falta se completa en Académico, que es donde estan las notas.
+                    onGoComplete = { navController.go(AppRoutes.Academic) },
+                    // Cerrado el periodo, esta pantalla ya no tiene nada que ensenar.
+                    onClosed = { navController.go(AppRoutes.Home) }
+                )
+            }
+            screen("${AppRoutes.ClosedTerm}/{termId}") { backStackEntry ->
+                ClosedTermDetailScreen(
+                    termId = backStackEntry.arguments?.getString("termId").orEmpty(),
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicHistory)
+                        }
+                    },
+                    onSubjectClick = { subjectId ->
+                        navController.navigateIfModuleEnabled(
+                            AppRoutes.subjectDetail(subjectId),
+                            enabledModules
+                        )
                     }
                 )
             }
@@ -968,6 +1018,9 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.EditSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicHistory) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.ClosedTerm) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TermClose) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.ModuleSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.NotificationSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.DataSettings) -> AppRoutes.Settings

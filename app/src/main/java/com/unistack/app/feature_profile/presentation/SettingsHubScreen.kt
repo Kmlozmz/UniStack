@@ -5,6 +5,7 @@ package com.unistack.app.feature_profile.presentation
 import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroup
+import androidx.compose.material.icons.rounded.History
 import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -64,6 +65,7 @@ fun SettingsHubScreen(
     onAccessibilityClick: () -> Unit,
     onProfileClick: () -> Unit,
     onAcademicClick: () -> Unit,
+    onAcademicHistoryClick: () -> Unit,
     onModulesClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onDataClick: () -> Unit,
@@ -116,13 +118,27 @@ fun SettingsHubScreen(
             }
         }
         item {
-            SettingsGroup(label = "TU SEMESTRE", rowCount = 3) {
+            SettingsGroup(label = "TU SEMESTRE", rowCount = 4) {
                 SettingsRow(
                     icon = Icons.Rounded.School,
                     title = "Configuración académica",
                     subtitle = "Escala, metas y cortes",
                     iconColor = sections.schedule,
                     onClick = onAcademicClick
+                )
+                /*
+                 * El periodo vive aqui porque es literalmente el semestre.
+                 *
+                 * Desde esta fila se llega a las tres cosas que hacen falta: ver los periodos
+                 * cerrados, entrar en uno, y cerrar el que esta en curso. Cerrar no tiene fila
+                 * propia a proposito: no es un ajuste que se toque de paso.
+                 */
+                SettingsRow(
+                    icon = Icons.Rounded.History,
+                    title = "Histórico académico",
+                    subtitle = "Tus periodos y cómo acabaron",
+                    iconColor = sections.onTrack,
+                    onClick = onAcademicHistoryClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Widgets,

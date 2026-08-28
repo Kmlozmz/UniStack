@@ -111,6 +111,10 @@ class RoomGradesRepository(
         }
     }
 
+    override suspend fun stampTerm(termId: String) {
+        subjectDao.stampMissingTerm(termId, System.currentTimeMillis(), userIds)
+    }
+
     override fun deleteSubject(subjectId: String) {
         scope.launch {
             // Grades are cascade-deleted by the foreign key, but we also

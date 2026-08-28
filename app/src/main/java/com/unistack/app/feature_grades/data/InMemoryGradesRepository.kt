@@ -81,4 +81,12 @@ class InMemoryGradesRepository : GradesRepository {
             }
         }
     }
+
+    override suspend fun stampTerm(termId: String) {
+        _subjects.update { current ->
+            current.map { subject ->
+                if (subject.termId == null) subject.copy(termId = termId) else subject
+            }
+        }
+    }
 }
