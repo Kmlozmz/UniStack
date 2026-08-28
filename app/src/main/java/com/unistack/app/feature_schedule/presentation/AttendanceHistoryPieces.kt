@@ -187,7 +187,14 @@ internal fun AttendanceSummaryCard(
             }
 
             val pasadas = entries.filter { !it.date.isAfter(today) }
-            if (pasadas.isNotEmpty()) {
+            /*
+             * Con dos clases no hay mapa que enseñar.
+             *
+             * Un cuadro suelto bajo un rotulo no se lee como un resumen del periodo: se lee
+             * como algo a medio pintar. Y abrirlo a «una fila por semana» para enseñar la
+             * misma fila tampoco da nada. El mapa aparece cuando hay algo que mapear.
+             */
+            if (pasadas.size >= MINIMO_PARA_EL_MAPA) {
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
                 if (mapaAbierto) {
                     AlternaMapa(
@@ -259,11 +266,17 @@ private fun TiraDeClases(pasadas: List<AttendanceHistoryEntry>, onClick: () -> U
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        /*
+         * «Tus 1 clase» no lo dice nadie.
+         *
+         * El rotulo se componia metiendo el numero delante siempre, asi que el singular salia
+         * con el uno pegado. Cuando es una sola no hace falta contarla: se nombra.
+         */
         Rotulo(
-            text = if (visibles.size < ordenadas.size) {
-                "Tus últimas ${visibles.size} clases"
-            } else {
-                "Tus ${ordenadas.size} ${if (ordenadas.size == 1) "clase" else "clases"}"
+            text = when {
+                visibles.size < ordenadas.size -> "Tus últimas ${visibles.size} clases"
+                ordenadas.size == 1 -> "Tu primera clase"
+                else -> "Tus ${ordenadas.size} clases"
             }
         )
         /*
@@ -365,6 +378,9 @@ private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
     }
 }
 
+/** A partir de cuántas clases el mapa dice algo que no diga ya la lista de abajo. */
+private const val MINIMO_PARA_EL_MAPA = 3
+
 /** El rótulo pequeño en versales que separa los bloques, como en el diseño aprobado. */
 @Composable
 private fun Rotulo(text: String) {
@@ -437,7 +453,7 @@ internal fun AttendanceWeekList(
     onPick: (AttendanceHistoryEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (upcoming.isNotEmpty()) {
             EtiquetaDeGrupo("Próxima")
             upcoming.take(2).forEach { entrada ->
@@ -447,7 +463,7 @@ internal fun AttendanceWeekList(
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .clickable { onPick(entrada) }
-                        .padding(horizontal = 11.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 9.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -488,7 +504,8 @@ internal fun AttendanceWeekList(
 
 @Composable
 private fun EtiquetaDeGrupo(texto: String) {
-    Box(modifier = Modifier.padding(start = 11.dp, top = 4.dp)) {
+    // El sangrado horizontal lo pone la lista entera; aquí solo el aire de arriba.
+    Box(modifier = Modifier.padding(top = 5.dp, bottom = 1.dp)) {
         Rotulo(texto)
     }
 }
@@ -513,7 +530,7 @@ private fun FilaDeClase(
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .clickable { onPick(entrada) }
-            .padding(horizontal = 11.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {

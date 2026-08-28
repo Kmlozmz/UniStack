@@ -519,7 +519,9 @@ private fun SubjectHistoryDialog(
                                     upcoming = upcoming,
                                     today = hoy,
                                     onPick = { entrada -> onMarkAttendance(entrada.date, entrada.session) },
-                                    modifier = Modifier.padding(vertical = 12.dp)
+                                    // Sin el sangrado horizontal las filas tocaban el borde
+                                    // de la tarjeta y parecian salirse de ella.
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)
                                 )
                             }
                         }
