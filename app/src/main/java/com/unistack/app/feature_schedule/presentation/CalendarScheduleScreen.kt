@@ -159,6 +159,30 @@ fun CalendarScheduleScreen(
     val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
     val dayOccurrences = state.occurrences.filter { it.dateEpochDay == selectedEpochDay }
 
+    /*
+     * Lo que se quedo sin marcar, de todas las materias a la vez.
+     *
+     * Se calcula con las mismas reglas que el historial de una —periodo, dias sin clase y el
+     * tope de la ventana—, asi que un festivo tampoco cuenta aqui como clase perdida.
+     */
+    val hoyMismo = LocalDate.now()
+    val sinMarcarTodas = remember(
+        state.sessions, state.occurrences, state.activeTerm, state.breaks
+    ) {
+        SubjectAttendanceHistory.pendingToCatchUp(
+            SubjectAttendanceHistory.build(
+                sessions = state.sessions,
+                occurrences = state.occurrences,
+                today = hoyMismo,
+                termStart = state.activeTerm?.start,
+                termEnd = state.activeTerm?.plannedEnd,
+                breaks = state.breaks.map { it.range }
+            ),
+            hoyMismo
+        )
+    }
+    var poniendoseAlDiaTodas by remember { mutableStateOf(false) }
+
     // Materias que existen y no tienen ni un solo bloque en el horario. Si no hay ninguna,
     // «Agregar clase» va directo al formulario y nadie ve un paso de más.
     val subjectsWithoutSchedule = state.subjects.filter { subject ->
@@ -204,6 +228,8 @@ fun CalendarScheduleScreen(
         onAddClass = startAddClass,
         onAddEvent = { showAgendaMenu = true },
         onOpenFullSchedule = { showFullSchedule = true },
+        pendingCount = sinMarcarTodas.size,
+        onCatchUp = { poniendoseAlDiaTodas = true },
         modifier = modifier
     )
     if (showAgendaMenu) {
@@ -296,6 +322,24 @@ fun CalendarScheduleScreen(
                     note = note
                 )
             }
+        )
+    }
+
+    if (poniendoseAlDiaTodas) {
+        CatchUpSheet(
+            pending = sinMarcarTodas,
+            subjects = state.subjects,
+            onMark = { entrada, estado ->
+                viewModel.saveOccurrence(
+                    sessionId = entrada.session.id,
+                    dateEpochDay = entrada.date.toEpochDay(),
+                    status = estado,
+                    modality = ClassModality.IN_PERSON,
+                    absenceReason = null,
+                    note = ""
+                )
+            },
+            onDismiss = { poniendoseAlDiaTodas = false }
         )
     }
 

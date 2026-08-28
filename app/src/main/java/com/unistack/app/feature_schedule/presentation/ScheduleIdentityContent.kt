@@ -49,6 +49,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -72,6 +73,8 @@ import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.MetricCard
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.AgendaEvent
 import com.unistack.app.feature_schedule.domain.AgendaEventKind
@@ -128,6 +131,9 @@ internal fun ScheduleIdentityContent(
     onAddClass: () -> Unit,
     onAddEvent: () -> Unit,
     onOpenFullSchedule: () -> Unit,
+    /** Cuántas clases pasadas están sin marcar, en todas las materias. */
+    pendingCount: Int = 0,
+    onCatchUp: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val spacing = LocalInterfaceSpacing.current
@@ -152,6 +158,22 @@ internal fun ScheduleIdentityContent(
         }
         item {
             IdentityModeSwitch(view = view, onViewChange = onViewChange)
+        }
+
+        /*
+         * Lo que se te paso, avisado donde vas a estar.
+         *
+         * Ponerse al dia vivia solo dentro del historial de una materia, asi que para
+         * enterarte de que llevabas cinco clases sin marcar tenias que entrar a mirar. Aqui
+         * cuenta las de todas y esta en la primera pantalla del modulo.
+         *
+         * Con una sola pendiente no sale: no hace falta una lista para una fila, y el aviso
+         * seria mas trabajo del que ahorra.
+         */
+        if (pendingCount > 1) {
+            item {
+                CatchUpBanner(count = pendingCount, onClick = onCatchUp)
+            }
         }
 
         when (view) {
@@ -192,6 +214,7 @@ internal fun ScheduleIdentityContent(
                         selectedDate = selectedDate,
                         sessions = uiState.sessions,
                         subjects = uiState.subjects,
+                        occurrences = uiState.occurrences,
                         use24Hour = uiState.accessibility.use24HourTime,
                         onSessionClick = onSessionClick
                     )
@@ -988,6 +1011,7 @@ private fun WeekDayClassList(
     selectedDate: LocalDate,
     sessions: List<ClassSession>,
     subjects: List<Subject>,
+    occurrences: List<ClassOccurrence>,
     use24Hour: Boolean,
     onSessionClick: (LocalDate, ClassSession) -> Unit
 ) {
@@ -1038,8 +1062,47 @@ private fun WeekDayClassList(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                /*
+                 * Como quedo la clase, en la propia fila.
+                 *
+                 * Habia que abrir cada una para saber si estaba marcada, asi que enterarse de
+                 * que se te habian pasado tres costaba tres toques. Con el estado a la vista,
+                 * el dia entero se lee de un vistazo.
+                 *
+                 * Una clase que todavia no ha llegado no lleva estado: no hay nada que
+                 * decir de ella, y «pendiente» significaria lo que no es.
+                 */
+                if (!selectedDate.isAfter(LocalDate.now())) {
+                    val estado = occurrences.firstOrNull {
+                        it.sessionId == session.id && it.dateEpochDay == selectedDate.toEpochDay()
+                    }?.status ?: ClassAttendanceStatus.PENDING
+                    Spacer(Modifier.width(8.dp))
+                    AttendanceDot(estado)
+                }
             }
         }
+    }
+}
+
+/** El estado de una clase, del tamaño justo para caber en la fila sin robarle sitio. */
+@Composable
+private fun AttendanceDot(status: ClassAttendanceStatus) {
+    val (tono, texto) = when (status) {
+        ClassAttendanceStatus.ATTENDED -> LocalSectionColors.current.schedule to "Asistí"
+        ClassAttendanceStatus.ABSENT -> MaterialTheme.colorScheme.error to "Falta"
+        ClassAttendanceStatus.CANCELLED -> MaterialTheme.colorScheme.tertiary to "Cancelada"
+        ClassAttendanceStatus.RESCHEDULED -> MaterialTheme.colorScheme.secondary to "Movida"
+        ClassAttendanceStatus.PENDING -> MaterialTheme.colorScheme.onSurfaceVariant to "Sin marcar"
+    }
+    Surface(shape = CircleShape, color = tono.copy(alpha = 0.16f)) {
+        Text(
+            text = texto,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            color = tono,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
     }
 }
 
@@ -1660,3 +1723,59 @@ private fun findUpcomingClass(
             ?.let { date to it }
     }.firstOrNull()
 }
+
+/**
+ * «Tienes N clases sin marcar», con el atajo para resolverlas juntas.
+ */
+@Composable
+private fun CatchUpBanner(count: Int, onClick: () -> Unit) {
+    val tono = LocalSectionColors.current.schedule
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, tono.copy(alpha = 0.45f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(tono.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.EventAvailable,
+                    contentDescription = null,
+                    tint = tono,
+                    modifier = Modifier.size(19.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = "$count clases sin marcar",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Ponerse al día en un momento",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.5.sp
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = null,
+                tint = tono,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
