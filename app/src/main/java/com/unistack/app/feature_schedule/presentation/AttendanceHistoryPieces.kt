@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -195,30 +197,94 @@ private fun RachaChip(racha: Int) {
  * Solo las pasadas: un cuadro vacío al final se leería como una clase sin marcar cuando en
  * realidad todavía no ha llegado.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TiraDeClases(entries: List<AttendanceHistoryEntry>, today: LocalDate) {
     val pasadas = entries.filter { !it.date.isAfter(today) }.sortedBy { it.date }
     // Con un semestre entero la tira no cabe; las últimas veinte cuentan la historia igual.
     val visibles = pasadas.takeLast(20)
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Text(
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Rotulo(
             text = if (visibles.size < pasadas.size) {
                 "Tus últimas ${visibles.size} clases"
             } else {
                 "Tus ${pasadas.size} ${if (pasadas.size == 1) "clase" else "clases"}"
-            },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold
+            }
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        /*
+         * Cuadros de tamaño fijo, no repartidos por el ancho.
+         *
+         * Con `weight` una sola clase ocupaba la fila entera y se leía como una barra de
+         * progreso llena: exactamente el «100 %» sin fundamento que esta cabecera venía a
+         * quitar. Fijos, una clase es un cuadro y once son once.
+         */
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             visibles.forEach { entrada ->
                 Box(
                     modifier = Modifier
-                        .weight(1f)
-                        .height(14.dp)
+                        .size(14.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .background(entrada.status.cuadro())
+                )
+            }
+        }
+        Leyenda(visibles)
+    }
+}
+
+/** El rótulo pequeño en versales que separa los bloques, como en el diseño aprobado. */
+@Composable
+private fun Rotulo(text: String) {
+    Text(
+        text = text.uppercase(Espanol),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 9.5.sp,
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = 0.13.em
+    )
+}
+
+/**
+ * Qué significa cada color, y solo de los que salen.
+ *
+ * Sin leyenda la tira es decorativa: se ve que hay rojos, pero no que son las faltas, que es
+ * justo la mitad de lo que este gráfico cuenta.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Leyenda(visibles: List<AttendanceHistoryEntry>) {
+    val presentes = visibles.map { it.status }.toSet()
+    val orden = listOf(
+        ClassAttendanceStatus.ATTENDED to "asistí",
+        ClassAttendanceStatus.ABSENT to "falta",
+        ClassAttendanceStatus.CANCELLED to "cancelada",
+        ClassAttendanceStatus.RESCHEDULED to "reprogramada",
+        ClassAttendanceStatus.PENDING to "sin marcar"
+    ).filter { it.first in presentes }
+    if (orden.size < 2) return
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        orden.forEach { (estado, nombre) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Box(
+                    Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(estado.cuadro())
+                )
+                Text(
+                    text = nombre,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp
                 )
             }
         }
@@ -282,14 +348,9 @@ internal fun AttendanceWeekList(
 
 @Composable
 private fun EtiquetaDeGrupo(texto: String) {
-    Text(
-        text = texto.uppercase(Espanol),
-        modifier = Modifier.padding(start = 11.dp, top = 4.dp),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 9.5.sp,
-        fontWeight = FontWeight.ExtraBold,
-        letterSpacing = 0.11.em
-    )
+    Box(modifier = Modifier.padding(start = 11.dp, top = 4.dp)) {
+        Rotulo(texto)
+    }
 }
 
 @Composable
@@ -311,35 +372,30 @@ private fun FilaDeSemana(
             fontSize = 11.sp,
             fontWeight = if (esLaDeHoy) FontWeight.Bold else FontWeight.Normal
         )
+        /*
+         * Cuadros limpios, sin la fecha escrita dentro.
+         *
+         * El numero del dia no cabe con dignidad en algo de este tamaño y competia con el
+         * color, que es lo que de verdad se lee de un vistazo. La semana ya esta a la
+         * izquierda, y tocar un cuadro abre su clase con la fecha entera.
+         */
         Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
             semana.entries.forEach { entrada ->
                 val esHoy = entrada.date == today
                 Box(
                     modifier = Modifier
-                        .size(23.dp)
-                        .clip(RoundedCornerShape(7.dp))
+                        .size(18.dp)
+                        .clip(RoundedCornerShape(5.dp))
                         .background(entrada.status.cuadro())
                         .then(
                             if (esHoy) {
-                                Modifier.border(1.5.dp, ScheduleAccent, RoundedCornerShape(7.dp))
+                                Modifier.border(1.5.dp, ScheduleAccent, RoundedCornerShape(5.dp))
                             } else {
                                 Modifier
                             }
                         )
-                        .clickable { onPick(entrada) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = entrada.date.format(SoloDia),
-                        color = if (entrada.status == ClassAttendanceStatus.PENDING) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onPrimary
-                        },
-                        fontSize = 9.5.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                        .clickable { onPick(entrada) }
+                )
             }
         }
     }

@@ -118,23 +118,31 @@ internal val ExpressiveDarkScheme: ColorScheme = darkColorScheme(
     errorContainer = Color(0xFF8C1D18),
     onErrorContainer = Color(0xFFF9DEDC),
 
-    background = Color(0xFF1E1D2B),
-    onBackground = Color(0xFFE8E5EF),
-    surface = Color(0xFF1E1D2B),
-    onSurface = Color(0xFFE8E5EF),
-    surfaceVariant = Color(0xFF494656),
-    onSurfaceVariant = Color(0xFFCBC7D8),
+    /*
+     * El suelo del modo oscuro, con sesgo azul y no morado.
+     *
+     * Estaba en #1E1D2B, un gris tirando a violeta que tenia bastante color propio: sobre el,
+     * cualquier acento se leia como una variacion del fondo en vez de destacar sobre el. Este
+     * es casi negro y su tinte va hacia el azul, que es el que ya usan los acentos de la app.
+     *
+     * Los cinco escalones bajan con el suelo. Si se quedaran donde estaban, tres de los cinco
+     * caerian por encima de lo que les toca y las tarjetas se verian flotando.
+     */
+    background = Color(0xFF0A0C11),
+    onBackground = Color(0xFFE8EBF3),
+    surface = Color(0xFF0A0C11),
+    onSurface = Color(0xFFE8EBF3),
+    surfaceVariant = Color(0xFF262E3B),
+    onSurfaceVariant = Color(0xFF98A2B7),
 
-    // Los cinco escalones suben con el fondo. Con el fondo en #1E1D2B y los niveles antiguos,
-    // tres de los cinco quedaban por debajo del suelo: las tarjetas se veían como agujeros.
-    surfaceContainerLowest = Color(0xFF16151F),
-    surfaceContainerLow = Color(0xFF24222F),
-    surfaceContainer = Color(0xFF292736),
-    surfaceContainerHigh = Color(0xFF333140),
-    surfaceContainerHighest = Color(0xFF3E3B4C),
+    surfaceContainerLowest = Color(0xFF07090E),
+    surfaceContainerLow = Color(0xFF12161D),
+    surfaceContainer = Color(0xFF171C24),
+    surfaceContainerHigh = Color(0xFF1C222D),
+    surfaceContainerHighest = Color(0xFF232B37),
 
-    outline = Color(0xFF948FA3),
-    outlineVariant = Color(0xFF494656),
+    outline = Color(0xFF6C7689),
+    outlineVariant = Color(0xFF262E3B),
     scrim = Color(0xFF000000)
 )
 
