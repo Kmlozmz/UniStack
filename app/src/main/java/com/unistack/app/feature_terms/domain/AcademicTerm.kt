@@ -25,6 +25,19 @@ enum class AcademicTermType(val label: String, val perYear: Int, val weeks: Int)
      * numero declarado. Componiendola de las mismas dos cifras que dibuja la barra, las dos
      * cosas no pueden volver a discrepar.
      */
+    /**
+     * En cual de los tramos del año cae [date], contando desde 1.
+     *
+     * La ilustracion del año pintaba siempre el primero como «el que vas a configurar», lo que
+     * daba por hecho que todo el mundo se matricula en enero. Quien instala la app en julio
+     * esta en el segundo semestre, y la pantalla le decia lo contrario.
+     *
+     * Es tambien de donde sale el numero del nombre sugerido, para que la barra y el nombre no
+     * puedan discrepar: se calculaban por separado y para trimestral no coincidian.
+     */
+    fun blockFor(date: LocalDate): Int =
+        ((date.monthValue - 1) * perYear / 12 + 1).coerceIn(1, perYear)
+
     val detail: String
         get() = if (this == ANNUAL) {
             "1 al año · unas $weeks semanas"
@@ -121,14 +134,8 @@ data class AcademicTerm(
          * bloques— el número sale de si la fecha cae en la primera o la segunda mitad del año.
          */
         fun suggestedName(type: AcademicTermType, start: LocalDate): String {
-            val ordinal = when (type) {
-                AcademicTermType.ANNUAL -> return start.year.toString()
-                AcademicTermType.SEMESTER -> if (start.monthValue <= 6) 1 else 2
-                AcademicTermType.TRIMESTER -> (start.monthValue - 1) / 4 + 1
-                AcademicTermType.QUARTER -> (start.monthValue - 1) / 4 + 1
-                AcademicTermType.BLOCKS -> if (start.monthValue <= 6) 1 else 2
-            }
-            return "${start.year}-$ordinal"
+            if (type == AcademicTermType.ANNUAL) return start.year.toString()
+            return "${start.year}-${type.blockFor(start)}"
         }
 
         /** El fin que se propone, contando las semanas típicas de esa forma de periodo. */

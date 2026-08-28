@@ -24,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
@@ -81,7 +82,6 @@ fun SetupTermTypeScreen(
 ) {
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Term,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -146,6 +146,8 @@ private fun AnoPartido(type: AcademicTermType) {
     // El mismo numero que dice el texto. Dividir 52 entre las semanas daba tres para
     // semestral, que son dos: la barra contradecia a la linea de al lado.
     val cuantos = type.perYear.coerceIn(1, 6)
+    // El tramo que se ilumina es en el que estas hoy, no el primero del año.
+    val actual = type.blockFor(LocalDate.now()).coerceIn(1, cuantos)
     UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -161,7 +163,7 @@ private fun AnoPartido(type: AcademicTermType) {
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 repeat(cuantos) { indice ->
-                    val primero = indice == 0
+                    val primero = indice + 1 == actual
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -189,6 +191,7 @@ private fun AnoPartido(type: AcademicTermType) {
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                // Los extremos del año natural, que es el eje que dibuja la barra.
                 Text("enero", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 Text("diciembre", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
@@ -196,7 +199,7 @@ private fun AnoPartido(type: AcademicTermType) {
                 text = if (cuantos == 1) {
                     "Uno al año, de unas ${type.weeks} semanas."
                 } else {
-                    "$cuantos al año, de unas ${type.weeks} semanas cada uno. El primero es el que vas a configurar."
+                    "$cuantos al año, de unas ${type.weeks} semanas cada uno. Hoy estarías en el $actual.º, que es el que vas a configurar."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
@@ -232,12 +235,12 @@ fun SetupTermDatesScreen(
     totalSteps: Int = 8
 ) {
     var picking by remember { mutableStateOf<TermDateTarget?>(null) }
+    var ayudaVisible by remember { mutableStateOf(false) }
     val fechasPuestas = start != null && plannedEnd != null
     val listo = fechasPuestas && (cutCount <= 1 || knowsCutDates != null)
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.TermDates,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -350,7 +353,42 @@ fun SetupTermDatesScreen(
                      * examen, y ademas no era la pregunta: la app no necesita saber si te las
                      * sabes, necesita saber si las escribes ahora o luego.
                      */
-                    SetupSectionLabel("Las fechas de cada ${Corte.Singular.lowercase()}")
+                    /*
+                     * Un rotulo que nombra el dato no basta: hay que decir para que sirve.
+                     *
+                     * «Las fechas de cada corte» no decia si eran obligatorias, que pasaba si
+                     * faltaban ni por que se piden. La interrogacion lo cuenta a quien lo
+                     * pregunte, sin cargarle el texto a quien ya lo sabe.
+                     */
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+                        SetupSectionLabel("¿Cuándo cierra cada ${Corte.Singular.lowercase()}?")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
+                            contentDescription = if (ayudaVisible) "Ocultar la explicación" else "Qué es esto",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .clickable { ayudaVisible = !ayudaVisible }
+                        )
+                    }
+                    Revelado(visible = ayudaVisible) {
+                        UniCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow
+                        ) {
+                            Text(
+                                text = "Cada ${Corte.Singular.lowercase()} termina un día concreto. Si escribes esos días, cada nota que registres se va sola al ${Corte.Singular.lowercase()} que le toca por su fecha. Si no, lo eliges tú a mano en cada nota.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                                lineHeight = 17.sp
+                            )
+                        }
+                    }
                     UniSegmentedControl(
                         selected = knowsCutDates,
                         options = listOf(
@@ -434,7 +472,6 @@ fun SetupTermCutDatesScreen(
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.TermCutDates,
         totalSteps = totalSteps,
         modifier = modifier,

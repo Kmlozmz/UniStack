@@ -131,7 +131,6 @@ fun SetupPermissionsScreen(
     BackHandler(onBack = onBackClick)
     var exampleKind by rememberSaveable { mutableStateOf(PermissionExampleKind.CLASS) }
     SetupScaffold(
-        onBackClick = onBackClick,
         step = step,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -193,7 +192,7 @@ fun SetupPermissionsScreen(
                 style = MaterialTheme.typography.headlineMediumEmphasized
             )
             Text(
-                text = "Toca abajo para ver de qué te avisaría.",
+                text = "Cambia el ejemplo de abajo para ver cómo se vería cada uno.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -232,8 +231,10 @@ fun SetupPermissionsScreen(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PermissionPerkRow("Un par al día como mucho, y solo de lo tuyo.")
-                PermissionPerkRow("Se calculan en tu teléfono. Nada sale de aquí.")
+                // «Un par al dia como mucho» dejo de ser verdad al quitar el tope por tipo:
+                // ahora avisa de todo, y quien decide cuanto es el usuario en Ajustes.
+                PermissionPerkRow("Solo de lo tuyo, y a la hora que tú decidas.")
+                PermissionPerkRow("Se calcula todo en tu teléfono, sin conexión. Nada sale de aquí.")
             }
 
             AnimatedVisibility(visible = mustUseSettings, enter = fadeIn(), exit = fadeOut()) {

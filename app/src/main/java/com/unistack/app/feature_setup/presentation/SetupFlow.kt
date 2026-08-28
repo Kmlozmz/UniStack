@@ -135,6 +135,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -231,13 +232,56 @@ fun SetupFlow(
     // este Android pide el permiso de notificaciones en ejecución.
     val gradesEnabled = AppModule.GRADES in viewModel.enabledModules
     val permissionsNeeded = notificationPermissionRequired()
-    val totalSteps = SetupSteps.total(gradesEnabled, permissionsNeeded, viewModel.knowsCutDates == true)
+    val cutDates = viewModel.knowsCutDates == true
+    val totalSteps = SetupSteps.total(gradesEnabled, permissionsNeeded, cutDates)
     val afterEvaluation = if (permissionsNeeded) SetupRoutes.Permissions else SetupRoutes.Done
 
+    /*
+     * El paso se decide en un solo sitio, y ese sitio es este.
+     *
+     * Antes lo declaraba cada pantalla al construir su propio encabezado, y dos llegaron a
+     * decir que eran la octava: la de permisos calculaba su numero sin contar las fechas de
+     * corte mientras el total si las contaba.
+     */
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val pasoActual = when (navBackStackEntry?.destination?.route) {
+        SetupRoutes.Name -> SetupSteps.Name
+        SetupRoutes.Profile -> SetupSteps.Profile
+        SetupRoutes.Modules -> SetupSteps.Modules
+        SetupRoutes.Scale -> SetupSteps.Scale
+        SetupRoutes.Periods -> SetupSteps.Periods
+        SetupRoutes.Term -> SetupSteps.Term
+        SetupRoutes.TermDates -> SetupSteps.TermDates
+        SetupRoutes.TermCutDates -> SetupSteps.TermCutDates
+        SetupRoutes.Permissions -> SetupSteps.permissions(gradesEnabled, cutDates)
+        SetupRoutes.Done -> SetupSteps.done(gradesEnabled, permissionsNeeded, cutDates)
+        // La bienvenida no pide nada, asi que no cuenta como paso ni lleva barra.
+        else -> null
+    }
+
+    // El cierre del onboarding retira tambien el encabezado, que ya no vive dentro de el.
+    var saliendo by remember { mutableStateOf(false) }
+    val chromeAlpha by animateFloatAsState(
+        targetValue = if (saliendo) 0f else 1f,
+        animationSpec = tween(durationMillis = 320),
+        label = "setup-chrome-alpha"
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+    SetupProgressHeader(
+        step = pasoActual,
+        totalSteps = totalSteps,
+        onBackClick = { navController.navigateUp() },
+        chromeAlpha = chromeAlpha
+    )
     NavHost(
         navController = navController,
         startDestination = SetupRoutes.Welcome,
-        modifier = modifier.background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.weight(1f),
         enterTransition = {
             slideInHorizontally(
                 initialOffsetX = { it / 2 },
@@ -408,7 +452,7 @@ fun SetupFlow(
         }
         composable(SetupRoutes.Permissions) {
             SetupPermissionsScreen(
-                step = SetupSteps.permissions(gradesEnabled),
+                step = SetupSteps.permissions(gradesEnabled, cutDates),
                 totalSteps = totalSteps,
                 onBackClick = { navController.navigateUp() },
                 onContinueClick = { navController.navigate(SetupRoutes.Done) }
@@ -429,6 +473,7 @@ fun SetupFlow(
         }
         composable(SetupRoutes.Done) {
             SetupDoneScreen(
+                onExitingChange = { saliendo = it },
                 name = viewModel.preferredName,
                 studyArea = viewModel.studyArea,
                 selectedProgram = viewModel.selectedProgram,
@@ -455,6 +500,7 @@ fun SetupFlow(
                 }
             )
         }
+    }
     }
 }
 
@@ -793,7 +839,6 @@ fun SetupNameScreen(
 ) {
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Name,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -1154,7 +1199,6 @@ fun SetupProfileScreen(
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Profile,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -1511,7 +1555,6 @@ fun SetupGradingScaleScreen(
         else -> SetupScaleChoice.CUSTOM
     }
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Scale,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -1711,7 +1754,6 @@ fun SetupGradingCutsScreen(
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Periods,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -1909,7 +1951,6 @@ fun SetupModulesScreen(
 ) {
     BackHandler(onBack = onBackClick)
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.Modules,
         totalSteps = totalSteps,
         modifier = modifier,
@@ -1962,6 +2003,8 @@ fun SetupModulesScreen(
 @Composable
 fun SetupDoneScreen(
     name: String,
+    /** Avisa al flujo de que empieza el cierre, para que retire el encabezado a la vez. */
+    onExitingChange: (Boolean) -> Unit = {},
     studyArea: StudyArea?,
     selectedProgram: String?,
     customProgram: String,
@@ -1994,6 +2037,7 @@ fun SetupDoneScreen(
         if (!exiting) {
             createSubjectOnExit = createSubject
             exiting = true
+            onExitingChange(true)
         }
     }
 
@@ -2020,10 +2064,8 @@ fun SetupDoneScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
     SetupScaffold(
-        onBackClick = onBackClick,
         step = SetupSteps.done(gradesEnabled, permissionsNeeded),
         totalSteps = totalSteps,
-        chromeAlpha = contentAlpha,
         actions = {
             Column(
                 modifier = Modifier.graphicsLayer {
@@ -2458,13 +2500,17 @@ private fun allModuleOptions(): List<ModuleOption> = listOf(
 @Composable
 internal fun SetupScaffold(
     modifier: Modifier = Modifier,
-    onBackClick: (() -> Unit)? = null,
+    /**
+     * Solo para separar el contenido: quien dibuja el encabezado es [SetupFlow].
+     *
+     * Vivia aqui, y por eso la transicion entre pasos se lo llevaba de un lado a otro. Sigue
+     * haciendo falta el numero para saber si arriba hay encabezado o no, que es lo que decide
+     * cuanto respira el contenido.
+     */
     step: Int? = null,
     totalSteps: Int = 6,
     welcome: Boolean = false,
     overlayKeyboard: Boolean = false,
-    /** Opacidad del encabezado. La usa el cierre del onboarding para retirarlo con el resto. */
-    chromeAlpha: Float = 1f,
     actions: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -2482,19 +2528,6 @@ internal fun SetupScaffold(
             .then(if (overlayKeyboard) Modifier else Modifier.windowInsetsPadding(imeInsets)),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0.dp),
-        topBar = {
-            if (onBackClick != null || step != null) {
-                SetupTopBar(
-                    onBackClick = onBackClick,
-                    step = step,
-                    totalSteps = totalSteps,
-                    modifier = Modifier
-                        .graphicsLayer { alpha = chromeAlpha }
-                        .statusBarsPadding()
-                        .padding(horizontal = 22.dp, vertical = 5.dp)
-                )
-            }
-        },
         bottomBar = {
             // Con superposición la barra no va aquí: Scaffold le resta su alto al contenido,
             // así que subirla por el teclado encogería la pantalla igual que antes. Pasa a
@@ -2593,6 +2626,47 @@ internal fun SetupScaffold(
                 }
             }
         }
+    }
+}
+
+/**
+ * El encabezado del onboarding, por encima de las pantallas y no dentro de ellas.
+ *
+ * Vivia dentro de cada paso, asi que la transicion de navegacion se lo llevaba: al continuar,
+ * una barra salia por un lado y entraba otra por el otro. Eso es lo que hacia que nueve pasos
+ * se sintieran como pasar diapositivas. Aqui no se mueve nunca; lo unico que cambia es cuanto
+ * mide el relleno, que es exactamente lo que significa avanzar.
+ */
+@Composable
+private fun SetupProgressHeader(
+    step: Int?,
+    totalSteps: Int,
+    onBackClick: () -> Unit,
+    chromeAlpha: Float
+) {
+    // Al retirarse conserva el ultimo paso: sin esto la barra se vaciaria mientras se va.
+    var ultimoPaso by remember { mutableStateOf(1) }
+    LaunchedEffect(step) { if (step != null) ultimoPaso = step }
+
+    AnimatedVisibility(
+        visible = step != null,
+        enter = fadeIn(animationSpec = tween(220)) + expandVertically(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        ),
+        exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(200))
+    ) {
+        SetupTopBar(
+            onBackClick = onBackClick,
+            step = ultimoPaso,
+            totalSteps = totalSteps,
+            modifier = Modifier
+                .graphicsLayer { alpha = chromeAlpha }
+                .statusBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 5.dp)
+        )
     }
 }
 
