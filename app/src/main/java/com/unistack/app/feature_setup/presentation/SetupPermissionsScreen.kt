@@ -47,6 +47,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
@@ -130,6 +133,7 @@ fun SetupPermissionsScreen(
 
     BackHandler(onBack = onBackClick)
     var exampleKind by rememberSaveable { mutableStateOf(PermissionExampleKind.CLASS) }
+    val haptics = LocalHapticFeedback.current
     SetupScaffold(
         step = step,
         totalSteps = totalSteps,
@@ -203,7 +207,11 @@ fun SetupPermissionsScreen(
                 PermissionExampleKind.entries.forEach { kind ->
                     val selected = kind == exampleKind
                     Surface(
-                        onClick = { exampleKind = kind },
+                        // El mismo tacto que el resto de selectores de la app.
+                        onClick = {
+                            if (!selected) haptics.performSafely(HapticFeedbackType.SegmentTick)
+                            exampleKind = kind
+                        },
                         modifier = Modifier.weight(1f).height(42.dp),
                         shape = CircleShape,
                         color = if (selected) {
@@ -233,8 +241,8 @@ fun SetupPermissionsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 // «Un par al dia como mucho» dejo de ser verdad al quitar el tope por tipo:
                 // ahora avisa de todo, y quien decide cuanto es el usuario en Ajustes.
-                PermissionPerkRow("Solo de lo tuyo, y a la hora que tú decidas.")
-                PermissionPerkRow("Se calcula todo en tu teléfono, sin conexión. Nada sale de aquí.")
+                PermissionPerkRow("Clases, recordatorios, entregas, todo lo que necesite ser recordado")
+                PermissionPerkRow("Todo funciona offline. Seguirás recibiendo notificaciones incluso cuando no tengas conexión.")
             }
 
             AnimatedVisibility(visible = mustUseSettings, enter = fadeIn(), exit = fadeOut()) {

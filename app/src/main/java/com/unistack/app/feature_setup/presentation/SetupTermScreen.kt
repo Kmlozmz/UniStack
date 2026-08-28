@@ -197,9 +197,9 @@ private fun AnoPartido(type: AcademicTermType) {
             }
             Text(
                 text = if (cuantos == 1) {
-                    "Uno al año, de unas ${type.weeks} semanas."
+                    "Dura el año entero, unas ${type.weeks} semanas de clase."
                 } else {
-                    "$cuantos al año, de unas ${type.weeks} semanas cada uno. Hoy estarías en el $actual.º, que es el que vas a configurar."
+                    "Cada uno dura unos ${type.months} meses: $cuantos al año, de unas ${type.weeks} semanas de clase. Hoy estarías en el $actual.º, que es el que vas a configurar."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,

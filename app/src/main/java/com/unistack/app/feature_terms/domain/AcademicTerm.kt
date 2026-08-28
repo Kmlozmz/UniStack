@@ -18,14 +18,6 @@ enum class AcademicTermType(val label: String, val perYear: Int, val weeks: Int)
     BLOCKS("Por bloques", 6, 8);
 
     /**
-     * La linea que acompana al nombre, compuesta y no escrita a mano.
-     *
-     * Estaba escrita, y por eso pudo mentir: el texto decia «2 al año» mientras la barra
-     * dibujaba tres, porque la barra dividia 52 semanas entre las del tipo en vez de usar el
-     * numero declarado. Componiendola de las mismas dos cifras que dibuja la barra, las dos
-     * cosas no pueden volver a discrepar.
-     */
-    /**
      * En cual de los tramos del año cae [date], contando desde 1.
      *
      * La ilustracion del año pintaba siempre el primero como «el que vas a configurar», lo que
@@ -38,12 +30,15 @@ enum class AcademicTermType(val label: String, val perYear: Int, val weeks: Int)
     fun blockFor(date: LocalDate): Int =
         ((date.monthValue - 1) * perYear / 12 + 1).coerceIn(1, perYear)
 
-    val detail: String
-        get() = if (this == ANNUAL) {
-            "1 al año · unas $weeks semanas"
-        } else {
-            "$perYear al año · unas $weeks semanas"
-        }
+    /**
+     * Cuantos meses dura uno, que es de donde viene su nombre.
+     *
+     * Sin este dato la pantalla parecia equivocada: «Trimestral · 4 al año» y «Cuatrimestral ·
+     * 3 al año» se leen como invertidos, cuando lo cierto es que un trimestre son 3 meses —y
+     * por eso caben cuatro— y un cuatrimestre son 4 —y por eso caben tres—. Diciendo los meses,
+     * el nombre y la cuenta se explican el uno al otro.
+     */
+    val months: Int get() = 12 / perYear
 }
 
 /** Si el periodo es el que se está cursando o ya se cerró. */

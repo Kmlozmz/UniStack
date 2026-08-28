@@ -2692,27 +2692,20 @@ private fun SetupTopBar(
                 }
             }
             if (step != null) {
-                // El numero tambien se mueve, y en la direccion en la que vas.
-                AnimatedContent(
-                    targetState = step,
-                    transitionSpec = {
-                        val haciaDelante = targetState > initialState
-                        val signo = if (haciaDelante) 1 else -1
-                        (slideInVertically { alto -> signo * alto / 2 } + fadeIn(tween(170)))
-                            .togetherWith(
-                                slideOutVertically { alto -> -signo * alto / 2 } + fadeOut(tween(120))
-                            )
-                    },
-                    label = "setup-step-number",
+                /*
+                 * Quieto, y solo cambia la cifra.
+                 *
+                 * Se probo animandolo en la direccion de la marcha y quedaba peor: el rotulo
+                 * parecia reaparecer en cada paso, que es justo la sensacion que se estaba
+                 * intentando quitar. Quien tiene que dar el movimiento es la barra.
+                 */
+                Text(
+                    text = "Paso $step de $totalSteps",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center)
-                ) { paso ->
-                    Text(
-                        text = "Paso $paso de $totalSteps",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                )
             }
         }
         if (step != null) {
