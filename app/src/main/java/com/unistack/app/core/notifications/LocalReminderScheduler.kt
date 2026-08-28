@@ -80,7 +80,7 @@ private const val REARM_HOUR = 3
 private const val ATTENDANCE_PROMPT_DELAY_MINUTES = 20L
 private const val EXTRA_TITLE = "title"
 private const val EXTRA_BODY = "body"
-private const val EXTRA_NOTIFICATION_ID = "notification_id"
+internal const val EXTRA_NOTIFICATION_ID = "notification_id"
 private const val EXTRA_TARGET_ROUTE = "target_route"
 private const val EXTRA_SUBTEXT = "subtext"
 private const val EXTRA_CHANNEL_ID = "channel_id"
@@ -106,6 +106,7 @@ class LocalReminderScheduler(private val context: Context) {
             persistScheduledRequestCodes()
             return
         }
+        avisaSiTeQuedasSinFaltas(currentProfile, subjects, classSessions, classOccurrences)
         val leadMillis = currentProfile.reminderLeadHours.coerceIn(1, 168) * 60L * 60L * 1000L
 
         if (AppModule.TASKS in currentProfile.enabledModules && currentProfile.taskRemindersEnabled) {
@@ -328,7 +329,16 @@ class LocalReminderScheduler(private val context: Context) {
                     title = "¿Asististe a $subjectName?",
                     body = "Déjalo registrado para llevar la cuenta de tus faltas.",
                     targetRoute = AppRoutes.Calendar,
-                    channelId = CHANNEL_ID_DIGEST
+                    channelId = CHANNEL_ID_DIGEST,
+                    /*
+                     * Con botones, contestar no obliga a abrir la app.
+                     *
+                     * Preguntaba y para responder habia que entrar, ir al calendario, dar con
+                     * la clase y abrir su panel: cuatro pasos para un si o un no. Asi se
+                     * contesta desde la pantalla de bloqueo, y tocar el aviso sigue abriendo
+                     * el calendario para quien prefiera mirar.
+                     */
+                    attendanceOf = session.id to epochDay
                 )
             }
     }
@@ -528,7 +538,9 @@ class LocalReminderScheduler(private val context: Context) {
         subText: String? = null,
         channelId: String = CHANNEL_ID_ALERTS,
         eventAtMillis: Long? = null,
-        lateTitle: ((minutosRestantes: Long) -> String)? = null
+        lateTitle: ((minutosRestantes: Long) -> String)? = null,
+        /** Clase y dia a los que responden los botones «Asisti» y «Falta», si los lleva. */
+        attendanceOf: Pair<String, Long>? = null
     ) {
         val adjustedTrigger = ReminderTiming.adjustForQuietHours(profile, triggerAtMillis)
         val now = System.currentTimeMillis()
@@ -562,13 +574,13 @@ class LocalReminderScheduler(private val context: Context) {
             }
             showNotification(
                 context,
-                reminderIntent(requestCode, tituloReal, body, targetRoute, subText, channelId)
+                reminderIntent(requestCode, tituloReal, body, targetRoute, subText, channelId, attendanceOf)
             )
             rememberDeliveredLate(marca, now)
             return
         }
 
-        val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId)
+        val intent = reminderIntent(requestCode, title, body, targetRoute, subText, channelId, attendanceOf)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
@@ -621,7 +633,8 @@ class LocalReminderScheduler(private val context: Context) {
         body: String,
         targetRoute: String?,
         subText: String? = null,
-        channelId: String = CHANNEL_ID_ALERTS
+        channelId: String = CHANNEL_ID_ALERTS,
+        attendanceOf: Pair<String, Long>? = null
     ): Intent {
         return Intent(context, ReminderReceiver::class.java).apply {
             putExtra(EXTRA_TITLE, title)
@@ -630,6 +643,10 @@ class LocalReminderScheduler(private val context: Context) {
             putExtra(EXTRA_TARGET_ROUTE, targetRoute)
             putExtra(EXTRA_SUBTEXT, subText)
             putExtra(EXTRA_CHANNEL_ID, channelId)
+            attendanceOf?.let { (sessionId, epochDay) ->
+                putExtra(EXTRA_ATTENDANCE_SESSION_ID, sessionId)
+                putExtra(EXTRA_ATTENDANCE_EPOCH_DAY, epochDay)
+            }
         }
     }
 
@@ -689,6 +706,65 @@ class LocalReminderScheduler(private val context: Context) {
     private fun persistScheduledRequestCodes() {
         prefs.edit {
             putStringSet(REQUEST_CODE_SET, scheduledRequestCodes.map(Int::toString).toSet())
+        }
+    }
+
+    /**
+     * Avisa cuando queda una falta, o cuando ya no queda ninguna.
+     *
+     * Es el unico momento en que este dato cambia lo que haces, y llega tarde si tienes que
+     * ir tu a mirarlo. Antes de eso no dice nada: un aviso por cada falta seria ruido.
+     *
+     * Las faltas se cuentan de lo marcado y no de la regla de repeticion, asi que aqui no
+     * hace falta el periodo: una falta existe porque alguien la escribio.
+     *
+     * La marca lleva el numero de faltas dentro, de modo que el aviso sale una vez por falta
+     * nueva y no en cada cambio de datos —por aqui se vuelve a pasar constantemente—.
+     */
+    private fun avisaSiTeQuedasSinFaltas(
+        profile: UserProfile,
+        subjects: List<Subject>,
+        sessions: List<ClassSession>,
+        occurrences: List<ClassOccurrence>
+    ) {
+        // Va con las notas: el tope de faltas es un dato academico y sin ese modulo no hay
+        // materias que vigilar.
+        if (AppModule.GRADES !in profile.enabledModules) return
+        val ahora = System.currentTimeMillis()
+        // Respeta las horas de silencio igual que el resto: `showNotification` no las mira.
+        if (ReminderTiming.adjustForQuietHours(profile, ahora) != ahora) return
+        subjects.forEach { subject ->
+            val tope = subject.absenceLimit ?: return@forEach
+            val suyas = sessions.filter { it.subjectId == subject.id }.map { it.id }.toSet()
+            if (suyas.isEmpty()) return@forEach
+            val faltas = occurrences.count {
+                it.sessionId in suyas && it.status == ClassAttendanceStatus.ABSENT
+            }
+            val restantes = tope - faltas
+            if (restantes > 1) return@forEach
+
+            val marca = "limite:${subject.id}@$faltas"
+            if (marca in storedDeliveredLate()) return@forEach
+            showNotification(
+                context,
+                reminderIntent(
+                    requestCode = marca.stableRequestCode("absence-limit"),
+                    title = if (restantes <= 0) {
+                        "Te pasaste del tope en ${subject.name}"
+                    } else {
+                        "Te queda una falta en ${subject.name}"
+                    },
+                    body = if (restantes <= 0) {
+                        "Llevas $faltas de $tope. Habla con tu profesor si crees que hay un error."
+                    } else {
+                        "Llevas $faltas de $tope. La siguiente ya no cabe."
+                    },
+                    targetRoute = AppRoutes.Calendar,
+                    subText = "Asistencia",
+                    channelId = CHANNEL_ID_ALERTS
+                )
+            )
+            rememberDeliveredLate(marca, ahora)
         }
     }
 
@@ -783,7 +859,9 @@ class LocalReminderScheduler(private val context: Context) {
             val channelId = intent.getStringExtra(EXTRA_CHANNEL_ID) ?: CHANNEL_ID_ALERTS
             val subText = intent.getStringExtra(EXTRA_SUBTEXT)
             val isAlert = channelId == CHANNEL_ID_ALERTS
-            val notification = NotificationCompat.Builder(context, channelId)
+            val sessionId = intent.getStringExtra(EXTRA_ATTENDANCE_SESSION_ID)
+            val epochDay = intent.getLongExtra(EXTRA_ATTENDANCE_EPOCH_DAY, -1L)
+            val builder = NotificationCompat.Builder(context, channelId)
                 // Un mipmap de lanzador no sirve aquí: el sistema se queda solo
                 // con su alfa y, al ser una imagen opaca de borde a borde, sale
                 // un cuadro blanco. Hace falta una silueta monocroma de 24dp.
@@ -801,8 +879,62 @@ class LocalReminderScheduler(private val context: Context) {
                 // para que la ventana emergente salga en todas las versiones.
                 .setPriority(if (isAlert) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
                 .setDefaults(if (isAlert) NotificationCompat.DEFAULT_ALL else 0)
-                .build()
-            notificationManager.notify(notificationId, notification)
+
+            /*
+             * Si el aviso pregunta por una clase, se contesta desde el propio aviso.
+             *
+             * Las dos acciones van a un receptor y no a la actividad: abrir la app para
+             * guardar un si o un no es exactamente el rodeo que hacia que nadie contestase.
+             */
+            if (sessionId != null && epochDay >= 0L) {
+                builder.addAction(
+                    0,
+                    "Asistí",
+                    accionDeAsistencia(
+                        context, notificationId, sessionId, epochDay,
+                        ClassAttendanceStatus.ATTENDED
+                    )
+                )
+                builder.addAction(
+                    0,
+                    "Falta",
+                    accionDeAsistencia(
+                        context, notificationId, sessionId, epochDay,
+                        ClassAttendanceStatus.ABSENT
+                    )
+                )
+            }
+
+            notificationManager.notify(notificationId, builder.build())
+        }
+
+        /**
+         * El disparador de un boton del aviso.
+         *
+         * Cada estado necesita su propio `requestCode`: con el mismo, el segundo
+         * `PendingIntent` reutilizaria los extras del primero y «Falta» guardaria una
+         * asistencia.
+         */
+        private fun accionDeAsistencia(
+            context: Context,
+            notificationId: Int,
+            sessionId: String,
+            epochDay: Long,
+            status: ClassAttendanceStatus
+        ): PendingIntent {
+            val intent = Intent(context, AttendanceActionReceiver::class.java).apply {
+                action = ACTION_MARK_ATTENDANCE
+                putExtra(EXTRA_ATTENDANCE_SESSION_ID, sessionId)
+                putExtra(EXTRA_ATTENDANCE_EPOCH_DAY, epochDay)
+                putExtra(EXTRA_ATTENDANCE_STATUS, status.name)
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            }
+            return PendingIntent.getBroadcast(
+                context,
+                notificationId * 2 + if (status == ClassAttendanceStatus.ATTENDED) 0 else 1,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         }
     }
 }

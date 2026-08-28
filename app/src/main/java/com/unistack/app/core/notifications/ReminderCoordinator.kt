@@ -4,6 +4,8 @@ import android.content.Context
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
+import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_user.domain.UserRepository
 import kotlinx.coroutines.CompletableDeferred
@@ -21,6 +23,20 @@ object ReminderCoordinator {
        start() y lo usa el rearmado de madrugada: el combine de abajo solo reacciona a
        cambios, y a las tres de la manana no cambia nada. */
     private var rescheduleFromCurrentState: (() -> Unit)? = null
+
+    /* Marcar la asistencia desde un boton del aviso, sin que haya ninguna pantalla viva. El
+       broadcast puede levantar el proceso el, asi que no hay ViewModel al que pedirselo. */
+    private var markFromNotification: ((String, Long, ClassAttendanceStatus) -> Unit)? = null
+
+    /**
+     * Guarda lo que se conteste en la notificacion.
+     *
+     * Silencioso si el proceso todavia no ha arrancado del todo: perder un toque es molesto,
+     * pero reventar en un receptor se lleva por delante toda la app.
+     */
+    fun markAttendance(sessionId: String, epochDay: Long, status: ClassAttendanceStatus) {
+        markFromNotification?.invoke(sessionId, epochDay, status)
+    }
 
     /* BootReceiver necesita saber cuándo se han reprogramado las alarmas para
        soltar el broadcast. No vale con esperar «la primera pasada»: el combine
@@ -55,6 +71,19 @@ object ReminderCoordinator {
     ) {
         if (job != null) return
         val scheduler = LocalReminderScheduler(context.applicationContext)
+        markFromNotification = { sessionId, epochDay, status ->
+            val existente = scheduleRepository.occurrences.value.firstOrNull {
+                it.sessionId == sessionId && it.dateEpochDay == epochDay
+            }
+            scheduleRepository.saveOccurrence(
+                (existente ?: ClassOccurrence(
+                    id = "occurrence-$sessionId-$epochDay",
+                    sessionId = sessionId,
+                    dateEpochDay = epochDay,
+                    updatedAt = System.currentTimeMillis()
+                )).copy(status = status, updatedAt = System.currentTimeMillis())
+            )
+        }
         rescheduleFromCurrentState = {
             scheduler.schedule(
                 profile = userRepository.userProfile.value,

@@ -108,6 +108,59 @@ class AttendanceWeekTest {
         assertTrue(semanas.all { it.entries.isNotEmpty() })
     }
 
+    // ---------- ponerse al dia ----------
+
+    @Test
+    fun `ponerse al dia solo trae lo pasado y sin marcar`() {
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), hoy)
+
+        assertTrue(pendientes.isNotEmpty())
+        assertTrue(pendientes.all { it.status == ClassAttendanceStatus.PENDING })
+        assertTrue(pendientes.all { !it.date.isAfter(hoy) })
+    }
+
+    @Test
+    fun `ponerse al dia empieza por lo mas reciente`() {
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), hoy)
+
+        val fechas = pendientes.map { it.date }
+        assertEquals(fechas.sortedDescending(), fechas)
+    }
+
+    @Test
+    fun `una lista larga se corta para que se pueda terminar`() {
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(
+            construir(inicio = hoy.minusDays(90)),
+            hoy
+        )
+
+        assertTrue(pendientes.size <= SubjectAttendanceHistory.CATCH_UP_LIMIT)
+    }
+
+    @Test
+    fun `lo ya marcado no vuelve a preguntarse`() {
+        val unLunes = hoy.minusDays(3)
+        assertEquals(DayOfWeek.MONDAY, unLunes.dayOfWeek)
+        val entradas = SubjectAttendanceHistory.build(
+            sessions = listOf(lunesYmiercoles),
+            occurrences = listOf(
+                ClassOccurrence(
+                    id = "o-1",
+                    sessionId = lunesYmiercoles.id,
+                    dateEpochDay = unLunes.toEpochDay(),
+                    status = ClassAttendanceStatus.ATTENDED,
+                    updatedAt = 0L
+                )
+            ),
+            today = hoy,
+            termStart = hoy.minusDays(30)
+        )
+
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(entradas, hoy)
+
+        assertTrue(pendientes.none { it.date == unLunes })
+    }
+
     @Test
     fun `sin nada que agrupar no hay semanas`() {
         val semanas = SubjectAttendanceHistory.byWeek(emptyList(), hoy)

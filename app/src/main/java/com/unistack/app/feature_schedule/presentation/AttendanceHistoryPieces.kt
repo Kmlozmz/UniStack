@@ -71,6 +71,7 @@ internal fun AttendanceSummaryCard(
     summary: AttendanceSummary,
     entries: List<AttendanceHistoryEntry>,
     today: LocalDate,
+    onLimitClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val restantes = summary.remainingAbsences
@@ -129,6 +130,28 @@ internal fun AttendanceSummaryCard(
                     RachaChip(summary.streak)
                 }
             }
+
+            /*
+             * El tope se pone desde aqui, que es donde se echa en falta.
+             *
+             * Sin el, la cifra grande no puede ser «te quedan N» y cae al porcentaje. Pedirlo
+             * en el formulario de la materia lo habria escondido en un sitio al que solo se
+             * entra a cambiar el nombre.
+             */
+            Text(
+                text = if (summary.absenceLimit == null) {
+                    "Poner un tope de faltas"
+                } else {
+                    "Cambiar el tope (${summary.absenceLimit})"
+                },
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable(onClick = onLimitClick)
+                    .padding(vertical = 2.dp),
+                color = ScheduleAccent,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             if (entries.any { !it.date.isAfter(today) }) {
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))

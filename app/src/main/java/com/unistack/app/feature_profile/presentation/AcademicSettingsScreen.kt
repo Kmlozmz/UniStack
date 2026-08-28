@@ -80,6 +80,7 @@ fun AcademicSettingsScreen(
         mutableStateOf(current.gradingCutScheme.cuts.map { academicPercentInput(it.weight) })
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+    val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
     var pendingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var confirmingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
 
@@ -196,6 +197,16 @@ fun AcademicSettingsScreen(
         }
         item {
             ScaleWarningNote()
+        }
+        item {
+            AcademicGroupLabel("DÍAS SIN CLASE")
+            AcademicBreaksSection(
+                breaks = breaks,
+                onSave = { id, nombre, desde, hasta ->
+                    viewModel.saveAcademicBreak(id, nombre, desde, hasta)
+                },
+                onDelete = viewModel::deleteAcademicBreak
+            )
         }
         item {
             AcademicGroupLabel("TUS CORTES")

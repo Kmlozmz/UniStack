@@ -20,6 +20,9 @@ import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_terms.domain.AcademicBreak
+import com.unistack.app.feature_terms.domain.AcademicBreakRepository
+import java.time.LocalDate
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_billing.domain.BillingRepository
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
@@ -82,8 +85,25 @@ class ProfileViewModel @Inject constructor(
     private val billingRepository: BillingRepository,
     private val accountAuthService: AccountAuthService,
     private val localBackupRepository: LocalBackupRepository,
-    private val cloudBackupRepository: CloudBackupRepository
+    private val cloudBackupRepository: CloudBackupRepository,
+    private val breakRepository: AcademicBreakRepository
 ) : ViewModel() {
+    /**
+     * Los días en que la universidad estuvo cerrada.
+     *
+     * Se editan aquí y no en el horario porque no son de una materia: un festivo lo es para
+     * todas, igual que la escala de notas o el reparto de los cortes.
+     */
+    val academicBreaks: StateFlow<List<AcademicBreak>> = breakRepository.breaks
+
+    fun saveAcademicBreak(id: String?, name: String, start: LocalDate, end: LocalDate) {
+        viewModelScope.launch { breakRepository.save(id, name, start, end) }
+    }
+
+    fun deleteAcademicBreak(breakId: String) {
+        viewModelScope.launch { breakRepository.delete(breakId) }
+    }
+
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
     val currentUser = userRepository.currentUser
     val billingState = billingRepository.state

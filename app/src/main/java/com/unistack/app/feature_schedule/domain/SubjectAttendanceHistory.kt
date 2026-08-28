@@ -40,6 +40,9 @@ object SubjectAttendanceHistory {
     /** Cuántas clases futuras se anuncian. */
     const val UPCOMING_LIMIT = 2
 
+    /** Cuántas sin marcar caben en «ponerse al día» de una vez. */
+    const val CATCH_UP_LIMIT = 12
+
     /**
      * @param termStart primer día del periodo, o nulo si no hay periodo configurado.
      * @param termEnd último día del periodo, o nulo si no tiene fin previsto.
@@ -105,6 +108,26 @@ object SubjectAttendanceHistory {
     fun upcoming(entries: List<AttendanceHistoryEntry>, today: LocalDate): List<AttendanceHistoryEntry> =
         entries.filter { it.date.isAfter(today) }
             .sortedWith(compareBy({ it.date }, { it.session.startMinute }))
+
+    /**
+     * Lo que pasó y nadie marcó, de lo más reciente hacia atrás.
+     *
+     * Existe porque los avisos se ignoran: una semana de exámenes y aparecen seis clases sin
+     * marcar. Entrar en cada una es lo que hace que la gente **abandone el registro entero**,
+     * así que hay que poder resolverlas juntas.
+     *
+     * Se corta en [limit] a propósito: una lista de cuarenta pendientes no se pone al día, se
+     * cierra. Con las más recientes delante, lo que se recuerda se marca y lo viejo se queda
+     * donde estaba, que ya no se acuerda nadie.
+     */
+    fun pendingToCatchUp(
+        entries: List<AttendanceHistoryEntry>,
+        today: LocalDate,
+        limit: Int = CATCH_UP_LIMIT
+    ): List<AttendanceHistoryEntry> = entries
+        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(today) }
+        .sortedWith(masRecientePrimero)
+        .take(limit)
 
     /**
      * Lo ya ocurrido, en semanas y de la más reciente a la más antigua.

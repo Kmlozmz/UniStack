@@ -82,6 +82,10 @@
         <receiver
             android:name=".core.notifications.ReminderReceiver"
             android:exported="false" />
+        <!-- Los botones «Asistí» y «Falta» del aviso: nadie de fuera los dispara. -->
+        <receiver
+            android:name=".core.notifications.AttendanceActionReceiver"
+            android:exported="false" />
         <receiver
             android:name=".core.notifications.BootReceiver"
             android:enabled="true"

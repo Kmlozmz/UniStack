@@ -82,6 +82,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
@@ -279,16 +280,21 @@ fun CalendarScheduleScreen(
                 viewModel.delete(session.id)
                 selectedSession = null
             },
-            onStatus = { status ->
+            /*
+             * Guardar ya no cierra el panel.
+             *
+             * Lo cerraba, y con el se iba la unica oportunidad de decir por que faltaste. El
+             * detalle se pregunta despues de guardar, asi que el panel tiene que seguir ahi.
+             */
+            onStatus = { status, modality, absenceReason, note ->
                 viewModel.saveOccurrence(
                     sessionId = session.id,
                     dateEpochDay = selectedEpochDay,
                     status = status,
-                    modality = ClassModality.IN_PERSON,
-                    absenceReason = null,
-                    note = ""
+                    modality = modality,
+                    absenceReason = absenceReason,
+                    note = note
                 )
-                selectedSession = null
             }
         )
     }
@@ -303,6 +309,17 @@ fun CalendarScheduleScreen(
                 term = state.activeTerm,
                 breaks = state.breaks,
                 onDismiss = { historySubjectId = null },
+                onSetAbsenceLimit = { limite -> viewModel.setAbsenceLimit(subject, limite) },
+                onCatchUp = { entrada, estado ->
+                    viewModel.saveOccurrence(
+                        sessionId = entrada.session.id,
+                        dateEpochDay = entrada.date.toEpochDay(),
+                        status = estado,
+                        modality = ClassModality.IN_PERSON,
+                        absenceReason = null,
+                        note = ""
+                    )
+                },
                 onMarkAttendance = { date, session ->
                     historySubjectId = null
                     selectedEpochDay = date.toEpochDay()
@@ -322,8 +339,12 @@ private fun SubjectHistoryDialog(
     term: AcademicTerm?,
     breaks: List<AcademicBreak>,
     onDismiss: () -> Unit,
+    onSetAbsenceLimit: (Int?) -> Unit,
+    onCatchUp: (AttendanceHistoryEntry, ClassAttendanceStatus) -> Unit,
     onMarkAttendance: (LocalDate, ClassSession) -> Unit
 ) {
+    var pidiendoTope by remember { mutableStateOf(false) }
+    var poniendoseAlDia by remember { mutableStateOf(false) }
     val entries = remember(sessions, occurrences, term, breaks) {
         SubjectAttendanceHistory.build(
             sessions = sessions,
@@ -346,9 +367,8 @@ private fun SubjectHistoryDialog(
     }
     val weeks = remember(entries) { SubjectAttendanceHistory.byWeek(entries, hoy) }
     val upcoming = remember(entries) { SubjectAttendanceHistory.upcoming(entries, hoy) }
-    val pending = entries
-        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(hoy) }
-        .maxByOrNull(AttendanceHistoryEntry::date)
+    val sinMarcar = remember(entries) { SubjectAttendanceHistory.pendingToCatchUp(entries, hoy) }
+    val pending = sinMarcar.firstOrNull()
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -386,6 +406,7 @@ private fun SubjectHistoryDialog(
                     summary = summary,
                     entries = entries,
                     today = hoy,
+                    onLimitClick = { pidiendoTope = true },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 Text(
@@ -425,7 +446,15 @@ private fun SubjectHistoryDialog(
                 }
                 Button(
                     shapes = UniStackButtonDefaults.shapes,
-                    onClick = { pending?.let { onMarkAttendance(it.date, it.session) } },
+                    onClick = {
+                        // Con varias sin marcar, entrar en cada una es lo que hace que se
+                        // abandone el registro: se abre la lista con dos botones por fila.
+                        if (sinMarcar.size > 1) {
+                            poniendoseAlDia = true
+                        } else {
+                            pending?.let { onMarkAttendance(it.date, it.session) }
+                        }
+                    },
                     enabled = pending != null,
                     modifier = Modifier.fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight).padding(16.dp),
@@ -433,13 +462,36 @@ private fun SubjectHistoryDialog(
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
                     Text(
-                        text = pending?.let { "Marcar la del ${it.date.dayMonth()}" }
-                            ?: "Todo al d\u00eda",
+                        text = when {
+                            sinMarcar.size > 1 -> "Ponerse al d\u00eda \u00b7 ${sinMarcar.size} sin marcar"
+                            pending != null -> "Marcar la del ${pending.date.dayMonth()}"
+                            else -> "Todo al d\u00eda"
+                        },
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
         }
+    }
+
+    if (pidiendoTope) {
+        AbsenceLimitDialog(
+            actual = subject.absenceLimit,
+            onDismiss = { pidiendoTope = false },
+            onConfirm = { limite ->
+                onSetAbsenceLimit(limite)
+                pidiendoTope = false
+            }
+        )
+    }
+
+    if (poniendoseAlDia) {
+        CatchUpSheet(
+            pending = sinMarcar,
+            subjects = listOf(subject),
+            onMark = { entrada, estado -> onCatchUp(entrada, estado) },
+            onDismiss = { poniendoseAlDia = false }
+        )
     }
 }
 
@@ -475,7 +527,7 @@ private fun ClassDetailsSheet(
     onEdit: () -> Unit,
     onHistory: () -> Unit,
     onDelete: () -> Unit,
-    onStatus: (ClassAttendanceStatus) -> Unit
+    onStatus: (ClassAttendanceStatus, ClassModality, ClassAbsenceReason?, String) -> Unit
 ) {
     // Abierto del todo desde el principio. Con la altura a medias —lo que hace un
     // ModalBottomSheet por defecto— las acciones del final quedaban fuera de la pantalla y
@@ -483,6 +535,20 @@ private fun ClassDetailsSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val accent = subject.scheduleColor()
     val status = occurrence?.status ?: ClassAttendanceStatus.PENDING
+    /*
+     * Si la clase ya paso y no esta marcada, la pregunta va antes que los datos.
+     *
+     * Habia seis fichas —horario, duracion, aula, profesor, repeticion, recordatorio— y
+     * debajo de todas ellas los botones: lo que casi siempre vienes a hacer quedaba lo mas
+     * lejos de la mano. Una clase que todavia no ha ocurrido no pregunta nada, asi que ahi
+     * el orden de siempre sigue siendo el bueno.
+     */
+    val preguntaPrimero = !date.isAfter(LocalDate.now()) && status == ClassAttendanceStatus.PENDING
+
+    // El detalle vive aqui y no en el modelo guardado porque se escribe despues de guardar.
+    val modalidad = occurrence?.modality ?: ClassModality.IN_PERSON
+    val motivo = occurrence?.absenceReason
+    val nota = occurrence?.note.orEmpty()
     val statusOptions = listOf(
         ClassAttendanceStatus.ATTENDED,
         ClassAttendanceStatus.ABSENT,
@@ -540,17 +606,32 @@ private fun ClassDetailsSheet(
             // Los datos, en rejilla de dos. Antes iban en una línea de texto pegados con
             // puntos: si faltaba el aula y el profesor, la línea quedaba vacía y el hueco
             // parecía un fallo de la app en vez de un dato que nadie había rellenado.
-            ClassInfoGrid(
-                listOf(
-                    ClassInfo(Icons.Rounded.Schedule, "Horario", "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
-                    ClassInfo(Icons.Rounded.HourglassBottom, "Duración", durationLabel(session.endMinute - session.startMinute)),
-                    ClassInfo(Icons.Rounded.Place, "Aula", session.place.room.ifBlank { "Sin aula" }),
-                    ClassInfo(Icons.Rounded.Person, "Profesor", session.place.professor.ifBlank { "Sin profesor" }),
-                    ClassInfo(Icons.Rounded.Repeat, "Repetición", repeatLabel(session.repeatEveryWeeks)),
-                    ClassInfo(Icons.Rounded.NotificationsNone, "Recordatorio", reminderLabel(session.reminderMinutes))
+            val fichas: @Composable () -> Unit = {
+                ClassInfoGrid(
+                    listOf(
+                        ClassInfo(Icons.Rounded.Schedule, "Horario", "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
+                        ClassInfo(Icons.Rounded.HourglassBottom, "Duración", durationLabel(session.endMinute - session.startMinute)),
+                        ClassInfo(Icons.Rounded.Place, "Aula", session.place.room.ifBlank { "Sin aula" }),
+                        ClassInfo(Icons.Rounded.Person, "Profesor", session.place.professor.ifBlank { "Sin profesor" }),
+                        ClassInfo(Icons.Rounded.Repeat, "Repetición", repeatLabel(session.repeatEveryWeeks)),
+                        ClassInfo(Icons.Rounded.NotificationsNone, "Recordatorio", reminderLabel(session.reminderMinutes))
+                    )
                 )
-            )
+            }
 
+            if (!preguntaPrimero) fichas()
+
+            if (preguntaPrimero) {
+                // Lo imprescindible en una linea, para no perder el contexto al subir la pregunta.
+                Text(
+                    text = listOf(
+                        "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}",
+                        session.place.room.takeIf { it.isNotBlank() }
+                    ).filterNotNull().joinToString(" · "),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             SheetGroupLabel("REGISTRAR ASISTENCIA")
             // Un grupo conectado, como el de Horario y Calendario arriba: tres piezas que se
             // tocan y una sola elegida. Eran tres rectángulos sueltos con borde, que es la
@@ -575,7 +656,16 @@ private fun ClassDetailsSheet(
                         // Volver a tocar el estado marcado lo deshace: si te equivocas de
                         // botón, antes no había forma de volver a «pendiente».
                         checked = selected,
-                        onCheckedChange = { onStatus(if (selected) ClassAttendanceStatus.PENDING else option) },
+                        onCheckedChange = {
+                            onStatus(
+                                if (selected) ClassAttendanceStatus.PENDING else option,
+                                modalidad,
+                                // Cambiar de estado tira el motivo: el de una falta no vale
+                                // para una asistencia, y arrastrarlo guardaria una mentira.
+                                if (option == ClassAttendanceStatus.ABSENT) motivo else null,
+                                nota
+                            )
+                        },
                         shapes = shapes,
                         colors = ToggleButtonDefaults.toggleButtonColors(
                             checkedContainerColor = option.color(),
@@ -606,6 +696,18 @@ private fun ClassDetailsSheet(
                     }
                 }
             }
+
+            AttendanceDetail(
+                status = status,
+                modality = modalidad,
+                absenceReason = motivo,
+                note = nota,
+                onModalityChange = { onStatus(status, it, motivo, nota) },
+                onReasonChange = { onStatus(status, modalidad, it, nota) },
+                onNoteChange = { onStatus(status, modalidad, motivo, it) }
+            )
+
+            if (preguntaPrimero) fichas()
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             SheetActionRow(

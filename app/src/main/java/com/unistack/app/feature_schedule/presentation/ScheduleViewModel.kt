@@ -117,6 +117,18 @@ class ScheduleViewModel @Inject constructor(
 
     fun delete(sessionId: String) = repository.deleteSession(sessionId)
 
+    /**
+     * Guarda cuántas faltas admite la materia, o quita el tope con `null`.
+     *
+     * Vive aquí y no en Académico porque es donde se echa en falta: el número se descubre
+     * mirando el historial, no configurando la materia.
+     */
+    fun setAbsenceLimit(subject: Subject, limit: Int?) {
+        gradesRepository.updateSubject(
+            subject.copy(absenceLimit = limit?.coerceIn(1, 40))
+        )
+    }
+
     fun saveAgendaEvent(
         existing: AgendaEvent?,
         title: String,
