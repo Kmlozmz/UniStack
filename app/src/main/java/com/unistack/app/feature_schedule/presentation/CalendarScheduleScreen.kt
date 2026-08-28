@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Add
@@ -392,6 +393,7 @@ private fun SubjectHistoryDialog(
 ) {
     var pidiendoTope by remember { mutableStateOf(false) }
     var poniendoseAlDia by remember { mutableStateOf(false) }
+    var ayudaVisible by remember { mutableStateOf(false) }
     val entries = remember(sessions, occurrences, term, breaks) {
         SubjectAttendanceHistory.build(
             sessions = sessions,
@@ -412,7 +414,9 @@ private fun SubjectHistoryDialog(
     val summary = remember(entries, subject.absenceLimit) {
         SubjectAttendanceHistory.summarize(entries, subject.absenceLimit)
     }
-    val weeks = remember(entries) { SubjectAttendanceHistory.byWeek(entries, hoy) }
+    val weeks = remember(entries, term) {
+        SubjectAttendanceHistory.byWeek(entries, hoy, term?.start)
+    }
     val upcoming = remember(entries) { SubjectAttendanceHistory.upcoming(entries, hoy) }
     val sinMarcar = remember(entries) {
         SubjectAttendanceHistory.pendingToCatchUp(entries, LocalDateTime.now())
@@ -457,46 +461,65 @@ private fun SubjectHistoryDialog(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                    // Toda la pantalla en una frase, para quien la abre por primera vez.
+                    IconButton(onClick = { ayudaVisible = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
+                            contentDescription = "Cómo se lee esta pantalla",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 AttendanceSummaryCard(
                     summary = summary,
                     entries = entries,
+                    weeks = weeks,
                     today = hoy,
                     onLimitClick = { pidiendoTope = true },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 Text(
                     text = "HISTORIAL",
-                    modifier = Modifier.padding(start = 18.dp, top = 14.dp, bottom = 7.dp),
+                    modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 8.dp),
                     color = MaterialTheme.colorScheme.outline,
                     fontWeight = FontWeight.Black,
                     fontSize = 10.sp,
                     letterSpacing = 0.13.em
                 )
-                Surface(
-                    modifier = Modifier.fillMaxWidth().weight(1f).padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                /*
+                 * La tarjeta mide lo que mide su contenido.
+                 *
+                 * Tenia `weight(1f)`, asi que con tres clases se estiraba hasta el boton y
+                 * dejaba media pantalla de tarjeta vacia: parecia que faltaba algo por cargar.
+                 * Ahora rueda la columna entera y la tarjeta acaba donde acaba la lista.
+                 */
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 ) {
-                    LazyColumn(contentPadding = PaddingValues(vertical = 9.dp)) {
-                        if (entries.isEmpty()) {
-                            item {
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            if (entries.isEmpty()) {
                                 Text(
                                     "A\u00fan no hay clases en el historial",
-                                    Modifier.fillMaxWidth().padding(20.dp),
+                                    Modifier.fillMaxWidth().padding(24.dp),
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            }
-                        } else {
-                            item {
+                            } else {
                                 AttendanceWeekList(
                                     weeks = weeks,
                                     upcoming = upcoming,
                                     today = hoy,
-                                    onPick = { entrada -> onMarkAttendance(entrada.date, entrada.session) }
+                                    onPick = { entrada -> onMarkAttendance(entrada.date, entrada.session) },
+                                    modifier = Modifier.padding(vertical = 12.dp)
                                 )
                             }
                         }
@@ -530,6 +553,14 @@ private fun SubjectHistoryDialog(
                 }
             }
         }
+    }
+
+    if (ayudaVisible) {
+        AttendanceHelpDialog(
+            hasLimit = subject.absenceLimit != null,
+            hasWeekNumbers = weeks.any { it.number != null },
+            onDismiss = { ayudaVisible = false }
+        )
     }
 
     if (pidiendoTope) {

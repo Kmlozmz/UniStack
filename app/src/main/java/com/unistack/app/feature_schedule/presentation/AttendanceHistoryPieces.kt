@@ -19,14 +19,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -43,6 +52,7 @@ private val Espanol: Locale = Locale.forLanguageTag("es")
 private val DiaMes = DateTimeFormatter.ofPattern("d MMM", Espanol)
 private val SoloDia = DateTimeFormatter.ofPattern("d", Espanol)
 private val Mes = DateTimeFormatter.ofPattern("MMMM", Espanol)
+private val DiaSemanaYfecha = DateTimeFormatter.ofPattern("EEE d 'de' MMMM", Espanol)
 
 /**
  * El color con que se pinta cada estado en la tira y en las semanas.
@@ -72,11 +82,20 @@ private fun ClassAttendanceStatus.cuadro(): Color =
 internal fun AttendanceSummaryCard(
     summary: AttendanceSummary,
     entries: List<AttendanceHistoryEntry>,
+    weeks: List<AttendanceWeek>,
     today: LocalDate,
     onLimitClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val restantes = summary.remainingAbsences
+    /*
+     * El mapa esta siempre, pero pequeño.
+     *
+     * Enseñarlo desplegado obliga a pasar por encima de el cada vez que vienes al detalle, y
+     * esconderlo del todo lo hace facil de no descubrir nunca. La tira es el mismo mapa en su
+     * forma corta: ocupa una linea y se abre a la cuadricula por semanas cuando la tocas.
+     */
+    var mapaAbierto by rememberSaveable { mutableStateOf(false) }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -142,24 +161,53 @@ internal fun AttendanceSummaryCard(
              * en el formulario de la materia lo habria escondido en un sitio al que solo se
              * entra a cambiar el nombre.
              */
-            Text(
-                text = if (summary.absenceLimit == null) {
-                    "Poner un tope de faltas"
-                } else {
-                    "Cambiar el tope (${summary.absenceLimit})"
-                },
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable(onClick = onLimitClick)
-                    .padding(vertical = 2.dp),
-                color = ScheduleAccent,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold
-            )
+            /*
+             * Un boton pequeño, no un texto de color.
+             *
+             * Pintarlo con el acento lo hacia el unico morado de la tarjeta y se llevaba la
+             * vista antes que la cifra, que es lo que se viene a leer. Con fondo propio se
+             * nota que se toca sin necesidad de gritar.
+             */
+            Surface(
+                onClick = onLimitClick,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest
+            ) {
+                Text(
+                    text = if (summary.absenceLimit == null) {
+                        "Poner un tope de faltas"
+                    } else {
+                        "Cambiar el tope · ${summary.absenceLimit}"
+                    },
+                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
-            if (entries.any { !it.date.isAfter(today) }) {
+            val pasadas = entries.filter { !it.date.isAfter(today) }
+            if (pasadas.isNotEmpty()) {
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
-                TiraDeClases(entries = entries, today = today)
+                if (mapaAbierto) {
+                    AlternaMapa(
+                        texto = "El periodo entero · por semana",
+                        abierto = true,
+                        onClick = { mapaAbierto = false }
+                    )
+                    RejillaPorSemanas(weeks = weeks, today = today)
+                    Leyenda(pasadas)
+                } else {
+                    TiraDeClases(
+                        pasadas = pasadas,
+                        onClick = { mapaAbierto = true }
+                    )
+                    AlternaMapa(
+                        texto = "Ver el periodo por semanas",
+                        abierto = false,
+                        onClick = { mapaAbierto = true }
+                    )
+                }
             }
         }
     }
@@ -201,16 +249,21 @@ private fun RachaChip(racha: Int) {
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TiraDeClases(entries: List<AttendanceHistoryEntry>, today: LocalDate) {
-    val pasadas = entries.filter { !it.date.isAfter(today) }.sortedBy { it.date }
+private fun TiraDeClases(pasadas: List<AttendanceHistoryEntry>, onClick: () -> Unit) {
+    val ordenadas = pasadas.sortedBy { it.date }
     // Con un semestre entero la tira no cabe; las últimas veinte cuentan la historia igual.
-    val visibles = pasadas.takeLast(20)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    val visibles = ordenadas.takeLast(20)
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Rotulo(
-            text = if (visibles.size < pasadas.size) {
+            text = if (visibles.size < ordenadas.size) {
                 "Tus últimas ${visibles.size} clases"
             } else {
-                "Tus ${pasadas.size} ${if (pasadas.size == 1) "clase" else "clases"}"
+                "Tus ${ordenadas.size} ${if (ordenadas.size == 1) "clase" else "clases"}"
             }
         )
         /*
@@ -234,6 +287,81 @@ private fun TiraDeClases(entries: List<AttendanceHistoryEntry>, today: LocalDate
             }
         }
         Leyenda(visibles)
+    }
+}
+
+/**
+ * El periodo entero, una fila por semana.
+ *
+ * Es el mismo dato que la tira, ordenado: cada fila es una semana y su número la sitúa en el
+ * semestre. Aquí los cuadros no llevan fecha escrita a propósito —no cabe— y para eso está el
+ * detalle de abajo, que es donde se va a mirar cuál fue cuál.
+ */
+@Composable
+private fun RejillaPorSemanas(weeks: List<AttendanceWeek>, today: LocalDate) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        weeks.forEach { semana ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Text(
+                    text = semana.number?.toString() ?: semana.start.format(SoloDia),
+                    modifier = Modifier.width(24.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                    fontSize = 9.5.sp,
+                    textAlign = TextAlign.End
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    semana.entries.forEach { entrada ->
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(entrada.status.cuadro())
+                                .then(
+                                    if (entrada.date == today) {
+                                        Modifier.border(
+                                            1.5.dp,
+                                            ScheduleAccent,
+                                            RoundedCornerShape(4.dp)
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** La línea que abre y cierra el mapa, con su flecha. */
+@Composable
+private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = texto,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Icon(
+            imageVector = if (abierto) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+            contentDescription = if (abierto) "Cerrar el mapa" else "Abrir el mapa",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(17.dp)
+        )
     }
 }
 
@@ -338,14 +466,22 @@ internal fun AttendanceWeekList(
             }
         }
 
-        var mesAnterior: String? = null
         weeks.forEach { semana ->
-            val mes = semana.start.format(Mes).replaceFirstChar { it.titlecase(Espanol) }
-            if (mes != mesAnterior) {
-                EtiquetaDeGrupo(mes)
-                mesAnterior = mes
+            /*
+             * «Semana 8 · 24–30 ago», y no solo el rango.
+             *
+             * Un rango suelto obliga a situarlo tu: hay que acordarse de en que mes estabas y
+             * de por donde va el semestre. El numero de semana es la unidad en la que se
+             * piensa un periodo, y la fecha al lado quita cualquier duda de cual es.
+             */
+            EtiquetaDeGrupo(tituloDeSemana(semana))
+            semana.entries.forEach { entrada ->
+                FilaDeClase(
+                    entrada = entrada,
+                    esHoy = entrada.date == today,
+                    onPick = onPick
+                )
             }
-            FilaDeSemana(semana = semana, today = today, onPick = onPick)
         }
     }
 }
@@ -357,52 +493,55 @@ private fun EtiquetaDeGrupo(texto: String) {
     }
 }
 
+/**
+ * Una clase, con su fecha y su estado escritos.
+ *
+ * Antes cada semana era una fila y sus clases unos cuadros de color. Con eso, «24–30» obligaba
+ * a deducir de que dia era cada cuadro, y con dos clases en la misma semana no habia forma de
+ * saber cual era cual. El mapa denso ya esta arriba, en la tira: aqui abajo lo que hace falta
+ * es el detalle, y el detalle es la fecha.
+ */
 @Composable
-private fun FilaDeSemana(
-    semana: AttendanceWeek,
-    today: LocalDate,
+private fun FilaDeClase(
+    entrada: AttendanceHistoryEntry,
+    esHoy: Boolean,
     onPick: (AttendanceHistoryEntry) -> Unit
 ) {
-    val esLaDeHoy = semana.contains(today)
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .clickable { onPick(entrada) }
+            .padding(horizontal = 11.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(11.dp)
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text(
-            text = "${semana.start.format(SoloDia)}–${semana.end.format(SoloDia)}",
-            modifier = Modifier.width(46.dp),
-            color = if (esLaDeHoy) ScheduleAccent else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.5.sp,
-            fontWeight = if (esLaDeHoy) FontWeight.Bold else FontWeight.Normal
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(entrada.status.cuadro())
         )
-        /*
-         * Cuadros limpios, sin la fecha escrita dentro.
-         *
-         * El numero del dia no cabe con dignidad en algo de este tamaño y competia con el
-         * color, que es lo que de verdad se lee de un vistazo. La semana ya esta a la
-         * izquierda, y tocar un cuadro abre su clase con la fecha entera.
-         */
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            semana.entries.forEach { entrada ->
-                val esHoy = entrada.date == today
-                Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(entrada.status.cuadro())
-                        .then(
-                            if (esHoy) {
-                                Modifier.border(1.5.dp, ScheduleAccent, RoundedCornerShape(5.dp))
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .clickable { onPick(entrada) }
-                )
-            }
-        }
+        Text(
+            text = entrada.date.format(DiaSemanaYfecha).replaceFirstChar { it.titlecase(Espanol) },
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = if (esHoy) FontWeight.Bold else FontWeight.Normal
+        )
+        Text(
+            text = entrada.status.legendName().replaceFirstChar { it.titlecase(Espanol) },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.5.sp
+        )
     }
 }
 
 private fun formatoDeHora(minuto: Int): String = "%02d:%02d".format(minuto / 60, minuto % 60)
+
+/** «Semana 8 · 24–30 ago», o solo el rango si no hay periodo del que contar semanas. */
+private fun tituloDeSemana(semana: AttendanceWeek): String {
+    val rango = "${semana.start.format(SoloDia)}–${semana.end.format(DiaMes)}"
+    return semana.number?.let { "Semana $it · $rango" } ?: rango
+}

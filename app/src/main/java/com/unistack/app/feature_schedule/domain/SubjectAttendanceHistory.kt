@@ -2,6 +2,7 @@ package com.unistack.app.feature_schedule.domain
 
 import java.time.DayOfWeek
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import java.time.LocalDate
 
 /** Una clase concreta de una materia en un día concreto, con lo que se marcó ese día. */
@@ -150,16 +151,24 @@ object SubjectAttendanceHistory {
      * así que agrupar así hace que la lista se lea sin contar fechas. Las semanas sin ninguna
      * clase no aparecen: una semana de receso deja hueco, que es lo que fue.
      */
-    fun byWeek(entries: List<AttendanceHistoryEntry>, today: LocalDate): List<AttendanceWeek> =
-        entries.filter { !it.date.isAfter(today) }
+    fun byWeek(
+        entries: List<AttendanceHistoryEntry>,
+        today: LocalDate,
+        termStart: LocalDate? = null
+    ): List<AttendanceWeek> {
+        val primerLunes = termStart?.with(DayOfWeek.MONDAY)
+        return entries.filter { !it.date.isAfter(today) }
             .groupBy { it.date.with(DayOfWeek.MONDAY) }
             .map { (lunes, dentro) ->
                 AttendanceWeek(
                     start = lunes,
-                    entries = dentro.sortedWith(compareBy({ it.date }, { it.session.startMinute }))
+                    entries = dentro.sortedWith(compareBy({ it.date }, { it.session.startMinute })),
+                    number = primerLunes?.let { ChronoUnit.WEEKS.between(it, lunes).toInt() + 1 }
+                        ?.takeIf { it >= 1 }
                 )
             }
             .sortedByDescending { it.start }
+    }
 
     /**
      * Las cuentas que abren el historial, en un solo sitio.
@@ -214,7 +223,14 @@ object SubjectAttendanceHistory {
  */
 data class AttendanceWeek(
     val start: LocalDate,
-    val entries: List<AttendanceHistoryEntry>
+    val entries: List<AttendanceHistoryEntry>,
+    /**
+     * Qué semana del periodo es, contando desde 1, o nulo si no hay periodo configurado.
+     *
+     * «Semana 8» sitúa mejor que un rango de días sueltos: un semestre se cuenta por semanas
+     * y esa es la unidad en la que se piensa «voy por la mitad».
+     */
+    val number: Int? = null
 ) {
     val end: LocalDate get() = start.plusDays(6)
 
