@@ -53,11 +53,13 @@ object RepositoriesModule {
     fun provideGradesRepository(
         subjectDao: SubjectDao,
         gradeDao: GradeDao,
-        userRepository: UserRepository
+        userRepository: UserRepository,
+        termRepository: AcademicTermRepository
     ): GradesRepository = RoomGradesRepository(
         subjectDao = subjectDao,
         gradeDao = gradeDao,
-        userRepository = userRepository
+        userRepository = userRepository,
+        activeTermId = { termRepository.activeTerm.value?.id }
     )
 
     @Provides

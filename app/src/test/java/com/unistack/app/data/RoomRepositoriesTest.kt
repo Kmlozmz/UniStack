@@ -32,6 +32,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -59,6 +60,102 @@ class RoomRepositoriesTest {
     @After
     fun tearDown() {
         database.close()
+    }
+
+    /**
+     * El tope de faltas tiene que llegar a la base.
+     *
+     * La columna existia y el mapeador la leia, pero la consulta de actualizacion no la
+     * escribia: ponerlo parecia funcionar y desaparecia en cuanto el flujo volvia a leer.
+     * Esta prueba pasa por el mismo camino que la app —`updateSubject`— a proposito.
+     */
+    @Test
+    fun elTopeDeFaltasYElPeriodoSobrevivenAGuardar() {
+        runBlocking {
+            val repository = RoomGradesRepository(
+                subjectDao = database.subjectDao(),
+                gradeDao = database.gradeDao(),
+                userRepository = userRepository
+            )
+            val subject = Subject(
+                id = "subject-tope",
+                name = "Estadistica",
+                targetAverage = 4.0,
+                grades = emptyList(),
+                visualType = SubjectVisualType.BLUE,
+                termId = "term-1"
+            )
+            repository.addSubject(subject)
+            repository.subjects.awaitValue { it.any { materia -> materia.id == subject.id } }
+
+            repository.updateSubject(subject.copy(absenceLimit = 6))
+
+            val guardada = repository.subjects.awaitValue { lista ->
+                lista.firstOrNull { it.id == subject.id }?.absenceLimit == 6
+            }.first { it.id == subject.id }
+            assertEquals(6, guardada.absenceLimit)
+            assertEquals("term-1", guardada.termId)
+
+            // Quitarlo tambien tiene que llegar: nulo es un valor, no «no lo toques».
+            repository.updateSubject(guardada.copy(absenceLimit = null))
+            val sinTope = repository.subjects.awaitValue { lista ->
+                lista.firstOrNull { it.id == subject.id }?.absenceLimit == null
+            }.first { it.id == subject.id }
+            assertNull(sinTope.absenceLimit)
+        }
+    }
+
+    /** Una materia nueva nace en el periodo que se esta cursando. */
+    @Test
+    fun laMateriaNuevaSeEstampaConElPeriodoActivo() {
+        runBlocking {
+            val repository = RoomGradesRepository(
+                subjectDao = database.subjectDao(),
+                gradeDao = database.gradeDao(),
+                userRepository = userRepository,
+                activeTermId = { "term-activo" }
+            )
+            repository.addSubject(
+                Subject(
+                    id = "subject-nueva",
+                    name = "Calculo II",
+                    targetAverage = 4.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE
+                )
+            )
+            val creada = repository.subjects.awaitValue { lista ->
+                lista.any { it.id == "subject-nueva" }
+            }.first { it.id == "subject-nueva" }
+            assertEquals("term-activo", creada.termId)
+        }
+    }
+
+    /** Restaurar una copia no reescribe el periodo: ese dato ya venia decidido. */
+    @Test
+    fun elPeriodoQueYaTraeLaMateriaSeRespeta() {
+        runBlocking {
+            val repository = RoomGradesRepository(
+                subjectDao = database.subjectDao(),
+                gradeDao = database.gradeDao(),
+                userRepository = userRepository,
+                activeTermId = { "term-activo" }
+            )
+            repository.addSubject(
+                Subject(
+                    id = "subject-vieja",
+                    name = "Fisica I",
+                    targetAverage = 4.0,
+                    grades = emptyList(),
+                    visualType = SubjectVisualType.BLUE,
+                    termId = "term-de-2025"
+                )
+            )
+            val creada = repository.subjects.awaitValue { lista ->
+                lista.any { it.id == "subject-vieja" }
+            }.first { it.id == "subject-vieja" }
+            assertEquals("term-de-2025", creada.termId)
+        }
     }
 
     @Test

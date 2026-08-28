@@ -21,6 +21,14 @@ interface SubjectDao {
     @Update
     suspend fun updateSubject(subject: SubjectEntity)
 
+    /*
+      * Los campos que se escriben al guardar una materia.
+      *
+      * `absenceLimit` y `termId` faltaban, y no era inocuo: la columna existe, el mapeador la
+      * lee y la escribe, pero esta consulta es el unico camino de `updateSubject`, asi que
+      * poner un tope de faltas no llegaba a la base y desaparecia en cuanto el flujo volvia a
+      * leer de ella. Al anadir una columna a `subjects` hay que anadirla tambien aqui.
+      */
     @Query(
         """
         UPDATE subjects
@@ -32,6 +40,8 @@ interface SubjectDao {
             activePeriodId = :activeCutId,
             historyPromptStatus = :historyPromptStatus,
             unknownPeriodIdsJson = :unknownPeriodIdsJson,
+            termId = :termId,
+            absenceLimit = :absenceLimit,
             updatedAt = :updatedAt
         WHERE id = :subjectId AND userId IN (:userIds)
         """
@@ -47,8 +57,19 @@ interface SubjectDao {
         activeCutId: String,
         historyPromptStatus: String,
         unknownPeriodIdsJson: String,
+        termId: String?,
+        absenceLimit: Int?,
         updatedAt: Long
     )
+
+    /** Estampa el periodo en las materias que todavia no lo tienen, al cerrarlo. */
+    @Query(
+        """
+        UPDATE subjects SET termId = :termId, updatedAt = :updatedAt
+        WHERE termId IS NULL AND userId IN (:userIds)
+        """
+    )
+    suspend fun stampMissingTerm(termId: String, updatedAt: Long, userIds: List<String>): Int
 
     @Query("DELETE FROM subjects WHERE id = :subjectId")
     suspend fun deleteSubjectById(subjectId: String)
