@@ -74,7 +74,18 @@ fun isUsingRealReleaseSigning(): Boolean =
         releaseStorePasswordValue() != devFallbackSigningValue &&
         releaseKeyPasswordValue() != devFallbackSigningValue
 
-val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHH"))
+/*
+ * El sello de una compilacion local, hasta el minuto.
+ *
+ * Era "yyMMddHH", asi que dos compilaciones de la misma hora salian con el mismo nombre de
+ * archivo y no habia forma de distinguirlas una vez enviadas: parecia que el envio se hubiera
+ * repetido cuando en realidad el contenido era otro.
+ *
+ * No afecta al versionCode: en un sufijo `dev` el numero de detras no cuenta como iteracion
+ * —lo dice `versionCodeFor`—, asi que alargarlo no mueve lo que Android usa para decidir que
+ * se instala encima de que.
+ */
+val fallbackVersionCode = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyMMddHHmm"))
 val debugBuildStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HHmm"))
 
 /**
