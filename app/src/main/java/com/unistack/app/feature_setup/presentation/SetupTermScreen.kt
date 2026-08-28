@@ -309,7 +309,19 @@ fun SetupTermDatesScreen(
     var picking by remember { mutableStateOf<TermDateTarget?>(null) }
     var ayudaVisible by remember { mutableStateOf(false) }
     val fechasPuestas = start != null && plannedEnd != null
-    val listo = fechasPuestas && (cutCount <= 1 || knowsCutDates != null)
+    /*
+     * Para seguir basta el inicio.
+     *
+     * El fin se pide como **previsión**, y así está escrito en `AcademicTerm`: sirve para
+     * avisarte cuando llegue, y el periodo no se cierra ese día. Pero la pantalla lo exigía
+     * igual que al inicio, así que quien todavía no lo sabe —que en agosto es casi todo el
+     * mundo— se quedaba encallado inventándose un día para poder pasar.
+     *
+     * El inicio sí es obligatorio y no por capricho: de él cuelgan las semanas del periodo,
+     * los tramos de los cortes y la asistencia. Sin él la app no distingue una clase anterior
+     * al semestre de una que se olvidó marcar, que es el problema que esto vino a resolver.
+     */
+    val listo = start != null && (cutCount <= 1 || knowsCutDates != null)
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
@@ -391,11 +403,34 @@ fun SetupTermDatesScreen(
                     onClick = { picking = TermDateTarget.START }
                 )
                 TermDateField(
-                    label = "Acaba",
+                    label = "Acaba (si lo sabes)",
                     date = plannedEnd,
+                    vacio = "Aún no",
                     modifier = Modifier.weight(1f),
                     onClick = { picking = TermDateTarget.PLANNED_END }
                 )
+            }
+
+            // Lo que pasa si se deja en blanco, dicho antes de que haga falta preguntarlo.
+            Revelado(visible = start != null && plannedEnd == null) {
+                UniCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerLow
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text("👌", fontSize = 15.sp)
+                        Text(
+                            text = "Puedes seguir sin ella. Es solo una previsión para avisarte cuando llegue el final, y la pones cuando la sepas en Ajustes › Configuración académica.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
             }
 
             Revelado(visible = fechasPuestas) {
