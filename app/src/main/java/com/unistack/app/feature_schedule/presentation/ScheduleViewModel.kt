@@ -61,6 +61,13 @@ data class ScheduleUiState(
      */
     val cutScheme: GradingCutScheme? = null,
     /**
+     * El tope de faltas del reglamento, uno para todas.
+     *
+     * Vivia en cada materia y era el mismo numero repetido: sale del reglamento de la
+     * universidad, no de la asignatura.
+     */
+    val absenceLimit: Int? = null,
+    /**
      * Si los datos ya llegaron.
      *
      * El valor inicial de un `stateIn` es un estado vacío, y la pantalla lo pintaba como si
@@ -118,6 +125,7 @@ class ScheduleViewModel @Inject constructor(
             tasks = tasks,
             accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences(),
             cutScheme = profile?.gradingCutScheme,
+            absenceLimit = profile?.absenceLimit,
             activeTerm = term,
             loaded = true
         )
@@ -128,15 +136,15 @@ class ScheduleViewModel @Inject constructor(
     fun delete(sessionId: String) = repository.deleteSession(sessionId)
 
     /**
-     * Guarda cuántas faltas admite la materia, o quita el tope con `null`.
+     * Guarda cuántas faltas admite tu reglamento, o quita el tope con `null`.
      *
-     * Vive aquí y no en Académico porque es donde se echa en falta: el número se descubre
-     * mirando el historial, no configurando la materia.
+     * Se puede poner desde aquí y no solo desde Ajustes porque es donde se echa en falta: el
+     * número se descubre mirando el historial. Pero se guarda **una vez y para todas**, que es
+     * lo que es: el reglamento no cambia de una materia a otra.
      */
-    fun setAbsenceLimit(subject: Subject, limit: Int?) {
-        gradesRepository.updateSubject(
-            subject.copy(absenceLimit = limit?.coerceIn(1, 40))
-        )
+    fun setAbsenceLimit(limit: Int?) {
+        val perfil = userRepository.userProfile.value ?: return
+        userRepository.saveUserProfile(perfil.copy(absenceLimit = limit?.coerceIn(1, 40)))
     }
 
     fun saveAgendaEvent(

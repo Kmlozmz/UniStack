@@ -41,7 +41,6 @@ interface SubjectDao {
             historyPromptStatus = :historyPromptStatus,
             unknownPeriodIdsJson = :unknownPeriodIdsJson,
             termId = :termId,
-            absenceLimit = :absenceLimit,
             repeatedFromSubjectId = :repeatedFromSubjectId,
             updatedAt = :updatedAt
         WHERE id = :subjectId AND userId IN (:userIds)
@@ -59,7 +58,6 @@ interface SubjectDao {
         historyPromptStatus: String,
         unknownPeriodIdsJson: String,
         termId: String?,
-        absenceLimit: Int?,
         repeatedFromSubjectId: String?,
         updatedAt: Long
     )

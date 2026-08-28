@@ -63,14 +63,15 @@ class RoomRepositoriesTest {
     }
 
     /**
-     * El tope de faltas tiene que llegar a la base.
+     * Los campos de la materia tienen que llegar a la base.
      *
-     * La columna existia y el mapeador la leia, pero la consulta de actualizacion no la
-     * escribia: ponerlo parecia funcionar y desaparecia en cuanto el flujo volvia a leer.
-     * Esta prueba pasa por el mismo camino que la app —`updateSubject`— a proposito.
+     * `termId` existia como columna y el mapeador la leia, pero la consulta de actualizacion
+     * no la escribia, asi que se perdia en cuanto el flujo volvia a leer. El tope de faltas
+     * tenia el mismo fallo; despues resulto ser uno solo y se fue al perfil. Esta prueba pasa
+     * por el mismo camino que la app —`updateSubject`— a proposito.
      */
     @Test
-    fun elTopeDeFaltasYElPeriodoSobrevivenAGuardar() {
+    fun elPeriodoDeLaMateriaSobreviveAGuardar() {
         runBlocking {
             val repository = RoomGradesRepository(
                 subjectDao = database.subjectDao(),
@@ -88,20 +89,19 @@ class RoomRepositoriesTest {
             repository.addSubject(subject)
             repository.subjects.awaitValue { it.any { materia -> materia.id == subject.id } }
 
-            repository.updateSubject(subject.copy(absenceLimit = 6))
+            repository.updateSubject(subject.copy(name = "Estadistica II"))
 
             val guardada = repository.subjects.awaitValue { lista ->
-                lista.firstOrNull { it.id == subject.id }?.absenceLimit == 6
+                lista.firstOrNull { it.id == subject.id }?.name == "Estadistica II"
             }.first { it.id == subject.id }
-            assertEquals(6, guardada.absenceLimit)
             assertEquals("term-1", guardada.termId)
 
-            // Quitarlo tambien tiene que llegar: nulo es un valor, no «no lo toques».
-            repository.updateSubject(guardada.copy(absenceLimit = null))
-            val sinTope = repository.subjects.awaitValue { lista ->
-                lista.firstOrNull { it.id == subject.id }?.absenceLimit == null
+            // Mover una materia de periodo tambien tiene que llegar.
+            repository.updateSubject(guardada.copy(termId = "term-2"))
+            val movida = repository.subjects.awaitValue { lista ->
+                lista.firstOrNull { it.id == subject.id }?.termId == "term-2"
             }.first { it.id == subject.id }
-            assertNull(sinTope.absenceLimit)
+            assertEquals("term-2", movida.termId)
         }
     }
 

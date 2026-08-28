@@ -379,9 +379,10 @@ fun CalendarScheduleScreen(
                 occurrences = state.occurrences,
                 term = state.activeTerm,
                 cutScheme = state.cutScheme,
+                absenceLimit = state.absenceLimit,
                 breaks = state.breaks,
                 onDismiss = { historySubjectId = null },
-                onSetAbsenceLimit = { limite -> viewModel.setAbsenceLimit(subject, limite) },
+                onSetAbsenceLimit = { limite -> viewModel.setAbsenceLimit(limite) },
                 onCatchUp = { entrada, estado ->
                     viewModel.saveOccurrence(
                         sessionId = entrada.session.id,
@@ -410,6 +411,8 @@ private fun SubjectHistoryDialog(
     occurrences: List<ClassOccurrence>,
     term: AcademicTerm?,
     cutScheme: GradingCutScheme?,
+    /** El tope del reglamento, uno para todas las materias. */
+    absenceLimit: Int?,
     breaks: List<AcademicBreak>,
     onDismiss: () -> Unit,
     onSetAbsenceLimit: (Int?) -> Unit,
@@ -478,10 +481,10 @@ private fun SubjectHistoryDialog(
      * ya gastaste otras cuatro. Dentro de un corte la cifra vuelve al porcentaje, que si se
      * puede afirmar sobre lo que se esta mirando; el tope sigue existiendo y su boton lo dice.
      */
-    val summary = remember(enAlcance, subject.absenceLimit, alcance) {
+    val summary = remember(enAlcance, absenceLimit, alcance) {
         SubjectAttendanceHistory.summarize(
             entries = enAlcance,
-            absenceLimit = if (alcance == null) subject.absenceLimit else null
+            absenceLimit = if (alcance == null) absenceLimit else null
         )
     }
     val weeks = remember(enAlcance, term) {
@@ -559,7 +562,7 @@ private fun SubjectHistoryDialog(
                     onLimitClick = { pidiendoTope = true },
                     modifier = Modifier.padding(horizontal = 16.dp),
                     scopeName = nombreDelAlcance,
-                    absenceLimit = subject.absenceLimit
+                    absenceLimit = absenceLimit
                 )
                 Text(
                     text = "HISTORIAL",
@@ -644,7 +647,7 @@ private fun SubjectHistoryDialog(
 
     if (ayudaVisible) {
         AttendanceHelpDialog(
-            hasLimit = subject.absenceLimit != null,
+            hasLimit = absenceLimit != null,
             hasWeekNumbers = weeks.any { it.number != null },
             hasCuts = cortes.isNotEmpty(),
             onDismiss = { ayudaVisible = false }
@@ -653,7 +656,7 @@ private fun SubjectHistoryDialog(
 
     if (pidiendoTope) {
         AbsenceLimitDialog(
-            actual = subject.absenceLimit,
+            actual = absenceLimit,
             onDismiss = { pidiendoTope = false },
             onConfirm = { limite ->
                 onSetAbsenceLimit(limite)

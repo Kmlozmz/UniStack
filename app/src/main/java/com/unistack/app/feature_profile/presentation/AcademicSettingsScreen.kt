@@ -4,6 +4,7 @@ package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.SettingsHeader
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +40,7 @@ import com.unistack.app.core.design.components.CutDatesSection
 import com.unistack.app.core.design.components.CutWheelCard
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.SetupEvenSplitAction
+import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -48,6 +50,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.feature_schedule.presentation.AbsenceLimitDialog
 import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.CutDateProblem
 import com.unistack.app.feature_user.domain.CutDateRules
@@ -105,6 +108,7 @@ fun AcademicSettingsScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
     val term by viewModel.activeTerm.collectAsStateWithLifecycle()
+    var pidiendoTope by rememberSaveable { mutableStateOf(false) }
     var pendingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
     var confirmingScaleChange by rememberSaveable { mutableStateOf<GradingScaleChangeImpact?>(null) }
 
@@ -229,6 +233,44 @@ fun AcademicSettingsScreen(
             ScaleWarningNote()
         }
         item {
+            AcademicGroupLabel("FALTAS")
+            /*
+             * Un solo tope, y aqui.
+             *
+             * Vivia en cada materia, y ahi era el mismo numero repetido: sale del reglamento
+             * de la universidad, no de la asignatura. Se sigue pudiendo poner desde el
+             * historial de una materia —es donde se echa en falta— pero guarda este mismo.
+             */
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { pidiendoTope = true }
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = current.absenceLimit
+                                ?.let { "Pierdes con $it faltas" }
+                                ?: "Sin tope de faltas",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = current.absenceLimit
+                                ?.let { "Vale para todas tus materias." }
+                                ?: "Ponlo y la app te dirá cuántas te quedan en vez del porcentaje.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Text(
+                        text = if (current.absenceLimit == null) "Poner" else "Cambiar",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+        item {
             AcademicGroupLabel("DÍAS SIN CLASE")
             AcademicBreaksSection(
                 breaks = breaks,
@@ -344,6 +386,18 @@ fun AcademicSettingsScreen(
                 )
             }
         }
+    }
+
+    if (pidiendoTope) {
+        AbsenceLimitDialog(
+            actual = current.absenceLimit,
+            onDismiss = { pidiendoTope = false },
+            onConfirm = { limite ->
+                viewModel.setAbsenceLimit(limite)
+                pidiendoTope = false
+                feedback = if (limite == null) "Quitaste el tope." else "Tope actualizado."
+            }
+        )
     }
 
     pendingScaleChange?.let { impact ->

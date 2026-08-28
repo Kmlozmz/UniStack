@@ -183,6 +183,7 @@ class FirebaseCloudBackupRepository(
             "gradingScale" to profile.gradingScale.name,
             "customGradeMax" to profile.customGradeMax,
             "passingGrade" to profile.passingGrade,
+            "absenceLimit" to profile.absenceLimit,
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },
             "visualPreference" to profile.visualPreference.name,
@@ -264,7 +265,6 @@ class FirebaseCloudBackupRepository(
         "unknownCutIds" to subject.unknownCutIds.toList(),
         // Sin estos, restaurar deja el historico sin poder colocar ninguna materia.
         "termId" to subject.termId,
-        "absenceLimit" to subject.absenceLimit,
         "repeatedFromSubjectId" to subject.repeatedFromSubjectId,
         "grades" to subject.grades.map(::gradeMap)
     )
@@ -398,7 +398,6 @@ class FirebaseCloudBackupRepository(
                     ?.toSet()
                     .orEmpty(),
                 termId = map.string("termId"),
-                absenceLimit = (map["absenceLimit"] as? Number)?.toInt(),
                 repeatedFromSubjectId = map.string("repeatedFromSubjectId")
             )
         }

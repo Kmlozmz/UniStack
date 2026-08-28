@@ -290,6 +290,18 @@ class ProfileViewModel @Inject constructor(
         return true
     }
 
+    /**
+     * Cuántas faltas admite tu reglamento, o nulo para quitar el tope.
+     *
+     * Uno para todas las materias: el número sale del reglamento de la universidad, no de la
+     * asignatura. Estuvo colgando de cada materia y obligaba a escribir siete veces lo mismo.
+     */
+    fun setAbsenceLimit(limit: Int?): Boolean {
+        val current = profile.value ?: return false
+        save(current.copy(absenceLimit = limit?.coerceIn(1, 40)))
+        return true
+    }
+
     fun toggleModule(module: AppModule): Boolean {
         val current = profile.value ?: return false
         val nextModules = if (module in current.enabledModules) {

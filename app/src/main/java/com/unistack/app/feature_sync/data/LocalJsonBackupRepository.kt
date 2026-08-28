@@ -202,6 +202,7 @@ class LocalJsonBackupRepository(
             .put("gradingScale", profile?.gradingScale?.name)
             .put("customGradeMax", profile?.customGradeMax ?: 100.0)
             .put("passingGrade", profile?.passingGrade ?: 3.0)
+            .put("absenceLimit", profile?.absenceLimit)
             .put("targetAverage", profile?.targetAverage ?: 4.0)
             .put("visualPreference", profile?.visualPreference?.name ?: VisualPreference.SYSTEM.name)
             .put(
@@ -251,6 +252,11 @@ class LocalJsonBackupRepository(
                 gradingScale = profileJson.optString("gradingScale").toGradingScaleOrNull() ?: current.gradingScale,
                 customGradeMax = profileJson.optDouble("customGradeMax", current.customGradeMax).coerceIn(1.0, 100.0),
                 passingGrade = profileJson.optDouble("passingGrade", current.passingGrade),
+                absenceLimit = if (profileJson.isNull("absenceLimit")) {
+                    null
+                } else {
+                    profileJson.optInt("absenceLimit").takeIf { it > 0 }
+                },
                 targetAverage = profileJson.optDouble("targetAverage", current.targetAverage),
                 visualPreference = profileJson.optString("visualPreference")
                     .toEnum(current.visualPreference),
@@ -469,7 +475,6 @@ class LocalJsonBackupRepository(
          * usuario, y `repeatedFromSubjectId` la marca de que la esta repitiendo.
          */
         .put("termId", subject.termId)
-        .put("absenceLimit", subject.absenceLimit)
         .put("repeatedFromSubjectId", subject.repeatedFromSubjectId)
         .put("grades", JSONArray(subject.grades.map(::gradeJson)))
 
@@ -584,7 +589,6 @@ class LocalJsonBackupRepository(
             unknownCutIds = item.optJSONArray("unknownCutIds").strings().toSet(),
             // Ausentes en copias viejas: nulo es exactamente lo que significaban entonces.
             termId = if (item.isNull("termId")) null else item.optString("termId").takeIf { it.isNotBlank() },
-            absenceLimit = if (item.isNull("absenceLimit")) null else item.optInt("absenceLimit").takeIf { it > 0 },
             repeatedFromSubjectId = if (item.isNull("repeatedFromSubjectId")) {
                 null
             } else {

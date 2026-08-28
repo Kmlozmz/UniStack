@@ -57,6 +57,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val GRADING_SCALE = stringPreferencesKey("grading_scale")
         val CUSTOM_GRADE_MAX = doublePreferencesKey("custom_grade_max")
         val PASSING_GRADE = doublePreferencesKey("passing_grade")
+        val ABSENCE_LIMIT = intPreferencesKey("absence_limit")
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
         val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
@@ -130,6 +131,7 @@ class UserPreferencesDataSource(private val context: Context) {
             gradingScale = gradingScale,
             customGradeMax = prefs[Keys.CUSTOM_GRADE_MAX]?.coerceIn(1.0, 100.0) ?: 100.0,
             passingGrade = prefs[Keys.PASSING_GRADE] ?: 3.0,
+            absenceLimit = prefs[Keys.ABSENCE_LIMIT]?.takeIf { it > 0 },
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
             visualPreference = visualPreference,
@@ -204,6 +206,9 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.GRADING_SCALE] = profile.gradingScale.name
             prefs[Keys.CUSTOM_GRADE_MAX] = profile.customGradeMax.coerceIn(1.0, 100.0)
             prefs[Keys.PASSING_GRADE] = profile.passingGrade
+            // Quitar el tope es un valor, no un olvido: hay que borrar la clave.
+            profile.absenceLimit?.let { prefs[Keys.ABSENCE_LIMIT] = it }
+                ?: prefs.remove(Keys.ABSENCE_LIMIT)
             prefs[Keys.TARGET_AVERAGE] = profile.targetAverage
             prefs[Keys.SETUP_COMPLETED] = profile.setupCompleted
             prefs[Keys.CREATED_AT] = profile.createdAt

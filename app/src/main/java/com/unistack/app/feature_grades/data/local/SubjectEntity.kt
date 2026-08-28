@@ -24,7 +24,14 @@ data class SubjectEntity(
      * semestre seria inventarle al usuario un dato que nunca dio.
      */
     val termId: String? = null,
-    /** El tope de faltas de la materia. Nulo es «no lo ha dicho», no «no hay». */
+    /**
+     * Antiguo tope de faltas por materia. **Ya no se usa.**
+     *
+     * El tope resulto ser uno solo —sale del reglamento de la universidad, no de la
+     * asignatura— y vive ahora en el perfil. La columna sigue declarada porque quitarla obliga
+     * a rehacer la tabla, y eso no se hace con datos de un semestre en curso encima: se
+     * limpiara entre periodos. No la lee nadie.
+     */
     val absenceLimit: Int? = null,
     /** La materia de la que viene esta, si se trajo para repetirla. */
     val repeatedFromSubjectId: String? = null,

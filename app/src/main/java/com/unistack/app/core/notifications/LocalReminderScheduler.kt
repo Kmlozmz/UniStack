@@ -733,8 +733,9 @@ class LocalReminderScheduler(private val context: Context) {
         val ahora = System.currentTimeMillis()
         // Respeta las horas de silencio igual que el resto: `showNotification` no las mira.
         if (ReminderTiming.adjustForQuietHours(profile, ahora) != ahora) return
+        // Uno para todas: sale del reglamento, no de la asignatura.
+        val tope = profile.absenceLimit ?: return
         subjects.forEach { subject ->
-            val tope = subject.absenceLimit ?: return@forEach
             val suyas = sessions.filter { it.subjectId == subject.id }.map { it.id }.toSet()
             if (suyas.isEmpty()) return@forEach
             val faltas = occurrences.count {

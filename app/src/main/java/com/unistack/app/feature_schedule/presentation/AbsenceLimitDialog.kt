@@ -33,11 +33,12 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.performSafely
 
 /**
- * Cuántas faltas admite esta materia.
+ * Cuántas faltas admite tu reglamento.
  *
- * Se pregunta y no se supone: el tope cambia por materia —un laboratorio perdona menos que una
- * teórica— y por universidad, así que cualquier número por defecto sería inventado. Mientras
- * no esté puesto, el historial enseña el porcentaje en vez de prometer «te quedan N».
+ * Es **uno para todas las materias**, no uno por materia: el número sale del reglamento de la
+ * universidad, y tenerlo por asignatura obligaba a escribir siete veces lo mismo. Se pregunta y
+ * no se supone —cambia de una universidad a otra— así que mientras no esté puesto, el historial
+ * enseña el porcentaje en vez de prometer «te quedan N».
  */
 @Composable
 internal fun AbsenceLimitDialog(
@@ -50,13 +51,12 @@ internal fun AbsenceLimitDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("¿Cuántas faltas admite?") },
+        title = { Text("¿Cuántas faltas te admiten?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(
-                    text = "El número a partir del cual pierdes la materia. Lo dice el " +
-                        "reglamento de tu universidad, y suele cambiar entre teóricas y " +
-                        "laboratorios.",
+                    text = "El número a partir del cual pierdes una materia. Lo dice el " +
+                        "reglamento de tu universidad, y vale para todas tus materias.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 18.sp

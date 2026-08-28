@@ -53,6 +53,17 @@ data class UserProfile(
     val customGradeMax: Double = 100.0,
     val passingGrade: Double,
     val targetAverage: Double,
+    /**
+     * Cuántas faltas admite tu reglamento, o nulo si no lo has dicho.
+     *
+     * Es **uno para todo**, no uno por materia: el número sale del reglamento de la
+     * universidad y no de cada asignatura. Estuvo un tiempo colgando de `Subject`, donde
+     * obligaba a repetirlo materia por materia para decir lo mismo siete veces.
+     *
+     * Nulo no es «no hay tope», es «no lo sé», que es distinto: con nulo la app no puede
+     * prometer «te quedan 4», así que enseña el porcentaje, que sí puede sostener.
+     */
+    val absenceLimit: Int? = null,
     val enabledModules: Set<AppModule>,
     val visualPreference: VisualPreference = VisualPreference.SYSTEM,
     val appearancePreferences: AppearancePreferences = AppearancePreferences(),
