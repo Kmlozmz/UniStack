@@ -143,18 +143,54 @@ fun SetupTermTypeScreen(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AnoPartido(type: AcademicTermType) {
+    val hoy = LocalDate.now()
+    var porqueVisible by remember { mutableStateOf(false) }
     // El mismo numero que dice el texto. Dividir 52 entre las semanas daba tres para
     // semestral, que son dos: la barra contradecia a la linea de al lado.
     val cuantos = type.perYear.coerceIn(1, 6)
     // El tramo que se ilumina es en el que estas hoy, no el primero del año.
-    val actual = type.blockFor(LocalDate.now()).coerceIn(1, cuantos)
+    val actual = type.blockFor(hoy).coerceIn(1, cuantos)
     UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Así queda tu año:",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp
-            )
+            /*
+             * El tramo iluminado dice por que lo esta.
+             *
+             * Se encendia uno y habia que deducir que era «el de hoy» leyendo la linea de
+             * abajo. Nombrarlo y dejar tocarlo lo convierte en una respuesta, y de paso avisa
+             * de que es una suposicion por la fecha, no algo que la app haya decidido.
+             */
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Así queda tu año:",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable { porqueVisible = !porqueVisible }
+                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Estás aquí",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
+                        contentDescription = if (porqueVisible) "Ocultar el porqué" else "Por qué este tramo",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,6 +230,14 @@ private fun AnoPartido(type: AcademicTermType) {
                 // Los extremos del año natural, que es el eje que dibuja la barra.
                 Text("enero", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 Text("diciembre", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            }
+            Revelado(visible = porqueVisible) {
+                Text(
+                    text = "Hoy es ${fechaLarga(hoy)}, y esa fecha cae en el $actual.º de los $cuantos tramos del año. Es solo para orientarte: las fechas exactas las pones tú en el paso siguiente.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp
+                )
             }
             Text(
                 text = if (cuantos == 1) {

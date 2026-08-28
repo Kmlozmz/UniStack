@@ -43,6 +43,18 @@ class SetupViewModel @Inject constructor(
         private set
     var gradingScale by mutableStateOf(GradingScale.ZERO_TO_FIVE)
         private set
+
+    /**
+     * Si el usuario ha elegido escala, distinto de cual tiene puesta.
+     *
+     * La pantalla llegaba con «0 a 5.0» ya marcada y todo lo de abajo desplegado, asi que no
+     * parecia una pregunta sino un ajuste hecho. Y una escala es de las pocas cosas que luego
+     * no se cambian de gratis: cambiarla borra las notas. [gradingScale] conserva un valor por
+     * defecto porque de el salen las cifras que se proponen; lo que faltaba era distinguir
+     * «esta puesta» de «la ha elegido».
+     */
+    var scaleChosen by mutableStateOf(false)
+        private set
     var customGradeMax by mutableDoubleStateOf(100.0)
         private set
     var customGradeRangeConfirmed by mutableStateOf(false)
@@ -95,6 +107,7 @@ class SetupViewModel @Inject constructor(
 
     val isGradesValid: Boolean
         get() {
+            if (!scaleChosen) return false
             if (gradingScale == GradingScale.CUSTOM && !customGradeRangeConfirmed) return false
             val passing = passingGradeText.toDoubleOrNull() ?: return false
             val target = targetAverageText.toDoubleOrNull() ?: return false
@@ -254,6 +267,7 @@ class SetupViewModel @Inject constructor(
 
     fun updateGradingScale(value: GradingScale) {
         gradingScale = value
+        scaleChosen = true
         customGradeRangeConfirmed = value != GradingScale.CUSTOM
         passingGradeText = value.defaultPassingGradeText
         targetAverageText = value.defaultTargetAverageText

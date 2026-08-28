@@ -365,6 +365,7 @@ fun SetupFlow(
             SetupGradingScaleScreen(
                 totalSteps = totalSteps,
                 selectedScale = viewModel.gradingScale,
+                scaleChosen = viewModel.scaleChosen,
                 customGradeMax = viewModel.customGradeMax,
                 customGradeRangeConfirmed = viewModel.customGradeRangeConfirmed,
                 passingGrade = viewModel.passingGradeText,
@@ -1532,6 +1533,8 @@ private fun programIcon(option: String): ImageVector =
 @Composable
 fun SetupGradingScaleScreen(
     selectedScale: GradingScale,
+    /** Si ya ha elegido; con `false` no hay nada marcado y lo de abajo no existe todavia. */
+    scaleChosen: Boolean,
     customGradeMax: Double,
     customGradeRangeConfirmed: Boolean,
     passingGrade: String,
@@ -1550,6 +1553,7 @@ fun SetupGradingScaleScreen(
 ) {
     BackHandler(onBack = onBackClick)
     val selectedChoice = when {
+        !scaleChosen -> null
         selectedScale == GradingScale.ZERO_TO_FIVE -> SetupScaleChoice.FIVE
         selectedScale == GradingScale.ZERO_TO_HUNDRED -> SetupScaleChoice.HUNDRED
         else -> SetupScaleChoice.CUSTOM
@@ -1607,24 +1611,37 @@ fun SetupGradingScaleScreen(
                     }
                 }
             )
-            if (selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed) {
+            /*
+             * Nada de esto existe hasta que hay escala, y entra escalonado.
+             *
+             * Salia todo montado con «0 a 5.0» marcada de fabrica, asi que la pantalla se leia
+             * como algo ya resuelto en vez de como la pregunta que es. Y esta en concreto no
+             * conviene contestarla por inercia: cambiar la escala mas tarde borra las notas.
+             */
+            val eligiendoRango = selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed
+            Revelado(visible = scaleChosen && eligiendoRango) {
                 CustomGradeRangeSelector(
                     customGradeMax = customGradeMax,
                     onCustomGradeMaxChange = onCustomGradeMaxChange,
                     onConfirmClick = onConfirmCustomGradeRange
                 )
-            } else {
-                if (selectedScale == GradingScale.CUSTOM) {
-                    ConfirmedScaleRangeRow(
-                        customGradeMax = customGradeMax,
-                        onEditClick = onEditCustomGradeRange
+            }
+            Revelado(visible = scaleChosen && !eligiendoRango, retardoMs = 90) {
+                Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+                    if (selectedScale == GradingScale.CUSTOM) {
+                        ConfirmedScaleRangeRow(
+                            customGradeMax = customGradeMax,
+                            onEditClick = onEditCustomGradeRange
+                        )
+                    }
+                    ScaleZoneBar(
+                        max = scaleMax,
+                        passing = gradeValueOf(passingGrade),
+                        target = gradeValueOf(targetAverage)
                     )
                 }
-                ScaleZoneBar(
-                    max = scaleMax,
-                    passing = gradeValueOf(passingGrade),
-                    target = gradeValueOf(targetAverage)
-                )
+            }
+            Revelado(visible = scaleChosen && !eligiendoRango, retardoMs = 220) {
                 GradeStepperRow(
                     label = "Apruebas con",
                     value = passingGrade,
@@ -1634,6 +1651,8 @@ fun SetupGradingScaleScreen(
                     filled = false,
                     onValueChange = onPassingGradeChange
                 )
+            }
+            Revelado(visible = scaleChosen && !eligiendoRango, retardoMs = 340) {
                 GradeStepperRow(
                     label = "Tu meta",
                     value = targetAverage,
@@ -1643,16 +1662,15 @@ fun SetupGradingScaleScreen(
                     filled = true,
                     onValueChange = onTargetAverageChange
                 )
-                val waitingForCustomRange = selectedScale == GradingScale.CUSTOM && !customGradeRangeConfirmed
-                if (!isValid && !waitingForCustomRange) {
-                    Text(
-                        text = "Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.",
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            }
+            Revelado(visible = scaleChosen && !eligiendoRango && !isValid) {
+                Text(
+                    text = "Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -1682,7 +1700,7 @@ internal fun SetupPlainTitle(title: String, subtitle: String) {
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun ScaleTypeSection(
-    selectedChoice: SetupScaleChoice,
+    selectedChoice: SetupScaleChoice?,
     onChoiceSelected: (SetupScaleChoice) -> Unit
 ) {
     // El grupo conectado del resto de la app. Eran tres tarjetas grandes con su punto de
@@ -1694,8 +1712,9 @@ private fun ScaleTypeSection(
             SetupScaleChoice.FIVE to "0 a 5.0",
             SetupScaleChoice.HUNDRED to "0 a 100",
             SetupScaleChoice.CUSTOM to "Otra"
-        ).map { (choice, label) -> UniSegmentedOption(value = choice, label = label) },
-        onSelected = onChoiceSelected,
+        ).map { (choice, label) -> UniSegmentedOption<SetupScaleChoice?>(value = choice, label = label) },
+        // Nulo es «todavia no ha elegido», y de ahi no se puede volver tocando una opcion.
+        onSelected = { valor -> valor?.let(onChoiceSelected) },
         modifier = Modifier.fillMaxWidth()
     )
 }
