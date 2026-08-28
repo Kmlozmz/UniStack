@@ -365,12 +365,10 @@ fun SetupFlow(
                     type = tipo,
                     name = viewModel.termName,
                     cutCount = viewModel.termCutCount,
-                    alreadyStarted = viewModel.termAlreadyStarted,
                     start = viewModel.termStart,
                     plannedEnd = viewModel.termPlannedEnd,
                     knowsCutDates = if (viewModel.termCutCount > 1) viewModel.knowsCutDates else false,
                     totalSteps = totalSteps,
-                    onAlreadyStartedChange = viewModel::updateTermAlreadyStarted,
                     onStartChange = viewModel::updateTermStart,
                     onPlannedEndChange = viewModel::updateTermPlannedEnd,
                     onKnowsCutDatesChange = viewModel::updateKnowsCutDates,
@@ -1215,7 +1213,8 @@ fun SetupProfileScreen(
             )
             // La carrera solo aparece cuando ya hay area: sin ella su lista estaria vacia,
             // y un desplegable vacio invita a tocarlo para nada.
-            if (studyArea != null) SetupDropdownField(
+            Revelado(visible = studyArea != null) {
+              SetupDropdownField(
                 label = "Programa o carrera",
                 value = selectedProgram.orEmpty(),
                 options = studyArea?.let(::programsFor).orEmpty(),
@@ -1228,10 +1227,11 @@ fun SetupProfileScreen(
                     if (expanded) areaExpanded = false
                 },
                 onOptionSelected = onProgramSelected
-            )
+              )
+            }
             // El atajo de «no encuentro la mia» acompana a la lista de carreras, asi que
             // aparece con ella.
-            if (studyArea != null) {
+            Revelado(visible = studyArea != null) {
                 AcademicProgramHelpCard(
                     selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
                     onClick = {
@@ -1248,7 +1248,7 @@ fun SetupProfileScreen(
                 )
             }
             // Y la universidad, que es opcional, solo tras haber contestado lo obligatorio.
-            if (selectedProgram != null) {
+            Revelado(visible = selectedProgram != null) {
                 InstitutionField(
                     value = institutionName,
                     label = "Universidad",

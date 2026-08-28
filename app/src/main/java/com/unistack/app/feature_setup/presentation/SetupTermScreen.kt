@@ -1,6 +1,14 @@
 package com.unistack.app.feature_setup.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -115,7 +123,10 @@ fun SetupTermTypeScreen(
                 }
             }
 
-            if (type != null) AnoPartido(type) else EsperandoEleccion()
+            Revelado(visible = type != null) {
+                type?.let { AnoPartido(it) }
+            }
+            Revelado(visible = type == null) { EsperandoEleccion() }
         }
     }
 }
@@ -130,7 +141,9 @@ fun SetupTermTypeScreen(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AnoPartido(type: AcademicTermType) {
-    val cuantos = (52 / type.weeks).coerceIn(1, 6)
+    // El mismo numero que dice el texto. Dividir 52 entre las semanas daba tres para
+    // semestral, que son dos: la barra contradecia a la linea de al lado.
+    val cuantos = type.perYear.coerceIn(1, 6)
     UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -205,11 +218,9 @@ fun SetupTermDatesScreen(
     type: AcademicTermType,
     name: String,
     cutCount: Int,
-    alreadyStarted: Boolean?,
     start: LocalDate?,
     plannedEnd: LocalDate?,
     knowsCutDates: Boolean?,
-    onAlreadyStartedChange: (Boolean) -> Unit,
     onStartChange: (LocalDate) -> Unit,
     onPlannedEndChange: (LocalDate) -> Unit,
     onKnowsCutDatesChange: (Boolean) -> Unit,
@@ -219,7 +230,8 @@ fun SetupTermDatesScreen(
     totalSteps: Int = 8
 ) {
     var picking by remember { mutableStateOf<TermDateTarget?>(null) }
-    val listo = start != null && (cutCount <= 1 || knowsCutDates != null)
+    val fechasPuestas = start != null && plannedEnd != null
+    val listo = fechasPuestas && (cutCount <= 1 || knowsCutDates != null)
 
     BackHandler(onBack = onBackClick)
     SetupScaffold(
@@ -286,34 +298,30 @@ fun SetupTermDatesScreen(
                 }
             }
 
-            SetupSectionLabel("¿Tu periodo ya empezó?")
-            UniSegmentedControl(
-                selected = alreadyStarted,
-                options = listOf(
-                    UniSegmentedOption<Boolean?>(value = true, label = "Ya empezó"),
-                    UniSegmentedOption<Boolean?>(value = false, label = "Empieza pronto")
-                ),
-                onSelected = { valor -> valor?.let(onAlreadyStartedChange) },
-                modifier = Modifier.fillMaxWidth()
-            )
+            /*
+             * Dos campos vacios, sin pregunta previa ni fechas propuestas.
+             *
+             * Hubo una pregunta —«¿ya empezo?»— cuyo unico trabajo era decidir si proponer una
+             * fecha hacia atras o hacia delante. Quitada la propuesta, la pregunta no decidia
+             * nada: era un paso mas para llegar al mismo sitio.
+             */
+            SetupSectionLabel("Fechas")
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                TermDateField(
+                    label = "Empieza",
+                    date = start,
+                    modifier = Modifier.weight(1f),
+                    onClick = { picking = TermDateTarget.START }
+                )
+                TermDateField(
+                    label = "Acaba",
+                    date = plannedEnd,
+                    modifier = Modifier.weight(1f),
+                    onClick = { picking = TermDateTarget.PLANNED_END }
+                )
+            }
 
-            if (start != null) {
-                SetupSectionLabel("Fechas")
-                Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    TermDateField(
-                        label = "Empieza",
-                        date = start,
-                        modifier = Modifier.weight(1f),
-                        onClick = { picking = TermDateTarget.START }
-                    )
-                    TermDateField(
-                        label = "Acaba (previsto)",
-                        date = plannedEnd,
-                        modifier = Modifier.weight(1f),
-                        onClick = { picking = TermDateTarget.PLANNED_END }
-                    )
-                }
-
+            Revelado(visible = fechasPuestas) {
                 UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -321,20 +329,18 @@ fun SetupTermDatesScreen(
                     ) {
                         Text("💡", fontSize = 15.sp)
                         Text(
-                            text = buildString {
-                                if (plannedEnd != null) {
-                                    append("Son ${semanasEntre(start, plannedEnd)} semanas. ")
-                                }
-                                append("La fecha de fin es una previsión: el periodo no se cierra hasta que tú lo cierres.")
-                            },
+                            text = "Son ${semanasEntre(start!!, plannedEnd!!)} semanas. " +
+                                "El periodo no se cierra en esa fecha: se cierra cuando tú lo cierres.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 17.sp
                         )
                     }
                 }
+            }
 
-                if (cutCount > 1) {
+            Revelado(visible = fechasPuestas && cutCount > 1) {
+                Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     SetupSectionLabel("¿Sabes cuándo cierra cada ${Corte.Singular.lowercase()}?")
                     UniSegmentedControl(
                         selected = knowsCutDates,
@@ -412,9 +418,35 @@ fun SetupTermCutDatesScreen(
             SetupPlainTitle(
                 title = "¿Dónde se corta?",
                 subtitle = plannedEnd?.let {
-                    "Tu periodo va del ${fechaCorta(start)} al ${fechaCorta(it)}. Marca dónde termina cada ${Corte.Singular.lowercase()}."
-                } ?: "Marca dónde termina cada ${Corte.Singular.lowercase()}."
+                    "Tu periodo va del ${fechaCorta(start)} al ${fechaCorta(it)}. Pon el último día de cada ${Corte.Singular.lowercase()}."
+                } ?: "Pon el último día de cada ${Corte.Singular.lowercase()}."
             )
+
+            /*
+             * Se dice de entrada como funciona, en vez de dejar que se deduzca.
+             *
+             * El encadenado —cada corte empieza donde acabo el anterior— habia que descubrirlo
+             * mirando las fechas un rato. Escrito arriba, la pantalla se entiende antes de
+             * tocarla.
+             */
+            UniCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surfaceContainerLow
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text("💡", fontSize = 15.sp)
+                    Text(
+                        text = "Solo el último día. Cada ${Corte.Singular.lowercase()} empieza al día siguiente del anterior, y el último acaba con el periodo.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        lineHeight = 17.sp
+                    )
+                }
+            }
 
             cutWeights.forEachIndexed { indice, peso ->
                 val ultimo = indice == total - 1
@@ -456,49 +488,49 @@ fun SetupTermCutDatesScreen(
                             }
                         }
 
-                        if (desde != null && hasta != null) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(7.dp)
-                            ) {
-                                Text(
-                                    text = fechaCorta(desde),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
+                        /*
+                         * Los dos extremos a la vista, aunque solo uno se toque.
+                         *
+                         * Se pedia el final y el principio habia que deducirlo del corte
+                         * anterior. Ensenar los dos hace evidente el encadenado sin permitir
+                         * escribirlo: el que no se toca sale apagado.
+                         */
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TermDateField(
+                                label = "Empieza",
+                                date = desde,
+                                vacio = "—",
+                                enabled = false,
+                                modifier = Modifier.weight(1f),
+                                onClick = {}
+                            )
+                            if (ultimo) {
+                                TermDateField(
+                                    label = "Acaba",
+                                    date = hasta,
+                                    vacio = "con el periodo",
+                                    enabled = false,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = {}
                                 )
-                                Text(
-                                    text = "→",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = fechaCorta(hasta),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "· ${semanasEntre(desde, hasta)} semanas",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
+                            } else {
+                                TermDateField(
+                                    label = "Acaba",
+                                    date = cutEndDates.getOrNull(indice),
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { picking = indice }
                                 )
                             }
                         }
 
-                        if (ultimo) {
-                            Text(
-                                text = "Acaba con el periodo.",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp
-                            )
-                        } else {
-                            TermDateField(
-                                label = "Acaba el",
-                                date = cutEndDates.getOrNull(indice),
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = { picking = indice }
-                            )
+                        Revelado(visible = desde != null && hasta != null) {
+                            if (desde != null && hasta != null) {
+                                Text(
+                                    text = "${semanasEntre(desde, hasta)} semanas",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -579,6 +611,28 @@ private fun EsperandoEleccion() {
     }
 }
 
+/**
+ * Lo que aparece, aparece creciendo y no de golpe.
+ *
+ * Con las preguntas saliendo de una en una, un bloque que se materializa seco se lee como un
+ * salto de la pantalla y no como la consecuencia de lo que acabas de tocar.
+ */
+@Composable
+internal fun Revelado(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(180)) + expandVertically(
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        ),
+        exit = fadeOut(animationSpec = tween(110)) + shrinkVertically(animationSpec = tween(160))
+    ) {
+        content()
+    }
+}
+
 /** Cuál de las dos fechas del periodo se está eligiendo. */
 private enum class TermDateTarget { START, PLANNED_END }
 
@@ -627,13 +681,19 @@ private fun TermDateField(
     label: String,
     date: LocalDate?,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    vacio: String = "Elegir",
+    enabled: Boolean = true
 ) {
     UniCard(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        onClick = onClick
+        color = if (enabled) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
+        },
+        onClick = if (enabled) onClick else null
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(
@@ -642,11 +702,11 @@ private fun TermDateField(
                 fontSize = 11.sp
             )
             Text(
-                text = date?.let(::fechaLarga) ?: "Elegir",
-                color = if (date != null) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.primary
+                text = date?.let(::fechaLarga) ?: vacio,
+                color = when {
+                    date != null -> MaterialTheme.colorScheme.onSurface
+                    enabled -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold

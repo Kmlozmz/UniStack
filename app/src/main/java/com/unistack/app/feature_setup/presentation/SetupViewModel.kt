@@ -134,7 +134,8 @@ class SetupViewModel @Inject constructor(
 
     fun updateKnowsCutDates(value: Boolean) {
         knowsCutDates = value
-        if (value) suggestCutEndDates() else clearCutEndDates()
+        // Decir que las sabes no las rellena: te deja los campos para ponerlas.
+        clearCutEndDates()
     }
 
     val termCutCount: Int get() = gradingCutWeights.size
@@ -142,7 +143,6 @@ class SetupViewModel @Inject constructor(
     /** Elegir tipo es lo unico obligatorio aqui; las fechas vienen sugeridas y editables. */
     val isTermValid: Boolean
         get() {
-            if (termAlreadyStarted == null) return false
             val tipo = termType ?: return false
             val inicio = termStart ?: return false
             val fin = termPlannedEnd
@@ -159,50 +159,29 @@ class SetupViewModel @Inject constructor(
             return true
         }
 
-    /**
-     * Si el periodo ya arranco o esta por arrancar. Nulo: todavia no lo ha dicho.
-     *
-     * Se pregunta esto antes que la fecha porque cualquiera sabe contestarlo sin mirar un
-     * calendario, y de la respuesta sale una propuesta —hacia atras o hacia delante— que ya
-     * cae cerca. Antes la fecha venia puesta con la de hoy, asi que la pantalla no preguntaba:
-     * afirmaba, y casi nadie configura la app el dia exacto en que empieza su semestre.
-     */
-    var termAlreadyStarted by mutableStateOf<Boolean?>(null)
-        private set
-
     fun updateTermType(value: AcademicTermType) {
         termType = value
         knowsCutDates = null
-        // La fecha no se supone: se espera a que diga si ya empezo.
-        termAlreadyStarted = null
+        /*
+         * Ni fecha ni nombre propuestos: los pone quien sabe sus tiempos.
+         *
+         * Hubo dos intentos antes. El primero rellenaba con la fecha de hoy, asi que la
+         * pantalla afirmaba en lugar de preguntar. El segundo preguntaba «¿ya empezo?» y de ahi
+         * proponia una fecha, que seguia siendo un numero inventado presentado como respuesta.
+         * Lo unico que no miente es un campo vacio.
+         */
         termStart = null
         termPlannedEnd = null
-        termName = ""
-        cutEndDates = emptyList()
-    }
-
-    /**
-     * Propone unas fechas a partir de si ya empezo, y deja las dos editables.
-     *
-     * Tres semanas atras o dos hacia delante no son numeros con autoridad: son un punto de
-     * partida cercano para que mover la fecha cueste dos toques en vez de veinte.
-     */
-    fun updateTermAlreadyStarted(value: Boolean) {
-        termAlreadyStarted = value
-        val tipo = termType ?: return
-        val hoy = LocalDate.now()
-        val inicio = if (value) hoy.minusWeeks(3) else hoy.plusWeeks(2)
-        termStart = inicio
-        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(tipo, inicio)
-        termName = AcademicTerm.suggestedName(tipo, inicio)
+        termName = AcademicTerm.suggestedName(value, LocalDate.now())
         cutEndDates = emptyList()
     }
 
     fun updateTermStart(value: LocalDate) {
         termStart = value
         val tipo = termType ?: return
-        termPlannedEnd = AcademicTerm.suggestedPlannedEnd(tipo, value)
+        // El nombre si se recompone: sale del año y del tramo, no es una fecha inventada.
         termName = AcademicTerm.suggestedName(tipo, value)
+        // Los cortes cuelgan del inicio, asi que moverlo los invalida.
         cutEndDates = emptyList()
     }
 
@@ -213,22 +192,6 @@ class SetupViewModel @Inject constructor(
 
     fun updateTermName(value: String) {
         termName = value.take(40)
-    }
-
-    /**
-     * Reparte los cortes por igual entre el inicio y el fin previsto, como punto de partida.
-     *
-     * Es una sugerencia, no una imposicion: cada fecha se mueve despues. Sin fin previsto no
-     * hay tramo que repartir, asi que no se propone nada.
-     */
-    fun suggestCutEndDates() {
-        val inicio = termStart ?: return
-        val fin = termPlannedEnd ?: return
-        val tramos = termCutCount
-        if (tramos < 2) return
-        val dias = java.time.temporal.ChronoUnit.DAYS.between(inicio, fin)
-        if (dias < tramos) return
-        cutEndDates = (1 until tramos).map { i -> inicio.plusDays(dias * i / tramos) }
     }
 
     fun clearCutEndDates() {

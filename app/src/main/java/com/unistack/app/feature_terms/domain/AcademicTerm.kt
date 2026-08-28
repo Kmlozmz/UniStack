@@ -10,12 +10,27 @@ import java.time.LocalDate
  * usan de verdad; no hay una opción «otro» porque cualquier calendario cabe en alguna de ellas
  * en cuanto se le ponen fechas propias.
  */
-enum class AcademicTermType(val label: String, val detail: String, val weeks: Int) {
-    SEMESTER("Semestral", "2 al año · unas 16 semanas", 16),
-    TRIMESTER("Trimestral", "3 al año · unas 11 semanas", 11),
-    QUARTER("Cuatrimestral", "3 al año · unas 14 semanas", 14),
-    ANNUAL("Anual", "1 al año", 36),
-    BLOCKS("Por bloques", "Módulos cortos seguidos", 8)
+enum class AcademicTermType(val label: String, val perYear: Int, val weeks: Int) {
+    SEMESTER("Semestral", 2, 16),
+    TRIMESTER("Trimestral", 4, 11),
+    QUARTER("Cuatrimestral", 3, 14),
+    ANNUAL("Anual", 1, 36),
+    BLOCKS("Por bloques", 6, 8);
+
+    /**
+     * La linea que acompana al nombre, compuesta y no escrita a mano.
+     *
+     * Estaba escrita, y por eso pudo mentir: el texto decia «2 al año» mientras la barra
+     * dibujaba tres, porque la barra dividia 52 semanas entre las del tipo en vez de usar el
+     * numero declarado. Componiendola de las mismas dos cifras que dibuja la barra, las dos
+     * cosas no pueden volver a discrepar.
+     */
+    val detail: String
+        get() = if (this == ANNUAL) {
+            "1 al año · unas $weeks semanas"
+        } else {
+            "$perYear al año · unas $weeks semanas"
+        }
 }
 
 /** Si el periodo es el que se está cursando o ya se cerró. */
