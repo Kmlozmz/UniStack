@@ -121,12 +121,21 @@ class SetupViewModel @Inject constructor(
     /**
      * Los dias en que cierra cada corte, uno menos que cortes hay.
      *
-     * Vacio significa «todavia no las se», que es una respuesta valida: sin ellas el corte de
-     * cada nota se sigue eligiendo a mano. El ultimo corte no aparece porque acaba con el
-     * periodo, y por eso guardar solo los cortes hace imposibles los solapes y los huecos.
+     * Hay una casilla por corte —menos el ultimo, que acaba con el periodo— y todas empiezan
+     * en nulo. Todas nulas significa «todavia no las se», que es una respuesta valida: sin
+     * ellas el corte de cada nota se sigue eligiendo a mano. Guardar solo el dia de cierre
+     * hace imposibles los solapes y los huecos.
+     *
+     * La lista se dimensiona al elegir cuantos cortes hay, y no crece sola. Cuando estaba
+     * vacia, escribir en ella era un mapeo sobre cero elementos: elegir una fecha en la
+     * pantalla no guardaba nada y tampoco lo decia.
      */
-    var cutEndDates by mutableStateOf<List<LocalDate>>(emptyList())
+    var cutEndDates by mutableStateOf<List<LocalDate?>>(emptyList())
         private set
+
+    /** Una casilla vacia por corte, menos el ultimo. */
+    private fun cortesVacios(): List<LocalDate?> =
+        List((termCutCount - 1).coerceAtLeast(0)) { null }
 
     /** Si dijo que sabe las fechas de corte. Nulo: todavia no ha contestado. */
     var knowsCutDates by mutableStateOf<Boolean?>(null)
@@ -148,12 +157,14 @@ class SetupViewModel @Inject constructor(
             val fin = termPlannedEnd
             if (fin != null && !fin.isAfter(inicio)) return false
             if (termName.isBlank()) return false
-            // O estan todas las fechas de corte, o ninguna.
-            if (cutEndDates.isNotEmpty()) {
-                if (cutEndDates.size != (termCutCount - 1).coerceAtLeast(0)) return false
-                if (cutEndDates.zipWithNext().any { (a, b) -> !b.isAfter(a) }) return false
-                if (cutEndDates.first().isBefore(inicio)) return false
-                if (fin != null && cutEndDates.last().isAfter(fin)) return false
+            // O estan todas las fechas de corte, o ninguna: media tabla no ordena nada.
+            val puestas = cutEndDates.filterNotNull()
+            if (puestas.isNotEmpty()) {
+                if (puestas.size != (termCutCount - 1).coerceAtLeast(0)) return false
+                if (puestas.zipWithNext().any { (a, b) -> !b.isAfter(a) }) return false
+                if (puestas.first().isBefore(inicio)) return false
+                // El ultimo va del dia siguiente al final del periodo: sin dias no es un corte.
+                if (fin != null && !fin.isAfter(puestas.last())) return false
             }
             @Suppress("UNUSED_EXPRESSION") tipo
             return true
@@ -173,7 +184,7 @@ class SetupViewModel @Inject constructor(
         termStart = null
         termPlannedEnd = null
         termName = AcademicTerm.suggestedName(value, LocalDate.now())
-        cutEndDates = emptyList()
+        cutEndDates = cortesVacios()
     }
 
     fun updateTermStart(value: LocalDate) {
@@ -182,12 +193,12 @@ class SetupViewModel @Inject constructor(
         // El nombre si se recompone: sale del año y del tramo, no es una fecha inventada.
         termName = AcademicTerm.suggestedName(tipo, value)
         // Los cortes cuelgan del inicio, asi que moverlo los invalida.
-        cutEndDates = emptyList()
+        cutEndDates = cortesVacios()
     }
 
     fun updateTermPlannedEnd(value: LocalDate) {
         termPlannedEnd = value
-        cutEndDates = emptyList()
+        cutEndDates = cortesVacios()
     }
 
     fun updateTermName(value: String) {
@@ -195,11 +206,18 @@ class SetupViewModel @Inject constructor(
     }
 
     fun clearCutEndDates() {
-        cutEndDates = emptyList()
+        cutEndDates = cortesVacios()
     }
 
     fun updateCutEndDate(index: Int, value: LocalDate) {
-        cutEndDates = cutEndDates.mapIndexed { i, actual -> if (i == index) value else actual }
+        // Si la lista no tiene el tamano que toca, se rehace antes de escribir en ella.
+        val base = if (cutEndDates.size == (termCutCount - 1).coerceAtLeast(0)) {
+            cutEndDates
+        } else {
+            cortesVacios()
+        }
+        if (index !in base.indices) return
+        cutEndDates = base.mapIndexed { i, actual -> if (i == index) value else actual }
     }
 
     fun updatePreferredName(value: String) {
@@ -277,6 +295,8 @@ class SetupViewModel @Inject constructor(
     fun updateGradingCutCount(count: Int) {
         val safeCount = count.coerceIn(0, 6)
         gradingCutWeights = suggestedAcademicWeights(safeCount)
+        // Cambiar cuantos cortes hay cambia cuantas casillas de fecha hacen falta.
+        cutEndDates = cortesVacios()
     }
 
     fun updateGradingCutWeight(index: Int, value: String) {

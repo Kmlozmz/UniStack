@@ -8,6 +8,11 @@ import com.unistack.app.core.design.components.CutBalanceNotice
 import com.unistack.app.core.design.components.CutCountSection
 import com.unistack.app.core.design.components.SetupEvenSplitAction
 import com.unistack.app.core.design.components.gradeValueOf
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -1736,39 +1741,42 @@ fun SetupGradingCutsScreen(
             )
 
             /*
-             * El reparto sale de entrada, sin esperar a nada.
+             * Primero cuantos, y lo demas va saliendo debajo.
              *
-             * Estaba escondido tras elegir «Corte» o «Periodo», que era la pregunta que se
-             * hacia por primaria y secundaria. Sin esa eleccion no hay nada que esperar, asi
-             * que el bloque deja de aparecer y desaparecer y se queda puesto.
+             * La cantidad estaba debajo de la rueda, asi que elegir un numero hacia aparecer de
+             * golpe todo el bloque —rueda, balance y atajo— y ademas encima, empujando hacia
+             * abajo el propio boton que acababas de tocar. Con el selector arriba, cada pieza
+             * entra escalonada justo bajo la mano.
              */
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    if (weights.isNotEmpty()) {
-                        CutWheelCard(
-                            weights = weights,
-                            total = total,
-                            isValid = isValid,
-                            onWeightChange = onWeightChange
-                        )
-                        CutBalanceNotice(total = total, remaining = remaining, isValid = isValid)
+                CutCountSection(
+                    count = weights.size,
+                    onCountSelected = { count ->
+                        customCountSelected = false
+                        countExpanded = false
+                        onCountSelected(count)
                     }
-                    CutCountSection(
+                )
+                Revelado(visible = weights.isNotEmpty(), retardoMs = 90) {
+                    CutWheelCard(
+                        weights = weights,
+                        total = total,
+                        isValid = isValid,
+                        onWeightChange = onWeightChange
+                    )
+                }
+                Revelado(visible = weights.isNotEmpty(), retardoMs = 230) {
+                    CutBalanceNotice(total = total, remaining = remaining, isValid = isValid)
+                }
+                Revelado(visible = weights.size > 1, retardoMs = 360) {
+                    SetupEvenSplitAction(
                         count = weights.size,
-                        onCountSelected = { count ->
-                            customCountSelected = false
-                            countExpanded = false
-                            onCountSelected(count)
+                        onSplit = { even ->
+                            weights.indices.forEach { index -> onWeightChange(index, even[index]) }
                         }
                     )
-                    if (weights.size > 1) {
-                        SetupEvenSplitAction(
-                            count = weights.size,
-                            onSplit = { even ->
-                                weights.indices.forEach { index -> onWeightChange(index, even[index]) }
-                            }
-                        )
-                    }
                 }
+            }
             }
         }
     }
@@ -2610,55 +2618,86 @@ private fun SetupTopBar(
                 }
             }
             if (step != null) {
-                Text(
-                    text = "Paso $step de $totalSteps",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
+                // El numero tambien se mueve, y en la direccion en la que vas.
+                AnimatedContent(
+                    targetState = step,
+                    transitionSpec = {
+                        val haciaDelante = targetState > initialState
+                        val signo = if (haciaDelante) 1 else -1
+                        (slideInVertically { alto -> signo * alto / 2 } + fadeIn(tween(170)))
+                            .togetherWith(
+                                slideOutVertically { alto -> -signo * alto / 2 } + fadeOut(tween(120))
+                            )
+                    },
+                    label = "setup-step-number",
                     modifier = Modifier.align(Alignment.Center)
-                )
+                ) { paso ->
+                    Text(
+                        text = "Paso $paso de $totalSteps",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
         if (step != null) {
-            Row(
+            /*
+             * Una barra que se llena, no una fila de pastillas que se encienden.
+             *
+             * Con una pastilla por paso, avanzar solo pintaba una mas: eso es el punto de una
+             * diapositiva, no una sensacion de avance. Una sola barra crece del ancho anterior
+             * al nuevo, asi que el movimiento se ve, y al cambiar de paso pega un golpe de alto
+             * para que no pase desapercibido.
+             *
+             * El alto se anima dentro de un contenedor de alto fijo. Animarlo por fuera movia
+             * la barra de acciones y el contenido entero de la pantalla a cada paso.
+             */
+            val avance = step.coerceIn(0, totalSteps).toFloat() / totalSteps.coerceAtLeast(1)
+            val relleno by animateFloatAsState(
+                targetValue = avance,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioLowBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "setup-progress"
+            )
+            val grosor = remember { Animatable(6f) }
+            LaunchedEffect(step) {
+                grosor.animateTo(10f, tween(140, easing = FastOutSlowInEasing))
+                grosor.animateTo(
+                    6f,
+                    spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                )
+            }
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 54.dp),
-                horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    .padding(horizontal = 54.dp)
+                    .height(11.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                // Una barra por paso, y se llenan tantas como pasos completados incluyendo
-                // el actual. Antes había 8 barras fijas para 9 pasos y el relleno iba
-                // adelantado en uno.
-                repeat(totalSteps) { index ->
-                    val isActive = index < step.coerceIn(1, totalSteps)
-                    val barColor by animateColorAsState(
-                        targetValue = if (isActive) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (LocalIsDarkTheme.current) 0.5f else 0.72f)
-                        },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        ),
-                        label = "setup-progress-color"
-                    )
-                    val barHeight by animateDpAsState(
-                        targetValue = if (isActive) 6.dp else 5.dp,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        label = "setup-progress-height"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(barHeight)
-                            .clip(CircleShape)
-                            .background(barColor)
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(grosor.value.dp)
+                        .clip(CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.outlineVariant
+                                .copy(alpha = if (LocalIsDarkTheme.current) 0.5f else 0.72f)
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        // Nunca del todo vacia: en el primer paso ya has hecho algo.
+                        .fillMaxWidth(relleno.coerceIn(0.05f, 1f))
+                        .height(grosor.value.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
             }
         }
     }

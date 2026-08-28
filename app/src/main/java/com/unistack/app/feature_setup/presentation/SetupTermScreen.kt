@@ -31,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.feature_terms.domain.AcademicTermType
 import com.unistack.app.feature_user.domain.Corte
+import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -341,16 +343,50 @@ fun SetupTermDatesScreen(
 
             Revelado(visible = fechasPuestas && cutCount > 1) {
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    SetupSectionLabel("¿Sabes cuándo cierra cada ${Corte.Singular.lowercase()}?")
+                    /*
+                     * Se pregunta por lo que vas a hacer, no por lo que sabes.
+                     *
+                     * «¿Sabes cuando cierra cada corte?» con un «Si, las se» debajo sonaba a
+                     * examen, y ademas no era la pregunta: la app no necesita saber si te las
+                     * sabes, necesita saber si las escribes ahora o luego.
+                     */
+                    SetupSectionLabel("Las fechas de cada ${Corte.Singular.lowercase()}")
                     UniSegmentedControl(
                         selected = knowsCutDates,
                         options = listOf(
-                            UniSegmentedOption<Boolean?>(value = true, label = "Sí, las sé"),
-                            UniSegmentedOption<Boolean?>(value = false, label = "Todavía no")
+                            UniSegmentedOption<Boolean?>(value = true, label = "Ponerlas ahora"),
+                            UniSegmentedOption<Boolean?>(value = false, label = "Más adelante")
                         ),
                         onSelected = { valor -> valor?.let(onKnowsCutDatesChange) },
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    /*
+                     * Dejarlo para luego dice que pasa mientras y donde se hace.
+                     *
+                     * Antes solo se saltaba el paso, asi que aplazarlo parecia renunciar a algo
+                     * sin saber a que ni si tenia vuelta atras.
+                     */
+                    Revelado(visible = knowsCutDates == false) {
+                        UniCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.large,
+                            color = MaterialTheme.colorScheme.surfaceContainerLow
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Text("🗓", fontSize = 15.sp)
+                                Text(
+                                    text = "Sin problema. Mientras tanto eliges a mano el ${Corte.Singular.lowercase()} de cada nota que pongas, y en cuanto las sepas las añades en Ajustes › Configuración académica.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    lineHeight = 17.sp
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -385,7 +421,7 @@ fun SetupTermCutDatesScreen(
     start: LocalDate,
     plannedEnd: LocalDate?,
     cutWeights: List<String>,
-    cutEndDates: List<LocalDate>,
+    cutEndDates: List<LocalDate?>,
     isValid: Boolean,
     onCutDateChange: (Int, LocalDate) -> Unit,
     onBackClick: () -> Unit,
@@ -618,9 +654,25 @@ private fun EsperandoEleccion() {
  * salto de la pantalla y no como la consecuencia de lo que acabas de tocar.
  */
 @Composable
-internal fun Revelado(visible: Boolean, content: @Composable () -> Unit) {
+internal fun Revelado(visible: Boolean, retardoMs: Int = 0, content: @Composable () -> Unit) {
+    /*
+     * El retardo solo cuenta al aparecer.
+     *
+     * Encadenandolo, un bloque de tres cosas entra como tres cosas y no como un muro, que es
+     * justo lo que se veia al elegir cuantos cortes hay. Al irse no se escalona: hacer esperar
+     * a algo que ya sobra se lee como que la pantalla va lenta.
+     */
+    var mostrado by remember { mutableStateOf(visible && retardoMs == 0) }
+    LaunchedEffect(visible) {
+        if (!visible) {
+            mostrado = false
+        } else {
+            if (retardoMs > 0) delay(retardoMs.toLong())
+            mostrado = true
+        }
+    }
     AnimatedVisibility(
-        visible = visible,
+        visible = mostrado,
         enter = fadeIn(animationSpec = tween(180)) + expandVertically(
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioLowBouncy,
