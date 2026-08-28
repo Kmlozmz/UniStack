@@ -85,7 +85,17 @@ internal fun AttendanceSummaryCard(
     weeks: List<AttendanceWeek>,
     today: LocalDate,
     onLimitClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Cómo se llama lo que se está mirando: «el periodo», «el Corte 2». */
+    scopeName: String = "el periodo",
+    /**
+     * El tope de la materia, que existe aunque no se esté aplicando.
+     *
+     * Mirando un corte suelto, [summary] llega sin tope a propósito —contar las faltas del
+     * corte contra un tope del semestre diría «te quedan 5» cuando llevas 6 gastadas— pero el
+     * botón sigue teniendo que decir la verdad: el tope está puesto y se puede cambiar.
+     */
+    absenceLimit: Int? = summary.absenceLimit
 ) {
     val restantes = summary.remainingAbsences
     /*
@@ -174,10 +184,10 @@ internal fun AttendanceSummaryCard(
                 color = MaterialTheme.colorScheme.surfaceContainerHighest
             ) {
                 Text(
-                    text = if (summary.absenceLimit == null) {
+                    text = if (absenceLimit == null) {
                         "Poner un tope de faltas"
                     } else {
-                        "Cambiar el tope · ${summary.absenceLimit}"
+                        "Cambiar el tope · $absenceLimit"
                     },
                     modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -191,7 +201,7 @@ internal fun AttendanceSummaryCard(
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
                 if (mapaAbierto) {
                     AlternaMapa(
-                        texto = "El periodo entero · por semana",
+                        texto = "${scopeName.replaceFirstChar { it.uppercase() }} · por semana",
                         abierto = true,
                         onClick = { mapaAbierto = false }
                     )
@@ -203,13 +213,86 @@ internal fun AttendanceSummaryCard(
                         onClick = { mapaAbierto = true }
                     )
                     AlternaMapa(
-                        texto = "Ver el periodo por semanas",
+                        texto = "Ver $scopeName por semanas",
                         abierto = false,
                         onClick = { mapaAbierto = true }
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * Mirar el semestre entero, o un corte suelto.
+ *
+ * En la universidad el reglamento cuenta faltas por corte tan a menudo como por semestre, y
+ * hasta ahora la pantalla solo sabía sumar el periodo completo: al llegar a noviembre, dos
+ * faltas de septiembre ya perdonadas seguían pesando en la única cifra que había.
+ *
+ * Solo aparece cuando el esquema tiene fechas y más de un corte: sin eso no hay forma de decir
+ * a qué corte pertenece una clase, y una fila de botones que no puede cumplir es peor que nada.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun AlcanceDeCortes(
+    cortes: List<CutScope>,
+    seleccionado: String?,
+    onSelect: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            FichaDeAlcance(
+                texto = "Todo el periodo",
+                activa = seleccionado == null,
+                onClick = { onSelect(null) }
+            )
+            cortes.forEach { corte ->
+                FichaDeAlcance(
+                    texto = corte.name,
+                    activa = seleccionado == corte.id,
+                    onClick = { onSelect(corte.id) }
+                )
+            }
+        }
+        // El tramo debajo, y solo del elegido: con los cuatro escritos a la vez la fila se
+        // convierte en un calendario y deja de leerse como un interruptor.
+        cortes.firstOrNull { it.id == seleccionado }?.range?.let { tramo ->
+            Text(
+                text = tramo,
+                color = MaterialTheme.colorScheme.outline,
+                fontSize = 11.sp
+            )
+        }
+    }
+}
+
+/** Un corte, tal y como lo necesita la fila: nombre, identidad y tramo ya escrito. */
+internal data class CutScope(val id: String, val name: String, val range: String?)
+
+@Composable
+private fun FichaDeAlcance(texto: String, activa: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (activa) ScheduleAccent else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (activa) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Text(
+            text = texto,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            color = if (activa) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 

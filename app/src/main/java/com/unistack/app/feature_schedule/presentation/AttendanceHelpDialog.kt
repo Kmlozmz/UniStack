@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import com.unistack.app.feature_user.domain.Corte
 
 /**
  * Cómo se lee el historial.
@@ -34,6 +35,7 @@ import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 internal fun AttendanceHelpDialog(
     hasLimit: Boolean,
     hasWeekNumbers: Boolean,
+    hasCuts: Boolean,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
@@ -61,6 +63,15 @@ internal fun AttendanceHelpDialog(
                     Fila(ClassAttendanceStatus.ABSENT, "No fuiste, y cuenta para el tope.")
                     Fila(ClassAttendanceStatus.CANCELLED, "No la hubo. No cuenta ni a favor ni en contra.")
                     Fila(ClassAttendanceStatus.PENDING, "Ya pasó y no la marcaste.")
+                }
+
+                if (hasCuts) {
+                    Parrafo(
+                        "Arriba del todo puedes mirar el periodo entero o un ${Corte.Singular.lowercase()} " +
+                            "suelto. Dentro de uno la cifra pasa a ser el porcentaje: el tope " +
+                            "de faltas es del semestre y contarlo por ${Corte.Plural.lowercase()} " +
+                            "diría que te quedan más de las que te quedan."
+                    )
                 }
 
                 if (hasWeekNumbers) {

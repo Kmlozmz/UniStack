@@ -147,6 +147,31 @@ data class GradingCutScheme(
         return ordenados.firstOrNull { it.endEpochDay != null && dia <= it.endEpochDay } ?: ordenados.last()
     }
 
+    /**
+     * Del primer dia al ultimo de un corte, con los extremos que aporta el periodo.
+     *
+     * Solo se guarda el dia en que cierra cada uno, asi que el principio hay que deducirlo:
+     * es el dia siguiente al cierre del anterior, y para el primero es el inicio del periodo.
+     * El final del ultimo es el del periodo. Cualquiera de los dos extremos puede faltar
+     * —sin periodo declarado, o sin fechas puestas— y entonces sale nulo en vez de inventado.
+     */
+    fun rangeFor(cutId: String, termStart: LocalDate?, termEnd: LocalDate?): Pair<LocalDate?, LocalDate?> {
+        val ordenados = cuts.sortedBy { it.order }
+        val indice = ordenados.indexOfFirst { it.id == cutId }
+        if (indice < 0) return null to null
+        val desde = if (indice == 0) {
+            termStart
+        } else {
+            ordenados[indice - 1].endEpochDay?.let { LocalDate.ofEpochDay(it).plusDays(1) }
+        }
+        val hasta = if (indice == ordenados.lastIndex) {
+            termEnd
+        } else {
+            ordenados[indice].endEpochDay?.let(LocalDate::ofEpochDay)
+        }
+        return desde to hasta
+    }
+
     fun cutName(cutId: String?): String {
         return cuts.firstOrNull { it.id == cutId }?.name
             ?: cuts.firstOrNull()?.name

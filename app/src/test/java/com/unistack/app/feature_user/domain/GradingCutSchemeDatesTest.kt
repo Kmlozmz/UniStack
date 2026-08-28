@@ -131,6 +131,50 @@ class GradingCutSchemeDatesTest {
         assertTrue(conFechas().isValid)
     }
 
+    // --- El tramo de cada corte ---
+
+    @Test
+    fun `el primer corte empieza cuando empieza el periodo`() {
+        val (desde, hasta) = conFechas().rangeFor("period-1", dia("2026-08-24"), dia("2026-12-12"))
+        assertEquals(dia("2026-08-24"), desde)
+        assertEquals(dia("2026-09-20"), hasta)
+    }
+
+    @Test
+    fun `un corte de en medio empieza al dia siguiente del anterior`() {
+        val (desde, hasta) = conFechas().rangeFor("period-2", dia("2026-08-24"), dia("2026-12-12"))
+        assertEquals(dia("2026-09-21"), desde)
+        assertEquals(dia("2026-10-31"), hasta)
+    }
+
+    @Test
+    fun `el ultimo corte acaba con el periodo`() {
+        val (desde, hasta) = conFechas().rangeFor("period-3", dia("2026-08-24"), dia("2026-12-12"))
+        assertEquals(dia("2026-11-01"), desde)
+        assertEquals(dia("2026-12-12"), hasta)
+    }
+
+    @Test
+    fun `sin periodo declarado los extremos que lo necesitan salen nulos`() {
+        val (desde, hasta) = conFechas().rangeFor("period-1", null, null)
+        assertNull(desde)
+        assertEquals(dia("2026-09-20"), hasta)
+    }
+
+    @Test
+    fun `un corte que no existe no tiene tramo`() {
+        val (desde, hasta) = conFechas().rangeFor("period-9", dia("2026-08-24"), dia("2026-12-12"))
+        assertNull(desde)
+        assertNull(hasta)
+    }
+
+    @Test
+    fun `sin fechas puestas solo se sabe lo que aporta el periodo`() {
+        val (desde, hasta) = sinFechas().rangeFor("period-2", dia("2026-08-24"), dia("2026-12-12"))
+        assertNull(desde)
+        assertNull(hasta)
+    }
+
     /** Atajo para probar solo la parte de fechas, sin que los pesos enturbien el resultado. */
     private fun GradingCutScheme.datesLookValid(): Boolean =
         copy(cuts = cuts.mapIndexed { i, c -> c.copy(weight = 1.0 / cuts.size) }).isValid

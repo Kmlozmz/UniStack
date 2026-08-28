@@ -91,6 +91,8 @@ import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
 import com.unistack.app.feature_terms.domain.AcademicBreak
+import com.unistack.app.feature_user.domain.GradingCutScheme
+import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_schedule.domain.ClassSession
 import java.time.LocalDateTime
@@ -355,6 +357,7 @@ fun CalendarScheduleScreen(
                 sessions = state.sessions.filter { it.subjectId == subjectId },
                 occurrences = state.occurrences,
                 term = state.activeTerm,
+                cutScheme = state.cutScheme,
                 breaks = state.breaks,
                 onDismiss = { historySubjectId = null },
                 onSetAbsenceLimit = { limite -> viewModel.setAbsenceLimit(subject, limite) },
@@ -385,6 +388,7 @@ private fun SubjectHistoryDialog(
     sessions: List<ClassSession>,
     occurrences: List<ClassOccurrence>,
     term: AcademicTerm?,
+    cutScheme: GradingCutScheme?,
     breaks: List<AcademicBreak>,
     onDismiss: () -> Unit,
     onSetAbsenceLimit: (Int?) -> Unit,
@@ -411,13 +415,59 @@ private fun SubjectHistoryDialog(
      * sobre cuantas clases se calculaba. En `AttendanceSummary` las dos cifras viajan juntas.
      */
     val hoy = LocalDate.now()
-    val summary = remember(entries, subject.absenceLimit) {
-        SubjectAttendanceHistory.summarize(entries, subject.absenceLimit)
+
+    /*
+     * El semestre entero, o un corte suelto.
+     *
+     * Solo se ofrece si el esquema tiene fechas y mas de un corte: sin fechas no hay forma de
+     * decir a que corte pertenece una clase. Sin ellas la lista sale vacia y la pantalla se
+     * queda exactamente como estaba.
+     */
+    val cortes = remember(cutScheme, term) {
+        val esquema = cutScheme?.takeIf { it.hasDates && it.cuts.size > 1 } ?: return@remember emptyList()
+        esquema.cuts.sortedBy { it.order }.map { corte ->
+            val (desde, hasta) = esquema.rangeFor(corte.id, term?.start, term?.plannedEnd)
+            CutScope(
+                id = corte.id,
+                name = corte.name,
+                range = when {
+                    desde != null && hasta != null -> desde.dayMonth() + " \u2192 " + hasta.dayMonth()
+                    desde != null -> "Desde el " + desde.dayMonth()
+                    hasta != null -> "Hasta el " + hasta.dayMonth()
+                    else -> null
+                }
+            )
+        }
     }
-    val weeks = remember(entries, term) {
-        SubjectAttendanceHistory.byWeek(entries, hoy, term?.start)
+    var alcanceElegido by rememberSaveable(subject.id) { mutableStateOf<String?>(null) }
+    // Cambiar el numero de cortes en Ajustes deja el elegido apuntando a nada.
+    val alcance = alcanceElegido?.takeIf { id -> cortes.any { it.id == id } }
+    val enAlcance = remember(entries, alcance, cutScheme) {
+        val id = alcance
+        if (id == null || cutScheme == null) {
+            entries
+        } else {
+            entries.filter { cutScheme.cutForDate(it.date)?.id == id }
+        }
     }
-    val upcoming = remember(entries) { SubjectAttendanceHistory.upcoming(entries, hoy) }
+    /*
+     * Mirando un corte, el tope del semestre no se aplica.
+     *
+     * «Te quedan 5 de 6» contando solo las faltas de noviembre seria mentira si en septiembre
+     * ya gastaste otras cuatro. Dentro de un corte la cifra vuelve al porcentaje, que si se
+     * puede afirmar sobre lo que se esta mirando; el tope sigue existiendo y su boton lo dice.
+     */
+    val summary = remember(enAlcance, subject.absenceLimit, alcance) {
+        SubjectAttendanceHistory.summarize(
+            entries = enAlcance,
+            absenceLimit = if (alcance == null) subject.absenceLimit else null
+        )
+    }
+    val weeks = remember(enAlcance, term) {
+        SubjectAttendanceHistory.byWeek(enAlcance, hoy, term?.start)
+    }
+    val upcoming = remember(enAlcance) { SubjectAttendanceHistory.upcoming(enAlcance, hoy) }
+    val nombreDelAlcance = cortes.firstOrNull { it.id == alcance }?.let { "el " + it.name } ?: "el periodo"
     val sinMarcar = remember(entries) {
         SubjectAttendanceHistory.pendingToCatchUp(entries, LocalDateTime.now())
     }
@@ -472,13 +522,23 @@ private fun SubjectHistoryDialog(
                     }
                 }
                 Spacer(Modifier.height(6.dp))
+                if (cortes.isNotEmpty()) {
+                    AlcanceDeCortes(
+                        cortes = cortes,
+                        seleccionado = alcance,
+                        onSelect = { elegido -> alcanceElegido = elegido },
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp)
+                    )
+                }
                 AttendanceSummaryCard(
                     summary = summary,
-                    entries = entries,
+                    entries = enAlcance,
                     weeks = weeks,
                     today = hoy,
                     onLimitClick = { pidiendoTope = true },
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    scopeName = nombreDelAlcance,
+                    absenceLimit = subject.absenceLimit
                 )
                 Text(
                     text = "HISTORIAL",
@@ -506,9 +566,13 @@ private fun SubjectHistoryDialog(
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
-                            if (entries.isEmpty()) {
+                            if (enAlcance.isEmpty()) {
                                 Text(
-                                    "A\u00fan no hay clases en el historial",
+                                    if (alcance == null) {
+                                        "A\u00fan no hay clases en el historial"
+                                    } else {
+                                        "Ninguna clase cae en este " + Corte.Singular.lowercase()
+                                    },
                                     Modifier.fillMaxWidth().padding(24.dp),
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -561,6 +625,7 @@ private fun SubjectHistoryDialog(
         AttendanceHelpDialog(
             hasLimit = subject.absenceLimit != null,
             hasWeekNumbers = weeks.any { it.number != null },
+            hasCuts = cortes.isNotEmpty(),
             onDismiss = { ayudaVisible = false }
         )
     }

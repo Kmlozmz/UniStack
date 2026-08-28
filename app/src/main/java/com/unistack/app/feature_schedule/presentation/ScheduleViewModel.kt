@@ -23,6 +23,7 @@ import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.UserRepository
 import java.util.UUID
 import com.unistack.app.feature_terms.domain.AcademicTerm
+import com.unistack.app.feature_user.domain.GradingCutScheme
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicBreakRepository
@@ -51,6 +52,14 @@ data class ScheduleUiState(
     val activeTerm: AcademicTerm? = null,
     /** Festivos, paros y recesos: sus días no cuentan como clase perdida. */
     val breaks: List<AcademicBreak> = emptyList(),
+    /**
+     * Cómo se parte el periodo, para poder mirar la asistencia corte a corte.
+     *
+     * Solo sirve si tiene fechas: sin ellas no hay forma de decir a qué corte pertenece una
+     * clase, y entonces el historial se queda con la única vista que puede sostener, que es
+     * la del periodo entero.
+     */
+    val cutScheme: GradingCutScheme? = null,
     /**
      * Si los datos ya llegaron.
      *
@@ -108,6 +117,7 @@ class ScheduleViewModel @Inject constructor(
             subjects = subjects,
             tasks = tasks,
             accessibility = profile?.accessibilityPreferences ?: AccessibilityPreferences(),
+            cutScheme = profile?.gradingCutScheme,
             activeTerm = term,
             loaded = true
         )
