@@ -1,6 +1,7 @@
 package com.unistack.app.feature_schedule.domain
 
 import java.time.DayOfWeek
+import java.time.LocalDateTime
 import java.time.LocalDate
 
 /** Una clase concreta de una materia en un día concreto, con lo que se marcó ese día. */
@@ -8,7 +9,20 @@ data class AttendanceHistoryEntry(
     val date: LocalDate,
     val session: ClassSession,
     val status: ClassAttendanceStatus
-)
+) {
+    /** El instante en que esta clase termina. */
+    val endsAt: LocalDateTime
+        get() = date.atStartOfDay().plusMinutes(session.endMinute.toLong())
+
+    /**
+     * Si la clase ya terminó de verdad.
+     *
+     * No basta con que su día no sea futuro: una clase de hoy a las 18:30 no ha ocurrido a las
+     * 8:38 de la mañana, y contarla como pendiente hacía que la app reclamara asistencia de
+     * algo que aún no había pasado.
+     */
+    fun hasEnded(now: LocalDateTime): Boolean = !endsAt.isAfter(now)
+}
 
 /**
  * El historial de asistencia de una materia, sin inventarse clases.
@@ -122,10 +136,10 @@ object SubjectAttendanceHistory {
      */
     fun pendingToCatchUp(
         entries: List<AttendanceHistoryEntry>,
-        today: LocalDate,
+        now: LocalDateTime,
         limit: Int = CATCH_UP_LIMIT
     ): List<AttendanceHistoryEntry> = entries
-        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(today) }
+        .filter { it.status == ClassAttendanceStatus.PENDING && it.hasEnded(now) }
         .sortedWith(masRecientePrimero)
         .take(limit)
 

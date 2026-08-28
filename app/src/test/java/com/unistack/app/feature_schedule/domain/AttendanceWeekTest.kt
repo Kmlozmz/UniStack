@@ -5,6 +5,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 /**
  * El historial agrupado por semanas, con lo que viene aparte.
@@ -18,6 +19,8 @@ class AttendanceWeekTest {
     // Jueves 27 de agosto de 2026; su lunes es el 24.
     private val hoy: LocalDate = LocalDate.of(2026, 8, 27)
     private val lunesDeHoy: LocalDate = LocalDate.of(2026, 8, 24)
+    // Las 23:00: todas las clases del dia ya terminaron.
+    private val ahora: LocalDateTime = hoy.atTime(23, 0)
 
     private val lunesYmiercoles = ClassSession(
         id = "s-1",
@@ -112,7 +115,7 @@ class AttendanceWeekTest {
 
     @Test
     fun `ponerse al dia solo trae lo pasado y sin marcar`() {
-        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), hoy)
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), ahora)
 
         assertTrue(pendientes.isNotEmpty())
         assertTrue(pendientes.all { it.status == ClassAttendanceStatus.PENDING })
@@ -121,7 +124,7 @@ class AttendanceWeekTest {
 
     @Test
     fun `ponerse al dia empieza por lo mas reciente`() {
-        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), hoy)
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), ahora)
 
         val fechas = pendientes.map { it.date }
         assertEquals(fechas.sortedDescending(), fechas)
@@ -131,7 +134,7 @@ class AttendanceWeekTest {
     fun `una lista larga se corta para que se pueda terminar`() {
         val pendientes = SubjectAttendanceHistory.pendingToCatchUp(
             construir(inicio = hoy.minusDays(90)),
-            hoy
+            ahora
         )
 
         assertTrue(pendientes.size <= SubjectAttendanceHistory.CATCH_UP_LIMIT)
@@ -156,9 +159,35 @@ class AttendanceWeekTest {
             termStart = hoy.minusDays(30)
         )
 
-        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(entradas, hoy)
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(entradas, ahora)
 
         assertTrue(pendientes.none { it.date == unLunes })
+    }
+
+    @Test
+    fun `una clase de hoy que aun no ha terminado no se reclama`() {
+        // Son las 9 de la manana; la clase de hoy acaba a las 10.
+        val porLaManana = hoy.atTime(9, 0)
+
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(construir(), porLaManana)
+
+        assertTrue(pendientes.none { it.date == hoy })
+    }
+
+    @Test
+    fun `en cuanto termina si se reclama`() {
+        // La sesion acaba a las 10:00, asi que a las 10:01 ya cuenta.
+        val despues = hoy.minusDays(1).atTime(10, 1)
+
+        val entradas = SubjectAttendanceHistory.build(
+            sessions = listOf(lunesYmiercoles),
+            occurrences = emptyList(),
+            today = hoy,
+            termStart = hoy.minusDays(30)
+        )
+        val pendientes = SubjectAttendanceHistory.pendingToCatchUp(entradas, despues)
+
+        assertTrue(pendientes.all { !it.endsAt.isAfter(despues) })
     }
 
     @Test

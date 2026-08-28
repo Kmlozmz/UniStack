@@ -82,6 +82,7 @@ import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskType
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
@@ -1072,12 +1073,19 @@ private fun WeekDayClassList(
                  * Una clase que todavia no ha llegado no lleva estado: no hay nada que
                  * decir de ella, y «pendiente» significaria lo que no es.
                  */
-                if (!selectedDate.isAfter(LocalDate.now())) {
-                    val estado = occurrences.firstOrNull {
-                        it.sessionId == session.id && it.dateEpochDay == selectedDate.toEpochDay()
-                    }?.status ?: ClassAttendanceStatus.PENDING
+                val termina = selectedDate.atStartOfDay().plusMinutes(session.endMinute.toLong())
+                val estado = occurrences.firstOrNull {
+                    it.sessionId == session.id && it.dateEpochDay == selectedDate.toEpochDay()
+                }?.status
+                // Si aun no ha terminado, solo se dice algo cuando ya hay respuesta.
+                val aEnsenar = if (termina.isAfter(LocalDateTime.now())) {
+                    estado?.takeIf { it != ClassAttendanceStatus.PENDING }
+                } else {
+                    estado ?: ClassAttendanceStatus.PENDING
+                }
+                if (aEnsenar != null) {
                     Spacer(Modifier.width(8.dp))
-                    AttendanceDot(estado)
+                    AttendanceDot(aEnsenar)
                 }
             }
         }
@@ -1729,51 +1737,56 @@ private fun findUpcomingClass(
  */
 @Composable
 private fun CatchUpBanner(count: Int, onClick: () -> Unit) {
+    /*
+     * Una linea, no una tarjeta.
+     *
+     * La primera version era del tamaño de las metricas que tiene debajo —icono en circulo,
+     * dos lineas de texto y una flecha— y con eso pesaba lo mismo que el contenido de la
+     * pantalla. Es un recado, no una seccion: se dice y se quita de en medio.
+     */
     val tono = LocalSectionColors.current.schedule
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, tono.copy(alpha = 0.45f))
+        shape = CircleShape,
+        color = tono.copy(alpha = 0.12f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(start = 16.dp, end = 12.dp, top = 9.dp, bottom = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             Box(
-                modifier = Modifier
-                    .size(38.dp)
+                Modifier
+                    .size(7.dp)
                     .clip(CircleShape)
-                    .background(tono.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.EventAvailable,
-                    contentDescription = null,
-                    tint = tono,
-                    modifier = Modifier.size(19.dp)
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = "$count clases sin marcar",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Ponerse al día en un momento",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.5.sp
-                )
-            }
+                    .background(tono)
+            )
+            Text(
+                text = if (count == 1) {
+                    "Tienes 1 clase sin marcar"
+                } else {
+                    "Tienes $count clases sin marcar"
+                },
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Ponerse al día",
+                color = tono,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
+            )
             Icon(
                 imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                 contentDescription = null,
                 tint = tono,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(17.dp)
             )
         }
     }

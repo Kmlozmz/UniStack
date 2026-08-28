@@ -91,6 +91,7 @@ import com.unistack.app.feature_schedule.domain.SubjectAttendanceHistory
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_schedule.domain.ClassSession
+import java.time.LocalDateTime
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -166,6 +167,7 @@ fun CalendarScheduleScreen(
      * tope de la ventana—, asi que un festivo tampoco cuenta aqui como clase perdida.
      */
     val hoyMismo = LocalDate.now()
+    val ahora = LocalDateTime.now()
     val sinMarcarTodas = remember(
         state.sessions, state.occurrences, state.activeTerm, state.breaks
     ) {
@@ -178,7 +180,7 @@ fun CalendarScheduleScreen(
                 termEnd = state.activeTerm?.plannedEnd,
                 breaks = state.breaks.map { it.range }
             ),
-            hoyMismo
+            ahora
         )
     }
     var poniendoseAlDiaTodas by remember { mutableStateOf(false) }
@@ -411,7 +413,9 @@ private fun SubjectHistoryDialog(
     }
     val weeks = remember(entries) { SubjectAttendanceHistory.byWeek(entries, hoy) }
     val upcoming = remember(entries) { SubjectAttendanceHistory.upcoming(entries, hoy) }
-    val sinMarcar = remember(entries) { SubjectAttendanceHistory.pendingToCatchUp(entries, hoy) }
+    val sinMarcar = remember(entries) {
+        SubjectAttendanceHistory.pendingToCatchUp(entries, LocalDateTime.now())
+    }
     val pending = sinMarcar.firstOrNull()
 
     Dialog(
