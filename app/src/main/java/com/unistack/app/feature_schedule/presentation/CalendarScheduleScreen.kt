@@ -108,15 +108,15 @@ import androidx.compose.runtime.getValue
    así que mentían en cuanto el acento dejaba de ser verde —es decir, siempre—. Ahora
    nombran el papel que cumplen. Se cayeron dos: SchedulePurple, que era un duplicado
    literal de ScheduleAccent, y SchedulePink, que solo alimentaba la lista de muestras. */
-private val ScheduleAccent: Color
+internal val ScheduleAccent: Color
     @Composable
     @ReadOnlyComposable
     get() = MaterialTheme.colorScheme.primary
-private val ScheduleRescheduled: Color
+internal val ScheduleRescheduled: Color
     @Composable get() = LocalSectionColors.current.schedule
-private val ScheduleCancelled: Color
+internal val ScheduleCancelled: Color
     @Composable get() = LocalSectionColors.current.atRisk
-private val ScheduleShape: Shape
+internal val ScheduleShape: Shape
     @Composable
     @ReadOnlyComposable
     get() = MaterialTheme.shapes.medium
@@ -334,19 +334,20 @@ private fun SubjectHistoryDialog(
             breaks = breaks.map { it.range }
         )
     }
-    val attended = entries.count { it.status == ClassAttendanceStatus.ATTENDED }
-    val absent = entries.count { it.status == ClassAttendanceStatus.ABSENT }
-    val decided = attended + absent
     /*
-     * Sin nada marcado no hay porcentaje, y decir «0%» es mentir.
+     * Las cuentas se piden, no se hacen aqui.
      *
-     * Devolvia cero, asi que una materia recien creada se abria anunciando «Asistencia
-     * general 0%» con el anillo vacio: se lee como haber faltado a todo cuando lo cierto es
-     * que no hay un solo dato. Nulo obliga a que cada sitio que lo pinta diga la verdad.
+     * Estaban escritas en la pantalla, y por eso el porcentaje podia anunciarse sin decir
+     * sobre cuantas clases se calculaba. En `AttendanceSummary` las dos cifras viajan juntas.
      */
-    val rate: Int? = if (decided == 0) null else (attended.toFloat() / decided * 100).roundToInt()
+    val hoy = LocalDate.now()
+    val summary = remember(entries, subject.absenceLimit) {
+        SubjectAttendanceHistory.summarize(entries, subject.absenceLimit)
+    }
+    val weeks = remember(entries) { SubjectAttendanceHistory.byWeek(entries, hoy) }
+    val upcoming = remember(entries) { SubjectAttendanceHistory.upcoming(entries, hoy) }
     val pending = entries
-        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(LocalDate.now()) }
+        .filter { it.status == ClassAttendanceStatus.PENDING && !it.date.isAfter(hoy) }
         .maxByOrNull(AttendanceHistoryEntry::date)
 
     Dialog(
@@ -381,47 +382,12 @@ private fun SubjectHistoryDialog(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Spacer(Modifier.height(14.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    shape = ScheduleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                ) {
-                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Asistencia general", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            Text(
-                                text = if (rate == null) "\u2014" else "$rate%",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 23.sp,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                            Text(
-                                text = if (rate == null) {
-                                    "Marca tus clases y aparece aqui"
-                                } else {
-                                    "$attended asistencias  \u2022  $absent faltas"
-                                },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 10.sp
-                            )
-                        }
-                        Box(Modifier.size(54.dp), contentAlignment = Alignment.Center) {
-                            EvaluationRing(
-                                fraction = (rate ?: 0) / 100.0,
-                                modifier = Modifier.fillMaxSize(),
-                                color = ScheduleAccent,
-                                trackColor = MaterialTheme.colorScheme.outlineVariant
-                            )
-                            Text(
-                                text = if (rate == null) "\u2014" else "$rate%",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+                AttendanceSummaryCard(
+                    summary = summary,
+                    entries = entries,
+                    today = hoy,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
                 Text(
                     "Historial",
                     modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 7.dp),
@@ -435,14 +401,25 @@ private fun SubjectHistoryDialog(
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    LazyColumn(contentPadding = PaddingValues(vertical = 5.dp)) {
+                    LazyColumn(contentPadding = PaddingValues(vertical = 9.dp)) {
                         if (entries.isEmpty()) {
                             item {
-                                Text("A\u00fan no hay clases en el historial", Modifier.fillMaxWidth().padding(20.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "A\u00fan no hay clases en el historial",
+                                    Modifier.fillMaxWidth().padding(20.dp),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-                        }
-                        items(entries, key = { "${it.session.id}:${it.date.toEpochDay()}" }) { entry ->
-                            HistoryRow(entry)
+                        } else {
+                            item {
+                                AttendanceWeekList(
+                                    weeks = weeks,
+                                    upcoming = upcoming,
+                                    today = hoy,
+                                    onPick = { entrada -> onMarkAttendance(entrada.date, entrada.session) }
+                                )
+                            }
                         }
                     }
                 }
@@ -455,7 +432,11 @@ private fun SubjectHistoryDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = ScheduleAccent),
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
-                    Text("Marcar asistencia", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = pending?.let { "Marcar la del ${it.date.dayMonth()}" }
+                            ?: "Todo al d\u00eda",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
@@ -896,6 +877,10 @@ private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 @Composable
 @ReadOnlyComposable
 private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?: this?.let { subject -> subjectAccent(subject) } ?: ScheduleAccent
+
+/** «24 ago», para decir de qué clase habla un botón sin escribir la fecha entera. */
+private fun LocalDate.dayMonth(): String =
+    format(DateTimeFormatter.ofPattern("d MMM", SpanishLocale))
 
 private fun LocalDate.longTitle(): String = format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", SpanishLocale)).capitalized()
 

@@ -1,5 +1,6 @@
 package com.unistack.app.feature_schedule.domain
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /** Una clase concreta de una materia en un día concreto, con lo que se marcó ese día. */
@@ -96,6 +97,34 @@ object SubjectAttendanceHistory {
             .thenByDescending { it.session.startMinute }
 
     /**
+     * Lo que todavía no ha ocurrido, de lo más próximo en adelante.
+     *
+     * Sale aparte del historial porque **no está pendiente de nada**: una clase del mes que
+     * viene no es una que se te olvidó marcar, y la lista las enseñaba con la misma etiqueta.
+     */
+    fun upcoming(entries: List<AttendanceHistoryEntry>, today: LocalDate): List<AttendanceHistoryEntry> =
+        entries.filter { it.date.isAfter(today) }
+            .sortedWith(compareBy({ it.date }, { it.session.startMinute }))
+
+    /**
+     * Lo ya ocurrido, en semanas y de la más reciente a la más antigua.
+     *
+     * Un semestre se piensa por semanas —«la semana pasada falté una»— y no por días sueltos,
+     * así que agrupar así hace que la lista se lea sin contar fechas. Las semanas sin ninguna
+     * clase no aparecen: una semana de receso deja hueco, que es lo que fue.
+     */
+    fun byWeek(entries: List<AttendanceHistoryEntry>, today: LocalDate): List<AttendanceWeek> =
+        entries.filter { !it.date.isAfter(today) }
+            .groupBy { it.date.with(DayOfWeek.MONDAY) }
+            .map { (lunes, dentro) ->
+                AttendanceWeek(
+                    start = lunes,
+                    entries = dentro.sortedWith(compareBy({ it.date }, { it.session.startMinute }))
+                )
+            }
+            .sortedByDescending { it.start }
+
+    /**
      * Las cuentas que abren el historial, en un solo sitio.
      *
      * Se calculaban en la pantalla, y por eso el porcentaje podía decir «100 %» apoyado en una
@@ -139,6 +168,21 @@ object SubjectAttendanceHistory {
         }
         return cuenta
     }
+}
+
+/**
+ * Una semana del historial, con las clases que cayeron dentro.
+ *
+ * [start] es siempre el lunes, para que dos materias con horarios distintos agrupen igual.
+ */
+data class AttendanceWeek(
+    val start: LocalDate,
+    val entries: List<AttendanceHistoryEntry>
+) {
+    val end: LocalDate get() = start.plusDays(6)
+
+    /** Si la semana en curso es esta. */
+    fun contains(date: LocalDate): Boolean = !date.isBefore(start) && !date.isAfter(end)
 }
 
 /**
