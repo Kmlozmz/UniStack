@@ -6,6 +6,7 @@ import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.StickyNote2
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -46,10 +47,13 @@ fun UniStackFabMenu(
     onAddExpenseClick: () -> Unit,
     onAddSubjectClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onAddNoteClick: () -> Unit = {},
     showAddGrade: Boolean = true,
     showAddTask: Boolean = true,
     showAddExpense: Boolean = true,
-    showAddSubject: Boolean = false
+    showAddSubject: Boolean = false,
+    /** Solo en Inicio: en Académico el menú es de lo académico y un apunte no lo es. */
+    showAddNote: Boolean = false
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
@@ -58,6 +62,15 @@ fun UniStackFabMenu(
 
     val entries = buildList {
         if (showAddGrade) add(Triple("Nota", Icons.Rounded.EditNote, onAddGradeClick))
+        /*
+         * «Apunte» y no «Nota».
+         *
+         * En esta app una nota es una calificacion, y esa palabra ya esta ocupada justo
+         * encima. Fue idea suya tener las notas rapidas aqui, y el nombre es lo que evita
+         * que las dos entradas del mismo menu signifiquen cosas distintas con la misma
+         * palabra.
+         */
+        if (showAddNote) add(Triple("Apunte", Icons.Rounded.StickyNote2, onAddNoteClick))
         if (showAddTask) add(Triple("Tarea", Icons.Rounded.TaskAlt, onAddTaskClick))
         if (showAddExpense) add(Triple("Gasto", Icons.Rounded.AccountBalanceWallet, onAddExpenseClick))
         if (showAddSubject) add(Triple("Materia", Icons.AutoMirrored.Rounded.MenuBook, onAddSubjectClick))

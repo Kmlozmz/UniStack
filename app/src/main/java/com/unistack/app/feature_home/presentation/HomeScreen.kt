@@ -123,6 +123,7 @@ fun HomeScreen(
     onAboutClick: () -> Unit = {},
     onGpaClick: () -> Unit = {},
     onQuickNotesClick: () -> Unit = {},
+    onNewNoteClick: () -> Unit = {},
     onAiClick: () -> Unit = {},
     onLabsClick: () -> Unit = {},
     onDrawerOpenChange: (Boolean) -> Unit = {},
@@ -267,6 +268,8 @@ fun HomeScreen(
                         else -> pickingSubjectForGrade = true
                     }
                 },
+                onAddNoteClick = onNewNoteClick,
+                showAddNote = true,
                 onAddTaskClick = onAddTaskClick,
                 onAddExpenseClick = onAddExpenseClick,
                 onAddSubjectClick = onAddSubjectClick,

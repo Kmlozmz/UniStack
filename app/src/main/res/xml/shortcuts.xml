@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Escribir sin pasar por ninguna pantalla.
+
+    Es el camino mas corto que puede tener la app: dejar pulsado el icono y ya estas escribiendo.
+    Va directo a `new_note`, la ruta del editor en blanco, por el mismo extra que ya usaban las
+    notificaciones para abrir una pantalla concreta.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="apunte_nuevo"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_note"
+        android:shortcutShortLabel="@string/shortcut_note_short"
+        android:shortcutLongLabel="@string/shortcut_note_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.unistack.app"
+            android:targetClass="com.unistack.app.MainActivity">
+            <extra
+                android:name="com.unistack.app.extra.LAUNCH_ROUTE"
+                android:value="new_note" />
+        </intent>
+    </shortcut>
+</shortcuts>

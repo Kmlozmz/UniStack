@@ -69,6 +69,13 @@ private val GRUPOS_MARKDOWN = listOf(
             AyudaFila("---", "---"),
             AyudaFila("| a | b |", "| Corte | Peso |")
         )
+    ),
+    AyudaGrupo(
+        "Vincular una materia",
+        listOf(
+            AyudaFila("@calculo", "Cálculo II"),
+            AyudaFila("@fis", "Física I")
+        )
     )
 )
 
@@ -87,6 +94,13 @@ private val GRUPOS_SENCILLO = listOf(
             AyudaFila("Lista", "- traer calculadora"),
             AyudaFila("Lista numerada", "1. leer el capítulo"),
             AyudaFila("Casilla", "- [ ] taller 3")
+        )
+    ),
+    AyudaGrupo(
+        "Vincular una materia",
+        listOf(
+            AyudaFila("@calculo", "Cálculo II"),
+            AyudaFila("@fis", "Física I")
         )
     )
 )
@@ -131,10 +145,11 @@ fun NoteFormatHelpSheet(
                     Text(
                         if (format == NoteFormat.MARKDOWN) {
                             "Escribes las marcas y el texto se va formateando solo. A la izquierda " +
-                                "lo que se escribe; a la derecha, cómo queda."
+                                "lo que se escribe; a la derecha, cómo queda. Con una arroba se vincula " +
+                                "la materia sin soltar el teclado."
                         } else {
                             "Sin marcas a la vista. Selecciona un trozo de texto y aparece la barra " +
-                                "con estos botones."
+                                "con estos botones. Escribiendo una arroba sale la lista de materias."
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall

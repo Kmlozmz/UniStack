@@ -43,6 +43,8 @@ import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.School
@@ -96,8 +98,12 @@ import com.unistack.app.feature_notes.domain.NoteAction
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteFormatting
 import com.unistack.app.feature_notes.domain.NoteMarkdown
+import com.unistack.app.feature_notes.domain.NoteMention
+import com.unistack.app.feature_notes.domain.NoteMoment
+import com.unistack.app.feature_notes.domain.NoteSearch
 import com.unistack.app.feature_notes.domain.NoteText
 import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 
 /**
  * Escribir una nota, a pantalla completa.
@@ -121,6 +127,7 @@ fun NoteEditorScreen(
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
+    val sessions by viewModel.sessions.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // El identificador vive en el estado porque una nota nueva todavía no tiene: nace en el
@@ -141,6 +148,7 @@ fun NoteEditorScreen(
     var recording by rememberSaveable { mutableStateOf(false) }
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
     var attachError by rememberSaveable { mutableStateOf<String?>(null) }
+    var dismissedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
 
     val body = value.text
     // Hasta que el perfil carga no hay ajuste que leer, y una nota nueva no puede nacer con un
@@ -274,6 +282,40 @@ fun NoteEditorScreen(
         }
     }
 
+    /*
+     * El reloj de la sugerencia.
+     *
+     * Se mira al entrar y una vez por minuto. Sin el latido, quien abre el editor un minuto
+     * antes de que empiece la clase no ve la sugerencia aparecer nunca, y quien lo deja abierto
+     * hasta que acaba la clase la sigue viendo media hora despues.
+     */
+    var ahora by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            ahora = LocalDateTime.now()
+        }
+    }
+
+    val enClase = remember(sessions, ahora) { NoteMoment.subjectInClassNow(sessions, ahora) }
+    val sugerida = subjects.firstOrNull { it.id == enClase }
+    val haySugerencia = sugerida != null &&
+        NoteMoment.shouldSuggest(enClase, subjectId, dismissedSuggestion)
+
+    /*
+     * La mencion con arroba, mientras se escribe.
+     *
+     * Solo cuando el cursor esta suelto: con texto seleccionado no se esta escribiendo un
+     * nombre de materia, se esta a punto de darle formato.
+     */
+    val mencion = remember(value.text, value.selection) {
+        if (value.selection.collapsed) NoteMention.at(value.text, value.selection.start) else null
+    }
+    val candidatas = remember(mencion, subjects) {
+        val consulta = mencion ?: return@remember emptyList()
+        NoteSearch.matchingSubjects(subjects.map { it.id to it.name }, consulta.token).take(4)
+    }
+
     val subject = subjects.firstOrNull { it.id == subjectId }
     val saved = loaded && !dirty && body.isNotBlank()
     val palette = rememberNotePalette()
@@ -328,6 +370,14 @@ fun NoteEditorScreen(
                             }
                         }
                     }
+                    if (currentId != null) {
+                        val fijada = existing?.pinned == true
+                        UniIconButton(
+                            icon = if (fijada) Icons.Rounded.PushPin else Icons.Outlined.PushPin,
+                            contentDescription = if (fijada) "Quitar de fijadas" else "Fijar arriba",
+                            onClick = { currentId?.let { viewModel.setPinned(it, !fijada) } }
+                        )
+                    }
                     UniIconButton(
                         icon = Icons.AutoMirrored.Rounded.HelpOutline,
                         contentDescription = "Qué se puede escribir",
@@ -354,6 +404,56 @@ fun NoteEditorScreen(
                  * En Markdown estorbaría: ahí las marcas se escriben a mano y se ven, así que un
                  * botón de negrita sería una segunda forma de hacer lo mismo. Aquí es la única.
                  */
+                /*
+                 * Las materias que encajan con lo tecleado tras la arroba.
+                 *
+                 * Van aqui abajo, pegadas al teclado, y no flotando sobre el texto: una lista
+                 * encima de lo que se escribe tapa justo la linea que se esta escribiendo.
+                 */
+                AnimatedVisibility(
+                    visible = candidatas.isNotEmpty(),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        candidatas.forEach { (id, nombre) ->
+                            val materia = subjects.firstOrNull { it.id == id }
+                            Surface(
+                                onClick = {
+                                    val consulta = mencion ?: return@Surface
+                                    val cambio = NoteMention.accept(value.text, consulta, nombre)
+                                    value = TextFieldValue(
+                                        text = cambio.text.take(NoteText.MAX_LENGTH),
+                                        selection = TextRange(
+                                            cambio.selectionStart.coerceIn(0, cambio.text.length)
+                                        )
+                                    )
+                                    subjectId = id
+                                },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surface,
+                                contentColor = materia?.let { subjectAccent(it) }
+                                    ?: MaterialTheme.colorScheme.onSurface
+                            ) {
+                                Text(
+                                    nombre,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
                 AnimatedVisibility(
                     visible = activeFormat == NoteFormat.PLAIN && !value.selection.collapsed,
                     enter = fadeIn() + expandVertically(),
@@ -452,6 +552,23 @@ fun NoteEditorScreen(
                 .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
+            AnimatedVisibility(
+                visible = haySugerencia,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                NoteSuggestionPill(
+                    subjectName = sugerida?.name.orEmpty(),
+                    accent = sugerida?.let { subjectAccent(it) }
+                        ?: MaterialTheme.colorScheme.primary,
+                    onLink = {
+                        subjectId = enClase
+                        dismissedSuggestion = null
+                    },
+                    onDismiss = { dismissedSuggestion = enClase },
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
+                )
+            }
             Box(modifier = Modifier.fillMaxWidth()) {
             if (body.isEmpty()) {
                 Text(

@@ -12,6 +12,8 @@ import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesRepository
+import com.unistack.app.feature_schedule.domain.ClassSession
+import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,12 +26,14 @@ class NotesViewModel @Inject constructor(
     private val notesRepository: NotesRepository,
     private val gradesRepository: GradesRepository,
     private val userRepository: UserRepository,
+    private val scheduleRepository: ScheduleRepository,
     private val attachmentStore: NoteAttachmentStore
 ) : ViewModel() {
 
     val notes: StateFlow<List<QuickNote>> = notesRepository.notes
     val attachments: StateFlow<List<NoteAttachment>> = notesRepository.attachments
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects
+    val sessions: StateFlow<List<ClassSession>> = scheduleRepository.sessions
     val userProfile = userRepository.userProfile
 
     fun noteById(noteId: String?): QuickNote? {

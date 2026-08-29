@@ -1,8 +1,12 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
 
 package com.unistack.app.feature_notes.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,7 +99,8 @@ fun NoteCard(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     attachments: List<NoteAttachment> = emptyList(),
-    pathFor: (NoteAttachment) -> String = { "" }
+    pathFor: (NoteAttachment) -> String = { "" },
+    onLongClick: (() -> Unit)? = null
 ) {
     val accent = subject?.let { subjectAccent(it) }
     /*
@@ -119,10 +124,24 @@ fun NoteCard(
     val title = NoteText.title(plano)
     val preview = NoteText.preview(plano, maxLines = if (compact) 4 else 8)
 
+    /*
+     * Fijar y borrar viven en la pulsacion larga.
+     *
+     * Un boton por tarjeta seria seis iconos en la pantalla para dos acciones que casi nunca se
+     * usan. La pulsacion larga es donde Android pone siempre lo que hay detras de una fila.
+     */
+    val forma = MaterialTheme.shapes.large
     UniCard(
-        modifier = modifier.fillMaxWidth(),
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
+        modifier = if (onLongClick == null) {
+            modifier.fillMaxWidth()
+        } else {
+            modifier
+                .fillMaxWidth()
+                .clip(forma)
+                .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+        },
+        onClick = if (onLongClick == null) onClick else null,
+        shape = forma,
         contentPadding = PaddingValues(0.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {

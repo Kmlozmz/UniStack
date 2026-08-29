@@ -330,6 +330,7 @@ fun MainNavGraph(
                             onAboutClick = { navController.go(AppRoutes.About) },
                             onGpaClick = { navController.go(AppRoutes.GpaCalculator) },
                             onQuickNotesClick = { navController.go(AppRoutes.QuickNotes) },
+                            onNewNoteClick = { navController.go(AppRoutes.NewNote) },
                             onAiClick = { navController.go(AppRoutes.AiAssistant) },
                             onLabsClick = { navController.go(AppRoutes.Labs) },
                             onProfileClick = {

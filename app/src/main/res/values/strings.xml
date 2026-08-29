@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        El atajo del icono de la app: dejar pulsado UniStack y escribir sin pasar por Inicio.
+
+        El rótulo corto es el que cabe debajo del icono en el escritorio; el largo, el que sale
+        en la lista de atajos. «Apunte» y no «Nota» a propósito: en esta app una nota es una
+        calificación, y el menú de crear ya usa esa palabra para eso.
+    -->
+    <string name="shortcut_note_short">Apunte</string>
+    <string name="shortcut_note_long">Escribir un apunte</string>
+</resources>

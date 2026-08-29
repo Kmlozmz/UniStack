@@ -26,8 +26,19 @@ import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,10 +61,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSearchField
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteGrouping
+import com.unistack.app.feature_notes.domain.NoteSearch
+import com.unistack.app.feature_notes.domain.NoteText
+import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.QuickNote
 import java.time.LocalDate
 
 /**
@@ -82,6 +98,10 @@ fun NotesListScreen(
 
     var filterSubjectId by rememberSaveable { mutableStateOf<String?>(null) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var searching by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var acting by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleting by rememberSaveable { mutableStateOf<String?>(null) }
 
     val layout = profile?.notesLayout ?: NotesLayout.MOSAICO
     val use24Hour = profile?.accessibilityPreferences?.use24HourTime ?: true
@@ -98,8 +118,10 @@ fun NotesListScreen(
     // pantalla se queda vacía con una pastilla marcada que ya no existe en la fila.
     val activeFilter = filterSubjectId?.takeIf { id -> subjectsWithNotes.any { it.id == id } }
 
-    val visible = remember(notes, activeFilter) {
-        if (activeFilter == null) notes else notes.filter { it.subjectId == activeFilter }
+    val visible = remember(notes, activeFilter, query) {
+        val porMateria =
+            if (activeFilter == null) notes else notes.filter { it.subjectId == activeFilter }
+        NoteSearch.filter(porMateria, query)
     }
     val porNota = remember(allAttachments) { allAttachments.groupBy { it.noteId } }
     val pinned = remember(visible) { NoteGrouping.pinned(visible) }
@@ -125,6 +147,22 @@ fun NotesListScreen(
                     )
                 },
                 actions = {
+                    if (notes.isNotEmpty()) {
+                        /*
+                         * Buscar se despliega, no ocupa sitio siempre.
+                         *
+                         * Filtros, buscador y fijadas apilados se comen media pantalla antes de
+                         * la primera nota. Detras de la lupa, la lista empieza arriba.
+                         */
+                        UniIconButton(
+                            icon = Icons.Rounded.Search,
+                            contentDescription = if (searching) "Cerrar la búsqueda" else "Buscar",
+                            onClick = {
+                                searching = !searching
+                                if (!searching) query = ""
+                            }
+                        )
+                    }
                     if (notes.isNotEmpty()) {
                         UniIconButton(
                             icon = if (layout == NotesLayout.MOSAICO) {
@@ -209,6 +247,14 @@ fun NotesListScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (searching) {
+                UniSearchField(
+                    query = query,
+                    onQueryChange = { query = it },
+                    placeholder = "Buscar en tus notas…",
+                    modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 10.dp)
+                )
+            }
             if (subjectsWithNotes.isNotEmpty()) {
                 NoteSubjectFilters(
                     subjects = subjectsWithNotes,
@@ -225,6 +271,11 @@ fun NotesListScreen(
                         "Escríbelo aquí y luego dile de qué materia es."
                 )
 
+                visible.isEmpty() && query.isNotBlank() -> EmptyNotes(
+                    headline = "Nada con eso",
+                    body = "No hay ninguna nota que diga «" + query.trim() + "»."
+                )
+
                 visible.isEmpty() -> EmptyNotes(
                     headline = "Nada de esta materia",
                     body = "No has apuntado nada en esta asignatura todavía."
@@ -236,7 +287,8 @@ fun NotesListScreen(
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
-                    onNoteClick = onNoteClick
+                    onNoteClick = onNoteClick,
+                    onNoteLongClick = { acting = it }
                 )
 
                 else -> NotesNotebook(
@@ -246,9 +298,118 @@ fun NotesListScreen(
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
-                    onNoteClick = onNoteClick
+                    onNoteClick = onNoteClick,
+                    onNoteLongClick = { acting = it }
                 )
             }
+        }
+    }
+
+    acting?.let { noteId ->
+        val nota = notes.firstOrNull { it.id == noteId }
+        NoteActionsSheet(
+            pinned = nota?.pinned == true,
+            onPin = {
+                nota?.let { viewModel.setPinned(it.id, !it.pinned) }
+                acting = null
+            },
+            onDelete = {
+                acting = null
+                deleting = noteId
+            },
+            onDismiss = { acting = null }
+        )
+    }
+
+    deleting?.let { noteId ->
+        val nota = notes.firstOrNull { it.id == noteId }
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("¿Borrar la nota?") },
+            text = {
+                Text(
+                    "Se borra «" + NoteText.label(NoteMarkdown.strip(nota?.body.orEmpty())) +
+                        "» con lo que lleve dentro, y no se puede deshacer."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteNote(noteId)
+                    deleting = null
+                }) {
+                    Text(
+                        "Borrar",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+}
+
+/** Lo que hay detrás de una nota al dejar el dedo puesto. */
+@Composable
+private fun NoteActionsSheet(
+    pinned: Boolean,
+    onPin: () -> Unit,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 18.dp)
+                .padding(bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ActionRow(
+                icon = Icons.Rounded.PushPin,
+                label = if (pinned) "Quitar de fijadas" else "Fijar arriba",
+                tint = MaterialTheme.colorScheme.onSurface,
+                onClick = onPin
+            )
+            ActionRow(
+                icon = Icons.Rounded.DeleteOutline,
+                label = "Borrar",
+                tint = MaterialTheme.colorScheme.error,
+                onClick = onDelete
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    tint: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = tint,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(19.dp))
+            Spacer(Modifier.width(13.dp))
+            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -266,7 +427,8 @@ private fun NotesMosaic(
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
-    onNoteClick: (String) -> Unit
+    onNoteClick: (String) -> Unit,
+    onNoteLongClick: (String) -> Unit
 ) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
@@ -283,7 +445,8 @@ private fun NotesMosaic(
                 onClick = { onNoteClick(note.id) },
                 compact = true,
                 attachments = attachmentsFor(note.id),
-                pathFor = pathFor
+                pathFor = pathFor,
+                onLongClick = { onNoteLongClick(note.id) }
             )
         }
     }
@@ -298,7 +461,8 @@ private fun NotesNotebook(
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
-    onNoteClick: (String) -> Unit
+    onNoteClick: (String) -> Unit,
+    onNoteLongClick: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -314,7 +478,8 @@ private fun NotesNotebook(
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
                     onClick = { onNoteClick(note.id) },
                     attachments = attachmentsFor(note.id),
-                    pathFor = pathFor
+                    pathFor = pathFor,
+                    onLongClick = { onNoteLongClick(note.id) }
                 )
             }
         }
@@ -327,7 +492,8 @@ private fun NotesNotebook(
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
                     onClick = { onNoteClick(note.id) },
                     attachments = attachmentsFor(note.id),
-                    pathFor = pathFor
+                    pathFor = pathFor,
+                    onLongClick = { onNoteLongClick(note.id) }
                 )
             }
         }
