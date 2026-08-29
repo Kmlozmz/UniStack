@@ -4,7 +4,10 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.BuildConfig
+import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.feature_notes.data.NoteAttachmentStore
+import com.unistack.app.feature_notes.data.NoteSamples
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAttachment
@@ -215,7 +218,41 @@ class NotesViewModel @Inject constructor(
 
     fun discardStoredFile(storedName: String) = attachmentStore.delete(storedName)
 
-    fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
+fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
+
+    /**
+     * Si esta compilacion puede llenarse de notas de mentira.
+     *
+     * Solo dev, alpha y beta. En una version publicada, un boton que crea ocho notas falsas
+     * dentro de las notas de alguien es una forma rapida de perder la confianza de esa persona.
+     */
+    val canSeedSamples: Boolean = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
+
+    val hasSamples: Boolean
+        get() = notes.value.any { NoteSamples.isSample(it.id) }
+
+    /**
+     * Ocho notas de ejemplo, distintas entre si y con todo puesto.
+     *
+     * Existe porque mirar esta pantalla vacia no dice nada: para juzgar si el mosaico se lee hay
+     * que escribir ocho notas con foto, archivo y audio, y eso es media hora cada vez que se
+     * mueve una separacion.
+     */
+    fun seedSamples() {
+        val materias = subjects.value.map { it.id }
+        val muestras = NoteSamples.build(attachmentStore, materias, System.currentTimeMillis())
+        muestras.forEach { muestra ->
+            notesRepository.addNote(muestra.note)
+            muestra.attachments.forEach(notesRepository::addAttachment)
+        }
+    }
+
+    /** Se van todas juntas, con sus archivos, por el mismo camino que borra una nota normal. */
+    fun removeSamples() {
+        notes.value.filter { NoteSamples.isSample(it.id) }.forEach {
+            notesRepository.deleteNote(it.id)
+        }
+    }
 
     fun setPinned(noteId: String, pinned: Boolean) = notesRepository.setPinned(noteId, pinned)
 

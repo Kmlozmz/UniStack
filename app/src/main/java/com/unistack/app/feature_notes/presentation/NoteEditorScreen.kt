@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -525,11 +526,6 @@ fun NoteEditorScreen(
                         asegurarNota()
                         recording = true
                     }
-                    SubjectButton(
-                        subject = subject,
-                        enabled = subjects.isNotEmpty(),
-                        onClick = { pickingSubject = true }
-                    )
                     // El contador solo aparece cuando queda poco. Enseñar «31 de 20000» desde la
                     // primera letra es poner un límite delante de quien viene a escribir.
                     if (body.length > NoteText.MAX_LENGTH - 500) {
@@ -540,6 +536,20 @@ fun NoteEditorScreen(
                         )
                     }
                     }
+                    /*
+                     * La materia se queda fuera del carrusel.
+                     *
+                     * Dentro se desplazaba con los iconos y quedaba cortada a media palabra
+                     * contra el interruptor: «Sin materia» se leia «Si». Fuera siempre esta
+                     * entera, y con un nombre largo se recorta con puntos suspensivos en vez de
+                     * partirse por donde acabe el hueco.
+                     */
+                    SubjectButton(
+                        subject = subject,
+                        enabled = subjects.isNotEmpty(),
+                        onClick = { pickingSubject = true },
+                        modifier = Modifier.widthIn(max = 132.dp)
+                    )
                     FormatSwitch(format = activeFormat, onChange = cambiarFormato)
                 }
             }

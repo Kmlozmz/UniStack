@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.Row
@@ -203,8 +204,15 @@ fun NotesListScreen(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false }
                         ) {
+                            /*
+                              * El rotulo va corto porque el menu mide lo que mide su texto.
+                              *
+                              * Con «Las notas nuevas nacen en» entero, el menu salia mas ancho
+                              * que el hueco que le queda a la derecha y se cortaba contra el
+                              * borde de la pantalla.
+                              */
                             Text(
-                                "Las notas nuevas nacen en",
+                                "Notas nuevas",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 2.dp)
@@ -225,6 +233,33 @@ fun NotesListScreen(
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
+                                    }
+                                )
+                            }
+                            if (viewModel.canSeedSamples) {
+                                /*
+                                 * Notas de mentira para poder mirar las de verdad.
+                                 *
+                                 * Solo en dev, alpha y beta: en una version publicada, un boton
+                                 * que mete ocho notas falsas entre las notas de alguien es la
+                                 * forma mas rapida de perder su confianza.
+                                 */
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Crear notas de ejemplo") },
+                                    onClick = {
+                                        viewModel.seedSamples()
+                                        menuOpen = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Quitar las de ejemplo") },
+                                    onClick = {
+                                        viewModel.removeSamples()
+                                        menuOpen = false
                                     }
                                 )
                             }
