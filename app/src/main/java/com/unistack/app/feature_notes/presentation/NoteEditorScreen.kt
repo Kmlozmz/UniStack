@@ -61,6 +61,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,6 +73,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -123,6 +126,7 @@ import com.unistack.app.feature_notes.domain.NoteSearch
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NoteTextEdits
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -180,9 +184,9 @@ fun NoteEditorScreen(
     var dismissedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
     var pickingDate by rememberSaveable { mutableStateOf(false) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
-    var tareaCreada by rememberSaveable { mutableStateOf(false) }
-    var copiado by rememberSaveable { mutableStateOf(false) }
     val portapapeles = LocalClipboardManager.current
+    val avisos = remember { SnackbarHostState() }
+    val alcance = rememberCoroutineScope()
     var pendingDate by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val body = value.text
@@ -454,6 +458,7 @@ fun NoteEditorScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = fondo,
+        snackbarHost = { SnackbarHost(avisos) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -567,22 +572,34 @@ fun NoteEditorScreen(
                                             subjectId,
                                             reminderAt
                                         )
-                                        attachError = if (hecha) {
-                                            null
-                                        } else {
-                                            "Escribe algo antes de crear la tarea."
+                                        alcance.launch {
+                                            avisos.showSnackbar(
+                                                if (hecha) {
+                                                    "Tarea creada en Académico"
+                                                } else {
+                                                    "Escribe algo antes de crear la tarea"
+                                                }
+                                            )
                                         }
-                                        if (hecha) tareaCreada = true
                                     }
                                 )
+                                /*
+                                 * «Copiar», a secas.
+                                 *
+                                 * Decia «Copiar el texto sin marcas», y eso era hablarle al
+                                 * usuario de algo que no ve: las marcas estan escondidas justo
+                                 * para que no tenga que saber que existen. Lo que hace si es
+                                 * quitarlas —pegar `**importante**` en otra app seria pegar los
+                                 * asteriscos— pero eso es cosa del boton, no suya.
+                                 */
                                 DropdownMenuItem(
-                                    text = { Text("Copiar el texto") },
+                                    text = { Text("Copiar") },
                                     onClick = {
                                         menuOpen = false
-                                        val plano = NoteMarkdown.strip(body)
-                                        portapapeles.setText(AnnotatedString(plano))
-                                        tareaCreada = false
-                                        copiado = true
+                                        portapapeles.setText(AnnotatedString(NoteMarkdown.strip(body)))
+                                        alcance.launch {
+                                            avisos.showSnackbar("Copiado")
+                                        }
                                     }
                                 )
                                 DropdownMenuItem(
@@ -590,13 +607,6 @@ fun NoteEditorScreen(
                                     onClick = {
                                         menuOpen = false
                                         compartir()
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Duplicar") },
-                                    onClick = {
-                                        menuOpen = false
-                                        viewModel.duplicate(draft, subjectId)
                                     }
                                 )
                                 if (currentId != null) {
@@ -942,32 +952,6 @@ fun NoteEditorScreen(
                 }
             },
             onDismiss = { recording = false }
-        )
-    }
-
-    if (tareaCreada || copiado) {
-        AlertDialog(
-            onDismissRequest = {
-                tareaCreada = false
-                copiado = false
-            },
-            title = { Text(if (tareaCreada) "Tarea creada" else "Copiado") },
-            text = {
-                Text(
-                    if (tareaCreada) {
-                        "Está en Académico, en Tareas, con la materia y la fecha de esta nota."
-                    } else {
-                        "El texto de la nota, sin marcas, está en el portapapeles."
-                    }
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    tareaCreada = false
-                    copiado = false
-                }) { Text("Entendido") }
-            },
-            containerColor = MaterialTheme.colorScheme.background
         )
     }
 

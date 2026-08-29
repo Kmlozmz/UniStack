@@ -269,25 +269,6 @@ class NotesViewModel @Inject constructor(
      */
     val diasEnPapelera: Int = 7
 
-    /** Una copia de la nota, igual pero suya. Sin los adjuntos: esos no se duplican. */
-    fun duplicate(draft: NoteDraft, subjectId: String?) {
-        val now = System.currentTimeMillis()
-        notesRepository.addNote(
-            QuickNote(
-                id = "note-" + UUID.randomUUID(),
-                title = draft.title.trim(),
-                body = draft.body.trimEnd(),
-                subjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
-                format = NoteFormat.MARKDOWN,
-                pinned = false,
-                reminderAt = null,
-                colorArgb = draft.colorArgb,
-                createdAt = now,
-                updatedAt = now
-            )
-        )
-    }
-
     /**
      * Una tarea nacida de una nota.
      *
