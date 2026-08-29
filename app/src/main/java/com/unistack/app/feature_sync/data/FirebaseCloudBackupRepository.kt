@@ -194,6 +194,7 @@ class FirebaseCloudBackupRepository(
             "targetAverage" to profile.targetAverage,
             "enabledModules" to profile.enabledModules.map { it.name },
             "notesLayout" to profile.notesLayout.name,
+            "noteFormatDefault" to profile.noteFormatDefault.name,
             "visualPreference" to profile.visualPreference.name,
             "appearancePreferences" to mapOf(
                 "backgroundStyle" to profile.appearancePreferences.backgroundStyle.name,

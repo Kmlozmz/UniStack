@@ -7,7 +7,12 @@ package com.unistack.app.feature_notes.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +34,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.School
@@ -48,7 +54,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,8 +61,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,6 +80,10 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_notes.domain.NoteAction
+import com.unistack.app.feature_notes.domain.NoteFormat
+import com.unistack.app.feature_notes.domain.NoteFormatting
+import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import kotlinx.coroutines.delay
 
@@ -90,6 +107,7 @@ fun NoteEditorScreen(
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
+    val profile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     // El identificador vive en el estado porque una nota nueva todavía no tiene: nace en el
     // primer guardado y a partir de ahí los siguientes tienen que actualizar, no insertar.
@@ -97,10 +115,20 @@ fun NoteEditorScreen(
     val existing = remember(notes, currentId) { viewModel.noteById(currentId) }
 
     var loaded by rememberSaveable { mutableStateOf(noteId == null) }
-    var body by rememberSaveable { mutableStateOf("") }
+    var value by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
     var subjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var format by rememberSaveable { mutableStateOf<NoteFormat?>(null) }
     var pickingSubject by rememberSaveable { mutableStateOf(false) }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
+    var showingHelp by rememberSaveable { mutableStateOf(false) }
+    var warningAboutSimple by rememberSaveable { mutableStateOf(false) }
+
+    val body = value.text
+    // Hasta que el perfil carga no hay ajuste que leer, y una nota nueva no puede nacer con un
+    // formato inventado: mientras tanto vale el de partida, que es el mismo que trae el perfil.
+    val activeFormat = format ?: existing?.format ?: profile?.noteFormatDefault ?: NoteFormat.MARKDOWN
 
     /*
      * La nota se lee una sola vez.
@@ -112,31 +140,36 @@ fun NoteEditorScreen(
     LaunchedEffect(existing?.id) {
         val note = existing
         if (!loaded && note != null) {
-            body = note.body
+            value = TextFieldValue(note.body)
             subjectId = note.subjectId
+            format = note.format
             loaded = true
         }
     }
 
-    val dirty = loaded && (body.trimEnd() != existing?.body.orEmpty() || subjectId != existing?.subjectId)
+    val dirty = loaded && (
+        body.trimEnd() != existing?.body.orEmpty() ||
+            subjectId != existing?.subjectId ||
+            (existing != null && activeFormat != existing.format)
+        )
 
-    LaunchedEffect(body, subjectId, loaded) {
+    LaunchedEffect(body, subjectId, activeFormat, loaded) {
         if (!loaded || !dirty) return@LaunchedEffect
         delay(600)
-        val id = viewModel.saveNote(currentId, body, subjectId)
+        val id = viewModel.saveNote(currentId, body, subjectId, activeFormat)
         if (id != null) currentId = id
     }
 
     /*
-     * Salir guarda, pero solo si la nota llego a leerse.
+     * Salir guarda, pero solo si la nota llegó a leerse.
      *
-     * Sin la condicion, abrir una nota y volver atras antes de que la base conteste guardaria un
-     * campo vacio sobre ella, y guardar vacio es borrar: se perderia la nota por el simple hecho
+     * Sin la condición, abrir una nota y volver atrás antes de que la base conteste guardaría un
+     * campo vacío sobre ella, y guardar vacío es borrar: se perdería la nota por el simple hecho
      * de haberla abierto.
      */
     val leave: () -> Unit = {
         if (loaded) {
-            val id = viewModel.saveNote(currentId, body, subjectId)
+            val id = viewModel.saveNote(currentId, body, subjectId, activeFormat)
             if (id != null) currentId = id
         }
         onBackClick()
@@ -154,6 +187,18 @@ fun NoteEditorScreen(
 
     val subject = subjects.firstOrNull { it.id == subjectId }
     val saved = loaded && !dirty && body.isNotBlank()
+    val palette = rememberNotePalette()
+    val transformation = remember(activeFormat, palette) {
+        NoteVisualTransformation(activeFormat, palette)
+    }
+
+    val cambiarFormato: (NoteFormat) -> Unit = { destino ->
+        when {
+            destino == activeFormat -> Unit
+            destino == NoteFormat.PLAIN && NoteMarkdown.hasRichBlocks(body) -> warningAboutSimple = true
+            else -> format = destino
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -194,6 +239,11 @@ fun NoteEditorScreen(
                             }
                         }
                     }
+                    UniIconButton(
+                        icon = Icons.AutoMirrored.Rounded.HelpOutline,
+                        contentDescription = "Qué se puede escribir",
+                        onClick = { showingHelp = true }
+                    )
                     if (currentId != null) {
                         UniIconButton(
                             icon = Icons.Rounded.DeleteOutline,
@@ -209,12 +259,42 @@ fun NoteEditorScreen(
         },
         bottomBar = {
             Column(modifier = Modifier.navigationBarsPadding()) {
+                /*
+                 * La barra de formato sale al seleccionar, y solo en sencillo.
+                 *
+                 * En Markdown estorbaría: ahí las marcas se escriben a mano y se ven, así que un
+                 * botón de negrita sería una segunda forma de hacer lo mismo. Aquí es la única.
+                 */
+                AnimatedVisibility(
+                    visible = activeFormat == NoteFormat.PLAIN && !value.selection.collapsed,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    NoteFormatBar(
+                        onAction = { action ->
+                            val cambio = NoteFormatting.apply(
+                                action = action,
+                                text = value.text,
+                                selectionStart = value.selection.start,
+                                selectionEnd = value.selection.end
+                            )
+                            value = TextFieldValue(
+                                text = cambio.text.take(NoteText.MAX_LENGTH),
+                                selection = TextRange(
+                                    cambio.selectionStart.coerceIn(0, cambio.text.length),
+                                    cambio.selectionEnd.coerceIn(0, cambio.text.length)
+                                )
+                            )
+                        }
+                    )
+                }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 14.dp, end = 18.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     SubjectButton(
                         subject = subject,
@@ -231,6 +311,7 @@ fun NoteEditorScreen(
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
+                    FormatSwitch(format = activeFormat, onChange = cambiarFormato)
                 }
             }
         }
@@ -251,8 +332,14 @@ fun NoteEditorScreen(
                 )
             }
             BasicTextField(
-                value = body,
-                onValueChange = { body = it.take(NoteText.MAX_LENGTH) },
+                value = value,
+                onValueChange = { nuevo ->
+                    value = if (nuevo.text.length <= NoteText.MAX_LENGTH) {
+                        nuevo
+                    } else {
+                        nuevo.copy(text = nuevo.text.take(NoteText.MAX_LENGTH))
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
@@ -261,6 +348,7 @@ fun NoteEditorScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 25.sp
                 ),
+                visualTransformation = transformation,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
             )
         }
@@ -278,12 +366,50 @@ fun NoteEditorScreen(
         )
     }
 
+    if (showingHelp) {
+        NoteFormatHelpSheet(format = activeFormat, onDismiss = { showingHelp = false })
+    }
+
+    if (warningAboutSimple) {
+        /*
+         * Cambiar a sencillo no convierte ni pierde nada, pero deja cosas sin botón.
+         *
+         * Las dos maneras guardan el mismo texto: lo único que cambia es si las marcas se ven.
+         * Por eso el aviso no habla de perder, que sería mentira, sino de lo que de verdad pasa:
+         * los títulos y las tablas se seguirán viendo y no habrá con qué quitarlos desde ahí.
+         */
+        AlertDialog(
+            onDismissRequest = { warningAboutSimple = false },
+            title = { Text("Esta nota tiene títulos o tablas") },
+            text = {
+                Text(
+                    "No se pierde nada: es el mismo texto con las marcas escondidas. Pero la barra " +
+                        "de escritura sencilla no tiene botón para títulos, tablas ni bloques de " +
+                        "código, así que se seguirán viendo y no podrás quitarlos hasta que vuelvas " +
+                        "a Markdown."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    format = NoteFormat.PLAIN
+                    warningAboutSimple = false
+                }) {
+                    Text("Cambiar igual", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { warningAboutSimple = false }) { Text("Quedarme en Markdown") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+
     if (confirmingDelete) {
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
             title = { Text("¿Borrar la nota?") },
             text = {
-                Text("Se borra «${NoteText.label(body)}» y no se puede deshacer.")
+                Text("Se borra «${NoteText.label(NoteMarkdown.strip(body))}» y no se puede deshacer.")
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -302,6 +428,129 @@ fun NoteEditorScreen(
                 TextButton(onClick = { confirmingDelete = false }) { Text("Cancelar") }
             },
             containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+}
+
+/**
+ * El interruptor de las dos maneras de escribir.
+ *
+ * Cambia **esta** nota y no el ajuste: el ajuste dice con qué nacen las nuevas y vive en el menú
+ * de la lista. Fue lo que él eligió —«un ajuste por defecto, y se puede cambiar en una nota»—
+ * porque las dos cosas por separado son lo que hace falta: quien escribe casi todo en Markdown
+ * no quiere tocar el ajuste para un apunte suelto de dos líneas.
+ */
+@Composable
+private fun FormatSwitch(format: NoteFormat, onChange: (NoteFormat) -> Unit) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Row(modifier = Modifier.padding(2.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            FormatSwitchOption(
+                label = "MD",
+                description = "Escribir en Markdown",
+                selected = format == NoteFormat.MARKDOWN,
+                monospace = true,
+                onClick = { onChange(NoteFormat.MARKDOWN) }
+            )
+            FormatSwitchOption(
+                label = "Aa",
+                description = "Escribir sin marcas",
+                selected = format == NoteFormat.PLAIN,
+                monospace = false,
+                onClick = { onChange(NoteFormat.PLAIN) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FormatSwitchOption(
+    label: String,
+    description: String,
+    selected: Boolean,
+    monospace: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        contentColor = if (selected) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(horizontal = 11.dp, vertical = 6.dp)
+                .semanticsDescription(description)
+        )
+    }
+}
+
+private fun Modifier.semanticsDescription(description: String): Modifier =
+    this.then(
+        Modifier.semantics { contentDescription = description }
+    )
+
+/**
+ * La barra que sale al seleccionar en escritura sencilla.
+ *
+ * No hay subrayado y sí tachado. Las dos maneras guardan Markdown —eso es lo que permite pasar
+ * de una a la otra sin convertir ni perder—, y en Markdown el subrayado no existe: ponerlo aquí
+ * obligaría a inventar una marca propia que luego nadie más sabría leer.
+ */
+@Composable
+private fun NoteFormatBar(onAction: (NoteAction) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FormatBarButton("B", NoteAction.NEGRITA, onAction) { FontWeight.ExtraBold }
+        FormatBarButton("I", NoteAction.CURSIVA, onAction, italic = true) { FontWeight.Medium }
+        FormatBarButton("S", NoteAction.TACHADO, onAction, strike = true) { FontWeight.Medium }
+        FormatBarButton("•", NoteAction.VINETA, onAction) { FontWeight.Bold }
+        FormatBarButton("1.", NoteAction.NUMERADA, onAction) { FontWeight.Bold }
+        FormatBarButton("☐", NoteAction.CASILLA, onAction) { FontWeight.Bold }
+    }
+}
+
+@Composable
+private fun FormatBarButton(
+    label: String,
+    action: NoteAction,
+    onAction: (NoteAction) -> Unit,
+    italic: Boolean = false,
+    strike: Boolean = false,
+    weight: () -> FontWeight
+) {
+    Surface(
+        onClick = { onAction(action) },
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = weight(),
+            fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+            textDecoration = if (strike) TextDecoration.LineThrough else TextDecoration.None,
+            modifier = Modifier
+                .padding(horizontal = 13.dp, vertical = 6.dp)
+                .semanticsDescription(action.label)
         )
     }
 }
@@ -412,7 +661,7 @@ private fun NoteSubjectSheet(
 @Composable
 private fun SubjectRow(
     name: String,
-    accent: androidx.compose.ui.graphics.Color,
+    accent: Color,
     selected: Boolean,
     onClick: () -> Unit
 ) {

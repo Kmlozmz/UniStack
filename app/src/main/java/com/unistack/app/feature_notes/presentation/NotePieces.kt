@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.QuickNote
 
@@ -92,8 +94,16 @@ fun NoteCard(
     compact: Boolean = false
 ) {
     val accent = subject?.let { subjectAccent(it) }
-    val title = NoteText.title(note.body)
-    val preview = NoteText.preview(note.body, maxLines = if (compact) 4 else 8)
+    /*
+     * En la tarjeta el texto va sin marcas.
+     *
+     * Una nota que empieza por `## Parcial 2` delataria el formato justo donde menos importa:
+     * quien mira la lista viene a acordarse de que hay parcial, no a leer Markdown. Se limpia
+     * tambien en las notas sencillas porque las dos maneras guardan lo mismo.
+     */
+    val plano = remember(note.body) { NoteMarkdown.strip(note.body) }
+    val title = NoteText.title(plano)
+    val preview = NoteText.preview(plano, maxLines = if (compact) 4 else 8)
 
     UniCard(
         modifier = modifier.fillMaxWidth(),

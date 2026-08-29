@@ -6,6 +6,7 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
+import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 
 /**
@@ -92,6 +93,14 @@ data class UserProfile(
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
     val notesLayout: NotesLayout = NotesLayout.MOSAICO,
+    /**
+     * Con que formato nacen las notas nuevas.
+     *
+     * Es solo el punto de partida: cada nota guarda el suyo y se puede cambiar desde el
+     * propio editor. Un ajuste unico obligaria a quien escribe casi todo en Markdown a
+     * cambiarlo en cada apunte suelto, y al reves.
+     */
+    val noteFormatDefault: NoteFormat = NoteFormat.MARKDOWN,
     val gradeScenarios: List<SavedGradeScenario> = emptyList(),
     val gradingCutScheme: GradingCutScheme = GradingCutScheme.default(),
     val setupCompleted: Boolean,

@@ -42,7 +42,12 @@ class NotesViewModel @Inject constructor(
      * papeles vacíos por la lista. Y si se borra todo el texto de una nota que ya existía, se
      * borra la nota —dejar una tarjeta vacía es peor que no dejar nada.
      */
-    fun saveNote(noteId: String?, body: String, subjectId: String?): String? {
+    fun saveNote(
+        noteId: String?,
+        body: String,
+        subjectId: String?,
+        format: NoteFormat = defaultFormat()
+    ): String? {
         val existing = noteById(noteId)
         val trimmed = body.trimEnd()
 
@@ -59,7 +64,7 @@ class NotesViewModel @Inject constructor(
                 id = "note-" + UUID.randomUUID(),
                 body = trimmed,
                 subjectId = validSubjectId,
-                format = defaultFormat(),
+                format = format,
                 pinned = false,
                 createdAt = now,
                 updatedAt = now
@@ -70,12 +75,18 @@ class NotesViewModel @Inject constructor(
 
         // Sin cambios no se toca nada: reescribir por salir de la pantalla movería la nota al
         // principio de la lista sin que nadie haya escrito una letra.
-        if (existing.body == trimmed && existing.subjectId == validSubjectId) return existing.id
+        if (existing.body == trimmed &&
+            existing.subjectId == validSubjectId &&
+            existing.format == format
+        ) {
+            return existing.id
+        }
 
         notesRepository.updateNote(
             existing.copy(
                 body = trimmed,
                 subjectId = validSubjectId,
+                format = format,
                 updatedAt = now
             )
         )
@@ -97,8 +108,16 @@ class NotesViewModel @Inject constructor(
     /**
      * Con qué formato nace una nota nueva.
      *
-     * De momento siempre texto plano. Cuando el editor de Markdown esté, esto leerá el ajuste
-     * global; el campo ya viaja en la nota para que ese día no haya que mover la tabla.
+     * Sale del ajuste global, que es solo el punto de partida: dentro del editor se cambia esta
+     * nota sin tocar el ajuste, y cada nota se guarda con el suyo.
      */
-    private fun defaultFormat(): NoteFormat = NoteFormat.PLAIN
+    fun defaultFormat(): NoteFormat = userProfile.value?.noteFormatDefault ?: NoteFormat.MARKDOWN
+
+    fun setDefaultFormat(format: NoteFormat) {
+        val profile = userProfile.value ?: return
+        if (profile.noteFormatDefault == format) return
+        userRepository.saveUserProfile(
+            profile.copy(noteFormatDefault = format, updatedAt = System.currentTimeMillis())
+        )
+    }
 }

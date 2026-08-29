@@ -23,8 +23,11 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.automirrored.rounded.ViewList
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +48,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteGrouping
 import com.unistack.app.feature_notes.domain.NotesLayout
 import java.time.LocalDate
@@ -74,6 +79,7 @@ fun NotesListScreen(
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
 
     var filterSubjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
 
     val layout = profile?.notesLayout ?: NotesLayout.MOSAICO
     val use24Hour = profile?.accessibilityPreferences?.use24HourTime ?: true
@@ -138,6 +144,50 @@ fun NotesListScreen(
                                 )
                             }
                         )
+                    }
+                    Box {
+                        UniIconButton(
+                            icon = Icons.Rounded.MoreVert,
+                            contentDescription = "Más opciones",
+                            onClick = { menuOpen = true }
+                        )
+                        /*
+                         * El ajuste de formato vive aquí y no dentro del editor.
+                         *
+                         * Son dos cosas distintas: el interruptor del editor cambia esa nota, y
+                         * esto dice con qué nacen las siguientes. Ponerlas juntas haría que
+                         * cambiar una nota cambiara todas las futuras sin haberlo pedido.
+                         */
+                        UniDropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            Text(
+                                "Las notas nuevas nacen en",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 2.dp)
+                            )
+                            NoteFormat.entries.forEach { opcion ->
+                                DropdownMenuItem(
+                                    text = { Text(if (opcion == NoteFormat.MARKDOWN) "Markdown" else "Sencillo") },
+                                    onClick = {
+                                        viewModel.setDefaultFormat(opcion)
+                                        menuOpen = false
+                                    },
+                                    trailingIcon = {
+                                        if (profile?.noteFormatDefault == opcion) {
+                                            Icon(
+                                                Icons.Rounded.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

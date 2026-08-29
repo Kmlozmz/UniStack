@@ -246,6 +246,7 @@ class LocalJsonBackupRepository(
             .put("enabledExpenseCategories", JSONArray(profile?.enabledExpenseCategories?.map { it.name }.orEmpty()))
             .put("enabledModules", JSONArray(profile?.enabledModules?.map { it.name }.orEmpty()))
             .put("notesLayout", (profile?.notesLayout ?: NotesLayout.MOSAICO).name)
+            .put("noteFormatDefault", (profile?.noteFormatDefault ?: NoteFormat.MARKDOWN).name)
     }
 
     private fun restoreProfile(profileJson: JSONObject?) {
@@ -331,6 +332,9 @@ class LocalJsonBackupRepository(
                 notesLayout = profileJson.optString("notesLayout")
                     .let { name -> runCatching { NotesLayout.valueOf(name) }.getOrNull() }
                     ?: current.notesLayout,
+                noteFormatDefault = profileJson.optString("noteFormatDefault")
+                    .let { name -> runCatching { NoteFormat.valueOf(name) }.getOrNull() }
+                    ?: current.noteFormatDefault,
                 updatedAt = System.currentTimeMillis()
             )
         )
