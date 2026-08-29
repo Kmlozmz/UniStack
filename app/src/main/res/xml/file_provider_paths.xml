@@ -3,4 +3,6 @@
     <external-files-path name="downloads" path="Download/" />
     <!-- El PDF del reporte y las copias que se comparten se escriben en la caché. -->
     <cache-path name="exports" path="." />
+    <!-- Los adjuntos de las notas viven dentro de la app; solo se prestan para abrirlos. -->
+    <files-path name="note_attachments" path="note_attachments/" />
 </paths>

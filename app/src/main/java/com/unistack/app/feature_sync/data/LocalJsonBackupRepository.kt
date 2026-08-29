@@ -17,6 +17,8 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesRepository
@@ -134,6 +136,14 @@ class LocalJsonBackupRepository(
                 notesRepository.updateNote(note)
             } else {
                 notesRepository.addNote(note)
+            }
+        }
+        root.optJSONArray("notes").objects().forEach { item ->
+            val noteId = item.optString("id").takeIf { it.isNotBlank() } ?: return@forEach
+            parseAttachments(noteId, item.optJSONArray("attachments")).forEach { adjunto ->
+                if (notesRepository.attachments.value.none { it.id == adjunto.id }) {
+                    notesRepository.addAttachment(adjunto)
+                }
             }
         }
         preview
@@ -586,6 +596,55 @@ class LocalJsonBackupRepository(
         .put("pinned", note.pinned)
         .put("createdAt", note.createdAt)
         .put("updatedAt", note.updatedAt)
+        .put(
+            "attachments",
+            JSONArray(
+                notesRepository.attachments.value
+                    .filter { it.noteId == note.id }
+                    .map(::attachmentJson)
+            )
+        )
+
+    /*
+     * De los adjuntos viaja la ficha, no el archivo.
+     *
+     * Es una decision, y con numeros detras: una sola foto de movil son tres o cuatro megas, y
+     * la copia en la nube va a un documento de Firestore que no admite mas de uno. Meter las
+     * fotos dentro convertiria un respaldo de kilobytes —que se manda por Telegram y se abre en
+     * cualquier sitio— en uno de decenas de megas que la nube ya no aceptaria.
+     *
+     * Asi que la copia guarda que la nota llevaba una foto llamada asi y de este tamano. Al
+     * restaurar en el mismo telefono el archivo sigue estando y todo funciona; en uno nuevo, la
+     * nota lo dice en vez de dejar un hueco. Llevarse los archivos de verdad pide otro formato
+     * de copia —un zip—, y eso es un trabajo aparte.
+     */
+    private fun attachmentJson(attachment: NoteAttachment): JSONObject = JSONObject()
+        .put("id", attachment.id)
+        .put("kind", attachment.kind.name)
+        .put("displayName", attachment.displayName)
+        .put("storedName", attachment.storedName)
+        .put("mimeType", attachment.mimeType)
+        .put("sizeBytes", attachment.sizeBytes)
+        .put("durationMillis", attachment.durationMillis)
+        .put("createdAt", attachment.createdAt)
+
+    private fun parseAttachments(noteId: String, array: JSONArray?): List<NoteAttachment> =
+        array.objects().mapNotNull { item ->
+            val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val storedName = item.optString("storedName").takeIf { it.isNotBlank() }
+                ?: return@mapNotNull null
+            NoteAttachment(
+                id = id,
+                noteId = noteId,
+                kind = item.optString("kind").toEnum(AttachmentKind.FILE),
+                displayName = item.optString("displayName").ifBlank { "Adjunto" },
+                storedName = storedName,
+                mimeType = item.optString("mimeType").ifBlank { "application/octet-stream" },
+                sizeBytes = item.optLong("sizeBytes", 0L),
+                durationMillis = if (item.isNull("durationMillis")) null else item.optLong("durationMillis"),
+                createdAt = item.optLong("createdAt", System.currentTimeMillis())
+            )
+        }
 
     private fun parseNotes(array: JSONArray?): List<QuickNote> = array.objects().mapNotNull { item ->
         val id = item.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null

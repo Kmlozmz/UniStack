@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteGrouping
 import com.unistack.app.feature_notes.domain.NotesLayout
@@ -77,6 +78,7 @@ fun NotesListScreen(
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
 
     var filterSubjectId by rememberSaveable { mutableStateOf<String?>(null) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
@@ -99,6 +101,7 @@ fun NotesListScreen(
     val visible = remember(notes, activeFilter) {
         if (activeFilter == null) notes else notes.filter { it.subjectId == activeFilter }
     }
+    val porNota = remember(allAttachments) { allAttachments.groupBy { it.noteId } }
     val pinned = remember(visible) { NoteGrouping.pinned(visible) }
     val days = remember(visible, today) { NoteGrouping.byDay(visible, today) }
 
@@ -230,6 +233,8 @@ fun NotesListScreen(
                 layout == NotesLayout.MOSAICO -> NotesMosaic(
                     notes = visible,
                     subjectFor = { viewModel.subjectById(it) },
+                    attachmentsFor = { porNota[it].orEmpty() },
+                    pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
                     onNoteClick = onNoteClick
                 )
@@ -238,6 +243,8 @@ fun NotesListScreen(
                     pinned = pinned,
                     days = days,
                     subjectFor = { viewModel.subjectById(it) },
+                    attachmentsFor = { porNota[it].orEmpty() },
+                    pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
                     onNoteClick = onNoteClick
                 )
@@ -256,6 +263,8 @@ fun NotesListScreen(
 private fun NotesMosaic(
     notes: List<com.unistack.app.feature_notes.domain.QuickNote>,
     subjectFor: (String?) -> com.unistack.app.feature_grades.domain.Subject?,
+    attachmentsFor: (String) -> List<NoteAttachment>,
+    pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
     onNoteClick: (String) -> Unit
 ) {
@@ -272,7 +281,9 @@ private fun NotesMosaic(
                 subject = subjectFor(note.subjectId),
                 timeLabel = NoteGrouping.timeLabel(note, use24Hour),
                 onClick = { onNoteClick(note.id) },
-                compact = true
+                compact = true,
+                attachments = attachmentsFor(note.id),
+                pathFor = pathFor
             )
         }
     }
@@ -284,6 +295,8 @@ private fun NotesNotebook(
     pinned: List<com.unistack.app.feature_notes.domain.QuickNote>,
     days: List<com.unistack.app.feature_notes.domain.NoteDay>,
     subjectFor: (String?) -> com.unistack.app.feature_grades.domain.Subject?,
+    attachmentsFor: (String) -> List<NoteAttachment>,
+    pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
     onNoteClick: (String) -> Unit
 ) {
@@ -299,7 +312,9 @@ private fun NotesNotebook(
                     note = note,
                     subject = subjectFor(note.subjectId),
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
-                    onClick = { onNoteClick(note.id) }
+                    onClick = { onNoteClick(note.id) },
+                    attachments = attachmentsFor(note.id),
+                    pathFor = pathFor
                 )
             }
         }
@@ -310,7 +325,9 @@ private fun NotesNotebook(
                     note = note,
                     subject = subjectFor(note.subjectId),
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
-                    onClick = { onNoteClick(note.id) }
+                    onClick = { onNoteClick(note.id) },
+                    attachments = attachmentsFor(note.id),
+                    pathFor = pathFor
                 )
             }
         }

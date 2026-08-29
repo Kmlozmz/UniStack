@@ -9,6 +9,8 @@ import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesRepository
@@ -77,6 +79,7 @@ class LocalJsonBackupRepositoryTest {
         val scheduleRepository = FakeScheduleRepository()
         val notesRepository = FakeNotesRepository()
         notesRepository.addNote(testNote())
+        notesRepository.addAttachment(testAttachment())
         tasksRepository.addTask(testTask())
         expensesRepository.addExpense(testExpense())
         worksRepository.addWork(testWork())
@@ -128,6 +131,18 @@ class LocalJsonBackupRepositoryTest {
         assertEquals(NoteFormat.MARKDOWN, notesRepository.notes.value.single().format)
         assertTrue(notesRepository.notes.value.single().pinned)
         assertEquals(NotesLayout.CUADERNO, userRepository.userProfile.value?.notesLayout)
+        /*
+         * De los adjuntos viaja la ficha, no el archivo.
+         *
+         * Una foto de movil son tres o cuatro megas y la copia en la nube va a un documento que
+         * no admite mas de uno: meterlas dentro dejaria la copia inservible. Lo que si tiene que
+         * sobrevivir es saber que la nota llevaba una foto, para que al restaurar en un telefono
+         * nuevo la nota lo diga en vez de que la fila desaparezca sin mas.
+         */
+        assertEquals(1, notesRepository.attachments.value.size)
+        assertEquals("Pizarra.jpg", notesRepository.attachments.value.single().displayName)
+        assertEquals("note-1", notesRepository.attachments.value.single().noteId)
+        assertEquals(AttachmentKind.IMAGE, notesRepository.attachments.value.single().kind)
     }
 
     @Test
@@ -173,6 +188,18 @@ class LocalJsonBackupRepositoryTest {
         pinned = true,
         createdAt = 20,
         updatedAt = 30
+    )
+
+    private fun testAttachment() = NoteAttachment(
+        id = "att-1",
+        noteId = "note-1",
+        kind = AttachmentKind.IMAGE,
+        displayName = "Pizarra.jpg",
+        storedName = "note-abc.jpg",
+        mimeType = "image/jpeg",
+        sizeBytes = 350_000,
+        durationMillis = null,
+        createdAt = 25
     )
 
     private fun testTask() = StudentTask(
@@ -234,7 +261,19 @@ class LocalJsonBackupRepositoryTest {
 
 private class FakeNotesRepository : NotesRepository {
     private val state = MutableStateFlow<List<QuickNote>>(emptyList())
+    private val adjuntos = MutableStateFlow<List<NoteAttachment>>(emptyList())
     override val notes: StateFlow<List<QuickNote>> = state
+    override val attachments: StateFlow<List<NoteAttachment>> = adjuntos
+    override fun addAttachment(attachment: NoteAttachment) {
+        adjuntos.value = if (adjuntos.value.any { it.id == attachment.id }) {
+            adjuntos.value
+        } else {
+            adjuntos.value + attachment
+        }
+    }
+    override fun deleteAttachment(attachmentId: String) {
+        adjuntos.value = adjuntos.value.filterNot { it.id == attachmentId }
+    }
     override fun addNote(note: QuickNote) {
         state.value = if (state.value.any { it.id == note.id }) state.value else state.value + note
     }

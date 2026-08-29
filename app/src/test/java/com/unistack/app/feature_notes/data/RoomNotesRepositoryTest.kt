@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.unistack.app.feature_grades.data.local.UniStackDatabase
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_user.data.InMemoryUserRepository
@@ -54,10 +56,27 @@ class RoomNotesRepositoryTest {
         database.close()
     }
 
+    /** Los nombres de archivo que el repositorio ha mandado borrar. */
+    private val borrados = mutableListOf<String>()
+
     private fun repository(legacy: String? = null) = RoomNotesRepository(
         noteDao = database.noteDao(),
+        attachmentDao = database.noteAttachmentDao(),
         userRepository = userRepository,
-        legacySheet = { legacy }
+        legacySheet = { legacy },
+        fileVault = { nombres -> borrados += nombres }
+    )
+
+    private fun adjunto(id: String = "att-1", noteId: String = "note-1") = NoteAttachment(
+        id = id,
+        noteId = noteId,
+        kind = AttachmentKind.IMAGE,
+        displayName = "Pizarra.jpg",
+        storedName = "note-" + id + ".jpg",
+        mimeType = "image/jpeg",
+        sizeBytes = 2048,
+        durationMillis = null,
+        createdAt = 1_000L
     )
 
     private fun nota(id: String = "note-1") = QuickNote(
@@ -155,6 +174,61 @@ class RoomNotesRepositoryTest {
             repository.deleteNote("note-1")
 
             repository.notes.awaitValue { it.isEmpty() }
+        }
+    }
+
+    @Test
+    fun loQueSeCuelgaDeUnaNotaSeGuardaEntero() {
+        runBlocking {
+            val repository = repository()
+            repository.addNote(nota())
+            repository.addAttachment(adjunto())
+
+            val guardado = repository.attachments.awaitValue { it.isNotEmpty() }.single()
+            assertEquals("note-1", guardado.noteId)
+            assertEquals(AttachmentKind.IMAGE, guardado.kind)
+            assertEquals("Pizarra.jpg", guardado.displayName)
+            assertEquals("note-att-1.jpg", guardado.storedName)
+            assertEquals(2048L, guardado.sizeBytes)
+        }
+    }
+
+    /**
+     * Borrar una nota se lleva sus archivos, y no solo sus filas.
+     *
+     * Al reves quedarian copias huerfanas ocupando sitio en el telefono sin que nada en la app
+     * supiera de ellas: nadie las veria y nadie podria borrarlas.
+     */
+    @Test
+    fun borrarLaNotaSeLlevaSusAdjuntosYSusArchivos() {
+        runBlocking {
+            val repository = repository()
+            repository.addNote(nota())
+            repository.addAttachment(adjunto())
+            repository.attachments.awaitValue { it.isNotEmpty() }
+
+            repository.deleteNote("note-1")
+
+            repository.attachments.awaitValue { it.isEmpty() }
+            repository.notes.awaitValue { it.isEmpty() }
+            assertEquals(listOf("note-att-1.jpg"), borrados)
+        }
+    }
+
+    @Test
+    fun quitarUnAdjuntoSueltoTambienBorraSuArchivo() {
+        runBlocking {
+            val repository = repository()
+            repository.addNote(nota())
+            repository.addAttachment(adjunto())
+            repository.attachments.awaitValue { it.isNotEmpty() }
+
+            repository.deleteAttachment("att-1")
+
+            repository.attachments.awaitValue { it.isEmpty() }
+            assertEquals(listOf("note-att-1.jpg"), borrados)
+            // La nota sigue: se quito la foto, no el apunte.
+            assertEquals(1, repository.notes.awaitValue { it.isNotEmpty() }.size)
         }
     }
 

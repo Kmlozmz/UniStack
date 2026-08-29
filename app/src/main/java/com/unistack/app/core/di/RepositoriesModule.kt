@@ -10,7 +10,10 @@ import com.unistack.app.feature_grades.data.local.GradeDao
 import com.unistack.app.feature_grades.data.local.SubjectDao
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_notes.data.LegacyNoteSheet
+import com.unistack.app.feature_notes.data.NoteAttachmentStore
+import com.unistack.app.feature_notes.data.NoteFileVault
 import com.unistack.app.feature_notes.data.RoomNotesRepository
+import com.unistack.app.feature_notes.data.local.NoteAttachmentDao
 import com.unistack.app.feature_notes.data.local.NoteDao
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.data.RoomScheduleRepository
@@ -78,14 +81,23 @@ object RepositoriesModule {
 
     @Provides
     @Singleton
+    fun provideNoteAttachmentStore(@ApplicationContext context: Context): NoteAttachmentStore =
+        NoteAttachmentStore(context)
+
+    @Provides
+    @Singleton
     fun provideNotesRepository(
         noteDao: NoteDao,
+        attachmentDao: NoteAttachmentDao,
         userRepository: UserRepository,
+        attachmentStore: NoteAttachmentStore,
         @ApplicationContext context: Context
     ): NotesRepository = RoomNotesRepository(
         noteDao = noteDao,
+        attachmentDao = attachmentDao,
         userRepository = userRepository,
-        legacySheet = { LegacyNoteSheet.take(context) }
+        legacySheet = { LegacyNoteSheet.take(context) },
+        fileVault = NoteFileVault { nombres -> attachmentStore.deleteAll(nombres) }
     )
 
     @Provides

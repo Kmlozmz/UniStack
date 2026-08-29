@@ -1,8 +1,13 @@
 package com.unistack.app.feature_notes.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.Subject
+import com.unistack.app.feature_notes.data.NoteAttachmentStore
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.Attachments
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
@@ -18,16 +23,23 @@ import javax.inject.Inject
 class NotesViewModel @Inject constructor(
     private val notesRepository: NotesRepository,
     private val gradesRepository: GradesRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val attachmentStore: NoteAttachmentStore
 ) : ViewModel() {
 
     val notes: StateFlow<List<QuickNote>> = notesRepository.notes
+    val attachments: StateFlow<List<NoteAttachment>> = notesRepository.attachments
     val subjects: StateFlow<List<Subject>> = gradesRepository.subjects
     val userProfile = userRepository.userProfile
 
     fun noteById(noteId: String?): QuickNote? {
         if (noteId.isNullOrBlank()) return null
         return notes.value.firstOrNull { it.id == noteId }
+    }
+
+    fun attachmentsOf(noteId: String?): List<NoteAttachment> {
+        if (noteId == null) return emptyList()
+        return attachments.value.filter { it.noteId == noteId }
     }
 
     fun subjectById(subjectId: String?): Subject? {
@@ -51,7 +63,13 @@ class NotesViewModel @Inject constructor(
         val existing = noteById(noteId)
         val trimmed = body.trimEnd()
 
-        if (NoteText.isEmpty(trimmed)) {
+        /*
+         * Una nota sin texto se descarta, salvo que lleve algo colgado.
+         *
+         * Una foto de la pizarra sin una sola palabra es una nota perfectamente valida —de
+         * hecho es la mas comun—, asi que «vacia» no puede significar solo «sin letras».
+         */
+        if (NoteText.isEmpty(trimmed) && attachmentsOf(existing?.id).isEmpty()) {
             if (existing != null) notesRepository.deleteNote(existing.id)
             return null
         }
@@ -92,6 +110,106 @@ class NotesViewModel @Inject constructor(
         )
         return existing.id
     }
+
+/**
+     * El identificador de la nota que se esta escribiendo, creandola si todavia no existe.
+     *
+     * Hace falta para colgar algo: un adjunto necesita una nota a la que pertenecer, y en una
+     * nota nueva el primer gesto puede ser perfectamente la foto y no la primera letra.
+     */
+    fun ensureNoteId(noteId: String?, body: String, subjectId: String?, format: NoteFormat): String {
+        val existente = noteById(noteId)
+        if (existente != null) return existente.id
+        val now = System.currentTimeMillis()
+        val nota = QuickNote(
+            id = "note-" + UUID.randomUUID(),
+            body = body.trimEnd(),
+            subjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
+            format = format,
+            pinned = false,
+            createdAt = now,
+            updatedAt = now
+        )
+        notesRepository.addNote(nota)
+        return nota.id
+    }
+
+    /**
+     * Copia dentro de UniStack lo que se acaba de elegir y lo cuelga de la nota.
+     *
+     * Devuelve falso si no se pudo leer o si pasa del tamano maximo, para que la pantalla lo
+     * diga en vez de dejar un hueco donde el usuario espera su archivo.
+     */
+    fun attach(noteId: String, uri: Uri): Boolean {
+        if (attachmentsOf(noteId).size >= Attachments.MAX_PER_NOTE) return false
+        val guardado = attachmentStore.import(uri) ?: return false
+        val now = System.currentTimeMillis()
+        notesRepository.addAttachment(
+            NoteAttachment(
+                id = "att-" + UUID.randomUUID(),
+                noteId = noteId,
+                kind = guardado.kind,
+                displayName = guardado.displayName,
+                storedName = guardado.storedName,
+                mimeType = guardado.mimeType,
+                sizeBytes = guardado.sizeBytes,
+                durationMillis = null,
+                createdAt = now
+            )
+        )
+        return true
+    }
+
+    /** Lo mismo, para un archivo que ya se escribio dentro (la camara y el grabador). */
+    fun attachStoredFile(
+        noteId: String,
+        storedName: String,
+        displayName: String,
+        mimeType: String,
+        kind: AttachmentKind,
+        durationMillis: Long? = null
+    ): Boolean {
+        val archivo = attachmentStore.file(storedName)
+        if (!archivo.exists() || archivo.length() == 0L) {
+            attachmentStore.delete(storedName)
+            return false
+        }
+        if (attachmentsOf(noteId).size >= Attachments.MAX_PER_NOTE) {
+            attachmentStore.delete(storedName)
+            return false
+        }
+        val now = System.currentTimeMillis()
+        notesRepository.addAttachment(
+            NoteAttachment(
+                id = "att-" + UUID.randomUUID(),
+                noteId = noteId,
+                kind = kind,
+                displayName = displayName,
+                storedName = storedName,
+                mimeType = mimeType,
+                sizeBytes = archivo.length(),
+                durationMillis = durationMillis,
+                createdAt = now
+            )
+        )
+        return true
+    }
+
+    fun removeAttachment(attachmentId: String) = notesRepository.deleteAttachment(attachmentId)
+
+    fun attachmentFileExists(attachment: NoteAttachment): Boolean =
+        attachmentStore.exists(attachment.storedName)
+
+    fun attachmentUri(attachment: NoteAttachment): Uri? =
+        runCatching { attachmentStore.shareUri(attachment.storedName) }.getOrNull()
+
+    fun attachmentPath(attachment: NoteAttachment): String =
+        attachmentStore.file(attachment.storedName).absolutePath
+
+    fun newAttachmentFile(extension: String): Pair<String, java.io.File> =
+        attachmentStore.newFileFor(extension)
+
+    fun discardStoredFile(storedName: String) = attachmentStore.delete(storedName)
 
     fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
 

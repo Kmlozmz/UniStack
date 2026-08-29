@@ -30,6 +30,16 @@
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <!--
+        Grabar un audio dentro de una nota, y nada mas.
+
+        Se pide en el momento de tocar el microfono, no al instalar: quien nunca grabe nada
+        no tiene por que conceder nada. La camara no aparece aqui a proposito: las fotos se
+        hacen abriendo la camara del sistema, que devuelve el archivo ya hecho, y declarar
+        CAMERA obligaria ademas a pedir ese permiso para algo que no lo necesita.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!--
         Sin esto, Android 11 en adelante no deja ni ver si hay una app que entienda «tg://», así
         que abrir el grupo de soporte fallaba antes de intentarlo. Solo declara lo que la app
         necesita abrir: Telegram y una página web.

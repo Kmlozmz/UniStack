@@ -8,6 +8,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.unistack.app.feature_expenses.data.local.ExpenseDao
 import com.unistack.app.feature_expenses.data.local.ExpenseEntity
+import com.unistack.app.feature_notes.data.local.NoteAttachmentDao
+import com.unistack.app.feature_notes.data.local.NoteAttachmentEntity
 import com.unistack.app.feature_notes.data.local.NoteDao
 import com.unistack.app.feature_notes.data.local.NoteEntity
 import com.unistack.app.feature_templates.data.local.AcademicWorkDao
@@ -37,9 +39,10 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         AgendaEventEntity::class,
         AcademicTermEntity::class,
         AcademicBreakEntity::class,
-        NoteEntity::class
+        NoteEntity::class,
+        NoteAttachmentEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -54,6 +57,7 @@ abstract class UniStackDatabase : RoomDatabase() {
     abstract fun academicTermDao(): AcademicTermDao
     abstract fun academicBreakDao(): AcademicBreakDao
     abstract fun noteDao(): NoteDao
+    abstract fun noteAttachmentDao(): NoteAttachmentDao
 
     companion object {
         @Volatile
@@ -393,6 +397,40 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Lo que se cuelga de una nota: fotos, archivos y grabaciones.
+         *
+         * Tabla aparte y no una columna con una lista dentro, porque un adjunto tiene datos
+         * propios —tamaño, tipo, duracion— y porque asi borrar uno no reescribe la nota entera.
+         *
+         * `storedName` es el nombre del archivo **dentro** de la app. Guardar la direccion de la
+         * galeria habria sido mas barato y habria dejado las notas en blanco el dia que alguien
+         * limpia la galeria, que es exactamente lo que se venia a evitar.
+         */
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS note_attachments (
+                        id TEXT NOT NULL,
+                        userId TEXT NOT NULL,
+                        noteId TEXT NOT NULL,
+                        kind TEXT NOT NULL,
+                        displayName TEXT NOT NULL,
+                        storedName TEXT NOT NULL,
+                        mimeType TEXT NOT NULL,
+                        sizeBytes INTEGER NOT NULL,
+                        durationMillis INTEGER,
+                        createdAt INTEGER NOT NULL,
+                        PRIMARY KEY(id)
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_note_attachments_userId ON note_attachments(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_note_attachments_noteId ON note_attachments(noteId)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -422,7 +460,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_13_14,
             MIGRATION_14_15,
             MIGRATION_15_16,
-            MIGRATION_16_17
+            MIGRATION_16_17,
+            MIGRATION_17_18
         )
     }
 }

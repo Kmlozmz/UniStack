@@ -1,8 +1,10 @@
 package com.unistack.app.feature_notes.data
 
+import com.unistack.app.feature_notes.data.local.NoteAttachmentDao
 import com.unistack.app.feature_notes.data.local.NoteDao
 import com.unistack.app.feature_notes.data.local.toDomain
 import com.unistack.app.feature_notes.data.local.toEntity
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_notes.domain.QuickNote
@@ -22,11 +24,24 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+/**
+ * Quien se lleva los archivos cuando desaparece la fila que los nombraba.
+ *
+ * Es una funcion y no el almacen entero para que el repositorio se pueda probar sin tocar el
+ * disco, que es donde estan las pruebas que de verdad importan: las de que ninguna columna se
+ * quede sin escribir.
+ */
+fun interface NoteFileVault {
+    fun remove(storedNames: List<String>)
+}
+
 class RoomNotesRepository(
     private val noteDao: NoteDao,
+    private val attachmentDao: NoteAttachmentDao,
     private val userRepository: UserRepository,
     /** El texto de la hoja de antes, si queda alguno por rescatar. Se pide una sola vez. */
-    private val legacySheet: () -> String? = { null }
+    private val legacySheet: () -> String? = { null },
+    private val fileVault: NoteFileVault = NoteFileVault { }
 ) : NotesRepository {
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,6 +58,18 @@ class RoomNotesRepository(
         .map { UserIds.storageIdsFor(it.userId) }
         .flatMapLatest { ids ->
             noteDao.observeNotesForUsers(ids).map { entities -> entities.map { it.toDomain() } }
+        }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val attachments: StateFlow<List<NoteAttachment>> = userRepository.currentUser
+        .map { UserIds.storageIdsFor(it.userId) }
+        .flatMapLatest { ids ->
+            attachmentDao.observeAttachmentsForUsers(ids).map { filas -> filas.map { it.toDomain() } }
         }
         .stateIn(
             scope = scope,
@@ -72,8 +99,21 @@ class RoomNotesRepository(
         }
     }
 
+    /**
+     * Borrar una nota se lleva tambien lo que colgaba de ella.
+     *
+     * Primero se apuntan los nombres, luego se van las filas y al final los archivos. Al reves
+     * —borrar la fila y despues buscar los archivos— dejaria copias huerfanas ocupando sitio sin
+     * que nada en la app supiera de ellas.
+     */
     override fun deleteNote(noteId: String) {
-        scope.launch { noteDao.deleteNoteById(noteId, userIds) }
+        scope.launch {
+            val ids = userIds
+            val archivos = attachmentDao.storedNamesOfNote(noteId, ids)
+            attachmentDao.deleteAttachmentsOfNote(noteId, ids)
+            noteDao.deleteNoteById(noteId, ids)
+            if (archivos.isNotEmpty()) fileVault.remove(archivos)
+        }
     }
 
     override fun setPinned(noteId: String, pinned: Boolean) {
@@ -84,6 +124,19 @@ class RoomNotesRepository(
                 pinned = pinned,
                 updatedAt = System.currentTimeMillis()
             )
+        }
+    }
+
+    override fun addAttachment(attachment: NoteAttachment) {
+        scope.launch { attachmentDao.insertAttachment(attachment.toEntity(userId)) }
+    }
+
+    override fun deleteAttachment(attachmentId: String) {
+        scope.launch {
+            val ids = userIds
+            val archivo = attachmentDao.storedNameOf(attachmentId, ids)
+            attachmentDao.deleteAttachmentById(attachmentId, ids)
+            if (archivo != null) fileVault.remove(listOf(archivo))
         }
     }
 

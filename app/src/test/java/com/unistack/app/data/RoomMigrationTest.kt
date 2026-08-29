@@ -252,6 +252,45 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationSeventeenToEighteenCreatesAttachmentsTableAndIndexes() {
+        val database = createDatabaseWithSchema(version = 17)
+
+        UniStackDatabase.MIGRATION_17_18.migrate(database)
+
+        assertTrue(database.hasTable("note_attachments"))
+        assertTrue(database.hasIndex("index_note_attachments_userId"))
+        assertTrue(database.hasIndex("index_note_attachments_noteId"))
+        // La duracion solo la tiene el audio, asi que es la unica columna que admite nulo.
+        assertTrue(database.hasColumn("note_attachments", "durationMillis"))
+        assertTrue(database.hasColumn("note_attachments", "storedName"))
+        database.close()
+    }
+
+    /** Las notas que ya existian sobreviven a la migracion, y sin nada colgado. */
+    @Test
+    fun migrationSeventeenToEighteenLeavesExistingNotesAlone() {
+        val database = createDatabaseWithSchema(version = 17)
+        database.execSQL(
+            """
+            INSERT INTO notes (id, userId, body, subjectId, format, pinned, createdAt, updatedAt)
+            VALUES ('n1', 'local', 'Parcial el martes', NULL, 'PLAIN', 0, 0, 0)
+            """.trimIndent()
+        )
+
+        UniStackDatabase.MIGRATION_17_18.migrate(database)
+
+        database.query("SELECT body FROM notes WHERE id = 'n1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Parcial el martes", cursor.getString(0))
+        }
+        database.query("SELECT COUNT(*) FROM note_attachments").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -301,6 +340,7 @@ class RoomMigrationTest {
         if (targetVersion >= 15) UniStackDatabase.MIGRATION_14_15.migrate(db)
         if (targetVersion >= 16) UniStackDatabase.MIGRATION_15_16.migrate(db)
         if (targetVersion >= 17) UniStackDatabase.MIGRATION_16_17.migrate(db)
+        if (targetVersion >= 18) UniStackDatabase.MIGRATION_17_18.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

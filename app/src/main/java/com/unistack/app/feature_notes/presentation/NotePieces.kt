@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.QuickNote
@@ -91,9 +93,21 @@ fun NoteCard(
     timeLabel: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    compact: Boolean = false
+    compact: Boolean = false,
+    attachments: List<NoteAttachment> = emptyList(),
+    pathFor: (NoteAttachment) -> String = { "" }
 ) {
     val accent = subject?.let { subjectAccent(it) }
+    /*
+     * La foto manda, y por eso va arriba del todo.
+     *
+     * Es lo que sostiene el mosaico: una nota de clase suele empezar por una foto de la
+     * pizarra, y en dos columnas es la foto la que dice de que va cada tarjeta antes de leer
+     * una sola palabra. Solo la primera; con dos, la tarjeta deja de ser una tarjeta.
+     */
+    val portada = remember(attachments) {
+        attachments.firstOrNull { it.kind == AttachmentKind.IMAGE }
+    }
     /*
      * En la tarjeta el texto va sin marcas.
      *
@@ -111,6 +125,8 @@ fun NoteCard(
         shape = MaterialTheme.shapes.large,
         contentPadding = PaddingValues(0.dp)
     ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+        if (portada != null) NoteCardThumbnail(pathFor(portada), compact)
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             /*
              * El filo de color, y no un borde entero.
@@ -177,8 +193,10 @@ fun NoteCard(
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1
                     )
+                    NoteAttachmentSummary(attachments)
                 }
             }
+        }
         }
     }
 }

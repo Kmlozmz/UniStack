@@ -11,6 +11,7 @@ import com.unistack.app.feature_terms.data.local.AcademicBreakDao
 import com.unistack.app.feature_terms.data.local.AcademicTermDao
 import com.unistack.app.feature_schedule.data.local.ClassOccurrenceDao
 import com.unistack.app.feature_schedule.data.local.ClassSessionDao
+import com.unistack.app.feature_notes.data.local.NoteAttachmentDao
 import com.unistack.app.feature_notes.data.local.NoteDao
 import com.unistack.app.feature_tasks.data.local.TaskDao
 import com.unistack.app.feature_templates.data.local.AcademicWorkDao
@@ -77,4 +78,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideNoteDao(db: UniStackDatabase): NoteDao = db.noteDao()
+
+    @Provides
+    @Singleton
+    fun provideNoteAttachmentDao(db: UniStackDatabase): NoteAttachmentDao = db.noteAttachmentDao()
 }

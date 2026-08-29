@@ -5,7 +5,11 @@
 
 package com.unistack.app.feature_notes.presentation
 
+import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -35,7 +39,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
+import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
@@ -62,6 +70,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -80,6 +90,8 @@ import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
+import com.unistack.app.feature_notes.domain.AttachmentKind
+import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAction
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteFormatting
@@ -108,6 +120,8 @@ fun NoteEditorScreen(
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val allAttachments by viewModel.attachments.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // El identificador vive en el estado porque una nota nueva todavía no tiene: nace en el
     // primer guardado y a partir de ahí los siguientes tienen que actualizar, no insertar.
@@ -124,6 +138,9 @@ fun NoteEditorScreen(
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
     var showingHelp by rememberSaveable { mutableStateOf(false) }
     var warningAboutSimple by rememberSaveable { mutableStateOf(false) }
+    var recording by rememberSaveable { mutableStateOf(false) }
+    var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
+    var attachError by rememberSaveable { mutableStateOf<String?>(null) }
 
     val body = value.text
     // Hasta que el perfil carga no hay ajuste que leer, y una nota nueva no puede nacer con un
@@ -182,6 +199,78 @@ fun NoteEditorScreen(
         if (noteId == null) {
             // Nota nueva: el teclado sube solo. Se viene a escribir, no a mirar una hoja.
             runCatching { focusRequester.requestFocus() }
+        }
+    }
+
+    val misAdjuntos = remember(allAttachments, currentId) {
+        allAttachments.filter { it.noteId == currentId }
+    }
+
+    /*
+     * Colgar algo necesita una nota a la que colgarlo.
+     *
+     * En una nota nueva el primer gesto puede ser perfectamente la foto y no la primera letra,
+     * asi que aqui se crea la fila antes de abrir el selector. Si luego se sale sin escribir
+     * nada, la nota se queda: tiene una foto dentro, que ya es contenido.
+     */
+    val asegurarNota: () -> String = {
+        val id = viewModel.ensureNoteId(currentId, body, subjectId, activeFormat)
+        currentId = id
+        loaded = true
+        id
+    }
+
+    val elegirFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        val id = currentId
+        if (uri != null && id != null && !viewModel.attach(id, uri)) {
+            attachError = "No se pudo guardar la foto. Puede que pase de " +
+                Attachments.formatSize(Attachments.MAX_BYTES) + "."
+        }
+    }
+
+    val elegirArchivo = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val id = currentId
+        if (uri != null && id != null && !viewModel.attach(id, uri)) {
+            attachError = "No se pudo guardar el archivo. Puede que pase de " +
+                Attachments.formatSize(Attachments.MAX_BYTES) + "."
+        }
+    }
+
+    val hacerFoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { hecha ->
+        val guardado = pendingPhoto
+        pendingPhoto = null
+        val id = currentId
+        if (guardado == null) return@rememberLauncherForActivityResult
+        if (!hecha || id == null) {
+            viewModel.discardStoredFile(guardado)
+            return@rememberLauncherForActivityResult
+        }
+        val puesta = viewModel.attachStoredFile(
+            noteId = id,
+            storedName = guardado,
+            displayName = "Foto",
+            mimeType = "image/jpeg",
+            kind = AttachmentKind.IMAGE
+        )
+        if (!puesta) attachError = "No se pudo guardar la foto."
+    }
+
+    val abrirAdjunto: (com.unistack.app.feature_notes.domain.NoteAttachment) -> Unit = { adjunto ->
+        val uri = viewModel.attachmentUri(adjunto)
+        if (uri != null) {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, adjunto.mimeType)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            // Si no hay ninguna app que abra ese tipo, se dice en vez de cerrarse.
+            runCatching { context.startActivity(intent) }
+                .onFailure { attachError = "No hay ninguna app en el teléfono que abra esto." }
         }
     }
 
@@ -296,12 +385,51 @@ fun NoteEditorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // Cuatro botones, la materia y el interruptor no caben en un telefono
+                    // estrecho: lo de la izquierda se desplaza y el interruptor no se mueve.
+                    Row(
+                        modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                    AttachButton(Icons.Rounded.Image, "Añadir una foto") {
+                        asegurarNota()
+                        elegirFoto.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                    AttachButton(Icons.Rounded.PhotoCamera, "Hacer una foto") {
+                        asegurarNota()
+                        val (nombre, archivo) = viewModel.newAttachmentFile("jpg")
+                        runCatching { archivo.createNewFile() }
+                        val uri = runCatching {
+                            androidx.core.content.FileProvider.getUriForFile(
+                                context,
+                                context.packageName + ".provider",
+                                archivo
+                            )
+                        }.getOrNull()
+                        if (uri == null) {
+                            viewModel.discardStoredFile(nombre)
+                            attachError = "No se pudo preparar la cámara."
+                        } else {
+                            pendingPhoto = nombre
+                            hacerFoto.launch(uri)
+                        }
+                    }
+                    AttachButton(Icons.Rounded.AttachFile, "Adjuntar un archivo") {
+                        asegurarNota()
+                        elegirArchivo.launch(arrayOf("*/*"))
+                    }
+                    AttachButton(Icons.Rounded.Mic, "Grabar audio") {
+                        asegurarNota()
+                        recording = true
+                    }
                     SubjectButton(
                         subject = subject,
                         enabled = subjects.isNotEmpty(),
                         onClick = { pickingSubject = true }
                     )
-                    Spacer(Modifier.weight(1f))
                     // El contador solo aparece cuando queda poco. Enseñar «31 de 20000» desde la
                     // primera letra es poner un límite delante de quien viene a escribir.
                     if (body.length > NoteText.MAX_LENGTH - 500) {
@@ -311,18 +439,20 @@ fun NoteEditorScreen(
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
+                    }
                     FormatSwitch(format = activeFormat, onChange = cambiarFormato)
                 }
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
         ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
             if (body.isEmpty()) {
                 Text(
                     "Escribe aquí…",
@@ -351,6 +481,15 @@ fun NoteEditorScreen(
                 visualTransformation = transformation,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
             )
+            }
+            NoteAttachmentStrip(
+                attachments = misAdjuntos,
+                pathFor = { viewModel.attachmentPath(it) },
+                existsFor = { viewModel.attachmentFileExists(it) },
+                onOpen = abrirAdjunto,
+                onRemove = { viewModel.removeAttachment(it.id) },
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 26.dp)
+            )
         }
     }
 
@@ -363,6 +502,41 @@ fun NoteEditorScreen(
                 subjectId = it
                 pickingSubject = false
             }
+        )
+    }
+
+    if (recording) {
+        NoteRecorderSheet(
+            createFile = { extension -> viewModel.newAttachmentFile(extension) },
+            onDiscard = { nombre -> viewModel.discardStoredFile(nombre) },
+            onSaved = { nombre, duracion ->
+                val id = currentId
+                val puesta = id != null && viewModel.attachStoredFile(
+                    noteId = id,
+                    storedName = nombre,
+                    displayName = "Grabacion",
+                    mimeType = "audio/mp4",
+                    kind = AttachmentKind.AUDIO,
+                    durationMillis = duracion
+                )
+                if (!puesta) {
+                    viewModel.discardStoredFile(nombre)
+                    attachError = "No se pudo guardar la grabacion."
+                }
+            },
+            onDismiss = { recording = false }
+        )
+    }
+
+    attachError?.let { mensaje ->
+        AlertDialog(
+            onDismissRequest = { attachError = null },
+            title = { Text("No se pudo adjuntar") },
+            text = { Text(mensaje) },
+            confirmButton = {
+                TextButton(onClick = { attachError = null }) { Text("Entendido") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -428,6 +602,23 @@ fun NoteEditorScreen(
                 TextButton(onClick = { confirmingDelete = false }) { Text("Cancelar") }
             },
             containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+}
+
+/** Un boton redondo de la fila de adjuntar. */
+@Composable
+private fun AttachButton(icon: ImageVector, description: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Icon(
+            icon,
+            contentDescription = description,
+            modifier = Modifier.padding(9.dp).size(19.dp)
         )
     }
 }
