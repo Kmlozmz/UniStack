@@ -15,6 +15,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,6 +81,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -174,6 +180,9 @@ fun NoteEditorScreen(
     var dismissedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
     var pickingDate by rememberSaveable { mutableStateOf(false) }
     var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var tareaCreada by rememberSaveable { mutableStateOf(false) }
+    var copiado by rememberSaveable { mutableStateOf(false) }
+    val portapapeles = LocalClipboardManager.current
     var pendingDate by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val body = value.text
@@ -447,79 +456,48 @@ fun NoteEditorScreen(
         containerColor = fondo,
         topBar = {
             TopAppBar(
-                title = {
-                    if (subject != null) {
-                        Surface(
-                            onClick = { pickingSubject = true },
-                            shape = RoundedCornerShape(9.dp),
-                            color = subjectAccent(subject).copy(alpha = 0.16f),
-                            contentColor = subjectAccent(subject)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Box(
-                                    Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(subjectAccent(subject))
-                                )
-                                Text(
-                                    subject.name,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                },
+                title = {},
                 navigationIcon = {
-                    UniIconButton(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Atrás",
-                        onClick = leave
-                    )
+                    Box(modifier = Modifier.padding(start = 6.dp)) {
+                        RoundIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Atrás", leave, enFondo)
+                    }
                 },
                 actions = {
-                    AnimatedVisibility(visible = saved) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = "Guardado",
-                            tint = suave,
-                            modifier = Modifier.padding(end = 6.dp).size(18.dp)
+                    Row(
+                        modifier = Modifier.padding(end = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (currentId != null) {
+                            val fijada = existing?.pinned == true
+                            RoundIconButton(
+                                if (fijada) Icons.Rounded.PushPin else Icons.Outlined.PushPin,
+                                if (fijada) "Quitar de fijadas" else "Fijar arriba",
+                                { currentId?.let { viewModel.setPinned(it, !fijada) } },
+                                enFondo
+                            )
+                        }
+                        RoundIconButton(
+                            if (reminderAt == null) {
+                                Icons.Rounded.NotificationAdd
+                            } else {
+                                Icons.Rounded.Notifications
+                            },
+                            "Recordatorio",
+                            { pickingDate = true },
+                            enFondo
                         )
-                    }
-                    if (currentId != null) {
-                        val fijada = existing?.pinned == true
-                        UniIconButton(
-                            icon = if (fijada) Icons.Rounded.PushPin else Icons.Outlined.PushPin,
-                            contentDescription = if (fijada) "Quitar de fijadas" else "Fijar arriba",
-                            onClick = { currentId?.let { viewModel.setPinned(it, !fijada) } }
-                        )
-                    }
-                    UniIconButton(
-                        icon = if (reminderAt == null) {
-                            Icons.Rounded.NotificationAdd
-                        } else {
-                            Icons.Rounded.Notifications
-                        },
-                        contentDescription = "Recordatorio",
-                        onClick = { pickingDate = true }
-                    )
-                    if (currentId != null) {
-                        val archivada = existing?.archived == true
-                        UniIconButton(
-                            icon = if (archivada) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                            contentDescription = if (archivada) "Sacar del archivo" else "Archivar",
-                            onClick = {
-                                currentId?.let { viewModel.archive(it, !archivada) }
-                                if (!archivada) leave()
-                            }
-                        )
+                        if (currentId != null) {
+                            val archivada = existing?.archived == true
+                            RoundIconButton(
+                                if (archivada) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                                if (archivada) "Sacar del archivo" else "Archivar",
+                                {
+                                    currentId?.let { viewModel.archive(it, !archivada) }
+                                    if (!archivada) leave()
+                                },
+                                enFondo
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = fondo)
@@ -572,11 +550,39 @@ fun NoteEditorScreen(
                                 expanded = menuOpen,
                                 onDismissRequest = { menuOpen = false }
                             ) {
+                                /*
+                                 * Lo que de verdad se hace con una nota de clase.
+                                 *
+                                 * «Duplicar» y «Compartir» a secas eran las de cualquier app de
+                                 * notas. Aquí lo que falta es el puente con lo demás: un apunte
+                                 * que dice «entregar el taller el viernes» quiere ser una tarea.
+                                 */
                                 DropdownMenuItem(
-                                    text = { Text("Duplicar") },
+                                    text = { Text("Crear una tarea con esto") },
                                     onClick = {
                                         menuOpen = false
-                                        viewModel.duplicate(draft, subjectId)
+                                        val hecha = viewModel.taskFromNote(
+                                            title.text,
+                                            body,
+                                            subjectId,
+                                            reminderAt
+                                        )
+                                        attachError = if (hecha) {
+                                            null
+                                        } else {
+                                            "Escribe algo antes de crear la tarea."
+                                        }
+                                        if (hecha) tareaCreada = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Copiar el texto") },
+                                    onClick = {
+                                        menuOpen = false
+                                        val plano = NoteMarkdown.strip(body)
+                                        portapapeles.setText(AnnotatedString(plano))
+                                        tareaCreada = false
+                                        copiado = true
                                     }
                                 )
                                 DropdownMenuItem(
@@ -584,6 +590,13 @@ fun NoteEditorScreen(
                                     onClick = {
                                         menuOpen = false
                                         compartir()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Duplicar") },
+                                    onClick = {
+                                        menuOpen = false
+                                        viewModel.duplicate(draft, subjectId)
                                     }
                                 )
                                 if (currentId != null) {
@@ -655,14 +668,67 @@ fun NoteEditorScreen(
                 )
             }
 
-            if (reminderAt != null) {
-                ReminderChip(
-                    at = reminderAt!!,
-                    tint = enFondo,
-                    onClear = { reminderAt = null },
-                    onClick = { pickingDate = true },
-                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp)
-                )
+            /*
+             * Lo que la nota es, debajo de su título.
+             *
+             * La materia estaba arriba, en la cabecera, y con nombres como «SISTEMAS DE
+             * ACUMULACIÓN DE COSTOS» se comía la fila entera de botones. Aquí abajo es un dato
+             * más de la nota, al lado del recordatorio, que es lo que es.
+             */
+            if (subject != null || reminderAt != null || saved) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 22.dp, end = 22.dp, top = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (subject != null) {
+                        Surface(
+                            onClick = { pickingSubject = true },
+                            shape = RoundedCornerShape(8.dp),
+                            color = subjectAccent(subject).copy(alpha = 0.16f),
+                            contentColor = subjectAccent(subject),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(subjectAccent(subject))
+                                )
+                                Text(
+                                    subject.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                    if (reminderAt != null) {
+                        ReminderChip(
+                            at = reminderAt!!,
+                            tint = enFondo,
+                            onClear = { reminderAt = null },
+                            onClick = { pickingDate = true }
+                        )
+                    }
+                    if (saved) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = "Guardado",
+                            tint = suave.copy(alpha = 0.7f),
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.size(10.dp))
@@ -772,8 +838,8 @@ fun NoteEditorScreen(
                             subjects = subjects,
                             offsetX = cursor.left.toInt(),
                             offsetY = cursor.bottom.toInt() + 8,
-                            onPick = { id, nombre ->
-                                val cambio = NoteMention.accept(value.text, mencion, nombre)
+                            onPick = { id ->
+                                val cambio = NoteMention.accept(value.text, mencion)
                                 value = TextFieldValue(
                                     text = cambio.text.take(NoteText.MAX_LENGTH),
                                     selection = TextRange(
@@ -845,52 +911,14 @@ fun NoteEditorScreen(
         )
     }
 
-    /*
-     * El recordatorio se pide en dos pasos: primero el día y después la hora.
-     *
-     * Un solo diálogo con las dos cosas no existe en Material, y separarlos deja además la puerta
-     * de atrás: quien solo quería mover el día cancela la hora y no se toca nada.
-     */
     if (pickingDate) {
-        UniDatePickerDialog(
-            selectedDate = reminderAt?.let {
-                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
-            } ?: NoteReminders.defaultMoment().toLocalDate(),
-            onDateSelected = { fecha ->
-                pendingDate = fecha.toEpochDay()
+        NoteReminderPicker(
+            current = reminderAt,
+            onPicked = {
+                reminderAt = it
                 pickingDate = false
             },
             onDismiss = { pickingDate = false }
-        )
-    }
-
-    pendingDate?.let { epochDay ->
-        UniTimePickerDialog(
-            selectedTime = reminderAt?.let {
-                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalTime()
-            } ?: LocalTime.of(8, 0),
-            title = "¿A qué hora?",
-            onTimeSelected = { hora ->
-                reminderAt = LocalDate.ofEpochDay(epochDay)
-                    .atTime(hora)
-                    .atZone(ZoneId.systemDefault())
-                    .toInstant()
-                    .toEpochMilli()
-                pendingDate = null
-            },
-            onDismiss = { pendingDate = null },
-            extraAction = if (reminderAt != null) {
-                {
-                    TextButton(onClick = {
-                        reminderAt = null
-                        pendingDate = null
-                    }) {
-                        Text("Quitar", color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            } else {
-                null
-            }
         )
     }
 
@@ -914,6 +942,32 @@ fun NoteEditorScreen(
                 }
             },
             onDismiss = { recording = false }
+        )
+    }
+
+    if (tareaCreada || copiado) {
+        AlertDialog(
+            onDismissRequest = {
+                tareaCreada = false
+                copiado = false
+            },
+            title = { Text(if (tareaCreada) "Tarea creada" else "Copiado") },
+            text = {
+                Text(
+                    if (tareaCreada) {
+                        "Está en Académico, en Tareas, con la materia y la fecha de esta nota."
+                    } else {
+                        "El texto de la nota, sin marcas, está en el portapapeles."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    tareaCreada = false
+                    copiado = false
+                }) { Text("Entendido") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -1083,21 +1137,39 @@ private fun MentionPopup(
     subjects: List<Subject>,
     offsetX: Int,
     offsetY: Int,
-    onPick: (String, String) -> Unit
+    onPick: (String) -> Unit
 ) {
+    /*
+     * Aparece creciendo desde donde está la arroba.
+     *
+     * Salía de golpe, entero y a tamaño completo, y una lista que se materializa encima de lo que
+     * estás escribiendo se lee como un fallo. Naciendo pequeña desde su esquina se entiende de
+     * dónde viene.
+     */
+    val entrada = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { entrada.animateTo(1f, tween(160)) }
+
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 3.dp,
         shadowElevation = 6.dp,
-        modifier = Modifier.offset { IntOffset(offsetX, offsetY) }.widthIn(max = 260.dp)
+        modifier = Modifier
+            .offset { IntOffset(offsetX, offsetY) }
+            .graphicsLayer {
+                alpha = entrada.value
+                scaleX = 0.88f + 0.12f * entrada.value
+                scaleY = 0.88f + 0.12f * entrada.value
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
+            .widthIn(max = 260.dp)
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
             candidatas.forEach { (id, nombre) ->
                 val materia = subjects.firstOrNull { it.id == id }
                 val color = materia?.let { subjectAccent(it) } ?: MaterialTheme.colorScheme.primary
                 Surface(
-                    onClick = { onPick(id, nombre) },
+                    onClick = { onPick(id) },
                     color = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.fillMaxWidth()

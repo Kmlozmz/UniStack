@@ -10,9 +10,11 @@ data class MentionQuery(val start: Int, val end: Int, val token: String)
  * escribir `#Calculo` al principio de una línea creaba un titular en vez de vincular nada. La
  * arroba no choca con ninguna marca.
  *
- * Al aceptar, la arroba y lo tecleado se sustituyen por el **nombre de la materia**. Borrarlo
- * sin más dejaría frases rotas —«hoy en @calculo vimos derivadas» se quedaría en «hoy en vimos
- * derivadas»—, y dejar la arroba escrita convertiría una orden en basura dentro del apunte.
+ * Al aceptar, la arroba y lo tecleado **se van**. La materia queda vinculada y se ve en su sitio,
+ * así que escribir el nombre dentro del texto lo diría dos veces. Se probó al revés y molestaba:
+ * el nombre aparecía a mitad de frase sin haberlo pedido.
+ *
+ * Al quitarla se limpia el espacio que deja: si no, cada arroba iría dejando un hueco doble.
  */
 object NoteMention {
 
@@ -44,12 +46,18 @@ object NoteMention {
         return null
     }
 
-    /** El texto con la mención cambiada por el nombre de la materia, y dónde queda el cursor. */
-    fun accept(text: String, mention: MentionQuery, subjectName: String): TextChange {
+    /** El texto sin la mención, y dónde queda el cursor. */
+    fun accept(text: String, mention: MentionQuery): TextChange {
         val inicio = mention.start.coerceIn(0, text.length)
-        val fin = mention.end.coerceIn(inicio, text.length)
-        val nuevo = text.replaceRange(inicio, fin, subjectName)
-        val cursor = inicio + subjectName.length
-        return TextChange(nuevo, cursor, cursor)
+        var fin = mention.end.coerceIn(inicio, text.length)
+
+        // El espacio que queda detrás se va con ella, y si no había nada delante, también el de
+        // antes: quitar «@cal» de «en @cal vimos» tiene que dejar «en vimos», no «en  vimos».
+        if (fin < text.length && text[fin] == ' ') fin += 1
+        var desde = inicio
+        if (fin >= text.length && desde > 0 && text[desde - 1] == ' ') desde -= 1
+
+        val nuevo = text.removeRange(desde, fin)
+        return TextChange(nuevo, desde, desde)
     }
 }

@@ -231,6 +231,22 @@ object NoteSamples {
          * que devuelve esta funcion salen con el enlace roto y solo funcionan si quien los usa se
          * acuerda de arreglarlos, que es justo la clase de trampa que acaba costando una tarde.
          */
+        // 9 - Una lista pura: todo casillas, para que se abra con el editor de lista.
+        muestras += plano(
+            id = "sample-mercado",
+            subjectId = null,
+            title = "Para el laboratorio",
+            colorArgb = 0xFF23453C.toInt(),
+            updatedAt = now - 5 * 60 * 60 * 1000,
+            body = """
+                - [ ] Bata
+                - [ ] Guantes
+                - [x] Gafas de seguridad
+                - [ ] Marcador de vidrio
+                - [x] Cuaderno de laboratorio
+            """.trimIndent()
+        )
+
         return muestras.map { muestra ->
             muestra.copy(
                 attachments = muestra.attachments.map { it.copy(noteId = muestra.note.id) }

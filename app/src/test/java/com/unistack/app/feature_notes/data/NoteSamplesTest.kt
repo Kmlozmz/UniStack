@@ -42,9 +42,9 @@ class NoteSamplesTest {
     @Test
     fun sonOchoYNingunaSeRepite() {
         val todas = muestras()
-        assertEquals(8, todas.size)
-        assertEquals(8, todas.map { it.note.body }.toSet().size)
-        assertEquals(8, todas.map { it.note.id }.toSet().size)
+        assertEquals(9, todas.size)
+        assertEquals(9, todas.map { it.note.body }.toSet().size)
+        assertEquals(9, todas.map { it.note.id }.toSet().size)
     }
 
     /*
@@ -80,6 +80,15 @@ class NoteSamplesTest {
         imprescindibles.forEach { estilo ->
             assertTrue("falta $estilo en las notas de ejemplo", estilo in estilos)
         }
+    }
+
+    /** Una de las nueve es una lista pura, para poder ver el editor de listas. */
+    @Test
+    fun hayUnaListaEntera() {
+        val listas = muestras().count {
+            com.unistack.app.feature_notes.domain.NoteChecklist.isChecklist(it.note.body)
+        }
+        assertEquals(1, listas)
     }
 
     @Test
@@ -157,6 +166,6 @@ class NoteSamplesTest {
     fun sinMateriasNingunaQuedaVinculada() {
         val sinMaterias = NoteSamples.build(store, emptyList(), 1_800_000_000_000L)
         assertTrue(sinMaterias.all { it.note.subjectId == null })
-        assertEquals(8, sinMaterias.size)
+        assertEquals(9, sinMaterias.size)
     }
 }

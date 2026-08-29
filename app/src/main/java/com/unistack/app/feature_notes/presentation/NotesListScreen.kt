@@ -41,6 +41,10 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.rounded.NotificationAdd
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.EditNote
@@ -93,7 +97,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -102,17 +108,23 @@ import com.unistack.app.feature_notes.domain.NoteDay
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteGrouping
 import com.unistack.app.feature_notes.domain.NoteMarkdown
+import com.unistack.app.feature_notes.domain.NoteReminders
 import com.unistack.app.feature_notes.domain.NoteSearch
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.QuickNote
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 /** Los tres montones de notas que hay. */
 enum class NotesView(val title: String) {
     NOTAS("Notas"),
+    /** Lo que avisa, de lo más próximo a lo más lejano. */
+    RECORDATORIOS("Recordatorios"),
     ARCHIVO("Archivo"),
     PAPELERA("Papelera")
 }
@@ -158,11 +170,14 @@ fun NotesListScreen(
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var searching by rememberSaveable { mutableStateOf(false) }
-    var acting by rememberSaveable { mutableStateOf<String?>(null) }
     var deleting by rememberSaveable { mutableStateOf<String?>(null) }
     var filtering by rememberSaveable { mutableStateOf(false) }
     var view by rememberSaveable { mutableStateOf(NotesView.NOTAS) }
     var confirmingTrash by rememberSaveable { mutableStateOf<String?>(null) }
+    var seleccion by rememberSaveable { mutableStateOf(setOf<String>()) }
+    var trashingSelection by rememberSaveable { mutableStateOf(false) }
+    var coloringSelection by rememberSaveable { mutableStateOf(false) }
+    var reminderFor by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val alcance = rememberCoroutineScope()
 
@@ -170,7 +185,15 @@ fun NotesListScreen(
     // no se vacia sola deja de ser una papelera y pasa a ser un almacen.
     LaunchedEffect(Unit) { viewModel.purgeOldTrash() }
 
-    BackHandler(enabled = view != NotesView.NOTAS) { view = NotesView.NOTAS }
+    BackHandler(enabled = seleccion.isNotEmpty()) { seleccion = emptySet() }
+    BackHandler(enabled = seleccion.isEmpty() && view != NotesView.NOTAS) { view = NotesView.NOTAS }
+
+    // Al cambiar de monton, lo marcado deja de tener sentido: son notas que ya no se ven.
+    LaunchedEffect(view) { seleccion = emptySet() }
+
+    val seleccionadas = remember(seleccion, notes) {
+        notes.filter { it.id in seleccion }
+    }
 
     val layout = profile?.notesLayout ?: NotesLayout.CUADERNO
     val use24Hour = profile?.accessibilityPreferences?.use24HourTime ?: true
@@ -185,6 +208,9 @@ fun NotesListScreen(
     val delMonton = remember(notes, view) {
         when (view) {
             NotesView.NOTAS -> notes.filter { it.deletedAt == null && !it.archived }
+            NotesView.RECORDATORIOS -> NoteReminders.upcoming(
+                notes.filter { it.deletedAt == null }
+            )
             NotesView.ARCHIVO -> notes.filter { it.deletedAt == null && it.archived }
             NotesView.PAPELERA -> notes.filter { it.deletedAt != null }
         }
@@ -217,7 +243,32 @@ fun NotesListScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
-                NotesSearchBar(
+                if (seleccion.isNotEmpty()) {
+                    NoteSelectionBar(
+                        count = seleccion.size,
+                        pinned = seleccionadas.all { it.pinned },
+                        archived = seleccionadas.all { it.archived },
+                        enPapelera = view == NotesView.PAPELERA,
+                        onClose = { seleccion = emptySet() },
+                        onPin = {
+                            val destino = !seleccionadas.all { it.pinned }
+                            seleccionadas.forEach { viewModel.setPinned(it.id, destino) }
+                            seleccion = emptySet()
+                        },
+                        onReminder = { reminderFor = seleccion.first() },
+                        onColor = { coloringSelection = true },
+                        onArchive = {
+                            val destino = !seleccionadas.all { it.archived }
+                            seleccionadas.forEach { viewModel.archive(it.id, destino) }
+                            seleccion = emptySet()
+                        },
+                        onRestore = {
+                            seleccionadas.forEach { viewModel.restore(it.id) }
+                            seleccion = emptySet()
+                        },
+                        onDelete = { trashingSelection = true }
+                    )
+                } else NotesSearchBar(
                     query = query,
                     onQueryChange = { query = it },
                     searching = searching,
@@ -249,8 +300,6 @@ fun NotesListScreen(
                             NotesOverflowMenu(
                                 expanded = menuOpen,
                                 onDismiss = { menuOpen = false },
-                                markdownVisible = profile?.noteFormatDefault == NoteFormat.MARKDOWN,
-                                onMarkdownVisible = viewModel::setMarkdownVisible,
                                 view = view,
                                 onView = { view = it },
                                 trashCount = notes.count { it.deletedAt != null },
@@ -315,8 +364,15 @@ fun NotesListScreen(
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
-                    onNoteClick = onNoteClick,
-                    onNoteLongClick = { acting = it },
+                    selected = seleccion,
+                    onNoteClick = { id ->
+                        if (seleccion.isEmpty()) {
+                            onNoteClick(id)
+                        } else {
+                            seleccion = if (id in seleccion) seleccion - id else seleccion + id
+                        }
+                    },
+                    onNoteLongClick = { id -> seleccion = seleccion + id },
                     onToggleCheck = viewModel::toggleCheck
                 )
 
@@ -327,8 +383,15 @@ fun NotesListScreen(
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
-                    onNoteClick = onNoteClick,
-                    onNoteLongClick = { acting = it },
+                    selected = seleccion,
+                    onNoteClick = { id ->
+                        if (seleccion.isEmpty()) {
+                            onNoteClick(id)
+                        } else {
+                            seleccion = if (id in seleccion) seleccion - id else seleccion + id
+                        }
+                    },
+                    onNoteLongClick = { id -> seleccion = seleccion + id },
                     onToggleCheck = viewModel::toggleCheck
                 )
             }
@@ -350,32 +413,6 @@ fun NotesListScreen(
                 filtering = false
             },
             onDismiss = { filtering = false }
-        )
-    }
-
-    acting?.let { noteId ->
-        val nota = notes.firstOrNull { it.id == noteId }
-        NoteActionsSheet(
-            enPapelera = view == NotesView.PAPELERA,
-            pinned = nota?.pinned == true,
-            archived = nota?.archived == true,
-            onPin = {
-                nota?.let { viewModel.setPinned(it.id, !it.pinned) }
-                acting = null
-            },
-            onArchive = {
-                nota?.let { viewModel.archive(it.id, !it.archived) }
-                acting = null
-            },
-            onRestore = {
-                viewModel.restore(noteId)
-                acting = null
-            },
-            onDelete = {
-                acting = null
-                if (view == NotesView.PAPELERA) deleting = noteId else confirmingTrash = noteId
-            },
-            onDismiss = { acting = null }
         )
     }
 
@@ -424,6 +461,84 @@ fun NotesListScreen(
                 TextButton(onClick = { confirmingTrash = null }) { Text("Cancelar") }
             },
             containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+
+    if (trashingSelection) {
+        val cuantas = seleccion.size
+        AlertDialog(
+            onDismissRequest = { trashingSelection = false },
+            title = {
+                Text(
+                    if (cuantas == 1) {
+                        "¿Mover esta nota a la papelera?"
+                    } else {
+                        "¿Mover estas " + cuantas + " notas a la papelera?"
+                    }
+                )
+            },
+            text = {
+                Text(
+                    "Se quedan en la papelera " + viewModel.diasEnPapelera +
+                        " días por si te arrepientes, y luego se borran solas."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val antes = seleccionadas
+                    antes.forEach { viewModel.moveToTrash(it.id) }
+                    trashingSelection = false
+                    seleccion = emptySet()
+                    alcance.launch {
+                        val respuesta = snackbar.showSnackbar(
+                            message = if (antes.size == 1) {
+                                "Movida a la papelera"
+                            } else {
+                                antes.size.toString() + " notas movidas a la papelera"
+                            },
+                            actionLabel = "Deshacer",
+                            withDismissAction = true
+                        )
+                        if (respuesta == SnackbarResult.ActionPerformed) {
+                            antes.forEach { viewModel.undoTrash(it) }
+                        }
+                    }
+                }) {
+                    Text(
+                        "Mover a la papelera",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { trashingSelection = false }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+
+    if (coloringSelection) {
+        NoteColorSheet(
+            selected = seleccionadas.firstOrNull()?.colorArgb,
+            onPick = { color ->
+                seleccionadas.forEach { viewModel.setColor(it.id, color) }
+                coloringSelection = false
+                seleccion = emptySet()
+            },
+            onDismiss = { coloringSelection = false }
+        )
+    }
+
+    reminderFor?.let { noteId ->
+        NoteReminderPicker(
+            current = notes.firstOrNull { it.id == noteId }?.reminderAt,
+            onPicked = { cuando ->
+                viewModel.setReminder(noteId, cuando)
+                reminderFor = null
+                seleccion = emptySet()
+            },
+            onDismiss = { reminderFor = null }
         )
     }
 
@@ -572,6 +687,140 @@ private fun NotesSearchBar(
     }
 }
 
+/**
+ * La barra de cuando hay notas marcadas.
+ *
+ * Sustituye a la cabecera entera, como en Keep, en vez de abrir una hoja por abajo. La hoja
+ * obligaba a levantar el dedo, mirar al otro extremo de la pantalla y elegir; aquí las acciones
+ * salen donde estaba la barra y sirven para una nota o para doce.
+ *
+ * El recordatorio solo aparece con una marcada. Ponerle la misma hora a seis notas a la vez no
+ * es lo que nadie quiere y no hay forma de deshacerlo de una pasada.
+ */
+@Composable
+private fun NoteSelectionBar(
+    count: Int,
+    pinned: Boolean,
+    archived: Boolean,
+    enPapelera: Boolean,
+    onClose: () -> Unit,
+    onPin: () -> Unit,
+    onReminder: () -> Unit,
+    onColor: () -> Unit,
+    onArchive: () -> Unit,
+    onRestore: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RoundIconButton(Icons.Rounded.Close, "Quitar la selección", onClose)
+        Spacer(Modifier.width(10.dp))
+        Text(
+            count.toString(),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.weight(1f))
+        if (enPapelera) {
+            RoundIconButton(Icons.Rounded.Restore, "Restaurar", onRestore)
+            RoundIconButton(Icons.Rounded.DeleteForever, "Borrar del todo", onDelete)
+        } else {
+            RoundIconButton(
+                if (pinned) Icons.Outlined.PushPin else Icons.Rounded.PushPin,
+                if (pinned) "Quitar de fijadas" else "Fijar arriba",
+                onPin
+            )
+            if (count == 1) {
+                RoundIconButton(Icons.Rounded.NotificationAdd, "Recordatorio", onReminder)
+            }
+            RoundIconButton(Icons.Rounded.Palette, "Color", onColor)
+            RoundIconButton(
+                if (archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                if (archived) "Sacar del archivo" else "Archivar",
+                onArchive
+            )
+            RoundIconButton(Icons.Rounded.DeleteOutline, "Mover a la papelera", onDelete)
+        }
+    }
+}
+
+/** Un icono con su círculo, como los del pie del editor. */
+@Composable
+internal fun RoundIconButton(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+    tint: Color? = null
+) {
+    val color = tint ?: MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = color.copy(alpha = 0.08f),
+        contentColor = color
+    ) {
+        Icon(icon, contentDescription = description, modifier = Modifier.padding(9.dp).size(20.dp))
+    }
+}
+
+/**
+ * Poner o quitar la hora de un recordatorio: primero el día, luego la hora.
+ *
+ * Vive aparte porque hace falta en dos sitios —dentro de la nota y con una marcada en la lista—
+ * y son exactamente los mismos dos pasos.
+ */
+@Composable
+internal fun NoteReminderPicker(
+    current: Long?,
+    onPicked: (Long?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var dia by rememberSaveable { mutableStateOf<Long?>(null) }
+    val zona = ZoneId.systemDefault()
+
+    if (dia == null) {
+        UniDatePickerDialog(
+            selectedDate = current?.let { Instant.ofEpochMilli(it).atZone(zona).toLocalDate() }
+                ?: NoteReminders.defaultMoment().toLocalDate(),
+            onDateSelected = { fecha -> dia = fecha.toEpochDay() },
+            onDismiss = onDismiss
+        )
+    } else {
+        UniTimePickerDialog(
+            selectedTime = current?.let { Instant.ofEpochMilli(it).atZone(zona).toLocalTime() }
+                ?: LocalTime.of(8, 0),
+            title = "¿A qué hora?",
+            onTimeSelected = { hora ->
+                onPicked(
+                    LocalDate.ofEpochDay(dia!!).atTime(hora).atZone(zona).toInstant().toEpochMilli()
+                )
+                dia = null
+            },
+            onDismiss = {
+                dia = null
+                onDismiss()
+            },
+            extraAction = if (current != null) {
+                {
+                    TextButton(onClick = {
+                        onPicked(null)
+                        dia = null
+                    }) {
+                        Text("Quitar", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else {
+                null
+            }
+        )
+    }
+}
+
 /** Con filtro puesto, una línea que lo dice y lo quita. */
 @Composable
 private fun FilterBanner(subject: Subject, count: Int, onClear: () -> Unit) {
@@ -653,8 +902,6 @@ private fun NewNoteFab(onPick: (NewNoteStart) -> Unit) {
 private fun NotesOverflowMenu(
     expanded: Boolean,
     onDismiss: () -> Unit,
-    markdownVisible: Boolean,
-    onMarkdownVisible: (Boolean) -> Unit,
     view: NotesView,
     onView: (NotesView) -> Unit,
     trashCount: Int,
@@ -678,6 +925,7 @@ private fun NotesOverflowMenu(
                     Icon(
                         when (opcion) {
                             NotesView.NOTAS -> Icons.Rounded.EditNote
+                            NotesView.RECORDATORIOS -> Icons.Rounded.Notifications
                             NotesView.ARCHIVO -> Icons.Rounded.Archive
                             NotesView.PAPELERA -> Icons.Rounded.DeleteOutline
                         },
@@ -713,37 +961,6 @@ private fun NotesOverflowMenu(
         HorizontalDivider(
             color = MaterialTheme.colorScheme.outlineVariant,
             modifier = Modifier.padding(vertical = 4.dp)
-        )
-        /*
-         * El ajuste de formato vive aquí y no dentro del editor.
-         *
-         * Son dos cosas distintas: el interruptor del editor cambia esa nota, y esto dice con
-         * qué nacen las siguientes. Juntarlas haría que cambiar una nota cambiara todas las
-         * futuras sin haberlo pedido.
-         */
-        /*
-         * Escribir Markdown a mano, para quien lo sepa.
-         *
-         * Ya no hay que elegir tipo de nota al crearla: los botones ponen las marcas y la app
-         * las esconde. Esto solo las destapa, y vive aquí porque es una preferencia que se toca
-         * una vez y no una pregunta que haya que responder en cada apunte.
-         */
-        DropdownMenuItem(
-            text = { Text("Ver las marcas de Markdown") },
-            onClick = {
-                onMarkdownVisible(!markdownVisible)
-                onDismiss()
-            },
-            trailingIcon = {
-                if (markdownVisible) {
-                    Icon(
-                        Icons.Rounded.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
         )
         if (canSeed) {
             /*
@@ -787,6 +1004,7 @@ private fun NotesMosaic(
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
+    selected: Set<String>,
     onNoteClick: (String) -> Unit,
     onNoteLongClick: (String) -> Unit,
     onToggleCheck: (String, Int) -> Unit
@@ -803,7 +1021,7 @@ private fun NotesMosaic(
                 NoteDayHeader("Fijadas", pinned.size)
             }
             items(pinned, key = { "pin-" + it.id }) { note ->
-                MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, onNoteClick, onNoteLongClick, onToggleCheck)
+                MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck)
             }
             if (others.isNotEmpty()) {
                 item(key = "h-otras", span = StaggeredGridItemSpan.FullLine) {
@@ -812,7 +1030,7 @@ private fun NotesMosaic(
             }
         }
         items(others, key = { it.id }) { note ->
-            MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, onNoteClick, onNoteLongClick, onToggleCheck)
+            MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck)
         }
     }
 }
@@ -824,6 +1042,7 @@ private fun MosaicCard(
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
+    selected: Boolean,
     onNoteClick: (String) -> Unit,
     onNoteLongClick: (String) -> Unit,
     onToggleCheck: (String, Int) -> Unit
@@ -834,6 +1053,7 @@ private fun MosaicCard(
         timeLabel = NoteGrouping.timeLabel(note, use24Hour),
         onClick = { onNoteClick(note.id) },
         compact = true,
+        selected = selected,
         attachments = attachmentsFor(note.id),
         pathFor = pathFor,
         onLongClick = { onNoteLongClick(note.id) },
@@ -850,6 +1070,7 @@ private fun NotesNotebook(
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
+    selected: Set<String>,
     onNoteClick: (String) -> Unit,
     onNoteLongClick: (String) -> Unit,
     onToggleCheck: (String, Int) -> Unit
@@ -867,6 +1088,7 @@ private fun NotesNotebook(
                     subject = subjectFor(note.subjectId),
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
                     onClick = { onNoteClick(note.id) },
+                    selected = note.id in selected,
                     attachments = attachmentsFor(note.id),
                     pathFor = pathFor,
                     onLongClick = { onNoteLongClick(note.id) },
@@ -883,6 +1105,7 @@ private fun NotesNotebook(
                 subject = subjectFor(note.subjectId),
                 timeLabel = NoteGrouping.timeLabel(note, use24Hour),
                 onClick = { onNoteClick(note.id) },
+                selected = note.id in selected,
                 attachments = attachmentsFor(note.id),
                 pathFor = pathFor,
                 onLongClick = { onNoteLongClick(note.id) },

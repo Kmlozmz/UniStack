@@ -59,25 +59,31 @@ class NoteMentionTest {
     }
 
     /*
-     * Al aceptar, la arroba se cambia por el nombre de la materia y no se borra sin mas: «hoy en
-     * @calculo vimos derivadas» tiene que quedar en «hoy en Calculo II vimos derivadas», no en
-     * «hoy en vimos derivadas».
+     * Al aceptar, la arroba desaparece: la materia queda vinculada y se ve en su sitio, asi que
+     * escribir el nombre dentro del texto lo diria dos veces.
      */
     @Test
-    fun aceptarDejaLaFraseEntera() {
+    fun aceptarSeLlevaLaMencionYSuHueco() {
         val texto = "hoy en @calc vimos derivadas"
         val m = NoteMention.at(texto, 12)!!
-        val cambio = NoteMention.accept(texto, m, "Calculo II")
-        assertEquals("hoy en Calculo II vimos derivadas", cambio.text)
+        val cambio = NoteMention.accept(texto, m)
+        assertEquals("hoy en vimos derivadas", cambio.text)
     }
 
     @Test
-    fun elCursorSeQuedaDespuesDelNombre() {
+    fun sinNadaDetrasTampocoQuedaElEspacioDeAntes() {
+        val texto = "apuntes de @cal"
+        val m = NoteMention.at(texto, 15)!!
+        assertEquals("apuntes de", NoteMention.accept(texto, m).text)
+    }
+
+    @Test
+    fun elCursorSeQuedaDondeEstabaLaArroba() {
         val texto = "@cal"
         val m = NoteMention.at(texto, 4)!!
-        val cambio = NoteMention.accept(texto, m, "Física")
-        assertEquals("Física", cambio.text)
-        assertEquals(6, cambio.selectionStart)
-        assertEquals(6, cambio.selectionEnd)
+        val cambio = NoteMention.accept(texto, m)
+        assertEquals("", cambio.text)
+        assertEquals(0, cambio.selectionStart)
+        assertEquals(0, cambio.selectionEnd)
     }
 }

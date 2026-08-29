@@ -109,7 +109,8 @@ fun NoteCard(
     attachments: List<NoteAttachment> = emptyList(),
     pathFor: (NoteAttachment) -> String = { "" },
     onLongClick: (() -> Unit)? = null,
-    onToggleCheck: ((Int) -> Unit)? = null
+    onToggleCheck: ((Int) -> Unit)? = null,
+    selected: Boolean = false
 ) {
     val accent = subject?.let { subjectAccent(it) }
     val portada = remember(attachments) {
@@ -131,12 +132,17 @@ fun NoteCard(
      */
     UniCard(
         color = fondo,
-        borderColor = if (note.colorArgb == null) {
-            MaterialTheme.colorScheme.outlineVariant
-        } else {
-            Color.Transparent
+        borderColor = when {
+            // Marcada: el borde del acento y mas grueso, que es como se ve en Keep.
+            selected -> MaterialTheme.colorScheme.primary
+            note.colorArgb == null -> MaterialTheme.colorScheme.outlineVariant
+            else -> Color.Transparent
         },
-        borderWidth = if (note.colorArgb == null) 1.dp else 0.dp,
+        borderWidth = when {
+            selected -> 2.dp
+            note.colorArgb == null -> 1.dp
+            else -> 0.dp
+        },
         modifier = if (onLongClick == null) {
             modifier.fillMaxWidth()
         } else {

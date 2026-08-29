@@ -19,6 +19,10 @@ import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_tasks.domain.StudentTask
+import com.unistack.app.feature_tasks.domain.TaskDifficulty
+import com.unistack.app.feature_tasks.domain.TaskType
+import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +50,7 @@ class NotesViewModel @Inject constructor(
     private val gradesRepository: GradesRepository,
     private val userRepository: UserRepository,
     private val scheduleRepository: ScheduleRepository,
+    private val tasksRepository: TasksRepository,
     private val attachmentStore: NoteAttachmentStore
 ) : ViewModel() {
 
@@ -280,6 +285,55 @@ class NotesViewModel @Inject constructor(
                 createdAt = now,
                 updatedAt = now
             )
+        )
+    }
+
+    /**
+     * Una tarea nacida de una nota.
+     *
+     * Es el puente que le faltaba a esta pantalla. Un apunte que dice «entregar el taller el
+     * viernes» quiere ser una tarea, y hasta ahora había que copiarlo a mano en la otra pantalla.
+     *
+     * Se lleva la materia y, si la nota tiene recordatorio, esa misma fecha: es la que el usuario
+     * ya eligió pensando en cuándo hay que hacerlo.
+     */
+    fun taskFromNote(title: String, body: String, subjectId: String?, reminderAt: Long?): Boolean {
+        val plano = NoteMarkdown.strip(body)
+        val titulo = title.trim().ifBlank { NoteText.title(plano) }
+        if (titulo.isBlank()) return false
+        val now = System.currentTimeMillis()
+        tasksRepository.addTask(
+            StudentTask(
+                id = "task-" + UUID.randomUUID(),
+                title = titulo,
+                description = NoteText.preview(plano, maxLines = 6),
+                subjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
+                type = TaskType.WORKSHOP,
+                dueDateMillis = reminderAt ?: (now + 24L * 60 * 60 * 1000),
+                difficulty = TaskDifficulty.MEDIUM,
+                estimatedMinutes = 60,
+                completed = false,
+                createdAt = now,
+                updatedAt = now
+            )
+        )
+        return true
+    }
+
+    /** El color de una nota, sin pasar por el editor. Sirve para varias a la vez. */
+    fun setColor(noteId: String, colorArgb: Int?) {
+        val nota = noteById(noteId) ?: return
+        if (nota.colorArgb == colorArgb) return
+        notesRepository.updateNote(
+            nota.copy(colorArgb = colorArgb, updatedAt = System.currentTimeMillis())
+        )
+    }
+
+    fun setReminder(noteId: String, at: Long?) {
+        val nota = noteById(noteId) ?: return
+        if (nota.reminderAt == at) return
+        notesRepository.updateNote(
+            nota.copy(reminderAt = at, updatedAt = System.currentTimeMillis())
         )
     }
 
