@@ -283,7 +283,7 @@ fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
      * Sale del ajuste global, que es solo el punto de partida: dentro del editor se cambia esta
      * nota sin tocar el ajuste, y cada nota se guarda con el suyo.
      */
-    fun defaultFormat(): NoteFormat = userProfile.value?.noteFormatDefault ?: NoteFormat.MARKDOWN
+    fun defaultFormat(): NoteFormat = userProfile.value?.noteFormatDefault ?: NoteFormat.PLAIN
 
     fun setDefaultFormat(format: NoteFormat) {
         val profile = userProfile.value ?: return

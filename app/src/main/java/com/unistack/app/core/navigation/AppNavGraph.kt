@@ -92,6 +92,7 @@ import com.unistack.app.feature_support.presentation.AiAssistantScreen
 import com.unistack.app.feature_support.presentation.GpaCalculatorScreen
 import com.unistack.app.feature_support.presentation.LabsScreen
 import com.unistack.app.feature_notes.presentation.NoteEditorScreen
+import com.unistack.app.feature_notes.presentation.NewNoteStart
 import com.unistack.app.feature_notes.presentation.NotesListScreen
 import com.unistack.app.feature_support.presentation.HelpScreen
 import com.unistack.app.feature_support.presentation.ResourcesScreen
@@ -622,12 +623,24 @@ fun MainNavGraph(
                 NotesListScreen(
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) },
                     onNoteClick = { noteId -> navController.go(AppRoutes.noteEditor(noteId)) },
-                    onNewNoteClick = { navController.go(AppRoutes.NewNote) }
+                    onNewNoteClick = { tipo -> navController.go(AppRoutes.newNote(tipo.route)) }
                 )
             }
-            screen(AppRoutes.NewNote) {
+            screen(
+                AppRoutes.NewNoteWithStart,
+                arguments = listOf(
+                    navArgument(AppRoutes.NewNoteStartArg) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) { backStackEntry ->
                 NoteEditorScreen(
                     noteId = null,
+                    start = NewNoteStart.of(
+                        backStackEntry.arguments?.getString(AppRoutes.NewNoteStartArg)
+                    ),
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.QuickNotes) }
                 )
             }

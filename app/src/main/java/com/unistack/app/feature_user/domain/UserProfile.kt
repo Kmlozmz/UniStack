@@ -92,7 +92,7 @@ data class UserProfile(
     val monthlyBudget: Int = 0,
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
-    val notesLayout: NotesLayout = NotesLayout.MOSAICO,
+    val notesLayout: NotesLayout = NotesLayout.CUADERNO,
     /**
      * Con que formato nacen las notas nuevas.
      *
@@ -100,7 +100,7 @@ data class UserProfile(
      * propio editor. Un ajuste unico obligaria a quien escribe casi todo en Markdown a
      * cambiarlo en cada apunte suelto, y al reves.
      */
-    val noteFormatDefault: NoteFormat = NoteFormat.MARKDOWN,
+    val noteFormatDefault: NoteFormat = NoteFormat.PLAIN,
     val gradeScenarios: List<SavedGradeScenario> = emptyList(),
     val gradingCutScheme: GradingCutScheme = GradingCutScheme.default(),
     val setupCompleted: Boolean,

@@ -208,11 +208,21 @@ private fun NoteCardBody(
     val casillas = remember(note.body) {
         NoteMarkdown.checkboxes(note.body).associateBy { it.lineIndex }
     }
-    val visibles = remember(plano, maxLines) {
-        plano.withIndex().filter { it.value.isNotBlank() }.take(maxLines)
+    /*
+     * Las marcadas se recogen en una linea, como hace Keep.
+     *
+     * Una lista de doce pendientes con nueve tachados ocupa la tarjeta entera para decir lo que
+     * queda por hacer, que son tres. Lo hecho se cuenta y se aparta; sigue estando dentro.
+     */
+    val hechas = remember(casillas) { casillas.values.count { it.checked } }
+    val visibles = remember(plano, maxLines, casillas) {
+        plano.withIndex()
+            .filter { it.value.isNotBlank() && casillas[it.index]?.checked != true }
+            .take(maxLines)
     }
-    val hayMas = remember(plano, visibles) {
-        plano.withIndex().count { it.value.isNotBlank() } > visibles.size
+    val hayMas = remember(plano, visibles, casillas) {
+        plano.withIndex()
+            .count { it.value.isNotBlank() && casillas[it.index]?.checked != true } > visibles.size
     }
 
     visibles.forEachIndexed { orden, (indice, linea) ->
@@ -273,6 +283,14 @@ private fun NoteCardBody(
             text = "…",
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.bodySmall
+        )
+    }
+    if (hechas > 0) {
+        Text(
+            text = "+ " + hechas + if (hechas == 1) " marcada" else " marcadas",
+            color = MaterialTheme.colorScheme.outline,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(top = 3.dp)
         )
     }
 }

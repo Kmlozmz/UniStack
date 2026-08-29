@@ -8,7 +8,7 @@ package com.unistack.app.feature_notes.domain
  * lo que ya está en el papel.
  */
 enum class NoteFormat {
-    /** Texto tal cual, sin marcas. */
+    /** Texto tal cual, sin marcas. Es con lo que nacen las notas. */
     PLAIN,
 
     /** Markdown de apuntes, formateado al vuelo. */
@@ -33,11 +33,11 @@ enum class NoteFormat {
  * Cuaderno es para quien escribe más de lo que fotografía y quiere leer sin abrir.
  */
 enum class NotesLayout {
-    /** Dos columnas de altura libre. */
-    MOSAICO,
-
     /** Una columna por días, con la fecha pegada arriba mientras se recorre. */
-    CUADERNO
+    CUADERNO,
+
+    /** Dos columnas de altura libre. */
+    MOSAICO
 }
 
 data class QuickNote(

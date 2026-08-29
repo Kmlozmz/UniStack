@@ -111,10 +111,10 @@ class UserPreferencesDataSource(private val context: Context) {
             ?: setOf(AppModule.GRADES, AppModule.TASKS)
         val notesLayout = prefs[Keys.NOTES_LAYOUT]
             ?.let { runCatching { NotesLayout.valueOf(it) }.getOrNull() }
-            ?: NotesLayout.MOSAICO
+            ?: NotesLayout.CUADERNO
         val noteFormatDefault = prefs[Keys.NOTE_FORMAT_DEFAULT]
             ?.let { runCatching { NoteFormat.valueOf(it) }.getOrNull() }
-            ?: NoteFormat.MARKDOWN
+            ?: NoteFormat.PLAIN
         val visualPreference = prefs[Keys.VISUAL_PREFERENCE]
             ?.let { runCatching { VisualPreference.valueOf(it) }.getOrNull() }
             ?: VisualPreference.SYSTEM

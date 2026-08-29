@@ -54,6 +54,10 @@ object AppRoutes {
      * historial de la que se estaba leyendo.
      */
     const val NewNote = "new_note"
+
+    /** Con que arranca la nota nueva: texto, lista, foto, audio o archivo. */
+    const val NewNoteStartArg = "start"
+    const val NewNoteWithStart = "$NewNote?$NewNoteStartArg={$NewNoteStartArg}"
     const val NoteEditor = "note_editor"
     const val AiAssistant = "ai_assistant"
     const val Labs = "labs"
@@ -104,6 +108,7 @@ object AppRoutes {
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
     fun noteEditor(noteId: String) = "$NoteEditor/$noteId"
+    fun newNote(start: String) = "$NewNote?$NewNoteStartArg=$start"
     fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"

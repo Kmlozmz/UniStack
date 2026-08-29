@@ -75,7 +75,14 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
@@ -91,6 +98,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.AttachmentKind
@@ -98,7 +106,9 @@ import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAction
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteFormatting
+import com.unistack.app.feature_notes.domain.NoteCheckbox
 import com.unistack.app.feature_notes.domain.NoteMarkdown
+import com.unistack.app.feature_notes.domain.NoteTextEdits
 import com.unistack.app.feature_notes.domain.NoteMention
 import com.unistack.app.feature_notes.domain.NoteMoment
 import com.unistack.app.feature_notes.domain.NoteSearch
@@ -122,6 +132,7 @@ fun NoteEditorScreen(
     noteId: String?,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    start: NewNoteStart = NewNoteStart.TEXTO,
     viewModel: NotesViewModel = hiltViewModel()
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
@@ -154,7 +165,7 @@ fun NoteEditorScreen(
     val body = value.text
     // Hasta que el perfil carga no hay ajuste que leer, y una nota nueva no puede nacer con un
     // formato inventado: mientras tanto vale el de partida, que es el mismo que trae el perfil.
-    val activeFormat = format ?: existing?.format ?: profile?.noteFormatDefault ?: NoteFormat.MARKDOWN
+    val activeFormat = format ?: existing?.format ?: profile?.noteFormatDefault ?: NoteFormat.PLAIN
 
     /*
      * La nota se lee una sola vez.
@@ -204,12 +215,6 @@ fun NoteEditorScreen(
     BackHandler(enabled = true) { leave() }
 
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        if (noteId == null) {
-            // Nota nueva: el teclado sube solo. Se viene a escribir, no a mirar una hoja.
-            runCatching { focusRequester.requestFocus() }
-        }
-    }
 
     val misAdjuntos = remember(allAttachments, currentId) {
         allAttachments.filter { it.noteId == currentId }
@@ -317,8 +322,76 @@ fun NoteEditorScreen(
         NoteSearch.matchingSubjects(subjects.map { it.id to it.name }, consulta.token).take(4)
     }
 
+    /*
+     * La nota se abre haciendo aquello por lo que se abrio.
+     *
+     * Quien toca «Foto» en el boton de crear no quiere una hoja en blanco con un icono de camara
+     * al fondo: quiere la camara. El arranque se hace una vez y solo en notas nuevas.
+     */
+    var arrancada by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (noteId != null || arrancada) return@LaunchedEffect
+        arrancada = true
+        when (start) {
+            NewNoteStart.TEXTO -> runCatching { focusRequester.requestFocus() }
+            NewNoteStart.LISTA -> {
+                // Una lista empieza por su primera casilla, no por un hueco que hay que rellenar.
+                value = TextFieldValue(text = "- [ ] ", selection = TextRange(6))
+                runCatching { focusRequester.requestFocus() }
+            }
+            NewNoteStart.FOTO -> {
+                asegurarNota()
+                elegirFoto.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            }
+            NewNoteStart.AUDIO -> {
+                asegurarNota()
+                recording = true
+            }
+            NewNoteStart.ARCHIVO -> {
+                asegurarNota()
+                elegirArchivo.launch(arrayOf("*/*"))
+            }
+        }
+    }
+
     val subject = subjects.firstOrNull { it.id == subjectId }
     val saved = loaded && !dirty && body.isNotBlank()
+    /*
+     * Donde cae cada letra en la pantalla.
+     *
+     * Sin esto no se puede ni poner la lista de materias al lado del cursor ni saber si un toque
+     * cayo encima de una casilla: las dos cosas necesitan la geometria del texto ya medido.
+     */
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    /*
+     * La cuenta que va del texto guardado al texto que se ve.
+     *
+     * En modo normal las marcas estan escondidas, asi que la posicion 30 de lo guardado no es la
+     * 30 de lo que se lee. En Markdown se ve todo y la cuenta es la identidad.
+     */
+    val escondido = remember(body, activeFormat) {
+        if (activeFormat == NoteFormat.PLAIN) {
+            NoteTextEdits.apply(body, NoteTextEdits.hidingEdits(NoteMarkdown.parse(body)))
+        } else {
+            null
+        }
+    }
+    val aVisible: (Int) -> Int = { offset -> escondido?.toTransformed(offset) ?: offset }
+    val textoVisible = escondido?.text ?: body
+
+    val casillas = remember(body) { NoteMarkdown.checkboxes(body) }
+    val iniciosDeLinea = remember(body) {
+        var acumulado = 0
+        body.split("\n").map { linea ->
+            val inicio = acumulado
+            acumulado += linea.length + 1
+            inicio
+        }
+    }
+
     val palette = rememberNotePalette()
     val transformation = remember(activeFormat, palette) {
         NoteVisualTransformation(activeFormat, palette)
@@ -442,56 +515,6 @@ fun NoteEditorScreen(
                  * En Markdown estorbaría: ahí las marcas se escriben a mano y se ven, así que un
                  * botón de negrita sería una segunda forma de hacer lo mismo. Aquí es la única.
                  */
-                /*
-                 * Las materias que encajan con lo tecleado tras la arroba.
-                 *
-                 * Van aqui abajo, pegadas al teclado, y no flotando sobre el texto: una lista
-                 * encima de lo que se escribe tapa justo la linea que se esta escribiendo.
-                 */
-                AnimatedVisibility(
-                    visible = candidatas.isNotEmpty(),
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 12.dp, vertical = 7.dp),
-                        horizontalArrangement = Arrangement.spacedBy(7.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        candidatas.forEach { (id, nombre) ->
-                            val materia = subjects.firstOrNull { it.id == id }
-                            Surface(
-                                onClick = {
-                                    val consulta = mencion ?: return@Surface
-                                    val cambio = NoteMention.accept(value.text, consulta, nombre)
-                                    value = TextFieldValue(
-                                        text = cambio.text.take(NoteText.MAX_LENGTH),
-                                        selection = TextRange(
-                                            cambio.selectionStart.coerceIn(0, cambio.text.length)
-                                        )
-                                    )
-                                    subjectId = id
-                                },
-                                shape = RoundedCornerShape(9.dp),
-                                color = MaterialTheme.colorScheme.surface,
-                                contentColor = materia?.let { subjectAccent(it) }
-                                    ?: MaterialTheme.colorScheme.onSurface
-                            ) {
-                                Text(
-                                    nombre,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                )
-                            }
-                        }
-                    }
-                }
                 AnimatedVisibility(
                     visible = activeFormat == NoteFormat.PLAIN && !value.selection.collapsed,
                     enter = fadeIn() + expandVertically(),
@@ -608,7 +631,45 @@ fun NoteEditorScreen(
                     modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
                 )
             }
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 22.dp, end = 22.dp, bottom = 14.dp)
+                    /*
+                     * Tocar una casilla la marca, sin salir de la nota.
+                     *
+                     * El campo de texto se queda con todos los toques, asi que hay que mirarlos
+                     * antes que el: en la pasada inicial se comprueba si el dedo cayo encima de
+                     * una casilla y solo entonces se consume. Todo lo demas sigue su camino y
+                     * mueve el cursor como siempre.
+                     */
+                    .pointerInput(casillas, layout, textoVisible) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val evento = awaitPointerEvent(PointerEventPass.Initial)
+                                val toque = evento.changes.firstOrNull() ?: continue
+                                if (!toque.pressed || toque.isConsumed) continue
+                                val medido = layout ?: continue
+                                val linea = casillaEn(
+                                    posicion = toque.position,
+                                    casillas = casillas,
+                                    iniciosDeLinea = iniciosDeLinea,
+                                    aVisible = aVisible,
+                                    visibleLength = textoVisible.length,
+                                    marcaLarga = activeFormat == NoteFormat.MARKDOWN,
+                                    layout = medido
+                                )
+                                if (linea != null) {
+                                    toque.consume()
+                                    val nuevo = NoteMarkdown.toggleCheckbox(body, linea)
+                                    if (nuevo != null) {
+                                        value = value.copy(text = nuevo)
+                                    }
+                                }
+                            }
+                        }
+                    }
+            ) {
                 if (body.isEmpty()) {
                     /*
                      * La hoja en blanco enseña lo único que hay que saber para empezar.
@@ -617,10 +678,7 @@ fun NoteEditorScreen(
                      * Decirlo aquí —donde ya está mirando quien va a escribir— sustituye al botón
                      * que había abajo y no ocupa nada en cuanto se escribe la primera letra.
                      */
-                    Column(
-                        modifier = Modifier.padding(start = 22.dp, end = 22.dp),
-                        verticalArrangement = Arrangement.spacedBy(7.dp)
-                    ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(
                             "Escribe aquí…",
                             color = MaterialTheme.colorScheme.outline,
@@ -662,15 +720,48 @@ fun NoteEditorScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester)
-                    .padding(start = 22.dp, end = 22.dp, bottom = 26.dp),
+                    .focusRequester(focusRequester),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 25.sp
                 ),
                 visualTransformation = transformation,
+                onTextLayout = { layout = it },
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
             )
+
+                /*
+                 * Las materias salen donde esta el cursor, como al etiquetar a alguien.
+                 *
+                 * Antes salian pegadas al teclado, al otro extremo de la pantalla: se escribia
+                 * arriba y habia que mirar abajo para elegir. Aqui aparece justo debajo de lo
+                 * que se acaba de escribir, que es donde ya se esta mirando.
+                 */
+                val medido = layout
+                if (candidatas.isNotEmpty() && mencion != null && medido != null) {
+                    val cursor = remember(medido, value.selection, escondido) {
+                        val visible = aVisible(mencion.start).coerceIn(0, textoVisible.length)
+                        runCatching { medido.getCursorRect(visible) }.getOrNull()
+                    }
+                    if (cursor != null) {
+                        MentionPopup(
+                            candidatas = candidatas,
+                            subjects = subjects,
+                            offsetX = cursor.left.toInt(),
+                            offsetY = cursor.bottom.toInt() + 8,
+                            onPick = { id, nombre ->
+                                val cambio = NoteMention.accept(value.text, mencion, nombre)
+                                value = TextFieldValue(
+                                    text = cambio.text.take(NoteText.MAX_LENGTH),
+                                    selection = TextRange(
+                                        cambio.selectionStart.coerceIn(0, cambio.text.length)
+                                    )
+                                )
+                                subjectId = id
+                            }
+                        )
+                    }
+                }
             }
             NoteAttachmentStrip(
                 attachments = misAdjuntos,
@@ -803,6 +894,87 @@ fun NoteEditorScreen(
  * son acciones que se usan de vez en cuando: el icono solo ya dice dónde tocar, y el área de
  * toque sigue siendo la misma porque el relleno no se ha ido, solo el color.
  */
+/**
+ * La casilla que hay bajo un toque, si la hay.
+ *
+ * Se mira línea por línea porque son pocas y el cálculo es barato. El ancho de la zona sensible
+ * es el de la marca: en Markdown ocupa `- [ ] ` y en normal, el cuadro solo.
+ */
+private fun casillaEn(
+    posicion: Offset,
+    casillas: List<NoteCheckbox>,
+    iniciosDeLinea: List<Int>,
+    aVisible: (Int) -> Int,
+    visibleLength: Int,
+    marcaLarga: Boolean,
+    layout: TextLayoutResult
+): Int? {
+    val ancho = if (marcaLarga) 6 else 2
+    for (casilla in casillas) {
+        val inicio = iniciosDeLinea.getOrNull(casilla.lineIndex) ?: continue
+        val desde = aVisible(inicio).coerceIn(0, (visibleLength - 1).coerceAtLeast(0))
+        if (desde >= visibleLength) continue
+        val hasta = (desde + ancho - 1).coerceIn(desde, visibleLength - 1)
+        val caja = runCatching { layout.getBoundingBox(desde) }.getOrNull() ?: continue
+        val fin = runCatching { layout.getBoundingBox(hasta) }.getOrNull() ?: caja
+        val dentro = posicion.x >= caja.left - 8f &&
+            posicion.x <= fin.right + 8f &&
+            posicion.y >= caja.top &&
+            posicion.y <= caja.bottom
+        if (dentro) return casilla.lineIndex
+    }
+    return null
+}
+
+/** La lista de materias, flotando justo debajo de la arroba que se está escribiendo. */
+@Composable
+private fun MentionPopup(
+    candidatas: List<Pair<String, String>>,
+    subjects: List<Subject>,
+    offsetX: Int,
+    offsetY: Int,
+    onPick: (String, String) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 3.dp,
+        shadowElevation = 6.dp,
+        modifier = Modifier
+            .offset { IntOffset(offsetX, offsetY) }
+            .widthIn(max = 260.dp)
+    ) {
+        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+            candidatas.forEach { (id, nombre) ->
+                val materia = subjects.firstOrNull { it.id == id }
+                val color = materia?.let { subjectAccent(it) }
+                    ?: MaterialTheme.colorScheme.primary
+                Surface(
+                    onClick = { onPick(id, nombre) },
+                    color = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    ) {
+                        Box(Modifier.size(7.dp).clip(CircleShape).background(color))
+                        Text(
+                            nombre,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun AttachButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Surface(
@@ -820,64 +992,38 @@ private fun AttachButton(icon: ImageVector, description: String, onClick: () -> 
 }
 
 /**
- * El interruptor de las dos maneras de escribir.
+ * Markdown: encendido o apagado.
+ *
+ * Eran dos pastillas, «MD» y «Aa», y había que saber cuál era cuál. Un interruptor dice por sí
+ * solo que hay algo que se enciende, y lo que se enciende tiene nombre escrito al lado.
  *
  * Cambia **esta** nota y no el ajuste: el ajuste dice con qué nacen las nuevas y vive en el menú
  * de la lista. Fue lo que él eligió —«un ajuste por defecto, y se puede cambiar en una nota»—
- * porque las dos cosas por separado son lo que hace falta: quien escribe casi todo en Markdown
- * no quiere tocar el ajuste para un apunte suelto de dos líneas.
+ * porque quien escribe casi todo normal no quiere tocar el ajuste para un apunte suelto.
  */
 @Composable
 private fun FormatSwitch(format: NoteFormat, onChange: (NoteFormat) -> Unit) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Row(modifier = Modifier.padding(2.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            FormatSwitchOption(
-                label = "MD",
-                description = "Escribir en Markdown",
-                selected = format == NoteFormat.MARKDOWN,
-                monospace = true,
-                onClick = { onChange(NoteFormat.MARKDOWN) }
-            )
-            FormatSwitchOption(
-                label = "Aa",
-                description = "Escribir sin marcas",
-                selected = format == NoteFormat.PLAIN,
-                monospace = false,
-                onClick = { onChange(NoteFormat.PLAIN) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FormatSwitchOption(
-    label: String,
-    description: String,
-    selected: Boolean,
-    monospace: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        }
+    val encendido = format == NoteFormat.MARKDOWN
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.semanticsDescription(
+            if (encendido) "Markdown encendido" else "Markdown apagado"
+        )
     ) {
         Text(
-            text = label,
+            "Markdown",
+            color = if (encendido) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
             style = MaterialTheme.typography.labelMedium,
-            fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier
-                .padding(horizontal = 11.dp, vertical = 6.dp)
-                .semanticsDescription(description)
+            fontWeight = FontWeight.Bold
+        )
+        UniSwitch(
+            checked = encendido,
+            onCheckedChange = { onChange(if (it) NoteFormat.MARKDOWN else NoteFormat.PLAIN) }
         )
     }
 }

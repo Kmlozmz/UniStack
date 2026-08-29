@@ -255,8 +255,8 @@ class LocalJsonBackupRepository(
             .put("expenseAlertThresholdPercent", profile?.expenseAlertThresholdPercent ?: 80)
             .put("enabledExpenseCategories", JSONArray(profile?.enabledExpenseCategories?.map { it.name }.orEmpty()))
             .put("enabledModules", JSONArray(profile?.enabledModules?.map { it.name }.orEmpty()))
-            .put("notesLayout", (profile?.notesLayout ?: NotesLayout.MOSAICO).name)
-            .put("noteFormatDefault", (profile?.noteFormatDefault ?: NoteFormat.MARKDOWN).name)
+            .put("notesLayout", (profile?.notesLayout ?: NotesLayout.CUADERNO).name)
+            .put("noteFormatDefault", (profile?.noteFormatDefault ?: NoteFormat.PLAIN).name)
     }
 
     private fun restoreProfile(profileJson: JSONObject?) {
