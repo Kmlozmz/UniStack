@@ -255,7 +255,65 @@ class NotesViewModel @Inject constructor(
 
     fun discardStoredFile(storedName: String) = attachmentStore.delete(storedName)
 
-fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
+    /**
+     * Cuánto aguanta algo en la papelera antes de irse de verdad.
+     *
+     * Una semana es lo que tarda alguien en darse cuenta de que borró lo que no era. Más tiempo
+     * convierte la papelera en un almacén: acaba ocupando más que las notas de verdad, con sus
+     * fotos dentro.
+     */
+    val diasEnPapelera: Int = 7
+
+    /** Una copia de la nota, igual pero suya. Sin los adjuntos: esos no se duplican. */
+    fun duplicate(draft: NoteDraft, subjectId: String?) {
+        val now = System.currentTimeMillis()
+        notesRepository.addNote(
+            QuickNote(
+                id = "note-" + UUID.randomUUID(),
+                title = draft.title.trim(),
+                body = draft.body.trimEnd(),
+                subjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
+                format = NoteFormat.MARKDOWN,
+                pinned = false,
+                reminderAt = null,
+                colorArgb = draft.colorArgb,
+                createdAt = now,
+                updatedAt = now
+            )
+        )
+    }
+
+    fun archive(noteId: String, archived: Boolean) {
+        notesRepository.setState(noteId, archived = archived, deletedAt = null)
+    }
+
+    /** Borrar no borra: mueve. Devuelve la nota de antes, para poder deshacerlo. */
+    fun moveToTrash(noteId: String): QuickNote? {
+        val nota = noteById(noteId) ?: return null
+        notesRepository.setState(noteId, archived = false, deletedAt = System.currentTimeMillis())
+        return nota
+    }
+
+    /** Deshacer: la nota vuelve exactamente al estado en el que estaba. */
+    fun undoTrash(note: QuickNote) {
+        notesRepository.setState(note.id, archived = note.archived, deletedAt = note.deletedAt)
+    }
+
+    fun restore(noteId: String) {
+        notesRepository.setState(noteId, archived = false, deletedAt = null)
+    }
+
+    fun purgeOldTrash() {
+        val limite = System.currentTimeMillis() - diasEnPapelera * 24L * 60 * 60 * 1000
+        notesRepository.purgeTrash(limite)
+    }
+
+    fun emptyTrash() {
+        notes.value.filter { it.deletedAt != null }.forEach { notesRepository.deleteNote(it.id) }
+    }
+
+    /** El borrado de verdad, el que no tiene vuelta. Solo desde la papelera. */
+    fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
 
     /**
      * Si esta compilacion puede llenarse de notas de mentira.

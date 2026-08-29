@@ -97,6 +97,8 @@ class RoomNotesRepository(
                 pinned = note.pinned,
                 reminderAt = note.reminderAt,
                 colorArgb = note.colorArgb,
+                archived = note.archived,
+                deletedAt = note.deletedAt,
                 updatedAt = System.currentTimeMillis()
             )
         }
@@ -116,6 +118,43 @@ class RoomNotesRepository(
             attachmentDao.deleteAttachmentsOfNote(noteId, ids)
             noteDao.deleteNoteById(noteId, ids)
             if (archivos.isNotEmpty()) fileVault.remove(archivos)
+        }
+    }
+
+    /**
+     * Mover a la papelera, archivar, o devolver a la lista.
+     *
+     * Es una consulta propia y no un `updateNote` porque no toca el contenido: cambiar el estado
+     * de una nota mientras alguien la tiene abierta no puede pisarle lo que esta escribiendo.
+     */
+    override fun setState(noteId: String, archived: Boolean, deletedAt: Long?) {
+        scope.launch {
+            noteDao.updateNoteState(
+                noteId = noteId,
+                userIds = userIds,
+                archived = archived,
+                deletedAt = deletedAt,
+                updatedAt = System.currentTimeMillis()
+            )
+        }
+    }
+
+    /**
+     * Vaciar lo que lleve mas de una semana en la papelera.
+     *
+     * Una papelera que no se vacia sola deja de ser una papelera y pasa a ser un almacen: acaba
+     * ocupando mas que las notas de verdad, con sus fotos dentro.
+     */
+    override fun purgeTrash(olderThan: Long) {
+        scope.launch {
+            val ids = userIds
+            val caducadas = noteDao.expiredInTrash(ids, olderThan)
+            caducadas.forEach { id ->
+                val archivos = attachmentDao.storedNamesOfNote(id, ids)
+                attachmentDao.deleteAttachmentsOfNote(id, ids)
+                noteDao.deleteNoteById(id, ids)
+                if (archivos.isNotEmpty()) fileVault.remove(archivos)
+            }
         }
     }
 

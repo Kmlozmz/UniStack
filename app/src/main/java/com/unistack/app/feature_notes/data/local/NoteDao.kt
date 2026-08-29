@@ -37,6 +37,8 @@ interface NoteDao {
             pinned = :pinned,
             reminderAt = :reminderAt,
             colorArgb = :colorArgb,
+            archived = :archived,
+            deletedAt = :deletedAt,
             updatedAt = :updatedAt
         WHERE id = :noteId AND userId IN (:userIds)
         """
@@ -51,6 +53,8 @@ interface NoteDao {
         pinned: Boolean,
         reminderAt: Long?,
         colorArgb: Int?,
+        archived: Boolean,
+        deletedAt: Long?,
         updatedAt: Long
     )
 
@@ -71,6 +75,27 @@ interface NoteDao {
 
     @Query("DELETE FROM notes WHERE id = :noteId AND userId IN (:userIds)")
     suspend fun deleteNoteById(noteId: String, userIds: List<String>)
+
+    @Query(
+        """
+        UPDATE notes
+        SET archived = :archived,
+            deletedAt = :deletedAt,
+            updatedAt = :updatedAt
+        WHERE id = :noteId AND userId IN (:userIds)
+        """
+    )
+    suspend fun updateNoteState(
+        noteId: String,
+        userIds: List<String>,
+        archived: Boolean,
+        deletedAt: Long?,
+        updatedAt: Long
+    )
+
+    /** Los identificadores de lo que lleva demasiado en la papelera. */
+    @Query("SELECT id FROM notes WHERE userId IN (:userIds) AND deletedAt IS NOT NULL AND deletedAt < :before")
+    suspend fun expiredInTrash(userIds: List<String>, before: Long): List<String>
 
     @Query("SELECT COUNT(*) FROM notes WHERE userId IN (:userIds)")
     suspend fun countNotesForUsers(userIds: List<String>): Int

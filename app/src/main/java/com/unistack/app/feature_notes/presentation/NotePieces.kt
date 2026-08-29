@@ -58,7 +58,7 @@ import com.unistack.app.feature_notes.domain.QuickNote
  * Menos que el `large` del tema, que en una tarjeta pequeña dejaba las esquinas tan blandas que
  * la lista parecía un montón de pastillas. Una nota es papel: se le nota el canto.
  */
-private val FormaNota = RoundedCornerShape(14.dp)
+private val FormaNota = RoundedCornerShape(12.dp)
 
 /**
  * La materia de una nota: un punto de su color y el nombre, sin más.
@@ -119,8 +119,24 @@ fun NoteCard(
     val enFondo = NoteColors.contentOn(fondo, MaterialTheme.colorScheme.onSurface)
     val suave = enFondo.copy(alpha = 0.66f)
 
+    /*
+     * Una tarjeta de contorno, no de relleno.
+     *
+     * Antes era una superficie rellena con un filo de color en el canto. Dos cosas peleaban con
+     * el texto: el relleno, que hacia que la lista se leyera como un montaje de bloques, y el
+     * filo, que convertia la pantalla en un semaforo. Con el fondo de la pantalla y una linea de
+     * un punto alrededor, lo que se ve son las notas.
+     *
+     * La nota con color propio si va rellena: ahi el color es lo que la distingue.
+     */
     UniCard(
         color = fondo,
+        borderColor = if (note.colorArgb == null) {
+            MaterialTheme.colorScheme.outlineVariant
+        } else {
+            Color.Transparent
+        },
+        borderWidth = if (note.colorArgb == null) 1.dp else 0.dp,
         modifier = if (onLongClick == null) {
             modifier.fillMaxWidth()
         } else {
@@ -136,41 +152,22 @@ fun NoteCard(
         Column(modifier = Modifier.fillMaxWidth()) {
             if (portada != null) NoteCardThumbnail(pathFor(portada), compact)
             Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                /*
-                 * El filo de color, y no un borde entero.
-                 *
-                 * Teñir la tarjeta entera del color de la materia convierte la lista en un
-                 * semáforo y pone el texto a pelear con el fondo. Un filo de tres puntos en el
-                 * canto dice lo mismo y deja que la nota siga siendo papel.
-                 */
-                if (accent != null) {
-                    Box(
-                        Modifier
-                            .width(3.dp)
-                            .fillMaxHeight()
-                            .background(accent)
-                    )
-                }
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(
-                            start = if (accent != null) 12.dp else 15.dp,
-                            end = 15.dp,
-                            top = 13.dp,
-                            bottom = 12.dp
-                        ),
+                        .padding(start = 15.dp, end = 15.dp, top = 13.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     if (note.title.isNotBlank()) {
                         Text(
                             text = note.title,
                             color = enFondo,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(Modifier.height(2.dp))
                     }
                     NoteCardBody(
                         note = note,
@@ -271,7 +268,7 @@ private fun NoteCardBody(
                 Text(
                     text = casilla.label,
                     color = if (casilla.checked) suave.copy(alpha = 0.5f) else suave,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     textDecoration = if (casilla.checked) TextDecoration.LineThrough else null,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -283,7 +280,7 @@ private fun NoteCardBody(
             conTitulo && orden == 0 -> Text(
                 text = linea,
                 color = texto,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -292,7 +289,7 @@ private fun NoteCardBody(
             else -> Text(
                 text = linea,
                 color = suave,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -381,11 +378,9 @@ fun NoteDayHeader(label: String, count: Int, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = label.uppercase(),
+            text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = androidx.compose.ui.unit.TextUnit(0.08f, androidx.compose.ui.unit.TextUnitType.Em),
+            style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.weight(1f)
         )
         Text(

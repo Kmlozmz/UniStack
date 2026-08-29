@@ -73,6 +73,20 @@ data class QuickNote(
     val reminderAt: Long? = null,
     /** El color con el que se pinta la nota, o nulo para el de siempre. */
     val colorArgb: Int? = null,
+    /**
+     * Guardada, pero fuera de la lista.
+     *
+     * Es lo que hace falta para no tener que elegir entre borrar algo que ya no sirve y verlo
+     * todos los días. El apunte de un parcial que ya pasó no es basura: es historia.
+     */
+    val archived: Boolean = false,
+    /**
+     * Cuándo se mandó a la papelera, o nulo si no está en ella.
+     *
+     * Borrar no borra: mueve. La fecha sirve para dos cosas —decir cuánto le queda y vaciarla
+     * sola pasada una semana— y es lo que convierte un toque equivocado en algo reversible.
+     */
+    val deletedAt: Long? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

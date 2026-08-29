@@ -12,6 +12,8 @@ fun NoteEntity.toDomain(): QuickNote = QuickNote(
     pinned = pinned,
     reminderAt = reminderAt,
     colorArgb = colorArgb,
+    archived = archived,
+    deletedAt = deletedAt,
     createdAt = createdAt,
     updatedAt = updatedAt
 )
@@ -26,6 +28,8 @@ fun QuickNote.toEntity(userId: String): NoteEntity = NoteEntity(
     pinned = pinned,
     reminderAt = reminderAt,
     colorArgb = colorArgb,
+    archived = archived,
+    deletedAt = deletedAt,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

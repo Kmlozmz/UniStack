@@ -42,7 +42,7 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         NoteEntity::class,
         NoteAttachmentEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -450,6 +450,24 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Archivar y la papelera.
+         *
+         * Borrar dejaba de existir la nota en el acto, con sus fotos y sus grabaciones detras.
+         * Ahora se mueve: `deletedAt` dice cuando, y de ahi salen las dos cosas que hacen que una
+         * papelera sirva —poder deshacer y vaciarse sola a la semana—.
+         *
+         * `archived` es otra cosa distinta: el apunte de un parcial que ya paso no es basura, es
+         * historia. Sin el, la unica forma de no verlo todos los dias era borrarlo.
+         */
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notes ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE notes ADD COLUMN deletedAt INTEGER DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_deletedAt ON notes(deletedAt)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -481,7 +499,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_15_16,
             MIGRATION_16_17,
             MIGRATION_17_18,
-            MIGRATION_18_19
+            MIGRATION_18_19,
+            MIGRATION_19_20
         )
     }
 }

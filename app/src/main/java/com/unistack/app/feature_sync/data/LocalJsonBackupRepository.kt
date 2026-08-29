@@ -599,6 +599,8 @@ class LocalJsonBackupRepository(
         .put("body", note.body)
         .put("reminderAt", note.reminderAt)
         .put("colorArgb", note.colorArgb)
+        .put("archived", note.archived)
+        .put("deletedAt", note.deletedAt)
         .put("subjectId", note.subjectId)
         .put("format", note.format.name)
         .put("pinned", note.pinned)
@@ -665,6 +667,8 @@ class LocalJsonBackupRepository(
             body = body,
             reminderAt = if (item.isNull("reminderAt")) null else item.optLong("reminderAt"),
             colorArgb = if (item.isNull("colorArgb")) null else item.optInt("colorArgb"),
+            archived = item.optBoolean("archived", false),
+            deletedAt = if (item.isNull("deletedAt")) null else item.optLong("deletedAt"),
             subjectId = item.optString("subjectId").takeIf { it.isNotBlank() },
             format = item.optString("format").toEnum(NoteFormat.PLAIN),
             pinned = item.optBoolean("pinned", false),

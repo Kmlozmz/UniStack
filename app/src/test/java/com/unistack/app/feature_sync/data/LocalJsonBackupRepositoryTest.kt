@@ -274,6 +274,14 @@ private class FakeNotesRepository : NotesRepository {
     override fun deleteAttachment(attachmentId: String) {
         adjuntos.value = adjuntos.value.filterNot { it.id == attachmentId }
     }
+    override fun setState(noteId: String, archived: Boolean, deletedAt: Long?) {
+        state.value = state.value.map {
+            if (it.id == noteId) it.copy(archived = archived, deletedAt = deletedAt) else it
+        }
+    }
+    override fun purgeTrash(olderThan: Long) {
+        state.value = state.value.filterNot { it.deletedAt != null && it.deletedAt!! < olderThan }
+    }
     override fun addNote(note: QuickNote) {
         state.value = if (state.value.any { it.id == note.id }) state.value else state.value + note
     }

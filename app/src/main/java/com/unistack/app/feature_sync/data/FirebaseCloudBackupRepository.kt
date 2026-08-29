@@ -298,6 +298,8 @@ class FirebaseCloudBackupRepository(
         "body" to note.body,
         "reminderAt" to note.reminderAt,
         "colorArgb" to note.colorArgb,
+        "archived" to note.archived,
+        "deletedAt" to note.deletedAt,
         "subjectId" to note.subjectId,
         "format" to note.format.name,
         "pinned" to note.pinned,
@@ -316,6 +318,8 @@ class FirebaseCloudBackupRepository(
                 body = body,
                 reminderAt = map.long("reminderAt"),
                 colorArgb = map.int("colorArgb"),
+                archived = map.boolean("archived") ?: false,
+                deletedAt = map.long("deletedAt"),
                 subjectId = map.string("subjectId"),
                 format = map.string("format")
                     ?.let { runCatching { NoteFormat.valueOf(it) }.getOrNull() }

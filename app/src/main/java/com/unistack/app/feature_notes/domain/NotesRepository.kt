@@ -16,6 +16,12 @@ interface NotesRepository {
     fun deleteNote(noteId: String)
     fun setPinned(noteId: String, pinned: Boolean)
 
+    /** Archivar, mandar a la papelera o devolver a la lista, sin tocar el contenido. */
+    fun setState(noteId: String, archived: Boolean, deletedAt: Long?)
+
+    /** Borra de verdad lo que lleve en la papelera desde antes de [olderThan]. */
+    fun purgeTrash(olderThan: Long)
+
     fun addAttachment(attachment: NoteAttachment)
     fun deleteAttachment(attachmentId: String)
 }

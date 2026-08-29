@@ -40,19 +40,21 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.FormatColorFill
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.NotificationAdd
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.TextFormat
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -94,6 +96,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniDatePickerDialog
+import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.feature_grades.domain.Subject
@@ -103,6 +106,7 @@ import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAction
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteCheckbox
+import com.unistack.app.feature_notes.domain.NoteChecklist
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteFormatting
 import com.unistack.app.feature_notes.domain.NoteMarkdown
@@ -161,7 +165,6 @@ fun NoteEditorScreen(
 
     var pickingSubject by rememberSaveable { mutableStateOf(false) }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
-    var showingHelp by rememberSaveable { mutableStateOf(false) }
     var inserting by rememberSaveable { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(false) }
     var formatting by rememberSaveable { mutableStateOf(false) }
@@ -170,6 +173,7 @@ fun NoteEditorScreen(
     var attachError by rememberSaveable { mutableStateOf<String?>(null) }
     var dismissedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
     var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
     var pendingDate by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val body = value.text
@@ -316,6 +320,21 @@ fun NoteEditorScreen(
         )
     }
 
+    /** Mandar la nota a donde sea: el texto sin marcas, con el título delante si lo tiene. */
+    val compartir: () -> Unit = {
+        val plano = NoteMarkdown.strip(body)
+        val texto = listOf(title.text.trim(), plano).filter { it.isNotBlank() }.joinToString("\n\n")
+        if (texto.isNotBlank()) {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, texto)
+                title.text.trim().takeIf { it.isNotBlank() }
+                    ?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
+            }
+            runCatching { context.startActivity(Intent.createChooser(intent, "Compartir la nota")) }
+        }
+    }
+
     val abrirAdjunto: (NoteAttachment) -> Unit = { adjunto ->
         val uri = viewModel.attachmentUri(adjunto)
         if (uri != null) {
@@ -392,6 +411,17 @@ fun NoteEditorScreen(
     }
     val aVisible: (Int) -> Int = { offset -> escondido?.toTransformed(offset) ?: offset }
     val textoVisible = escondido?.text ?: body
+    /*
+     * Una nota que es toda casillas se edita como lista.
+     *
+     * No hay tipo de nota guardado: se deduce del contenido. Asi nadie elige nada al crearla —que
+     * es lo que el pidio quitar— y una nota deja de ser lista en cuanto se le escribe un parrafo.
+     */
+    val esLista = remember(body) { NoteChecklist.isChecklist(body) }
+    val elementos = remember(body, esLista) {
+        if (esLista) NoteChecklist.parse(body) else emptyList()
+    }
+
     val casillas = remember(body) { NoteMarkdown.checkboxes(body) }
     val iniciosDeLinea = remember(body) {
         var acumulado = 0
@@ -480,16 +510,15 @@ fun NoteEditorScreen(
                         contentDescription = "Recordatorio",
                         onClick = { pickingDate = true }
                     )
-                    UniIconButton(
-                        icon = Icons.AutoMirrored.Rounded.HelpOutline,
-                        contentDescription = "Qué se puede escribir",
-                        onClick = { showingHelp = true }
-                    )
                     if (currentId != null) {
+                        val archivada = existing?.archived == true
                         UniIconButton(
-                            icon = Icons.Rounded.DeleteOutline,
-                            contentDescription = "Borrar la nota",
-                            onClick = { confirmingDelete = true }
+                            icon = if (archivada) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                            contentDescription = if (archivada) "Sacar del archivo" else "Archivar",
+                            onClick = {
+                                currentId?.let { viewModel.archive(it, !archivada) }
+                                if (!archivada) leave()
+                            }
                         )
                     }
                 },
@@ -504,17 +533,24 @@ fun NoteEditorScreen(
                         onClose = { formatting = false }
                     )
                 } else {
-                    HorizontalDivider(color = enFondo.copy(alpha = 0.12f))
+                    /*
+                     * El pie, sin línea y con los botones redondos.
+                     *
+                     * Planos y con una raya encima se leían como el borde de la pantalla, no como
+                     * cosas que se tocan. Con su círculo de fondo, y el resto del pie del mismo
+                     * color que la nota, el pie deja de ser una barra y pasa a ser el papel.
+                     */
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 10.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         FooterButton(Icons.Rounded.Add, "Añadir a la nota", enFondo) {
                             inserting = true
                         }
-                        FooterButton(Icons.Rounded.FormatColorFill, "Color de la nota", enFondo) {
+                        FooterButton(Icons.Rounded.Palette, "Color de la nota", enFondo) {
                             picking = true
                         }
                         FooterButton(Icons.Rounded.TextFormat, "Formato del texto", enFondo) {
@@ -527,6 +563,44 @@ fun NoteEditorScreen(
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelSmall
                             )
+                        }
+                        Box {
+                            FooterButton(Icons.Rounded.MoreVert, "Más opciones", enFondo) {
+                                menuOpen = true
+                            }
+                            UniDropdownMenu(
+                                expanded = menuOpen,
+                                onDismissRequest = { menuOpen = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Duplicar") },
+                                    onClick = {
+                                        menuOpen = false
+                                        viewModel.duplicate(draft, subjectId)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Compartir") },
+                                    onClick = {
+                                        menuOpen = false
+                                        compartir()
+                                    }
+                                )
+                                if (currentId != null) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Mover a la papelera",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        onClick = {
+                                            menuOpen = false
+                                            confirmingDelete = true
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -593,7 +667,17 @@ fun NoteEditorScreen(
 
             Spacer(Modifier.size(10.dp))
 
-            Box(
+            if (esLista) {
+                NoteChecklistEditor(
+                    items = elementos,
+                    onChange = { nuevos ->
+                        value = value.copy(text = NoteChecklist.render(nuevos))
+                    },
+                    texto = enFondo,
+                    suave = suave,
+                    modifier = Modifier.padding(start = 16.dp, end = 12.dp, bottom = 14.dp)
+                )
+            } else Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 22.dp, end = 22.dp, bottom = 14.dp)
@@ -735,7 +819,15 @@ fun NoteEditorScreen(
                         asegurarNota()
                         elegirArchivo.launch(arrayOf("*/*"))
                     }
-                    NoteInsert.CASILLAS -> aplicarFormato(NoteAction.CASILLA)
+                    NoteInsert.CASILLAS -> {
+                        // Con la nota en blanco, «Casillas» crea una lista; con algo escrito,
+                        // convierte lo que hay en elementos sin perder ni una linea.
+                        val convertida = NoteChecklist.render(NoteChecklist.from(body))
+                        value = TextFieldValue(
+                            text = convertida.ifBlank { "- [ ] " },
+                            selection = TextRange(convertida.ifBlank { "- [ ] " }.length)
+                        )
+                    }
                     NoteInsert.TABLA -> aplicarFormato(NoteAction.TABLA)
                 }
             }
@@ -837,10 +929,6 @@ fun NoteEditorScreen(
         )
     }
 
-    if (showingHelp) {
-        NoteFormatHelpSheet(format = activeFormat, onDismiss = { showingHelp = false })
-    }
-
     if (pickingSubject) {
         NoteSubjectSheet(
             subjects = subjects,
@@ -854,24 +942,30 @@ fun NoteEditorScreen(
     }
 
     if (confirmingDelete) {
+        /*
+         * Borrar es mover, y se dice.
+         *
+         * «No se puede deshacer» era verdad y daba miedo; ahora no lo es, así que el aviso dice
+         * a dónde va y cuánto tiempo se queda ahí. Es lo que convierte un toque equivocado en
+         * algo sin consecuencias.
+         */
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
-            title = { Text("¿Borrar la nota?") },
+            title = { Text("¿Mover esta nota a la papelera?") },
             text = {
                 Text(
-                    "Se borra «" +
-                        title.text.trim().ifBlank { NoteText.label(NoteMarkdown.strip(body)) } +
-                        "» y no se puede deshacer."
+                    "Se queda en la papelera " + viewModel.diasEnPapelera +
+                        " días por si te arrepientes, y luego se borra sola."
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    currentId?.let(viewModel::deleteNote)
+                    currentId?.let { viewModel.moveToTrash(it) }
                     confirmingDelete = false
                     onBackClick()
                 }) {
                     Text(
-                        "Borrar",
+                        "Mover a la papelera",
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
@@ -942,9 +1036,9 @@ private fun FooterButton(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = Color.Transparent,
-        contentColor = tint.copy(alpha = 0.82f)
+        shape = CircleShape,
+        color = tint.copy(alpha = 0.07f),
+        contentColor = tint.copy(alpha = 0.9f)
     ) {
         Icon(icon, contentDescription = description, modifier = Modifier.padding(11.dp).size(21.dp))
     }

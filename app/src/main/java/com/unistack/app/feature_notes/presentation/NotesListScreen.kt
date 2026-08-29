@@ -38,7 +38,11 @@ import androidx.compose.material.icons.rounded.AttachFile
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckBox
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Archive
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.Unarchive
 import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.GridView
@@ -57,6 +61,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,6 +74,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -99,7 +107,15 @@ import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.QuickNote
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+
+/** Los tres montones de notas que hay. */
+enum class NotesView(val title: String) {
+    NOTAS("Notas"),
+    ARCHIVO("Archivo"),
+    PAPELERA("Papelera")
+}
 
 /** Con qué arranca una nota nueva, según por dónde se pidió. */
 enum class NewNoteStart(val route: String) {
@@ -145,22 +161,49 @@ fun NotesListScreen(
     var acting by rememberSaveable { mutableStateOf<String?>(null) }
     var deleting by rememberSaveable { mutableStateOf<String?>(null) }
     var filtering by rememberSaveable { mutableStateOf(false) }
+    var view by rememberSaveable { mutableStateOf(NotesView.NOTAS) }
+    var confirmingTrash by rememberSaveable { mutableStateOf<String?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    val alcance = rememberCoroutineScope()
+
+    // Al abrir, lo que lleve mas de una semana en la papelera se va de verdad. Una papelera que
+    // no se vacia sola deja de ser una papelera y pasa a ser un almacen.
+    LaunchedEffect(Unit) { viewModel.purgeOldTrash() }
+
+    BackHandler(enabled = view != NotesView.NOTAS) { view = NotesView.NOTAS }
 
     val layout = profile?.notesLayout ?: NotesLayout.CUADERNO
     val use24Hour = profile?.accessibilityPreferences?.use24HourTime ?: true
     val today = remember { LocalDate.now() }
 
+    /*
+     * Cada monton es el mismo listado con otro filtro.
+     *
+     * Archivo y papelera no son pantallas aparte: son la misma, con las mismas formas de ver y
+     * el mismo buscador. Duplicarlas habria significado mantener tres listas iguales.
+     */
+    val delMonton = remember(notes, view) {
+        when (view) {
+            NotesView.NOTAS -> notes.filter { it.deletedAt == null && !it.archived }
+            NotesView.ARCHIVO -> notes.filter { it.deletedAt == null && it.archived }
+            NotesView.PAPELERA -> notes.filter { it.deletedAt != null }
+        }
+    }
+
     // Solo se ofrecen como filtro las materias de las que hay algo escrito: una lista con las
     // nueve del semestre obliga a recorrerlas para descubrir que siete están vacías.
-    val subjectsWithNotes = remember(notes, subjects) {
-        val used = notes.mapNotNull { it.subjectId }.toSet()
+    val subjectsWithNotes = remember(delMonton, subjects) {
+        val used = delMonton.mapNotNull { it.subjectId }.toSet()
         subjects.filter { it.id in used }
     }
     val activeFilter = filterSubjectId?.takeIf { id -> subjectsWithNotes.any { it.id == id } }
 
-    val visible = remember(notes, activeFilter, query) {
-        val porMateria =
-            if (activeFilter == null) notes else notes.filter { it.subjectId == activeFilter }
+    val visible = remember(delMonton, activeFilter, query) {
+        val porMateria = if (activeFilter == null) {
+            delMonton
+        } else {
+            delMonton.filter { it.subjectId == activeFilter }
+        }
         NoteSearch.filter(porMateria, query)
     }
     val sort = profile?.notesSort ?: NotesSort.MODIFICADA
@@ -194,7 +237,8 @@ fun NotesListScreen(
                     },
                     canFilter = subjectsWithNotes.isNotEmpty(),
                     onFilterClick = { filtering = true },
-                    onBackClick = onBackClick,
+                    onBackClick = { if (view != NotesView.NOTAS) view = NotesView.NOTAS else onBackClick() },
+                    view = view,
                     menu = {
                         Box {
                             UniIconButton(
@@ -207,6 +251,10 @@ fun NotesListScreen(
                                 onDismiss = { menuOpen = false },
                                 markdownVisible = profile?.noteFormatDefault == NoteFormat.MARKDOWN,
                                 onMarkdownVisible = viewModel::setMarkdownVisible,
+                                view = view,
+                                onView = { view = it },
+                                trashCount = notes.count { it.deletedAt != null },
+                                onEmptyTrash = viewModel::emptyTrash,
                                 canSeed = viewModel.canSeedSamples,
                                 onSeed = viewModel::seedSamples,
                                 onRemoveSamples = viewModel::removeSamples
@@ -223,11 +271,28 @@ fun NotesListScreen(
                 }
             }
         },
-        floatingActionButton = { NewNoteFab(onPick = onNewNoteClick) }
+        snackbarHost = { SnackbarHost(snackbar) },
+        floatingActionButton = {
+            // En archivo y papelera no se crea nada: el boton llevaria a escribir una nota que
+            // aparecería en otro sitio.
+            if (view == NotesView.NOTAS) NewNoteFab(onPick = onNewNoteClick)
+        }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
-                notes.isEmpty() -> EmptyNotes(
+                delMonton.isEmpty() && view == NotesView.ARCHIVO -> EmptyNotes(
+                    headline = "El archivo está vacío",
+                    body = "Aquí van las notas que ya no usas pero no quieres perder. " +
+                        "Se archivan desde la propia nota."
+                )
+
+                delMonton.isEmpty() && view == NotesView.PAPELERA -> EmptyNotes(
+                    headline = "La papelera está vacía",
+                    body = "Lo que borres se queda aquí " + viewModel.diasEnPapelera +
+                        " días antes de irse del todo."
+                )
+
+                delMonton.isEmpty() -> EmptyNotes(
                     headline = "Todavía no hay nada apuntado",
                     body = "Lo que se dijo en clase, la fecha del parcial, el salón. " +
                         "Escríbelo aquí y luego dile de qué materia es."
@@ -291,16 +356,74 @@ fun NotesListScreen(
     acting?.let { noteId ->
         val nota = notes.firstOrNull { it.id == noteId }
         NoteActionsSheet(
+            enPapelera = view == NotesView.PAPELERA,
             pinned = nota?.pinned == true,
+            archived = nota?.archived == true,
             onPin = {
                 nota?.let { viewModel.setPinned(it.id, !it.pinned) }
                 acting = null
             },
+            onArchive = {
+                nota?.let { viewModel.archive(it.id, !it.archived) }
+                acting = null
+            },
+            onRestore = {
+                viewModel.restore(noteId)
+                acting = null
+            },
             onDelete = {
                 acting = null
-                deleting = noteId
+                if (view == NotesView.PAPELERA) deleting = noteId else confirmingTrash = noteId
             },
             onDismiss = { acting = null }
+        )
+    }
+
+    confirmingTrash?.let { noteId ->
+        /*
+         * Borrar es mover, y se dice.
+         *
+         * «No se puede deshacer» era verdad y daba miedo; ahora no lo es. El aviso dice a donde
+         * va y cuanto se queda ahi, y al hacerlo sale un aviso abajo con el boton de deshacer:
+         * la confirmacion protege del descuido y el deshacer, del arrepentimiento.
+         */
+        AlertDialog(
+            onDismissRequest = { confirmingTrash = null },
+            title = { Text("¿Mover esta nota a la papelera?") },
+            text = {
+                Text(
+                    "Se queda en la papelera " + viewModel.diasEnPapelera +
+                        " días por si te arrepientes, y luego se borra sola."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val antes = viewModel.moveToTrash(noteId)
+                    confirmingTrash = null
+                    if (antes != null) {
+                        alcance.launch {
+                            val respuesta = snackbar.showSnackbar(
+                                message = "Movida a la papelera",
+                                actionLabel = "Deshacer",
+                                withDismissAction = true
+                            )
+                            if (respuesta == SnackbarResult.ActionPerformed) {
+                                viewModel.undoTrash(antes)
+                            }
+                        }
+                    }
+                }) {
+                    Text(
+                        "Mover a la papelera",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingTrash = null }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 
@@ -308,11 +431,12 @@ fun NotesListScreen(
         val nota = notes.firstOrNull { it.id == noteId }
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("¿Borrar la nota?") },
+            title = { Text("¿Borrar del todo?") },
             text = {
                 Text(
-                    "Se borra «" + NoteText.label(NoteMarkdown.strip(nota?.body.orEmpty())) +
-                        "» con lo que lleve dentro, y no se puede deshacer."
+                    "Se borra «" +
+                        nota?.title?.trim()?.ifBlank { NoteText.label(NoteMarkdown.strip(nota.body)) } +
+                        "» con lo que lleve dentro, y esta vez no se puede deshacer."
                 )
             },
             confirmButton = {
@@ -352,6 +476,7 @@ private fun NotesSearchBar(
     canFilter: Boolean,
     onFilterClick: () -> Unit,
     onBackClick: () -> Unit,
+    view: NotesView,
     menu: @Composable () -> Unit
 ) {
     val foco = remember { FocusRequester() }
@@ -390,7 +515,11 @@ private fun NotesSearchBar(
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (query.isEmpty()) {
                         Text(
-                            "Buscar en tus notas",
+                            if (view == NotesView.NOTAS) {
+                                "Buscar en tus notas"
+                            } else {
+                                "Buscar en " + view.title.lowercase()
+                            },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
@@ -526,11 +655,65 @@ private fun NotesOverflowMenu(
     onDismiss: () -> Unit,
     markdownVisible: Boolean,
     onMarkdownVisible: (Boolean) -> Unit,
+    view: NotesView,
+    onView: (NotesView) -> Unit,
+    trashCount: Int,
+    onEmptyTrash: () -> Unit,
     canSeed: Boolean,
     onSeed: () -> Unit,
     onRemoveSamples: () -> Unit
 ) {
     UniDropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        /*
+         * Los tres montones, sin barra lateral.
+         *
+         * Keep los pone en un cajon que se abre desde la izquierda. Aqui esta pantalla se abre
+         * desde otro sitio y ya tiene su boton de atras: un cajon encima seria una segunda forma
+         * de navegar para tres entradas.
+         */
+        NotesView.entries.forEach { opcion ->
+            DropdownMenuItem(
+                text = { Text(opcion.title) },
+                leadingIcon = {
+                    Icon(
+                        when (opcion) {
+                            NotesView.NOTAS -> Icons.Rounded.EditNote
+                            NotesView.ARCHIVO -> Icons.Rounded.Archive
+                            NotesView.PAPELERA -> Icons.Rounded.DeleteOutline
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(19.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (view == opcion) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                },
+                onClick = {
+                    onView(opcion)
+                    onDismiss()
+                }
+            )
+        }
+        if (view == NotesView.PAPELERA && trashCount > 0) {
+            DropdownMenuItem(
+                text = { Text("Vaciar la papelera", color = MaterialTheme.colorScheme.error) },
+                onClick = {
+                    onEmptyTrash()
+                    onDismiss()
+                }
+            )
+        }
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
         /*
          * El ajuste de formato vive aquí y no dentro del editor.
          *
@@ -863,8 +1046,12 @@ private fun FilterRow(
 /** Lo que hay detrás de una nota al dejar el dedo puesto. */
 @Composable
 private fun NoteActionsSheet(
+    enPapelera: Boolean,
     pinned: Boolean,
+    archived: Boolean,
     onPin: () -> Unit,
+    onArchive: () -> Unit,
+    onRestore: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -879,18 +1066,39 @@ private fun NoteActionsSheet(
                 .navigationBarsPadding()
                 .padding(bottom = 18.dp)
         ) {
-            ActionRow(
-                icon = Icons.Rounded.PushPin,
-                label = if (pinned) "Quitar de fijadas" else "Fijar arriba",
-                tint = MaterialTheme.colorScheme.onSurface,
-                onClick = onPin
-            )
-            ActionRow(
-                icon = Icons.Rounded.DeleteOutline,
-                label = "Borrar",
-                tint = MaterialTheme.colorScheme.error,
-                onClick = onDelete
-            )
+            if (enPapelera) {
+                ActionRow(
+                    icon = Icons.Rounded.Restore,
+                    label = "Restaurar",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onRestore
+                )
+                ActionRow(
+                    icon = Icons.Rounded.DeleteForever,
+                    label = "Borrar del todo",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = onDelete
+                )
+            } else {
+                ActionRow(
+                    icon = Icons.Rounded.PushPin,
+                    label = if (pinned) "Quitar de fijadas" else "Fijar arriba",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onPin
+                )
+                ActionRow(
+                    icon = if (archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
+                    label = if (archived) "Sacar del archivo" else "Archivar",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onArchive
+                )
+                ActionRow(
+                    icon = Icons.Rounded.DeleteOutline,
+                    label = "Mover a la papelera",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = onDelete
+                )
+            }
         }
     }
 }

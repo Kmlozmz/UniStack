@@ -333,6 +333,45 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationNineteenToTwentyAddsArchiveAndTrash() {
+        val database = createDatabaseWithSchema(version = 19)
+
+        UniStackDatabase.MIGRATION_19_20.migrate(database)
+
+        assertTrue(database.hasColumn("notes", "archived"))
+        assertTrue(database.hasColumn("notes", "deletedAt"))
+        assertTrue(database.hasIndex("index_notes_deletedAt"))
+        database.close()
+    }
+
+    /**
+     * Lo que ya habia sigue en la lista.
+     *
+     * Ni archivado ni en la papelera: son estados que nadie pudo pedir antes de que existieran,
+     * y darselos a las notas viejas las haria desaparecer de la pantalla al actualizar.
+     */
+    @Test
+    fun migrationNineteenToTwentyLeavesNotesInTheList() {
+        val database = createDatabaseWithSchema(version = 19)
+        database.execSQL(
+            """
+            INSERT INTO notes (id, userId, title, body, subjectId, format, pinned, reminderAt,
+                colorArgb, createdAt, updatedAt)
+            VALUES ('n1', 'local', '', 'Parcial el martes', NULL, 'PLAIN', 0, NULL, NULL, 0, 0)
+            """.trimIndent()
+        )
+
+        UniStackDatabase.MIGRATION_19_20.migrate(database)
+
+        database.query("SELECT archived, deletedAt FROM notes WHERE id = 'n1'").use {
+            assertTrue(it.moveToFirst())
+            assertEquals(0, it.getInt(0))
+            assertTrue(it.isNull(1))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -384,6 +423,7 @@ class RoomMigrationTest {
         if (targetVersion >= 17) UniStackDatabase.MIGRATION_16_17.migrate(db)
         if (targetVersion >= 18) UniStackDatabase.MIGRATION_17_18.migrate(db)
         if (targetVersion >= 19) UniStackDatabase.MIGRATION_18_19.migrate(db)
+        if (targetVersion >= 20) UniStackDatabase.MIGRATION_19_20.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {
