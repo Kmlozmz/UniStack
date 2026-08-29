@@ -254,29 +254,27 @@ private fun NoteCardBody(
     visibles.forEachIndexed { orden, (indice, linea) ->
         val casilla = casillas[indice]
         when {
+            /*
+             * En la tarjeta las casillas se ven, pero no se tocan.
+             *
+             * Se probo tocandolas y era un fastidio: en una tarjeta de mosaico el cuadro mide
+             * quince puntos, esta pegado al texto, y acertar sin abrir la nota por error costaba
+             * mas que abrirla. Como en Keep: la tarjeta se toca entera y lleva a la nota, que es
+             * donde hay sitio para marcar.
+             */
             casilla != null -> Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        if (onToggleCheck == null) {
-                            Modifier
-                        } else {
-                            Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .combinedClickable(onClick = { onToggleCheck(indice) })
-                        }
-                    )
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 CheckBoxMark(casilla.checked)
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = casilla.label,
+                    modifier = Modifier.weight(1f),
                     color = if (casilla.checked) suave.copy(alpha = 0.5f) else suave,
                     style = MaterialTheme.typography.bodyMedium,
                     textDecoration = if (casilla.checked) TextDecoration.LineThrough else null,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }

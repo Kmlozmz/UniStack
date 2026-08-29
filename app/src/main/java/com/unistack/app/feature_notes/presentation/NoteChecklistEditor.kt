@@ -49,6 +49,7 @@ import com.unistack.app.core.design.components.rememberUniReorderState
 import com.unistack.app.core.design.components.uniReorderHandle
 import com.unistack.app.core.design.components.uniReorderableItem
 import com.unistack.app.feature_notes.domain.ChecklistItem
+import com.unistack.app.feature_notes.domain.NoteChecklist
 
 /**
  * Una lista de verdad, no un texto con casillas.
@@ -57,11 +58,11 @@ import com.unistack.app.feature_notes.domain.ChecklistItem
  * arrastrando el asa de la izquierda. Dentro de un solo campo de texto había que colocar el
  * cursor a mano en cada línea y no había forma de reordenar nada.
  *
- * Las marcadas se recogen abajo, plegadas, como en Keep. Una lista de doce con nueve tachadas
- * gasta la pantalla entera en decir lo que ya está hecho.
- *
- * Guarda lo mismo de siempre: `- [ ] algo`. Por eso la tarjeta, el buscador y el respaldo no se
- * enteran de que esto existe.
+ * **La lista manda aquí y no en el texto.** Se probó al revés —leer los elementos del cuerpo en
+ * cada pintada— y fallaba en las dos cosas que más se hacen: el elemento recién añadido está
+ * vacío, así que al releer el cuerpo desaparecía y la nota volvía a ser un texto normal; y las
+ * filas se identificaban por su posición, que cambia en cuanto se mueve una, de modo que el
+ * arrastre soltaba la fila y agarraba la de al lado. Cada elemento lleva ahora su identidad.
  */
 @Composable
 fun NoteChecklistEditor(
@@ -73,11 +74,11 @@ fun NoteChecklistEditor(
 ) {
     val reorder: UniReorderState = rememberUniReorderState()
     var expandidas by remember { mutableStateOf(false) }
-    var focoEn by remember { mutableStateOf<Int?>(null) }
-    val focos = remember { mutableMapOf<Int, FocusRequester>() }
+    var focoEn by remember { mutableStateOf<String?>(null) }
+    val focos = remember { mutableMapOf<String, FocusRequester>() }
 
-    val sinMarcar = items.withIndex().filter { !it.value.checked }
-    val marcadas = items.withIndex().filter { it.value.checked }
+    val sinMarcar = items.filter { !it.checked }
+    val marcadas = items.filter { it.checked }
 
     LaunchedEffect(focoEn) {
         val destino = focoEn ?: return@LaunchedEffect
@@ -85,60 +86,54 @@ fun NoteChecklistEditor(
         focoEn = null
     }
 
+    fun cambiar(item: ChecklistItem, nuevo: ChecklistItem) {
+        onChange(items.map { if (it.id == item.id) nuevo else it })
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
-        sinMarcar.forEach { (indice, item) ->
+        sinMarcar.forEach { item ->
             ChecklistRow(
                 item = item,
-                indice = indice,
-                total = items.size,
+                indice = { items.indexOfFirst { otro -> otro.id == item.id } },
+                total = { items.size },
                 reorder = reorder,
                 texto = texto,
                 suave = suave,
-                foco = focos.getOrPut(indice) { FocusRequester() },
-                onText = { nuevo ->
-                    onChange(items.toMutableList().also { it[indice] = item.copy(text = nuevo) })
-                },
-                onToggle = {
-                    onChange(
-                        items.toMutableList().also { it[indice] = item.copy(checked = !item.checked) }
-                    )
-                },
-                onRemove = {
-                    onChange(items.toMutableList().also { it.removeAt(indice) })
-                    focoEn = (indice - 1).coerceAtLeast(0)
-                },
+                foco = focos.getOrPut(item.id) { FocusRequester() },
+                onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
+                onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
+                onRemove = { onChange(items.filterNot { it.id == item.id }) },
                 onEnter = {
-                    val nuevos = items.toMutableList()
-                    nuevos.add(indice + 1, ChecklistItem("", false))
-                    onChange(nuevos)
-                    focoEn = indice + 1
+                    val nuevo = ChecklistItem("", false)
+                    val donde = items.indexOfFirst { it.id == item.id } + 1
+                    onChange(items.toMutableList().also { it.add(donde, nuevo) })
+                    focoEn = nuevo.id
                 },
-                onMove = { desde, hasta ->
-                    onChange(com.unistack.app.feature_notes.domain.NoteChecklist.move(items, desde, hasta))
-                }
+                onMove = { desde, hasta -> onChange(NoteChecklist.move(items, desde, hasta)) }
             )
         }
 
-        // «Elemento de lista»: la fila que crea la siguiente sin tener que buscar un botón.
+        // «Elemento»: la fila que crea la siguiente sin tener que buscar un botón.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .clickable {
-                    onChange(items + ChecklistItem("", false))
-                    focoEn = items.size
+                    val nuevo = ChecklistItem("", false)
+                    onChange(items + nuevo)
+                    focoEn = nuevo.id
                 }
-                .padding(vertical = 10.dp),
+                .padding(vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(Modifier.width(26.dp))
+            Spacer(Modifier.width(30.dp))
             Icon(
                 Icons.Rounded.Add,
                 contentDescription = null,
                 tint = suave,
-                modifier = Modifier.size(19.dp)
+                modifier = Modifier.size(22.dp)
             )
-            Spacer(Modifier.width(13.dp))
+            Spacer(Modifier.width(16.dp))
             Text("Elemento", color = suave, style = MaterialTheme.typography.bodyLarge)
         }
 
@@ -146,52 +141,40 @@ fun NoteChecklistEditor(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .clickable { expandidas = !expandidas }
-                    .padding(vertical = 10.dp),
+                    .padding(vertical = 13.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     if (expandidas) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
                     contentDescription = null,
                     tint = suave,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(23.dp)
                 )
-                Spacer(Modifier.width(19.dp))
+                Spacer(Modifier.width(25.dp))
                 Text(
                     marcadas.size.toString() +
                         if (marcadas.size == 1) " marcada" else " marcadas",
                     color = suave,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             if (expandidas) {
-                marcadas.forEach { (indice, item) ->
+                marcadas.forEach { item ->
                     ChecklistRow(
                         item = item,
-                        indice = indice,
-                        total = items.size,
+                        indice = { items.indexOfFirst { otro -> otro.id == item.id } },
+                        total = { items.size },
                         reorder = reorder,
                         texto = texto,
                         suave = suave,
-                        foco = focos.getOrPut(indice) { FocusRequester() },
+                        foco = focos.getOrPut(item.id) { FocusRequester() },
                         conAsa = false,
-                        onText = { nuevo ->
-                            onChange(
-                                items.toMutableList().also { it[indice] = item.copy(text = nuevo) }
-                            )
-                        },
-                        onToggle = {
-                            onChange(
-                                items.toMutableList().also {
-                                    it[indice] = item.copy(checked = !item.checked)
-                                }
-                            )
-                        },
-                        onRemove = {
-                            onChange(items.toMutableList().also { it.removeAt(indice) })
-                        },
+                        onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
+                        onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
+                        onRemove = { onChange(items.filterNot { it.id == item.id }) },
                         onEnter = {},
                         onMove = { _, _ -> }
                     )
@@ -204,8 +187,8 @@ fun NoteChecklistEditor(
 @Composable
 private fun ChecklistRow(
     item: ChecklistItem,
-    indice: Int,
-    total: Int,
+    indice: () -> Int,
+    total: () -> Int,
     reorder: UniReorderState,
     texto: Color,
     suave: Color,
@@ -220,8 +203,8 @@ private fun ChecklistRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .uniReorderableItem(reorder, "item-$indice")
-            .padding(vertical = 3.dp),
+            .uniReorderableItem(reorder, item.id)
+            .padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (conAsa) {
@@ -230,22 +213,22 @@ private fun ChecklistRow(
                 contentDescription = "Mover de sitio",
                 tint = suave.copy(alpha = 0.55f),
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(24.dp)
                     .uniReorderHandle(
                         state = reorder,
-                        key = "item-$indice",
-                        index = { indice },
-                        itemCount = { total },
+                        key = item.id,
+                        index = indice,
+                        itemCount = total,
                         onMove = onMove
                     )
             )
             Spacer(Modifier.width(6.dp))
         } else {
-            Spacer(Modifier.width(26.dp))
+            Spacer(Modifier.width(30.dp))
         }
 
         ChecklistBox(checked = item.checked, tint = texto, onClick = onToggle)
-        Spacer(Modifier.width(13.dp))
+        Spacer(Modifier.width(14.dp))
 
         BasicTextField(
             value = item.text,
@@ -266,10 +249,10 @@ private fun ChecklistRow(
             contentDescription = "Quitar",
             tint = suave.copy(alpha = 0.6f),
             modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onRemove)
-                .padding(5.dp)
-                .size(16.dp)
+                .padding(6.dp)
+                .size(18.dp)
         )
     }
 }
@@ -277,19 +260,19 @@ private fun ChecklistRow(
 /** El cuadro de una fila: vacío con borde, y relleno con la marca cuando está hecho. */
 @Composable
 private fun ChecklistBox(checked: Boolean, tint: Color, onClick: () -> Unit) {
-    val forma = RoundedCornerShape(4.dp)
+    val forma = RoundedCornerShape(5.dp)
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(9.dp))
             .clickable(onClick = onClick)
-            .padding(3.dp)
-            .size(19.dp)
+            .padding(4.dp)
+            .size(22.dp)
             .clip(forma)
             .then(
                 if (checked) {
                     Modifier.background(tint.copy(alpha = 0.85f))
                 } else {
-                    Modifier.border(1.6.dp, tint.copy(alpha = 0.55f), forma)
+                    Modifier.border(1.8.dp, tint.copy(alpha = 0.55f), forma)
                 }
             ),
         contentAlignment = Alignment.Center
@@ -299,7 +282,7 @@ private fun ChecklistBox(checked: Boolean, tint: Color, onClick: () -> Unit) {
                 Icons.Rounded.Check,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.surface,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }

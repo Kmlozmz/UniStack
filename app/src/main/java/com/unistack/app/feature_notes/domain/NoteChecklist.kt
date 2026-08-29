@@ -1,7 +1,19 @@
 package com.unistack.app.feature_notes.domain
 
-/** Una línea de una lista: lo que dice y si está marcada. */
-data class ChecklistItem(val text: String, val checked: Boolean)
+import java.util.UUID
+
+/**
+ * Una línea de una lista: lo que dice, si está marcada, y quién es.
+ *
+ * [id] no se guarda en ningún sitio y no significa nada fuera de la pantalla: existe porque
+ * arrastrar una fila necesita saber **cuál** se está moviendo, y la posición no vale —cambia en
+ * cuanto la fila se mueve, y el gesto se queda a medias con el dedo encima de otra—.
+ */
+data class ChecklistItem(
+    val text: String,
+    val checked: Boolean,
+    val id: String = UUID.randomUUID().toString()
+)
 
 /**
  * Una nota que es una lista, y no un texto con casillas dentro.
@@ -38,6 +50,10 @@ object NoteChecklist {
      *
      * Los elementos vacíos se caen: una lista con renglones en blanco entre medias es lo que
      * queda cuando alguien borra el texto de uno y no se acuerda de quitarlo.
+     *
+     * Ojo: **esto no vale como fuente de verdad mientras se edita.** Un elemento recién añadido
+     * está vacío, así que al escribirlo y volver a leerlo desaparecería debajo del dedo. Por eso
+     * la pantalla se queda con su propia lista y solo usa esto para guardar.
      */
     fun render(items: List<ChecklistItem>): String = items
         .filter { it.text.isNotBlank() }

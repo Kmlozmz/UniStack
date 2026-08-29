@@ -1,4 +1,5 @@
 @file:OptIn(
+    androidx.compose.foundation.layout.ExperimentalLayoutApi::class,
     androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class,
     androidx.compose.material3.ExperimentalMaterial3Api::class
 )
@@ -18,6 +19,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -198,11 +201,34 @@ fun NoteEditorScreen(
         NoteFormat.PLAIN
     }
 
+    /*
+     * La lista manda aquí, y no el texto.
+     *
+     * Se probó al revés —leer los elementos del cuerpo en cada pintada— y rompía las dos cosas
+     * que más se hacen: un elemento recién añadido está vacío, así que al releer el cuerpo
+     * desaparecía y la nota volvía a ser un texto normal; y las filas se identificaban por su
+     * posición, que cambia al mover una, de modo que el arrastre soltaba la fila a medio camino.
+     *
+     * El cuerpo sigue siendo lo que se guarda: cada cambio en la lista lo reescribe. Lo que ya no
+     * hace es mandar mientras se edita.
+     */
+    var modoLista by rememberSaveable { mutableStateOf(false) }
+    var elementos by remember { mutableStateOf(emptyList<com.unistack.app.feature_notes.domain.ChecklistItem>()) }
+
+    val ponerLista: (List<com.unistack.app.feature_notes.domain.ChecklistItem>) -> Unit = { nuevos ->
+        elementos = nuevos
+        value = value.copy(text = NoteChecklist.render(nuevos))
+    }
+
     LaunchedEffect(existing?.id) {
         val note = existing
         if (!loaded && note != null) {
             title = TextFieldValue(note.title)
             value = TextFieldValue(note.body)
+            if (NoteChecklist.isChecklist(note.body)) {
+                modoLista = true
+                elementos = NoteChecklist.parse(note.body)
+            }
             subjectId = note.subjectId
             reminderAt = note.reminderAt
             colorArgb = note.colorArgb
@@ -373,8 +399,8 @@ fun NoteEditorScreen(
         when (start) {
             NewNoteStart.TEXTO -> runCatching { focusRequester.requestFocus() }
             NewNoteStart.LISTA -> {
-                value = TextFieldValue(text = "- [ ] ", selection = TextRange(6))
-                runCatching { focusRequester.requestFocus() }
+                modoLista = true
+                elementos = listOf(com.unistack.app.feature_notes.domain.ChecklistItem("", false))
             }
             NewNoteStart.FOTO -> {
                 asegurarNota()
@@ -424,16 +450,6 @@ fun NoteEditorScreen(
     }
     val aVisible: (Int) -> Int = { offset -> escondido?.toTransformed(offset) ?: offset }
     val textoVisible = escondido?.text ?: body
-    /*
-     * Una nota que es toda casillas se edita como lista.
-     *
-     * No hay tipo de nota guardado: se deduce del contenido. Asi nadie elige nada al crearla —que
-     * es lo que el pidio quitar— y una nota deja de ser lista en cuanto se le escribe un parrafo.
-     */
-    val esLista = remember(body) { NoteChecklist.isChecklist(body) }
-    val elementos = remember(body, esLista) {
-        if (esLista) NoteChecklist.parse(body) else emptyList()
-    }
 
     val casillas = remember(body) { NoteMarkdown.checkboxes(body) }
     val iniciosDeLinea = remember(body) {
@@ -685,13 +701,20 @@ fun NoteEditorScreen(
              * ACUMULACIÓN DE COSTOS» se comía la fila entera de botones. Aquí abajo es un dato
              * más de la nota, al lado del recordatorio, que es lo que es.
              */
-            if (subject != null || reminderAt != null || saved) {
-                Row(
+            if (subject != null || reminderAt != null) {
+                /*
+                 * Envuelve, no se sale.
+                 *
+                 * Con «SISTEMAS DE ACUMULACION DE COSTOS» y una fecha al lado no caben los dos
+                 * en una linea, y en una `Row` normal el segundo se iba por el borde derecho
+                 * con el aspa cortada. Aqui baja a la linea siguiente.
+                 */
+                FlowRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 22.dp, end = 22.dp, top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (subject != null) {
                         Surface(
@@ -699,7 +722,6 @@ fun NoteEditorScreen(
                             shape = RoundedCornerShape(8.dp),
                             color = subjectAccent(subject).copy(alpha = 0.16f),
                             contentColor = subjectAccent(subject),
-                            modifier = Modifier.weight(1f, fill = false)
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
@@ -730,28 +752,18 @@ fun NoteEditorScreen(
                             onClick = { pickingDate = true }
                         )
                     }
-                    if (saved) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = "Guardado",
-                            tint = suave.copy(alpha = 0.7f),
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
                 }
             }
 
             Spacer(Modifier.size(10.dp))
 
-            if (esLista) {
+            if (modoLista) {
                 NoteChecklistEditor(
                     items = elementos,
-                    onChange = { nuevos ->
-                        value = value.copy(text = NoteChecklist.render(nuevos))
-                    },
+                    onChange = ponerLista,
                     texto = enFondo,
                     suave = suave,
-                    modifier = Modifier.padding(start = 16.dp, end = 12.dp, bottom = 14.dp)
+                    modifier = Modifier.padding(start = 14.dp, end = 10.dp, bottom = 14.dp)
                 )
             } else Box(
                 modifier = Modifier
@@ -898,11 +910,8 @@ fun NoteEditorScreen(
                     NoteInsert.CASILLAS -> {
                         // Con la nota en blanco, «Casillas» crea una lista; con algo escrito,
                         // convierte lo que hay en elementos sin perder ni una linea.
-                        val convertida = NoteChecklist.render(NoteChecklist.from(body))
-                        value = TextFieldValue(
-                            text = convertida.ifBlank { "- [ ] " },
-                            selection = TextRange(convertida.ifBlank { "- [ ] " }.length)
-                        )
+                        modoLista = true
+                        ponerLista(NoteChecklist.from(body))
                     }
                     NoteInsert.TABLA -> aplicarFormato(NoteAction.TABLA)
                 }
@@ -1026,41 +1035,45 @@ private fun ReminderChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    /*
+     * Del mismo tamano que el chip de materia, y ni un punto mas.
+     *
+     * Salia con el doble de alto: el aspa llevaba su propio relleno dentro del chip, asi que el
+     * chip crecia para caberla. Ahora el aspa es un icono a secas y la zona de toque la pone el
+     * propio chip, que ya es tocable.
+     */
     val color = if (NoteReminders.isDue(at)) MaterialTheme.colorScheme.error else tint
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(9.dp),
-        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.14f),
         contentColor = color,
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(
                 Icons.Rounded.Notifications,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(12.dp)
             )
             Text(
                 NoteReminders.label(at),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1
             )
-            Surface(
-                onClick = onClear,
-                shape = CircleShape,
-                color = Color.Transparent,
-                contentColor = color
-            ) {
-                Icon(
-                    Icons.Rounded.Close,
-                    contentDescription = "Quitar el recordatorio",
-                    modifier = Modifier.padding(4.dp).size(13.dp)
-                )
-            }
+            Icon(
+                Icons.Rounded.Close,
+                contentDescription = "Quitar el recordatorio",
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable(onClick = onClear)
+                    .size(13.dp)
+            )
         }
     }
 }
