@@ -1,6 +1,7 @@
 package com.unistack.app.feature_notes.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -101,6 +102,59 @@ class NoteFormattingTest {
     fun unaSeleccionAlRevesTambienVale() {
         val r = aplicar(NoteAction.NEGRITA, "importante", 10, 0)
         assertEquals("**importante**", r.text)
+    }
+
+    /*
+     * Los titulos son un cambio y no un interruptor: pedir «Titulo» sobre una linea que ya es
+     * subtitulo la convierte, no le anade otra almohadilla delante.
+     */
+    @Test
+    fun elTituloCambiaDeNivelEnVezDeAcumularse() {
+        assertEquals("# Parcial", aplicar(NoteAction.TITULO1, "Parcial", 0, 0).text)
+        assertEquals("# Parcial", aplicar(NoteAction.TITULO1, "## Parcial", 3, 3).text)
+        assertEquals("## Parcial", aplicar(NoteAction.TITULO2, "# Parcial", 2, 2).text)
+    }
+
+    @Test
+    fun volverAPedirElMismoNivelLoQuita() {
+        assertEquals("Parcial", aplicar(NoteAction.TITULO1, "# Parcial", 2, 2).text)
+    }
+
+    @Test
+    fun textoNormalDejaLaLineaLisa() {
+        assertEquals("Parcial", aplicar(NoteAction.NORMAL, "### Parcial", 4, 4).text)
+        assertEquals("Parcial", aplicar(NoteAction.NORMAL, "Parcial", 0, 0).text)
+    }
+
+    /** Quitar el formato deja el trozo en texto pelado, sea cual sea la marca que llevara. */
+    @Test
+    fun limpiarQuitaTodasLasMarcasDeLoSeleccionado() {
+        val texto = "esto es **muy** importante"
+        val r = aplicar(NoteAction.LIMPIAR, texto, 8, 15)
+        assertEquals("esto es muy importante", r.text)
+    }
+
+    @Test
+    fun limpiarSinNadaSeleccionadoNoToca() {
+        assertEquals("**algo**", aplicar(NoteAction.LIMPIAR, "**algo**", 3, 3).text)
+    }
+
+    /*
+     * La tabla sale hecha porque escribir la linea de guiones a mano es lo que hace que casi
+     * nadie use tablas en Markdown.
+     */
+    @Test
+    fun laTablaSaleConSuLineaDeSeparacion() {
+        val r = aplicar(NoteAction.TABLA, "", 0, 0)
+        assertTrue(r.text, r.text.contains("| Columna | Columna |"))
+        assertTrue(r.text, r.text.contains("| --- | --- |"))
+        assertEquals(NoteStyle.TABLA, NoteMarkdown.parse(r.text).spans.first().style)
+    }
+
+    @Test
+    fun laTablaSeSeparaDeLoQueYaHabiaEscrito() {
+        val r = aplicar(NoteAction.TABLA, "una frase", 9, 9)
+        assertTrue(r.text, r.text.startsWith("una frase\n|"))
     }
 
     @Test

@@ -32,6 +32,15 @@ enum class NoteFormat {
  * de partida porque una nota suele empezar por una foto de la pizarra, y ahí la foto manda;
  * Cuaderno es para quien escribe más de lo que fotografía y quiere leer sin abrir.
  */
+/** Por qué fecha se ordenan las notas. */
+enum class NotesSort {
+    /** Lo último que se tocó, arriba. Es lo que se espera de un cuaderno. */
+    MODIFICADA,
+
+    /** Por cuándo se escribieron, para leer las cosas en el orden en que pasaron. */
+    CREADA
+}
+
 enum class NotesLayout {
     /** Una columna por días, con la fecha pegada arriba mientras se recorre. */
     CUADERNO,
@@ -42,11 +51,28 @@ enum class NotesLayout {
 
 data class QuickNote(
     val id: String,
+    /**
+     * El título, aparte del cuerpo.
+     *
+     * Antes el título era la primera línea del texto, que ahorra un campo y a cambio impide dos
+     * cosas: escribir una nota que empiece por una lista sin que el primer punto haga de título,
+     * y buscar solo por títulos. Es opcional: una nota sin título sigue siendo una nota.
+     */
+    val title: String = "",
     val body: String,
     val subjectId: String? = null,
     val format: NoteFormat = NoteFormat.PLAIN,
     /** Arriba del todo, por encima de la fecha. Se guarda desde ya aunque aún no se pueda tocar. */
     val pinned: Boolean = false,
+    /**
+     * Cuándo tiene que avisar esta nota, si tiene que avisar.
+     *
+     * Nulo es «no avisa». Es lo que convierte un apunte en algo que vuelve solo: «traer la
+     * calculadora» no sirve de nada guardado si nadie lo lee la mañana del parcial.
+     */
+    val reminderAt: Long? = null,
+    /** El color con el que se pinta la nota, o nulo para el de siempre. */
+    val colorArgb: Int? = null,
     val createdAt: Long,
     val updatedAt: Long
 )

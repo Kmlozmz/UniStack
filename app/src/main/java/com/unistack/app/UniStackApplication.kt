@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.work.Configuration
 import com.unistack.app.core.notifications.ReminderCoordinator
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
@@ -38,6 +39,7 @@ class UniStackApplication : Application(), Configuration.Provider {
     @Inject lateinit var tasksRepository: TasksRepository
     @Inject lateinit var academicWorksRepository: AcademicWorksRepository
     @Inject lateinit var scheduleRepository: ScheduleRepository
+    @Inject lateinit var notesRepository: NotesRepository
     @Inject lateinit var updateRepository: UpdateRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -50,7 +52,8 @@ class UniStackApplication : Application(), Configuration.Provider {
             gradesRepository = gradesRepository,
             tasksRepository = tasksRepository,
             academicWorksRepository = academicWorksRepository,
-            scheduleRepository = scheduleRepository
+            scheduleRepository = scheduleRepository,
+            notesRepository = notesRepository
         )
         appScope.launch {
             updateRepository.checkForUpdatesIfDue()

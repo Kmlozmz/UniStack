@@ -15,6 +15,7 @@ import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
@@ -24,6 +25,20 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import java.util.UUID
 import javax.inject.Inject
+
+/**
+ * Lo que se está escribiendo en el editor, todo junto.
+ *
+ * Era una lista de parámetros que ya iba por siete y crecía con cada cosa nueva que una nota
+ * puede llevar. Con un solo objeto, añadir un campo no obliga a tocar cada sitio que guarda.
+ */
+data class NoteDraft(
+    val title: String = "",
+    val body: String = "",
+    val subjectId: String? = null,
+    val reminderAt: Long? = null,
+    val colorArgb: Int? = null
+)
 
 @HiltViewModel
 class NotesViewModel @Inject constructor(
@@ -62,14 +77,10 @@ class NotesViewModel @Inject constructor(
      * papeles vacíos por la lista. Y si se borra todo el texto de una nota que ya existía, se
      * borra la nota —dejar una tarjeta vacía es peor que no dejar nada.
      */
-    fun saveNote(
-        noteId: String?,
-        body: String,
-        subjectId: String?,
-        format: NoteFormat = defaultFormat()
-    ): String? {
+    fun saveNote(noteId: String?, draft: NoteDraft): String? {
         val existing = noteById(noteId)
-        val trimmed = body.trimEnd()
+        val trimmed = draft.body.trimEnd()
+        val titulo = draft.title.trim()
 
         /*
          * Una nota sin texto se descarta, salvo que lleve algo colgado.
@@ -77,21 +88,27 @@ class NotesViewModel @Inject constructor(
          * Una foto de la pizarra sin una sola palabra es una nota perfectamente valida —de
          * hecho es la mas comun—, asi que «vacia» no puede significar solo «sin letras».
          */
-        if (NoteText.isEmpty(trimmed) && attachmentsOf(existing?.id).isEmpty()) {
+        if (NoteText.isEmpty(trimmed) &&
+            titulo.isEmpty() &&
+            attachmentsOf(existing?.id).isEmpty()
+        ) {
             if (existing != null) notesRepository.deleteNote(existing.id)
             return null
         }
 
         val now = System.currentTimeMillis()
-        val validSubjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } }
+        val validSubjectId = draft.subjectId?.takeIf { id -> subjects.value.any { it.id == id } }
 
         if (existing == null) {
             val note = QuickNote(
                 id = "note-" + UUID.randomUUID(),
+                title = titulo,
                 body = trimmed,
                 subjectId = validSubjectId,
-                format = format,
+                format = NoteFormat.MARKDOWN,
                 pinned = false,
+                reminderAt = draft.reminderAt,
+                colorArgb = draft.colorArgb,
                 createdAt = now,
                 updatedAt = now
             )
@@ -101,18 +118,22 @@ class NotesViewModel @Inject constructor(
 
         // Sin cambios no se toca nada: reescribir por salir de la pantalla movería la nota al
         // principio de la lista sin que nadie haya escrito una letra.
-        if (existing.body == trimmed &&
+        if (existing.title == titulo &&
+            existing.body == trimmed &&
             existing.subjectId == validSubjectId &&
-            existing.format == format
+            existing.reminderAt == draft.reminderAt &&
+            existing.colorArgb == draft.colorArgb
         ) {
             return existing.id
         }
 
         notesRepository.updateNote(
             existing.copy(
+                title = titulo,
                 body = trimmed,
                 subjectId = validSubjectId,
-                format = format,
+                reminderAt = draft.reminderAt,
+                colorArgb = draft.colorArgb,
                 updatedAt = now
             )
         )
@@ -125,16 +146,19 @@ class NotesViewModel @Inject constructor(
      * Hace falta para colgar algo: un adjunto necesita una nota a la que pertenecer, y en una
      * nota nueva el primer gesto puede ser perfectamente la foto y no la primera letra.
      */
-    fun ensureNoteId(noteId: String?, body: String, subjectId: String?, format: NoteFormat): String {
+    fun ensureNoteId(noteId: String?, draft: NoteDraft): String {
         val existente = noteById(noteId)
         if (existente != null) return existente.id
         val now = System.currentTimeMillis()
         val nota = QuickNote(
             id = "note-" + UUID.randomUUID(),
-            body = body.trimEnd(),
-            subjectId = subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
-            format = format,
+            title = draft.title.trim(),
+            body = draft.body.trimEnd(),
+            subjectId = draft.subjectId?.takeIf { id -> subjects.value.any { it.id == id } },
+            format = NoteFormat.MARKDOWN,
             pinned = false,
+            reminderAt = draft.reminderAt,
+            colorArgb = draft.colorArgb,
             createdAt = now,
             updatedAt = now
         )
@@ -269,6 +293,14 @@ fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
 
     fun setPinned(noteId: String, pinned: Boolean) = notesRepository.setPinned(noteId, pinned)
 
+    fun setSort(sort: NotesSort) {
+        val profile = userProfile.value ?: return
+        if (profile.notesSort == sort) return
+        userRepository.saveUserProfile(
+            profile.copy(notesSort = sort, updatedAt = System.currentTimeMillis())
+        )
+    }
+
     fun setLayout(layout: NotesLayout) {
         val profile = userProfile.value ?: return
         if (profile.notesLayout == layout) return
@@ -278,18 +310,22 @@ fun deleteNote(noteId: String) = notesRepository.deleteNote(noteId)
     }
 
     /**
-     * Con qué formato nace una nota nueva.
+     * Si las marcas de Markdown se ven mientras se escribe.
      *
-     * Sale del ajuste global, que es solo el punto de partida: dentro del editor se cambia esta
-     * nota sin tocar el ajuste, y cada nota se guarda con el suyo.
+     * Ya no es una propiedad de cada nota ni una pregunta que se haga al crearla: **todas** las
+     * notas son lo mismo por dentro. Los botones ponen las marcas y la app las esconde, que era
+     * lo que él pidió —«del markdown que se encargue la app»—. Esto solo destapa las marcas para
+     * quien quiera escribirlas a mano.
      */
-    fun defaultFormat(): NoteFormat = userProfile.value?.noteFormatDefault ?: NoteFormat.PLAIN
+    fun markdownVisible(): Boolean =
+        userProfile.value?.noteFormatDefault == NoteFormat.MARKDOWN
 
-    fun setDefaultFormat(format: NoteFormat) {
+    fun setMarkdownVisible(visible: Boolean) {
         val profile = userProfile.value ?: return
-        if (profile.noteFormatDefault == format) return
+        val destino = if (visible) NoteFormat.MARKDOWN else NoteFormat.PLAIN
+        if (profile.noteFormatDefault == destino) return
         userRepository.saveUserProfile(
-            profile.copy(noteFormatDefault = format, updatedAt = System.currentTimeMillis())
+            profile.copy(noteFormatDefault = destino, updatedAt = System.currentTimeMillis())
         )
     }
 }

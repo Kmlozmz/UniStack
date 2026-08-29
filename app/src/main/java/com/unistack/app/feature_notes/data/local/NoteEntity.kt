@@ -9,16 +9,20 @@ import androidx.room.PrimaryKey
     indices = [
         Index("userId"),
         Index("subjectId"),
-        Index("updatedAt")
+        Index("updatedAt"),
+        Index("reminderAt")
     ]
 )
 data class NoteEntity(
     @PrimaryKey val id: String,
     val userId: String,
+    val title: String,
     val body: String,
     val subjectId: String?,
     val format: String,
     val pinned: Boolean,
+    val reminderAt: Long?,
+    val colorArgb: Int?,
     val createdAt: Long,
     val updatedAt: Long
 )

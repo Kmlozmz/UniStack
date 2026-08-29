@@ -195,6 +195,7 @@ class FirebaseCloudBackupRepository(
             "enabledModules" to profile.enabledModules.map { it.name },
             "notesLayout" to profile.notesLayout.name,
             "noteFormatDefault" to profile.noteFormatDefault.name,
+            "notesSort" to profile.notesSort.name,
             "visualPreference" to profile.visualPreference.name,
             "appearancePreferences" to mapOf(
                 "backgroundStyle" to profile.appearancePreferences.backgroundStyle.name,
@@ -293,7 +294,10 @@ class FirebaseCloudBackupRepository(
 
     private fun noteMap(note: QuickNote): Map<String, Any?> = mapOf(
         "id" to note.id,
+        "title" to note.title,
         "body" to note.body,
+        "reminderAt" to note.reminderAt,
+        "colorArgb" to note.colorArgb,
         "subjectId" to note.subjectId,
         "format" to note.format.name,
         "pinned" to note.pinned,
@@ -308,7 +312,10 @@ class FirebaseCloudBackupRepository(
             val created = map.long("createdAt") ?: System.currentTimeMillis()
             QuickNote(
                 id = map.string("id") ?: return@mapNotNull null,
+                title = map.string("title") ?: "",
                 body = body,
+                reminderAt = map.long("reminderAt"),
+                colorArgb = map.int("colorArgb"),
                 subjectId = map.string("subjectId"),
                 format = map.string("format")
                     ?.let { runCatching { NoteFormat.valueOf(it) }.getOrNull() }

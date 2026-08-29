@@ -7,7 +7,12 @@ enum class NoteAction(val label: String) {
     TACHADO("Tachado"),
     VINETA("Lista"),
     NUMERADA("Lista numerada"),
-    CASILLA("Casilla")
+    CASILLA("Casilla"),
+    TITULO1("Título"),
+    TITULO2("Subtítulo"),
+    NORMAL("Texto normal"),
+    LIMPIAR("Quitar el formato"),
+    TABLA("Tabla")
 }
 
 /** Un texto y donde queda la seleccion despues de tocarlo. */
@@ -40,7 +45,76 @@ object NoteFormatting {
             NoteAction.VINETA -> prefijar(text, inicio, fin) { "- " }
             NoteAction.CASILLA -> prefijar(text, inicio, fin) { "- [ ] " }
             NoteAction.NUMERADA -> prefijar(text, inicio, fin) { indice -> "${indice + 1}. " }
+            NoteAction.TITULO1 -> titular(text, inicio, fin, "# ")
+            NoteAction.TITULO2 -> titular(text, inicio, fin, "## ")
+            NoteAction.NORMAL -> titular(text, inicio, fin, "")
+            NoteAction.LIMPIAR -> limpiar(text, inicio, fin)
+            NoteAction.TABLA -> insertarTabla(text, inicio)
         }
+    }
+
+    private val TITULO_RE = Regex("""^#{1,6}[ @T]+""".replace("@T", "\t"))
+
+    /**
+     * Poner, cambiar o quitar el nivel de título de una línea.
+     *
+     * Es un cambio y no un interruptor: pedir «Título» sobre una línea que ya es subtítulo la
+     * convierte en título, no le añade otra almohadilla delante. Con marca vacía, la deja lisa.
+     */
+    private fun titular(text: String, inicio: Int, fin: Int, marca: String): TextChange {
+        val lineaInicio = text.lastIndexOf(10.toChar(), (inicio - 1).coerceAtLeast(0))
+            .let { if (it == -1 || inicio == 0) 0 else it + 1 }
+        val lineaFin = text.indexOf(10.toChar(), fin).let { if (it == -1) text.length else it }
+
+        val linea = text.substring(lineaInicio, lineaFin)
+        val sangria = linea.takeWhile { it == ' ' }.length
+        val resto = linea.substring(sangria)
+        val actual = TITULO_RE.find(resto)?.value.orEmpty()
+        val yaEsta = actual == marca && marca.isNotEmpty()
+
+        val nueva = linea.substring(0, sangria) +
+            (if (yaEsta) "" else marca) +
+            resto.removePrefix(actual)
+
+        val nuevo = text.replaceRange(lineaInicio, lineaFin, nueva)
+        val desplazamiento = nueva.length - linea.length
+        return TextChange(
+            text = nuevo,
+            selectionStart = (inicio + desplazamiento).coerceIn(0, nuevo.length),
+            selectionEnd = (fin + desplazamiento).coerceIn(0, nuevo.length)
+        )
+    }
+
+    /**
+     * Dejar el trozo seleccionado en texto pelado.
+     *
+     * Es el botón que hace falta cuando algo se puso con la mano y no se sabe qué marca lleva:
+     * en vez de adivinar cuál quitar, se quitan todas las de dentro.
+     */
+    private fun limpiar(text: String, inicio: Int, fin: Int): TextChange {
+        if (inicio == fin) return TextChange(text, inicio, fin)
+        val trozo = text.substring(inicio, fin)
+        val limpio = NoteMarkdown.strip(trozo)
+        val nuevo = text.replaceRange(inicio, fin, limpio)
+        return TextChange(nuevo, inicio, (inicio + limpio.length).coerceAtMost(nuevo.length))
+    }
+
+    /**
+     * Una tabla ya hecha, para no tener que acordarse de los guiones.
+     *
+     * Escribir la línea de separación a mano es lo que hace que casi nadie use tablas en
+     * Markdown. Sale con dos columnas y una fila: es más fácil añadir que recortar.
+     */
+    private fun insertarTabla(text: String, cursor: Int): TextChange {
+        val salto = 10.toChar()
+        val delante = if (cursor > 0 && text.getOrNull(cursor - 1) != salto) salto.toString() else ""
+        val tabla = delante +
+            "| Columna | Columna |" + salto +
+            "| --- | --- |" + salto +
+            "|  |  |" + salto
+        val nuevo = text.replaceRange(cursor, cursor, tabla)
+        val destino = cursor + delante.length + 2
+        return TextChange(nuevo, destino, destino)
     }
 
     private fun envolver(text: String, inicio: Int, fin: Int, marca: String): TextChange {

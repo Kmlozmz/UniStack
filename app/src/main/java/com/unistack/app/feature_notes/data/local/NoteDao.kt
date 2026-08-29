@@ -30,10 +30,13 @@ interface NoteDao {
     @Query(
         """
         UPDATE notes
-        SET body = :body,
+        SET title = :title,
+            body = :body,
             subjectId = :subjectId,
             format = :format,
             pinned = :pinned,
+            reminderAt = :reminderAt,
+            colorArgb = :colorArgb,
             updatedAt = :updatedAt
         WHERE id = :noteId AND userId IN (:userIds)
         """
@@ -41,10 +44,13 @@ interface NoteDao {
     suspend fun updateNoteFields(
         noteId: String,
         userIds: List<String>,
+        title: String,
         body: String,
         subjectId: String?,
         format: String,
         pinned: Boolean,
+        reminderAt: Long?,
+        colorArgb: Int?,
         updatedAt: Long
     )
 

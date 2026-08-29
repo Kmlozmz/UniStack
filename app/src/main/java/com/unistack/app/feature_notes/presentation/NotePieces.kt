@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +49,7 @@ import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteMarkdown
+import com.unistack.app.feature_notes.domain.NoteReminders
 import com.unistack.app.feature_notes.domain.QuickNote
 
 /**
@@ -113,8 +115,12 @@ fun NoteCard(
     val portada = remember(attachments) {
         attachments.firstOrNull { it.kind == AttachmentKind.IMAGE }
     }
+    val fondo = NoteColors.surfaceFor(note.colorArgb)
+    val enFondo = NoteColors.contentOn(fondo, MaterialTheme.colorScheme.onSurface)
+    val suave = enFondo.copy(alpha = 0.66f)
 
     UniCard(
+        color = fondo,
         modifier = if (onLongClick == null) {
             modifier.fillMaxWidth()
         } else {
@@ -156,11 +162,25 @@ fun NoteCard(
                         ),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
+                    if (note.title.isNotBlank()) {
+                        Text(
+                            text = note.title,
+                            color = enFondo,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     NoteCardBody(
                         note = note,
                         maxLines = if (compact) 5 else 9,
+                        conTitulo = note.title.isBlank(),
+                        texto = enFondo,
+                        suave = suave,
                         onToggleCheck = onToggleCheck
                     )
+                    note.reminderAt?.let { NoteReminderChip(it, suave) }
                     Spacer(Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -170,7 +190,7 @@ fun NoteCard(
                             Icon(
                                 Icons.Rounded.PushPin,
                                 contentDescription = "Fijada",
-                                tint = MaterialTheme.colorScheme.outline,
+                                tint = suave,
                                 modifier = Modifier.size(12.dp)
                             )
                         }
@@ -179,7 +199,7 @@ fun NoteCard(
                         }
                         Text(
                             text = timeLabel,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = suave.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1
                         )
@@ -202,6 +222,9 @@ fun NoteCard(
 private fun NoteCardBody(
     note: QuickNote,
     maxLines: Int,
+    conTitulo: Boolean,
+    texto: Color,
+    suave: Color,
     onToggleCheck: ((Int) -> Unit)?
 ) {
     val plano = remember(note.body) { NoteMarkdown.strip(note.body).lines() }
@@ -247,11 +270,7 @@ private fun NoteCardBody(
                 CheckBoxMark(casilla.checked)
                 Text(
                     text = casilla.label,
-                    color = if (casilla.checked) {
-                        MaterialTheme.colorScheme.outline
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    color = if (casilla.checked) suave.copy(alpha = 0.5f) else suave,
                     style = MaterialTheme.typography.bodySmall,
                     textDecoration = if (casilla.checked) TextDecoration.LineThrough else null,
                     maxLines = 1,
@@ -259,9 +278,11 @@ private fun NoteCardBody(
                 )
             }
 
-            orden == 0 -> Text(
+            // Sin titulo propio, la primera linea hace de titular: es lo que habia antes de
+            // que el titulo fuera un campo, y sigue haciendo falta en las notas viejas.
+            conTitulo && orden == 0 -> Text(
                 text = linea,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = texto,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
@@ -270,7 +291,7 @@ private fun NoteCardBody(
 
             else -> Text(
                 text = linea,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = suave,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -281,14 +302,14 @@ private fun NoteCardBody(
     if (hayMas) {
         Text(
             text = "…",
-            color = MaterialTheme.colorScheme.outline,
+            color = suave.copy(alpha = 0.7f),
             style = MaterialTheme.typography.bodySmall
         )
     }
     if (hechas > 0) {
         Text(
             text = "+ " + hechas + if (hechas == 1) " marcada" else " marcadas",
-            color = MaterialTheme.colorScheme.outline,
+            color = suave.copy(alpha = 0.7f),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 3.dp)
         )
@@ -320,6 +341,31 @@ private fun CheckBoxMark(checked: Boolean) {
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(11.dp)
             )
+        }
+    }
+}
+
+/** El recordatorio de una nota, en su tarjeta. */
+@Composable
+private fun NoteReminderChip(at: Long, tint: Color) {
+    val color = if (NoteReminders.isDue(at)) MaterialTheme.colorScheme.error else tint
+    Surface(
+        shape = RoundedCornerShape(7.dp),
+        color = color.copy(alpha = 0.12f),
+        contentColor = color,
+        modifier = Modifier.padding(top = 3.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                Icons.Rounded.Notifications,
+                contentDescription = null,
+                modifier = Modifier.size(11.dp)
+            )
+            Text(NoteReminders.label(at), style = MaterialTheme.typography.labelSmall)
         }
     }
 }

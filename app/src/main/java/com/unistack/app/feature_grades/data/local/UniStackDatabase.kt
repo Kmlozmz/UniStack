@@ -42,7 +42,7 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         NoteEntity::class,
         NoteAttachmentEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -431,6 +431,25 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * La nota crece: titulo propio, recordatorio y color.
+         *
+         * El titulo era la primera linea del cuerpo. Ahorraba una columna y a cambio impedia dos
+         * cosas: escribir una nota que empiece por una lista sin que el primer punto hiciera de
+         * titulo, y buscar solo por titulos.
+         *
+         * `reminderAt` es lo que convierte un apunte en algo que vuelve solo. Nulo es «no avisa»,
+         * que es lo que le pasa a todo lo que ya estaba escrito.
+         */
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE notes ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE notes ADD COLUMN reminderAt INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE notes ADD COLUMN colorArgb INTEGER DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_notes_reminderAt ON notes(reminderAt)")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -461,7 +480,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_14_15,
             MIGRATION_15_16,
             MIGRATION_16_17,
-            MIGRATION_17_18
+            MIGRATION_17_18,
+            MIGRATION_18_19
         )
     }
 }

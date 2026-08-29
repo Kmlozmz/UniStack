@@ -30,7 +30,17 @@ object NoteGrouping {
      * Fijar una nota es decir «esta no envejece»: si se quedara en su día, al cabo de una semana
      * estaría enterrada, que es exactamente lo contrario de lo que se pidió.
      */
-    fun pinned(notes: List<QuickNote>): List<QuickNote> = notes.filter { it.pinned }
+    fun pinned(notes: List<QuickNote>, sort: NotesSort = NotesSort.MODIFICADA): List<QuickNote> =
+        ordenar(notes.filter { it.pinned }, sort)
+
+    /** Todo lo demás, que en Keep es «Otras». */
+    fun others(notes: List<QuickNote>, sort: NotesSort = NotesSort.MODIFICADA): List<QuickNote> =
+        ordenar(notes.filterNot { it.pinned }, sort)
+
+    private fun ordenar(notes: List<QuickNote>, sort: NotesSort): List<QuickNote> = when (sort) {
+        NotesSort.MODIFICADA -> notes.sortedByDescending { it.updatedAt }
+        NotesSort.CREADA -> notes.sortedByDescending { it.createdAt }
+    }
 
     /** El resto, por días y de lo más reciente a lo más viejo. */
     fun byDay(

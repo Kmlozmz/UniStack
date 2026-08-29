@@ -23,6 +23,9 @@ import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.AgendaEvent
+import com.unistack.app.feature_notes.domain.NoteMarkdown
+import com.unistack.app.feature_notes.domain.NoteText
+import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
@@ -98,7 +101,8 @@ class LocalReminderScheduler(private val context: Context) {
         subjects: List<Subject> = emptyList(),
         classSessions: List<ClassSession> = emptyList(),
         classOccurrences: List<ClassOccurrence> = emptyList(),
-        agendaEvents: List<AgendaEvent> = emptyList()
+        agendaEvents: List<AgendaEvent> = emptyList(),
+        notes: List<QuickNote> = emptyList()
     ) {
         createChannel()
         cancelPrevious()
@@ -107,6 +111,7 @@ class LocalReminderScheduler(private val context: Context) {
             return
         }
         avisaSiTeQuedasSinFaltas(currentProfile, subjects, classSessions, classOccurrences)
+        scheduleNoteReminders(currentProfile, notes, subjects)
         val leadMillis = currentProfile.reminderLeadHours.coerceIn(1, 168) * 60L * 60L * 1000L
 
         if (AppModule.TASKS in currentProfile.enabledModules && currentProfile.taskRemindersEnabled) {
@@ -528,6 +533,40 @@ class LocalReminderScheduler(private val context: Context) {
      * cancelando primero todas las alarmas, asi que bastaba con que el usuario tocara la app
      * en el minuto equivocado para que su recordatorio desapareciera sin dejar rastro.
      */
+    /**
+     * Los recordatorios que el usuario le puso a sus notas.
+     *
+     * No dependen de ningun modulo ni de ningun ajuste de avisos: si alguien se toma la molestia
+     * de poner una hora a una nota es porque quiere que suene, y apagarla desde otro sitio
+     * convertiria la campana del editor en un boton que a veces no hace nada.
+     *
+     * El titulo del aviso es el de la nota, y si no tiene, su primera linea sin marcas. El cuerpo
+     * lleva lo que sigue, que es lo que hace util un aviso a las siete de la manana.
+     */
+    private fun scheduleNoteReminders(
+        profile: UserProfile,
+        notes: List<QuickNote>,
+        subjects: List<Subject>
+    ) {
+        notes.filter { it.reminderAt != null }.forEach { note ->
+            val plano = NoteMarkdown.strip(note.body)
+            val titulo = note.title.trim().ifBlank { NoteText.title(plano) }.ifBlank { "Nota" }
+            val cuerpo = NoteText.preview(plano, maxLines = 2)
+                .replace(10.toChar(), ' ')
+                .trim()
+            scheduleReminder(
+                profile = profile,
+                requestCode = note.id.stableRequestCode("note-reminder"),
+                triggerAtMillis = note.reminderAt!!,
+                subText = subjects.firstOrNull { it.id == note.subjectId }?.name ?: "Nota",
+                title = titulo,
+                body = cuerpo.ifBlank { "Lo apuntaste para ahora." },
+                targetRoute = AppRoutes.noteEditor(note.id),
+                eventAtMillis = note.reminderAt
+            )
+        }
+    }
+
     private fun scheduleReminder(
         profile: UserProfile,
         requestCode: Int,

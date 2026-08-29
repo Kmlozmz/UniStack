@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -96,6 +97,7 @@ import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteSearch
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.QuickNote
 import java.time.LocalDate
 
@@ -161,9 +163,10 @@ fun NotesListScreen(
             if (activeFilter == null) notes else notes.filter { it.subjectId == activeFilter }
         NoteSearch.filter(porMateria, query)
     }
+    val sort = profile?.notesSort ?: NotesSort.MODIFICADA
     val porNota = remember(allAttachments) { allAttachments.groupBy { it.noteId } }
-    val pinned = remember(visible) { NoteGrouping.pinned(visible) }
-    val days = remember(visible, today) { NoteGrouping.byDay(visible, today) }
+    val pinned = remember(visible, sort) { NoteGrouping.pinned(visible, sort) }
+    val otras = remember(visible, sort) { NoteGrouping.others(visible, sort) }
     val materiaFiltrada = subjectsWithNotes.firstOrNull { it.id == activeFilter }
 
     Scaffold(
@@ -202,8 +205,8 @@ fun NotesListScreen(
                             NotesOverflowMenu(
                                 expanded = menuOpen,
                                 onDismiss = { menuOpen = false },
-                                defaultFormat = profile?.noteFormatDefault ?: NoteFormat.PLAIN,
-                                onDefaultFormat = viewModel::setDefaultFormat,
+                                markdownVisible = profile?.noteFormatDefault == NoteFormat.MARKDOWN,
+                                onMarkdownVisible = viewModel::setMarkdownVisible,
                                 canSeed = viewModel.canSeedSamples,
                                 onSeed = viewModel::seedSamples,
                                 onRemoveSamples = viewModel::removeSamples
@@ -241,7 +244,8 @@ fun NotesListScreen(
                 )
 
                 layout == NotesLayout.MOSAICO -> NotesMosaic(
-                    notes = visible,
+                    pinned = pinned,
+                    others = otras,
                     subjectFor = { viewModel.subjectById(it) },
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
@@ -253,7 +257,7 @@ fun NotesListScreen(
 
                 else -> NotesNotebook(
                     pinned = pinned,
-                    days = days,
+                    others = otras,
                     subjectFor = { viewModel.subjectById(it) },
                     attachmentsFor = { porNota[it].orEmpty() },
                     pathFor = { viewModel.attachmentPath(it) },
@@ -268,6 +272,8 @@ fun NotesListScreen(
 
     if (filtering) {
         NoteFilterSheet(
+            sort = sort,
+            onSort = viewModel::setSort,
             subjects = subjectsWithNotes,
             counts = remember(notes) {
                 notes.mapNotNull { it.subjectId }.groupingBy { it }.eachCount()
@@ -518,8 +524,8 @@ private fun NewNoteFab(onPick: (NewNoteStart) -> Unit) {
 private fun NotesOverflowMenu(
     expanded: Boolean,
     onDismiss: () -> Unit,
-    defaultFormat: NoteFormat,
-    onDefaultFormat: (NoteFormat) -> Unit,
+    markdownVisible: Boolean,
+    onMarkdownVisible: (Boolean) -> Unit,
     canSeed: Boolean,
     onSeed: () -> Unit,
     onRemoveSamples: () -> Unit
@@ -532,31 +538,30 @@ private fun NotesOverflowMenu(
          * qué nacen las siguientes. Juntarlas haría que cambiar una nota cambiara todas las
          * futuras sin haberlo pedido.
          */
-        Text(
-            "Notas nuevas",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(start = 16.dp, top = 10.dp, bottom = 2.dp)
-        )
-        NoteFormat.entries.forEach { opcion ->
-            DropdownMenuItem(
-                text = { Text(if (opcion == NoteFormat.MARKDOWN) "Markdown" else "Normal") },
-                onClick = {
-                    onDefaultFormat(opcion)
-                    onDismiss()
-                },
-                trailingIcon = {
-                    if (defaultFormat == opcion) {
-                        Icon(
-                            Icons.Rounded.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+        /*
+         * Escribir Markdown a mano, para quien lo sepa.
+         *
+         * Ya no hay que elegir tipo de nota al crearla: los botones ponen las marcas y la app
+         * las esconde. Esto solo las destapa, y vive aquí porque es una preferencia que se toca
+         * una vez y no una pregunta que haya que responder en cada apunte.
+         */
+        DropdownMenuItem(
+            text = { Text("Ver las marcas de Markdown") },
+            onClick = {
+                onMarkdownVisible(!markdownVisible)
+                onDismiss()
+            },
+            trailingIcon = {
+                if (markdownVisible) {
+                    Icon(
+                        Icons.Rounded.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-            )
-        }
+            }
+        )
         if (canSeed) {
             /*
              * Notas de mentira para poder mirar las de verdad. Solo en dev, alpha y beta: en una
@@ -593,7 +598,8 @@ private fun NotesOverflowMenu(
  */
 @Composable
 private fun NotesMosaic(
-    notes: List<QuickNote>,
+    pinned: List<QuickNote>,
+    others: List<QuickNote>,
     subjectFor: (String?) -> Subject?,
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
@@ -609,27 +615,54 @@ private fun NotesMosaic(
         verticalItemSpacing = 8.dp,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(notes, key = { it.id }) { note ->
-            NoteCard(
-                note = note,
-                subject = subjectFor(note.subjectId),
-                timeLabel = NoteGrouping.timeLabel(note, use24Hour),
-                onClick = { onNoteClick(note.id) },
-                compact = true,
-                attachments = attachmentsFor(note.id),
-                pathFor = pathFor,
-                onLongClick = { onNoteLongClick(note.id) },
-                onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
-            )
+        if (pinned.isNotEmpty()) {
+            item(key = "h-fijadas", span = StaggeredGridItemSpan.FullLine) {
+                NoteDayHeader("Fijadas", pinned.size)
+            }
+            items(pinned, key = { "pin-" + it.id }) { note ->
+                MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, onNoteClick, onNoteLongClick, onToggleCheck)
+            }
+            if (others.isNotEmpty()) {
+                item(key = "h-otras", span = StaggeredGridItemSpan.FullLine) {
+                    NoteDayHeader("Otras", others.size)
+                }
+            }
+        }
+        items(others, key = { it.id }) { note ->
+            MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, onNoteClick, onNoteLongClick, onToggleCheck)
         }
     }
+}
+
+@Composable
+private fun MosaicCard(
+    note: QuickNote,
+    subjectFor: (String?) -> Subject?,
+    attachmentsFor: (String) -> List<NoteAttachment>,
+    pathFor: (NoteAttachment) -> String,
+    use24Hour: Boolean,
+    onNoteClick: (String) -> Unit,
+    onNoteLongClick: (String) -> Unit,
+    onToggleCheck: (String, Int) -> Unit
+) {
+    NoteCard(
+        note = note,
+        subject = subjectFor(note.subjectId),
+        timeLabel = NoteGrouping.timeLabel(note, use24Hour),
+        onClick = { onNoteClick(note.id) },
+        compact = true,
+        attachments = attachmentsFor(note.id),
+        pathFor = pathFor,
+        onLongClick = { onNoteLongClick(note.id) },
+        onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
+    )
 }
 
 /** Cuaderno: una columna por días, con la fecha arriba de cada montón. */
 @Composable
 private fun NotesNotebook(
     pinned: List<QuickNote>,
-    days: List<NoteDay>,
+    others: List<QuickNote>,
     subjectFor: (String?) -> Subject?,
     attachmentsFor: (String) -> List<NoteAttachment>,
     pathFor: (NoteAttachment) -> String,
@@ -657,21 +690,21 @@ private fun NotesNotebook(
                     onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
                 )
             }
-        }
-        days.forEach { day ->
-            item(key = "dia-" + day.date) { NoteDayHeader(day.label, day.notes.size) }
-            items(day.notes, key = { it.id }) { note ->
-                NoteCard(
-                    note = note,
-                    subject = subjectFor(note.subjectId),
-                    timeLabel = NoteGrouping.timeLabel(note, use24Hour),
-                    onClick = { onNoteClick(note.id) },
-                    attachments = attachmentsFor(note.id),
-                    pathFor = pathFor,
-                    onLongClick = { onNoteLongClick(note.id) },
-                    onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
-                )
+            if (others.isNotEmpty()) {
+                item(key = "otras") { NoteDayHeader("Otras", others.size) }
             }
+        }
+        items(others, key = { it.id }) { note ->
+            NoteCard(
+                note = note,
+                subject = subjectFor(note.subjectId),
+                timeLabel = NoteGrouping.timeLabel(note, use24Hour),
+                onClick = { onNoteClick(note.id) },
+                attachments = attachmentsFor(note.id),
+                pathFor = pathFor,
+                onLongClick = { onNoteLongClick(note.id) },
+                onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
+            )
         }
     }
 }
@@ -684,6 +717,8 @@ private fun NotesNotebook(
  */
 @Composable
 private fun NoteFilterSheet(
+    sort: NotesSort,
+    onSort: (NotesSort) -> Unit,
     subjects: List<Subject>,
     counts: Map<String, Int>,
     total: Int,
@@ -703,11 +738,28 @@ private fun NoteFilterSheet(
                 .padding(bottom = 20.dp)
         ) {
             Text(
-                "Filtrar por materia",
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                "Ordenar por",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 6.dp)
+            )
+            SortRow("Última modificación", sort == NotesSort.MODIFICADA) {
+                onSort(NotesSort.MODIFICADA)
+            }
+            SortRow("Fecha de creación", sort == NotesSort.CREADA) {
+                onSort(NotesSort.CREADA)
+            }
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.padding(vertical = 10.dp)
+            )
+            Text(
+                "Filtrar por materia",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 6.dp)
             )
             FilterRow(
                 name = "Todas",
@@ -723,6 +775,40 @@ private fun NoteFilterSheet(
                     count = counts[subject.id] ?: 0,
                     selected = selectedSubjectId == subject.id,
                     onClick = { onSelect(subject.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortRow(name: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        color = if (selected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+        } else {
+            Color.Transparent
+        },
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+            if (selected) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }

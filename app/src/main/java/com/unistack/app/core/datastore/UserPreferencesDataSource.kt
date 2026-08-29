@@ -31,6 +31,7 @@ import com.unistack.app.feature_user.domain.SyncStatus
 import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
@@ -63,6 +64,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val TARGET_AVERAGE = doublePreferencesKey("target_average")
         val ENABLED_MODULES = stringSetPreferencesKey("enabled_modules")
         val NOTES_LAYOUT = stringPreferencesKey("notes_layout")
+        val NOTES_SORT = stringPreferencesKey("notes_sort")
         val NOTE_FORMAT_DEFAULT = stringPreferencesKey("note_format_default")
         val VISUAL_PREFERENCE = stringPreferencesKey("visual_preference")
         val APPEARANCE_PREFERENCES_JSON = stringPreferencesKey("appearance_preferences_json")
@@ -112,6 +114,9 @@ class UserPreferencesDataSource(private val context: Context) {
         val notesLayout = prefs[Keys.NOTES_LAYOUT]
             ?.let { runCatching { NotesLayout.valueOf(it) }.getOrNull() }
             ?: NotesLayout.CUADERNO
+        val notesSort = prefs[Keys.NOTES_SORT]
+            ?.let { runCatching { NotesSort.valueOf(it) }.getOrNull() }
+            ?: NotesSort.MODIFICADA
         val noteFormatDefault = prefs[Keys.NOTE_FORMAT_DEFAULT]
             ?.let { runCatching { NoteFormat.valueOf(it) }.getOrNull() }
             ?: NoteFormat.PLAIN
@@ -145,6 +150,7 @@ class UserPreferencesDataSource(private val context: Context) {
             targetAverage = prefs[Keys.TARGET_AVERAGE] ?: 4.0,
             enabledModules = enabledModules,
             notesLayout = notesLayout,
+            notesSort = notesSort,
             noteFormatDefault = noteFormatDefault,
             visualPreference = visualPreference,
             appearancePreferences = parseAppearancePreferences(prefs[Keys.APPEARANCE_PREFERENCES_JSON]),
@@ -227,6 +233,7 @@ class UserPreferencesDataSource(private val context: Context) {
             prefs[Keys.UPDATED_AT] = profile.updatedAt
             prefs[Keys.ENABLED_MODULES] = profile.enabledModules.map { it.name }.toSet()
             prefs[Keys.NOTES_LAYOUT] = profile.notesLayout.name
+            prefs[Keys.NOTES_SORT] = profile.notesSort.name
             prefs[Keys.NOTE_FORMAT_DEFAULT] = profile.noteFormatDefault.name
             prefs[Keys.VISUAL_PREFERENCE] = profile.visualPreference.name
             prefs[Keys.APPEARANCE_PREFERENCES_JSON] = profile.appearancePreferences.normalized().toJsonString()

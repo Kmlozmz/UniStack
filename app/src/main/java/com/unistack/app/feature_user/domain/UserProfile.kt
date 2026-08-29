@@ -8,6 +8,7 @@ import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesSort
 
 /**
  * El retrato que hay que pintar, venga de donde venga.
@@ -93,6 +94,7 @@ data class UserProfile(
     val expenseAlertThresholdPercent: Int = 80,
     val enabledExpenseCategories: Set<ExpenseCategory> = ExpenseCategory.entries.toSet(),
     val notesLayout: NotesLayout = NotesLayout.CUADERNO,
+    val notesSort: NotesSort = NotesSort.MODIFICADA,
     /**
      * Con que formato nacen las notas nuevas.
      *

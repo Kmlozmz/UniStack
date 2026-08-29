@@ -2,6 +2,7 @@ package com.unistack.app.core.notifications
 
 import android.content.Context
 import com.unistack.app.feature_grades.domain.GradesRepository
+import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -15,6 +16,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+
+/** Todo lo que se mira a la vez para decidir qué avisos hay que programar. */
+private data class ScheduleSnapshot(
+    val sessions: List<com.unistack.app.feature_schedule.domain.ClassSession>,
+    val occurrences: List<ClassOccurrence>,
+    val agendaEvents: List<com.unistack.app.feature_schedule.domain.AgendaEvent>,
+    val notes: List<com.unistack.app.feature_notes.domain.QuickNote>
+)
 
 object ReminderCoordinator {
     private var job: Job? = null
@@ -67,7 +76,8 @@ object ReminderCoordinator {
         gradesRepository: GradesRepository,
         tasksRepository: TasksRepository,
         academicWorksRepository: AcademicWorksRepository,
-        scheduleRepository: ScheduleRepository
+        scheduleRepository: ScheduleRepository,
+        notesRepository: NotesRepository
     ) {
         if (job != null) return
         val scheduler = LocalReminderScheduler(context.applicationContext)
@@ -92,15 +102,25 @@ object ReminderCoordinator {
                 subjects = gradesRepository.subjects.value,
                 classSessions = scheduleRepository.sessions.value,
                 classOccurrences = scheduleRepository.occurrences.value,
-                agendaEvents = scheduleRepository.agendaEvents.value
+                agendaEvents = scheduleRepository.agendaEvents.value,
+                notes = notesRepository.notes.value
             )
         }
         job = CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            /*
+             * Lo del calendario y las notas, en un solo flujo.
+             *
+             * `combine` admite cinco fuentes y ya iban cinco. Agrupar aqui lo que se mira junto
+             * deja sitio sin tener que anidar otro combine dentro del de abajo.
+             */
             val scheduleState = combine(
                 scheduleRepository.sessions,
                 scheduleRepository.occurrences,
-                scheduleRepository.agendaEvents
-            ) { sessions, occurrences, agendaEvents -> Triple(sessions, occurrences, agendaEvents) }
+                scheduleRepository.agendaEvents,
+                notesRepository.notes
+            ) { sessions, occurrences, agendaEvents, notes ->
+                ScheduleSnapshot(sessions, occurrences, agendaEvents, notes)
+            }
             combine(
                 userRepository.userProfile,
                 gradesRepository.subjects,
@@ -113,9 +133,10 @@ object ReminderCoordinator {
                     tasks = tasks,
                     works = works,
                     subjects = subjects,
-                    classSessions = schedule.first,
-                    classOccurrences = schedule.second,
-                    agendaEvents = schedule.third
+                    classSessions = schedule.sessions,
+                    classOccurrences = schedule.occurrences,
+                    agendaEvents = schedule.agendaEvents,
+                    notes = schedule.notes
                 )
                 if (profile != null || userRepository.didLoad) {
                     firstSchedule.complete(Unit)

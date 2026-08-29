@@ -50,13 +50,15 @@ object NoteSamples {
         muestras += plano(
             id = "sample-parcial",
             subjectId = materia(0),
+            title = "Parcial 2",
             pinned = true,
+            reminderAt = now + 20 * 60 * 60 * 1000,
+            colorArgb = 0xFF5A2E28.toInt(),
             updatedAt = now - 40 * 60 * 1000,
             body = """
-                # Parcial 2
                 **Martes 14, salón 302**, de 7 a 9. Traer calculadora y hoja de fórmulas.
 
-                Temas que entran:
+                ## Temas que entran
                 - Derivadas implícitas
                 - Regla de la cadena
                 - *Todo* el capítulo 4
@@ -73,6 +75,7 @@ object NoteSamples {
             note = nota(
                 id = "sample-pizarra",
                 subjectId = materia(1),
+                title = "La pizarra del jueves",
                 body = "Lo que quedó en la pizarra al final de la clase. La parte de abajo no la " +
                     "alcancé a copiar, hay que pedírsela a alguien.",
                 format = NoteFormat.MARKDOWN,
@@ -99,8 +102,8 @@ object NoteSamples {
             note = nota(
                 id = "sample-taller",
                 subjectId = materia(0),
+                title = "Taller 3",
                 body = """
-                    ## Taller 3
                     > Se entrega en parejas y se sustenta en clase.
 
                     El enunciado está en [el aula virtual](https://ejemplo.edu/taller3) y también
@@ -130,6 +133,7 @@ object NoteSamples {
             note = nota(
                 id = "sample-voz",
                 subjectId = materia(2),
+                title = "Lo que dijo el profe",
                 body = "Lo que dijo sobre la sustentación. Lo grabé porque hablaba muy rápido.",
                 format = NoteFormat.PLAIN,
                 updatedAt = now - 27 * 60 * 60 * 1000
@@ -154,9 +158,11 @@ object NoteSamples {
         muestras += plano(
             id = "sample-calificacion",
             subjectId = materia(0),
+            title = "Cómo se califica",
+            colorArgb = 0xFF24414F.toInt(),
             updatedAt = now - 2 * DIA,
             body = """
-                ### Cómo se califica
+                # El reparto
 
                 | Corte | Peso |
                 | --- | --- |
@@ -165,6 +171,8 @@ object NoteSamples {
                 | Final | 40% |
 
                 ---
+
+                ### La fórmula
 
                 Para pasar con 3,0 en el final necesito:
 
@@ -181,7 +189,8 @@ object NoteSamples {
             note = nota(
                 id = "sample-sencilla",
                 subjectId = materia(1),
-                body = "Cambió la entrega: ahora es el **viernes**, no el miércoles.\n" +
+                title = "Cambió la entrega",
+                body = "Ahora es el **viernes**, no el miércoles.\n" +
                     "~~Miércoles 12~~ y el formato es *libre*.",
                 format = NoteFormat.PLAIN,
                 updatedAt = now - 2 * DIA - 3 * 60 * 60 * 1000
@@ -193,6 +202,7 @@ object NoteSamples {
         muestras += plano(
             id = "sample-suelta",
             subjectId = null,
+            reminderAt = now + 3 * DIA,
             updatedAt = now - 3 * DIA,
             body = "Renovar el carnet antes del 15. Llevar foto y el recibo de matrícula."
         )
@@ -201,10 +211,10 @@ object NoteSamples {
         muestras += plano(
             id = "sample-pendientes",
             subjectId = materia(2),
+            title = "Antes del lunes",
+            colorArgb = 0xFF3E4A28.toInt(),
             updatedAt = now - 6 * DIA,
             body = """
-                Antes del lunes
-
                 1. Leer el capítulo 4
                 2. Terminar el laboratorio
                 3. ~~Comprar el libro~~ me lo prestaron
@@ -233,9 +243,22 @@ object NoteSamples {
         subjectId: String?,
         body: String,
         updatedAt: Long,
-        pinned: Boolean = false
+        title: String = "",
+        pinned: Boolean = false,
+        reminderAt: Long? = null,
+        colorArgb: Int? = null
     ) = SampleNote(
-        note = nota(id, subjectId, body, NoteFormat.MARKDOWN, updatedAt, pinned),
+        note = nota(
+            id = id,
+            subjectId = subjectId,
+            body = body,
+            format = NoteFormat.MARKDOWN,
+            updatedAt = updatedAt,
+            title = title,
+            pinned = pinned,
+            reminderAt = reminderAt,
+            colorArgb = colorArgb
+        ),
         attachments = emptyList()
     )
 
@@ -245,13 +268,19 @@ object NoteSamples {
         body: String,
         format: NoteFormat,
         updatedAt: Long,
-        pinned: Boolean = false
+        title: String = "",
+        pinned: Boolean = false,
+        reminderAt: Long? = null,
+        colorArgb: Int? = null
     ) = QuickNote(
         id = id + "-" + UUID.randomUUID().toString().take(8),
+        title = title,
         body = body,
         subjectId = subjectId,
         format = format,
         pinned = pinned,
+        reminderAt = reminderAt,
+        colorArgb = colorArgb,
         createdAt = updatedAt,
         updatedAt = updatedAt
     )

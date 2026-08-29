@@ -90,10 +90,13 @@ class RoomNotesRepository(
             noteDao.updateNoteFields(
                 noteId = note.id,
                 userIds = userIds,
+                title = note.title,
                 body = note.body,
                 subjectId = note.subjectId,
                 format = note.format.name,
                 pinned = note.pinned,
+                reminderAt = note.reminderAt,
+                colorArgb = note.colorArgb,
                 updatedAt = System.currentTimeMillis()
             )
         }

@@ -291,6 +291,48 @@ class RoomMigrationTest {
         database.close()
     }
 
+    @Test
+    fun migrationEighteenToNineteenAddsTitleReminderAndColour() {
+        val database = createDatabaseWithSchema(version = 18)
+
+        UniStackDatabase.MIGRATION_18_19.migrate(database)
+
+        assertTrue(database.hasColumn("notes", "title"))
+        assertTrue(database.hasColumn("notes", "reminderAt"))
+        assertTrue(database.hasColumn("notes", "colorArgb"))
+        assertTrue(database.hasIndex("index_notes_reminderAt"))
+        database.close()
+    }
+
+    /**
+     * Lo que ya estaba escrito sobrevive, sin titulo y sin aviso.
+     *
+     * El titulo nace vacio porque hasta ahora era la primera linea del cuerpo, y `reminderAt`
+     * nulo porque «no avisa» es justo lo que le pasa a todo lo anterior: nadie pudo ponerle hora
+     * a una nota antes de que existiera la campana.
+     */
+    @Test
+    fun migrationEighteenToNineteenLeavesOldNotesUntouched() {
+        val database = createDatabaseWithSchema(version = 18)
+        database.execSQL(
+            """
+            INSERT INTO notes (id, userId, body, subjectId, format, pinned, createdAt, updatedAt)
+            VALUES ('n1', 'local', 'Parcial el martes', NULL, 'PLAIN', 0, 0, 0)
+            """.trimIndent()
+        )
+
+        UniStackDatabase.MIGRATION_18_19.migrate(database)
+
+        database.query("SELECT title, body, reminderAt, colorArgb FROM notes WHERE id = 'n1'").use {
+            assertTrue(it.moveToFirst())
+            assertEquals("", it.getString(0))
+            assertEquals("Parcial el martes", it.getString(1))
+            assertTrue(it.isNull(2))
+            assertTrue(it.isNull(3))
+        }
+        database.close()
+    }
+
     private fun createDatabase(
         version: Int,
         onCreateSchema: (SupportSQLiteDatabase) -> Unit
@@ -341,6 +383,7 @@ class RoomMigrationTest {
         if (targetVersion >= 16) UniStackDatabase.MIGRATION_15_16.migrate(db)
         if (targetVersion >= 17) UniStackDatabase.MIGRATION_16_17.migrate(db)
         if (targetVersion >= 18) UniStackDatabase.MIGRATION_17_18.migrate(db)
+        if (targetVersion >= 19) UniStackDatabase.MIGRATION_18_19.migrate(db)
     }
 
     private fun createVersionOneSchema(db: SupportSQLiteDatabase) {

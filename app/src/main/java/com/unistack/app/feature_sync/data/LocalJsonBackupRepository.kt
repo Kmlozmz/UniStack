@@ -21,6 +21,7 @@ import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
+import com.unistack.app.feature_notes.domain.NotesSort
 import com.unistack.app.feature_notes.domain.NotesRepository
 import com.unistack.app.feature_notes.domain.QuickNote
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
@@ -257,6 +258,7 @@ class LocalJsonBackupRepository(
             .put("enabledModules", JSONArray(profile?.enabledModules?.map { it.name }.orEmpty()))
             .put("notesLayout", (profile?.notesLayout ?: NotesLayout.CUADERNO).name)
             .put("noteFormatDefault", (profile?.noteFormatDefault ?: NoteFormat.PLAIN).name)
+            .put("notesSort", (profile?.notesSort ?: NotesSort.MODIFICADA).name)
     }
 
     private fun restoreProfile(profileJson: JSONObject?) {
@@ -345,6 +347,9 @@ class LocalJsonBackupRepository(
                 noteFormatDefault = profileJson.optString("noteFormatDefault")
                     .let { name -> runCatching { NoteFormat.valueOf(name) }.getOrNull() }
                     ?: current.noteFormatDefault,
+                notesSort = profileJson.optString("notesSort")
+                    .let { name -> runCatching { NotesSort.valueOf(name) }.getOrNull() }
+                    ?: current.notesSort,
                 updatedAt = System.currentTimeMillis()
             )
         )
@@ -590,7 +595,10 @@ class LocalJsonBackupRepository(
      */
     private fun noteJson(note: QuickNote): JSONObject = JSONObject()
         .put("id", note.id)
+        .put("title", note.title)
         .put("body", note.body)
+        .put("reminderAt", note.reminderAt)
+        .put("colorArgb", note.colorArgb)
         .put("subjectId", note.subjectId)
         .put("format", note.format.name)
         .put("pinned", note.pinned)
@@ -653,7 +661,10 @@ class LocalJsonBackupRepository(
         val created = item.optLong("createdAt", System.currentTimeMillis())
         QuickNote(
             id = id,
+            title = item.optString("title"),
             body = body,
+            reminderAt = if (item.isNull("reminderAt")) null else item.optLong("reminderAt"),
+            colorArgb = if (item.isNull("colorArgb")) null else item.optInt("colorArgb"),
             subjectId = item.optString("subjectId").takeIf { it.isNotBlank() },
             format = item.optString("format").toEnum(NoteFormat.PLAIN),
             pinned = item.optBoolean("pinned", false),

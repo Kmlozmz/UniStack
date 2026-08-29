@@ -16,7 +16,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,9 +26,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -40,15 +41,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
-import androidx.compose.material.icons.rounded.AttachFile
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Mic
-import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.outlined.PushPin
-import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.School
+import androidx.compose.material.icons.rounded.FormatColorFill
+import androidx.compose.material.icons.rounded.NotificationAdd
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material.icons.rounded.TextFormat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -72,60 +74,61 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniIconButton
-import com.unistack.app.core.design.components.UniSwitch
+import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAction
+import com.unistack.app.feature_notes.domain.NoteAttachment
+import com.unistack.app.feature_notes.domain.NoteCheckbox
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NoteFormatting
-import com.unistack.app.feature_notes.domain.NoteCheckbox
 import com.unistack.app.feature_notes.domain.NoteMarkdown
-import com.unistack.app.feature_notes.domain.NoteTextEdits
 import com.unistack.app.feature_notes.domain.NoteMention
 import com.unistack.app.feature_notes.domain.NoteMoment
+import com.unistack.app.feature_notes.domain.NoteReminders
 import com.unistack.app.feature_notes.domain.NoteSearch
 import com.unistack.app.feature_notes.domain.NoteText
+import com.unistack.app.feature_notes.domain.NoteTextEdits
 import kotlinx.coroutines.delay
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 /**
- * Escribir una nota, a pantalla completa.
+ * Escribir una nota.
  *
- * Fue una corrección suya y tiene motivo: en un recuadro dentro de la lista no caben el
- * interruptor de formato, la ayuda ni los adjuntos, y sobre todo no cabe escribir. Una nota de
- * clase son quince líneas, no dos.
+ * Título arriba y cuerpo debajo, como en cualquier libreta. El título era la primera línea del
+ * texto, que ahorra un campo y a cambio impide empezar una nota por una lista sin que el primer
+ * punto haga de titular.
  *
- * Se guarda sola —600 ms después de la última tecla, como hacía la hoja de antes— y también al
- * salir. Si al salir no hay nada escrito, no se guarda nada: abrir el editor y arrepentirse no
- * puede dejar papeles en blanco por la lista.
+ * **No hace falta saber Markdown.** Todas las notas son lo mismo por dentro: los botones de la
+ * barra de formato escriben las marcas y la app las esconde. Quien quiera escribirlas a mano lo
+ * enciende una vez en el menú de la lista y no se le vuelve a preguntar.
  */
 @Composable
 fun NoteEditorScreen(
@@ -142,58 +145,74 @@ fun NoteEditorScreen(
     val sessions by viewModel.sessions.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // El identificador vive en el estado porque una nota nueva todavía no tiene: nace en el
-    // primer guardado y a partir de ahí los siguientes tienen que actualizar, no insertar.
     var currentId by rememberSaveable { mutableStateOf(noteId) }
     val existing = remember(notes, currentId) { viewModel.noteById(currentId) }
 
     var loaded by rememberSaveable { mutableStateOf(noteId == null) }
+    var title by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
     var value by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
     var subjectId by rememberSaveable { mutableStateOf<String?>(null) }
-    var format by rememberSaveable { mutableStateOf<NoteFormat?>(null) }
+    var reminderAt by rememberSaveable { mutableStateOf<Long?>(null) }
+    var colorArgb by rememberSaveable { mutableStateOf<Int?>(null) }
+
     var pickingSubject by rememberSaveable { mutableStateOf(false) }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
     var showingHelp by rememberSaveable { mutableStateOf(false) }
-    var warningAboutSimple by rememberSaveable { mutableStateOf(false) }
+    var inserting by rememberSaveable { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf(false) }
+    var formatting by rememberSaveable { mutableStateOf(false) }
     var recording by rememberSaveable { mutableStateOf(false) }
     var pendingPhoto by rememberSaveable { mutableStateOf<String?>(null) }
     var attachError by rememberSaveable { mutableStateOf<String?>(null) }
     var dismissedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var pendingDate by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val body = value.text
-    // Hasta que el perfil carga no hay ajuste que leer, y una nota nueva no puede nacer con un
-    // formato inventado: mientras tanto vale el de partida, que es el mismo que trae el perfil.
-    val activeFormat = format ?: existing?.format ?: profile?.noteFormatDefault ?: NoteFormat.PLAIN
+    // Las marcas se ven solo si alguien lo pidió en el menú. Es una preferencia de cómo se
+    // escribe, no una propiedad de cada nota: por dentro todas son iguales.
+    val activeFormat = if (profile?.noteFormatDefault == NoteFormat.MARKDOWN) {
+        NoteFormat.MARKDOWN
+    } else {
+        NoteFormat.PLAIN
+    }
 
-    /*
-     * La nota se lee una sola vez.
-     *
-     * Sin el cerrojo, cada guardado devuelve la nota por el flujo y el efecto reescribiría el
-     * campo con lo que hay en la base: quien siguiera escribiendo durante ese viaje vería
-     * desaparecer las letras de en medio.
-     */
     LaunchedEffect(existing?.id) {
         val note = existing
         if (!loaded && note != null) {
+            title = TextFieldValue(note.title)
             value = TextFieldValue(note.body)
             subjectId = note.subjectId
-            format = note.format
+            reminderAt = note.reminderAt
+            colorArgb = note.colorArgb
             loaded = true
         }
     }
 
+    val draft = NoteDraft(
+        title = title.text,
+        body = body,
+        subjectId = subjectId,
+        reminderAt = reminderAt,
+        colorArgb = colorArgb
+    )
+
     val dirty = loaded && (
-        body.trimEnd() != existing?.body.orEmpty() ||
+        title.text.trim() != existing?.title.orEmpty() ||
+            body.trimEnd() != existing?.body.orEmpty() ||
             subjectId != existing?.subjectId ||
-            (existing != null && activeFormat != existing.format)
+            reminderAt != existing?.reminderAt ||
+            colorArgb != existing?.colorArgb
         )
 
-    LaunchedEffect(body, subjectId, activeFormat, loaded) {
+    LaunchedEffect(draft, loaded) {
         if (!loaded || !dirty) return@LaunchedEffect
         delay(600)
-        val id = viewModel.saveNote(currentId, body, subjectId, activeFormat)
+        val id = viewModel.saveNote(currentId, draft)
         if (id != null) currentId = id
     }
 
@@ -201,34 +220,25 @@ fun NoteEditorScreen(
      * Salir guarda, pero solo si la nota llegó a leerse.
      *
      * Sin la condición, abrir una nota y volver atrás antes de que la base conteste guardaría un
-     * campo vacío sobre ella, y guardar vacío es borrar: se perdería la nota por el simple hecho
-     * de haberla abierto.
+     * campo vacío sobre ella, y guardar vacío es borrar.
      */
     val leave: () -> Unit = {
         if (loaded) {
-            val id = viewModel.saveNote(currentId, body, subjectId, activeFormat)
+            val id = viewModel.saveNote(currentId, draft)
             if (id != null) currentId = id
         }
         onBackClick()
     }
 
-    BackHandler(enabled = true) { leave() }
+    BackHandler(enabled = true) { if (formatting) formatting = false else leave() }
 
     val focusRequester = remember { FocusRequester() }
-
     val misAdjuntos = remember(allAttachments, currentId) {
         allAttachments.filter { it.noteId == currentId }
     }
 
-    /*
-     * Colgar algo necesita una nota a la que colgarlo.
-     *
-     * En una nota nueva el primer gesto puede ser perfectamente la foto y no la primera letra,
-     * asi que aqui se crea la fila antes de abrir el selector. Si luego se sale sin escribir
-     * nada, la nota se queda: tiene una foto dentro, que ya es contenido.
-     */
     val asegurarNota: () -> String = {
-        val id = viewModel.ensureNoteId(currentId, body, subjectId, activeFormat)
+        val id = viewModel.ensureNoteId(currentId, draft)
         currentId = id
         loaded = true
         id
@@ -265,68 +275,64 @@ fun NoteEditorScreen(
             viewModel.discardStoredFile(guardado)
             return@rememberLauncherForActivityResult
         }
-        val puesta = viewModel.attachStoredFile(
-            noteId = id,
-            storedName = guardado,
-            displayName = "Foto",
-            mimeType = "image/jpeg",
-            kind = AttachmentKind.IMAGE
-        )
-        if (!puesta) attachError = "No se pudo guardar la foto."
+        if (!viewModel.attachStoredFile(id, guardado, "Foto", "image/jpeg", AttachmentKind.IMAGE)) {
+            attachError = "No se pudo guardar la foto."
+        }
     }
 
-    val abrirAdjunto: (com.unistack.app.feature_notes.domain.NoteAttachment) -> Unit = { adjunto ->
+    val abrirCamara: () -> Unit = {
+        asegurarNota()
+        val (nombre, archivo) = viewModel.newAttachmentFile("jpg")
+        runCatching { archivo.createNewFile() }
+        val uri = runCatching {
+            androidx.core.content.FileProvider.getUriForFile(
+                context,
+                context.packageName + ".provider",
+                archivo
+            )
+        }.getOrNull()
+        if (uri == null) {
+            viewModel.discardStoredFile(nombre)
+            attachError = "No se pudo preparar la cámara."
+        } else {
+            pendingPhoto = nombre
+            hacerFoto.launch(uri)
+        }
+    }
+
+    val aplicarFormato: (NoteAction) -> Unit = { accion ->
+        val cambio = NoteFormatting.apply(
+            action = accion,
+            text = value.text,
+            selectionStart = value.selection.start,
+            selectionEnd = value.selection.end
+        )
+        value = TextFieldValue(
+            text = cambio.text.take(NoteText.MAX_LENGTH),
+            selection = TextRange(
+                cambio.selectionStart.coerceIn(0, cambio.text.length),
+                cambio.selectionEnd.coerceIn(0, cambio.text.length)
+            )
+        )
+    }
+
+    val abrirAdjunto: (NoteAttachment) -> Unit = { adjunto ->
         val uri = viewModel.attachmentUri(adjunto)
         if (uri != null) {
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, adjunto.mimeType)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            // Si no hay ninguna app que abra ese tipo, se dice en vez de cerrarse.
             runCatching { context.startActivity(intent) }
                 .onFailure { attachError = "No hay ninguna app en el teléfono que abra esto." }
         }
     }
 
     /*
-     * El reloj de la sugerencia.
+     * La nota se abre haciendo aquello por lo que se abrió.
      *
-     * Se mira al entrar y una vez por minuto. Sin el latido, quien abre el editor un minuto
-     * antes de que empiece la clase no ve la sugerencia aparecer nunca, y quien lo deja abierto
-     * hasta que acaba la clase la sigue viendo media hora despues.
-     */
-    var ahora by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(60_000)
-            ahora = LocalDateTime.now()
-        }
-    }
-
-    val enClase = remember(sessions, ahora) { NoteMoment.subjectInClassNow(sessions, ahora) }
-    val sugerida = subjects.firstOrNull { it.id == enClase }
-    val haySugerencia = sugerida != null &&
-        NoteMoment.shouldSuggest(enClase, subjectId, dismissedSuggestion)
-
-    /*
-     * La mencion con arroba, mientras se escribe.
-     *
-     * Solo cuando el cursor esta suelto: con texto seleccionado no se esta escribiendo un
-     * nombre de materia, se esta a punto de darle formato.
-     */
-    val mencion = remember(value.text, value.selection) {
-        if (value.selection.collapsed) NoteMention.at(value.text, value.selection.start) else null
-    }
-    val candidatas = remember(mencion, subjects) {
-        val consulta = mencion ?: return@remember emptyList()
-        NoteSearch.matchingSubjects(subjects.map { it.id to it.name }, consulta.token).take(4)
-    }
-
-    /*
-     * La nota se abre haciendo aquello por lo que se abrio.
-     *
-     * Quien toca «Foto» en el boton de crear no quiere una hoja en blanco con un icono de camara
-     * al fondo: quiere la camara. El arranque se hace una vez y solo en notas nuevas.
+     * Quien toca «Foto» en el botón de crear no quiere una hoja en blanco con un icono de cámara
+     * al fondo: quiere la cámara.
      */
     var arrancada by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -335,7 +341,6 @@ fun NoteEditorScreen(
         when (start) {
             NewNoteStart.TEXTO -> runCatching { focusRequester.requestFocus() }
             NewNoteStart.LISTA -> {
-                // Una lista empieza por su primera casilla, no por un hueco que hay que rellenar.
                 value = TextFieldValue(text = "- [ ] ", selection = TextRange(6))
                 runCatching { focusRequester.requestFocus() }
             }
@@ -356,22 +361,28 @@ fun NoteEditorScreen(
         }
     }
 
-    val subject = subjects.firstOrNull { it.id == subjectId }
-    val saved = loaded && !dirty && body.isNotBlank()
-    /*
-     * Donde cae cada letra en la pantalla.
-     *
-     * Sin esto no se puede ni poner la lista de materias al lado del cursor ni saber si un toque
-     * cayo encima de una casilla: las dos cosas necesitan la geometria del texto ya medido.
-     */
-    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    // El reloj de la sugerencia: se mira al entrar y una vez por minuto.
+    var ahora by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            ahora = LocalDateTime.now()
+        }
+    }
+    val enClase = remember(sessions, ahora) { NoteMoment.subjectInClassNow(sessions, ahora) }
+    val sugerida = subjects.firstOrNull { it.id == enClase }
+    val haySugerencia = sugerida != null &&
+        NoteMoment.shouldSuggest(enClase, subjectId, dismissedSuggestion)
 
-    /*
-     * La cuenta que va del texto guardado al texto que se ve.
-     *
-     * En modo normal las marcas estan escondidas, asi que la posicion 30 de lo guardado no es la
-     * 30 de lo que se lee. En Markdown se ve todo y la cuenta es la identidad.
-     */
+    val mencion = remember(value.text, value.selection) {
+        if (value.selection.collapsed) NoteMention.at(value.text, value.selection.start) else null
+    }
+    val candidatas = remember(mencion, subjects) {
+        val consulta = mencion ?: return@remember emptyList()
+        NoteSearch.matchingSubjects(subjects.map { it.id to it.name }, consulta.token).take(4)
+    }
+
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val escondido = remember(body, activeFormat) {
         if (activeFormat == NoteFormat.PLAIN) {
             NoteTextEdits.apply(body, NoteTextEdits.hidingEdits(NoteMarkdown.parse(body)))
@@ -381,7 +392,6 @@ fun NoteEditorScreen(
     }
     val aVisible: (Int) -> Int = { offset -> escondido?.toTransformed(offset) ?: offset }
     val textoVisible = escondido?.text ?: body
-
     val casillas = remember(body) { NoteMarkdown.checkboxes(body) }
     val iniciosDeLinea = remember(body) {
         var acumulado = 0
@@ -392,38 +402,27 @@ fun NoteEditorScreen(
         }
     }
 
-    val palette = rememberNotePalette()
+    val subject = subjects.firstOrNull { it.id == subjectId }
+    val saved = loaded && !dirty && (body.isNotBlank() || title.text.isNotBlank())
+    val fondo = NoteColors.surfaceFor(colorArgb)
+    val enFondo = NoteColors.contentOn(fondo, MaterialTheme.colorScheme.onSurface)
+    val suave = enFondo.copy(alpha = 0.62f)
+    val palette = rememberNotePalette().copy(texto = enFondo, suave = suave)
     val transformation = remember(activeFormat, palette) {
         NoteVisualTransformation(activeFormat, palette)
     }
 
-    val cambiarFormato: (NoteFormat) -> Unit = { destino ->
-        when {
-            destino == activeFormat -> Unit
-            destino == NoteFormat.PLAIN && NoteMarkdown.hasRichBlocks(body) -> warningAboutSimple = true
-            else -> format = destino
-        }
-    }
-
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = fondo,
         topBar = {
             TopAppBar(
                 title = {
-                    /*
-                     * La materia vive aqui arriba, y solo cuando la hay.
-                     *
-                     * Abajo era un boton mas entre los de adjuntar, con el mismo peso que la
-                     * camara, para algo que no es una accion sino un dato de la nota. Y sobre
-                     * todo: se pone escribiendo una arroba, no buscando un boton, asi que tener
-                     * el boton delante era ensenar el camino largo.
-                     */
                     if (subject != null) {
                         Surface(
                             onClick = { pickingSubject = true },
                             shape = RoundedCornerShape(9.dp),
-                            color = subjectAccent(subject).copy(alpha = 0.14f),
+                            color = subjectAccent(subject).copy(alpha = 0.16f),
                             contentColor = subjectAccent(subject)
                         ) {
                             Row(
@@ -457,29 +456,12 @@ fun NoteEditorScreen(
                 },
                 actions = {
                     AnimatedVisibility(visible = saved) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(end = 4.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(5.dp)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(13.dp)
-                                )
-                                Text(
-                                    "Guardado",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = "Guardado",
+                            tint = suave,
+                            modifier = Modifier.padding(end = 6.dp).size(18.dp)
+                        )
                     }
                     if (currentId != null) {
                         val fijada = existing?.pinned == true
@@ -489,6 +471,15 @@ fun NoteEditorScreen(
                             onClick = { currentId?.let { viewModel.setPinned(it, !fijada) } }
                         )
                     }
+                    UniIconButton(
+                        icon = if (reminderAt == null) {
+                            Icons.Rounded.NotificationAdd
+                        } else {
+                            Icons.Rounded.Notifications
+                        },
+                        contentDescription = "Recordatorio",
+                        onClick = { pickingDate = true }
+                    )
                     UniIconButton(
                         icon = Icons.AutoMirrored.Rounded.HelpOutline,
                         contentDescription = "Qué se puede escribir",
@@ -502,107 +493,42 @@ fun NoteEditorScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = fondo)
             )
         },
         bottomBar = {
             Column(modifier = Modifier.navigationBarsPadding()) {
-                /*
-                 * La barra de formato sale al seleccionar, y solo en sencillo.
-                 *
-                 * En Markdown estorbaría: ahí las marcas se escriben a mano y se ven, así que un
-                 * botón de negrita sería una segunda forma de hacer lo mismo. Aquí es la única.
-                 */
-                AnimatedVisibility(
-                    visible = activeFormat == NoteFormat.PLAIN && !value.selection.collapsed,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    NoteFormatBar(
-                        onAction = { action ->
-                            val cambio = NoteFormatting.apply(
-                                action = action,
-                                text = value.text,
-                                selectionStart = value.selection.start,
-                                selectionEnd = value.selection.end
-                            )
-                            value = TextFieldValue(
-                                text = cambio.text.take(NoteText.MAX_LENGTH),
-                                selection = TextRange(
-                                    cambio.selectionStart.coerceIn(0, cambio.text.length),
-                                    cambio.selectionEnd.coerceIn(0, cambio.text.length)
-                                )
-                            )
-                        }
+                if (formatting) {
+                    NoteFormatToolbar(
+                        onAction = aplicarFormato,
+                        onClose = { formatting = false }
                     )
-                }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                /*
-                 * El pie, sin adornos.
-                 *
-                 * Eran seis pastillas redondas en fila —cuatro con fondo propio, la materia y el
-                 * interruptor— que no cabian y se desplazaban, cortando palabras. Ahora son
-                 * cuatro iconos planos con sitio de sobra y el interruptor al otro extremo: lo
-                 * que se toca se ve, y lo que no, no pinta nada.
-                 */
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                } else {
+                    HorizontalDivider(color = enFondo.copy(alpha = 0.12f))
                     Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 10.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                    AttachButton(Icons.Rounded.Image, "Añadir una foto") {
-                        asegurarNota()
-                        elegirFoto.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    }
-                    AttachButton(Icons.Rounded.PhotoCamera, "Hacer una foto") {
-                        asegurarNota()
-                        val (nombre, archivo) = viewModel.newAttachmentFile("jpg")
-                        runCatching { archivo.createNewFile() }
-                        val uri = runCatching {
-                            androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                context.packageName + ".provider",
-                                archivo
+                        FooterButton(Icons.Rounded.Add, "Añadir a la nota", enFondo) {
+                            inserting = true
+                        }
+                        FooterButton(Icons.Rounded.FormatColorFill, "Color de la nota", enFondo) {
+                            picking = true
+                        }
+                        FooterButton(Icons.Rounded.TextFormat, "Formato del texto", enFondo) {
+                            formatting = true
+                        }
+                        Spacer(Modifier.weight(1f))
+                        if (body.length > NoteText.MAX_LENGTH - 500) {
+                            Text(
+                                "${body.length} de ${NoteText.MAX_LENGTH}",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelSmall
                             )
-                        }.getOrNull()
-                        if (uri == null) {
-                            viewModel.discardStoredFile(nombre)
-                            attachError = "No se pudo preparar la cámara."
-                        } else {
-                            pendingPhoto = nombre
-                            hacerFoto.launch(uri)
                         }
                     }
-                    AttachButton(Icons.Rounded.AttachFile, "Adjuntar un archivo") {
-                        asegurarNota()
-                        elegirArchivo.launch(arrayOf("*/*"))
-                    }
-                    AttachButton(Icons.Rounded.Mic, "Grabar audio") {
-                        asegurarNota()
-                        recording = true
-                    }
-                    }
-                    // El contador solo aparece cuando queda poco. Enseñar «31 de 20000» desde
-                    // la primera letra es poner un límite delante de quien viene a escribir.
-                    if (body.length > NoteText.MAX_LENGTH - 500) {
-                        Text(
-                            "${body.length} de ${NoteText.MAX_LENGTH}",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(end = 10.dp)
-                        )
-                    }
-                    FormatSwitch(format = activeFormat, onChange = cambiarFormato)
                 }
             }
         }
@@ -621,16 +547,52 @@ fun NoteEditorScreen(
             ) {
                 NoteSuggestionPill(
                     subjectName = sugerida?.name.orEmpty(),
-                    accent = sugerida?.let { subjectAccent(it) }
-                        ?: MaterialTheme.colorScheme.primary,
+                    accent = sugerida?.let { subjectAccent(it) } ?: MaterialTheme.colorScheme.primary,
                     onLink = {
                         subjectId = enClase
                         dismissedSuggestion = null
                     },
                     onDismiss = { dismissedSuggestion = enClase },
-                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp)
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 10.dp)
                 )
             }
+
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
+                if (title.text.isEmpty()) {
+                    Text(
+                        "Título",
+                        color = suave,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                BasicTextField(
+                    value = title,
+                    onValueChange = { nuevo ->
+                        title = nuevo.copy(text = nuevo.text.take(120).replace("\n", " "))
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(
+                        color = enFondo,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+                )
+            }
+
+            if (reminderAt != null) {
+                ReminderChip(
+                    at = reminderAt!!,
+                    tint = enFondo,
+                    onClear = { reminderAt = null },
+                    onClick = { pickingDate = true },
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 10.dp)
+                )
+            }
+
+            Spacer(Modifier.size(10.dp))
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -638,10 +600,9 @@ fun NoteEditorScreen(
                     /*
                      * Tocar una casilla la marca, sin salir de la nota.
                      *
-                     * El campo de texto se queda con todos los toques, asi que hay que mirarlos
-                     * antes que el: en la pasada inicial se comprueba si el dedo cayo encima de
-                     * una casilla y solo entonces se consume. Todo lo demas sigue su camino y
-                     * mueve el cursor como siempre.
+                     * El campo de texto se queda con todos los toques, así que hay que mirarlos
+                     * antes que él: en la pasada inicial se comprueba si el dedo cayó encima de
+                     * una casilla y solo entonces se consume.
                      */
                     .pointerInput(casillas, layout, textoVisible) {
                         awaitPointerEventScope {
@@ -662,35 +623,22 @@ fun NoteEditorScreen(
                                 if (linea != null) {
                                     toque.consume()
                                     val nuevo = NoteMarkdown.toggleCheckbox(body, linea)
-                                    if (nuevo != null) {
-                                        value = value.copy(text = nuevo)
-                                    }
+                                    if (nuevo != null) value = value.copy(text = nuevo)
                                 }
                             }
                         }
                     }
             ) {
                 if (body.isEmpty()) {
-                    /*
-                     * La hoja en blanco enseña lo único que hay que saber para empezar.
-                     *
-                     * Vincular una materia se hace escribiendo una arroba, y eso no se adivina.
-                     * Decirlo aquí —donde ya está mirando quien va a escribir— sustituye al botón
-                     * que había abajo y no ocupa nada en cuanto se escribe la primera letra.
-                     */
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text(
-                            "Escribe aquí…",
-                            color = MaterialTheme.colorScheme.outline,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Text("Nota", color = suave, style = MaterialTheme.typography.bodyLarge)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(7.dp)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                color = enFondo.copy(alpha = 0.10f),
                                 contentColor = MaterialTheme.colorScheme.primary
                             ) {
                                 Text(
@@ -703,40 +651,31 @@ fun NoteEditorScreen(
                             }
                             Text(
                                 "para vincularla a una materia",
-                                color = MaterialTheme.colorScheme.outline,
+                                color = suave,
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }
                 }
-            BasicTextField(
-                value = value,
-                onValueChange = { nuevo ->
-                    value = if (nuevo.text.length <= NoteText.MAX_LENGTH) {
-                        nuevo
-                    } else {
-                        nuevo.copy(text = nuevo.text.take(NoteText.MAX_LENGTH))
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .focusRequester(focusRequester),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 25.sp
-                ),
-                visualTransformation = transformation,
-                onTextLayout = { layout = it },
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
-            )
+                BasicTextField(
+                    value = value,
+                    onValueChange = { nuevo ->
+                        value = if (nuevo.text.length <= NoteText.MAX_LENGTH) {
+                            nuevo
+                        } else {
+                            nuevo.copy(text = nuevo.text.take(NoteText.MAX_LENGTH))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                        color = enFondo,
+                        lineHeight = 25.sp
+                    ),
+                    visualTransformation = transformation,
+                    onTextLayout = { layout = it },
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
+                )
 
-                /*
-                 * Las materias salen donde esta el cursor, como al etiquetar a alguien.
-                 *
-                 * Antes salian pegadas al teclado, al otro extremo de la pantalla: se escribia
-                 * arriba y habia que mirar abajo para elegir. Aqui aparece justo debajo de lo
-                 * que se acaba de escribir, que es donde ya se esta mirando.
-                 */
                 val medido = layout
                 if (candidatas.isNotEmpty() && mencion != null && medido != null) {
                     val cursor = remember(medido, value.selection, escondido) {
@@ -763,6 +702,7 @@ fun NoteEditorScreen(
                     }
                 }
             }
+
             NoteAttachmentStrip(
                 attachments = misAdjuntos,
                 pathFor = { viewModel.attachmentPath(it) },
@@ -774,14 +714,90 @@ fun NoteEditorScreen(
         }
     }
 
-    if (pickingSubject) {
-        NoteSubjectSheet(
-            subjects = subjects,
-            selectedSubjectId = subjectId,
-            onDismiss = { pickingSubject = false },
-            onSelected = {
-                subjectId = it
-                pickingSubject = false
+    if (inserting) {
+        NoteInsertSheet(
+            onDismiss = { inserting = false },
+            onPick = { tipo ->
+                inserting = false
+                when (tipo) {
+                    NoteInsert.CAMARA -> abrirCamara()
+                    NoteInsert.GALERIA -> {
+                        asegurarNota()
+                        elegirFoto.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                    NoteInsert.GRABACION -> {
+                        asegurarNota()
+                        recording = true
+                    }
+                    NoteInsert.ARCHIVO -> {
+                        asegurarNota()
+                        elegirArchivo.launch(arrayOf("*/*"))
+                    }
+                    NoteInsert.CASILLAS -> aplicarFormato(NoteAction.CASILLA)
+                    NoteInsert.TABLA -> aplicarFormato(NoteAction.TABLA)
+                }
+            }
+        )
+    }
+
+    if (picking) {
+        NoteColorSheet(
+            selected = colorArgb,
+            onPick = {
+                colorArgb = it
+                picking = false
+            },
+            onDismiss = { picking = false }
+        )
+    }
+
+    /*
+     * El recordatorio se pide en dos pasos: primero el día y después la hora.
+     *
+     * Un solo diálogo con las dos cosas no existe en Material, y separarlos deja además la puerta
+     * de atrás: quien solo quería mover el día cancela la hora y no se toca nada.
+     */
+    if (pickingDate) {
+        UniDatePickerDialog(
+            selectedDate = reminderAt?.let {
+                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+            } ?: NoteReminders.defaultMoment().toLocalDate(),
+            onDateSelected = { fecha ->
+                pendingDate = fecha.toEpochDay()
+                pickingDate = false
+            },
+            onDismiss = { pickingDate = false }
+        )
+    }
+
+    pendingDate?.let { epochDay ->
+        UniTimePickerDialog(
+            selectedTime = reminderAt?.let {
+                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalTime()
+            } ?: LocalTime.of(8, 0),
+            title = "¿A qué hora?",
+            onTimeSelected = { hora ->
+                reminderAt = LocalDate.ofEpochDay(epochDay)
+                    .atTime(hora)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+                pendingDate = null
+            },
+            onDismiss = { pendingDate = null },
+            extraAction = if (reminderAt != null) {
+                {
+                    TextButton(onClick = {
+                        reminderAt = null
+                        pendingDate = null
+                    }) {
+                        Text("Quitar", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else {
+                null
             }
         )
     }
@@ -795,14 +811,14 @@ fun NoteEditorScreen(
                 val puesta = id != null && viewModel.attachStoredFile(
                     noteId = id,
                     storedName = nombre,
-                    displayName = "Grabacion",
+                    displayName = "Grabación",
                     mimeType = "audio/mp4",
                     kind = AttachmentKind.AUDIO,
                     durationMillis = duracion
                 )
                 if (!puesta) {
                     viewModel.discardStoredFile(nombre)
-                    attachError = "No se pudo guardar la grabacion."
+                    attachError = "No se pudo guardar la grabación."
                 }
             },
             onDismiss = { recording = false }
@@ -825,37 +841,15 @@ fun NoteEditorScreen(
         NoteFormatHelpSheet(format = activeFormat, onDismiss = { showingHelp = false })
     }
 
-    if (warningAboutSimple) {
-        /*
-         * Cambiar a sencillo no convierte ni pierde nada, pero deja cosas sin botón.
-         *
-         * Las dos maneras guardan el mismo texto: lo único que cambia es si las marcas se ven.
-         * Por eso el aviso no habla de perder, que sería mentira, sino de lo que de verdad pasa:
-         * los títulos y las tablas se seguirán viendo y no habrá con qué quitarlos desde ahí.
-         */
-        AlertDialog(
-            onDismissRequest = { warningAboutSimple = false },
-            title = { Text("Esta nota tiene títulos o tablas") },
-            text = {
-                Text(
-                    "No se pierde nada: es el mismo texto con las marcas escondidas. Pero la barra " +
-                        "de escritura sencilla no tiene botón para títulos, tablas ni bloques de " +
-                        "código, así que se seguirán viendo y no podrás quitarlos hasta que vuelvas " +
-                        "a Markdown."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    format = NoteFormat.PLAIN
-                    warningAboutSimple = false
-                }) {
-                    Text("Cambiar igual", fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { warningAboutSimple = false }) { Text("Quedarme en Markdown") }
-            },
-            containerColor = MaterialTheme.colorScheme.background
+    if (pickingSubject) {
+        NoteSubjectSheet(
+            subjects = subjects,
+            selectedSubjectId = subjectId,
+            onDismiss = { pickingSubject = false },
+            onSelected = {
+                subjectId = it
+                pickingSubject = false
+            }
         )
     }
 
@@ -864,7 +858,11 @@ fun NoteEditorScreen(
             onDismissRequest = { confirmingDelete = false },
             title = { Text("¿Borrar la nota?") },
             text = {
-                Text("Se borra «${NoteText.label(NoteMarkdown.strip(body))}» y no se puede deshacer.")
+                Text(
+                    "Se borra «" +
+                        title.text.trim().ifBlank { NoteText.label(NoteMarkdown.strip(body)) } +
+                        "» y no se puede deshacer."
+                )
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -887,18 +885,76 @@ fun NoteEditorScreen(
     }
 }
 
-/**
- * Un botón de la fila de adjuntar.
- *
- * Sin fondo propio. Cuatro pastillas rellenas seguidas pesaban más que el texto de la nota, y
- * son acciones que se usan de vez en cuando: el icono solo ya dice dónde tocar, y el área de
- * toque sigue siendo la misma porque el relleno no se ha ido, solo el color.
- */
+/** El recordatorio puesto, con su fecha en cristiano y un aspa para quitarlo. */
+@Composable
+private fun ReminderChip(
+    at: Long,
+    tint: Color,
+    onClear: () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val color = if (NoteReminders.isDue(at)) MaterialTheme.colorScheme.error else tint
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(9.dp),
+        color = color.copy(alpha = 0.12f),
+        contentColor = color,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Icon(
+                Icons.Rounded.Notifications,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                NoteReminders.label(at),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Surface(
+                onClick = onClear,
+                shape = CircleShape,
+                color = Color.Transparent,
+                contentColor = color
+            ) {
+                Icon(
+                    Icons.Rounded.Close,
+                    contentDescription = "Quitar el recordatorio",
+                    modifier = Modifier.padding(4.dp).size(13.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FooterButton(
+    icon: ImageVector,
+    description: String,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = Color.Transparent,
+        contentColor = tint.copy(alpha = 0.82f)
+    ) {
+        Icon(icon, contentDescription = description, modifier = Modifier.padding(11.dp).size(21.dp))
+    }
+}
+
 /**
  * La casilla que hay bajo un toque, si la hay.
  *
  * Se mira línea por línea porque son pocas y el cálculo es barato. El ancho de la zona sensible
- * es el de la marca: en Markdown ocupa `- [ ] ` y en normal, el cuadro solo.
+ * es el de la marca: con las marcas a la vista ocupa `- [ ] ` y escondidas, el cuadro solo.
  */
 private fun casillaEn(
     posicion: Offset,
@@ -940,15 +996,12 @@ private fun MentionPopup(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 3.dp,
         shadowElevation = 6.dp,
-        modifier = Modifier
-            .offset { IntOffset(offsetX, offsetY) }
-            .widthIn(max = 260.dp)
+        modifier = Modifier.offset { IntOffset(offsetX, offsetY) }.widthIn(max = 260.dp)
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp)) {
             candidatas.forEach { (id, nombre) ->
                 val materia = subjects.firstOrNull { it.id == id }
-                val color = materia?.let { subjectAccent(it) }
-                    ?: MaterialTheme.colorScheme.primary
+                val color = materia?.let { subjectAccent(it) } ?: MaterialTheme.colorScheme.primary
                 Surface(
                     onClick = { onPick(id, nombre) },
                     color = Color.Transparent,
@@ -972,119 +1025,6 @@ private fun MentionPopup(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun AttachButton(icon: ImageVector, description: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-    ) {
-        Icon(
-            icon,
-            contentDescription = description,
-            modifier = Modifier.padding(10.dp).size(20.dp)
-        )
-    }
-}
-
-/**
- * Markdown: encendido o apagado.
- *
- * Eran dos pastillas, «MD» y «Aa», y había que saber cuál era cuál. Un interruptor dice por sí
- * solo que hay algo que se enciende, y lo que se enciende tiene nombre escrito al lado.
- *
- * Cambia **esta** nota y no el ajuste: el ajuste dice con qué nacen las nuevas y vive en el menú
- * de la lista. Fue lo que él eligió —«un ajuste por defecto, y se puede cambiar en una nota»—
- * porque quien escribe casi todo normal no quiere tocar el ajuste para un apunte suelto.
- */
-@Composable
-private fun FormatSwitch(format: NoteFormat, onChange: (NoteFormat) -> Unit) {
-    val encendido = format == NoteFormat.MARKDOWN
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.semanticsDescription(
-            if (encendido) "Markdown encendido" else "Markdown apagado"
-        )
-    ) {
-        Text(
-            "Markdown",
-            color = if (encendido) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold
-        )
-        UniSwitch(
-            checked = encendido,
-            onCheckedChange = { onChange(if (it) NoteFormat.MARKDOWN else NoteFormat.PLAIN) }
-        )
-    }
-}
-
-private fun Modifier.semanticsDescription(description: String): Modifier =
-    this.then(
-        Modifier.semantics { contentDescription = description }
-    )
-
-/**
- * La barra que sale al seleccionar en escritura sencilla.
- *
- * No hay subrayado y sí tachado. Las dos maneras guardan Markdown —eso es lo que permite pasar
- * de una a la otra sin convertir ni perder—, y en Markdown el subrayado no existe: ponerlo aquí
- * obligaría a inventar una marca propia que luego nadie más sabría leer.
- */
-@Composable
-private fun NoteFormatBar(onAction: (NoteAction) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        FormatBarButton("B", NoteAction.NEGRITA, onAction) { FontWeight.ExtraBold }
-        FormatBarButton("I", NoteAction.CURSIVA, onAction, italic = true) { FontWeight.Medium }
-        FormatBarButton("S", NoteAction.TACHADO, onAction, strike = true) { FontWeight.Medium }
-        FormatBarButton("•", NoteAction.VINETA, onAction) { FontWeight.Bold }
-        FormatBarButton("1.", NoteAction.NUMERADA, onAction) { FontWeight.Bold }
-        FormatBarButton("☐", NoteAction.CASILLA, onAction) { FontWeight.Bold }
-    }
-}
-
-@Composable
-private fun FormatBarButton(
-    label: String,
-    action: NoteAction,
-    onAction: (NoteAction) -> Unit,
-    italic: Boolean = false,
-    strike: Boolean = false,
-    weight: () -> FontWeight
-) {
-    Surface(
-        onClick = { onAction(action) },
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = weight(),
-            fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
-            textDecoration = if (strike) TextDecoration.LineThrough else TextDecoration.None,
-            modifier = Modifier
-                .padding(horizontal = 13.dp, vertical = 6.dp)
-                .semanticsDescription(action.label)
-        )
     }
 }
 
@@ -1113,11 +1053,6 @@ private fun NoteSubjectSheet(
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
-            )
-            Text(
-                "Vincularla te deja filtrar después por asignatura. Es opcional.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp
             )
             LazyColumn(
                 modifier = Modifier.heightIn(max = 420.dp),
