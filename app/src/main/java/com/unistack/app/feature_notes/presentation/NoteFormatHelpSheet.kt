@@ -2,24 +2,34 @@
 
 package com.unistack.app.feature_notes.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
-import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_notes.domain.NoteFormat
 
 private data class AyudaFila(val marca: String, val ejemplo: String)
@@ -30,9 +40,17 @@ private data class AyudaGrupo(val titulo: String, val filas: List<AyudaFila>)
  *
  * Fue condicion suya: «cada una debe mostrar todo lo que puede hacer y como». Por eso no es una
  * lista de nombres sino dos columnas —lo que se escribe a la izquierda, como queda a la
- * derecha—, y la de la derecha se pinta con el mismo motor que el editor, no con capturas ni
- * con texto imitando el resultado. Si algun dia el formateo cambia, esta pantalla cambia sola.
+ * derecha—, y la de la derecha se pinta con el mismo motor que el editor, no con capturas ni con
+ * texto imitando el resultado. Si algun dia el formateo cambia, esta pantalla cambia sola.
  */
+private val VINCULAR = AyudaGrupo(
+    "Vincular una materia",
+    listOf(
+        AyudaFila("@calculo", "Cálculo II"),
+        AyudaFila("@fis", "Física I")
+    )
+)
+
 private val GRUPOS_MARKDOWN = listOf(
     AyudaGrupo(
         "Títulos",
@@ -49,7 +67,7 @@ private val GRUPOS_MARKDOWN = listOf(
             AyudaFila("*matiz*", "*matiz*"),
             AyudaFila("~~ya no va~~", "~~ya no va~~"),
             AyudaFila("`x = 2`", "`x = 2`"),
-            AyudaFila("[el aula](https://…)", "[el aula](https://ejemplo)")
+            AyudaFila("[el aula](enlace)", "[el aula](https://ejemplo)")
         )
     ),
     AyudaGrupo(
@@ -65,18 +83,12 @@ private val GRUPOS_MARKDOWN = listOf(
         "Bloques",
         listOf(
             AyudaFila("> lo que dijo el profe", "> lo que dijo el profe"),
-            AyudaFila("```\ncódigo\n```", "```\ncodigo()\n```"),
+            AyudaFila("```", "```\ncodigo()\n```"),
             AyudaFila("---", "---"),
             AyudaFila("| a | b |", "| Corte | Peso |")
         )
     ),
-    AyudaGrupo(
-        "Vincular una materia",
-        listOf(
-            AyudaFila("@calculo", "Cálculo II"),
-            AyudaFila("@fis", "Física I")
-        )
-    )
+    VINCULAR
 )
 
 private val GRUPOS_SENCILLO = listOf(
@@ -96,13 +108,7 @@ private val GRUPOS_SENCILLO = listOf(
             AyudaFila("Casilla", "- [ ] taller 3")
         )
     ),
-    AyudaGrupo(
-        "Vincular una materia",
-        listOf(
-            AyudaFila("@calculo", "Cálculo II"),
-            AyudaFila("@fis", "Física I")
-        )
-    )
+    VINCULAR
 )
 
 /**
@@ -111,6 +117,10 @@ private val GRUPOS_SENCILLO = listOf(
  * Enseña lo del modo que esté puesto y no las dos cosas a la vez: quien escribe en sencillo no
  * necesita saber que existe una almohadilla, y quien escribe en Markdown no necesita que le
  * expliquen un botón que no tiene delante.
+ *
+ * Era una pila de tarjetas redondeadas, una por grupo, con las filas dentro: tres bordes entre
+ * la pregunta y la respuesta. Ahora los grupos se separan con su rótulo y una línea, que es lo
+ * que hace falta para saber dónde empieza cada uno, y la hoja se lee de un tirón.
  */
 @Composable
 fun NoteFormatHelpSheet(
@@ -119,122 +129,173 @@ fun NoteFormatHelpSheet(
 ) {
     val palette = rememberNotePalette()
     val grupos = if (format == NoteFormat.MARKDOWN) GRUPOS_MARKDOWN else GRUPOS_SENCILLO
+    val esMarkdown = format == NoteFormat.MARKDOWN
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 560.dp)
-                .navigationBarsPadding()
-                .padding(horizontal = 18.dp)
-                .padding(bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .heightIn(max = 600.dp)
+                .navigationBarsPadding(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 24.dp)
         ) {
             item(key = "cabecera") {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
-                        if (format == NoteFormat.MARKDOWN) "Markdown de apuntes" else "Escritura sencilla",
+                        if (esMarkdown) "Markdown de apuntes" else "Escritura sencilla",
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        if (format == NoteFormat.MARKDOWN) {
-                            "Escribes las marcas y el texto se va formateando solo. A la izquierda " +
-                                "lo que se escribe; a la derecha, cómo queda. Con una arroba se vincula " +
-                                "la materia sin soltar el teclado."
+                        if (esMarkdown) {
+                            "Escribes las marcas y el texto se formatea solo, mientras escribes."
                         } else {
-                            "Sin marcas a la vista. Selecciona un trozo de texto y aparece la barra " +
-                                "con estos botones. Escribiendo una arroba sale la lista de materias."
+                            "Sin marcas a la vista. Selecciona un trozo y aparece la barra."
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
 
-            grupos.forEach { grupo ->
-                item(key = "g-" + grupo.titulo) {
-                    Text(
-                        grupo.titulo,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(top = 6.dp)
-                    )
+            item(key = "columnas") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 22.dp, end = 22.dp, bottom = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    ColumnLabel(if (esMarkdown) "Escribes" else "Tocas", Modifier.weight(1f))
+                    ColumnLabel("Queda", Modifier.weight(1f))
                 }
-                item(key = "c-" + grupo.titulo) {
-                    UniCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
-                            grupo.filas.forEach { fila ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        text = fila.marca,
-                                        modifier = Modifier.weight(1f),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontFamily = if (format == NoteFormat.MARKDOWN) {
-                                            FontFamily.Monospace
-                                        } else {
-                                            FontFamily.Default
-                                        },
-                                        fontWeight = if (format == NoteFormat.MARKDOWN) {
-                                            FontWeight.Normal
-                                        } else {
-                                            FontWeight.Bold
-                                        }
-                                    )
-                                    Text(
-                                        // El resultado se pinta con el motor del editor y con las
-                                        // marcas escondidas, que es exactamente lo que se ve.
-                                        text = noteAnnotated(fila.ejemplo, NoteFormat.PLAIN, palette),
-                                        modifier = Modifier.weight(1f),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
+            }
+
+            grupos.forEachIndexed { indice, grupo ->
+                item(key = "g-" + grupo.titulo) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (indice > 0) {
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                modifier = Modifier.padding(horizontal = 22.dp)
+                            )
                         }
+                        Text(
+                            grupo.titulo,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = TextUnit(0.08f, TextUnitType.Em),
+                            modifier = Modifier.padding(
+                                start = 22.dp,
+                                end = 22.dp,
+                                top = if (indice > 0) 20.dp else 8.dp,
+                                bottom = 4.dp
+                            )
+                        )
                     }
+                }
+                items(grupo.filas.size) { fila ->
+                    AyudaLinea(
+                        fila = grupo.filas[fila],
+                        // La columna izquierda va en monoespaciada cuando es algo que se
+                        // teclea tal cual; en sencillo son nombres de botones, y esos no.
+                        monospace = esMarkdown || grupo.filas[fila].marca.startsWith("@"),
+                        palette = palette
+                    )
                 }
             }
 
             item(key = "pie") {
-                UniCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainer
+                Column(
+                    modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 26.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(
-                            "Las dos guardan lo mismo",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.ExtraBold
+                    Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                        Box(
+                            Modifier
+                                .width(2.dp)
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.primary)
                         )
-                        Text(
-                            "Cambiar de una a otra no convierte nada ni pierde nada: es la misma " +
-                                "nota con las marcas a la vista o escondidas. Lo único: en sencillo " +
-                                "no hay botón para títulos, tablas ni bloques de código, así que si " +
-                                "los escribiste en Markdown se siguen viendo pero no se pueden " +
-                                "quitar desde ahí.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Column(
+                            modifier = Modifier.padding(start = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            Text(
+                                "Las dos guardan lo mismo",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                "Cambiar de una a otra no convierte nada ni pierde nada: es la " +
+                                    "misma nota con las marcas a la vista o escondidas. Lo único: " +
+                                    "en sencillo no hay botón para títulos, tablas ni bloques de " +
+                                    "código, así que si los escribiste en Markdown se siguen " +
+                                    "viendo pero no se pueden quitar desde ahí.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ColumnLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text.uppercase(),
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.outline,
+        style = MaterialTheme.typography.labelSmall,
+        letterSpacing = TextUnit(0.12f, TextUnitType.Em)
+    )
+}
+
+/**
+ * Una línea de la ayuda: lo que se escribe y cómo queda.
+ *
+ * La derecha se pinta con el motor del editor y con las marcas escondidas, que es exactamente
+ * lo que se ve al escribirlo. Nada de aquí está escrito a mano imitando el resultado.
+ */
+@Composable
+private fun AyudaLinea(
+    fila: AyudaFila,
+    monospace: Boolean,
+    palette: NotePalette
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = fila.marca,
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default,
+            fontWeight = if (monospace) FontWeight.Normal else FontWeight.Bold
+        )
+        Text(
+            text = noteAnnotated(fila.ejemplo, NoteFormat.PLAIN, palette),
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }

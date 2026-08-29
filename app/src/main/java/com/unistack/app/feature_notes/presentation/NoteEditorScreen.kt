@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -35,6 +34,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -337,7 +337,44 @@ fun NoteEditorScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    /*
+                     * La materia vive aqui arriba, y solo cuando la hay.
+                     *
+                     * Abajo era un boton mas entre los de adjuntar, con el mismo peso que la
+                     * camara, para algo que no es una accion sino un dato de la nota. Y sobre
+                     * todo: se pone escribiendo una arroba, no buscando un boton, asi que tener
+                     * el boton delante era ensenar el camino largo.
+                     */
+                    if (subject != null) {
+                        Surface(
+                            onClick = { pickingSubject = true },
+                            shape = RoundedCornerShape(9.dp),
+                            color = subjectAccent(subject).copy(alpha = 0.14f),
+                            contentColor = subjectAccent(subject)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(subjectAccent(subject))
+                                )
+                                Text(
+                                    subject.name,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                },
                 navigationIcon = {
                     UniIconButton(
                         icon = Icons.AutoMirrored.Rounded.ArrowBack,
@@ -439,7 +476,7 @@ fun NoteEditorScreen(
                                     )
                                     subjectId = id
                                 },
-                                shape = CircleShape,
+                                shape = RoundedCornerShape(9.dp),
                                 color = MaterialTheme.colorScheme.surface,
                                 contentColor = materia?.let { subjectAccent(it) }
                                     ?: MaterialTheme.colorScheme.onSurface
@@ -479,19 +516,24 @@ fun NoteEditorScreen(
                     )
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                /*
+                 * El pie, sin adornos.
+                 *
+                 * Eran seis pastillas redondas en fila —cuatro con fondo propio, la materia y el
+                 * interruptor— que no cabian y se desplazaban, cortando palabras. Ahora son
+                 * cuatro iconos planos con sitio de sobra y el interruptor al otro extremo: lo
+                 * que se toca se ve, y lo que no, no pinta nada.
+                 */
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(start = 10.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Cuatro botones, la materia y el interruptor no caben en un telefono
-                    // estrecho: lo de la izquierda se desplaza y el interruptor no se mueve.
                     Row(
-                        modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                        modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                     AttachButton(Icons.Rounded.Image, "Añadir una foto") {
                         asegurarNota()
@@ -526,30 +568,17 @@ fun NoteEditorScreen(
                         asegurarNota()
                         recording = true
                     }
-                    // El contador solo aparece cuando queda poco. Enseñar «31 de 20000» desde la
-                    // primera letra es poner un límite delante de quien viene a escribir.
+                    }
+                    // El contador solo aparece cuando queda poco. Enseñar «31 de 20000» desde
+                    // la primera letra es poner un límite delante de quien viene a escribir.
                     if (body.length > NoteText.MAX_LENGTH - 500) {
                         Text(
                             "${body.length} de ${NoteText.MAX_LENGTH}",
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(end = 10.dp)
                         )
                     }
-                    }
-                    /*
-                     * La materia se queda fuera del carrusel.
-                     *
-                     * Dentro se desplazaba con los iconos y quedaba cortada a media palabra
-                     * contra el interruptor: «Sin materia» se leia «Si». Fuera siempre esta
-                     * entera, y con un nombre largo se recorta con puntos suspensivos en vez de
-                     * partirse por donde acabe el hueco.
-                     */
-                    SubjectButton(
-                        subject = subject,
-                        enabled = subjects.isNotEmpty(),
-                        onClick = { pickingSubject = true },
-                        modifier = Modifier.widthIn(max = 132.dp)
-                    )
                     FormatSwitch(format = activeFormat, onChange = cambiarFormato)
                 }
             }
@@ -580,14 +609,48 @@ fun NoteEditorScreen(
                 )
             }
             Box(modifier = Modifier.fillMaxWidth()) {
-            if (body.isEmpty()) {
-                Text(
-                    "Escribe aquí…",
-                    color = MaterialTheme.colorScheme.outline,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 22.dp, end = 22.dp)
-                )
-            }
+                if (body.isEmpty()) {
+                    /*
+                     * La hoja en blanco enseña lo único que hay que saber para empezar.
+                     *
+                     * Vincular una materia se hace escribiendo una arroba, y eso no se adivina.
+                     * Decirlo aquí —donde ya está mirando quien va a escribir— sustituye al botón
+                     * que había abajo y no ocupa nada en cuanto se escribe la primera letra.
+                     */
+                    Column(
+                        modifier = Modifier.padding(start = 22.dp, end = 22.dp),
+                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        Text(
+                            "Escribe aquí…",
+                            color = MaterialTheme.colorScheme.outline,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    "@",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                )
+                            }
+                            Text(
+                                "para vincularla a una materia",
+                                color = MaterialTheme.colorScheme.outline,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             BasicTextField(
                 value = value,
                 onValueChange = { nuevo ->
@@ -733,19 +796,25 @@ fun NoteEditorScreen(
     }
 }
 
-/** Un boton redondo de la fila de adjuntar. */
+/**
+ * Un botón de la fila de adjuntar.
+ *
+ * Sin fondo propio. Cuatro pastillas rellenas seguidas pesaban más que el texto de la nota, y
+ * son acciones que se usan de vez en cuando: el icono solo ya dice dónde tocar, y el área de
+ * toque sigue siendo la misma porque el relleno no se ha ido, solo el color.
+ */
 @Composable
 private fun AttachButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(10.dp),
+        color = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     ) {
         Icon(
             icon,
             contentDescription = description,
-            modifier = Modifier.padding(9.dp).size(19.dp)
+            modifier = Modifier.padding(10.dp).size(20.dp)
         )
     }
 }
@@ -761,7 +830,7 @@ private fun AttachButton(icon: ImageVector, description: String, onClick: () -> 
 @Composable
 private fun FormatSwitch(format: NoteFormat, onChange: (NoteFormat) -> Unit) {
     Surface(
-        shape = CircleShape,
+        shape = RoundedCornerShape(10.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Row(modifier = Modifier.padding(2.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -793,7 +862,7 @@ private fun FormatSwitchOption(
 ) {
     Surface(
         onClick = onClick,
-        shape = CircleShape,
+        shape = RoundedCornerShape(8.dp),
         color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
         contentColor = if (selected) {
             MaterialTheme.colorScheme.onPrimary
@@ -856,7 +925,7 @@ private fun FormatBarButton(
 ) {
     Surface(
         onClick = { onAction(action) },
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
@@ -873,53 +942,6 @@ private fun FormatBarButton(
     }
 }
 
-/**
- * El botón de materia del pie del editor.
- *
- * Sin materia dice «Sin materia» en gris y con ella se tiñe de su color, porque vincular es lo
- * único que esta pantalla pide además de escribir y tiene que verse hecho de un vistazo.
- */
-@Composable
-private fun SubjectButton(
-    subject: Subject?,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val accent = subject?.let { subjectAccent(it) }
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = CircleShape,
-        color = accent?.copy(alpha = 0.14f) ?: MaterialTheme.colorScheme.surfaceContainerLow,
-        contentColor = accent ?: MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            if (accent != null) {
-                Box(Modifier.size(8.dp).clip(CircleShape).background(accent))
-            } else {
-                Icon(
-                    Icons.Rounded.School,
-                    contentDescription = null,
-                    modifier = Modifier.size(15.dp)
-                )
-            }
-            Text(
-                text = subject?.name ?: if (enabled) "Sin materia" else "No hay materias",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
 @Composable
 private fun NoteSubjectSheet(
     subjects: List<Subject>,
@@ -930,7 +952,7 @@ private fun NoteSubjectSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     ) {
         Column(
             modifier = Modifier
@@ -985,7 +1007,7 @@ private fun SubjectRow(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(12.dp),
         color = if (selected) accent.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerLow,
         onClick = onClick
     ) {

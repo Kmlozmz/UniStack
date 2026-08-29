@@ -20,6 +20,9 @@ enum class NoteStyle {
     TABLA
 }
 
+/** Una casilla dentro de una nota: en que linea esta, si esta marcada y que dice. */
+data class NoteCheckbox(val lineIndex: Int, val checked: Boolean, val label: String)
+
 /** Un tramo del texto que se pinta de una manera. */
 data class NoteSpan(val style: NoteStyle, val start: Int, val end: Int)
 
@@ -236,6 +239,50 @@ object NoteMarkdown {
         aplicar(NEGRITA_RE, NoteStyle.NEGRITA, marca = 2)
         aplicar(TACHADO_RE, NoteStyle.TACHADO, marca = 2)
         aplicar(CURSIVA_RE, NoteStyle.CURSIVA, marca = 1)
+    }
+
+    /**
+     * Las casillas de una nota, en el orden en que aparecen.
+     *
+     * Devuelve por cada una en que linea esta y si esta marcada. La linea es lo que hace falta
+     * para poder cambiarla: el indice de la casilla dentro de la lista se mueve si alguien
+     * escribe otra por encima, el numero de linea no.
+     */
+    fun checkboxes(text: String): List<NoteCheckbox> {
+        val salida = mutableListOf<NoteCheckbox>()
+        text.split("\n").forEachIndexed { indice, linea ->
+            val sangria = linea.takeWhile { it == ' ' || it == '\t' }.length
+            val casilla = CASILLA_RE.find(linea.substring(sangria)) ?: return@forEachIndexed
+            salida += NoteCheckbox(
+                lineIndex = indice,
+                checked = casilla.groupValues[1].lowercase() == "x",
+                label = linea.substring(sangria + casilla.value.length)
+            )
+        }
+        return salida
+    }
+
+    /**
+     * Marca o desmarca la casilla de una linea.
+     *
+     * Devuelve el texto nuevo, o nulo si esa linea no era una casilla. Se cambia **solo** el
+     * caracter de dentro de los corchetes: reescribir la linea entera perderia la sangria y
+     * cualquier espacio que alguien hubiera puesto a mano.
+     */
+    fun toggleCheckbox(text: String, lineIndex: Int): String? {
+        val lineas = text.split("\n")
+        if (lineIndex !in lineas.indices) return null
+        val linea = lineas[lineIndex]
+        val sangria = linea.takeWhile { it == ' ' || it == '\t' }.length
+        val casilla = CASILLA_RE.find(linea.substring(sangria)) ?: return null
+
+        val dentro = sangria + casilla.value.indexOf('[') + 1
+        val marcada = casilla.groupValues[1].lowercase() == "x"
+        val nuevaLinea = linea.substring(0, dentro) +
+            (if (marcada) " " else "x") +
+            linea.substring(dentro + 1)
+
+        return lineas.toMutableList().also { it[lineIndex] = nuevaLinea }.joinToString("\n")
     }
 
     /**

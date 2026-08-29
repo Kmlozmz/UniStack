@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
@@ -111,7 +112,7 @@ private fun ImageAttachment(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 260.dp)
-                .clip(MaterialTheme.shapes.large)
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
         )
         RemoveBadge(
@@ -143,7 +144,7 @@ private fun FileAttachment(
 ) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(12.dp),
         onClick = onOpen,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
     ) {
@@ -199,7 +200,7 @@ private fun AudioAttachment(
 
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -267,7 +268,7 @@ private fun AudioAttachment(
 private fun MissingAttachmentRow(attachment: NoteAttachment, onRemove: () -> Unit) {
     UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 11.dp)
     ) {

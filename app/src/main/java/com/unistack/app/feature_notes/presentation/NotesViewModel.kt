@@ -12,6 +12,7 @@ import com.unistack.app.feature_notes.domain.AttachmentKind
 import com.unistack.app.feature_notes.domain.Attachments
 import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteFormat
+import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesRepository
@@ -200,6 +201,18 @@ class NotesViewModel @Inject constructor(
             )
         )
         return true
+    }
+
+/**
+     * Marcar o desmarcar una casilla desde la lista, sin abrir la nota.
+     *
+     * Es lo que hace que una lista de pendientes sea una lista: si para tachar algo hay que
+     * entrar, editar el texto y salir, no se tacha nunca.
+     */
+    fun toggleCheck(noteId: String, lineIndex: Int) {
+        val nota = noteById(noteId) ?: return
+        val nuevo = NoteMarkdown.toggleCheckbox(nota.body, lineIndex) ?: return
+        notesRepository.updateNote(nota.copy(body = nuevo, updatedAt = System.currentTimeMillis()))
     }
 
     fun removeAttachment(attachmentId: String) = notesRepository.deleteAttachment(attachmentId)

@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -323,7 +324,8 @@ fun NotesListScreen(
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
                     onNoteClick = onNoteClick,
-                    onNoteLongClick = { acting = it }
+                    onNoteLongClick = { acting = it },
+                    onToggleCheck = viewModel::toggleCheck
                 )
 
                 else -> NotesNotebook(
@@ -334,7 +336,8 @@ fun NotesListScreen(
                     pathFor = { viewModel.attachmentPath(it) },
                     use24Hour = use24Hour,
                     onNoteClick = onNoteClick,
-                    onNoteLongClick = { acting = it }
+                    onNoteLongClick = { acting = it },
+                    onToggleCheck = viewModel::toggleCheck
                 )
             }
         }
@@ -398,7 +401,7 @@ private fun NoteActionsSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     ) {
         Column(
             modifier = Modifier
@@ -433,7 +436,7 @@ private fun ActionRow(
 ) {
     Surface(
         onClick = onClick,
-        shape = MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         contentColor = tint,
         modifier = Modifier.fillMaxWidth()
@@ -463,7 +466,8 @@ private fun NotesMosaic(
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
     onNoteClick: (String) -> Unit,
-    onNoteLongClick: (String) -> Unit
+    onNoteLongClick: (String) -> Unit,
+    onToggleCheck: (String, Int) -> Unit
 ) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(2),
@@ -481,7 +485,8 @@ private fun NotesMosaic(
                 compact = true,
                 attachments = attachmentsFor(note.id),
                 pathFor = pathFor,
-                onLongClick = { onNoteLongClick(note.id) }
+                onLongClick = { onNoteLongClick(note.id) },
+                onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
             )
         }
     }
@@ -497,7 +502,8 @@ private fun NotesNotebook(
     pathFor: (NoteAttachment) -> String,
     use24Hour: Boolean,
     onNoteClick: (String) -> Unit,
-    onNoteLongClick: (String) -> Unit
+    onNoteLongClick: (String) -> Unit,
+    onToggleCheck: (String, Int) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -514,7 +520,8 @@ private fun NotesNotebook(
                     onClick = { onNoteClick(note.id) },
                     attachments = attachmentsFor(note.id),
                     pathFor = pathFor,
-                    onLongClick = { onNoteLongClick(note.id) }
+                    onLongClick = { onNoteLongClick(note.id) },
+                onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
                 )
             }
         }
@@ -528,7 +535,8 @@ private fun NotesNotebook(
                     onClick = { onNoteClick(note.id) },
                     attachments = attachmentsFor(note.id),
                     pathFor = pathFor,
-                    onLongClick = { onNoteLongClick(note.id) }
+                    onLongClick = { onNoteLongClick(note.id) },
+                onToggleCheck = { linea -> onToggleCheck(note.id, linea) }
                 )
             }
         }

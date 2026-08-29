@@ -2,6 +2,7 @@ package com.unistack.app.feature_notes.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -161,5 +162,54 @@ class NoteMarkdownTest {
             assertTrue(marca.toString(), marca.start in 0..texto.length)
             assertTrue(marca.toString(), marca.end in marca.start..texto.length)
         }
+    }
+
+    /*
+     * Las casillas se marcan desde la lista, sin abrir la nota. Lo que se cambia es un solo
+     * caracter dentro de los corchetes: reescribir la linea entera perderia la sangria.
+     */
+    @Test
+    fun lasCasillasSeEncuentranConSuLineaYSuEstado() {
+        val texto = "Pendientes\n- [ ] taller 3\ntexto suelto\n- [x] taller 2"
+        val casillas = NoteMarkdown.checkboxes(texto)
+
+        assertEquals(2, casillas.size)
+        assertEquals(1, casillas[0].lineIndex)
+        assertFalse(casillas[0].checked)
+        assertEquals("taller 3", casillas[0].label)
+        assertEquals(3, casillas[1].lineIndex)
+        assertTrue(casillas[1].checked)
+    }
+
+    @Test
+    fun marcarUnaCasillaSoloTocaSuCorchete() {
+        val texto = "Pendientes\n- [ ] taller 3"
+        assertEquals("Pendientes\n- [x] taller 3", NoteMarkdown.toggleCheckbox(texto, 1))
+    }
+
+    @Test
+    fun volverATocarlaLaDesmarca() {
+        assertEquals("- [ ] taller", NoteMarkdown.toggleCheckbox("- [x] taller", 0))
+    }
+
+    @Test
+    fun laSangriaYElRestoDeLaNotaNoSeMueven() {
+        val texto = "# Titulo\n\n    - [ ] con sangria\n\nfinal"
+        val nuevo = NoteMarkdown.toggleCheckbox(texto, 2)
+        assertEquals("# Titulo\n\n    - [x] con sangria\n\nfinal", nuevo)
+    }
+
+    @Test
+    fun unaLineaQueNoEsCasillaNoSeToca() {
+        assertNull(NoteMarkdown.toggleCheckbox("- solo una vineta", 0))
+        assertNull(NoteMarkdown.toggleCheckbox("- [ ] taller", 5))
+        assertNull(NoteMarkdown.toggleCheckbox("- [ ] taller", -1))
+    }
+
+    /** Esconder una marca nunca quita un salto de linea: la cuenta de lineas no cambia. */
+    @Test
+    fun quitarLasMarcasNoCambiaElNumeroDeLineas() {
+        val texto = "# Titulo\n- [ ] uno\n> cita\n---\n**negrita**"
+        assertEquals(texto.split("\n").size, NoteMarkdown.strip(texto).split("\n").size)
     }
 }
