@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -90,27 +91,41 @@ fun NoteChecklistEditor(
         onChange(items.map { if (it.id == item.id) nuevo else it })
     }
 
+    fun moverEnGrupo(grupo: List<ChecklistItem>, desde: Int, hasta: Int) {
+        val fromItem = grupo.getOrNull(desde) ?: return
+        val toItem = grupo.getOrNull(hasta) ?: return
+        val from = items.indexOfFirst { it.id == fromItem.id }
+        val to = items.indexOfFirst { it.id == toItem.id }
+        if (from >= 0 && to >= 0) onChange(NoteChecklist.move(items, from, to))
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
-        sinMarcar.forEach { item ->
-            ChecklistRow(
-                item = item,
-                indice = { items.indexOfFirst { otro -> otro.id == item.id } },
-                total = { items.size },
-                reorder = reorder,
-                texto = texto,
-                suave = suave,
-                foco = focos.getOrPut(item.id) { FocusRequester() },
-                onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
-                onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
-                onRemove = { onChange(items.filterNot { it.id == item.id }) },
-                onEnter = {
-                    val nuevo = ChecklistItem("", false)
-                    val donde = items.indexOfFirst { it.id == item.id } + 1
-                    onChange(items.toMutableList().also { it.add(donde, nuevo) })
-                    focoEn = nuevo.id
-                },
-                onMove = { desde, hasta -> onChange(NoteChecklist.move(items, desde, hasta)) }
-            )
+        sinMarcar.forEachIndexed { visibleIndex, item ->
+            // La lista se pinta por grupos (pendientes / hechas), así que el índice que recibe
+            // el asa también debe ser el del grupo visible. Usar el índice de `items` hacía que
+            // el primer salto funcionara y el siguiente apuntara a una fila que no estaba en
+            // pantalla cuando había elementos marcados.
+            key(item.id) {
+                ChecklistRow(
+                    item = item,
+                    indice = { visibleIndex },
+                    total = { sinMarcar.size },
+                    reorder = reorder,
+                    texto = texto,
+                    suave = suave,
+                    foco = focos.getOrPut(item.id) { FocusRequester() },
+                    onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
+                    onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
+                    onRemove = { onChange(items.filterNot { it.id == item.id }) },
+                    onEnter = {
+                        val nuevo = ChecklistItem("", false)
+                        val donde = items.indexOfFirst { it.id == item.id } + 1
+                        onChange(items.toMutableList().also { it.add(donde, nuevo) })
+                        focoEn = nuevo.id
+                    },
+                    onMove = { desde, hasta -> moverEnGrupo(sinMarcar, desde, hasta) }
+                )
+            }
         }
 
         // «Elemento»: la fila que crea la siguiente sin tener que buscar un botón.
@@ -162,22 +177,23 @@ fun NoteChecklistEditor(
             }
 
             if (expandidas) {
-                marcadas.forEach { item ->
-                    ChecklistRow(
-                        item = item,
-                        indice = { items.indexOfFirst { otro -> otro.id == item.id } },
-                        total = { items.size },
-                        reorder = reorder,
-                        texto = texto,
-                        suave = suave,
-                        foco = focos.getOrPut(item.id) { FocusRequester() },
-                        conAsa = false,
-                        onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
-                        onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
-                        onRemove = { onChange(items.filterNot { it.id == item.id }) },
-                        onEnter = {},
-                        onMove = { _, _ -> }
-                    )
+                marcadas.forEachIndexed { visibleIndex, item ->
+                    key(item.id) {
+                        ChecklistRow(
+                            item = item,
+                            indice = { visibleIndex },
+                            total = { marcadas.size },
+                            reorder = reorder,
+                            texto = texto,
+                            suave = suave,
+                            foco = focos.getOrPut(item.id) { FocusRequester() },
+                            onText = { nuevo -> cambiar(item, item.copy(text = nuevo)) },
+                            onToggle = { cambiar(item, item.copy(checked = !item.checked)) },
+                            onRemove = { onChange(items.filterNot { it.id == item.id }) },
+                            onEnter = {},
+                            onMove = { desde, hasta -> moverEnGrupo(marcadas, desde, hasta) }
+                        )
+                    }
                 }
             }
         }

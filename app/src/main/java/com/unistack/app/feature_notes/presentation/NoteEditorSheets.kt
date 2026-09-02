@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -39,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,18 +74,100 @@ fun NoteInsertSheet(onPick: (NoteInsert) -> Unit, onDismiss: () -> Unit) {
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
+            Box(
+                Modifier
+                    .padding(top = 10.dp)
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+            )
+        }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(bottom = 18.dp)
+                .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
         ) {
-            opciones.forEach { (tipo, label, icono) ->
-                SheetRow(icono, label) { onPick(tipo) }
+            Text(
+                "Añadir a la nota",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(top = 18.dp)
+            )
+            Text(
+                "Inserta contenido sin salir del editor",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
+            )
+
+            // Dos columnas reducen el recorrido del pulgar y hacen que las seis opciones se
+            // lean como herramientas relacionadas, no como un menú interminable.
+            opciones.chunked(2).forEach { fila ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    fila.forEach { (tipo, label, icono) ->
+                        InsertOptionCard(
+                            icon = icono,
+                            label = label,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onPick(tipo) }
+                        )
+                    }
+                    if (fila.size == 1) Spacer(Modifier.weight(1f))
+                }
+                Spacer(Modifier.size(12.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun InsertOptionCard(
+    icon: ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 104.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(21.dp)
+                )
+            }
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2
+            )
         }
     }
 }
@@ -102,8 +186,18 @@ fun NoteColorSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = {
+            Box(
+                Modifier
+                    .padding(top = 10.dp)
+                    .size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+            )
+        }
     ) {
         Column(
             modifier = Modifier
@@ -113,28 +207,31 @@ fun NoteColorSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                "Color",
+                "Color de la nota",
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.padding(top = 18.dp)
             )
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ColorDot(
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    selected = selected == null,
-                    sinColor = true,
-                    onClick = { onPick(null) }
-                )
-                NoteColors.palette.forEach { color ->
-                    ColorDot(
-                        color = color,
-                        selected = selected == color.toArgb(),
-                        sinColor = false,
-                        onClick = { onPick(color.toArgb()) }
-                    )
+            Text(
+                "Elige un tono para reconocerla de un vistazo",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val colores: List<Color?> = listOf(null) + NoteColors.palette
+                colores.chunked(5).forEach { fila ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        fila.forEach { color ->
+                            val actual = color ?: MaterialTheme.colorScheme.surfaceContainerLow
+                            ColorDot(
+                                color = actual,
+                                selected = selected == color?.toArgb(),
+                                sinColor = color == null,
+                                onClick = { onPick(color?.toArgb()) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -275,21 +372,3 @@ private fun IconButtonSmall(icon: ImageVector, action: NoteAction, onAction: (No
     }
 }
 
-@Composable
-private fun SheetRow(icon: ImageVector, label: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 15.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
-            Spacer(Modifier.width(16.dp))
-            Text(label, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
