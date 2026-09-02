@@ -1463,10 +1463,12 @@ private fun AcademicProgramHelpCard(
 }
 
 @Composable
-private fun SetupCustomProgramField(
+internal fun SetupCustomProgramField(
     value: String,
     validation: ValidationResult?,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    label: String = "Nombre del programa",
+    placeholder: String = "Ej: Ingeniería Biomédica"
 ) {
     val showError = value.isNotBlank() && validation?.isValid == false
     MaterialTheme(
@@ -1479,14 +1481,14 @@ private fun SetupCustomProgramField(
             singleLine = true,
             label = {
                 Text(
-                    text = "Nombre del programa",
+                    text = label,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Normal
                 )
             },
             placeholder = {
                 Text(
-                    text = "Ej: Ingeniería Biomédica",
+                    text = placeholder,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                 )
             },
@@ -1512,10 +1514,10 @@ private fun SetupCustomProgramField(
     }
 }
 
-private fun studyAreaForLabel(label: String): StudyArea? =
+internal fun studyAreaForLabel(label: String): StudyArea? =
     StudyArea.entries.firstOrNull { labelFor(it) == label }
 
-private fun studyAreaIcon(area: StudyArea): ImageVector = when (area) {
+internal fun studyAreaIcon(area: StudyArea): ImageVector = when (area) {
     StudyArea.ENGINEERING_TECHNOLOGY -> Icons.Rounded.GridView
     StudyArea.ECONOMICS_BUSINESS -> Icons.Rounded.BarChart
     StudyArea.LAW_POLITICS -> Icons.Rounded.BusinessCenter
@@ -1527,7 +1529,7 @@ private fun studyAreaIcon(area: StudyArea): ImageVector = when (area) {
     StudyArea.OTHER -> Icons.Rounded.AutoAwesome
 }
 
-private fun programIcon(option: String): ImageVector =
+internal fun programIcon(option: String): ImageVector =
     if (option == OTHER_OPTION) Icons.Rounded.AutoAwesome else Icons.Rounded.School
 
 @Composable
@@ -2817,7 +2819,7 @@ private fun resolvedProgram(selectedProgram: String?, customProgram: String): St
     if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
 
 @Composable
-private fun SetupDropdownField(
+internal fun SetupDropdownField(
     label: String,
     value: String,
     options: List<String>,
@@ -2827,7 +2829,9 @@ private fun SetupDropdownField(
     leadingIcon: ImageVector,
     optionIcon: (String) -> ImageVector,
     onExpandedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    leadingIconContainerColor: Color? = null,
+    leadingIconContentColor: Color? = null
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val density = LocalDensity.current
@@ -2880,7 +2884,9 @@ private fun SetupDropdownField(
                     DropdownIconBox(
                         icon = leadingIcon,
                         enabled = enabled,
-                        modifier = Modifier.size(46.dp)
+                        modifier = Modifier.size(46.dp),
+                        containerColor = leadingIconContainerColor,
+                        contentColor = leadingIconContentColor
                     )
                     Text(
                         text = displayValue,
@@ -2980,17 +2986,22 @@ private fun SetupDropdownField(
 }
 
 @Composable
-private fun DropdownIconBox(
+internal fun DropdownIconBox(
     icon: ImageVector,
     enabled: Boolean,
     modifier: Modifier = Modifier,
-    iconSize: androidx.compose.ui.unit.Dp = 25.dp
+    iconSize: androidx.compose.ui.unit.Dp = 25.dp,
+    // Nulos preservan el aspecto de siempre. El perfil los usa para pedir una caja neutra:
+    // ahí ya compiten el avatar y el camino del progreso por el mismo morado, y otra caja más
+    // del mismo color no distingue nada, solo repite.
+    containerColor: Color? = null,
+    contentColor: Color? = null
 ) {
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.small)
             .background(
-                MaterialTheme.colorScheme.primaryContainer.copy(
+                containerColor ?: MaterialTheme.colorScheme.primaryContainer.copy(
                     alpha = when {
                         !enabled -> 0.42f
                         LocalIsDarkTheme.current -> 0.9f
@@ -3003,7 +3014,7 @@ private fun DropdownIconBox(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = contentColor ?: if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(iconSize)
         )
     }

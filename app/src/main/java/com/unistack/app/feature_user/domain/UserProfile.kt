@@ -45,6 +45,15 @@ data class UserProfile(
     val careerOrProgram: String?,
     val studyArea: StudyArea?,
     /**
+     * El nombre del área cuando [studyArea] es [StudyArea.OTHER].
+     *
+     * El área es un enum cerrado —hace falta para el catálogo de materias— así que «tu área no
+     * está en la lista» no puede guardarse dentro de él. Esto es lo que guarda lo que sí
+     * escribiste. [careerOrProgram] no necesita su equivalente: ya acepta texto libre para
+     * cualquier carrera, esté o no en el catálogo.
+     */
+    val customStudyArea: String? = null,
+    /**
      * Nombre de la institución tal y como lo escribió el usuario, sin normalizar.
      *
      * Se guarda en crudo a propósito: si algún día se añade un catálogo canónico, poder
@@ -52,6 +61,16 @@ data class UserProfile(
      * escribió después de haberlo sobrescrito, no. Es opcional en todos los niveles.
      */
     val institutionName: String? = null,
+    /**
+     * En qué semestre vas y cuántos dura tu programa, para el progreso del perfil.
+     *
+     * Los dos o ninguno: un semestre actual sin total no puede dibujar un camino, y un total
+     * sin semestre actual no puede decir dónde estás parado. Nulos hasta que el usuario los
+     * pone a mano —no se derivan del Histórico académico porque ese cuenta periodos ya creados
+     * en la app, y esto es la carrera entera, incluida la parte de antes de instalarla.
+     */
+    val currentSemester: Int? = null,
+    val totalSemesters: Int? = null,
     val gradingScale: GradingScale,
     val customGradeMax: Double = 100.0,
     val passingGrade: Double,

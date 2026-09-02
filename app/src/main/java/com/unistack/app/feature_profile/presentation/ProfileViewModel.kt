@@ -20,6 +20,7 @@ import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.BackgroundStyle
 import com.unistack.app.feature_user.domain.CustomThemeBase
 import com.unistack.app.feature_user.domain.GradingScale
+import com.unistack.app.feature_user.domain.StudyArea
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicBreakRepository
 import com.unistack.app.feature_terms.domain.AcademicTerm
@@ -168,6 +169,60 @@ class ProfileViewModel @Inject constructor(
         val current = profile.value ?: return false
         if (!TextValidators.validateDisplayName(name).isValid) return false
         save(current.copy(preferredName = TextValidators.normalizeText(name)))
+        return true
+    }
+
+    /**
+     * Cambia el área de estudio.
+     *
+     * La carrera solo sobrevive si el área no cambió de verdad: viene de un catálogo distinto
+     * por área, así que una carrera de Ingeniería no tiene sentido bajo Salud. El nombre
+     * escrito a mano para «Otra» se conserva igual —por si se vuelve a elegir— y se limpia
+     * en cuanto el área deja de ser «Otra».
+     */
+    fun updateStudyArea(area: StudyArea): Boolean {
+        val current = profile.value ?: return false
+        val keepProgram = current.studyArea == area
+        save(
+            current.copy(
+                studyArea = area,
+                careerOrProgram = if (keepProgram) current.careerOrProgram else null,
+                customStudyArea = if (area == StudyArea.OTHER) current.customStudyArea else null
+            )
+        )
+        return true
+    }
+
+    fun updateCustomStudyArea(text: String): Boolean {
+        val current = profile.value ?: return false
+        save(current.copy(customStudyArea = text))
+        return true
+    }
+
+    /** Sirve igual para una carrera del catálogo que para una escrita a mano. */
+    fun updateCareerOrProgram(text: String): Boolean {
+        val current = profile.value ?: return false
+        save(current.copy(careerOrProgram = text))
+        return true
+    }
+
+    fun updateInstitutionName(text: String): Boolean {
+        val current = profile.value ?: return false
+        save(current.copy(institutionName = text))
+        return true
+    }
+
+    /**
+     * En qué semestre vas, de cuántos.
+     *
+     * Van juntos porque uno solo no dice nada: «semestre 5» sin el total no dibuja el camino,
+     * y el total sin el actual no dice dónde estás parado.
+     */
+    fun updateSemesterProgress(currentSemester: Int, totalSemesters: Int): Boolean {
+        val current = profile.value ?: return false
+        if (totalSemesters !in 1..30) return false
+        if (currentSemester !in 1..totalSemesters) return false
+        save(current.copy(currentSemester = currentSemester, totalSemesters = totalSemesters))
         return true
     }
 

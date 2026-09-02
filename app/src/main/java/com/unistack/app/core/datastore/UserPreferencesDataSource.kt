@@ -55,8 +55,11 @@ class UserPreferencesDataSource(private val context: Context) {
         val SYNC_STATUS = stringPreferencesKey("sync_status")
         val LAST_SYNC_AT = longPreferencesKey("last_sync_at")
         val STUDY_AREA = stringPreferencesKey("study_area")
+        val CUSTOM_STUDY_AREA = stringPreferencesKey("custom_study_area")
         val CAREER_OR_PROGRAM = stringPreferencesKey("career_or_program")
         val INSTITUTION_NAME = stringPreferencesKey("institution_name")
+        val CURRENT_SEMESTER = intPreferencesKey("current_semester")
+        val TOTAL_SEMESTERS = intPreferencesKey("total_semesters")
         val GRADING_SCALE = stringPreferencesKey("grading_scale")
         val CUSTOM_GRADE_MAX = doublePreferencesKey("custom_grade_max")
         val PASSING_GRADE = doublePreferencesKey("passing_grade")
@@ -141,8 +144,11 @@ class UserPreferencesDataSource(private val context: Context) {
             syncStatus = syncStatus,
             lastSyncAt = prefs[Keys.LAST_SYNC_AT],
             studyArea = studyArea,
+            customStudyArea = prefs[Keys.CUSTOM_STUDY_AREA],
             careerOrProgram = prefs[Keys.CAREER_OR_PROGRAM],
             institutionName = prefs[Keys.INSTITUTION_NAME],
+            currentSemester = prefs[Keys.CURRENT_SEMESTER]?.takeIf { it > 0 },
+            totalSemesters = prefs[Keys.TOTAL_SEMESTERS]?.takeIf { it > 0 },
             gradingScale = gradingScale,
             customGradeMax = prefs[Keys.CUSTOM_GRADE_MAX]?.coerceIn(1.0, 100.0) ?: 100.0,
             passingGrade = prefs[Keys.PASSING_GRADE] ?: 3.0,
@@ -298,6 +304,11 @@ class UserPreferencesDataSource(private val context: Context) {
             } else {
                 prefs.remove(Keys.STUDY_AREA)
             }
+            if (profile.customStudyArea != null) {
+                prefs[Keys.CUSTOM_STUDY_AREA] = profile.customStudyArea
+            } else {
+                prefs.remove(Keys.CUSTOM_STUDY_AREA)
+            }
             if (profile.careerOrProgram != null) {
                 prefs[Keys.CAREER_OR_PROGRAM] = profile.careerOrProgram
             } else {
@@ -307,6 +318,16 @@ class UserPreferencesDataSource(private val context: Context) {
                 prefs[Keys.INSTITUTION_NAME] = profile.institutionName
             } else {
                 prefs.remove(Keys.INSTITUTION_NAME)
+            }
+            if (profile.currentSemester != null) {
+                prefs[Keys.CURRENT_SEMESTER] = profile.currentSemester
+            } else {
+                prefs.remove(Keys.CURRENT_SEMESTER)
+            }
+            if (profile.totalSemesters != null) {
+                prefs[Keys.TOTAL_SEMESTERS] = profile.totalSemesters
+            } else {
+                prefs.remove(Keys.TOTAL_SEMESTERS)
             }
         }
     }
