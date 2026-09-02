@@ -98,24 +98,25 @@ val debugBuildStamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH
  * adelante a la nueva. Derivándolo del nombre, el orden es el que se ve:
  *
  * ```
- * 0.0.0-dev.…            1
- * 1.0.0-alpha.1  1_000_011
- * 1.0.0-beta.1   1_000_031
- * 1.0.0-rc.1     1_000_061
- * 1.0.0          1_000_099
- * 1.0.1          1_000_199
- * 1.1.0          1_010_099
+ * 0.0.0-dev.…             1
+ * 1.0.0-alpha.1  10_000_101
+ * 1.0.0-beta.1   10_000_301
+ * 1.0.0-rc.1     10_000_601
+ * 1.0.0          10_000_999
+ * 1.0.1          10_001_999
+ * 1.1.0          10_100_999
  * ```
  *
- * Cada tramo deja sitio para 19 iteraciones, y la versión sin sufijo va siempre por encima de
+ * Cada tramo deja sitio para 99 iteraciones, y la versión sin sufijo va siempre por encima de
  * sus preestrenos. Que una alpha no se instale sobre la definitiva es lo correcto: es un paso
  * atrás, y para eso se desinstala a conciencia.
  */
 /**
  * Si un nombre de versión es una alpha.
  *
- * `alpha` es el único peldaño cuyo destinatario es una persona concreta a la que se le manda el
- * APK; beta y definitiva llegan por la propia app, a quien corresponda.
+ * Lo usa `sendAlpha` para negarse a mandar algo que no sea una alpha: esa tarea es el atajo del
+ * día a día y equivocarse de nombre ahí es fácil. **No decide quién pasa por el bot** —por el
+ * bot va cualquier release desde el 21 ago 2026—, solo que esa tarea se use para lo que es.
  */
 fun isAlphaVersion(versionName: String): Boolean {
     val suffix = versionName.substringAfter('-', missingDelimiterValue = "").lowercase()
@@ -1012,17 +1013,20 @@ afterEvaluate {
     tasks.findByName("assembleRelease")?.mustRunAfter(validateGitHubPublishReady)
 
     /*
-     * Por el bot solo van las alphas.
+     * Por el bot va cualquier release, sea el peldaño que sea.
      *
-     * Antes iban también los `dev`, y eso obligaba a desinstalar para pasar de uno a otro: un
+     * Los `dev` no, y por eso esto se engancha a `assembleRelease` y no a `assembleDebug`: un
      * `dev` lleva el `versionCode` más bajo que existe, así que no entra encima de nada
-     * publicado y se lleva los datos por delante al reinstalar. Una alpha es una compilación
-     * firmada con su número en la escalera, así que se instala encima sin perder nada.
+     * publicado y obliga a desinstalar, con los datos por delante. Una alpha va firmada y con
+     * su número en la escalera, así que se instala encima sin perder nada.
      *
-     * Y las alphas ya no se publican en GitHub: son la compilación de trabajo, y su único
-     * camino es este. Beta y definitiva, al revés: se publican y no pasan por aquí, porque
-     * tienen quien las reciba por la app y mandarlas también por el bot sería una vía de
-     * distribución paralela que no respeta ningún permiso.
+     * Hasta el 21 ago 2026 había además un `onlyIf { isAlphaVersion(...) }`, con la idea de que
+     * beta y definitiva llegaran por la propia app y el bot no fuera una vía de distribución
+     * paralela. Se quitó a petición suya: el bot es del dueño de la app, y filtrar por peldaño
+     * solo conseguía que tuviera que ir a buscar a mano el APK que él mismo acababa de compilar.
+     * Las alphas, además, ya no se publican en GitHub: el bot es su único camino.
+     *
+     * Para compilar un release sin que salga nada: `-PskipTelegramApk=true`.
      */
     if (!skipTelegramApk.get()) {
         tasks.named("assembleRelease") {
