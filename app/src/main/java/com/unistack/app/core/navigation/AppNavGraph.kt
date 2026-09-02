@@ -1,5 +1,7 @@
 package com.unistack.app.core.navigation
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
 import androidx.compose.animation.core.animateFloatAsState
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.NavigationItemIconPosition
 import androidx.compose.material3.ShortNavigationBarArrangement
 import androidx.compose.material3.ShortNavigationBarItem
@@ -30,12 +33,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -161,6 +168,41 @@ fun MainNavGraph(
         }
     }
     val currentRoute = navController.currentRouteAsState() ?: resolvedInitialRoute
+
+    /*
+     * Salir de la app pide confirmación, y solo en Inicio.
+     *
+     * En cualquier otra pantalla, atrás vuelve a la anterior: eso no hace falta protegerlo.
+     * Pero en Inicio ya no queda ninguna anterior, así que ese mismo gesto cierra la app sin
+     * avisar. Un toque de más — el más fácil de dar sin querer, porque es el único sitio
+     * donde atrás no tiene nada que deshacer — y la app se va.
+     *
+     * Se activa solo cuando la pila de navegación ya está vacía. Con esto siempre encendido
+     * se perdería el gesto predictivo del sistema en el resto de la app, por la misma razón
+     * que en `rememberLeaveGuard`.
+     */
+    val activity = LocalContext.current as? Activity
+    var confirmingExit by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = currentRoute == AppRoutes.Home) {
+        confirmingExit = true
+    }
+    if (confirmingExit) {
+        AlertDialog(
+            onDismissRequest = { confirmingExit = false },
+            title = { Text("¿Salir de UniStack?") },
+            text = { Text("Todo se guarda solo, no perderás nada.") },
+            confirmButton = {
+                TextButton(onClick = { activity?.finish() }) {
+                    Text("Salir", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingExit = false }) { Text("Cancelar") }
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    }
+
     var homeDrawerOpen by remember { mutableStateOf(false) }
     LaunchedEffect(currentRoute) {
         if (currentRoute != AppRoutes.Home) homeDrawerOpen = false
