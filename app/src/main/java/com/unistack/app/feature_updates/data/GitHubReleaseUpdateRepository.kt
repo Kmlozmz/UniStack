@@ -3,6 +3,7 @@ package com.unistack.app.feature_updates.data
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -18,6 +19,7 @@ import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,21 +75,28 @@ class GitHubReleaseUpdateRepository(
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    override suspend fun checkForUpdates() = runCheck(notify = false)
+    override suspend fun checkForUpdates() {
+        runCheck(notify = false)
+    }
 
     override suspend fun checkForUpdatesIfDue() {
         val lastCheckedAt = prefs.getLong(KEY_LAST_CHECKED_AT, 0L)
         val now = System.currentTimeMillis()
         if (now - lastCheckedAt < AUTO_CHECK_INTERVAL_MILLIS) return
-        prefs.edit { putLong(KEY_LAST_CHECKED_AT, now) }
         // Esta sí: pasa por su cuenta y en segundo plano, así que es la única que tiene algo
         // que contar.
-        runCheck(notify = true)
+        if (runCheck(notify = true)) {
+            // Solo una comprobación real cuenta como comprobación. Si GitHub o la red fallan,
+            // WorkManager recibe el fallo y puede reintentar antes del siguiente ciclo.
+            prefs.edit { putLong(KEY_LAST_CHECKED_AT, now) }
+        } else {
+            throw IOException("No se pudo verificar actualizaciones.")
+        }
     }
 
-    private suspend fun runCheck(notify: Boolean) {
+    private suspend fun runCheck(notify: Boolean): Boolean {
         _state.value = UpdateState.Checking
-        runCatching { fetchReleases() }
+        return runCatching { fetchReleases() }
             .onSuccess { published ->
                 _releases.value = published
                 val info = published.firstOrNull()
@@ -102,6 +111,7 @@ class GitHubReleaseUpdateRepository(
             .onFailure { error ->
                 _state.value = UpdateState.Error(error.message ?: "No se pudo verificar actualizaciones.")
             }
+            .isSuccess
     }
 
     /**
@@ -217,8 +227,16 @@ class GitHubReleaseUpdateRepository(
                     val status = it.intOrNull(DownloadManager.COLUMN_STATUS) ?: return@use
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
-                            _state.value = UpdateState.ReadyToInstall(info, apkUri())
-                            refreshPendingApks()
+                            if (isSignedByThisApp(apkFile())) {
+                                _state.value = UpdateState.ReadyToInstall(info, apkUri())
+                                refreshPendingApks()
+                            } else {
+                                apkFile().delete()
+                                refreshPendingApks()
+                                _state.value = UpdateState.Error(
+                                    "La actualización descargada no está firmada por UniStack."
+                                )
+                            }
                             shouldStop = true
                             /*
                              * En cuanto está descargada se abre el instalador de Android.
@@ -230,7 +248,7 @@ class GitHubReleaseUpdateRepository(
                              * llevaría a los ajustes del sistema por su cuenta, y eso sí es
                              * un desvío que conviene que el usuario empiece a propósito.
                              */
-                            if (canInstallPackages()) installUpdate()
+                            if (_state.value is UpdateState.ReadyToInstall && canInstallPackages()) installUpdate()
                         }
                         DownloadManager.STATUS_FAILED -> {
                             _state.value = UpdateState.Error("La descarga falló. Intenta de nuevo.")
@@ -321,6 +339,45 @@ class GitHubReleaseUpdateRepository(
 
     private fun apkFile(): File =
         File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), APK_FILE_NAME)
+
+    /**
+     * HTTPS protege el trayecto, pero no basta si se publica un APK ajeno por error o tras un
+     * compromiso de la cuenta de releases. Antes de abrir el instalador, el archivo tiene que
+     * llevar uno de los certificados con los que está firmada la aplicación instalada.
+     */
+    private fun isSignedByThisApp(apk: File): Boolean {
+        if (!apk.isFile || apk.length() == 0L) return false
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            @Suppress("DEPRECATION") PackageManager.GET_SIGNATURES
+        }
+        val packageManager = context.packageManager
+        val installed = packageManager.getPackageInfo(context.packageName, flags)
+        val archive = packageManager.getPackageArchiveInfo(apk.absolutePath, flags) ?: return false
+        val installedCertificates = certificatesOf(installed)
+            ?.map { it.toSha256() }
+            ?.toSet()
+            .orEmpty()
+        val archiveCertificates = certificatesOf(archive)
+            ?.map { it.toSha256() }
+            ?.toSet()
+            .orEmpty()
+        return installedCertificates.isNotEmpty() && archiveCertificates == installedCertificates
+    }
+
+    @Suppress("DEPRECATION")
+    private fun certificatesOf(packageInfo: android.content.pm.PackageInfo): Array<android.content.pm.Signature>? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.signingInfo?.apkContentsSigners
+        } else {
+            packageInfo.signatures
+        }
+
+    private fun android.content.pm.Signature.toSha256(): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(toByteArray())
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
 
     private fun apkUri(): Uri =
         FileProvider.getUriForFile(context, "${context.packageName}.provider", apkFile())
