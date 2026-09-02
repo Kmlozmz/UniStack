@@ -6,6 +6,7 @@
 package com.unistack.app.feature_notes.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -95,12 +97,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniChoiceRow
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
 import com.unistack.app.feature_notes.domain.NoteAttachment
@@ -614,19 +620,29 @@ private fun NotesSearchBar(
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 3.dp,
+            shadowElevation = 6.dp,
+            border = if (searching) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
             modifier = Modifier.weight(1f)
         ) {
+            /*
+             * La barra medía lo que midiera el botón más alto que lleva dentro: unos 40 dp para
+             * el ancho entero de la pantalla, o sea una raya. 56 dp es la altura de una barra de
+             * buscar de Material, y a esa altura el texto deja de ir pegado a los bordes.
+             */
             Row(
-                modifier = Modifier.padding(start = 15.dp, end = 3.dp),
+                modifier = Modifier
+                    .heightIn(min = 56.dp)
+                    .padding(start = 18.dp, end = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     Icons.Rounded.Search,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(19.dp)
+                    modifier = Modifier.size(21.dp)
                 )
-                Spacer(Modifier.width(11.dp))
+                Spacer(Modifier.width(12.dp))
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                     if (query.isEmpty()) {
                         Text(
@@ -636,7 +652,7 @@ private fun NotesSearchBar(
                                 "Buscar en " + view.title.lowercase()
                             },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -647,7 +663,7 @@ private fun NotesSearchBar(
                             onValueChange = onQueryChange,
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth().focusRequester(foco),
-                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = MaterialTheme.colorScheme.onSurface
                             ),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
@@ -657,7 +673,7 @@ private fun NotesSearchBar(
                         Surface(
                             onClick = { onSearchingChange(true) },
                             color = Color.Transparent,
-                            modifier = Modifier.fillMaxWidth().height(46.dp)
+                            modifier = Modifier.fillMaxWidth().height(52.dp)
                         ) {}
                     }
                 }
@@ -1116,7 +1132,15 @@ private fun NotesNotebook(
 }
 
 /**
- * Elegir por qué materia se mira la lista.
+ * Ordenar y filtrar la lista.
+ *
+ * Es la hoja de «¿En qué materia?» con otro contenido: mismo fondo, mismas esquinas, mismo
+ * título y las mismas tarjetas de materia. La versión anterior se inventaba una cabecera con
+ * subtítulo y dos tarjetas grandes para el orden, y por eso no se parecía a nada del resto de
+ * la app.
+ *
+ * El orden va en [UniChoiceRow] y no en el segmentado relleno porque aquí no se cambia de
+ * sitio: se acota lo que ya se está mirando, que es justo la regla que separa a los dos.
  *
  * Solo salen las materias que tienen alguna nota, con cuántas: una lista con las nueve del
  * semestre obliga a recorrerlas enteras para descubrir que siete están vacías.
@@ -1135,126 +1159,127 @@ private fun NoteFilterSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.background,
-        shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
+        shape = MaterialTheme.shapes.extraLarge
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(bottom = 20.dp)
+                .padding(horizontal = 18.dp)
+                .padding(bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                "Ordenar por",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(start = 22.dp, end = 22.dp, top = 4.dp, bottom = 6.dp)
-            )
-            SortRow("Última modificación", sort == NotesSort.MODIFICADA) {
-                onSort(NotesSort.MODIFICADA)
-            }
-            SortRow("Fecha de creación", sort == NotesSort.CREADA) {
-                onSort(NotesSort.CREADA)
-            }
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(vertical = 10.dp)
+                "Ordenar y filtrar",
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
             )
             Text(
-                "Filtrar por materia",
+                "El orden de la lista y con qué materia te quedas.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 6.dp)
+                fontSize = 12.sp
             )
-            FilterRow(
-                name = "Todas",
-                accent = MaterialTheme.colorScheme.primary,
-                count = total,
-                selected = selectedSubjectId == null,
-                onClick = { onSelect(null) }
+            FilterSectionLabel("ORDENAR POR")
+            UniChoiceRow(
+                selected = sort,
+                options = listOf(
+                    UniSegmentedOption(NotesSort.MODIFICADA, "Modificación"),
+                    UniSegmentedOption(NotesSort.CREADA, "Creación")
+                ),
+                onSelected = onSort
             )
-            subjects.forEach { subject ->
-                FilterRow(
-                    name = subject.name,
-                    accent = subjectAccent(subject),
-                    count = counts[subject.id] ?: 0,
-                    selected = selectedSubjectId == subject.id,
-                    onClick = { onSelect(subject.id) }
-                )
+            FilterSectionLabel("MATERIA")
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 420.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item(key = "todas") {
+                    SubjectFilterRow(
+                        name = "Todas las notas",
+                        accent = MaterialTheme.colorScheme.primary,
+                        count = total,
+                        selected = selectedSubjectId == null,
+                        onClick = { onSelect(null) }
+                    )
+                }
+                items(subjects, key = { it.id }) { subject ->
+                    SubjectFilterRow(
+                        name = subject.name,
+                        accent = subjectAccent(subject),
+                        count = counts[subject.id] ?: 0,
+                        selected = selectedSubjectId == subject.id,
+                        onClick = { onSelect(subject.id) }
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SortRow(name: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        color = if (selected) {
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
-        } else {
-            Color.Transparent
-        },
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                name,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-            )
-            if (selected) {
-                Icon(
-                    Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    }
+private fun FilterSectionLabel(text: String) {
+    Text(
+        text,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.ExtraBold,
+        modifier = Modifier.padding(top = 2.dp)
+    )
 }
 
+/**
+ * Una materia, con su color y cuántas notas tiene.
+ *
+ * Es la tarjeta del selector de materia de Inicio, con dos cambios: el número de notas, y un
+ * visto en lugar de la flecha, porque esto no lleva a ninguna parte —marca por dónde se está
+ * mirando la lista—.
+ */
 @Composable
-private fun FilterRow(
+private fun SubjectFilterRow(
     name: String,
     accent: Color,
     count: Int,
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
-        color = if (selected) accent.copy(alpha = 0.10f) else Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.fillMaxWidth()
+    UniCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = if (selected) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow
+        },
+        borderColor = if (selected) accent else Color.Transparent,
+        borderWidth = if (selected) 1.dp else 0.dp,
+        onClick = onClick
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(Modifier.size(9.dp).clip(CircleShape).background(accent))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(9.dp)
+                    .clip(CircleShape)
+                    .background(accent)
+            )
+            Spacer(Modifier.width(11.dp))
             Text(
                 name,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            Spacer(Modifier.width(10.dp))
             Text(
                 count.toString(),
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.labelMedium
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
             )
             if (selected) {
+                Spacer(Modifier.width(10.dp))
                 Icon(
                     Icons.Rounded.Check,
                     contentDescription = null,
