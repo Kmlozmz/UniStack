@@ -168,10 +168,12 @@ internal fun ScheduleIdentityContent(
          * enterarte de que llevabas cinco clases sin marcar tenias que entrar a mirar. Aqui
          * cuenta las de todas y esta en la primera pantalla del modulo.
          *
-         * Con una sola pendiente no sale: no hace falta una lista para una fila, y el aviso
-         * seria mas trabajo del que ahorra.
+         * Sale mientras quede una sola sin responder. Antes pedia dos, y con dos pendientes
+         * marcar una hacia desaparecer el aviso con la otra todavia sin marcar: el recado se
+         * daba por dado a mitad de camino. Una lista de una fila es poca cosa, pero menos aun
+         * es enterarte de que te faltaba una cuando ya no hay forma de acordarse.
          */
-        if (pendingCount > 1) {
+        if (pendingCount > 0) {
             item {
                 CatchUpBanner(count = pendingCount, onClick = onCatchUp)
             }
