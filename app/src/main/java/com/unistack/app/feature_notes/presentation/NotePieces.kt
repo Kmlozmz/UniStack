@@ -27,8 +27,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.PushPin
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -39,10 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -51,6 +54,8 @@ import com.unistack.app.feature_notes.domain.NoteAttachment
 import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteReminders
 import com.unistack.app.feature_notes.domain.QuickNote
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * El redondeo de una nota.
@@ -116,6 +121,14 @@ fun NoteCard(
     val portada = remember(attachments) {
         attachments.firstOrNull { it.kind == AttachmentKind.IMAGE }
     }
+    val audio = remember(attachments) {
+        attachments.firstOrNull { it.kind == AttachmentKind.AUDIO }
+    }
+    val archivo = remember(attachments) {
+        attachments.firstOrNull { it.kind == AttachmentKind.FILE }
+    }
+    val casillasTotal = remember(note.body) { NoteMarkdown.checkboxes(note.body) }
+    val casillasHechas = remember(casillasTotal) { casillasTotal.count { it.checked } }
     val fondo = NoteColors.surfaceFor(note.colorArgb)
     val enFondo = NoteColors.contentOn(fondo, MaterialTheme.colorScheme.onSurface)
     val suave = enFondo.copy(alpha = 0.66f)
@@ -164,6 +177,15 @@ fun NoteCard(
                         .padding(start = 15.dp, end = 15.dp, top = 13.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
+                    NoteTypeRow(
+                        casillasTotal = casillasTotal.size,
+                        casillasHechas = casillasHechas,
+                        audioName = audio?.displayName,
+                        reminderAt = note.reminderAt,
+                        archivoName = archivo?.displayName,
+                        content = enFondo,
+                        soft = suave
+                    )
                     if (note.title.isNotBlank()) {
                         Text(
                             text = note.title,
@@ -177,18 +199,22 @@ fun NoteCard(
                     }
                     NoteCardBody(
                         note = note,
-                        maxLines = if (compact) 5 else 9,
+                        maxLines = if (compact) 4 else 7,
                         conTitulo = note.title.isBlank(),
                         texto = enFondo,
                         suave = suave,
-                        onToggleCheck = onToggleCheck
+                        onToggleCheck = onToggleCheck,
+                        showDoneCount = casillasTotal.isEmpty()
                     )
-                    note.reminderAt?.let { NoteReminderChip(it, suave) }
                     Spacer(Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        if (subject != null) {
+                            NoteSubjectChip(subject, modifier = Modifier.weight(1f, fill = false))
+                        }
+                        Spacer(Modifier.weight(1f))
                         if (note.pinned) {
                             Icon(
                                 Icons.Rounded.PushPin,
@@ -197,16 +223,12 @@ fun NoteCard(
                                 modifier = Modifier.size(12.dp)
                             )
                         }
-                        if (subject != null) {
-                            NoteSubjectChip(subject, modifier = Modifier.weight(1f, fill = false))
-                        }
                         Text(
                             text = timeLabel,
                             color = suave.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1
                         )
-                        NoteAttachmentSummary(attachments)
                     }
                 }
             }
@@ -228,7 +250,8 @@ private fun NoteCardBody(
     conTitulo: Boolean,
     texto: Color,
     suave: Color,
-    onToggleCheck: ((Int) -> Unit)?
+    onToggleCheck: ((Int) -> Unit)?,
+    showDoneCount: Boolean = true
 ) {
     val plano = remember(note.body) { NoteMarkdown.strip(note.body).lines() }
     val casillas = remember(note.body) {
@@ -307,7 +330,7 @@ private fun NoteCardBody(
             style = MaterialTheme.typography.bodySmall
         )
     }
-    if (hechas > 0) {
+    if (hechas > 0 && showDoneCount) {
         Text(
             text = "+ " + hechas + if (hechas == 1) " marcada" else " marcadas",
             color = suave.copy(alpha = 0.7f),
@@ -346,27 +369,145 @@ private fun CheckBoxMark(checked: Boolean) {
     }
 }
 
-/** El recordatorio de una nota, en su tarjeta. */
+/**
+ * Lo que hace especial a esta nota, antes del título: una lista con su avance, un audio, un
+ * archivo o un aviso con su fecha en bloque. Una sola señal y en ese orden — es la que manda en
+ * la tarjeta, no un resumen de todo lo que lleva.
+ */
 @Composable
-private fun NoteReminderChip(at: Long, tint: Color) {
-    val color = if (NoteReminders.isDue(at)) MaterialTheme.colorScheme.error else tint
-    Surface(
-        shape = RoundedCornerShape(7.dp),
-        color = color.copy(alpha = 0.12f),
-        contentColor = color,
-        modifier = Modifier.padding(top = 3.dp)
+private fun NoteTypeRow(
+    casillasTotal: Int,
+    casillasHechas: Int,
+    audioName: String?,
+    reminderAt: Long?,
+    archivoName: String?,
+    content: Color,
+    soft: Color
+) {
+    if (casillasTotal == 0 && audioName == null && reminderAt == null && archivoName == null) return
+    val error = MaterialTheme.colorScheme.error
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.padding(bottom = 8.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Icon(
-                Icons.Rounded.Notifications,
-                contentDescription = null,
-                modifier = Modifier.size(11.dp)
+        when {
+            casillasTotal > 0 -> {
+                ChecklistRing(casillasHechas, casillasTotal, content)
+                NoteTypeCaption("Lista", "$casillasHechas de $casillasTotal hechas", content, soft)
+            }
+            audioName != null -> {
+                AudioWaveform(content)
+                NoteTypeCaption("Audio", "nota de voz", content, soft)
+            }
+            reminderAt != null -> {
+                val vencido = NoteReminders.isDue(reminderAt)
+                NoteDateTile(reminderAt, vencido, content, error)
+                NoteTypeCaption(
+                    if (vencido) "Venció" else "Recordatorio",
+                    NoteReminders.label(reminderAt),
+                    if (vencido) error else content,
+                    soft
+                )
+            }
+            archivoName != null -> {
+                Icon(
+                    Icons.Rounded.Description,
+                    contentDescription = null,
+                    tint = soft,
+                    modifier = Modifier.size(22.dp)
+                )
+                NoteTypeCaption("Archivo", archivoName, content, soft)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoteTypeCaption(caption: String, detail: String, contentColor: Color, softColor: Color) {
+    Column {
+        Text(
+            text = caption,
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = detail,
+            color = softColor,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** El avance de una lista, en un anillo — el mismo dato que ya cuentan las casillas de abajo. */
+@Composable
+private fun ChecklistRing(hechas: Int, total: Int, content: Color) {
+    CircularProgressIndicator(
+        progress = { if (total == 0) 0f else hechas.toFloat() / total },
+        modifier = Modifier.size(26.dp),
+        color = content,
+        trackColor = content.copy(alpha = 0.25f),
+        strokeWidth = 2.5.dp,
+        strokeCap = StrokeCap.Round
+    )
+}
+
+private val AlturasOnda = listOf(6, 13, 9, 17, 10, 19, 8, 14, 10)
+
+/** Una grabación, antes de abrirla: una forma de onda quieta, no un ícono. */
+@Composable
+private fun AudioWaveform(tint: Color) {
+    Row(
+        modifier = Modifier
+            .height(24.dp)
+            .width(38.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(2.5.dp)
+    ) {
+        AlturasOnda.forEach { alto ->
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(alto.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(tint.copy(alpha = 0.7f))
             )
-            Text(NoteReminders.label(at), style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+private val MesesAbrev = listOf(
+    "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"
+)
+
+/** El recordatorio, como una fecha de calendario: el día grande, el mes debajo. */
+@Composable
+private fun NoteDateTile(at: Long, vencido: Boolean, content: Color, error: Color) {
+    val fecha = remember(at) { Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate() }
+    val tono = if (vencido) error else content
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(tono.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = fecha.dayOfMonth.toString(),
+                color = tono,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = MesesAbrev[fecha.monthValue - 1],
+                color = tono,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

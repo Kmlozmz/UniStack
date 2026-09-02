@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.BrokenImage
@@ -337,43 +336,3 @@ fun NoteCardThumbnail(path: String, compact: Boolean, modifier: Modifier = Modif
     )
 }
 
-/** Un contador de lo que no cabe en la tarjeta: «2 archivos», «1 grabación». */
-@Composable
-fun NoteAttachmentSummary(attachments: List<NoteAttachment>, modifier: Modifier = Modifier) {
-    val archivos = attachments.count { it.kind == AttachmentKind.FILE }
-    val audios = attachments.count { it.kind == AttachmentKind.AUDIO }
-    if (archivos == 0 && audios == 0) return
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        if (archivos > 0) {
-            Icon(
-                Icons.Rounded.Description,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(12.dp)
-            )
-            Text(
-                archivos.toString(),
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-        if (audios > 0) {
-            Icon(
-                Icons.Rounded.Mic,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(12.dp)
-            )
-            Text(
-                audios.toString(),
-                color = MaterialTheme.colorScheme.outline,
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-    }
-}
