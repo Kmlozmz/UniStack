@@ -65,7 +65,6 @@ object AppRoutes {
     const val NoteEditor = "note_editor"
     const val AiAssistant = "ai_assistant"
     const val Labs = "labs"
-    const val Pro = "pro"
     const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"
     const val AddSubject = "add_subject"

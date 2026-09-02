@@ -75,8 +75,6 @@ import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
 import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
-import com.unistack.app.feature_profile.domain.FeatureGate
-import com.unistack.app.feature_profile.presentation.ProScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
 import com.unistack.app.feature_terms.presentation.NewTermScreen
 import com.unistack.app.feature_terms.presentation.TermsViewModel
@@ -444,8 +442,7 @@ fun MainNavGraph(
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
                         }
-                    },
-                    onOpenProClick = { navController.go(AppRoutes.Pro) }
+                    }
                 )
             }
             screen(
@@ -731,25 +728,6 @@ fun MainNavGraph(
             screen(AppRoutes.Labs) {
                 LabsScreen(onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.Home) })
             }
-            /*
-             * Pro solo se registra si está encendido.
-             *
-             * Apagado, la app va sin límites y no hay nada que vender: una ruta viva a una
-             * pantalla de compra que nadie puede alcanzar es una puerta que solo se abre por
-             * error —una notificación vieja, un enlace guardado— y aterriza en una oferta que
-             * no existe.
-             */
-            if (FeatureGate.PRO_FEATURES_ENABLED) {
-            screen(AppRoutes.Pro) {
-                ProScreen(
-                    onBackClick = {
-                        if (!navController.navigateUp()) {
-                            navController.go(AppRoutes.Profile)
-                        }
-                    }
-                )
-            }
-            }
             screen(AppRoutes.Expenses) {
                 ExpensesScreen(
                     onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
@@ -767,8 +745,7 @@ fun MainNavGraph(
                                 inclusive = true
                             }
                         }
-                    },
-                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
+                    }
                 )
             }
             // Las dos rutas de Horario: el mismo formulario, con el bloque académico plegado
@@ -777,8 +754,7 @@ fun MainNavGraph(
                 SubjectFormScreen(
                     mode = SubjectFormMode.SCHEDULE,
                     onBackClick = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
-                    onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) },
-                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
+                    onSubjectSaved = { navController.navigateBackOr(AppRoutes.Calendar, enabledModules) }
                 )
             }
             screen("${AppRoutes.EditSubjectFromSchedule}/{subjectId}") { backStackEntry ->
@@ -800,8 +776,7 @@ fun MainNavGraph(
                         if (!navController.navigateUp()) {
                             navController.navigateIfModuleEnabled(AppRoutes.AddTask, enabledModules)
                         }
-                    },
-                    onUpgradeClick = { navController.go(AppRoutes.Pro) }
+                    }
                 )
             }
             screen("${AppRoutes.SubjectDetail}/{subjectId}") { backStackEntry ->
@@ -1173,7 +1148,6 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.NoteEditor) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.AiAssistant) -> AppRoutes.Home
         routeBelongsTo(route, AppRoutes.Labs) -> AppRoutes.Home
-        routeBelongsTo(route, AppRoutes.Pro) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicTemplates) -> AppRoutes.Home
         else -> null
     }

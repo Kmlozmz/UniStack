@@ -16,10 +16,8 @@ import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
-import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_templates.domain.AcademicWork
 import com.unistack.app.feature_templates.domain.AcademicWorksRepository
-import com.unistack.app.feature_billing.domain.BillingRepository
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TasksRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
@@ -36,12 +34,10 @@ class GradesViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val tasksRepository: TasksRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val billingRepository: BillingRepository,
     private val academicWorksRepository: AcademicWorksRepository
 ) : ViewModel() {
     val subjects: StateFlow<List<Subject>> = repository.subjects
     val userProfile: StateFlow<UserProfile?> = userRepository.userProfile
-    val billingState = billingRepository.state
     val academicWorks: StateFlow<List<AcademicWork>> = academicWorksRepository.works
     val classSessions: StateFlow<List<ClassSession>> = scheduleRepository.sessions
 
@@ -66,8 +62,6 @@ class GradesViewModel @Inject constructor(
         )
     }
 
-    fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
-
     fun addSubject(
         name: String,
         targetAverage: Double,
@@ -75,7 +69,6 @@ class GradesViewModel @Inject constructor(
         customColor: Int? = null,
         activeCutId: String? = null
     ): Subject? {
-        if (!FeatureGate.canCreateSubject(currentPlan(), subjects.value.size)) return null
         if (!TextValidators.validateSubjectName(name).isValid) return null
         if (targetAverage !in 0.0..getMaxGrade()) return null
         val cutScheme = userProfile.value?.gradingCutScheme

@@ -24,7 +24,6 @@ class NavigationRulesTest {
         assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Settings))
         assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Profile))
         assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.AppearanceSettings))
-        assertEquals(AppRoutes.Settings, bottomRouteFor(AppRoutes.Pro))
         assertEquals(AppRoutes.Home, bottomRouteFor(AppRoutes.AcademicTemplates))
     }
 

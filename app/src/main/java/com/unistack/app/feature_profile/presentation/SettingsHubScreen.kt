@@ -54,9 +54,7 @@ import androidx.compose.runtime.getValue
  * Arriba va tu ficha, que antes había que ir a buscar dentro de «Cuenta y perfil»: el sitio
  * donde se configura la app es el sitio donde tiene sentido ver de quién es.
  *
- * Aquí no hay tarjeta de Pro. La hubo, y sobraba por dos motivos: mientras Pro esté apagado no
- * hay nada que ofrecer —la app va sin límites—, y aunque estuviera encendido, lo que se compra
- * y el plan que se tiene son asunto de «Cuenta y perfil», no del índice de ajustes.
+ * No hay tarjeta de plan ni nada que vender: la app va entera y sin límites.
  */
 @Composable
 fun SettingsHubScreen(

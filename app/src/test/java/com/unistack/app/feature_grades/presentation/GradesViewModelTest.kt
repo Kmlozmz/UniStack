@@ -1,9 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
-import android.app.Activity
 import com.unistack.app.core.MainDispatcherRule
-import com.unistack.app.feature_billing.domain.BillingRepository
-import com.unistack.app.feature_billing.domain.BillingState
 import com.unistack.app.feature_grades.data.InMemoryGradesRepository
 import com.unistack.app.feature_grades.domain.GradeSource
 import com.unistack.app.feature_grades.domain.GradeWeightStatus
@@ -42,7 +39,6 @@ class GradesViewModelTest {
     private lateinit var userRepo: InMemoryUserRepository
     private lateinit var tasksRepo: InMemoryTasksRepository
     private lateinit var scheduleRepo: FakeScheduleRepository
-    private lateinit var billingRepo: FakeBillingRepository
     private lateinit var worksRepo: FakeAcademicWorksRepository
     private lateinit var viewModel: GradesViewModel
 
@@ -52,14 +48,12 @@ class GradesViewModelTest {
         userRepo = InMemoryUserRepository()
         tasksRepo = InMemoryTasksRepository()
         scheduleRepo = FakeScheduleRepository()
-        billingRepo = FakeBillingRepository()
         worksRepo = FakeAcademicWorksRepository()
         viewModel = GradesViewModel(
             repository = gradesRepo,
             userRepository = userRepo,
             tasksRepository = tasksRepo,
             scheduleRepository = scheduleRepo,
-            billingRepository = billingRepo,
             academicWorksRepository = worksRepo
         )
     }
@@ -366,16 +360,6 @@ private class FakeScheduleRepository : ScheduleRepository {
     override fun deleteAgendaEvent(eventId: String) {
         _agendaEvents.value = _agendaEvents.value.filterNot { it.id == eventId }
     }
-}
-
-private class FakeBillingRepository : BillingRepository {
-    private val _state = MutableStateFlow(BillingState(isLoading = false, isBillingAvailable = false))
-    override val state: StateFlow<BillingState> = _state.asStateFlow()
-
-    override fun start() {}
-    override fun refreshPurchases() {}
-    override fun launchPurchase(activity: Activity, productId: String) {}
-    override fun end() {}
 }
 
 private class FakeAcademicWorksRepository : AcademicWorksRepository {

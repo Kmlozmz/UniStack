@@ -10,7 +10,6 @@ import javax.inject.Inject
 import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.BuildConfig
-import com.unistack.app.feature_profile.domain.FeatureGate
 import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.GradingCutScheme
@@ -27,7 +26,6 @@ import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
 import java.time.LocalDate
 import com.unistack.app.feature_user.domain.UserProfile
-import com.unistack.app.feature_billing.domain.BillingRepository
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import com.unistack.app.feature_sync.domain.LocalBackupRepository
@@ -85,7 +83,6 @@ data class AcademicSnapshot(
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val gradesRepository: GradesRepository,
-    private val billingRepository: BillingRepository,
     private val accountAuthService: AccountAuthService,
     private val localBackupRepository: LocalBackupRepository,
     private val cloudBackupRepository: CloudBackupRepository,
@@ -120,7 +117,6 @@ class ProfileViewModel @Inject constructor(
 
     val profile: StateFlow<UserProfile?> = userRepository.userProfile
     val currentUser = userRepository.currentUser
-    val billingState = billingRepository.state
     val cloudBackupState = cloudBackupRepository.state
 
     val academicSnapshot: StateFlow<AcademicSnapshot> = combine(
@@ -146,12 +142,6 @@ class ProfileViewModel @Inject constructor(
 
     private val _actionState = MutableStateFlow(ProfileActionState())
     val actionState: StateFlow<ProfileActionState> = _actionState
-
-    fun currentPlan() = FeatureGate.planFor(billingState.value.isPro)
-
-    fun refreshBilling() {
-        billingRepository.refreshPurchases()
-    }
 
     /**
      * Guarda el retrato elegido, o lo quita.

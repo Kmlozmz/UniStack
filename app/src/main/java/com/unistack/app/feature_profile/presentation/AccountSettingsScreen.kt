@@ -12,7 +12,6 @@ import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.runtime.LaunchedEffect
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsGroupCard
 import com.unistack.app.core.design.components.SettingsRowIcon
@@ -63,15 +62,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.cookieCorner
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.TextValidators
-import com.unistack.app.feature_profile.domain.FeatureGate
-import com.unistack.app.feature_profile.domain.UserPlan
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.width
@@ -115,27 +111,16 @@ import com.unistack.app.feature_user.domain.UserProfile
 @Composable
 fun AccountSettingsScreen(
     onBackClick: () -> Unit,
-    onOpenProClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
     val actionState by viewModel.actionState.collectAsStateWithLifecycle()
-    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     val activeTerm by viewModel.activeTerm.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val context = LocalContext.current
     val current = profile ?: return
-
-    // El estado del plan hay que ir a pedirlo: vivía en el ProfileScreen que se partió en
-    // cinco, y al desaparecer aquel se quedó sin nadie que lo refrescara. Sin esto, quien
-    // acabara de comprar Pro seguía viendo el plan gratuito hasta reinstalar.
-    LaunchedEffect(FeatureGate.PRO_FEATURES_ENABLED) {
-        if (FeatureGate.PRO_FEATURES_ENABLED) {
-            viewModel.refreshBilling()
-        }
-    }
 
     var editingName by rememberSaveable { mutableStateOf(false) }
     var nameInput by rememberSaveable(current.userId) { mutableStateOf(current.preferredName) }
@@ -264,22 +249,6 @@ fun AccountSettingsScreen(
                         if (currentUser.isLinked) showUnlinkDialog = true else viewModel.connectGoogle(context)
                     }
                 )
-            }
-        }
-        if (FeatureGate.PRO_FEATURES_ENABLED) {
-            item {
-                Column {
-                    Text(
-                        text = "TU PLAN",
-                        style = SectionLabelStyle,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 9.dp)
-                    )
-                    PlanCard(
-                        plan = FeatureGate.planFor(billingState.isPro),
-                        onOpenProClick = onOpenProClick
-                    )
-                }
             }
         }
         feedback?.let { message ->
@@ -597,60 +566,6 @@ private fun AccountLinkRow(
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
             )
-        }
-    }
-}
-
-/**
- * El plan, con la forma de la marca detrás.
- */
-@Composable
-private fun PlanCard(plan: UserPlan, onOpenProClick: () -> Unit) {
-    val ink = MaterialTheme.colorScheme.onPrimaryContainer
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .cookieCorner(color = ink, size = 140.dp, offsetX = 240.dp, offsetY = (-46).dp),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = ink
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = if (plan.isPro) "PLAN PRO" else "PLAN ESTUDIANTE",
-                style = SectionLabelStyle
-            )
-            Text(
-                text = if (plan.hasSubjectLimit) "Hasta ${plan.maxSubjects} materias" else "Materias ilimitadas",
-                modifier = Modifier.padding(top = 6.dp),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = if (plan.isPro) {
-                    "Gracias por sostener la app."
-                } else {
-                    "Pro las quita y añade respaldo en la nube."
-                },
-                modifier = Modifier.padding(top = 3.dp),
-                style = MaterialTheme.typography.bodySmall,
-                color = ink.copy(alpha = 0.88f)
-            )
-            Surface(
-                onClick = onOpenProClick,
-                modifier = Modifier.padding(top = 13.dp),
-                shape = CircleShape,
-                color = ink,
-                contentColor = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Text(
-                    text = if (plan.isPro) "Ver tu plan" else "Ver UniStack Pro",
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }

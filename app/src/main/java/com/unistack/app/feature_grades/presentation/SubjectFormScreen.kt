@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -91,8 +90,6 @@ import com.unistack.app.core.utils.TextValidators
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.feature_grades.domain.SubjectVisualType
 import com.unistack.app.feature_user.domain.GradingCutScheme
-import com.unistack.app.feature_profile.domain.FeatureGate
-import com.unistack.app.feature_profile.domain.UserPlan
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -108,8 +105,8 @@ import androidx.compose.runtime.setValue
  * Es la misma pantalla en los dos casos: lo único que cambia es qué bloque llega abierto y si
  * el horario se puede apagar. Antes eran dos formularios distintos para la misma entidad
  * —«Agregar materia» desde Académico y el diálogo «Nueva materia» desde Horario— y divergían
- * en todo lo que nadie sincronizaba a mano: la paleta, las horas por defecto, el sitio del
- * botón de guardar y el límite del plan gratis, que uno comprobaba y el otro no.
+ * en todo lo que nadie sincronizaba a mano: la paleta, las horas por defecto y el sitio del
+ * botón de guardar.
  */
 enum class SubjectFormMode {
     /** Desde Académico: la materia es el asunto, y el bloque académico llega abierto. */
@@ -126,8 +123,7 @@ fun SubjectFormScreen(
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel(),
     subjectId: String? = null,
-    mode: SubjectFormMode = SubjectFormMode.ACADEMIC,
-    onUpgradeClick: () -> Unit = {}
+    mode: SubjectFormMode = SubjectFormMode.ACADEMIC
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val classSessions by viewModel.classSessions.collectAsStateWithLifecycle()
@@ -140,8 +136,6 @@ fun SubjectFormScreen(
     val subject = subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
     val subjectSchedule = subjectId?.let { id -> classSessions.firstOrNull { it.subjectId == id } }
     val defaultCutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
-    val userPlan = FeatureGate.planFor(isPro = false)
-    val freeLimitReached = !isEditing && !FeatureGate.canCreateSubject(userPlan, subjects.size)
     // Desde Horario no tiene sentido guardar una materia sin clase: es justo lo que se venía
     // a crear. El interruptor solo aparece en la ruta académica.
     val scheduleIsOptional = mode == SubjectFormMode.ACADEMIC
@@ -201,7 +195,6 @@ fun SubjectFormScreen(
     // campo todavía está vacío porque nadie lo ha rellenado aún.
     val targetBlocksSave = initialized && (targetValue == null || targetValue !in 0.0..maxGrade)
     val isValid = canEditLoadedSubject &&
-        !freeLimitReached &&
         nameValidation.isValid &&
         targetValue != null &&
         targetValue in 0.0..maxGrade &&
@@ -278,14 +271,6 @@ fun SubjectFormScreen(
                     Text("Materia no encontrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (!isEditing && FeatureGate.PRO_FEATURES_ENABLED) {
-                PlanBanner(
-                    plan = userPlan,
-                    currentSubjectCount = subjects.size,
-                    onUpgradeClick = onUpgradeClick
-                )
-            }
-
             FormBlock(
                 title = "Identidad",
                 icon = Icons.Rounded.School,
@@ -432,11 +417,6 @@ fun SubjectFormScreen(
                 text = if (isEditing) "Guardar cambios" else "Guardar materia",
                 enabled = isValid,
                 onClick = {
-                    if (freeLimitReached) {
-                        error = "Alcanzaste el límite gratis de ${userPlan.maxSubjects} materias."
-                        return@UniStackButton
-                    }
-
                     val editingSubjectId = subjectId
                     val savedSubjectId = if (editingSubjectId != null) {
                         val saved = viewModel.updateSubject(
@@ -576,75 +556,6 @@ private fun SubjectFormHeader(
                     fontWeight = FontWeight.Normal,
                     maxLines = 1
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun PlanBanner(
-    plan: UserPlan,
-    currentSubjectCount: Int,
-    onUpgradeClick: () -> Unit
-) {
-    val remaining = FeatureGate.remainingSubjects(plan, currentSubjectCount) ?: Int.MAX_VALUE
-    val limitReached = remaining == 0
-
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f),
-        shape = MaterialTheme.shapes.large,
-        tonalElevation = 0.dp,
-        borderColor = if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.36f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.14f),
-        borderWidth = 0.5.dp,
-        contentPadding = PaddingValues(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(
-                        if (limitReached) MaterialTheme.colorScheme.error.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                        MaterialTheme.shapes.medium
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Rounded.AutoAwesome,
-                    contentDescription = null,
-                    tint = if (limitReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = if (limitReached) "Límite gratis alcanzado" else "Plan ${plan.name}",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Text(
-                    text = if (limitReached) {
-                        "${plan.maxSubjects} materias incluidas. Pro desbloqueará materias ilimitadas."
-                    } else {
-                        "$currentSubjectCount de ${plan.maxSubjects} materias usadas."
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            }
-            if (limitReached) {
-                Button(
-                    shapes = UniStackButtonDefaults.shapes,
-                    onClick = onUpgradeClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Text("Ver Pro", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
             }
         }
     }
