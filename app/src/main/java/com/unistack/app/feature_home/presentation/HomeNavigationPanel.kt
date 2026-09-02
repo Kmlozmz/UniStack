@@ -305,11 +305,14 @@ private fun DrawerPanelHeader(
                 overflow = TextOverflow.Ellipsis
             )
             if (educationLine.isNotBlank()) {
+                // Dos líneas, no una: el panel no tiene el alto contado -- lo que apretaba
+                // «Universidad del Atlántico» era el ancho fijo del cajón, no falta de sitio
+                // debajo. Con dos líneas cabe entera casi siempre, sin cortar a media palabra.
                 Text(
                     text = educationLine,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }

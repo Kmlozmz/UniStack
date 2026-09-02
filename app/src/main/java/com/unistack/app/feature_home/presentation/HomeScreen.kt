@@ -46,13 +46,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import com.unistack.app.feature_profile.presentation.AccountAvatar
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.components.UniStackFabMenu
@@ -330,28 +329,26 @@ private fun HomeHeader(
             // marca. Con los dos a la derecha, la mitad izquierda de la barra quedaba vacía
             // y el centro dejaba de leerse como centro: parecía un hueco al lado del nombre.
             // Y el panel se abre desde la izquierda, que es de donde ahora sale su botón.
+            /*
+             * El mismo violeta que el avatar en todas partes.
+             *
+             * Iba en `tertiaryContainer`, un color que no pinta ningún otro retrato de la app
+             * -Ajustes, el panel lateral, Cuenta y perfil usan todos `primaryContainer`-, y era
+             * porque este botón se dibujaba a mano en vez de apoyarse en `AccountAvatar`. Con
+             * el componente compartido, el color deja de poder desviarse.
+             */
             Surface(
                 onClick = onAvatarClick,
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.align(Alignment.CenterStart).size(38.dp)
             ) {
-                if (photoUrl != null) {
-                    AsyncImage(
-                        model = photoUrl,
-                        contentDescription = "Tu perfil",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = name.take(1).uppercase(SpanishLocale),
-                            style = MaterialTheme.typography.titleMediumEmphasized
-                        )
-                    }
-                }
+                AccountAvatar(
+                    photoUrl = photoUrl,
+                    contentDescription = "Tu perfil",
+                    initial = name.take(1).uppercase(SpanishLocale),
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Box(

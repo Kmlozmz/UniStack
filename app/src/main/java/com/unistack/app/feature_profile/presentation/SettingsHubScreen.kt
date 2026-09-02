@@ -23,7 +23,6 @@ import androidx.compose.material.icons.rounded.Accessibility
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.Widgets
@@ -36,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.remember
@@ -118,7 +118,7 @@ fun SettingsHubScreen(
             }
         }
         item {
-            SettingsGroup(label = "TU SEMESTRE", rowCount = 4) {
+            SettingsGroup(label = "TU SEMESTRE", rowCount = 3) {
                 SettingsRow(
                     icon = Icons.Rounded.School,
                     title = "Configuración académica",
@@ -146,13 +146,6 @@ fun SettingsHubScreen(
                     subtitle = "Qué áreas usas",
                     iconColor = sections.onTrack,
                     onClick = onModulesClick
-                )
-                SettingsRow(
-                    icon = Icons.Rounded.Person,
-                    title = "Cuenta y perfil",
-                    subtitle = "Nombre, foto y sincronización",
-                    iconColor = sections.atRisk,
-                    onClick = onProfileClick
                 )
             }
         }
@@ -227,11 +220,14 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1
                 )
+                // Dos líneas y con puntos suspensivos: a una sola, «Universidad del Atlántico»
+                // se cortaba a media palabra y sin ni siquiera un «…» que lo dijera.
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             Icon(
