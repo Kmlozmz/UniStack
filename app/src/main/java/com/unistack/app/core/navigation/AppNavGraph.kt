@@ -1,6 +1,7 @@
 package com.unistack.app.core.navigation
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.offset
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.NavigationItemIconPosition
 import androidx.compose.material3.ShortNavigationBarArrangement
 import androidx.compose.material3.ShortNavigationBarItem
@@ -33,16 +33,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -87,6 +84,10 @@ import com.unistack.app.feature_terms.presentation.AcademicHistoryScreen
 import com.unistack.app.feature_terms.presentation.ClosedTermDetailScreen
 import com.unistack.app.feature_terms.presentation.TermCloseScreen
 import com.unistack.app.feature_profile.presentation.AcademicSettingsScreen
+import com.unistack.app.feature_profile.presentation.AcademicScaleScreen
+import com.unistack.app.feature_profile.presentation.AcademicCutsScreen
+import com.unistack.app.feature_profile.presentation.AcademicAbsenceScreen
+import com.unistack.app.feature_profile.presentation.AcademicBreaksScreen
 import com.unistack.app.feature_profile.presentation.AccountSettingsScreen
 import com.unistack.app.feature_profile.presentation.ModuleSettingsScreen
 import com.unistack.app.feature_profile.presentation.NotificationSettingsScreen
@@ -170,37 +171,29 @@ fun MainNavGraph(
     val currentRoute = navController.currentRouteAsState() ?: resolvedInitialRoute
 
     /*
-     * Salir de la app pide confirmación, y solo en Inicio.
+     * Salir de la app pide dos toques, y solo en Inicio.
      *
      * En cualquier otra pantalla, atrás vuelve a la anterior: eso no hace falta protegerlo.
-     * Pero en Inicio ya no queda ninguna anterior, así que ese mismo gesto cierra la app sin
-     * avisar. Un toque de más — el más fácil de dar sin querer, porque es el único sitio
-     * donde atrás no tiene nada que deshacer — y la app se va.
+     * Pero en Inicio ya no queda ninguna anterior, así que ese mismo gesto cerraba la app sin
+     * avisar de un solo toque — el más fácil de dar sin querer, porque es el único sitio donde
+     * atrás no tiene nada que deshacer. El primer toque solo avisa; el segundo, dentro de los
+     * dos segundos siguientes, es el que sale de verdad.
      *
-     * Se activa solo cuando la pila de navegación ya está vacía. Con esto siempre encendido
-     * se perdería el gesto predictivo del sistema en el resto de la app, por la misma razón
-     * que en `rememberLeaveGuard`.
+     * Se activa solo cuando la pila de navegación ya está vacía. Con esto siempre encendido se
+     * perdería el gesto predictivo del sistema en el resto de la app, por la misma razón que en
+     * `rememberLeaveGuard`.
      */
-    val activity = LocalContext.current as? Activity
-    var confirmingExit by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val activity = context as? Activity
+    var lastBackPressAt by remember { mutableStateOf(0L) }
     BackHandler(enabled = currentRoute == AppRoutes.Home) {
-        confirmingExit = true
-    }
-    if (confirmingExit) {
-        AlertDialog(
-            onDismissRequest = { confirmingExit = false },
-            title = { Text("¿Salir de UniStack?") },
-            text = { Text("Todo se guarda solo, no perderás nada.") },
-            confirmButton = {
-                TextButton(onClick = { activity?.finish() }) {
-                    Text("Salir", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmingExit = false }) { Text("Cancelar") }
-            },
-            containerColor = MaterialTheme.colorScheme.background
-        )
+        val now = System.currentTimeMillis()
+        if (now - lastBackPressAt <= 2000L) {
+            activity?.finish()
+        } else {
+            lastBackPressAt = now
+            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+        }
     }
 
     var homeDrawerOpen by remember { mutableStateOf(false) }
@@ -557,6 +550,46 @@ fun MainNavGraph(
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
+                        }
+                    },
+                    onScaleClick = { navController.go(AppRoutes.AcademicScale) },
+                    onCutsClick = { navController.go(AppRoutes.AcademicCuts) },
+                    onAbsenceClick = { navController.go(AppRoutes.AcademicAbsence) },
+                    onBreaksClick = { navController.go(AppRoutes.AcademicBreaks) }
+                )
+            }
+            screen(AppRoutes.AcademicScale) {
+                AcademicScaleScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicSettings)
+                        }
+                    }
+                )
+            }
+            screen(AppRoutes.AcademicCuts) {
+                AcademicCutsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicSettings)
+                        }
+                    }
+                )
+            }
+            screen(AppRoutes.AcademicAbsence) {
+                AcademicAbsenceScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicSettings)
+                        }
+                    }
+                )
+            }
+            screen(AppRoutes.AcademicBreaks) {
+                AcademicBreaksScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicSettings)
                         }
                     }
                 )
@@ -1118,6 +1151,10 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.EditSubjectFromSchedule) -> AppRoutes.Calendar
         routeBelongsTo(route, AppRoutes.AcademicSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicScale) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicCuts) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicAbsence) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicBreaks) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicHistory) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.ClosedTerm) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.TermClose) -> AppRoutes.Settings
