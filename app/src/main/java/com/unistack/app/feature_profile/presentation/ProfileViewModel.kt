@@ -24,6 +24,7 @@ import com.unistack.app.feature_terms.domain.AcademicBreak
 import com.unistack.app.feature_terms.domain.AcademicBreakRepository
 import com.unistack.app.feature_terms.domain.AcademicTerm
 import com.unistack.app.feature_terms.domain.AcademicTermRepository
+import com.unistack.app.feature_terms.domain.AcademicTermType
 import java.time.LocalDate
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_sync.domain.CloudBackupRepository
@@ -332,6 +333,38 @@ class ProfileViewModel @Inject constructor(
         // poder decidir el corte de una nota y es peor que no tener fechas.
         if (!scheme.isValid) return false
         save(current.copy(gradingCutScheme = scheme))
+        return true
+    }
+
+    /**
+     * Corrige el periodo activo: nombre, forma, o sus dos fechas.
+     *
+     * El onboarding las pregunta una vez y `NewTermScreen` promete que «se cambia en Ajustes
+     * › Configuración académica, cuando quieras» — una promesa que hasta ahora no tenía dónde
+     * cumplirse: el repositorio ya sabía actualizar un periodo, solo faltaba quien lo llamara
+     * desde aquí. Cerrar el periodo sigue siendo la única vía para cambiar sus fechas *reales*
+     * de cierre; esto solo toca lo que se puso al abrirlo.
+     */
+    fun updateActiveTerm(
+        name: String,
+        type: AcademicTermType,
+        start: LocalDate,
+        plannedEnd: LocalDate?
+    ): Boolean {
+        val term = activeTerm.value ?: return false
+        if (name.isBlank()) return false
+        if (plannedEnd != null && !plannedEnd.isAfter(start)) return false
+        viewModelScope.launch {
+            termRepository.update(
+                term.copy(
+                    name = name.trim(),
+                    type = type,
+                    startEpochDay = start.toEpochDay(),
+                    plannedEndEpochDay = plannedEnd?.toEpochDay(),
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
         return true
     }
 

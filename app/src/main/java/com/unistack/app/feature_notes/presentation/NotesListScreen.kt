@@ -981,7 +981,7 @@ private fun NotesOverflowMenu(
         if (canSeed) {
             /*
              * Notas de mentira para poder mirar las de verdad. Solo en dev, alpha y beta: en una
-             * versión publicada, un botón que mete ocho notas falsas entre las de alguien es la
+             * versión publicada, un botón que mete una docena de notas falsas entre las de alguien es la
              * forma más rápida de perder su confianza.
              */
             HorizontalDivider(

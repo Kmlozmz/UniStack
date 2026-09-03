@@ -61,6 +61,19 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.unistack.app.core.design.components.UniChoiceRow
+import com.unistack.app.feature_user.domain.ExpenseChartStyle
+import com.unistack.app.core.design.theme.SectionLabelStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -154,6 +167,7 @@ private val ReferenceBars = listOf(28, 55, 35, 78, 32, 52, 40)
 fun ExpensesScreen(
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
+    onInsightsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = hiltViewModel()
 ) {
@@ -163,7 +177,7 @@ fun ExpensesScreen(
     var showBudgetSheet by rememberSaveable { mutableStateOf(false) }
     var showCategorySheet by rememberSaveable { mutableStateOf(false) }
     var categoryFeedback by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.WEEK) }
+    var selectedPeriod by rememberSaveable { mutableStateOf(ExpensePeriodFilter.ALL) }
     var selectedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
 
     val enabledCategories = profile?.enabledExpenseCategories ?: ExpenseCategory.entries.toSet()
@@ -183,6 +197,15 @@ fun ExpensesScreen(
         previousTotalForPeriod(expenses, selectedPeriod)
     }
     val chartValues = remember(weeklyExpenses) { viewModel.weeklyChartValues(weeklyExpenses) }
+    // Lo que pinta el anillo: cuanto va en cada categoria dentro del tramo elegido, de mayor a
+    // menor y sin las que estan a cero, que solo meterian arcos invisibles.
+    val categoryTotals = remember(selectedPeriodExpenses) {
+        selectedPeriodExpenses
+            .groupBy { it.category }
+            .map { (categoria, lista) -> categoria to lista.sumOf { it.amount } }
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+    }
     val periodTotal = selectedPeriodExpenses.sumOf { it.amount }
     val activeBudget = when (selectedPeriod) {
         ExpensePeriodFilter.TODAY,
@@ -230,6 +253,10 @@ fun ExpensesScreen(
             budget = activeBudget,
             budgetSpent = budgetSpent,
             chartValues = chartValues,
+            chartStyle = profile?.expenseChartStyle ?: ExpenseChartStyle.BARS,
+            onChartStyleChange = viewModel::setChartStyle,
+            categoryTotals = categoryTotals,
+            onChartClick = onInsightsClick,
             expenses = filteredExpenses,
             onAddExpenseClick = onAddExpenseClick,
             onEditExpenseClick = onEditExpenseClick,
@@ -309,6 +336,10 @@ private fun ExpensesContent(
     budget: Int,
     budgetSpent: Int,
     chartValues: List<Int>,
+    chartStyle: ExpenseChartStyle,
+    onChartStyleChange: (ExpenseChartStyle) -> Unit,
+    categoryTotals: List<Pair<ExpenseCategory, Int>>,
+    onChartClick: () -> Unit,
     expenses: List<Expense>,
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
@@ -338,6 +369,10 @@ private fun ExpensesContent(
                     budget = budget,
                     budgetProgress = if (budget > 0) (budgetSpent / budget.toFloat()).coerceIn(0f, 1f) else 0f,
                     chartValues = chartValues,
+                    chartStyle = chartStyle,
+                    onChartStyleChange = onChartStyleChange,
+                    categoryTotals = categoryTotals,
+                    onChartClick = onChartClick,
                     onBudgetClick = onBudgetClick
                 )
             }
@@ -378,13 +413,11 @@ private fun ExpensesContent(
                     .groupBy { ExpenseDateUtils.fromMillis(it.dateMillis) }
                     .forEach { (day, ofTheDay) ->
                         item(key = "dia-" + day.toString()) {
-                            ExpenseDayHeader(day = day, total = ofTheDay.sumOf { it.amount })
-                        }
-                        items(ofTheDay, key = { it.id }) { expense ->
-                            ExpenseListItem(
-                                expense = expense,
-                                onEditClick = { onEditExpenseClick(expense.id) },
-                                onDeleteClick = { onDeleteExpenseClick(expense.id) }
+                            ExpenseDayGroup(
+                                day = day,
+                                expenses = ofTheDay,
+                                onEditClick = onEditExpenseClick,
+                                onDeleteClick = onDeleteExpenseClick
                             )
                         }
                     }
@@ -422,6 +455,10 @@ private fun ExpensesHeroCard(
     budget: Int,
     budgetProgress: Float,
     chartValues: List<Int>,
+    chartStyle: ExpenseChartStyle,
+    onChartStyleChange: (ExpenseChartStyle) -> Unit,
+    categoryTotals: List<Pair<ExpenseCategory, Int>>,
+    onChartClick: () -> Unit,
     onBudgetClick: () -> Unit
 ) {
     Surface(
@@ -436,74 +473,102 @@ private fun ExpensesHeroCard(
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val chartWidth = (maxWidth * 0.30f).coerceIn(88.dp, 104.dp)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Top
+            /*
+             * La cifra manda a lo ancho, y el grafico va debajo.
+             *
+             * Estuvo a la derecha, en una columna de 100dp: siete barras en ese hueco salian
+             * como palillos y el dia se distinguia por el rotulo, no por la barra. A lo ancho
+             * la barra se toca con el dedo, que es lo que hace falta para poder elegir un dia.
+             */
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                AccentCircleIcon(
+                    icon = Icons.Rounded.AccountBalanceWallet,
+                    iconColor = LocalSectionColors.current.onExpensesContainer,
+                    backgroundColor = LocalSectionColors.current.expensesContainer,
+                    size = 42.dp,
+                    iconSize = 21.dp
+                )
+                Text(
+                    text = selectedPeriod.heroLabel,
+                    color = ExpenseText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    softWrap = false,
+                    modifier = Modifier.weight(1f)
+                )
+                // La puerta a las tres lecturas, escrita.
+                //
+                // Estaba en el grafico entero, y con las barras tocables no habia forma de
+                // acertar: se elegia un dia sin querer y habia que ir buscando un hueco muerto
+                // entre barras para entrar. Un boton dice a donde va y no compite con nada.
+                Surface(
+                    onClick = onChartClick,
+                    shape = CircleShape,
+                    color = ExpenseCardHigh,
+                    contentColor = ExpenseCoral
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(7.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            AccentCircleIcon(
-                                icon = Icons.Rounded.AccountBalanceWallet,
-                                iconColor = LocalSectionColors.current.onExpensesContainer,
-                                backgroundColor = LocalSectionColors.current.expensesContainer,
-                                size = 42.dp,
-                                iconSize = 21.dp
-                            )
-                            // Solo el rotulo del tramo. Aqui habia un segundo selector de
-                            // periodo, desplegable, que movia el mismo dato que el grupo de
-                            // filtros de debajo: dos mandos para una sola cosa, y el de
-                            // arriba tapaba media tarjeta al abrirse.
-                            Text(
-                                text = selectedPeriod.heroLabel,
-                                color = ExpenseText,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
                         Text(
-                            text = CurrencyFormatter.formatCop(amount),
-                            color = ExpenseCoral,
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis
+                            text = "Ver más",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
-                        Text(
-                            text = "gastados",
-                            color = ExpenseMuted,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                        ExpenseTrendLine(
-                            recordCount = recordCount,
-                            trendText = trendText,
-                            modifier = Modifier.fillMaxWidth()
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    WeeklyMiniChart(
-                        values = chartValues,
-                        modifier = Modifier
-                            .padding(top = 44.dp)
-                            .width(chartWidth)
-                            .height(86.dp)
-                    )
                 }
             }
+            Spacer(modifier = Modifier.height(9.dp))
+            Text(
+                text = CurrencyFormatter.formatCop(amount),
+                color = ExpenseCoral,
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "gastados",
+                color = ExpenseMuted,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            ExpenseTrendLine(
+                recordCount = recordCount,
+                trendText = trendText,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            when (chartStyle) {
+                ExpenseChartStyle.BARS -> WeeklyMiniChart(
+                    values = chartValues,
+                    modifier = Modifier.fillMaxWidth().height(96.dp)
+                )
+
+                ExpenseChartStyle.RING -> CategoryRingChart(
+                    totals = categoryTotals,
+                    modifier = Modifier.fillMaxWidth().height(96.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            ChartStylePicker(selected = chartStyle, onSelected = onChartStyleChange)
 
             Spacer(modifier = Modifier.height(13.dp))
             Box(
@@ -560,6 +625,9 @@ private fun WeeklyMiniChart(
     modifier: Modifier = Modifier
 ) {
     val labels = DayLabels.short
+    // Cual esta elegido, o -1. La eleccion vive en la barra y no en el modelo: es una mirada,
+    // no un ajuste, y no tiene por que sobrevivir a salir de la pantalla.
+    var elegido by remember { mutableIntStateOf(-1) }
     val normalizedValues = values.take(7).let { current ->
         if (current.size == 7) current else current + List(7 - current.size) { 0 }
     }
@@ -593,49 +661,235 @@ private fun WeeklyMiniChart(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 2.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                bars.forEach { value ->
+                bars.forEachIndexed { indice, value ->
                     val normalized = if (hasData) value / max.toFloat() else 0.15f
+                    /*
+                     * Cada barra entra con el muelle espacial del tema, escalonada por su
+                     * posicion: crecen de lunes a domingo con un rebote corto en lugar de
+                     * aparecer ya puestas. El retraso es lo que hace que se lea como un gesto
+                     * y no como siete animaciones a la vez.
+                     */
+                    var visible by remember(values) { mutableStateOf(false) }
+                    LaunchedEffect(values) {
+                        kotlinx.coroutines.delay(40L * indice)
+                        visible = true
+                    }
+                    val alto by animateDpAsState(
+                        targetValue = if (visible) (16f + normalized * 42f).dp else 4.dp,
+                        animationSpec = MaterialTheme.motionScheme.slowSpatialSpec(),
+                        label = "alto de la barra"
+                    )
+                    val destacada = elegido == indice
                     Box(
                         modifier = Modifier
-                            .width(9.dp)
-                            .height((16f + normalized * 42f).dp)
+                            .weight(1f)
+                            .padding(horizontal = 3.dp)
+                            .height(alto)
                             .clip(RoundedCornerShape(5.dp))
                             .background(
-                                if (hasData) {
-                                    Brush.verticalGradient(listOf(ExpenseCoral, ExpenseCoralDeep))
-                                } else {
-                                    Brush.verticalGradient(
+                                when {
+                                    !hasData -> Brush.verticalGradient(
                                         listOf(
                                             ExpenseCoral.copy(alpha = 0.38f),
                                             ExpenseCoralDeep.copy(alpha = 0.28f)
                                         )
                                     )
+                                    elegido == -1 || destacada ->
+                                        Brush.verticalGradient(listOf(ExpenseCoral, ExpenseCoralDeep))
+                                    else -> Brush.verticalGradient(
+                                        listOf(
+                                            ExpenseCoral.copy(alpha = 0.34f),
+                                            ExpenseCoralDeep.copy(alpha = 0.26f)
+                                        )
+                                    )
                                 }
                             )
+                            .cleanClickable { elegido = if (destacada) -1 else indice }
                     )
                 }
             }
         }
         Spacer(modifier = Modifier.height(6.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            labels.forEach { label ->
+        Row(modifier = Modifier.fillMaxWidth()) {
+            labels.forEachIndexed { indice, label ->
                 Text(
                     text = label,
-                    color = ExpenseMuted,
+                    color = if (elegido == indice) ExpenseCoral else ExpenseMuted,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = if (elegido == indice) FontWeight.Bold else FontWeight.Medium,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.width(9.dp)
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
+        // Con un dia elegido, el pie deja de ser una fila de letras y dice cuanto fue.
+        AnimatedVisibility(visible = elegido >= 0) {
+            Text(
+                text = normalizedValues.getOrElse(elegido.coerceAtLeast(0)) { 0 }
+                    .takeIf { it > 0 }
+                    ?.let { CurrencyFormatter.formatCop(it) }
+                    ?: "sin gastos",
+                color = ExpenseCoral,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+            )
+        }
     }
+}
+
+/**
+ * El anillo por categoria, con la galleta de [MaterialShapes] detras.
+ *
+ * Las barras dicen **cuando** gastaste y este dice **en que**: son dos preguntas distintas y
+ * por eso conviven en vez de sustituirse. Los arcos entran uno detras de otro, en orden de
+ * tamaño, para que el reparto se lea mientras se dibuja.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun CategoryRingChart(
+    totals: List<Pair<ExpenseCategory, Int>>,
+    modifier: Modifier = Modifier
+) {
+    val total = totals.sumOf { it.second }
+    val galleta = MaterialShapes.Cookie9Sided.toShape()
+    // Los colores se leen aqui: dentro del Canvas no hay tema al que preguntarle.
+    val arcos = totals.map { (categoria, monto) -> categoria.expenseTone() to monto }
+    val arcosConNombre = totals
+    val pista = ExpenseTrack
+    var visible by remember(totals) { mutableStateOf(false) }
+    LaunchedEffect(totals) { visible = true }
+    val barrido by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = MaterialTheme.motionScheme.slowEffectsSpec(),
+        label = "barrido del anillo"
+    )
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+    Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(62.dp)
+                .background(ExpenseCoral.copy(alpha = 0.16f), galleta)
+        )
+        // El total, dentro de la galleta.
+        //
+        // Sin el, el centro es una mancha oscura y el anillo no dice de que es el reparto:
+        // hay que sumar los tres numeros de la leyenda para saber el total. La forma existe
+        // para sostener esta cifra, no como adorno.
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = compactCop(total),
+                color = ExpenseText,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1
+            )
+            Text(
+                text = "GASTADO",
+                color = ExpenseMuted,
+                style = SectionLabelStyle,
+                maxLines = 1
+            )
+        }
+        Canvas(modifier = Modifier.size(92.dp)) {
+            val grosor = 11.dp.toPx()
+            val radio = (size.minDimension - grosor) / 2f
+            val esquina = Offset((size.width - radio * 2) / 2f, (size.height - radio * 2) / 2f)
+            val lado = androidx.compose.ui.geometry.Size(radio * 2, radio * 2)
+
+            if (total <= 0) {
+                drawArc(
+                    color = pista,
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = esquina,
+                    size = lado,
+                    style = Stroke(width = grosor, cap = StrokeCap.Round)
+                )
+                return@Canvas
+            }
+
+            var angulo = -90f
+            arcos.forEach { (tono, monto) ->
+                val porcion = monto * 360f / total
+                drawArc(
+                    color = tono,
+                    startAngle = angulo,
+                    // Cada arco deja un hueco de dos grados para que se distingan sin filete.
+                    sweepAngle = (porcion - 2f).coerceAtLeast(0f) * barrido,
+                    useCenter = false,
+                    topLeft = esquina,
+                    size = lado,
+                    style = Stroke(width = grosor, cap = StrokeCap.Round)
+                )
+                angulo += porcion
+            }
+        }
+    }
+        // La leyenda: sin ella el anillo es bonito y no dice nada, porque los colores de las
+        // categorias no se saben de memoria.
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            arcosConNombre.take(4).forEach { (categoria, monto) ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(9.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(categoria.expenseTone())
+                    )
+                    Text(
+                        text = categoria.label(),
+                        color = ExpenseText,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 8.dp).weight(1f)
+                    )
+                    Text(
+                        text = CurrencyFormatter.formatCop(monto),
+                        color = ExpenseMuted,
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Elegir entre barras y anillo, aqui mismo.
+ *
+ * Estuvo pensado para Ajustes › Apariencia y no encajaba: aquello cambia el aspecto de la app
+ * entera, y esto solo el de una tarjeta. Puesto donde se ve el resultado, elegir cuesta un
+ * toque y se juzga en el momento, en vez de ir a otra pantalla a decidir a ciegas.
+ */
+@Composable
+private fun ChartStylePicker(
+    selected: ExpenseChartStyle,
+    onSelected: (ExpenseChartStyle) -> Unit
+) {
+    UniChoiceRow(
+        selected = selected,
+        options = listOf(
+            UniSegmentedOption(value = ExpenseChartStyle.BARS, label = "Por día"),
+            UniSegmentedOption(value = ExpenseChartStyle.RING, label = "Por categoría")
+        ),
+        onSelected = onSelected
+    )
 }
 
 @Composable
@@ -868,14 +1122,15 @@ private fun PeriodSegmentedControl(
         // Tres, no cuatro. Con «Periodo» dentro, los cuatro rótulos se quedaban en «Tod»,
         // «Sem», «Mes» y «Period»: un filtro que hay que adivinar no es un filtro. El periodo
         // a medida baja a la fila de chips, donde tiene sitio para decir las fechas.
-        // Semana, mes y todo. «Hoy» estuvo aquí y era el que salía al abrir: un día es una
-        // ventana tan corta que la mayoría de las veces la pantalla arrancaba en cero, y una
-        // pantalla vacía nada más entrar parece rota antes que vacía. La semana casi siempre
-        // tiene algo que enseñar.
+        // Todo primero, y es tambien el que sale al abrir. Semana fue el que abria antes,
+        // razonando que «casi siempre tiene algo que enseñar» -- pero un lunes, o cualquier
+        // dia antes de registrar el primer gasto de la semana, «casi siempre» falla, y una
+        // pantalla vacia nada mas entrar parece rota antes que vacia. Todo casi nunca esta
+        // vacio salvo la primera vez de verdad.
         options = listOf(
+            ExpensePeriodFilter.ALL,
             ExpensePeriodFilter.WEEK,
-            ExpensePeriodFilter.MONTH,
-            ExpensePeriodFilter.ALL
+            ExpensePeriodFilter.MONTH
         ).map { UniSegmentedOption(value = it, label = it.label) },
         onSelected = onPeriodSelected,
         modifier = modifier
@@ -1027,7 +1282,7 @@ private fun ExpenseCategorySheetOption(
  * el del gasto. Con un tono por categoría la lista se lee de un vistazo.
  */
 @Composable
-private fun ExpenseCategory.expenseTone(): Color = when (this) {
+internal fun ExpenseCategory.expenseTone(): Color = when (this) {
     ExpenseCategory.TRANSPORT -> LocalSectionColors.current.schedule
     ExpenseCategory.FOOD -> LocalSectionColors.current.expenses
     ExpenseCategory.COPIES -> LocalSectionColors.current.atRisk
@@ -1037,7 +1292,7 @@ private fun ExpenseCategory.expenseTone(): Color = when (this) {
 }
 
 @Composable
-private fun ExpenseCategory.expenseSheetIcon(): ImageVector {
+internal fun ExpenseCategory.expenseSheetIcon(): ImageVector {
     return when (this) {
         ExpenseCategory.TRANSPORT -> Icons.Rounded.DirectionsBus
         ExpenseCategory.FOOD -> Icons.Rounded.Restaurant
@@ -1322,8 +1577,23 @@ private fun BudgetInputField(
  * a las once de la noche está mirando hoy, y leer «26 ago» obliga a comprobar qué día es hoy
  * antes de saber si eso es lo de hoy.
  */
+/**
+ * Un día, como una sola tarjeta.
+ *
+ * Antes el encabezado del día y cada gasto eran piezas sueltas -- una fila plana y una
+ * tarjeta por gasto -- separadas todas por el mismo hueco de 20dp que separaba un día del
+ * siguiente. Un martes con seis gastos se leía como seis filas cualquiera, sin nada que dijera
+ * dónde acababa el bloque. Aquí el día entero es un solo contenedor: el total va dentro de su
+ * propio encabezado y cada gasto es una fila interna, separada de la siguiente por un filete,
+ * no por una tarjeta propia.
+ */
 @Composable
-private fun ExpenseDayHeader(day: java.time.LocalDate, total: Int) {
+private fun ExpenseDayGroup(
+    day: java.time.LocalDate,
+    expenses: List<Expense>,
+    onEditClick: (String) -> Unit,
+    onDeleteClick: (String) -> Unit
+) {
     val today = ExpenseDateUtils.today()
     val label = when (day) {
         today -> "Hoy"
@@ -1335,28 +1605,54 @@ private fun ExpenseDayHeader(day: java.time.LocalDate, total: Int) {
             )
         ).replaceFirstChar { it.uppercase(ExpenseChipLocale) }
     }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 6.dp, bottom = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        // extraLarge (32dp) se veía demasiado redondeado en un bloque alto de varias filas --
+        // el radio grande está pensado para tarjetas cortas. medium (20dp) es el mismo que
+        // llevaba cada gasto por separado antes de agruparlos.
+        shape = MaterialTheme.shapes.medium,
+        color = ExpenseCard,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Text(
-            text = label,
-            color = ExpenseText,
-            style = MaterialTheme.typography.labelLargeEmphasized,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = CurrencyFormatter.formatCop(total),
-            color = ExpenseMuted,
-            style = MaterialTheme.typography.labelLarge
-        )
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label,
+                    color = ExpenseText,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = CurrencyFormatter.formatCop(expenses.sumOf { it.amount }),
+                    color = ExpenseMuted,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            expenses.forEachIndexed { index, expense ->
+                if (index > 0) {
+                    HorizontalDivider(color = ExpenseDivider, thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
+                }
+                ExpenseRow(
+                    expense = expense,
+                    onEditClick = { onEditClick(expense.id) },
+                    onDeleteClick = { onDeleteClick(expense.id) }
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+        }
     }
 }
 
 @Composable
-private fun ExpenseListItem(
+private fun ExpenseRow(
     expense: Expense,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
@@ -1383,56 +1679,50 @@ private fun ExpenseListItem(
         )
     }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth().cleanClickable { showActions = true },
-        shape = MaterialTheme.shapes.medium,
-        color = ExpenseCard,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .cleanClickable { showActions = true }
+            // Los 8dp de antes en el borde derecho eran del tiempo en que cada gasto era su
+            // propia tarjeta, pensados para dejar sitio a un mando que ya no está. Agrupadas
+            // en la tarjeta del día, esa asimetría dejaba el importe pegado a la esquina
+            // mientras el encabezado respiraba 20dp de los dos lados.
+            .padding(start = 20.dp, top = 12.dp, end = 20.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(
-                start = 16.dp,
-                top = 12.dp,
-                end = 8.dp,
-                bottom = 12.dp
-            ),
-            verticalAlignment = Alignment.CenterVertically
+        // El icono dice de qué es el gasto. Los seis cajones llevaban el mismo billete
+        // en el mismo coral, así que una lista de diez gastos era diez veces el mismo
+        // dibujo y había que leer el rótulo de cada fila para distinguirlas.
+        AccentCircleIcon(
+            icon = expense.category.expenseSheetIcon(),
+            iconColor = contentColorOn(expense.category.expenseTone()),
+            backgroundColor = expense.category.expenseTone(),
+            size = 42.dp,
+            iconSize = 20.dp
+        )
+        Column(
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .weight(1f)
         ) {
-            // El icono dice de qué es el gasto. Los seis cajones llevaban el mismo billete
-            // en el mismo coral, así que una lista de diez gastos era diez veces el mismo
-            // dibujo y había que leer el rótulo de cada fila para distinguirlas.
-            AccentCircleIcon(
-                icon = expense.category.expenseSheetIcon(),
-                iconColor = contentColorOn(expense.category.expenseTone()),
-                backgroundColor = expense.category.expenseTone(),
-                size = 46.dp,
-                iconSize = 22.dp
-            )
-            Column(
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .weight(1f)
-            ) {
-                Text(
-                    text = expense.category.label(),
-                    color = ExpenseText,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                // Sin segunda línea: la fecha la dice ahora el encabezado del día, y un gasto
-                // no guarda nada más que su categoría y su importe.
-            }
             Text(
-                text = CurrencyFormatter.formatCop(expense.amount),
-                color = ExpenseCoral,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1
+                text = expense.category.label(),
+                color = ExpenseText,
+                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+            // Sin segunda línea: la fecha la dice ahora el encabezado del día, y un gasto
+            // no guarda nada más que su categoría y su importe.
         }
+        Text(
+            text = CurrencyFormatter.formatCop(expense.amount),
+            color = ExpenseCoral,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1
+        )
     }
 }
 
@@ -1617,6 +1907,20 @@ private fun previousTotalForPeriod(
     }
 }
 
+/**
+ * La cifra abreviada que cabe dentro del anillo.
+ *
+ * «$60.500» a tamaño legible no entra en 62dp, y encogerlo hasta que quepa lo dejaria
+ * ilegible: dentro de la galleta se dice «$60,5k» y el importe exacto vive en la cifra grande
+ * de arriba, a dos centimetros.
+ */
+private fun compactCop(monto: Int): String = when {
+    monto >= 1_000_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000_000.0) + "M"
+    monto >= 10_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
+    monto >= 1_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
+    else -> CurrencyFormatter.formatCop(monto)
+}
+
 private fun recordCountLabel(count: Int): String =
     if (count == 1) "1 registro" else "$count registros"
 
@@ -1679,6 +1983,7 @@ private fun ExpensesReferencePreview(widthDp: Int) {
                 budget = 80_000,
                 budgetProgress = 0.61f,
                 chartValues = ReferenceBars,
+            chartStyle = ExpenseChartStyle.BARS,
                 expenses = emptyList(),
                 onAddExpenseClick = {},
                 onEditExpenseClick = {},
@@ -1707,6 +2012,7 @@ private fun ExpensesContent(
     budget: Int,
     budgetProgress: Float,
     chartValues: List<Int>,
+    chartStyle: ExpenseChartStyle = ExpenseChartStyle.BARS,
     expenses: List<Expense>,
     onAddExpenseClick: () -> Unit,
     onEditExpenseClick: (String) -> Unit,
@@ -1735,6 +2041,10 @@ private fun ExpensesContent(
                 budget = budget,
                 budgetProgress = budgetProgress,
                 chartValues = chartValues,
+                chartStyle = chartStyle,
+                onChartStyleChange = {},
+                categoryTotals = emptyList(),
+                onChartClick = {},
                 onBudgetClick = onBudgetClick
             )
         }
@@ -1760,7 +2070,7 @@ private fun ExpensesContent(
                 )
             }
             items(expenses, key = { it.id }) { expense ->
-                ExpenseListItem(
+                ExpenseRow(
                     expense = expense,
                     onEditClick = { onEditExpenseClick(expense.id) },
                     onDeleteClick = { onDeleteExpenseClick(expense.id) }

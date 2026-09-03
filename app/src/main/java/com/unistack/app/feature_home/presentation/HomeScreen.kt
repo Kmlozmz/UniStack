@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +51,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,10 +70,13 @@ import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.HomeTimelineKind
 import com.unistack.app.feature_home.domain.HomeTimelineState
 import com.unistack.app.feature_home.domain.HomeTimelineSummary
+import com.unistack.app.feature_home.domain.HomeUpcomingItem
+import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
+import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -241,7 +249,13 @@ fun HomeScreen(
                         )
                     }
                     item("hoy") {
-                        HomeTodayCard(items = summary.todayItems, onEmptyClick = onCalendarClick)
+                        HomeTodayCard(
+                            summary = summary,
+                            onEmptyClick = onCalendarClick,
+                            onTasksClick = onSeeTasksClick,
+                            onWorksClick = onOpenTemplatesClick,
+                            onSubjectClick = onSubjectClick
+                        )
                     }
                 }
 
@@ -552,31 +566,169 @@ private fun HomeSectionHeader(title: String, actionLabel: String, onActionClick:
     }
 }
 
-/** Lo de hoy: hora, un riel del color de lo que sea, y el detalle. */
+/**
+ * Lo de hoy: hora, un riel del color de lo que sea, y el detalle.
+ *
+ * Sin nada en el horario de hoy, la tarjeta decía siempre lo mismo -- «Hoy no tienes nada
+ * puesto» -- mirando solo las horas de hoy. Eso daba una falsa sensación de calma: una tarea
+ * vencida de la semana pasada, un trabajo por entregar el viernes o una materia que se está
+ * cayendo no pasan por el horario de hoy, y la tarjeta los tapaba con un mensaje tranquilo.
+ *
+ * Ahora, vacía de horario, mira el resto de señales que ya calcula [HomeSummary] antes de
+ * decir que todo está en calma -- en el mismo orden de urgencia que usa el resto de Inicio:
+ * tareas vencidas primero, luego una materia en riesgo, luego lo próximo que vence. Solo si
+ * ninguna de esas existe se enseña el mensaje tranquilo, y entonces sí lo es de verdad.
+ */
 @Composable
-private fun HomeTodayCard(items: List<HomeTimelineSummary>, onEmptyClick: () -> Unit) {
+private fun HomeTodayCard(
+    summary: HomeSummary,
+    onEmptyClick: () -> Unit,
+    onTasksClick: () -> Unit,
+    onWorksClick: () -> Unit,
+    onSubjectClick: (String) -> Unit
+) {
+    val sections = LocalSectionColors.current
+    val items = summary.todayItems
+
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
-        if (items.isEmpty()) {
+        if (items.isNotEmpty()) {
+            Column(modifier = Modifier.padding(6.dp)) {
+                items.forEach { item -> HomeTodayRow(item) }
+            }
+        } else {
+            val risk = summary.riskSubject?.takeIf { it.severity != SubjectRiskSeverity.STABLE }
+            val fallback = when {
+                summary.overdueTasks > 0 -> HomeTodayFallback(
+                    title = if (summary.overdueTasks == 1) "Tienes una tarea vencida" else "Tienes ${summary.overdueTasks} tareas vencidas",
+                    detail = "No estaban en el horario de hoy, pero siguen sin cerrarse.",
+                    actionLabel = "Ver tareas",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = onTasksClick
+                )
+                risk != null -> HomeTodayFallback(
+                    title = risk.subjectName,
+                    detail = risk.detail,
+                    actionLabel = "Ver materia",
+                    tint = if (risk.severity == SubjectRiskSeverity.CRITICAL) MaterialTheme.colorScheme.error else sections.atRisk,
+                    onClick = { onSubjectClick(risk.subjectId) }
+                )
+                summary.nextTask != null -> HomeTodayFallback(
+                    title = summary.nextTask.title,
+                    detail = "Vence " + summary.nextTask.dueText + ". No es de hoy, pero es lo próximo.",
+                    actionLabel = "Ver tareas",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onTasksClick
+                )
+                summary.nextAcademicWork != null -> HomeTodayFallback(
+                    title = summary.nextAcademicWork.title,
+                    detail = "Vence " + summary.nextAcademicWork.dueText + ". No es de hoy, pero es lo próximo.",
+                    actionLabel = "Ver trabajos",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = onWorksClick
+                )
+                else -> null
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth().padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text("Hoy no tienes nada puesto", style = MaterialTheme.typography.titleSmallEmphasized)
-                Text(
-                    "Ni clases ni entregas. Si falta algo, añádelo desde Horario.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Abrir Horario") }
+                if (fallback != null) {
+                    Text(
+                        fallback.title,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        color = fallback.tint,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        fallback.detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(onClick = fallback.onClick, contentPadding = PaddingValues(0.dp)) { Text(fallback.actionLabel) }
+                } else {
+                    Text(
+                        text = if (summary.upcomingItems.isEmpty()) {
+                            "Hoy no tienes nada puesto, y vas al día con todo"
+                        } else {
+                            "Hoy no tienes nada puesto"
+                        },
+                        style = MaterialTheme.typography.titleSmallEmphasized
+                    )
+                    Text(
+                        text = if (summary.upcomingItems.isEmpty()) {
+                            "Ni clases ni entregas hoy, ni tareas vencidas, ni materias en riesgo."
+                        } else {
+                            "Nada vencido detrás. Esto es lo que viene:"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (summary.upcomingItems.isEmpty()) {
+                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Abrir Horario") }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(9.dp)
+                        ) {
+                            summary.upcomingItems.forEach { item -> HomeUpcomingRow(item) }
+                        }
+                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Ver el horario completo") }
+                    }
+                }
             }
-        } else {
-            Column(modifier = Modifier.padding(6.dp)) {
-                items.forEach { item -> HomeTodayRow(item) }
-            }
+        }
+    }
+}
+
+private data class HomeTodayFallback(
+    val title: String,
+    val detail: String,
+    val actionLabel: String,
+    val tint: Color,
+    val onClick: () -> Unit
+)
+
+/** Una parada de los próximos días, dentro de la tarjeta de hoy. */
+@Composable
+private fun HomeUpcomingRow(item: HomeUpcomingItem) {
+    val sections = LocalSectionColors.current
+    val accent = when (item.kind) {
+        HomeTimelineKind.CLASS -> sections.schedule
+        HomeTimelineKind.TASK, HomeTimelineKind.WORK -> sections.atRisk
+        HomeTimelineKind.EXAM -> MaterialTheme.colorScheme.primary
+        HomeTimelineKind.FOCUS -> MaterialTheme.colorScheme.tertiary
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+        Box(
+            modifier = Modifier
+                .size(width = 3.dp, height = 30.dp)
+                .clip(CircleShape)
+                .background(accent)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = listOf(item.dayLabel, item.timeText, item.subtitle)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -643,7 +795,14 @@ private fun HomeTodayRow(item: HomeTimelineSummary) {
     }
 }
 
-/** Promedio, pendientes y gasto del mes. */
+/**
+ * Promedio, pendientes y gasto de la semana, en tres casillas del mismo tamaño.
+ *
+ * Antes cada una medía lo que midiera su contenido, así que la de gasto -- sin pie -- quedaba
+ * más baja que las otras dos y la fila entera se veía descuadrada. Ahora las tres comparten
+ * altura y reparten su contenido igual: rótulo arriba, cifra en medio y pie abajo, cada uno en
+ * su sitio aunque lo que lleve dentro cambie de tamaño.
+ */
 @Composable
 private fun HomeSnapshotRow(
     summary: HomeSummary,
@@ -653,85 +812,98 @@ private fun HomeSnapshotRow(
 ) {
     val sections = LocalSectionColors.current
     val modules = summary.enabledModules
+    val scale = summary.gradingScale
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .padding(top = 14.dp, bottom = 4.dp)
+            // La altura la marca la casilla más alta, y las tres se estiran hasta ella. Es lo
+            // que mantiene la fila cuadrada sin fijar una altura a ojo que se rompa en cuanto
+            // el texto crezca por accesibilidad.
+            .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         if (AppModule.GRADES in modules) {
             HomeTile(
                 label = "PROMEDIO",
-                value = summary.generalAverage?.let { String.format(SpanishLocale, "%.1f", it) } ?: "—",
+                value = summary.generalAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
+                footerText = "de " + GradingScaleUtils.formatGrade(GradingScaleUtils.maxGradeFor(scale), scale),
                 onClick = onAverageClick,
                 modifier = Modifier.weight(1f)
-            ) {
-                /*
-                 * La referencia de la escala, no una barra.
-                 *
-                 * Aquí hubo un indicador de progreso ondulado y no quería decir nada: un
-                 * promedio de 4,0 no es «el 80 % de algo», es una nota. La barra invitaba a
-                 * leerlo como un avance que se llena, que es justo lo que no es.
-                 */
-                Text(
-                    text = "de " + GradingScaleUtils.formatGrade(
-                        GradingScaleUtils.maxGradeFor(summary.gradingScale),
-                        summary.gradingScale
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
+            )
         }
         if (AppModule.TASKS in modules) {
+            val overdue = summary.overdueTasks
+            val pending = summary.pendingTasks
             HomeTile(
                 label = "PENDIENTES",
-                value = summary.pendingTasks.toString(),
+                value = pending.toString(),
                 onClick = onPendingClick,
-                modifier = Modifier.weight(1f)
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
-                    val overdue = summary.overdueTasks
-                    repeat(3) { index ->
-                        val filled = index < overdue.coerceAtMost(3)
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(6.dp)
-                                .clip(CircleShape)
-                                .background(if (filled) sections.atRisk else MaterialTheme.colorScheme.outlineVariant)
-                        )
-                    }
+                modifier = Modifier.weight(1f),
+                footer = {
+                    HomeStatusPill(
+                        text = when {
+                            overdue > 0 -> if (overdue == 1) "1 vencida" else "$overdue vencidas"
+                            pending > 0 -> "Sin vencer"
+                            else -> "Al día"
+                        },
+                        ink = when {
+                            overdue > 0 -> MaterialTheme.colorScheme.onErrorContainer
+                            pending > 0 -> sections.onAtRiskContainer
+                            else -> sections.onOnTrackContainer
+                        },
+                        container = when {
+                            overdue > 0 -> MaterialTheme.colorScheme.errorContainer
+                            pending > 0 -> sections.atRiskContainer
+                            else -> sections.onTrackContainer
+                        }
+                    )
                 }
-            }
+            )
         }
         if (AppModule.EXPENSES in modules) {
+            val anterior = summary.previousWeekExpenseTotal
+            val actual = summary.weeklyExpenseTotal
             HomeTile(
                 label = "ESTA SEMANA",
-                value = CurrencyFormatter.formatCop(summary.weeklyExpenseTotal),
+                value = CurrencyFormatter.formatCop(actual),
                 valueColor = sections.expenses,
+                // El pie compara con la semana pasada, que es lo unico que hace que la cifra
+                // signifique algo. Decia «en 1 dia», que sonaba a reproche y no ayudaba a
+                // decidir nada.
+                footerText = when {
+                    anterior > 0 -> {
+                        val cambio = ((actual - anterior) * 100.0 / anterior).roundToInt()
+                        when {
+                            cambio > 0 -> "+$cambio% vs. la anterior"
+                            cambio < 0 -> "$cambio% vs. la anterior"
+                            else -> "igual que la anterior"
+                        }
+                    }
+                    actual > 0 -> "tu primera semana"
+                    else -> "aún sin gastos"
+                },
                 onClick = onExpensesClick,
                 modifier = Modifier.weight(1f)
-            ) {
-                val bars = summary.weeklyExpenses?.chartValues.orEmpty().takeLast(5)
-                val peak = (bars.maxOrNull() ?: 0).coerceAtLeast(1)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier.fillMaxWidth().height(16.dp)
-                ) {
-                    bars.forEach { value ->
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height((4 + 12f * value / peak).dp)
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .background(sections.expenses)
-                        )
-                    }
-                }
-            }
+            )
         }
+    }
+}
+
+/** La etiqueta de estado del pie de «Pendientes». */
+@Composable
+private fun HomeStatusPill(text: String, ink: Color, container: Color) {
+    Surface(shape = MaterialTheme.shapes.small, color = container) {
+        Text(
+            text = text,
+            color = ink,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
     }
 }
 
@@ -742,26 +914,57 @@ private fun HomeTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     valueColor: Color = Color.Unspecified,
-    footer: @Composable () -> Unit
+    /** Un pie de texto normal, que es lo que llevan casi todas. */
+    footerText: String? = null,
+    /** O un pie con forma propia, como la etiqueta de estado de «Pendientes». */
+    footer: (@Composable () -> Unit)? = null
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.fillMaxHeight(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 13.dp),
+            // El rótulo arriba, la cifra en medio y el pie abajo del todo. Repartir así hace
+            // que las tres casillas alineen sus tres partes entre ellas, aunque una lleve una
+            // etiqueta y otra una línea de texto.
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = label, style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = label,
+                style = SectionLabelStyle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+            // Se encoge sola hasta que quepa entera.
+            //
+            // «$22.400» no cabe a 24sp en un tercio de pantalla, asi que se cortaba y se leia
+            // «$22.40»: un numero distinto y creible, que es la peor forma de cortar un texto.
+            // Con autoSize baja de tamaño lo justo y nunca miente.
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 color = if (valueColor == Color.Unspecified) MaterialTheme.colorScheme.onSurface else valueColor,
-                maxLines = 1
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = 15.sp,
+                    maxFontSize = MaterialTheme.typography.headlineSmallEmphasized.fontSize,
+                    stepSize = 0.5.sp
+                ),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
             )
-            Box(modifier = Modifier.height(16.dp), contentAlignment = Alignment.CenterStart) { footer() }
+            when {
+                footer != null -> footer()
+                footerText != null -> Text(
+                    text = footerText,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

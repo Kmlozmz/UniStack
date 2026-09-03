@@ -242,7 +242,7 @@ fun AccountSettingsScreen(
                         ?: if (viewModel.accountLinkAvailable) {
                             "Vincula una para respaldar en la nube"
                         } else {
-                            "Podrás respaldar tus datos y recuperarlos"
+                            "Podrás respaldar tus datos y recuperarlos si cambias de teléfono"
                         },
                     isBusy = actionState.isAccountBusy,
                     onClick = {

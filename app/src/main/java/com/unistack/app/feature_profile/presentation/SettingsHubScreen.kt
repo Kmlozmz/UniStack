@@ -44,7 +44,6 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.UserProfile
 import androidx.compose.runtime.getValue
 
@@ -238,11 +237,9 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
 }
 
 /**
- * Nivel, programa y cuántos cortes, en una línea.
+ * Programa e institución, en una línea.
+ *
+ * Llevaba el número de cortes al final -- «3 cortes» -- y no decía nada útil aquí: es un dato
+ * de Configuración académica, no una ficha de identidad. Se quitó a petición suya.
  */
-private fun settingsIdentityDetail(profile: UserProfile): String {
-    val scheme = profile.gradingCutScheme
-    val count = scheme.cuts.size
-    val periodLabel = if (count == 1) Corte.Singular else Corte.Plural
-    return profile.educationSummary() + " · " + count + " " + periodLabel.lowercase()
-}
+private fun settingsIdentityDetail(profile: UserProfile): String = profile.educationSummary()

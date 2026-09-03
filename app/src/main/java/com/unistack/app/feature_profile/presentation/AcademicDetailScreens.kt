@@ -49,6 +49,8 @@ import com.unistack.app.core.design.components.CutWheelCard
 import com.unistack.app.core.design.components.GradeStepperRow
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.SetupEvenSplitAction
+import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
@@ -58,12 +60,24 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.performSafely
+import com.unistack.app.feature_terms.domain.AcademicTermType
 import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.CutDateRules
 import com.unistack.app.feature_user.domain.GradingScale
 import java.time.LocalDate
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.draw.clip
 
 /**
  * Las cuatro puertas del hub de Configuración académica.
@@ -629,3 +643,252 @@ fun AcademicBreaksScreen(
         }
     }
 }
+
+/** Cuál de las dos fechas del periodo se está eligiendo. */
+private enum class FechaDePeriodo { EMPIEZA, ACABA }
+
+/**
+ * Corregir el periodo activo, sin tener que cerrarlo.
+ *
+ * `NewTermScreen` ya promete, al abrir uno nuevo, que la forma y las fechas «se cambian en
+ * Ajustes › Configuración académica, cuando quieras». Esta es esa pantalla: el mismo trío
+ * —nombre, forma, fechas— que se pregunta al abrir un periodo, editable en cualquier momento
+ * mientras está en curso. Escala, aprobado y cortes tienen sus propias puertas en el hub; esta
+ * es la que faltaba, la del periodo en sí.
+ *
+ * Cambiar la forma (semestral, trimestral...) no reparte de nuevo nada: solo cambia cómo se
+ * nombra y qué duración se sugiere la próxima vez que se abra un periodo. Los cortes y sus
+ * fechas siguen donde están, en «Tus cortes».
+ */
+@Composable
+fun AcademicTermScreen(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
+    val term by viewModel.activeTerm.collectAsStateWithLifecycle()
+    val spacing = LocalInterfaceSpacing.current
+    val current = term ?: return
+
+    var nombre by rememberSaveable(current.id) { mutableStateOf(current.name) }
+    var tipo by rememberSaveable(current.id) { mutableStateOf(current.type) }
+    var inicio by rememberSaveable(current.id, stateSaver = TermInicioSaver) {
+        mutableStateOf(current.start)
+    }
+    var fin by rememberSaveable(current.id, stateSaver = TermFechaSaver) {
+        mutableStateOf(current.plannedEnd)
+    }
+    var eligiendo by remember { mutableStateOf<FechaDePeriodo?>(null) }
+    var feedback by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val valido = nombre.isNotBlank() && (fin == null || fin!!.isAfter(inicio))
+    val focusManager = LocalFocusManager.current
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            // El campo de nombre se quedaba con el foco -- y el teclado en pantalla -- al
+            // tocar en cualquier otro sitio de la lista. Un toque fuera de un campo de texto
+            // cierra la edición en el resto de la app; aquí no lo hacía.
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            },
+        contentPadding = PaddingValues(
+            start = spacing.screenHorizontal,
+            end = spacing.screenHorizontal,
+            top = 8.dp,
+            bottom = scrollBottomRoom
+        ),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            SettingsHeader(
+                title = "Tu periodo",
+                subtitle = "Nombre, forma y fechas de ${current.name}",
+                onBackClick = onBackClick
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = nombre,
+                onValueChange = { nombre = it.take(40) },
+                label = { Text("Cómo se llama") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            Text(
+                text = "¿CÓMO SE ORGANIZAN LOS PERIODOS EN TU UNIVERSIDAD?",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AcademicTermType.entries.forEach { opcion ->
+                    TermTypeOption(
+                        label = opcion.label,
+                        selected = tipo == opcion,
+                        onClick = { tipo = opcion }
+                    )
+                }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TermFechaField(
+                    label = "Empieza",
+                    date = inicio,
+                    modifier = Modifier.weight(1f),
+                    onClick = { eligiendo = FechaDePeriodo.EMPIEZA }
+                )
+                TermFechaField(
+                    label = "Acaba (previsto)",
+                    date = fin,
+                    vacio = "Elegir",
+                    modifier = Modifier.weight(1f),
+                    onClick = { eligiendo = FechaDePeriodo.ACABA }
+                )
+            }
+        }
+        item {
+            Text(
+                text = "El fin es solo una previsión, para avisarte cuando llegue. El periodo " +
+                    "no se cierra ese día: se cierra cuando tú lo cierres, desde el histórico.",
+                modifier = Modifier.padding(horizontal = 4.dp),
+                color = MaterialTheme.colorScheme.outline,
+                fontSize = 11.sp,
+                lineHeight = 15.sp
+            )
+        }
+        item {
+            Button(
+                shapes = UniStackButtonDefaults.shapes,
+                onClick = {
+                    feedback = if (viewModel.updateActiveTerm(nombre, tipo, inicio, fin)) {
+                        "Periodo actualizado."
+                    } else {
+                        "Revisa el nombre y las fechas."
+                    }
+                },
+                enabled = valido,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
+            ) {
+                Text("Guardar")
+            }
+        }
+        feedback?.let { message ->
+            item {
+                Text(
+                    message,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    color = if (message.startsWith("Revisa")) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        LocalSectionColors.current.onTrack
+                    },
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    eligiendo?.let { cual ->
+        UniDatePickerDialog(
+            selectedDate = if (cual == FechaDePeriodo.EMPIEZA) inicio else fin,
+            onDateSelected = { fecha ->
+                if (cual == FechaDePeriodo.EMPIEZA) {
+                    inicio = fecha
+                    if (fin != null && !fin!!.isAfter(fecha)) fin = null
+                } else {
+                    fin = fecha
+                }
+                eligiendo = null
+            },
+            onDismiss = { eligiendo = null }
+        )
+    }
+}
+
+@Composable
+private fun TermTypeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Text(
+            text = label,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun TermFechaField(
+    label: String,
+    date: LocalDate?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    vacio: String = "Elegir"
+) {
+    UniCard(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        onClick = onClick
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+            Text(
+                text = date?.let { "${it.dayOfMonth} ${TermMeses[it.monthValue - 1]} ${it.year}" } ?: vacio,
+                color = if (date != null) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+private val TermMeses =
+    listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+/** Las fechas sobreviven a un giro de pantalla; el `Bundle` solo entiende texto. */
+private val TermFechaSaver = androidx.compose.runtime.saveable.Saver<LocalDate?, String>(
+    save = { it?.toString() ?: "" },
+    restore = { texto -> texto.takeIf { it.isNotEmpty() }?.let(LocalDate::parse) }
+)
+
+private val TermInicioSaver = androidx.compose.runtime.saveable.Saver<LocalDate, String>(
+    save = { it.toString() },
+    restore = LocalDate::parse
+)

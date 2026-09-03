@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.EventBusy
 import androidx.compose.material.icons.rounded.PersonOff
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.ScaleZoneBar
+import com.unistack.app.core.design.components.fechaLargaDeCorte
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -45,12 +47,15 @@ import java.time.LocalDate
 import androidx.compose.runtime.getValue
 
 /**
- * Tu semestre, en cuatro puertas: escala, cortes, faltas y días sin clase.
+ * Tu semestre, en puertas: el periodo, la escala, los cortes, las faltas y los días sin clase.
  *
- * Era una sola pantalla con las cuatro cosas amontonadas y tres botones de «Guardar» sueltos
- * en medio del scroll -- cada uno guardaba solo su pedazo, y nada decía cuál faltaba pulsar.
- * Aquí es un hub, igual que **Ajustes** mismo lo es un nivel más arriba: cada fila dice ahora
- * mismo qué hay guardado y abre su propia pantalla, con un solo botón.
+ * Era una sola pantalla con las cuatro primeras cosas amontonadas y tres botones de «Guardar»
+ * sueltos en medio del scroll -- cada uno guardaba solo su pedazo, y nada decía cuál faltaba
+ * pulsar. Aquí es un hub, igual que **Ajustes** mismo lo es un nivel más arriba: cada fila dice
+ * ahora mismo qué hay guardado y abre su propia pantalla, con un solo botón.
+ *
+ * «Tu periodo» solo aparece con un periodo activo: cerrado, no hay nada que corregir aquí, y
+ * abrir uno nuevo es «Sin periodo activo» en Inicio, no esta pantalla.
  *
  * La franja de arriba se queda visible aunque la escala se mude a su pantalla: es la única
  * parte de esta sección que vale la pena ver de un vistazo, sin entrar a nada.
@@ -62,11 +67,13 @@ fun AcademicSettingsScreen(
     onCutsClick: () -> Unit,
     onAbsenceClick: () -> Unit,
     onBreaksClick: () -> Unit,
+    onTermClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
+    val activeTerm by viewModel.activeTerm.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
     val sections = LocalSectionColors.current
     val current = profile ?: return
@@ -101,7 +108,17 @@ fun AcademicSettingsScreen(
             ScaleZoneBar(max = maxGrade, passing = current.passingGrade, target = current.targetAverage)
         }
         item {
-            SettingsGroup(label = "SECCIONES", rowCount = 4) {
+            SettingsGroup(label = "SECCIONES", rowCount = if (activeTerm != null) 5 else 4) {
+                activeTerm?.let { term ->
+                    SettingsRow(
+                        icon = Icons.Rounded.CalendarMonth,
+                        title = "Tu periodo",
+                        subtitle = term.name + " · " + term.type.label +
+                            (term.plannedEnd?.let { " · hasta " + fechaLargaDeCorte(it) } ?: ""),
+                        iconColor = sections.schedule,
+                        onClick = onTermClick
+                    )
+                }
                 SettingsRow(
                     icon = Icons.Rounded.BarChart,
                     title = "Escala y metas",

@@ -353,7 +353,7 @@ class NotesViewModel @Inject constructor(
     /**
      * Si esta compilacion puede llenarse de notas de mentira.
      *
-     * Solo dev, alpha y beta. En una version publicada, un boton que crea ocho notas falsas
+     * Solo dev, alpha y beta. En una version publicada, un boton que crea una docena de notas falsas
      * dentro de las notas de alguien es una forma rapida de perder la confianza de esa persona.
      */
     val canSeedSamples: Boolean = BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished
@@ -362,11 +362,13 @@ class NotesViewModel @Inject constructor(
         get() = notes.value.any { NoteSamples.isSample(it.id) }
 
     /**
-     * Ocho notas de ejemplo, distintas entre si y con todo puesto.
+     * Una nota de cada tipo, con todo lo que una nota sabe hacer puesto en alguna de ellas.
      *
      * Existe porque mirar esta pantalla vacia no dice nada: para juzgar si el mosaico se lee hay
-     * que escribir ocho notas con foto, archivo y audio, y eso es media hora cada vez que se
-     * mueve una separacion.
+     * que escribir una docena de notas con foto, archivo y audio, y eso es media hora cada vez
+     * que se mueve una separacion. Incluye los estados que no se ven en la lista -- archivada,
+     * en la papelera, aviso vencido -- y una con cuatro adjuntos, que es la unica manera de ver
+     * el carrusel sin adjuntar cuatro cosas a mano.
      */
     fun seedSamples() {
         val materias = subjects.value.map { it.id }

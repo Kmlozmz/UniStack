@@ -24,8 +24,25 @@ data class HomeSummary(
     val nextTask: TaskSummary?,
     val nextAcademicWork: AcademicWorkSummary?,
     val todayItems: List<HomeTimelineSummary>,
+    /**
+     * Lo que viene despues de hoy, para cuando hoy no hay nada.
+     *
+     * La tarjeta de «Hoy» se quedaba en blanco con un mensaje de calma y nada mas. Esto es
+     * lo que la llena: las proximas paradas de los siguientes dias -- clases, entregas y
+     * trabajos --, que existen en los datos pero no tenian donde salir. El hero solo
+     * anuncia **una**, y siempre la primera.
+     */
+    val upcomingItems: List<HomeUpcomingItem> = emptyList(),
     val weeklyExpenses: ExpenseSummary?,
     val weeklyExpenseTotal: Int,
+    /**
+     * Lo de la semana anterior, solo para comparar.
+     *
+     * El pie de la casilla decia «en 1 dia», que suena a reproche y ademas no ayuda a
+     * decidir nada. Con la semana pasada al lado, la cifra pasa a significar algo: no es
+     * lo mismo llevar 22.400 subiendo que bajando.
+     */
+    val previousWeekExpenseTotal: Int = 0,
     val productivitySummary: String,
     val companionInsight: String,
     val gradingScale: GradingScale = GradingScale.ZERO_TO_FIVE,
@@ -98,6 +115,15 @@ data class AcademicWorkSummary(
     val title: String,
     val dueText: String,
     val progress: Float
+)
+
+/** Una parada de los proximos dias: el dia, la hora y que es. */
+data class HomeUpcomingItem(
+    val dayLabel: String,
+    val timeText: String,
+    val title: String,
+    val subtitle: String,
+    val kind: HomeTimelineKind
 )
 
 data class HomeTimelineSummary(

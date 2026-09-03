@@ -31,6 +31,7 @@ object AppRoutes {
     const val AcademicCuts = "academic_cuts"
     const val AcademicAbsence = "academic_absence"
     const val AcademicBreaks = "academic_breaks"
+    const val AcademicTerm = "academic_term"
     const val AcademicHistory = "academic_history"
     const val TermClose = "term_close"
     const val NewTerm = "new_term"
@@ -61,12 +62,16 @@ object AppRoutes {
 
     /** Con que arranca la nota nueva: texto, lista, foto, audio o archivo. */
     const val NewNoteStartArg = "start"
-    const val NewNoteWithStart = "$NewNote?$NewNoteStartArg={$NewNoteStartArg}"
+
+    /** Con qué materia sale ya vinculada, si se lanzó desde una en concreto. */
+    const val NewNoteSubjectArg = "subject"
+    const val NewNoteWithStart = "$NewNote?$NewNoteStartArg={$NewNoteStartArg}&$NewNoteSubjectArg={$NewNoteSubjectArg}"
     const val NoteEditor = "note_editor"
     const val AiAssistant = "ai_assistant"
     const val Labs = "labs"
     const val AcademicTemplates = "academic_templates"
     const val Expenses = "expenses"
+    const val ExpenseInsights = "expense_insights"
     const val AddSubject = "add_subject"
     const val AddSubjectFromTask = "add_subject_from_task"
     const val EditSubject = "edit_subject"
@@ -111,7 +116,8 @@ object AppRoutes {
 
     fun subjectDetail(subjectId: String) = "$SubjectDetail/$subjectId"
     fun noteEditor(noteId: String) = "$NoteEditor/$noteId"
-    fun newNote(start: String) = "$NewNote?$NewNoteStartArg=$start"
+    fun newNote(start: String, subjectId: String? = null) =
+        "$NewNote?$NewNoteStartArg=$start".let { if (subjectId == null) it else "$it&$NewNoteSubjectArg=$subjectId" }
     fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"

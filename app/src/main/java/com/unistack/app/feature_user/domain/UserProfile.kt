@@ -108,6 +108,15 @@ data class UserProfile(
     val quietHoursEnabled: Boolean = false,
     val quietHoursStartHour: Int? = null,
     val quietHoursEndHour: Int? = null,
+    /**
+     * Con que forma se dibuja el grafico de la tarjeta de Gastos.
+     *
+     * Vive aqui, junto al presupuesto y las categorias, y **no** en las preferencias de
+     * apariencia: no cambia el aspecto de la app entera, solo el de una tarjeta. Por eso
+     * tampoco se elige en Ajustes sino en la propia pantalla de Gastos, donde se ve el cambio
+     * en el momento en vez de tener que ir a mirarlo a otro sitio.
+     */
+    val expenseChartStyle: ExpenseChartStyle = ExpenseChartStyle.BARS,
     val weeklyBudget: Int = 0,
     val monthlyBudget: Int = 0,
     val expenseAlertThresholdPercent: Int = 80,
@@ -311,4 +320,19 @@ enum class VisualPreference {
     DARK,
     OLED,
     CUSTOM
+}
+
+/**
+ * Las dos maneras de mirar el gasto de la semana en la tarjeta de Gastos.
+ *
+ * No es un adorno: cada una responde una pregunta distinta. Las barras dicen **cuando**
+ * gastaste, el anillo dice **en que**. Se elige en la propia pantalla, y por eso son dos y no
+ * seis: una lista larga de estilos en una tarjeta es un menu, no una eleccion.
+ */
+enum class ExpenseChartStyle {
+    /** Una barra por dia de la semana. Se puede tocar un dia para ver su total. */
+    BARS,
+
+    /** Un anillo repartido por categoria, con la forma de galleta de M3E detras. */
+    RING
 }

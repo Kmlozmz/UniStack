@@ -23,6 +23,7 @@ import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ClassOccurrence
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.AgendaEvent
+import com.unistack.app.feature_schedule.domain.SessionPlace
 import com.unistack.app.feature_notes.domain.NoteMarkdown
 import com.unistack.app.feature_notes.domain.NoteText
 import com.unistack.app.feature_notes.domain.QuickNote
@@ -288,8 +289,10 @@ class LocalReminderScheduler(private val context: Context) {
                     // Los minutos van en el título: es el dato que decide si te
                     // levantas ya o no, y así se ve sin desplegar el aviso.
                     title = "$subjectName empieza en ${session.reminderMinutes} min",
-                    body = session.location.takeIf(String::isNotBlank)?.let { "Nos vemos en $it." }
-                        ?: "Alista lo que necesites antes de entrar.",
+                    // `location` es "aula•profesor" en crudo -- concatenarlo tal cual dejaba un
+                    // punto suelto cuando faltaba el profesor ("Nos vemos en 103F•."). Se arma
+                    // la frase a partir de `place`, que ya sabe cuál de los dos falta.
+                    body = classReminderBody(session.place),
                     targetRoute = AppRoutes.Calendar,
                     eventAtMillis = comienzo.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     // Si sale con retraso, los minutos del titulo se cuentan de nuevo: el
@@ -828,6 +831,24 @@ class LocalReminderScheduler(private val context: Context) {
 
     private fun String.stableRequestCode(kind: String): Int {
         return "$kind:$this".hashCode() and Int.MAX_VALUE
+    }
+
+    /**
+     * El cuerpo del aviso de clase, con solo lo que hay.
+     *
+     * `location` se guarda como `"aula•profesor"` y con cualquiera de los dos vacío la frase
+     * quedaba con el separador suelto -- «Nos vemos en 103F•.» -- porque se concatenaba tal
+     * cual en vez de mirar qué mitad faltaba.
+     */
+    private fun classReminderBody(place: SessionPlace): String {
+        val room = place.room.takeIf(String::isNotBlank)
+        val professor = place.professor.takeIf(String::isNotBlank)
+        return when {
+            room != null && professor != null -> "Nos vemos en $room, con $professor."
+            room != null -> "Nos vemos en $room."
+            professor != null -> "Con $professor."
+            else -> "Alista lo que necesites antes de entrar."
+        }
     }
 
     /* dueText() devuelve fragmentos pensados para ir dentro de una frase

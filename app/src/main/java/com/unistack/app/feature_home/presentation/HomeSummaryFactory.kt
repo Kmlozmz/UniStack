@@ -19,6 +19,7 @@ import com.unistack.app.feature_home.domain.HomeSummary
 import com.unistack.app.feature_home.domain.HomeTimelineKind
 import com.unistack.app.feature_home.domain.HomeTimelineState
 import com.unistack.app.feature_home.domain.HomeTimelineSummary
+import com.unistack.app.feature_home.domain.HomeUpcomingItem
 import com.unistack.app.feature_home.domain.NeededGradeSummary
 import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_home.domain.SubjectRiskSummary
@@ -65,6 +66,7 @@ internal object HomeSummaryFactory {
         val nextTask = pendingTasks.nextTaskSummary()
         val weeklyExpenses = weeklyExpenseSummary(expenses)
         val weeklyExpenseTotal = weeklyExpenses?.total ?: 0
+        val previousWeekExpenseTotal = previousWeekTotal(expenses)
         val nextAcademicWork = works.nextAcademicWorkSummary()
         val openAcademicWorks = works.count { it.status != AcademicWorkStatus.SUBMITTED }
         val gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE
@@ -90,6 +92,12 @@ internal object HomeSummaryFactory {
         val schedulePriority = schedulePrioritySummary(
             sessions = classSessions,
             subjects = subjects
+        )
+        val upcomingItems = upcomingItems(
+            sessions = classSessions,
+            tasks = pendingTasks,
+            works = works,
+            subjectNameById = subjects.associate { it.id to it.name }
         )
         val todayItems = todayTimelineItems(
             tasks = pendingTasks,
@@ -153,8 +161,10 @@ internal object HomeSummaryFactory {
             nextTask = nextTask,
             nextAcademicWork = nextAcademicWork,
             todayItems = todayItems,
+            upcomingItems = upcomingItems,
             weeklyExpenses = weeklyExpenses,
             weeklyExpenseTotal = weeklyExpenseTotal,
+            previousWeekExpenseTotal = previousWeekExpenseTotal,
             productivitySummary = productivitySummary(completedTasks, pendingTasks.size, overdueTasks),
             companionInsight = companionInsight(
                 userName = profile?.preferredName?.takeIf { it.isNotBlank() }
@@ -537,6 +547,96 @@ internal object HomeSummaryFactory {
         }
     }
 
+    /**
+     * Las proximas paradas, de mañana en adelante.
+     *
+     * Mira siete dias hacia delante y mezcla las tres cosas que ocupan un dia: las clases que
+     * toquen por su regla de repeticion, las tareas con fecha y los trabajos sin entregar. Hoy
+     * queda fuera a proposito -- de hoy ya se encarga [todayTimelineItems], y repetirlo aqui
+     * haria que la tarjeta dijera dos veces lo mismo.
+     */
+    private fun upcomingItems(
+        sessions: List<ClassSession>,
+        tasks: List<StudentTask>,
+        works: List<AcademicWork>,
+        subjectNameById: Map<String, String>
+    ): List<HomeUpcomingItem> {
+        val today = LocalDate.now()
+        val dias = (1..7).map { today.plusDays(it.toLong()) }
+        // Cada candidata guarda su dia y su minuto para poder ordenarlas entre si; lo que se
+        // devuelve es solo la ficha.
+        val candidatas = mutableListOf<Triple<LocalDate, Int, HomeUpcomingItem>>()
+
+        dias.forEach { date ->
+            sessions
+                .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
+                .forEach { session ->
+                    candidatas += Triple(
+                        date,
+                        session.startMinute,
+                        HomeUpcomingItem(
+                            dayLabel = upcomingDayLabel(date, today),
+                            timeText = formatClassMinute(session.startMinute),
+                            title = subjectNameById[session.subjectId] ?: "Clase",
+                            subtitle = session.place.room.takeIf(String::isNotBlank)?.let { "Aula $it" }.orEmpty(),
+                            kind = HomeTimelineKind.CLASS
+                        )
+                    )
+                }
+        }
+
+        tasks.forEach { task ->
+            val date = TaskDateUtils.fromMillis(task.dueDateMillis)
+            if (date in dias) {
+                candidatas += Triple(
+                    date,
+                    // Las entregas van al final de su dia: una clase de las 8 se hace antes
+                    // que algo que solo tiene fecha.
+                    24 * 60,
+                    HomeUpcomingItem(
+                        dayLabel = upcomingDayLabel(date, today),
+                        timeText = "Entrega",
+                        title = task.title,
+                        subtitle = task.type.label(),
+                        kind = task.type.timelineKind()
+                    )
+                )
+            }
+        }
+
+        works
+            .filterNot { it.status == AcademicWorkStatus.SUBMITTED }
+            .forEach { work ->
+                val millis = work.dueDateMillis ?: return@forEach
+                val date = TaskDateUtils.fromMillis(millis)
+                if (date in dias) {
+                    candidatas += Triple(
+                        date,
+                        24 * 60,
+                        HomeUpcomingItem(
+                            dayLabel = upcomingDayLabel(date, today),
+                            timeText = "Entrega",
+                            title = work.title,
+                            subtitle = work.subjectId?.let(subjectNameById::get).orEmpty(),
+                            kind = HomeTimelineKind.WORK
+                        )
+                    )
+                }
+            }
+
+        return candidatas
+            .sortedWith(compareBy({ it.first }, { it.second }))
+            .map { it.third }
+            .take(3)
+    }
+
+    private fun upcomingDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
+        today.plusDays(1) -> "Mañana"
+        else -> date.dayOfWeek
+            .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("es"))
+            .replaceFirstChar { it.uppercase(java.util.Locale.forLanguageTag("es")) }
+    }
+
     private fun todayTimelineItems(
         tasks: List<StudentTask>,
         works: List<AcademicWork>,
@@ -598,6 +698,15 @@ internal object HomeSummaryFactory {
                 }.thenBy { it.timeText }
             )
             .take(3)
+    }
+
+    /** Lo gastado en los siete dias anteriores al lunes de esta semana. */
+    private fun previousWeekTotal(expenses: List<Expense>): Int {
+        val inicio = ExpenseDateUtils.startOfWeek().minusDays(7)
+        val fin = inicio.plusDays(6)
+        return expenses
+            .filter { ExpenseDateUtils.fromMillis(it.dateMillis) in inicio..fin }
+            .sumOf { it.amount }
     }
 
     private fun weeklyExpenseSummary(expenses: List<Expense>): ExpenseSummary? {

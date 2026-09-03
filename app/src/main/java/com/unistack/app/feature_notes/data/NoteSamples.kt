@@ -20,14 +20,19 @@ data class SampleNote(val note: QuickNote, val attachments: List<NoteAttachment>
 /**
  * Notas de mentira para poder mirar las de verdad.
  *
- * Existe porque probar esta pantalla vacía no dice nada: hay que escribir ocho notas distintas,
- * con foto, con archivo y con audio, antes de poder juzgar si el mosaico se lee o si el cuaderno
- * respira. Eso es media hora de teclear cada vez que se cambia una separación.
+ * Existe porque probar esta pantalla vacía no dice nada: hay que escribir una docena de notas
+ * distintas, con foto, con archivo y con audio, antes de poder juzgar si el mosaico se lee o si
+ * el cuaderno respira. Eso es media hora de teclear cada vez que se cambia una separación.
  *
- * Las ocho son distintas a propósito y entre todas tocan **todo**: título, negrita, cursiva,
- * tachado, código en línea y en bloque, cita, línea, lista, lista numerada, casillas marcadas y
- * sin marcar, enlace, tabla, las dos maneras de escribir, con materia y sin ella, fijada, y los
- * tres tipos de adjunto.
+ * **Hay una de cada tipo, y entre todas tocan todo lo que una nota sabe hacer hoy**: título,
+ * negrita, cursiva, tachado, código en línea y en bloque, cita, línea, lista, lista numerada,
+ * casillas marcadas y sin marcar, enlace, tabla, las dos maneras de escribir, con materia y sin
+ * ella, fijada, con color, con aviso por llegar y con aviso ya vencido, los tres tipos de
+ * adjunto, **una con cuatro adjuntos a la vez** —que es la única forma de ver el carrusel—, una
+ * **archivada** y una **en la papelera**.
+ *
+ * Los tres últimos estados son de lo añadido después de la primera tanda, y sin ellos había que
+ * archivar y borrar a mano cada vez para mirar esas dos pantallas.
  *
  * Los archivos se fabrican aquí: la foto se dibuja, el audio se sintetiza y el documento se
  * escribe. Nada viene de fuera, así que no hay que empaquetar nada en el APK ni pedir permisos.
@@ -37,6 +42,13 @@ data class SampleNote(val note: QuickNote, val attachments: List<NoteAttachment>
 object NoteSamples {
 
     private const val DIA = 24L * 60 * 60 * 1000
+
+    private val GALERIA_CUERPO = """
+        Todo lo de la clase: las dos pizarras, lo que explico de viva voz y el enunciado que
+        paso al final.
+
+        La tasa se calcula sobre el **inductor**, no sobre horas maquina.
+    """.trimIndent()
 
     fun build(store: NoteAttachmentStore, subjectIds: List<String>, now: Long): List<SampleNote> {
         // Se reparten las materias que haya. Con una sola, se repite; sin ninguna, todas van
@@ -247,6 +259,87 @@ object NoteSamples {
             """.trimIndent()
         )
 
+        // 10 - Varios adjuntos en una nota: dos fotos, el audio y el archivo. Es la que
+        // ensena el carrusel de adjuntos, que con uno solo no se despliega.
+        // La nota se construye **antes** que sus adjuntos: `nota()` le pone un sufijo al azar
+        // al identificador, asi que colgar los adjuntos del nombre base los deja huerfanos.
+        val galeria = nota(
+            id = "sample-galeria",
+            subjectId = materia(1),
+            title = "Clase entera del jueves",
+            body = GALERIA_CUERPO,
+            format = NoteFormat.MARKDOWN,
+            updatedAt = now - 2 * 60 * 60 * 1000
+        )
+        val galeriaId = galeria.id
+        val galeriaAdjuntos = mutableListOf<NoteAttachment>()
+        pizarra(store, variante = 0)?.let { (nombre, peso) ->
+            galeriaAdjuntos += adjunto(
+                galeriaId, AttachmentKind.IMAGE, "pizarra-1.jpg", nombre,
+                "image/jpeg", peso, now - 2 * 60 * 60 * 1000
+            )
+        }
+        pizarra(store, variante = 1)?.let { (nombre, peso) ->
+            galeriaAdjuntos += adjunto(
+                galeriaId, AttachmentKind.IMAGE, "pizarra-2.jpg", nombre,
+                "image/jpeg", peso, now - 2 * 60 * 60 * 1000
+            )
+        }
+        grabacion(store)?.let { (nombre, peso, duracion) ->
+            galeriaAdjuntos += adjunto(
+                galeriaId, AttachmentKind.AUDIO, "explicacion.wav", nombre,
+                "audio/wav", peso, now - 2 * 60 * 60 * 1000, duracion
+            )
+        }
+        documento(store)?.let { (nombre, peso) ->
+            galeriaAdjuntos += adjunto(
+                galeriaId, AttachmentKind.FILE, "enunciado.txt", nombre,
+                "text/plain", peso, now - 2 * 60 * 60 * 1000
+            )
+        }
+        if (galeriaAdjuntos.isNotEmpty()) {
+            muestras += SampleNote(note = galeria, attachments = galeriaAdjuntos)
+        }
+
+        // 11 - Con el aviso ya vencido, para ver la ficha de fecha en rojo en la tarjeta.
+        muestras += plano(
+            id = "sample-vencida",
+            subjectId = materia(2),
+            title = "Entregar el formato",
+            reminderAt = now - 5 * 60 * 60 * 1000,
+            updatedAt = now - 2 * DIA,
+            body = "Se entregaba ayer en secretaria. Preguntar si todavia lo reciben."
+        )
+
+        // 12 - Archivada: guardada, pero fuera de la lista. Solo se ve entrando a Archivo.
+        muestras += plano(
+            id = "sample-archivada",
+            subjectId = materia(0),
+            title = "Parcial 1 (ya paso)",
+            archived = true,
+            updatedAt = now - 21 * DIA,
+            body = """
+                Lo que entro en el primer parcial, por si sirve para el final.
+
+                - Limites y continuidad
+                - Derivadas basicas
+            """.trimIndent()
+        )
+
+        // 13 - En la papelera, borrada hace dos dias: le quedan cinco antes de irse sola.
+        muestras += plano(
+            id = "sample-papelera",
+            subjectId = null,
+            title = "Lista vieja del super",
+            deletedAt = now - 2 * DIA,
+            updatedAt = now - 2 * DIA,
+            body = """
+                - [x] Cafe
+                - [x] Cuaderno
+                - [ ] Marcadores
+            """.trimIndent()
+        )
+
         return muestras.map { muestra ->
             muestra.copy(
                 attachments = muestra.attachments.map { it.copy(noteId = muestra.note.id) }
@@ -262,7 +355,9 @@ object NoteSamples {
         title: String = "",
         pinned: Boolean = false,
         reminderAt: Long? = null,
-        colorArgb: Int? = null
+        colorArgb: Int? = null,
+        archived: Boolean = false,
+        deletedAt: Long? = null
     ) = SampleNote(
         note = nota(
             id = id,
@@ -273,7 +368,9 @@ object NoteSamples {
             title = title,
             pinned = pinned,
             reminderAt = reminderAt,
-            colorArgb = colorArgb
+            colorArgb = colorArgb,
+            archived = archived,
+            deletedAt = deletedAt
         ),
         attachments = emptyList()
     )
@@ -287,7 +384,9 @@ object NoteSamples {
         title: String = "",
         pinned: Boolean = false,
         reminderAt: Long? = null,
-        colorArgb: Int? = null
+        colorArgb: Int? = null,
+        archived: Boolean = false,
+        deletedAt: Long? = null
     ) = QuickNote(
         id = id + "-" + UUID.randomUUID().toString().take(8),
         title = title,
@@ -297,6 +396,8 @@ object NoteSamples {
         pinned = pinned,
         reminderAt = reminderAt,
         colorArgb = colorArgb,
+        archived = archived,
+        deletedAt = deletedAt,
         createdAt = updatedAt,
         updatedAt = updatedAt
     )
@@ -328,14 +429,20 @@ object NoteSamples {
      * Pesa cero en el instalador y sale del mismo tamaño que una foto de verdad, que es lo que
      * hace falta para ver si la portada del mosaico recorta bien.
      */
-    private fun pizarra(store: NoteAttachmentStore): Pair<String, Long>? = runCatching {
+    private fun pizarra(store: NoteAttachmentStore, variante: Int = 0): Pair<String, Long>? = runCatching {
         val ancho = 1200
         val alto = 800
         val bitmap = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
         val lienzo = Canvas(bitmap)
 
         // design-tokens-ok: es una imagen dibujada, no interfaz: los colores son el contenido.
-        lienzo.drawColor(android.graphics.Color.rgb(28, 42, 38))
+        lienzo.drawColor(
+            if (variante == 0) {
+                android.graphics.Color.rgb(28, 42, 38)
+            } else {
+                android.graphics.Color.rgb(30, 34, 52)
+            }
+        )
 
         val tiza = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = android.graphics.Color.rgb(226, 232, 226)
@@ -352,14 +459,25 @@ object NoteSamples {
             textSize = 48f
         }
 
-        lienzo.drawText("f(x) = 3x² - 2x + 1", 90f, 170f, letra)
-        lienzo.drawLine(90f, 205f, 700f, 205f, tiza)
-        lienzo.drawText("f'(x) = 6x - 2", 90f, 300f, letra)
-        lienzo.drawText("f'(2) = 10", 90f, 400f, letra)
-        lienzo.drawText("(regla de la cadena)", 90f, 480f, floja)
-        lienzo.drawText("ejercicio 12 → queda de tarea", 90f, 570f, floja)
-        lienzo.drawLine(90f, 640f, 1100f, 640f, tiza)
-        lienzo.drawText("parcial: martes 14", 90f, 720f, floja)
+        if (variante == 0) {
+            lienzo.drawText("f(x) = 3x² - 2x + 1", 90f, 170f, letra)
+            lienzo.drawLine(90f, 205f, 700f, 205f, tiza)
+            lienzo.drawText("f'(x) = 6x - 2", 90f, 300f, letra)
+            lienzo.drawText("f'(2) = 10", 90f, 400f, letra)
+            lienzo.drawText("(regla de la cadena)", 90f, 480f, floja)
+            lienzo.drawText("ejercicio 12 → queda de tarea", 90f, 570f, floja)
+            lienzo.drawLine(90f, 640f, 1100f, 640f, tiza)
+            lienzo.drawText("parcial: martes 14", 90f, 720f, floja)
+        } else {
+            lienzo.drawText("Costeo por actividades", 90f, 160f, letra)
+            lienzo.drawLine(90f, 195f, 820f, 195f, tiza)
+            lienzo.drawText("tasa = CIF / inductor", 90f, 290f, letra)
+            lienzo.drawText("CIF = 4.800.000", 90f, 380f, floja)
+            lienzo.drawText("inductor = 12.000 h", 90f, 450f, floja)
+            lienzo.drawText("tasa = 400 / hora", 90f, 545f, letra)
+            lienzo.drawLine(90f, 610f, 1100f, 610f, tiza)
+            lienzo.drawText("ojo: no son horas máquina", 90f, 700f, floja)
+        }
 
         val bytes = ByteArrayOutputStream().also {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 82, it)

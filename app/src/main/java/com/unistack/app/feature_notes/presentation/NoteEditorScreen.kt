@@ -153,6 +153,7 @@ fun NoteEditorScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     start: NewNoteStart = NewNoteStart.TEXTO,
+    initialSubjectId: String? = null,
     viewModel: NotesViewModel = hiltViewModel()
 ) {
     val notes by viewModel.notes.collectAsStateWithLifecycle()
@@ -172,7 +173,7 @@ fun NoteEditorScreen(
     var value by rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue(""))
     }
-    var subjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var subjectId by rememberSaveable { mutableStateOf(initialSubjectId) }
     var reminderAt by rememberSaveable { mutableStateOf<Long?>(null) }
     var colorArgb by rememberSaveable { mutableStateOf<Int?>(null) }
 

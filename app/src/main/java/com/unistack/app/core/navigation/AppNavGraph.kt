@@ -63,6 +63,7 @@ import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
+import com.unistack.app.feature_expenses.presentation.ExpenseInsightsScreen
 import com.unistack.app.feature_expenses.presentation.ExpensesScreen
 import com.unistack.app.feature_grades.presentation.AddGradeScreen
 import com.unistack.app.feature_grades.presentation.AcademicScreen
@@ -86,6 +87,7 @@ import com.unistack.app.feature_profile.presentation.AcademicScaleScreen
 import com.unistack.app.feature_profile.presentation.AcademicCutsScreen
 import com.unistack.app.feature_profile.presentation.AcademicAbsenceScreen
 import com.unistack.app.feature_profile.presentation.AcademicBreaksScreen
+import com.unistack.app.feature_profile.presentation.AcademicTermScreen
 import com.unistack.app.feature_profile.presentation.AccountSettingsScreen
 import com.unistack.app.feature_profile.presentation.ModuleSettingsScreen
 import com.unistack.app.feature_profile.presentation.NotificationSettingsScreen
@@ -552,7 +554,17 @@ fun MainNavGraph(
                     onScaleClick = { navController.go(AppRoutes.AcademicScale) },
                     onCutsClick = { navController.go(AppRoutes.AcademicCuts) },
                     onAbsenceClick = { navController.go(AppRoutes.AcademicAbsence) },
-                    onBreaksClick = { navController.go(AppRoutes.AcademicBreaks) }
+                    onBreaksClick = { navController.go(AppRoutes.AcademicBreaks) },
+                    onTermClick = { navController.go(AppRoutes.AcademicTerm) }
+                )
+            }
+            screen(AppRoutes.AcademicTerm) {
+                AcademicTermScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) {
+                            navController.go(AppRoutes.AcademicSettings)
+                        }
+                    }
                 )
             }
             screen(AppRoutes.AcademicScale) {
@@ -705,6 +717,11 @@ fun MainNavGraph(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
+                    },
+                    navArgument(AppRoutes.NewNoteSubjectArg) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) { backStackEntry ->
@@ -713,6 +730,7 @@ fun MainNavGraph(
                     start = NewNoteStart.of(
                         backStackEntry.arguments?.getString(AppRoutes.NewNoteStartArg)
                     ),
+                    initialSubjectId = backStackEntry.arguments?.getString(AppRoutes.NewNoteSubjectArg),
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.QuickNotes) }
                 )
             }
@@ -720,6 +738,13 @@ fun MainNavGraph(
                 NoteEditorScreen(
                     noteId = backStackEntry.arguments?.getString("noteId"),
                     onBackClick = { if (!navController.navigateUp()) navController.go(AppRoutes.QuickNotes) }
+                )
+            }
+            screen(AppRoutes.ExpenseInsights) {
+                ExpenseInsightsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.Expenses)
+                    }
                 )
             }
             screen(AppRoutes.AiAssistant) {
@@ -731,7 +756,8 @@ fun MainNavGraph(
             screen(AppRoutes.Expenses) {
                 ExpensesScreen(
                     onAddExpenseClick = { navController.navigateIfModuleEnabled(AppRoutes.AddExpense, enabledModules) },
-                    onEditExpenseClick = { expenseId -> navController.navigateIfModuleEnabled(AppRoutes.editExpense(expenseId), enabledModules) }
+                    onEditExpenseClick = { expenseId -> navController.navigateIfModuleEnabled(AppRoutes.editExpense(expenseId), enabledModules) },
+                    onInsightsClick = { navController.navigateIfModuleEnabled(AppRoutes.ExpenseInsights, enabledModules) }
                 )
             }
             screen(AppRoutes.AddSubject) {
@@ -792,6 +818,9 @@ fun MainNavGraph(
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
                     onCompleteHistoryClick = { id ->
                         navController.navigateIfModuleEnabled(AppRoutes.priorHistory(id), enabledModules)
+                    },
+                    onNewNoteClick = { id ->
+                        navController.go(AppRoutes.newNote(NewNoteStart.TEXTO.route, id))
                     },
                     onSubjectDeleted = {
                         if (!navController.popBackStack(AppRoutes.Academic, inclusive = false)) {
@@ -1113,6 +1142,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.Expenses) -> AppRoutes.Expenses
+        routeBelongsTo(route, AppRoutes.ExpenseInsights) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.AddExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.EditExpense) -> AppRoutes.Expenses
         routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Settings
@@ -1130,6 +1160,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AcademicCuts) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicAbsence) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicBreaks) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.AcademicTerm) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AcademicHistory) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.ClosedTerm) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.TermClose) -> AppRoutes.Settings

@@ -21,6 +21,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Pause
@@ -67,32 +71,129 @@ fun NoteAttachmentStrip(
 ) {
     if (attachments.isEmpty()) return
 
+    /*
+     * El carrusel es **solo para fotos**.
+     *
+     * Se probo con todo dentro y quedaba raro: una tarjeta de archivo o de audio recortada por
+     * el borde no ensena nada -- lo que asoma es media palabra del nombre --, mientras que una
+     * foto recortada se sigue reconociendo. Lo que hace util al recorte es que haya imagen
+     * debajo, asi que los archivos y las grabaciones se quedan en su fila de siempre, debajo.
+     */
+    val fotos = attachments.filter { it.kind == AttachmentKind.IMAGE && existsFor(it) }
+    val resto = attachments - fotos.toSet()
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        attachments.forEach { adjunto ->
-            val presente = existsFor(adjunto)
-            when {
-                !presente -> MissingAttachmentRow(adjunto) { onRemove(adjunto) }
-                adjunto.kind == AttachmentKind.IMAGE -> ImageAttachment(
-                    attachment = adjunto,
-                    path = pathFor(adjunto),
-                    onOpen = { onOpen(adjunto) },
-                    onRemove = { onRemove(adjunto) }
-                )
-                adjunto.kind == AttachmentKind.AUDIO -> AudioAttachment(
-                    attachment = adjunto,
-                    path = pathFor(adjunto),
-                    onRemove = { onRemove(adjunto) }
-                )
-                else -> FileAttachment(
-                    attachment = adjunto,
-                    onOpen = { onOpen(adjunto) },
-                    onRemove = { onRemove(adjunto) }
+        when {
+            // Una foto sola se mira entera y a lo ancho: un carrusel de uno no es un carrusel.
+            fotos.size == 1 -> SingleAttachment(fotos.first(), pathFor, existsFor, onOpen, onRemove)
+            fotos.size > 1 -> PhotoCarousel(
+                fotos = fotos,
+                pathFor = pathFor,
+                onOpen = onOpen,
+                onRemove = onRemove
+            )
+        }
+        resto.forEach { adjunto ->
+            SingleAttachment(adjunto, pathFor, existsFor, onOpen, onRemove)
+        }
+    }
+}
+
+/**
+ * Las fotos, en carrusel multi-browse.
+ *
+ * Dos cosas lo separan de una fila que se desplaza. La primera es que el item **se recorta** en
+ * vez de encogerse, asi que lo que asoma por el borde se sigue viendo a su escala. La segunda es
+ * la que le da vida: la foto mide siempre lo mismo por dentro y **no se mueve con su mascara**,
+ * de modo que al arrastrar la ventana se desliza por encima de la imagen y esta parece quedarse
+ * quieta detras. Sin eso -- que fue como quedo primero -- la foto se estira y encoge con el
+ * marco y el conjunto se siente rigido, como una tabla que cambia de ancho.
+ */
+@Composable
+private fun PhotoCarousel(
+    fotos: List<NoteAttachment>,
+    pathFor: (NoteAttachment) -> String,
+    onOpen: (NoteAttachment) -> Unit,
+    onRemove: (NoteAttachment) -> Unit
+) {
+    val anchoItem = 232.dp
+    val carousel = rememberCarouselState { fotos.size }
+    HorizontalMultiBrowseCarousel(
+        state = carousel,
+        preferredItemWidth = anchoItem,
+        itemSpacing = 8.dp,
+        modifier = Modifier.fillMaxWidth().height(196.dp)
+    ) { indice ->
+        val foto = fotos[indice]
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .maskClip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        ) {
+            AsyncImage(
+                model = File(pathFor(foto)),
+                contentDescription = foto.displayName,
+                contentScale = ContentScale.Crop,
+                // Ancho fijo, no fillMaxWidth: es lo que hace que la imagen se quede quieta
+                // mientras la mascara se estrecha por encima.
+                modifier = Modifier
+                    .width(anchoItem)
+                    .fillMaxHeight()
+                    .align(Alignment.Center)
+            )
+            RemoveBadge(
+                onRemove = { onRemove(foto) },
+                modifier = Modifier.align(Alignment.TopEnd).padding(7.dp)
+            )
+            Surface(
+                onClick = { onOpen(foto) },
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.align(Alignment.BottomStart).padding(7.dp)
+            ) {
+                Text(
+                    "Abrir",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
             }
         }
+    }
+}
+
+/** Un adjunto, con la forma que le toque segun lo que sea. */
+@Composable
+private fun SingleAttachment(
+    adjunto: NoteAttachment,
+    pathFor: (NoteAttachment) -> String,
+    existsFor: (NoteAttachment) -> Boolean,
+    onOpen: (NoteAttachment) -> Unit,
+    onRemove: (NoteAttachment) -> Unit
+) {
+    when {
+        !existsFor(adjunto) -> MissingAttachmentRow(adjunto) { onRemove(adjunto) }
+        adjunto.kind == AttachmentKind.IMAGE -> ImageAttachment(
+            attachment = adjunto,
+            path = pathFor(adjunto),
+            onOpen = { onOpen(adjunto) },
+            onRemove = { onRemove(adjunto) }
+        )
+        adjunto.kind == AttachmentKind.AUDIO -> AudioAttachment(
+            attachment = adjunto,
+            path = pathFor(adjunto),
+            onRemove = { onRemove(adjunto) }
+        )
+        else -> FileAttachment(
+            attachment = adjunto,
+            onOpen = { onOpen(adjunto) },
+            onRemove = { onRemove(adjunto) }
+        )
     }
 }
 

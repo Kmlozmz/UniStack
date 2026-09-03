@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.unistack.app.feature_user.domain.ExpenseChartStyle
 import javax.inject.Inject
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
@@ -118,6 +119,19 @@ class ExpensesViewModel @Inject constructor(
         userRepository.saveUserProfile(
             current.copy(enabledExpenseCategories = next)
         )
+        return true
+    }
+
+    /**
+     * Con que forma se dibuja el grafico de la tarjeta.
+     *
+     * Se guarda en el perfil como el presupuesto o las categorias, y se elige en la propia
+     * pantalla de Gastos: es un ajuste de esta tarjeta, no del aspecto de la app.
+     */
+    fun setChartStyle(style: ExpenseChartStyle): Boolean {
+        val current = userProfile.value ?: return false
+        if (current.expenseChartStyle == style) return true
+        userRepository.saveUserProfile(current.copy(expenseChartStyle = style))
         return true
     }
 

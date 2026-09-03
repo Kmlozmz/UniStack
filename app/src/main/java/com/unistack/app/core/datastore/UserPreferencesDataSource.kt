@@ -32,6 +32,7 @@ import com.unistack.app.feature_user.domain.TextScalePreference
 import com.unistack.app.feature_notes.domain.NoteFormat
 import com.unistack.app.feature_notes.domain.NotesLayout
 import com.unistack.app.feature_notes.domain.NotesSort
+import com.unistack.app.feature_user.domain.ExpenseChartStyle
 import com.unistack.app.feature_user.domain.UserProfile
 import com.unistack.app.feature_user.domain.UserIds
 import com.unistack.app.feature_user.domain.VisualPreference
@@ -84,6 +85,7 @@ class UserPreferencesDataSource(private val context: Context) {
         val QUIET_HOURS_ENABLED = booleanPreferencesKey("quiet_hours_enabled")
         val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
+        val EXPENSE_CHART_STYLE = stringPreferencesKey("expense_chart_style")
         val WEEKLY_BUDGET = intPreferencesKey("weekly_budget")
         val MONTHLY_BUDGET = intPreferencesKey("monthly_budget")
         val EXPENSE_ALERT_THRESHOLD_PERCENT = intPreferencesKey("expense_alert_threshold_percent")
@@ -186,6 +188,9 @@ class UserPreferencesDataSource(private val context: Context) {
             quietHoursEnabled = prefs[Keys.QUIET_HOURS_ENABLED] ?: false,
             quietHoursStartHour = prefs[Keys.QUIET_HOURS_START]?.takeIf { it in 0..23 },
             quietHoursEndHour = prefs[Keys.QUIET_HOURS_END]?.takeIf { it in 0..23 },
+            expenseChartStyle = prefs[Keys.EXPENSE_CHART_STYLE]
+                ?.let { valor -> ExpenseChartStyle.entries.firstOrNull { it.name == valor } }
+                ?: ExpenseChartStyle.BARS,
             weeklyBudget = prefs[Keys.WEEKLY_BUDGET] ?: 0,
             monthlyBudget = prefs[Keys.MONTHLY_BUDGET] ?: 0,
             expenseAlertThresholdPercent = prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] ?: 80,
@@ -264,6 +269,7 @@ class UserPreferencesDataSource(private val context: Context) {
             } else {
                 prefs.remove(Keys.QUIET_HOURS_END)
             }
+            prefs[Keys.EXPENSE_CHART_STYLE] = profile.expenseChartStyle.name
             prefs[Keys.WEEKLY_BUDGET] = profile.weeklyBudget
             prefs[Keys.MONTHLY_BUDGET] = profile.monthlyBudget
             prefs[Keys.EXPENSE_ALERT_THRESHOLD_PERCENT] = profile.expenseAlertThresholdPercent

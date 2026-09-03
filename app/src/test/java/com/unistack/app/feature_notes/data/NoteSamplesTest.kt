@@ -19,8 +19,8 @@ import org.robolectric.annotation.Config
  *
  * Es facil que un juego de datos falsos se quede a medias sin que nadie lo note: se anade una
  * funcion nueva y el señuelo sigue siendo el de antes, asi que al mirar la pantalla no se ve
- * justo lo que se acaba de construir. Esta prueba recorre las ocho notas y comprueba que entre
- * todas aparece cada cosa que el editor sabe pintar.
+ * justo lo que se acaba de construir. Esta prueba las recorre todas y comprueba que entre ellas
+ * aparece cada cosa que el editor sabe pintar y cada estado en que puede estar una nota.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest = Config.NONE, sdk = [34])
@@ -40,11 +40,39 @@ class NoteSamplesTest {
     )
 
     @Test
-    fun sonOchoYNingunaSeRepite() {
+    fun ningunaSeRepite() {
         val todas = muestras()
-        assertEquals(9, todas.size)
-        assertEquals(9, todas.map { it.note.body }.toSet().size)
-        assertEquals(9, todas.map { it.note.id }.toSet().size)
+        assertEquals(13, todas.size)
+        assertEquals(13, todas.map { it.note.body }.toSet().size)
+        assertEquals(13, todas.map { it.note.id }.toSet().size)
+    }
+
+    /**
+     * Los tres estados que no se ven en la lista.
+     *
+     * Archivada, en la papelera y con el aviso ya pasado son justo los que obligaban a
+     * archivar, borrar y esperar a mano para poder mirar esas pantallas.
+     */
+    @Test
+    fun estanLosEstadosQueNoSalenEnLaLista() {
+        val todas = muestras()
+        assertTrue("falta una archivada", todas.any { it.note.archived })
+        assertTrue("falta una en la papelera", todas.any { it.note.deletedAt != null })
+        assertTrue(
+            "falta una con el aviso ya vencido",
+            todas.any { it.note.reminderAt != null && it.note.reminderAt!! < 1_800_000_000_000L }
+        )
+        assertTrue(
+            "falta una con el aviso por llegar",
+            todas.any { it.note.reminderAt != null && it.note.reminderAt!! > 1_800_000_000_000L }
+        )
+    }
+
+    /** Con una sola no se despliega el carrusel: hace falta una nota con varios adjuntos. */
+    @Test
+    fun hayUnaConVariosAdjuntos() {
+        val mayor = muestras().maxOf { it.attachments.size }
+        assertTrue("ninguna nota lleva mas de un adjunto", mayor >= 3)
     }
 
     /*
@@ -82,13 +110,13 @@ class NoteSamplesTest {
         }
     }
 
-    /** Una de las nueve es una lista pura, para poder ver el editor de listas. */
+    /** Alguna es una lista pura, para poder ver el editor de listas y el anillo de avance. */
     @Test
     fun hayUnaListaEntera() {
         val listas = muestras().count {
             com.unistack.app.feature_notes.domain.NoteChecklist.isChecklist(it.note.body)
         }
-        assertEquals(1, listas)
+        assertTrue("no hay ninguna lista pura", listas >= 1)
     }
 
     @Test
@@ -131,10 +159,13 @@ class NoteSamplesTest {
     }
 
     @Test
-    fun laGrabacionTieneDuracionYElRestoNo() {
+    fun lasGrabacionesTienenDuracionYElRestoNo() {
         val adjuntos = muestras().flatMap { it.attachments }
-        val audio = adjuntos.single { it.kind == AttachmentKind.AUDIO }
-        assertTrue(audio.durationMillis != null && audio.durationMillis!! > 0)
+        val audios = adjuntos.filter { it.kind == AttachmentKind.AUDIO }
+        assertTrue("no hay ninguna grabacion", audios.isNotEmpty())
+        audios.forEach {
+            assertTrue(it.durationMillis != null && it.durationMillis!! > 0)
+        }
         adjuntos.filter { it.kind != AttachmentKind.AUDIO }.forEach {
             assertTrue(it.durationMillis == null)
         }
@@ -166,6 +197,6 @@ class NoteSamplesTest {
     fun sinMateriasNingunaQuedaVinculada() {
         val sinMaterias = NoteSamples.build(store, emptyList(), 1_800_000_000_000L)
         assertTrue(sinMaterias.all { it.note.subjectId == null })
-        assertEquals(9, sinMaterias.size)
+        assertEquals(13, sinMaterias.size)
     }
 }

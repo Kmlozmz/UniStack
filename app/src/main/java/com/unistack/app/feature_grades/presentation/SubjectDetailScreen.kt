@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.School
@@ -132,6 +133,7 @@ fun SubjectDetailScreen(
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
+    onNewNoteClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel()
@@ -245,6 +247,10 @@ fun SubjectDetailScreen(
                         }
                     } else {
                         null
+                    },
+                    onNewNoteClick = {
+                        showSubjectMenu = false
+                        onNewNoteClick(subject.id)
                     },
                     onDeleteClick = {
                         showSubjectMenu = false
@@ -644,6 +650,7 @@ private fun SubjectHeader(
     onDismissMenu: () -> Unit,
     onEditClick: () -> Unit,
     onCompleteHistoryClick: (() -> Unit)?,
+    onNewNoteClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     Row(
@@ -724,6 +731,11 @@ private fun SubjectHeader(
                     text = { Text("Editar materia", color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = onEditClick
+                )
+                DropdownMenuItem(
+                    text = { Text("Nueva nota", color = MaterialTheme.colorScheme.onSurface) },
+                    leadingIcon = { Icon(Icons.Rounded.EditNote, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    onClick = onNewNoteClick
                 )
                 onCompleteHistoryClick?.let { action ->
                     DropdownMenuItem(
