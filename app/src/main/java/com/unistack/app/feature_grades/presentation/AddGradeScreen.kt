@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
+import com.unistack.app.core.design.components.avisoDeError
 import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -409,7 +410,9 @@ fun AddGradeScreen(
                     label = { Text("Nombre") },
                     placeholder = { Text("Ej. Taller 2, Parcial de mitad…") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto
+                    // anade lo que el rojo no dice, que es que **acaba** de pasar.
+                    modifier = Modifier.fillMaxWidth().avisoDeError(!isNameValid),
                     shape = FormCardShape,
                     isError = !isNameValid,
                     colors = formFieldColors(),

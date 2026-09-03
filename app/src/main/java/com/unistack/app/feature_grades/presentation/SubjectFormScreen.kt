@@ -42,6 +42,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.unistack.app.core.design.components.avisoDeError
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
@@ -289,7 +290,9 @@ fun SubjectFormScreen(
                     placeholder = { Text("Ej: Estadística inferencial") },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth(),
+                    // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto anade
+                    // lo que el rojo no dice, que es que **acaba** de pasar.
+                    modifier = Modifier.fillMaxWidth().avisoDeError(!isNameValid),
                     isError = !isNameValid,
                     supportingText = {
                         if (!isNameValid) {

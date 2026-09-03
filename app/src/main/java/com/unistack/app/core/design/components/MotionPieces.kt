@@ -41,6 +41,7 @@ import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
+import com.unistack.app.feature_user.domain.ErrorMotion
 import com.unistack.app.feature_user.domain.ListEntry
 import com.unistack.app.feature_user.domain.LoadingStyle
 import com.unistack.app.feature_user.domain.OverdueBeat
@@ -289,4 +290,46 @@ fun numeroQueCuenta(objetivo: Float, etiqueta: String = "numero"): Float {
         label = etiqueta
     )
     return valor
+}
+
+/**
+ * El aviso de un campo mal rellenado, con la variante elegida.
+ *
+ * Se aplica al `Modifier` del campo y ya esta: el rojo lo pone el propio `isError` de Material,
+ * y esto anade lo que el rojo no dice —que **acaba** de pasar algo—. Es la diferencia entre un
+ * campo que estaba mal desde el principio y uno que se acaba de equivocar.
+ *
+ * La sacudida y el parpadeo se disparan una sola vez al pasar a error y no mientras dure: un
+ * campo temblando sin parar mientras se escribe es peor que uno quieto en rojo.
+ */
+@Composable
+fun Modifier.avisoDeError(hayError: Boolean): Modifier {
+    val estilo = motionActual().errorHint
+    if (estilo == ErrorMotion.ROJO || !hayMovimiento()) return this
+
+    // Se reinicia cada vez que se entra en error, y no cada recomposicion: escribiendo, el
+    // campo recompone en cada tecla y el aviso no puede repetirse en cada una.
+    var golpe by remember { mutableStateOf(0f) }
+    LaunchedEffect(hayError) { golpe = if (hayError) 1f else 0f }
+    val avance by animateFloatAsState(
+        targetValue = golpe,
+        animationSpec = tweenDeMovimiento(baseMs = 480),
+        label = "error"
+    )
+    if (avance <= 0.01f) return this
+
+    return when (estilo) {
+        // Tres idas y venidas que se apagan: un temblor que no decae se lee como un fallo.
+        ErrorMotion.SACUDE -> this.graphicsLayer {
+            translationX = sin(avance * 6f * Math.PI.toFloat()) * 9f * (1f - avance)
+        }
+        ErrorMotion.PARPADEA -> this.alpha(
+            if (avance >= 1f) 1f else 0.45f + 0.55f * abs(sin(avance * 4f * Math.PI.toFloat()))
+        )
+        // El texto de ayuda entra desde arriba en vez de aparecer: el campo no se mueve.
+        ErrorMotion.ENTRA -> this.graphicsLayer {
+            translationY = -6f * (1f - avance)
+        }
+        ErrorMotion.ROJO -> this
+    }
 }

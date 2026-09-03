@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.foundation.layout.fillMaxHeight
+import com.unistack.app.core.design.theme.motionActual
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
@@ -138,10 +139,22 @@ private fun PhotoCarousel(
                 model = File(pathFor(foto)),
                 contentDescription = foto.displayName,
                 contentScale = ContentScale.Crop,
-                // Ancho fijo, no fillMaxWidth: es lo que hace que la imagen se quede quieta
-                // mientras la mascara se estrecha por encima.
+                /*
+                 * Ancho fijo, no `fillMaxWidth`: es lo que hace que la imagen se quede quieta
+                 * mientras la mascara se estrecha por encima. **Eso es el parallax**, y es lo
+                 * que enciende y apaga el interruptor de Movimiento.
+                 *
+                 * Apagado, la imagen se estira con su mascara y viaja con la tarjeta, que es
+                 * lo que hace cualquier carrusel sin parallax.
+                 */
                 modifier = Modifier
-                    .width(anchoItem)
+                    .then(
+                        if (motionActual().carouselParallax) {
+                            Modifier.width(anchoItem)
+                        } else {
+                            Modifier.fillMaxWidth()
+                        }
+                    )
                     .fillMaxHeight()
                     .align(Alignment.Center)
             )
