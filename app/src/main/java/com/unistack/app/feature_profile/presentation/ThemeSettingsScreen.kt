@@ -103,8 +103,15 @@ fun ThemeSettingsScreen(
             )
         }
 
+        item { TelefonoDePrueba() }
+
         item {
-            Text("MODO", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+            Text(
+                "MODO",
+                style = SectionLabelStyle,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 6.dp)
+            )
         }
         item {
             UniSegmentedControl(

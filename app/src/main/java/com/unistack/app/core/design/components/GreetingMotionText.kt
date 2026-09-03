@@ -51,13 +51,24 @@ fun SaludoAnimado(
     val estilo = motionActual().greeting
     val animar = hayMovimiento()
 
-    // Arranca a cero y sube a uno una sola vez, al entrar. `LaunchedEffect` con el nombre como
-    // clave es lo que hace que vuelva a saludar si cambias tu nombre y no en cada recomposición.
-    var lanzado by remember(nombre) { mutableStateOf(!animar) }
-    LaunchedEffect(nombre, animar) {
-        if (animar) {
+    /*
+     * El saludo se anima **al abrir la app**, no cada vez que se vuelve a Inicio.
+     *
+     * Estaba atado a que la pantalla entrara en composicion, y a Inicio se vuelve veinte veces
+     * al dia: el saludo se escribia letra a letra cada vez que se tocaba la primera pestana, lo
+     * cual deja de ser una bienvenida y pasa a ser un tic. [SaludoYaVisto] es un objeto de
+     * proceso: se pone a cierto la primera vez y vuelve a falso solo cuando Android mata la
+     * app, que es justo cuando volver a saludar tiene sentido.
+     *
+     * Cambiar el nombre si vuelve a lanzarlo: ahi hay algo nuevo que ensenar.
+     */
+    val debeAnimar = animar && !SaludoYaVisto.visto(nombre)
+    var lanzado by remember(nombre) { mutableStateOf(!debeAnimar) }
+    LaunchedEffect(nombre, debeAnimar) {
+        if (debeAnimar) {
             delay(60)
             lanzado = true
+            SaludoYaVisto.marcar(nombre)
         }
     }
     val avance by animateFloatAsState(
@@ -189,3 +200,21 @@ private fun NombreLlano(texto: String, estilo: TextStyle, modifier: Modifier = M
 /** Sin uso directo; queda a mano para quien necesite el compás del saludo. */
 @Composable
 internal fun compasDelSaludo(): Int = duracion(520)
+
+/**
+ * Si el saludo ya se enseno en esta sesion de la app.
+ *
+ * Es estado de proceso y no de composicion a proposito: lo que hay que recordar es «esta
+ * apertura de la app», y eso vive mas que cualquier pantalla. Guardarlo en disco seria peor
+ * —el saludo no volveria nunca tras la primera instalacion— y guardarlo en la composicion es
+ * lo que estaba haciendo que se repitiera en cada vuelta a Inicio.
+ */
+private object SaludoYaVisto {
+    private var nombreVisto: String? = null
+
+    fun visto(nombre: String): Boolean = nombreVisto == nombre
+
+    fun marcar(nombre: String) {
+        nombreVisto = nombre
+    }
+}

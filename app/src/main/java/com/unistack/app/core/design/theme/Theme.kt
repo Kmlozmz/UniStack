@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AccentStyle
+import com.unistack.app.feature_user.domain.HapticStrength
+import com.unistack.app.feature_user.domain.MotionPreference
+import com.unistack.app.core.utils.HapticRuntime
 import com.unistack.app.feature_user.domain.LineHeightStyle
 import com.unistack.app.feature_user.domain.ReadingFont
 import com.unistack.app.feature_user.domain.ContrastLevel
@@ -57,6 +60,13 @@ fun UniStackTheme(
     content: @Composable () -> Unit
 ) {
     AppearanceRuntime.cornerStyle = appearance.cornerStyle
+    // La fuerza de vibracion sale de aqui hacia `performSafely`, que se llama desde onClick y
+    // no puede leer un CompositionLocal. Con el movimiento apagado del todo, tampoco vibra.
+    HapticRuntime.strength = if (maxOf(appearance.motionPreference, accessibility.motionPreference) == MotionPreference.NONE) {
+        HapticStrength.NINGUNA
+    } else {
+        appearance.motion.haptics
+    }
 
     val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = appearance)
         .conContraste(accessibility.contrast, accessibility.highContrastEnabled, darkTheme)
@@ -228,6 +238,17 @@ private fun expressiveColorScheme(
             primaryContainer = acento.copy(alpha = 0.22f).compuestoSobre(tema.background),
             onPrimaryContainer = if (!darkTheme) tema.ink else acento,
             secondary = acento,
+            /*
+             * La pastilla de la barra de abajo sale de aqui.
+             *
+             * `ShortNavigationBarItem` pinta su indicador con `secondaryContainer`, y ese se
+             * quedaba con el valor del esquema base: la barra marcaba la pestana activa con un
+             * color que no era el del tema ni el del acento, y no habia forma de entender de
+             * donde salia. Ahora es el acento rebajado sobre el fondo, que es lo que hace que
+             * se lea como «lo elegido» en el mismo idioma que el resto de la app.
+             */
+            secondaryContainer = acento.copy(alpha = 0.26f).compuestoSobre(tema.background),
+            onSecondaryContainer = acento,
             tertiary = acento,
             background = tema.background,
             onBackground = tema.ink,

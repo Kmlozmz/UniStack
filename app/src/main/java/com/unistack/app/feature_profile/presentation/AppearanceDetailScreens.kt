@@ -137,9 +137,10 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        // La muestra va arriba del todo y se queda a la vista mientras se toca lo de abajo:
-        // es una tarjeta de materia real, con su marca, su promedio y su barra.
-        VistaPreviaDeTarjeta()
+        // El teléfono va arriba del todo y se queda a la vista mientras se toca lo de abajo.
+        // Todo lo que se elige en esta pantalla se ve ahí dentro, y en el conjunto: una
+        // superficie no se juzga en una tarjeta suelta sino viendo si la pantalla respira.
+        TelefonoDePrueba()
 
         Rotulo("SUPERFICIE", arriba = true)
         UniSegmentedControl(
@@ -196,7 +197,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonShape = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeBotones()
 
         Rotulo("FORMA DE LOS CAMPOS", arriba = true)
         UniSegmentedControl(
@@ -205,7 +205,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(textFieldStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeCampo()
 
         Rotulo("FORMA DE LOS CHIPS", arriba = true)
         UniSegmentedControl(
@@ -214,7 +213,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(chipStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeChips()
 
         Rotulo("FORMA DE LOS DISTINTIVOS", arriba = true)
         UniSegmentedControl(
@@ -223,7 +221,6 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(badgeShape = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeDistintivos()
         Explicacion(
             if (appearance.badgeShape == BadgeShape.ALEATORIO) {
                 "Cada materia se queda con la suya, siempre la misma: dos del mismo color ya no se confunden."
@@ -245,6 +242,7 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
+        TelefonoDePrueba()
         MuestraDeLetra()
 
         Rotulo("FAMILIA", arriba = true)
@@ -365,14 +363,15 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo("TAMAÑO DE LOS BOTONES")
+        TelefonoDePrueba()
+
+        Rotulo("TAMAÑO DE LOS BOTONES", arriba = true)
         UniSegmentedControl(
             selected = appearance.buttonSize,
             options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeBotones()
         Explicacion("La forma se elige en Forma y superficie.")
 
         Rotulo("BARRA DE ABAJO", arriba = true)
@@ -399,10 +398,7 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             onSelected = { valor -> viewModel.updateAppearance { it.copy(academicProgressShape = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BarraDeProgresoReal(progreso = 0.68f)
-            BarraDeProgresoReal(progreso = 0.34f)
-        }
+        BarraDeProgresoReal(progreso = 0.68f)
         Explicacion(
             "Es la onda de Material 3 Expressive, y se ve moviéndose porque quieta apenas se " +
                 "distingue de una recta. Las de descarga se quedan onduladas siempre."
@@ -415,7 +411,6 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             onSelected = { valor -> viewModel.updateAppearance { it.copy(switchIconStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        VistaPreviaDeInterruptores()
 
         Rotulo("DETALLES", arriba = true)
         Surface(
