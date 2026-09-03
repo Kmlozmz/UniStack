@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
 import com.unistack.app.core.utils.desde
@@ -1102,7 +1103,7 @@ private fun CategoryFilterMenu(
                     }
                 )
             }
-            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            UniDivider(Modifier.padding(vertical = 4.dp))
             DropdownMenuItem(
                 text = { Text("Administrar categorías") },
                 leadingIcon = {

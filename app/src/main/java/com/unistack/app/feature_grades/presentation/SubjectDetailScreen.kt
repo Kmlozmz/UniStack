@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -553,7 +554,7 @@ fun SubjectCutDetailScreen(
                                 onDeleteClick = { gradeIdPendingDelete = grade.id }
                             )
                             if (index < grades.lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                                UniDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             }
                         }
                     }
@@ -748,7 +749,7 @@ private fun SubjectHeader(
                 }
                 // Borrar una materia se lleva por delante sus notas: la línea la separa de
                 // las opciones que solo abren otra pantalla.
-                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                UniDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
                     text = { Text("Eliminar materia", color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
@@ -1645,7 +1646,7 @@ private fun GradeRowItem(
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = { showMenu = false; onEditClick() }
                 )
-                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                UniDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
                     text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
