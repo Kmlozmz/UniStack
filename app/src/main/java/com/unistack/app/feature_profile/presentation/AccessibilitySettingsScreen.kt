@@ -43,6 +43,11 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.AppLanguage
+import java.time.LocalDate
+import java.time.DayOfWeek
+import com.unistack.app.feature_user.domain.FirstDayOfWeek
+import com.unistack.app.core.utils.desde
+import com.unistack.app.core.utils.DayLabels
 import com.unistack.app.feature_user.domain.ColorBlindPalette
 import com.unistack.app.feature_user.domain.ContrastLevel
 import com.unistack.app.feature_user.domain.MotionPreference
@@ -72,6 +77,9 @@ fun AccessibilitySettingsScreen(
     val spacing = LocalInterfaceSpacing.current
     val current = profile ?: return
     val a11y = current.accessibilityPreferences
+    // El primer dia de la semana vive en las preferencias de apariencia, pero se elige aqui:
+    // es un formato de fecha, no un componente.
+    val appearance = current.appearancePreferences
 
     LazyColumn(
         modifier = modifier.fillMaxSize().statusBarsPadding(),
@@ -222,16 +230,46 @@ fun AccessibilitySettingsScreen(
                     a11y.oneHandedMode
                 ) { valor -> viewModel.updateAccessibility { it.copy(oneHandedMode = valor) } }
                 FilaDeInterruptorA11y(
-                    "Reloj de 24 horas",
-                    "«14:30» en vez de «2:30 p. m.».",
-                    a11y.use24HourTime
-                ) { valor -> viewModel.updateAccessibility { it.copy(use24HourTime = valor) } }
-                FilaDeInterruptorA11y(
                     "Animación del saludo",
                     "El movimiento de la tarjeta grande de Inicio.",
                     a11y.heroAnimationEnabled
                 ) { valor -> viewModel.updateAccessibility { it.copy(heroAnimationEnabled = valor) } }
             }
+        }
+
+        /*
+         * Formato: como escribe la app las horas y por donde empieza la semana.
+         *
+         * El primer dia estaba en Componentes y ahi no encajaba —no es un componente, es un
+         * formato— y el reloj de 24 horas estaba suelto entre «modo de una mano» y «animacion
+         * del saludo». Los dos responden a la misma pregunta: como se escriben las fechas y
+         * las horas.
+         */
+        item { Rotulo("FORMATO", arriba = true) }
+        item {
+            SettingsGroupCard(label = "") {
+                FilaDeInterruptorA11y(
+                    "Reloj de 24 horas",
+                    "«14:30» en vez de «2:30 p. m.».",
+                    a11y.use24HourTime
+                ) { valor -> viewModel.updateAccessibility { it.copy(use24HourTime = valor) } }
+            }
+        }
+        item {
+            Etiqueta("Primer día de la semana")
+            UniSegmentedControl(
+                selected = appearance.firstDayOfWeek,
+                options = FirstDayOfWeek.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+                onSelected = { valor -> viewModel.updateAppearance { it.copy(firstDayOfWeek = valor) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+            VistaPreviaDeSemana(
+                letras = DayLabels.desde(DayOfWeek.of(appearance.firstDayOfWeek.isoDay)),
+                indiceDeHoy = Math.floorMod(
+                    LocalDate.now().dayOfWeek.value - appearance.firstDayOfWeek.isoDay,
+                    7
+                )
+            )
         }
 
         // ------------------------------------------------------------------ voz y seguridad

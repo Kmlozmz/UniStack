@@ -1,6 +1,9 @@
 package com.unistack.app.core.design.theme
 
 import androidx.compose.material3.Typography
+import android.os.Build
+import androidx.compose.ui.text.font.DeviceFontFamilyName
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.LineHeightStyle
@@ -50,10 +53,19 @@ fun appearanceTypography(
     negrita: Boolean = false
 ): Typography {
     val family = when (estilo) {
-        TypographyStyle.UNISTACK -> FontFamily.SansSerif
+        TypographyStyle.SANS -> FontFamily.SansSerif
         TypographyStyle.SYSTEM -> FontFamily.Default
         TypographyStyle.SERIF -> FontFamily.Serif
         TypographyStyle.MONO -> FontFamily.Monospace
+        /*
+         * Las dos que se piden por nombre de dispositivo.
+         *
+         * `DeviceFontFamilyName` es de API 31, y la app llega hasta la 26. Debajo de eso —y en
+         * cualquier telefono que no tenga esa familia instalada— cae en la `sans-serif` normal:
+         * la letra no es la elegida pero la app se lee, que es lo que importa.
+         */
+        TypographyStyle.ESTRECHA -> familiaDelSistema("sans-serif-condensed")
+        TypographyStyle.REDONDEADA -> familiaDelSistema("sans-serif-rounded", "casual")
     }
     val factor = when (interlineado) {
         LineHeightStyle.COMPACTO -> 0.88f
@@ -101,4 +113,15 @@ fun appearanceTypography(
             labelSmall = labelSmall.ajustada()
         )
     }
+}
+
+/**
+ * Una familia instalada en el telefono, o la `sans-serif` de siempre si no esta.
+ *
+ * @param nombres se prueban en orden. Android no dice si una familia existe, asi que el
+ *   respaldo va dentro del propio [FontFamily]: si la primera no resuelve, usa la siguiente.
+ */
+private fun familiaDelSistema(vararg nombres: String): FontFamily {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return FontFamily.SansSerif
+    return FontFamily(nombres.map { Font(DeviceFontFamilyName(it)) })
 }

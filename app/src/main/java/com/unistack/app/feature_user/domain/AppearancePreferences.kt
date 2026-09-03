@@ -40,7 +40,7 @@ data class AppearancePreferences(
      */
     val motion: MotionPreferences = MotionPreferences(),
     val textScale: TextScalePreference = TextScalePreference.STANDARD,
-    val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
+    val typographyStyle: TypographyStyle = TypographyStyle.SANS,
 
     /**
      * El tamano del texto, de 85 a 135 por ciento.
@@ -172,8 +172,19 @@ enum class CustomThemeBase {
     DARK
 }
 
+/**
+ * Lo que queda de la eleccion de acento vieja, solo para leer copias de seguridad antiguas.
+ *
+ * **Ya no decide nada.** El acento sale del tema, o de [AppearancePreferences.customAccentColor]
+ * si se ha elegido uno a mano. `DYNAMIC` —el color del fondo de pantalla, Material You— se
+ * retiro entero: con veintiocho temas y un acento a medida no anadia nada, y mientras estaba
+ * encendido dejaba los temas en pausa y media pantalla de ajustes sin pintar.
+ *
+ * El enum se conserva porque el valor viaja en las copias de seguridad y en el JSON del disco;
+ * borrarlo haria que una copia de hace dos versiones no se pudiera leer.
+ */
+@Deprecated("El acento sale del tema o de customAccentColor; esto solo se lee de copias viejas.")
 enum class AccentStyle {
-    /** Toma el color del fondo de pantalla del sistema (Material You / Monet, Android 12+). */
     DYNAMIC,
     VIOLET,
     BLUE,
@@ -222,15 +233,32 @@ enum class TextScalePreference {
 /**
  * La familia de letra de toda la app.
  *
- * Serif y mono se anaden a las dos de siempre: la serif es lo que pide quien lee mejor con
- * remates, y la mono alinea cifras por columnas, que en una lista de notas y de importes se
- * nota. Las cuatro salen de las familias del sistema, asi que ninguna suma peso al APK.
+ * **Ya no se llama «UniStack».** Se llamaba asi la de por defecto y era mentira: no hay ninguna
+ * fuente propia, es la `sans-serif` del sistema. Un nombre de marca sobre una fuente prestada
+ * hace pensar que se pierde algo al cambiarla, y no se pierde nada.
+ *
+ * Las seis salen de las familias que Android ya trae, asi que ninguna suma peso al APK ni tarda
+ * en cargar. [ESTRECHA] y [REDONDEADA] se piden por nombre de dispositivo: si el telefono no
+ * las tiene, cae en la `sans-serif` normal sin romper nada.
  */
 enum class TypographyStyle {
-    UNISTACK,
+    /** La `sans-serif` del sistema. La de siempre, y la de por defecto. */
+    SANS,
+
+    /** La que el fabricante haya puesto como suya: Samsung One, MIUI Sans, la que sea. */
     SYSTEM,
+
+    /** Con remates. Se lee mejor en parrafos largos. */
     SERIF,
-    MONO
+
+    /** Ancho fijo: alinea cifras por columnas, que en notas e importes se nota. */
+    MONO,
+
+    /** Condensada: cabe mas nombre de materia antes de cortarse. */
+    ESTRECHA,
+
+    /** De trazo mas blando, para quien la prefiere menos seca. */
+    REDONDEADA
 }
 
 enum class BottomBarStyle {

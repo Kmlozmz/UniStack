@@ -2,23 +2,16 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -27,18 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.formaDeDistintivo
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
-import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.SectionLabelStyle
@@ -65,16 +52,18 @@ import com.unistack.app.feature_user.domain.TypographyStyle
 /**
  * Las puertas de Apariencia, cada una con lo suyo.
  *
- * Antes era una sola pantalla con seis grupos apilados —modo, color, densidad y letra,
- * detalles de la interfaz, tarjetas de inicio y lo que enseña el hero— que se recorría a
- * base de scroll y donde el color se elegía en dos sitios a la vez. Es el mismo arreglo que
- * se hizo en Configuración académica: cada cosa en su puerta, y el hub diciendo qué hay
- * detrás de cada una.
+ * **Cada ajuste enseña lo que hace, con una pieza de la app y no con un rectángulo.** La
+ * versión anterior ponía tres cajas grises al elegir superficie y una fila de puntos al elegir
+ * distintivo, y con eso «plana» y «filete» se veían idénticas: las muestras abstractas no
+ * enseñan un contraste, solo un color. Ahora la superficie se juzga en una tarjeta de materia
+ * de verdad, los chips en los de Tareas, y el progreso animándose, porque la onda de Material
+ * 3 Expressive se reconoce por cómo se mueve y no por su silueta quieta.
  *
- * **Cada pantalla enseña lo que hace.** No hay un solo ajuste aquí sin algo que se mueva al
- * tocarlo: el estilo de superficie pinta tres tarjetas, el de botón pinta un botón, el
- * distintivo pinta cinco materias. Es lo que separa esto de la versión anterior, donde media
- * docena de segmentos se guardaban sin cambiar un píxel.
+ * El reparto entre las dos pantallas también cambió: **lo que es forma va en «Forma y
+ * superficie»** —la de las tarjetas, la de los botones, la de los campos, la de los
+ * distintivos— y en «Componentes» queda lo que no es forma sino comportamiento: tamaños,
+ * barra, iconos, progreso e interruptores. Antes la forma de un botón estaba en una pantalla y
+ * la de una tarjeta en la otra, sin nada que lo explicara.
  */
 
 /** Un rótulo de grupo, para no repetirlo en cada pantalla. */
@@ -84,7 +73,7 @@ private fun Rotulo(texto: String, arriba: Boolean = false) {
         text = texto,
         style = SectionLabelStyle,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = if (arriba) 8.dp else 0.dp)
+        modifier = Modifier.padding(top = if (arriba) 10.dp else 0.dp)
     )
 }
 
@@ -128,24 +117,28 @@ private fun PantallaDeAjustes(
 // ------------------------------------------------------------------ forma y superficie
 
 /**
- * Cómo se separa una tarjeta del fondo, y cuánto aire hay dentro.
+ * Todo lo que decide **qué forma tienen las cosas**: tarjetas, botones, campos y distintivos.
  *
  * `surfaceStyle` llevaba aquí desde el principio, guardado y viajando en la copia de
  * seguridad, **sin pintar nada**: elegir «plana» o «con sombra» daba exactamente el mismo
  * resultado. Ahora decide de verdad, y los dos ajustes que lo afinan —cuánta sombra, qué
- * grosor de filete— solo aparecen cuando el estilo elegido los usa: un deslizador de sombra
- * bajo una superficie plana es un mando desconectado.
+ * grosor de filete— solo aparecen cuando el estilo elegido los usa: un selector de sombra bajo
+ * una superficie plana es un mando desconectado.
  */
 @Composable
 fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
     PantallaDeAjustes(
         titulo = "Forma y superficie",
-        subtitulo = "Cómo se separan las tarjetas y cuánto aire hay",
+        subtitulo = "Tarjetas, botones, campos y distintivos",
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo("SUPERFICIE")
+        // La muestra va arriba del todo y se queda a la vista mientras se toca lo de abajo:
+        // es una tarjeta de materia real, con su marca, su promedio y su barra.
+        VistaPreviaDeTarjeta()
+
+        Rotulo("SUPERFICIE", arriba = true)
         UniSegmentedControl(
             selected = appearance.surfaceStyle,
             options = SurfaceStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -153,12 +146,11 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             modifier = Modifier.fillMaxWidth()
         )
         Explicacion(appearance.surfaceStyle.explicacion())
-        MuestraDeSuperficie(appearance)
 
         // Solo con «Sombra»: no hay opción «nada» porque una sombra de cero es una superficie
         // plana, y plana ya es una de las cuatro de arriba.
         if (appearance.surfaceStyle == SurfaceStyle.ELEVATED) {
-            Rotulo("CUÁNTA SOMBRA", arriba = true)
+            Rotulo("CUÁNTA SOMBRA")
             UniSegmentedControl(
                 selected = appearance.shadowIntensity,
                 options = ShadowIntensity.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -167,7 +159,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             )
         }
         if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-            Rotulo("GROSOR DEL FILETE", arriba = true)
+            Rotulo("GROSOR DEL FILETE")
             UniSegmentedControl(
                 selected = appearance.outlineWeight,
                 options = OutlineWeight.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -183,7 +175,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(cornerStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Afecta a tarjetas, botones y hojas, en toda la app.")
+        Explicacion("Afecta a tarjetas, botones y hojas, en toda la app. Mira la tarjeta de arriba.")
 
         Rotulo("DENSIDAD", arriba = true)
         UniSegmentedControl(
@@ -192,57 +184,50 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             onSelected = { valor -> viewModel.updateAppearance { it.copy(interfaceDensity = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Cuánto separa la app una cosa de la siguiente.")
-    }
-}
+        Explicacion("Cuánto separa la app una cosa de la siguiente, y cuánto aire hay dentro de una tarjeta.")
 
-/** Tres tarjetas con el estilo puesto: es la única forma de comparar cuatro superficies. */
-@Composable
-private fun MuestraDeSuperficie(appearance: AppearancePreferences) {
-    val esquema = MaterialTheme.colorScheme
-    val elevacion = when (appearance.shadowIntensity) {
-        ShadowIntensity.SUAVE -> 2.dp
-        ShadowIntensity.MEDIA -> 6.dp
-        ShadowIntensity.FUERTE -> 12.dp
-    }
-    val grosor = when (appearance.outlineWeight) {
-        OutlineWeight.FINO -> 1.dp
-        OutlineWeight.MEDIO -> 1.5.dp
-        OutlineWeight.GRUESO -> 2.5.dp
-    }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        repeat(3) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp)
-                    .then(
-                        if (appearance.surfaceStyle == SurfaceStyle.ELEVATED) {
-                            Modifier.shadow(elevacion, MaterialTheme.shapes.large)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .clip(MaterialTheme.shapes.large)
-                    .background(
-                        if (appearance.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
-                            esquema.surfaceContainer.copy(alpha = 0.55f)
-                        } else {
-                            esquema.surfaceContainer
-                        }
-                    )
-                    .then(
-                        if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-                            Modifier.border(grosor, esquema.outlineVariant, MaterialTheme.shapes.large)
-                        } else {
-                            Modifier
-                        }
-                    )
-            )
-        }
+        Rotulo("FORMA DE LOS BOTONES", arriba = true)
+        UniSegmentedControl(
+            selected = appearance.buttonShape,
+            options = ButtonShapeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonShape = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        VistaPreviaDeBotones()
+
+        Rotulo("FORMA DE LOS CAMPOS", arriba = true)
+        UniSegmentedControl(
+            selected = appearance.textFieldStyle,
+            options = TextFieldStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(textFieldStyle = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        VistaPreviaDeCampo()
+
+        Rotulo("FORMA DE LOS CHIPS", arriba = true)
+        UniSegmentedControl(
+            selected = appearance.chipStyle,
+            options = ChipStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(chipStyle = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        VistaPreviaDeChips()
+
+        Rotulo("FORMA DE LOS DISTINTIVOS", arriba = true)
+        UniSegmentedControl(
+            selected = appearance.badgeShape,
+            options = BadgeShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(badgeShape = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        VistaPreviaDeDistintivos()
+        Explicacion(
+            if (appearance.badgeShape == BadgeShape.ALEATORIO) {
+                "Cada materia se queda con la suya, siempre la misma: dos del mismo color ya no se confunden."
+            } else {
+                "Todas las materias con la misma forma. Se distinguen solo por el color."
+            }
+        )
     }
 }
 
@@ -257,25 +242,39 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo("FAMILIA")
+        MuestraDeLetra()
+
+        Rotulo("FAMILIA", arriba = true)
+        // Seis familias en dos filas: en una sola de seis, «Redondeada» y «Estrecha» se
+        // parten por la mitad y no se leen.
         UniSegmentedControl(
             selected = appearance.typographyStyle,
-            options = TypographyStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
+            options = TypographyStyle.entries.take(3).map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(typographyStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        MuestraDeLetra()
+        UniSegmentedControl(
+            selected = appearance.typographyStyle,
+            options = TypographyStyle.entries.drop(3).map { UniSegmentedOption(value = it, label = it.label()) },
+            onSelected = { valor -> viewModel.updateAppearance { it.copy(typographyStyle = valor) } },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Explicacion(appearance.typographyStyle.explicacion())
 
         Rotulo("TAMAÑO", arriba = true)
-        // Un deslizador y no tres segmentos: entre el 100% y el 110% hay gente que quiere el
-        // 105, y con tres posiciones había que dar el salto entero o quedarse.
+        /*
+         * Sin `steps`: el deslizador se mueve libre.
+         *
+         * Con nueve pasos se quedaba enganchado de casilla en casilla y no se podía dejar en el
+         * 97%, que es justo lo que un deslizador promete y un segmentado no. El redondeo a
+         * entero lo hace el propio ajuste al guardarse.
+         */
         Slider(
             value = appearance.textScalePercent.toFloat(),
             onValueChange = { valor ->
                 viewModel.updateAppearance { it.copy(textScalePercent = valor.toInt()) }
             },
             valueRange = 85f..135f,
-            steps = 9,
             modifier = Modifier.fillMaxWidth()
         )
         Explicacion("Al ${appearance.textScalePercent}%. Vale para toda la app, no solo para esta pantalla.")
@@ -309,7 +308,7 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
     }
 }
 
-/** El abecedario y unas cifras: lo justo para ver de qué familia se habla. */
+/** Un trozo de materia con cifras: donde se nota una familia de letra y no en el abecedario. */
 @Composable
 private fun MuestraDeLetra() {
     Surface(
@@ -317,10 +316,11 @@ private fun MuestraDeLetra() {
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("Cálculo III", style = MaterialTheme.typography.titleMediumEmphasized)
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Cálculo III", style = MaterialTheme.typography.headlineSmallEmphasized)
+            Text("Promedio 4,25 · 3 cortes · 128 h", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Promedio 4,25 · 3 cortes · 128 h",
+                "Con 3,10 en el tercer corte cierras en 4,00. El segundo corte pesa el 35%.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -331,52 +331,30 @@ private fun MuestraDeLetra() {
 // ------------------------------------------------------------------ componentes
 
 /**
- * Botones, campos, chips, barra y distintivos.
+ * Lo que no es forma sino comportamiento: tamaños, barra, iconos, progreso e interruptores.
  *
- * Cada grupo lleva su muestra debajo porque «Filete» y «Relleno» no dicen nada como palabras:
- * lo que separa un chip de otro es cómo se ve, y esta pantalla existe para verlo.
+ * Las formas se mudaron a «Forma y superficie», que es donde las buscaba cualquiera. Aquí
+ * queda lo que decide cómo se comporta o cuánto ocupa un control, y cada grupo lleva su
+ * muestra: la de progreso **animada**, porque la onda de M3E se reconoce por su movimiento.
  */
 @Composable
 fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
     PantallaDeAjustes(
         titulo = "Componentes",
-        subtitulo = "Botones, campos, barra y distintivos",
+        subtitulo = "Tamaños, barra, progreso e interruptores",
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo("BOTONES")
-        UniSegmentedControl(
-            selected = appearance.buttonShape,
-            options = ButtonShapeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonShape = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Rotulo("TAMAÑO DE LOS BOTONES")
         UniSegmentedControl(
             selected = appearance.buttonSize,
             options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        UniStackButton(text = "Guardar", onClick = {}, modifier = Modifier.fillMaxWidth())
-
-        Rotulo("CAMPOS DE TEXTO", arriba = true)
-        UniSegmentedControl(
-            selected = appearance.textFieldStyle,
-            options = TextFieldStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(textFieldStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        MuestraDeCampo(appearance.textFieldStyle)
-
-        Rotulo("CHIPS Y FILTROS", arriba = true)
-        UniSegmentedControl(
-            selected = appearance.chipStyle,
-            options = ChipStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(chipStyle = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        MuestraDeChips(appearance.chipStyle)
+        VistaPreviaDeBotones()
+        Explicacion("La forma se elige en Forma y superficie.")
 
         Rotulo("BARRA DE ABAJO", arriba = true)
         UniSegmentedControl(
@@ -391,23 +369,9 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             onSelected = { valor -> viewModel.updateAppearance { it.copy(iconStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Míralos en la barra de abajo mientras eliges.")
-
-        Rotulo("DISTINTIVOS DE MATERIA", arriba = true)
-        UniSegmentedControl(
-            selected = appearance.badgeShape,
-            options = BadgeShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(badgeShape = valor) } },
-            modifier = Modifier.fillMaxWidth()
-        )
-        MuestraDeDistintivos(appearance.badgeShape)
-        Explicacion(
-            if (appearance.badgeShape == BadgeShape.ALEATORIO) {
-                "Cada materia se queda con la suya, siempre la misma: dos del mismo color ya no se confunden."
-            } else {
-                "El punto de color de cada materia, en toda la app."
-            }
-        )
+        // La barra de abajo está a la vista mientras se elige: una muestra suya aquí sería la
+        // misma cosa dos veces en la misma pantalla.
+        Explicacion("Míralos en la barra de abajo mientras eliges: cambia al momento.")
 
         Rotulo("BARRAS DE PROGRESO", arriba = true)
         UniSegmentedControl(
@@ -416,7 +380,14 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             onSelected = { valor -> viewModel.updateAppearance { it.copy(academicProgressShape = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Es la onda de Material 3 Expressive. Las de descarga se quedan onduladas siempre.")
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            BarraDeProgresoReal(progreso = 0.68f)
+            BarraDeProgresoReal(progreso = 0.34f)
+        }
+        Explicacion(
+            "Es la onda de Material 3 Expressive, y se ve moviéndose porque quieta apenas se " +
+                "distingue de una recta. Las de descarga se quedan onduladas siempre."
+        )
 
         Rotulo("INTERRUPTORES", arriba = true)
         UniSegmentedControl(
@@ -425,35 +396,29 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             onSelected = { valor -> viewModel.updateAppearance { it.copy(switchIconStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            UniSwitch(checked = true, onCheckedChange = {})
-            UniSwitch(checked = false, onCheckedChange = {})
-            Explicacion("Encendido y apagado, con lo que elijas.")
-        }
+        VistaPreviaDeInterruptores()
 
         Rotulo("DETALLES", arriba = true)
-        FilaDeInterruptor(
-            titulo = "Separadores en las listas",
-            detalle = "La línea fina entre una fila y la siguiente.",
-            marcado = appearance.listDividers,
-            onCambio = { valor -> viewModel.updateAppearance { it.copy(listDividers = valor) } }
-        )
-        if (appearance.listDividers) HorizontalDivider()
-        FilaDeInterruptor(
-            titulo = "Colores por sección",
-            detalle = "Verde, ámbar y rojo en las notas. Apagado, todo va con el acento.",
-            marcado = appearance.sectionColorsEnabled,
-            onCambio = { valor -> viewModel.updateAppearance { it.copy(sectionColorsEnabled = valor) } }
-        )
-
-        Rotulo("PRIMER DÍA DE LA SEMANA", arriba = true)
-        UniSegmentedControl(
-            selected = appearance.firstDayOfWeek,
-            options = FirstDayOfWeek.entries.map { UniSegmentedOption(value = it, label = it.label()) },
-            onSelected = { valor -> viewModel.updateAppearance { it.copy(firstDayOfWeek = valor) } },
+        Surface(
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
             modifier = Modifier.fillMaxWidth()
-        )
-        MuestraDeSemana(appearance.firstDayOfWeek)
+        ) {
+            Column {
+                FilaDeInterruptor(
+                    titulo = "Separadores en las listas",
+                    detalle = "La línea fina entre una fila y la siguiente.",
+                    marcado = appearance.listDividers,
+                    onCambio = { valor -> viewModel.updateAppearance { it.copy(listDividers = valor) } }
+                )
+                FilaDeInterruptor(
+                    titulo = "Colores por sección",
+                    detalle = "Verde, ámbar y rojo en las notas. Apagado, todo va con el acento.",
+                    marcado = appearance.sectionColorsEnabled,
+                    onCambio = { valor -> viewModel.updateAppearance { it.copy(sectionColorsEnabled = valor) } }
+                )
+            }
+        }
     }
 }
 
@@ -465,7 +430,7 @@ private fun FilaDeInterruptor(
     onCambio: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -474,127 +439,6 @@ private fun FilaDeInterruptor(
             Explicacion(detalle)
         }
         UniSwitch(checked = marcado, onCheckedChange = onCambio)
-    }
-}
-
-@Composable
-private fun MuestraDeCampo(estilo: TextFieldStyle) {
-    val esquema = MaterialTheme.colorScheme
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .then(
-                when (estilo) {
-                    TextFieldStyle.RELLENO -> Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(esquema.surfaceContainerHighest)
-                    TextFieldStyle.FILETE -> Modifier
-                        .clip(MaterialTheme.shapes.medium)
-                        .border(1.5.dp, esquema.outline, MaterialTheme.shapes.medium)
-                    // El subrayado no lleva forma: solo la línea de abajo, que es lo que lo
-                    // hace distinto de los otros dos y no una variante del filete.
-                    TextFieldStyle.SUBRAYADO -> Modifier
-                }
-            ),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Text(
-            "Nombre de la materia",
-            modifier = Modifier.padding(horizontal = 14.dp),
-            style = MaterialTheme.typography.bodyLarge,
-            color = esquema.onSurfaceVariant
-        )
-        if (estilo == TextFieldStyle.SUBRAYADO) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.5.dp)
-                    .align(Alignment.BottomStart)
-                    .background(esquema.outline)
-            )
-        }
-    }
-}
-
-@Composable
-private fun MuestraDeChips(estilo: ChipStyle) {
-    val esquema = MaterialTheme.colorScheme
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("Vencidas" to true, "Hoy" to false, "Sin materia" to false).forEach { (texto, activo) ->
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(percent = 50))
-                    .then(
-                        when (estilo) {
-                            ChipStyle.RELLENO -> Modifier.background(
-                                if (activo) esquema.primary else esquema.surfaceContainerHighest
-                            )
-                            ChipStyle.FILETE -> Modifier
-                                .background(if (activo) esquema.primaryContainer else esquema.surface)
-                                .border(1.dp, esquema.outlineVariant, RoundedCornerShape(percent = 50))
-                            ChipStyle.TEXTO -> Modifier
-                        }
-                    )
-                    .padding(horizontal = 12.dp, vertical = 7.dp)
-            ) {
-                Text(
-                    texto,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (activo) FontWeight.Bold else FontWeight.Normal,
-                    color = when {
-                        estilo == ChipStyle.RELLENO && activo -> esquema.onPrimary
-                        estilo == ChipStyle.TEXTO && activo -> esquema.primary
-                        else -> esquema.onSurface
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MuestraDeDistintivos(forma: BadgeShape) {
-    val colores = listOf(
-        MaterialTheme.colorScheme.primary,
-        MaterialTheme.colorScheme.tertiary,
-        MaterialTheme.colorScheme.secondary,
-        MaterialTheme.colorScheme.error,
-        MaterialTheme.colorScheme.primary
-    )
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        // Cinco identificadores fijos: con «Aleatorio» puesto, el reparto se ve estable y no
-        // como algo que cambia cada vez que se pinta la pantalla.
-        listOf("cal", "fis", "prog", "est", "ing").forEachIndexed { indice, id ->
-            Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .clip(formaDeDistintivo(forma, id))
-                    .background(colores[indice])
-            )
-        }
-    }
-}
-
-@Composable
-private fun MuestraDeSemana(primerDia: FirstDayOfWeek) {
-    val dias = if (primerDia == FirstDayOfWeek.LUNES) {
-        listOf("L", "M", "X", "J", "V", "S", "D")
-    } else {
-        listOf("D", "L", "M", "X", "J", "V", "S")
-    }
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        dias.forEach { dia ->
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(dia, style = MaterialTheme.typography.labelMedium, fontSize = 12.sp)
-            }
-        }
     }
 }
 

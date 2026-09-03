@@ -180,11 +180,18 @@ internal fun escalaDeFormas(estilo: CornerStyle): Shapes = when (estilo) {
 }
 
 /**
- * El esquema que toca: el de la marca, o el del fondo de pantalla si se ha pedido.
+ * El esquema que toca: el tema elegido, en la cara que pida el modo.
  *
- * El violeta manda por defecto. Monet queda a un toque de distancia en Apariencia, pero
- * dejarlo de serie hacía que la app se viera del color del fondo de pantalla de cada quien:
- * UniStack no tenía identidad propia en su propia app.
+ * **Aqui estaba el fallo de los modos.** El tema pintaba una sola paleta encima del esquema
+ * base, y como veinticuatro de los veintiocho son oscuros, elegir «Claro» daba el tema oscuro
+ * igual: el modo parecia no hacer nada. Solo OLED se notaba, porque ese pinta el negro
+ * *despues* de todo lo demas. Ahora cada tema tiene su cara clara y su cara oscura, y el modo
+ * dice cual de las dos.
+ *
+ * Monet ya no esta. Se quito entero —no escondido tras un ajuste— porque con veintiocho temas
+ * y un acento a medida, tomar prestada la paleta del fondo de pantalla no anade nada y si
+ * quitaba: mientras estuvo encendido, los temas quedaban en pausa y la mitad de esta pantalla
+ * no pintaba.
  */
 @Composable
 private fun expressiveColorScheme(
@@ -192,25 +199,16 @@ private fun expressiveColorScheme(
     oledTheme: Boolean,
     appearance: AppearancePreferences
 ): ColorScheme {
-    val base = when {
-        appearance.accentStyle == AccentStyle.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> ExpressiveDarkScheme
-        else -> ExpressiveLightScheme
-    }
+    val base = if (darkTheme) ExpressiveDarkScheme else ExpressiveLightScheme
 
     /*
      * El tema elegido se pinta encima del esquema base.
      *
-     * Con Monet no: quien pide el color del fondo de pantalla esta pidiendo justo que no mande
-     * una paleta nuestra. En los demas casos, el tema decide fondo, tarjetas, tinta y acento a
-     * la vez -- que es lo que hace que «Dracula» se vea como Dracula y no como la app de
-     * siempre con un morado distinto.
+     * El tema decide fondo, tarjetas, tinta y acento a la vez -- que es lo que hace que
+     * «Dracula» se vea como Dracula y no como la app de siempre con un morado distinto.
      */
-    val conTema = if (appearance.accentStyle == AccentStyle.DYNAMIC) base else {
-        val tema = AppThemes.byId(appearance.themeId)
+    val conTema = run {
+        val tema = AppThemes.byId(appearance.themeId).palette(darkTheme)
         val acento = appearance.accentIntensity.aplicarA(
             appearance.customAccentColor?.let(::Color) ?: tema.accent
         )
@@ -218,7 +216,7 @@ private fun expressiveColorScheme(
             primary = acento,
             onPrimary = tema.onAccent,
             primaryContainer = acento.copy(alpha = 0.22f).compuestoSobre(tema.background),
-            onPrimaryContainer = if (tema.isLight) tema.ink else acento,
+            onPrimaryContainer = if (!darkTheme) tema.ink else acento,
             secondary = acento,
             tertiary = acento,
             background = tema.background,
@@ -317,7 +315,7 @@ internal fun Color.saturado(fuerza: Float): Color {
  * - **Sombra**: la tarjeta se aleja del fondo en tono; la sombra la ponen los componentes.
  * - **Cristal**: nivel intermedio y contorno tenue, para que se lea como algo translucido.
  */
-internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: AppTheme): ColorScheme = when (estilo) {
+internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: ThemePalette): ColorScheme = when (estilo) {
     SurfaceStyle.FLAT -> copy(
         surfaceContainer = tema.background.mezclaCon(tema.surface, 0.55f),
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.75f),

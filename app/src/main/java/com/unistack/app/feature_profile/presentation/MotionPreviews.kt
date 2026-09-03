@@ -146,7 +146,14 @@ internal fun LienzoDemo(
 
 // ---------------------------------------------------------------------- piezas comunes
 
-/** Una fila de lista: el rectángulo redondeado que hace de contenido en casi todas. */
+/**
+ * Una fila de la app: su marca de color, el título y la línea de apoyo.
+ *
+ * **No es un rectángulo.** Estuvo siéndolo, y con eso las ciento treinta cajas se veían como
+ * barras grises moviéndose: no se entendía que lo que entra escalonado es *una tarea*, ni que
+ * lo que se tacha es *una materia*. Con la marca a la izquierda y dos renglones de distinto
+ * largo dentro, la caja de dos centímetros ya se lee como una fila de Tareas.
+ */
 private fun DrawScope.fila(
     y: Float,
     color: Color,
@@ -155,24 +162,80 @@ private fun DrawScope.fila(
     alto: Float = 11f,
     alfa: Float = 1f
 ) {
+    val a = alfa
+    // El fondo de la fila: el tono de tarjeta, no el color del gesto.
     drawRoundRect(
-        color = color.copy(alpha = color.alpha * alfa),
+        color = color.copy(alpha = color.alpha * a * 0.18f),
         topLeft = Offset(x, y),
         size = Size(ancho, alto),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
+    )
+    // La marca de la materia, a la izquierda, como en la lista de verdad.
+    val marca = alto * 0.62f
+    drawCircle(
+        color = color.copy(alpha = color.alpha * a),
+        radius = marca / 2f,
+        center = Offset(x + 3f + marca / 2f, y + alto / 2f)
+    )
+    val textoX = x + 4f + marca + 2f
+    val libre = (x + ancho) - textoX - 3f
+    if (libre <= 2f) return
+    // Título y línea de apoyo: dos largos distintos es lo que la hace leerse como texto.
+    drawRoundRect(
+        color = color.copy(alpha = color.alpha * a * 0.95f),
+        topLeft = Offset(textoX, y + alto * 0.24f),
+        size = Size(libre * 0.72f, alto * 0.20f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f, 1.5f)
+    )
+    drawRoundRect(
+        color = color.copy(alpha = color.alpha * a * 0.45f),
+        topLeft = Offset(textoX, y + alto * 0.58f),
+        size = Size(libre * 0.44f, alto * 0.18f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f, 1.5f)
     )
 }
 
-/** Un panel entero, que es lo que se mueve en las transiciones de pantalla. */
+/**
+ * Una pantalla entera de la app en miniatura: su cabecera y dos filas.
+ *
+ * Es lo que se mueve en las transiciones. Como rectángulo liso, «eje» y «zoom» se veían como
+ * dos bloques de color deslizándose; con cabecera y filas dentro se entiende que lo que entra
+ * es una pantalla y lo que sale es otra.
+ */
 private fun DrawScope.panel(x: Float, color: Color, alfa: Float = 1f, escala: Float = 1f) {
     val ancho = 74f * escala
     val alto = 46f * escala
+    val izq = x + (74f - ancho) / 2f
+    val arriba = 9f + (46f - alto) / 2f
+    val a = alfa
     drawRoundRect(
-        color = color.copy(alpha = color.alpha * alfa),
-        topLeft = Offset(x + (74f - ancho) / 2f, 9f + (46f - alto) / 2f),
+        color = color.copy(alpha = color.alpha * a * 0.20f),
+        topLeft = Offset(izq, arriba),
         size = Size(ancho, alto),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f, 7f)
     )
+    // La cabecera: el título de la pantalla.
+    drawRoundRect(
+        color = color.copy(alpha = color.alpha * a),
+        topLeft = Offset(izq + ancho * 0.10f, arriba + alto * 0.13f),
+        size = Size(ancho * 0.52f, alto * 0.11f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+    )
+    // Dos filas dentro, como cualquier lista de la app.
+    repeat(2) { indice ->
+        val y = arriba + alto * (0.38f + indice * 0.26f)
+        drawRoundRect(
+            color = color.copy(alpha = color.alpha * a * 0.35f),
+            topLeft = Offset(izq + ancho * 0.10f, y),
+            size = Size(ancho * 0.80f, alto * 0.17f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.5f, 2.5f)
+        )
+        drawCircle(
+            color = color.copy(alpha = color.alpha * a * 0.9f),
+            radius = alto * 0.055f,
+            center = Offset(izq + ancho * 0.16f, y + alto * 0.085f)
+        )
+    }
 }
 
 /** El visto de asistencia, dibujado por tramos para poder pintarlo a medias. */

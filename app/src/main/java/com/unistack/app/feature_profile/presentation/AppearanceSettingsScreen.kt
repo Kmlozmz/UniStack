@@ -45,7 +45,6 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.greetingForNow
-import com.unistack.app.feature_user.domain.AccentStyle
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.BottomBarStyle
 import com.unistack.app.feature_user.domain.CornerStyle
@@ -137,11 +136,7 @@ fun AppearanceSettingsScreen(
                     // tema— porque son las que más se cambian y las que más se olvida cuál
                     // quedó puesta.
                     subtitle = current.visualPreference.orSystem().label() + " · " +
-                        if (appearance.accentStyle == AccentStyle.DYNAMIC) {
-                            "Del fondo de pantalla"
-                        } else {
-                            AppThemes.byId(appearance.themeId).name
-                        },
+                        AppThemes.byId(appearance.themeId).name,
                     iconColor = MaterialTheme.colorScheme.primary,
                     onClick = onThemeClick
                 )
@@ -362,10 +357,21 @@ internal fun InterfaceDensity.label() = when (this) {
 }
 
 internal fun TypographyStyle.label() = when (this) {
-    TypographyStyle.UNISTACK -> "UniStack"
+    TypographyStyle.SANS -> "Sans"
     TypographyStyle.SYSTEM -> "Sistema"
     TypographyStyle.SERIF -> "Serif"
     TypographyStyle.MONO -> "Mono"
+    TypographyStyle.ESTRECHA -> "Estrecha"
+    TypographyStyle.REDONDEADA -> "Redondeada"
+}
+
+internal fun TypographyStyle.explicacion() = when (this) {
+    TypographyStyle.SANS -> "La sans-serif del sistema. Es la de siempre."
+    TypographyStyle.SYSTEM -> "La que traiga tu teléfono como suya."
+    TypographyStyle.SERIF -> "Con remates: se lee mejor en párrafos largos."
+    TypographyStyle.MONO -> "Ancho fijo: las cifras quedan alineadas en columna."
+    TypographyStyle.ESTRECHA -> "Condensada: cabe más nombre de materia antes de cortarse."
+    TypographyStyle.REDONDEADA -> "De trazo más blando. Si tu teléfono no la tiene, usa la Sans."
 }
 
 internal fun HomeSection.label() = when (this) {

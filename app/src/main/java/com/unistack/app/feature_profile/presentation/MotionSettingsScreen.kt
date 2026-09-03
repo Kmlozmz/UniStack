@@ -31,6 +31,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.unistack.app.feature_user.domain.HapticStrength
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -75,6 +79,7 @@ fun MotionSettingsScreen(
     val appearance = current.appearancePreferences
     val motion = appearance.motion
     val activo = appearance.motionPreference == MotionPreference.FULL
+    val haptica = LocalHapticFeedback.current
 
     LazyColumn(
         modifier = modifier.fillMaxSize().statusBarsPadding(),
@@ -95,30 +100,51 @@ fun MotionSettingsScreen(
         }
 
         item {
-            Text("CUÁNTO MOVIMIENTO", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
-        }
-        item {
-            UniSegmentedControl(
-                selected = appearance.motionPreference,
-                options = MotionPreference.entries.map {
-                    UniSegmentedOption(value = it, label = it.etiqueta())
-                },
-                onSelected = { valor ->
-                    viewModel.updateAppearance { it.copy(motionPreference = valor) }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            Text(
-                text = if (activo) {
-                    "Cada gesto de abajo se elige por separado."
+            /*
+             * El interruptor maestro, dentro de una tarjeta y no suelto arriba del todo.
+             *
+             * Puesto como un rotulo mas seguido de tres botones, se leia como el primero de los
+             * veinticinco gestos, cuando en realidad manda sobre todos. La tarjeta con titulo y
+             * explicacion es lo que lo separa de la lista que viene debajo.
+             */
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                color = if (activo) {
+                    MaterialTheme.colorScheme.surfaceContainerLow
                 } else {
-                    "Con el movimiento así, lo de abajo queda guardado pero en pausa."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                    // Apagado, la tarjeta se tine: es la unica forma de que se note que lo de
+                    // abajo esta en pausa sin leer la explicacion.
+                    MaterialTheme.colorScheme.primaryContainer
+                }
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Cuánto movimiento", style = MaterialTheme.typography.titleSmallEmphasized)
+                    UniSegmentedControl(
+                        selected = appearance.motionPreference,
+                        options = MotionPreference.entries.map {
+                            UniSegmentedOption(value = it, label = it.etiqueta())
+                        },
+                        onSelected = { valor ->
+                            viewModel.updateAppearance { it.copy(motionPreference = valor) }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = if (activo) {
+                            "Manda sobre los veinticinco gestos de abajo. Cada uno se elige por separado."
+                        } else {
+                            "Los gestos de abajo quedan guardados, pero en pausa: nada se mueve hasta " +
+                                "volver a «Completo»."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
 
         MotionCatalog.grouped().forEach { (grupo, gestos) ->
@@ -150,7 +176,8 @@ fun MotionSettingsScreen(
                             viewModel.updateAppearance { prefs ->
                                 prefs.copy(motion = gesto.write(prefs.motion, opcion))
                             }
-                        }
+                        },
+                        haptica = haptica
                     )
                 }
             }
@@ -216,7 +243,8 @@ private fun GestureCard(
     gesto: MotionGesture,
     motion: MotionPreferences,
     activo: Boolean,
-    onElegir: (MotionChoice) -> Unit
+    onElegir: (MotionChoice) -> Unit,
+    haptica: HapticFeedback
 ) {
     val elegida = gesto.read(motion)
     Surface(
@@ -244,7 +272,20 @@ private fun GestureCard(
                             elegida = opcion.id == elegida.id,
                             animar = activo,
                             modifier = Modifier.weight(1f),
-                            onClick = { onElegir(opcion) }
+                            onClick = {
+                                /*
+                                 * Elegir la fuerza de la vibracion **vibra**.
+                                 *
+                                 * Es el unico gesto que no se puede juzgar mirando: una onda
+                                 * dibujada no dice como se siente en la mano. Cada opcion
+                                 * dispara el tipo de aviso que le toca, asi que «Fuerte» se
+                                 * nota mas que «Suave» al tocarla, no al leerla.
+                                 */
+                                if (gesto.id == "haptica") {
+                                    (opcion as? HapticStrength)?.avisar(haptica)
+                                }
+                                onElegir(opcion)
+                            }
                         )
                     }
                     // Rellena la fila incompleta para que las cajas no se estiren al doble.
@@ -327,4 +368,23 @@ private fun MotionPreference.etiqueta() = when (this) {
     MotionPreference.FULL -> "Completo"
     MotionPreference.REDUCED -> "Reducido"
     MotionPreference.NONE -> "Nada"
+}
+
+/**
+ * El aviso que le toca a cada fuerza de vibracion.
+ *
+ * Android no deja pedir «un poco de vibracion»: lo que hay son tipos de aviso con intensidad
+ * propia. `TextHandleMove` es el mas leve, `LongPress` el que mas se nota, y encadenar dos
+ * seguidos es lo mas cerca que se puede estar de un aviso «fuerte» sin permisos de vibrador.
+ */
+private fun HapticStrength.avisar(haptica: HapticFeedback) {
+    when (this) {
+        HapticStrength.NINGUNA -> Unit
+        HapticStrength.SUAVE -> haptica.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        HapticStrength.MEDIA -> haptica.performHapticFeedback(HapticFeedbackType.LongPress)
+        HapticStrength.FUERTE -> {
+            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
+            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
 }
