@@ -91,15 +91,19 @@ fun UniStackButton(
         }
     }
 
+    /*
+     * La forma y el alto salen de Apariencia, no de aqui.
+     *
+     * **Estuvieron escritos a mano en este archivo**, asi que los dos ajustes de «Forma de los
+     * botones» y «Tamano de los botones» se guardaban y no cambiaban un pixel: el boton pedia
+     * siempre `squareShape` y siempre `MediumContainerHeight`. Ahora los dos salen de
+     * [UniStackButtonDefaults], que es quien los lee de las preferencias.
+     */
     val sized = modifier
         .fillMaxWidth()
-        .heightIn(min = ButtonDefaults.MediumContainerHeight)
+        .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
 
-    // Cuadrado en reposo, esquinas cerradas bajo el dedo.
-    val shapes = ButtonDefaults.shapes(
-        shape = ButtonDefaults.squareShape,
-        pressedShape = ButtonDefaults.pressedShape
-    )
+    val shapes = UniStackButtonDefaults.shapes
     val padding = ButtonDefaults.MediumContentPadding
 
     when {

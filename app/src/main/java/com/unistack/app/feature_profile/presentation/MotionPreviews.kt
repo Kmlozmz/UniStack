@@ -1351,3 +1351,134 @@ private fun mezclar(desde: Color, hasta: Color, fraccion: Float): Color {
 
 /** Sin uso directo aún; queda por si una variante necesita línea discontinua. */
 internal val guiones: PathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))
+
+// ---------------------------------------------------------------------- los cuatro de «otros»
+
+/**
+ * Los cuatro interruptores del final tambien se ven.
+ *
+ * Eran los unicos de la pantalla sin nada que mirar: un «Parallax en carruseles» encendido o
+ * apagado no dice que hace el parallax. Cada uno pinta las dos caras a la vez —encendido a la
+ * izquierda, apagado a la derecha— porque lo que hay que juzgar aqui no es una variante entre
+ * varias sino la diferencia entre tenerlo y no tenerlo.
+ */
+internal fun DrawScope.pintarInterruptor(id: String, encendido: Boolean, t: Float, c: TintaDemo) {
+    when (id) {
+        "barraAnim" -> barraAnimada(encendido, t, c)
+        "gestos" -> deslizarEnLista(encendido, t, c)
+        "numeros" -> numerosQueCuentan(encendido, t, c)
+        "parallax" -> parallaxEnCarrusel(encendido, t, c)
+    }
+}
+
+/** La pastilla del activo saltando entre tres pestanas, deslizandose o apareciendo de golpe. */
+private fun DrawScope.barraAnimada(encendido: Boolean, t: Float, c: TintaDemo) {
+    val paso = (t * 3f)
+    val destino = paso.toInt().coerceIn(0, 2)
+    val fraccion = suave((paso - destino).coerceIn(0f, 1f) * 2.2f)
+    val anterior = if (destino == 0) 2 else destino - 1
+    val posicion = if (encendido) {
+        anterior + (destino - anterior) * fraccion
+    } else {
+        // Apagada, la pastilla no viaja: esta en una pestana o en la otra.
+        destino.toFloat()
+    }
+    val ancho = 26f
+    val hueco = 30f
+    val inicio = 10f
+    drawRoundRect(
+        color = c.acento,
+        topLeft = Offset(inicio + posicion * hueco, 24f),
+        size = Size(ancho, 16f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+    )
+    repeat(3) { indice ->
+        val cx = inicio + indice * hueco + ancho / 2f
+        drawCircle(
+            color = if (indice == destino) c.fondo else c.pieza,
+            radius = 4f,
+            center = Offset(cx, 32f)
+        )
+        drawRoundRect(
+            color = if (indice == destino) c.fondo else c.pieza,
+            topLeft = Offset(cx - 7f, 40f),
+            size = Size(14f, 3f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1.5f, 1.5f)
+        )
+    }
+}
+
+/** Una fila que se arrastra dejando ver el fondo de borrar, o que no se mueve. */
+private fun DrawScope.deslizarEnLista(encendido: Boolean, t: Float, c: TintaDemo) {
+    fila(12f, c.pieza)
+    fila(42f, c.pieza)
+    val avance = if (!encendido) 0f else {
+        val ida = tramo(t, 0.15f, 0.5f)
+        val vuelta = tramo(t, 0.62f, 0.9f)
+        suave(ida) - suave(vuelta)
+    }
+    if (avance > 0.02f) {
+        // El fondo rojo que asoma por detras: es lo que dice para que sirve el gesto.
+        drawRoundRect(
+            color = c.rojo,
+            topLeft = Offset(12f, 27f),
+            size = Size(76f, 11f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
+        )
+        drawCircle(color = c.fondo, radius = 3f, center = Offset(80f, 32.5f))
+    }
+    translate(left = -52f * avance) { fila(27f, c.acento) }
+}
+
+/** Una cifra subiendo desde cero, o puesta de golpe. */
+private fun DrawScope.numerosQueCuentan(encendido: Boolean, t: Float, c: TintaDemo) {
+    val objetivo = 0.82f
+    val valor = if (!encendido) {
+        if (t < 0.12f) 0f else objetivo
+    } else {
+        objetivo * suave(tramo(t, 0.1f, 0.7f))
+    }
+    // El importe, como barra de digitos que crece: cuantos mas «digitos», mas alto el numero.
+    val digitos = (valor * 5f).toInt().coerceAtLeast(1)
+    repeat(digitos) { indice ->
+        drawRoundRect(
+            color = c.acento,
+            topLeft = Offset(16f + indice * 13f, 22f),
+            size = Size(10f, 20f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.5f, 2.5f)
+        )
+    }
+    drawRoundRect(
+        color = c.pieza,
+        topLeft = Offset(16f, 46f),
+        size = Size(64f, 4f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+    )
+}
+
+/** La foto de un adjunto que se queda quieta mientras su tarjeta pasa, o que va con ella. */
+private fun DrawScope.parallaxEnCarrusel(encendido: Boolean, t: Float, c: TintaDemo) {
+    val recorrido = 100f
+    val x = 62f - (t * recorrido) % (recorrido + 46f)
+    clipRect(8f, 12f, 92f, 52f) {
+        listOf(x, x + 52f).forEach { tarjetaX ->
+            drawRoundRect(
+                color = c.pieza,
+                topLeft = Offset(tarjetaX, 14f),
+                size = Size(46f, 36f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
+            // Con parallax la foto se desplaza menos que su marco, asi que se queda atras: es
+            // exactamente lo que se ve al pasar los adjuntos de una nota.
+            val desvio = if (encendido) 12f * ((tarjetaX - 8f) / 84f) else 0f
+            clipRect(tarjetaX, 14f, tarjetaX + 46f, 50f) {
+                drawRoundRect(
+                    color = c.acento,
+                    topLeft = Offset(tarjetaX + 6f - desvio, 20f),
+                    size = Size(34f, 24f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+            }
+        }
+    }
+}

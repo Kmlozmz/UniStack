@@ -54,6 +54,7 @@ import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.MotionPreferences
+import com.unistack.app.feature_user.domain.MotionToggle
 
 /**
  * Movimiento: veinte gestos, ciento once variantes, y todas corriendo a la vez.
@@ -193,38 +194,112 @@ fun MotionSettingsScreen(
         }
         MotionCatalog.toggles.forEach { toggle ->
             item(key = toggle.id) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerLow
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .cleanClickable {
-                                viewModel.updateAppearance { prefs ->
-                                    prefs.copy(motion = toggle.write(prefs.motion, !toggle.read(prefs.motion)))
-                                }
-                            }
-                            .padding(horizontal = 15.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(13.dp)
+                ToggleCard(
+                    toggle = toggle,
+                    motion = motion,
+                    activo = activo,
+                    onCambio = { valor ->
+                        viewModel.updateAppearance { prefs ->
+                            prefs.copy(motion = toggle.write(prefs.motion, valor))
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Un interruptor de movimiento, con las dos caras a la vista.
+ *
+ * **Eran los unicos ajustes de la pantalla sin nada que mirar.** Un «Parallax en carruseles»
+ * encendido o apagado no dice que hace el parallax, y los otros tres igual: se elegian a ciegas
+ * en una pantalla cuya razon de ser es no elegir a ciegas.
+ *
+ * Se pintan las dos caras a la vez —encendido y apagado— y no solo la elegida, porque aqui lo
+ * que hay que juzgar no es una variante entre varias sino la diferencia entre tenerlo o no.
+ * La elegida se marca; la otra queda al lado para comparar.
+ */
+@Composable
+private fun ToggleCard(
+    toggle: MotionToggle,
+    motion: MotionPreferences,
+    activo: Boolean,
+    onCambio: (Boolean) -> Unit
+) {
+    val marcado = toggle.read(motion)
+    val tinta = tintaDemo()
+    val t = bucle(duracionMs = 2600, etiqueta = toggle.id)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(13.dp)
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(toggle.name, style = MaterialTheme.typography.titleSmallEmphasized)
+                    Text(
+                        toggle.detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                UniSwitch(checked = marcado, onCheckedChange = onCambio)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                listOf(true, false).forEach { encendido ->
+                    Column(
+                        modifier = Modifier.weight(1f).cleanClickable { onCambio(encendido) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(toggle.name, style = MaterialTheme.typography.titleSmallEmphasized)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(54.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                                .border(
+                                    width = if (marcado == encendido) 2.dp else 1.dp,
+                                    color = if (marcado == encendido) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.outlineVariant
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                        ) {
+                            LienzoDemo(t = if (activo) t else 0.55f) { reloj ->
+                                pintarInterruptor(toggle.id, encendido, reloj, tinta)
+                            }
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            if (marcado == encendido) {
+                                Icon(
+                                    Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                             Text(
-                                toggle.detail,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = if (encendido) "Encendido" else "Apagado",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (marcado == encendido) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                fontWeight = if (marcado == encendido) FontWeight.Bold else FontWeight.Normal
                             )
                         }
-                        UniSwitch(
-                            checked = toggle.read(motion),
-                            onCheckedChange = { valor ->
-                                viewModel.updateAppearance { prefs ->
-                                    prefs.copy(motion = toggle.write(prefs.motion, valor))
-                                }
-                            }
-                        )
                     }
                 }
             }

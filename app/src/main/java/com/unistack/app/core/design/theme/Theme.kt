@@ -78,6 +78,15 @@ fun UniStackTheme(
      * pisan a la familia elegida en Apariencia: quien las necesita las necesita, y no tiene
      * sentido que elegir «Mono» en Tipografia las anule sin decirlo.
      */
+    /*
+     * El interlineado se aplica **al final**, y ahi esta el arreglo.
+     *
+     * Se aplicaba dentro de `appearanceTypography`, y justo despues `expressiveTypography`
+     * reescribia el `lineHeight` de los diecisiete estilos con su valor fijo en sp: el ajuste
+     * se guardaba, se elegia y no cambiaba un renglon. Ahora el orden es al reves —primero la
+     * familia y el peso, luego los tamanos de M3E, y el aire al final— asi que ya no hay nada
+     * despues que lo pise.
+     */
     val typography = expressiveTypography(
         appearanceTypography(
             estilo = if (accessibility.readingFont == ReadingFont.DISLEXIA) {
@@ -85,15 +94,16 @@ fun UniStackTheme(
             } else {
                 appearance.typographyStyle
             },
-            interlineado = if (accessibility.readingFont == ReadingFont.DISLEXIA) {
-                // La dislexia pide aire entre renglones ademas de letra abierta: las dos cosas
-                // juntas es lo que hace que un parrafo deje de saltar de linea.
-                LineHeightStyle.AMPLIO
-            } else {
-                appearance.lineHeightStyle
-            },
             negrita = accessibility.boldText
         )
+    ).conInterlineado(
+        if (accessibility.readingFont == ReadingFont.DISLEXIA) {
+            // La dislexia pide aire entre renglones ademas de letra abierta: las dos cosas
+            // juntas es lo que hace que un parrafo deje de saltar de linea.
+            LineHeightStyle.AMPLIO
+        } else {
+            appearance.lineHeightStyle
+        }
     )
 
     // La preferencia de "texto grande" se aplica sobre el fontScale de la densidad, no

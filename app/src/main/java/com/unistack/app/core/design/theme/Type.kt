@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import android.os.Build
 import androidx.compose.ui.text.font.DeviceFontFamilyName
 import androidx.compose.ui.text.font.Font
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.ui.text.font.FontFamily
 import com.unistack.app.feature_user.domain.TypographyStyle
 import com.unistack.app.feature_user.domain.LineHeightStyle
@@ -49,7 +50,6 @@ val UniStackTypography = Typography().run {
  */
 fun appearanceTypography(
     estilo: TypographyStyle,
-    interlineado: LineHeightStyle = LineHeightStyle.NORMAL,
     negrita: Boolean = false
 ): Typography {
     val family = when (estilo) {
@@ -67,18 +67,9 @@ fun appearanceTypography(
         TypographyStyle.ESTRECHA -> familiaDelSistema("sans-serif-condensed")
         TypographyStyle.REDONDEADA -> familiaDelSistema("sans-serif-rounded", "casual")
     }
-    val factor = when (interlineado) {
-        LineHeightStyle.COMPACTO -> 0.88f
-        LineHeightStyle.NORMAL -> 1f
-        LineHeightStyle.AMPLIO -> 1.18f
-    }
     fun TextStyle.ajustada(): TextStyle {
-        val alto = lineHeight
         return copy(
             fontFamily = family,
-            // Un `lineHeight` sin especificar se queda como estaba: multiplicarlo daria
-            // `NaN.sp` y con eso el texto no llega a medirse.
-            lineHeight = if (alto.isSpecified) alto * factor else alto,
             /*
              * La negrita sube un escalon, no lo pone todo en «bold».
              *
@@ -124,4 +115,55 @@ fun appearanceTypography(
 private fun familiaDelSistema(vararg nombres: String): FontFamily {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return FontFamily.SansSerif
     return FontFamily(nombres.map { Font(DeviceFontFamilyName(it)) })
+}
+
+/**
+ * El aire entre renglones, aplicado sobre una tipografia ya montada.
+ *
+ * **Va al final a proposito.** Estuvo dentro de `appearanceTypography`, y justo despues
+ * `expressiveTypography` reescribia el `lineHeight` de los diecisiete estilos con su valor fijo
+ * en sp: el ajuste se elegia y no movia un renglon. Aplicandolo por encima de todo, no queda
+ * nada detras que lo pise.
+ *
+ * Los estilos de Material vienen todos con su `lineHeight` puesto, pero se comprueba igual: uno
+ * sin especificar multiplicado da `NaN.sp`, y con eso el texto no llega a medirse.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal fun Typography.conInterlineado(estilo: LineHeightStyle): Typography {
+    if (estilo == LineHeightStyle.NORMAL) return this
+    val factor = if (estilo == LineHeightStyle.COMPACTO) 0.86f else 1.22f
+    fun TextStyle.conAire(): TextStyle =
+        if (lineHeight.isSpecified) copy(lineHeight = lineHeight * factor) else this
+    return copy(
+        displayLarge = displayLarge.conAire(),
+        displayLargeEmphasized = displayLargeEmphasized.conAire(),
+        displayMedium = displayMedium.conAire(),
+        displayMediumEmphasized = displayMediumEmphasized.conAire(),
+        displaySmall = displaySmall.conAire(),
+        displaySmallEmphasized = displaySmallEmphasized.conAire(),
+        headlineLarge = headlineLarge.conAire(),
+        headlineLargeEmphasized = headlineLargeEmphasized.conAire(),
+        headlineMedium = headlineMedium.conAire(),
+        headlineMediumEmphasized = headlineMediumEmphasized.conAire(),
+        headlineSmall = headlineSmall.conAire(),
+        headlineSmallEmphasized = headlineSmallEmphasized.conAire(),
+        titleLarge = titleLarge.conAire(),
+        titleLargeEmphasized = titleLargeEmphasized.conAire(),
+        titleMedium = titleMedium.conAire(),
+        titleMediumEmphasized = titleMediumEmphasized.conAire(),
+        titleSmall = titleSmall.conAire(),
+        titleSmallEmphasized = titleSmallEmphasized.conAire(),
+        bodyLarge = bodyLarge.conAire(),
+        bodyLargeEmphasized = bodyLargeEmphasized.conAire(),
+        bodyMedium = bodyMedium.conAire(),
+        bodyMediumEmphasized = bodyMediumEmphasized.conAire(),
+        bodySmall = bodySmall.conAire(),
+        bodySmallEmphasized = bodySmallEmphasized.conAire(),
+        labelLarge = labelLarge.conAire(),
+        labelLargeEmphasized = labelLargeEmphasized.conAire(),
+        labelMedium = labelMedium.conAire(),
+        labelMediumEmphasized = labelMediumEmphasized.conAire(),
+        labelSmall = labelSmall.conAire(),
+        labelSmallEmphasized = labelSmallEmphasized.conAire()
+    )
 }

@@ -18,6 +18,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -262,22 +265,10 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
         Explicacion(appearance.typographyStyle.explicacion())
 
         Rotulo("TAMAÑO", arriba = true)
-        /*
-         * Sin `steps`: el deslizador se mueve libre.
-         *
-         * Con nueve pasos se quedaba enganchado de casilla en casilla y no se podía dejar en el
-         * 97%, que es justo lo que un deslizador promete y un segmentado no. El redondeo a
-         * entero lo hace el propio ajuste al guardarse.
-         */
-        Slider(
-            value = appearance.textScalePercent.toFloat(),
-            onValueChange = { valor ->
-                viewModel.updateAppearance { it.copy(textScalePercent = valor.toInt()) }
-            },
-            valueRange = 85f..135f,
-            modifier = Modifier.fillMaxWidth()
+        DeslizadorDeTamano(
+            porcentaje = appearance.textScalePercent,
+            onSoltar = { valor -> viewModel.updateAppearance { it.copy(textScalePercent = valor) } }
         )
-        Explicacion("Al ${appearance.textScalePercent}%. Vale para toda la app, no solo para esta pantalla.")
 
         Rotulo("INTERLINEADO", arriba = true)
         UniSegmentedControl(
@@ -325,6 +316,34 @@ private fun MuestraDeLetra() {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+/**
+ * El deslizador del tamaño de texto, que **arrastra de verdad**.
+ *
+ * Quitar los `steps` no bastó: seguía enganchándose al primer movimiento. La causa era otra —
+ * cada píxel del arrastre escribía en las preferencias, eso viaja al disco, y el valor volvía
+ * uno o dos fotogramas tarde. El deslizador se pintaba entonces en la posición vieja, que
+ * bajo el dedo se siente como si se hubiera trabado.
+ *
+ * Aquí el arrastre vive en estado local y solo se guarda **al levantar el dedo**. De paso, la
+ * app deja de reconstruir su tipografía entera cincuenta veces por gesto.
+ */
+@Composable
+private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
+    // `key` sobre el valor guardado: si cambia desde fuera —restablecer apariencia, una copia
+    // de seguridad— el deslizador se entera. Mientras se arrastra, manda lo local.
+    var arrastre by remember(porcentaje) { mutableFloatStateOf(porcentaje.toFloat()) }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Slider(
+            value = arrastre,
+            onValueChange = { arrastre = it },
+            onValueChangeFinished = { onSoltar(arrastre.toInt()) },
+            valueRange = 85f..135f,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Explicacion("Al ${arrastre.toInt()}%. Vale para toda la app, no solo para esta pantalla.")
     }
 }
 

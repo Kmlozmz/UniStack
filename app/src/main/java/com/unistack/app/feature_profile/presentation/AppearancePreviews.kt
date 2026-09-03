@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,15 +67,58 @@ import com.unistack.app.feature_user.domain.TextFieldStyle
  * no porque la muestra lo imite: si mañana [UniCard] cambia, la muestra cambia con ella.
  */
 
-/** Un rótulo pequeño sobre la muestra, para que no se confunda con contenido de la pantalla. */
+/**
+ * El marco de una muestra: una **ventana** a la app, no más contenido de la pantalla.
+ *
+ * Sin marco, la muestra se leía como un ajuste más: los botones de «Guardar» y «Cancelar»
+ * parecían botones de esta pantalla y no un ejemplo de cómo van a verse en otra. El fondo
+ * distinto, el filete y el rótulo con el punto rojo la separan de todo lo que sí se toca.
+ *
+ * El punto es el de una grabación, y está a propósito: dice «esto se está viendo pasar», que
+ * es exactamente lo que hacen las muestras que se animan.
+ */
 @Composable
-private fun RotuloDeMuestra(texto: String = "ASÍ SE VE") {
-    Text(
-        text = texto,
-        style = SectionLabelStyle,
-        color = MaterialTheme.colorScheme.outline,
-        modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
-    )
+private fun VentanaDeMuestra(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    contenido: @Composable ColumnScope.() -> Unit
+) {
+    val esquema = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            // El fondo de la app y no el de la tarjeta: dentro de la ventana se ve la app
+            // como es, con su propio fondo detrás.
+            .background(esquema.background)
+            .border(1.dp, esquema.outlineVariant, RoundedCornerShape(16.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(esquema.surfaceContainerHigh)
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(esquema.error)
+            )
+            Text(
+                text = titulo,
+                style = SectionLabelStyle,
+                color = esquema.onSurfaceVariant
+            )
+        }
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = contenido
+        )
+    }
 }
 
 /**
@@ -88,8 +132,7 @@ private fun RotuloDeMuestra(texto: String = "ASÍ SE VE") {
 fun VistaPreviaDeTarjeta(modifier: Modifier = Modifier) {
     val secciones = LocalSectionColors.current
     val apariencia = LocalAppearancePreferences.current
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra()
+    VentanaDeMuestra(titulo = "MATERIAS", modifier = modifier) {
         UniCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -164,8 +207,7 @@ fun BarraDeProgresoReal(progreso: Float = 0.68f, modifier: Modifier = Modifier) 
  */
 @Composable
 fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra()
+    VentanaDeMuestra(titulo = "AL PIE DE UN FORMULARIO", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             UniStackButton(
                 text = "Guardar",
@@ -192,8 +234,7 @@ fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
 fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
     val estilo = LocalAppearancePreferences.current.chipStyle
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra("ASÍ SE VEN EN TAREAS")
+    VentanaDeMuestra(titulo = "TAREAS", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Vencidas" to true, "Hoy" to false, "Sin materia" to false).forEach { (texto, activo) ->
                 Row(
@@ -246,8 +287,7 @@ fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
 fun VistaPreviaDeCampo(modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
     val estilo = LocalAppearancePreferences.current.textFieldStyle
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra("ASÍ SE VE AL CREAR UNA MATERIA")
+    VentanaDeMuestra(titulo = "CREAR UNA MATERIA", modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -296,8 +336,7 @@ fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
         Triple("estad", "Estadística", secciones.expenses),
         Triple("ingles", "Inglés IV", esquema.tertiary)
     )
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra("ASÍ SE VEN EN MATERIAS")
+    VentanaDeMuestra(titulo = "MATERIAS", modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             materias.take(3).forEach { (id, nombre, color) ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
@@ -344,8 +383,7 @@ fun VistaPreviaDeDistintivos(modifier: Modifier = Modifier) {
 /** Dos filas de ajustes con sus interruptores, encendida y apagada, como en cualquier pantalla. */
 @Composable
 fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra("ASÍ SE VEN EN AJUSTES")
+    VentanaDeMuestra(titulo = "AJUSTES", modifier = modifier) {
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -386,8 +424,7 @@ fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
 @Composable
 fun VistaPreviaDeSemana(letras: List<String>, indiceDeHoy: Int, modifier: Modifier = Modifier) {
     val esquema = MaterialTheme.colorScheme
-    Column(modifier = modifier.fillMaxWidth()) {
-        RotuloDeMuestra("ASÍ SE VE EN HORARIO")
+    VentanaDeMuestra(titulo = "HORARIO", modifier = modifier) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             letras.forEachIndexed { indice, dia ->
                 val hoy = indice == indiceDeHoy

@@ -326,13 +326,22 @@ private fun ThemeCard(
     onClick: () -> Unit
 ) {
     val p: ThemePalette = tema.palette(oscuro)
+    val anillo = MaterialTheme.colorScheme.primary
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(p.background)
+            /*
+             * El anillo de elegido va con **el acento de la app**, no con el del tema.
+             *
+             * Con el del tema, cada tarjeta se marcaba de un color distinto y no se leia como
+             * «este es el elegido» sino como un adorno mas del tema: con el acento verde puesto
+             * y Macchiato elegido, el anillo salia morado y no se entendia por que.
+             * «Elegido» es lo mismo en toda la app, y en toda la app se marca con el acento.
+             */
             .border(
                 width = if (elegido) 3.dp else 0.dp,
-                color = if (elegido) p.accent else Color.Transparent,
+                color = if (elegido) anillo else Color.Transparent,
                 shape = RoundedCornerShape(18.dp)
             )
             .cleanClickable(onClick = onClick)
@@ -379,7 +388,7 @@ private fun ThemeCard(
                     Icon(
                         Icons.Rounded.Check,
                         contentDescription = "Elegido",
-                        tint = p.accent,
+                        tint = anillo,
                         modifier = Modifier.size(16.dp)
                     )
                 }
