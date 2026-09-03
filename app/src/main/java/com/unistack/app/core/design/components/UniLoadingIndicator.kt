@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +23,10 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun UniLoadingIndicator(modifier: Modifier = Modifier) {
-    LoadingIndicator(modifier = modifier)
+    // La forma sale de Movimiento: circulo, formas de M3E, onda o puntos. Estuvo fija en
+    // «formas», que sigue siendo la de por defecto porque es la que menos se confunde con una
+    // barra de progreso atascada.
+    UniLoading(modifier = modifier)
 }
 
 /**

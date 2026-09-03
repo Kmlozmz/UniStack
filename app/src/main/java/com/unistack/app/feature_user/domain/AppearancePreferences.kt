@@ -1,6 +1,14 @@
 package com.unistack.app.feature_user.domain
 
 data class AppearancePreferences(
+    /**
+     * El tema completo elegido, por su identificador de [AppThemes].
+     *
+     * Sustituye en la practica a [backgroundStyle] y a la parte de color de [accentStyle]:
+     * aquellos guardaban trozos sueltos de una decision que siempre fue conjunta, y de los
+     * cinco acentos que ofrecian solo uno llegaba a pintarse.
+     */
+    val themeId: String = "unistack",
     val backgroundStyle: BackgroundStyle = BackgroundStyle.DEFAULT,
     val customBackgroundColor: Int? = null,
     val customThemeBase: CustomThemeBase = CustomThemeBase.SYSTEM,
@@ -14,6 +22,17 @@ data class AppearancePreferences(
     val cornerStyle: CornerStyle = CornerStyle.BALANCED,
     val interfaceDensity: InterfaceDensity = InterfaceDensity.BALANCED,
     val motionPreference: MotionPreference = MotionPreference.FULL,
+
+    /**
+     * Cada gesto de la app con su variante, en [MotionPreferences].
+     *
+     * Va como bloque aparte y no como treinta campos sueltos aqui: son veinticinco elecciones
+     * y cuatro interruptores, y sueltos convertirian esta clase en una lista de la compra
+     * donde ya no se distingue lo que decide el color de lo que decide como se tacha una
+     * tarea. [motionPreference] sigue mandando por encima: en «reducido» o «nada», esto queda
+     * guardado pero en pausa.
+     */
+    val motion: MotionPreferences = MotionPreferences(),
     val textScale: TextScalePreference = TextScalePreference.STANDARD,
     val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
     val decimalPlaces: Int = 1,

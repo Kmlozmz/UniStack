@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AccentStyle
+import com.unistack.app.feature_user.domain.CornerStyle
+import com.unistack.app.feature_user.domain.SurfaceStyle
+import com.unistack.app.feature_user.domain.AccentIntensity
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppearancePreferences
 import com.unistack.app.feature_user.domain.TextScalePreference
@@ -73,6 +76,12 @@ fun UniStackTheme(
         LocalAppearancePreferences provides appearance,
         LocalAccessibilityPreferences provides accessibility,
         LocalMotionDurationScale provides accessibility.motionScale(),
+        LocalMotion provides appearance.motion,
+        // El permiso sale del mas restrictivo de los dos: Accesibilidad puede quitar el
+        // movimiento de toda la app aunque Apariencia lo tenga completo, y al reves.
+        // maxOf y no minOf: el orden del enum va de completo a nada, asi que el mayor de los
+        // dos es el mas restrictivo.
+        LocalMotionAllowance provides maxOf(appearance.motionPreference, accessibility.motionPreference),
         LocalInterfaceSpacing provides appearance.interfaceSpacing(),
         LocalDensity provides Density(
             density = density.density,
@@ -82,7 +91,7 @@ fun UniStackTheme(
         MaterialExpressiveTheme(
             colorScheme = scheme,
             motionScheme = MotionScheme.expressive(),
-            shapes = ExpressiveShapeScale,
+            shapes = escalaDeFormas(appearance.cornerStyle),
             typography = typography,
             content = content
         )
@@ -90,19 +99,43 @@ fun UniStackTheme(
 }
 
 /**
- * La escala de formas, una sola y sin preferencia de esquinas.
+ * La escala de formas, ahora sí atada al ajuste de esquinas.
  *
- * Los cinco tamaños de Material, con los valores de la maqueta. Que no dependa de un ajuste es
- * la decisión: cada variante de esquina multiplicaba por tres los estados que había que mirar
- * en cada pantalla nueva, a cambio de una diferencia que casi nadie tocaba.
+ * **Estuvo fija.** El comentario que había aquí decía que no depender de un ajuste era la
+ * decisión —tres variantes multiplicaban los estados que revisar por pantalla—, pero el ajuste
+ * existía igual: se elegía «Rectas» en Apariencia, se guardaba, viajaba en la copia de
+ * seguridad y las tarjetas seguían con los mismos 28dp. Un ajuste que no hace nada cuesta más
+ * que tres variantes que sí.
+ *
+ * Los cinco tamaños se mueven juntos y guardando la proporción: si el contenedor grande baja a
+ * 14dp y el pequeño se queda en 12dp, un botón dentro de una tarjeta se ve más redondo que la
+ * tarjeta que lo contiene.
  */
-internal val ExpressiveShapeScale = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(20.dp),
-    large = RoundedCornerShape(28.dp),
-    extraLarge = RoundedCornerShape(32.dp)
-)
+internal val ExpressiveShapeScale = escalaDeFormas(CornerStyle.BALANCED)
+
+internal fun escalaDeFormas(estilo: CornerStyle): Shapes = when (estilo) {
+    CornerStyle.COMPACT -> Shapes(
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(6.dp),
+        medium = RoundedCornerShape(10.dp),
+        large = RoundedCornerShape(14.dp),
+        extraLarge = RoundedCornerShape(16.dp)
+    )
+    CornerStyle.BALANCED -> Shapes(
+        extraSmall = RoundedCornerShape(8.dp),
+        small = RoundedCornerShape(12.dp),
+        medium = RoundedCornerShape(20.dp),
+        large = RoundedCornerShape(28.dp),
+        extraLarge = RoundedCornerShape(32.dp)
+    )
+    CornerStyle.SOFT -> Shapes(
+        extraSmall = RoundedCornerShape(12.dp),
+        small = RoundedCornerShape(18.dp),
+        medium = RoundedCornerShape(28.dp),
+        large = RoundedCornerShape(36.dp),
+        extraLarge = RoundedCornerShape(42.dp)
+    )
+}
 
 /**
  * El esquema que toca: el de la marca, o el del fondo de pantalla si se ha pedido.
@@ -126,17 +159,141 @@ private fun expressiveColorScheme(
         else -> ExpressiveLightScheme
     }
 
+    /*
+     * El tema elegido se pinta encima del esquema base.
+     *
+     * Con Monet no: quien pide el color del fondo de pantalla esta pidiendo justo que no mande
+     * una paleta nuestra. En los demas casos, el tema decide fondo, tarjetas, tinta y acento a
+     * la vez -- que es lo que hace que «Dracula» se vea como Dracula y no como la app de
+     * siempre con un morado distinto.
+     */
+    val conTema = if (appearance.accentStyle == AccentStyle.DYNAMIC) base else {
+        val tema = AppThemes.byId(appearance.themeId)
+        val acento = appearance.accentIntensity.aplicarA(
+            appearance.customAccentColor?.let(::Color) ?: tema.accent
+        )
+        base.copy(
+            primary = acento,
+            onPrimary = tema.onAccent,
+            primaryContainer = acento.copy(alpha = 0.22f).compuestoSobre(tema.background),
+            onPrimaryContainer = if (tema.isLight) tema.ink else acento,
+            secondary = acento,
+            tertiary = acento,
+            background = tema.background,
+            onBackground = tema.ink,
+            surface = tema.background,
+            onSurface = tema.ink,
+            onSurfaceVariant = tema.ink.copy(alpha = 0.66f).compuestoSobre(tema.background),
+            surfaceContainerLowest = tema.background.mezclaCon(tema.surface, 0.25f),
+            surfaceContainerLow = tema.background.mezclaCon(tema.surface, 0.6f),
+            surfaceContainer = tema.surface,
+            surfaceContainerHigh = tema.surface.mezclaCon(tema.ink, 0.07f),
+            surfaceContainerHighest = tema.surface.mezclaCon(tema.ink, 0.13f),
+            surfaceVariant = tema.surface,
+            outline = tema.ink.copy(alpha = 0.34f).compuestoSobre(tema.background),
+            outlineVariant = tema.ink.copy(alpha = 0.16f).compuestoSobre(tema.background)
+        ).conSuperficie(appearance.surfaceStyle, tema)
+    }
+
     // OLED apaga el píxel: el fondo y el contenedor más bajo van a negro puro, y el resto de
     // los niveles se conservan para que la jerarquía de profundidad no se venga abajo.
     // design-tokens-ok-begin: el negro puro ES el modo OLED, no un color de marca
     return if (oledTheme && darkTheme) {
-        base.copy(
+        conTema.copy(
             background = Color.Black,
             surface = Color.Black,
             surfaceContainerLowest = Color.Black
         )
     } else {
-        base
+        conTema
     }
     // design-tokens-ok-end
+}
+
+/**
+ * Dos colores mezclados, para derivar los niveles de superficie de un tema.
+ *
+ * Un tema declara solo fondo y tarjeta; Material necesita cinco niveles entre medias. Se
+ * interpolan en vez de pedirlos uno a uno: veintiocho temas x cinco niveles serian ciento
+ * cuarenta colores escritos a mano, y bastaria con equivocarse en uno para que una pantalla
+ * quedara ilegible.
+ */
+internal fun Color.mezclaCon(otro: Color, fraccion: Float): Color = Color(
+    red = red + (otro.red - red) * fraccion,
+    green = green + (otro.green - green) * fraccion,
+    blue = blue + (otro.blue - blue) * fraccion,
+    alpha = 1f
+)
+
+/** El mismo color, ya resuelto sobre un fondo opaco: Material no admite transparencias aqui. */
+internal fun Color.compuestoSobre(fondo: Color): Color = Color(
+    red = fondo.red + (red - fondo.red) * alpha,
+    green = fondo.green + (green - fondo.green) * alpha,
+    blue = fondo.blue + (blue - fondo.blue) * alpha,
+    alpha = 1f
+)
+
+/**
+ * Lo que hace la intensidad del acento, que hasta ahora no hacia nada.
+ *
+ * Suave lo acerca al blanco y vivo lo satura acercandolo al negro; equilibrado lo deja como
+ * viene. Es un ajuste de un solo color y por eso vive con el color, no en la pantalla.
+ */
+internal fun AccentIntensity.aplicarA(color: Color): Color = when (this) {
+    // Los recorridos son amplios a proposito: con un 15% el cambio existia pero no se veia,
+    // que para el caso es lo mismo que no hacer nada.
+    AccentIntensity.SOFT -> color.mezclaCon(Color.White, 0.42f)
+    AccentIntensity.BALANCED -> color
+    AccentIntensity.VIBRANT -> color.saturado(0.55f)
+}
+
+/**
+ * El mismo color, mas vivo: se aleja de su propio gris manteniendo el tono.
+ *
+ * Oscurecerlo mezclando con negro apagaba el acento en vez de encenderlo, que es lo contrario
+ * de lo que promete «vivo».
+ */
+internal fun Color.saturado(fuerza: Float): Color {
+    val gris = (red + green + blue) / 3f
+    return Color(
+        red = (gris + (red - gris) * (1f + fuerza)).coerceIn(0f, 1f),
+        green = (gris + (green - gris) * (1f + fuerza)).coerceIn(0f, 1f),
+        blue = (gris + (blue - gris) * (1f + fuerza)).coerceIn(0f, 1f),
+        alpha = 1f
+    )
+}
+
+/**
+ * Lo que hace el estilo de superficie, que hasta ahora **no hacia nada**.
+ *
+ * Se guardaba, viajaba en la copia de seguridad y salia en Apariencia; elegir «plana» o «con
+ * sombra» daba el mismo pixel. Cada estilo cambia de donde sale la separacion entre una
+ * tarjeta y el fondo:
+ *
+ * - **Plana**: el nivel de tarjeta se acerca al fondo y el filete desaparece. Solo el tono.
+ * - **Filete**: la tarjeta se funde con el fondo y lo que la delimita es el contorno.
+ * - **Sombra**: la tarjeta se aleja del fondo en tono; la sombra la ponen los componentes.
+ * - **Cristal**: nivel intermedio y contorno tenue, para que se lea como algo translucido.
+ */
+internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: AppTheme): ColorScheme = when (estilo) {
+    SurfaceStyle.FLAT -> copy(
+        surfaceContainer = tema.background.mezclaCon(tema.surface, 0.55f),
+        surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.75f),
+        outlineVariant = tema.background.mezclaCon(tema.ink, 0.05f)
+    )
+    SurfaceStyle.OUTLINED -> copy(
+        surfaceContainer = tema.background.mezclaCon(tema.surface, 0.35f),
+        surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.6f),
+        outlineVariant = tema.ink.copy(alpha = 0.28f).compuestoSobre(tema.background)
+    )
+    SurfaceStyle.ELEVATED -> copy(
+        surfaceContainer = tema.surface.mezclaCon(tema.ink, 0.04f),
+        surfaceContainerHigh = tema.surface.mezclaCon(tema.ink, 0.10f),
+        outlineVariant = tema.ink.copy(alpha = 0.10f).compuestoSobre(tema.background)
+    )
+    SurfaceStyle.TRANSLUCENT -> copy(
+        surfaceContainer = tema.background.mezclaCon(tema.surface, 0.7f),
+        surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.85f),
+        outlineVariant = tema.ink.copy(alpha = 0.20f).compuestoSobre(tema.background)
+    )
 }

@@ -61,6 +61,7 @@ import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
 import com.unistack.app.feature_expenses.presentation.AddExpenseScreen
 import com.unistack.app.feature_expenses.presentation.ExpenseInsightsScreen
@@ -77,6 +78,12 @@ import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
 import com.unistack.app.feature_notifications.presentation.NotificationHistoryScreen
 import com.unistack.app.feature_profile.presentation.AppearanceSettingsScreen
+import com.unistack.app.feature_profile.presentation.ThemeSettingsScreen
+import com.unistack.app.feature_profile.presentation.SurfaceSettingsScreen
+import com.unistack.app.feature_profile.presentation.TypographySettingsScreen
+import com.unistack.app.feature_profile.presentation.ComponentSettingsScreen
+import com.unistack.app.feature_profile.presentation.HomeSettingsScreen
+import com.unistack.app.feature_profile.presentation.MotionSettingsScreen
 import com.unistack.app.feature_terms.presentation.NewTermScreen
 import com.unistack.app.feature_terms.presentation.TermsViewModel
 import com.unistack.app.feature_terms.presentation.AcademicHistoryScreen
@@ -271,6 +278,17 @@ fun MainNavGraph(
              */
             val motionEnabled = LocalMotionDurationScale.current > 0f
             val slide = MaterialTheme.motionScheme.defaultSpatialSpec<IntOffset>()
+            /*
+             * Cual de las seis, la que se haya elegido en Movimiento.
+             *
+             * Estuvo escrita a mano aqui —siempre el empuje— y el ajuste solo podia apagarla.
+             * Ahora el estilo sale de las preferencias y esto se limita a montarlo.
+             */
+            val transicion = transicionDe(
+                estilo = motionActual().screenTransition,
+                desplazamiento = slide,
+                fundido = MaterialTheme.motionScheme.defaultEffectsSpec()
+            )
 
             NavHost(
                 navController = navController,
@@ -291,19 +309,19 @@ fun MainNavGraph(
                     .padding(contentPadding),
                 enterTransition = {
                     if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
-                    else slideInHorizontally(animationSpec = slide) { width -> width }
+                    else transicion.entra
                 },
                 exitTransition = {
                     if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
-                    else slideOutHorizontally(animationSpec = slide) { width -> -width / 3 }
+                    else transicion.sale
                 },
                 popEnterTransition = {
                     if (!motionEnabled || isTabSwitch(initialState, targetState)) EnterTransition.None
-                    else slideInHorizontally(animationSpec = slide) { width -> -width / 3 }
+                    else transicion.vuelveEntrando
                 },
                 popExitTransition = {
                     if (!motionEnabled || isTabSwitch(initialState, targetState)) ExitTransition.None
-                    else slideOutHorizontally(animationSpec = slide) { width -> width }
+                    else transicion.vuelveSaliendo
                 }
             ) {
                 composable(AppRoutes.Home) {
@@ -510,6 +528,12 @@ fun MainNavGraph(
             }
             screen(AppRoutes.AppearanceSettings) {
                 AppearanceSettingsScreen(
+                    onThemeClick = { navController.go(AppRoutes.ThemeSettings) },
+                    onSurfaceClick = { navController.go(AppRoutes.SurfaceSettings) },
+                    onTypographyClick = { navController.go(AppRoutes.TypographySettings) },
+                    onComponentsClick = { navController.go(AppRoutes.ComponentSettings) },
+                    onHomeClick = { navController.go(AppRoutes.HomeSettings) },
+                    onMotionClick = { navController.go(AppRoutes.MotionSettings) },
                     onBackClick = {
                         if (!navController.navigateUp()) {
                             navController.go(AppRoutes.Settings)
@@ -556,6 +580,48 @@ fun MainNavGraph(
                     onAbsenceClick = { navController.go(AppRoutes.AcademicAbsence) },
                     onBreaksClick = { navController.go(AppRoutes.AcademicBreaks) },
                     onTermClick = { navController.go(AppRoutes.AcademicTerm) }
+                )
+            }
+            screen(AppRoutes.ThemeSettings) {
+                ThemeSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
+                )
+            }
+            screen(AppRoutes.SurfaceSettings) {
+                SurfaceSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
+                )
+            }
+            screen(AppRoutes.TypographySettings) {
+                TypographySettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
+                )
+            }
+            screen(AppRoutes.ComponentSettings) {
+                ComponentSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
+                )
+            }
+            screen(AppRoutes.HomeSettings) {
+                HomeSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
+                )
+            }
+            screen(AppRoutes.MotionSettings) {
+                MotionSettingsScreen(
+                    onBackClick = {
+                        if (!navController.navigateUp()) navController.go(AppRoutes.AppearanceSettings)
+                    }
                 )
             }
             screen(AppRoutes.AcademicTerm) {
@@ -1148,6 +1214,12 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.Profile) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.Settings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AppearanceSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.ThemeSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.SurfaceSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.TypographySettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.ComponentSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.HomeSettings) -> AppRoutes.Settings
+        routeBelongsTo(route, AppRoutes.MotionSettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.AccessibilitySettings) -> AppRoutes.Settings
         routeBelongsTo(route, AppRoutes.Calendar) -> AppRoutes.Calendar
         // El formulario de materia abierto desde Horario pertenece a Horario, que es a donde

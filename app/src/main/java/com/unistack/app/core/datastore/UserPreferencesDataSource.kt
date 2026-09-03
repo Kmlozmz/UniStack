@@ -14,6 +14,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.MotionCatalog
+import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.GradingCut
@@ -339,6 +341,7 @@ class UserPreferencesDataSource(private val context: Context) {
     }
 
     private fun AppearancePreferences.toJsonString(): String = JSONObject()
+        .put("themeId", themeId)
         .put("backgroundStyle", backgroundStyle.name)
         .put("customBackgroundColor", customBackgroundColor)
         .put("customThemeBase", customThemeBase.name)
@@ -349,6 +352,7 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("cornerStyle", cornerStyle.name)
         .put("interfaceDensity", interfaceDensity.name)
         .put("motionPreference", motionPreference.name)
+        .put("motion", motion.toJson())
         .put("textScale", textScale.name)
         .put("typographyStyle", typographyStyle.name)
         .put("decimalPlaces", decimalPlaces)
@@ -400,6 +404,7 @@ class UserPreferencesDataSource(private val context: Context) {
             val json = JSONObject(raw)
             val defaults = AppearancePreferences.defaults()
             AppearancePreferences(
+                themeId = json.optString("themeId").ifBlank { defaults.themeId },
                 backgroundStyle = json.enumOrDefault("backgroundStyle", defaults.backgroundStyle),
                 customBackgroundColor = json.optIntOrNull("customBackgroundColor"),
                 customThemeBase = json.enumOrDefault("customThemeBase", defaults.customThemeBase),
@@ -410,6 +415,7 @@ class UserPreferencesDataSource(private val context: Context) {
                 cornerStyle = json.enumOrDefault("cornerStyle", defaults.cornerStyle),
                 interfaceDensity = json.enumOrDefault("interfaceDensity", defaults.interfaceDensity),
                 motionPreference = json.enumOrDefault("motionPreference", defaults.motionPreference),
+                motion = parseMotion(json.optJSONObject("motion")),
                 textScale = json.enumOrDefault("textScale", defaults.textScale),
                 typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
@@ -451,6 +457,35 @@ class UserPreferencesDataSource(private val context: Context) {
                 visualPreset = json.enumOrDefault("visualPreset", defaults.visualPreset)
             ).normalized()
         }.getOrDefault(AppearancePreferences.defaults())
+    }
+
+    /**
+     * El movimiento, guardado **por el catalogo** y no campo a campo.
+     *
+     * Son veinticinco gestos con sus variantes: escritos a mano serian cincuenta lineas aqui y
+     * otras cincuenta al leer, y cada gesto nuevo obligaria a tocar las dos. Recorriendo
+     * [MotionCatalog] se guarda y se lee solo, y anadir un gesto es anadirlo alli.
+     */
+    private fun MotionPreferences.toJson(): JSONObject {
+        val json = JSONObject()
+        MotionCatalog.gestures.forEach { gesto -> json.put(gesto.id, gesto.read(this).id) }
+        MotionCatalog.toggles.forEach { toggle -> json.put(toggle.id, toggle.read(this)) }
+        return json
+    }
+
+    private fun parseMotion(json: JSONObject?): MotionPreferences {
+        if (json == null) return MotionPreferences.defaults()
+        var prefs = MotionPreferences.defaults()
+        MotionCatalog.gestures.forEach { gesto ->
+            val guardada = json.optString(gesto.id)
+            // Una variante que ya no existe —renombrada, o retirada— cae en el valor por
+            // defecto en vez de tumbar la lectura entera de las preferencias.
+            gesto.options.firstOrNull { it.id == guardada }?.let { prefs = gesto.write(prefs, it) }
+        }
+        MotionCatalog.toggles.forEach { toggle ->
+            if (json.has(toggle.id)) prefs = toggle.write(prefs, json.optBoolean(toggle.id, toggle.read(prefs)))
+        }
+        return prefs
     }
 
     private inline fun <reified T : Enum<T>> JSONObject.enumOrDefault(key: String, default: T): T {

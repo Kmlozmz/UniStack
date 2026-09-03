@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,6 +84,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
+import com.unistack.app.core.design.components.latidoDeVencido
+import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -303,8 +306,10 @@ fun TasksScreen(
                 else -> {
                     if (overdueTasks.isNotEmpty()) {
                         item { SectionTitle("Vencidas", overdueTasks.size) }
-                        items(overdueTasks, key = { it.id }) { task ->
+                        itemsIndexed(overdueTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
+                                modifier = Modifier.entradaDeLista(indice)
+                                    .latidoDeVencido(activo = true),
                                 task = task,
                                 subjects = subjects,
                                 gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
@@ -330,8 +335,10 @@ fun TasksScreen(
                     }
                     if (todayTasks.isNotEmpty()) {
                         item { SectionTitle("Hoy", todayTasks.size) }
-                        items(todayTasks, key = { it.id }) { task ->
+                        itemsIndexed(todayTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
+                                modifier = Modifier.entradaDeLista(indice)
+                                    .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
                                 gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
@@ -357,8 +364,10 @@ fun TasksScreen(
                     }
                     if (upcomingTasks.isNotEmpty()) {
                         item { SectionTitle("Próximas", upcomingTasks.size) }
-                        items(upcomingTasks, key = { it.id }) { task ->
+                        itemsIndexed(upcomingTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
+                                modifier = Modifier.entradaDeLista(indice)
+                                    .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
                                 gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
@@ -384,8 +393,10 @@ fun TasksScreen(
                     }
                     if (laterTasks.isNotEmpty()) {
                         item { SectionTitle("Más adelante", laterTasks.size) }
-                        items(laterTasks, key = { it.id }) { task ->
+                        itemsIndexed(laterTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
+                                modifier = Modifier.entradaDeLista(indice)
+                                    .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
                                 gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
@@ -411,8 +422,10 @@ fun TasksScreen(
                     }
                     if (completedTasks.isNotEmpty()) {
                         item { SectionTitle("Completadas", completedTasks.size) }
-                        items(completedTasks, key = { it.id }) { task ->
+                        itemsIndexed(completedTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
+                                modifier = Modifier.entradaDeLista(indice)
+                                    .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
                                 gradingScale = profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE,
@@ -1211,6 +1224,8 @@ private fun TaskCard(
     subjects: List<Subject>,
     gradingScale: GradingScale,
     onCardClick: () -> Unit,
+    /** La entrada de la lista y, si esta vencida, su latido. Sale de Movimiento. */
+    modifier: Modifier = Modifier,
     onCheckedChange: (Boolean) -> Unit,
     onRegisterGradeClick: () -> Unit,
     onNoGradeClick: () -> Unit,

@@ -74,6 +74,7 @@ import com.unistack.app.feature_home.domain.HomeUpcomingItem
 import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.components.SaludoAnimado
 import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
 import kotlin.math.roundToInt
@@ -386,23 +387,19 @@ private fun HomeHeader(
             }
         }
 
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Text(
-                text = greetingForNow().uppercase(SpanishLocale),
-                style = SectionLabelStyle,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = name,
-                style = MaterialTheme.typography.headlineLargeEmphasized,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        /*
+         * El saludo, con la variante que se haya elegido en Movimiento.
+         *
+         * Es lo primero que se ve al abrir la app, asi que es donde mas se nota: por eso tiene
+         * siete variantes propias en vez de heredar la entrada generica de las listas.
+         */
+        SaludoAnimado(
+            rotulo = greetingForNow().uppercase(SpanishLocale),
+            nombre = name,
+            estiloRotulo = SectionLabelStyle,
+            estiloNombre = MaterialTheme.typography.headlineLargeEmphasized,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 10.dp, bottom = 10.dp)
+        )
     }
 }
 

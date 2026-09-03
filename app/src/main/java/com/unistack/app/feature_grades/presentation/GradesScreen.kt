@@ -3,6 +3,7 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.rounded.DragHandle
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Edit
@@ -211,9 +213,11 @@ fun GradesScreen(
                     )
                 }
             } else {
-                items(visible, key = { it.id }) { subject ->
+                itemsIndexed(visible, key = { _, it -> it.id }) { indice, subject ->
                     SubjectRow(
-                        modifier = Modifier.uniReorderableItem(reorder, subject.id),
+                        modifier = Modifier
+                            .entradaDeLista(indice)
+                            .uniReorderableItem(reorder, subject.id),
                         // El asa solo con la selección abierta.
                         //
                         // Permanente, cinco asas en la lista repetían un mando que casi nunca se
