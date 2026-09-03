@@ -279,6 +279,18 @@ private fun RotuloDeGrupo(nombre: String, recuento: String) {
 /**
  * La tarjeta de un ajuste: icono teñido, nombre, descripción y lo que venga debajo.
  *
+ * **Los cuatro niveles del diseño.** Se veía todo plano porque la tarjeta estaba a un solo paso
+ * del fondo y la caja de variante a otro: dos tonos casi iguales para tres capas distintas. El
+ * diseño usa cuatro y bien separados —fondo, tarjeta, caja, y el filete un paso por encima de
+ * la caja— y son exactamente los que el tema ya deriva:
+ *
+ * | Diseño | En la app |
+ * |---|---|
+ * | `--bg` | `background` |
+ * | `--card` | `surfaceContainer` |
+ * | `--card2` | `surfaceContainerHigh` |
+ * | `--card3` y `--line` | `surfaceContainerHighest` |
+ *
  * El cuadrado del icono va relleno al trece por ciento de su color y el icono a plena
  * intensidad, que es lo que hace que veinticinco tarjetas seguidas se distingan de un vistazo
  * sin leer ni un nombre.
@@ -294,7 +306,7 @@ private fun TarjetaDeAjuste(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
@@ -386,7 +398,10 @@ private fun CajaDeVariante(
             .background(if (elegida) esquema.primary.copy(alpha = 0.12f) else Color.Transparent)
             .border(
                 width = 2.dp,
-                color = if (elegida) esquema.primary else esquema.outlineVariant,
+                // El filete sale del nivel de encima y no de `outlineVariant`: con la
+                // superficie plana ese contorno casi no se ve, y una rejilla de seis cajas sin
+                // borde visible se lee como una mancha.
+                color = if (elegida) esquema.primary else esquema.surfaceContainerHighest,
                 shape = RoundedCornerShape(13.dp)
             )
             .cleanClickable(onClick = onClick)
@@ -398,7 +413,7 @@ private fun CajaDeVariante(
                 .fillMaxWidth()
                 .height(66.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(esquema.surfaceContainerHighest)
+                .background(esquema.surfaceContainerHigh)
                 .padding(7.dp)
         ) {
             LienzoDemo(t = if (animar) t else 0.55f) { reloj ->
@@ -435,7 +450,7 @@ private fun TarjetaDeInterruptor(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
@@ -498,7 +513,7 @@ private fun DemoDesplegable(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                     .padding(12.dp)
             ) {
                 contenido()

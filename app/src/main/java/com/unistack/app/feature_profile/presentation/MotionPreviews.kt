@@ -114,7 +114,10 @@ internal fun tintaDemo(): TintaDemo {
     val esquema = MaterialTheme.colorScheme
     val secciones = LocalSectionColors.current
     return TintaDemo(
-        fondo = esquema.surfaceContainerHighest,
+        // El fondo sobre el que se dibuja es el de la caja de variante, no otro: si no
+        // coinciden, lo que se pinta «en blanco» dentro del dibujo sale de un tono distinto al
+        // de la caja y se ve un recorte.
+        fondo = esquema.surfaceContainerHigh,
         pieza = esquema.onSurface.copy(alpha = 0.16f),
         acento = esquema.primary,
         tinta = esquema.onSurface,

@@ -231,7 +231,7 @@ fun DemoDeVelocidad(motion: MotionPreferences) {
                 .fillMaxWidth()
                 .height(46.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
         ) {
             Box(
                 modifier = Modifier
@@ -315,7 +315,7 @@ fun DemoDeBarra(motion: MotionPreferences) {
                 .fillMaxWidth()
                 .height(38.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(esquema.surfaceContainerHigh)
+                .background(esquema.surfaceContainerHighest)
                 .padding(5.dp)
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -429,7 +429,7 @@ fun DemoDeGesto(motion: MotionPreferences) {
                     .fillMaxSize()
                     .graphicsLayer { translationX = -avance * 62f }
                     .clip(RoundedCornerShape(12.dp))
-                    .background(esquema.surfaceContainerHigh),
+                    .background(esquema.surfaceContainerHighest),
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
@@ -465,7 +465,7 @@ fun DemoDeParallax(motion: MotionPreferences) {
                 .fillMaxWidth()
                 .height(56.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(esquema.surfaceContainerHigh)
+                .background(esquema.surfaceContainerHighest)
         ) {
             // La «foto» de dentro se desplaza menos que su marco cuando hay parallax: esa
             // diferencia de recorrido **es** el efecto.
@@ -482,7 +482,7 @@ fun DemoDeParallax(motion: MotionPreferences) {
                     .fillMaxSize()
                     .align(Alignment.CenterStart)
                     .graphicsLayer { translationX = (t - 0.5f) * 120f }
-                    .background(esquema.surfaceContainerHighest.copy(alpha = 0.9f))
+                    .background(esquema.surfaceContainerLow.copy(alpha = 0.92f))
             )
         }
     }
