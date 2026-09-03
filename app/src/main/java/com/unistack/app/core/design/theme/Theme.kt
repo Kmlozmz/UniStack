@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.unistack.app.feature_user.domain.AccentStyle
+import com.unistack.app.feature_user.domain.LineHeightStyle
+import com.unistack.app.feature_user.domain.ReadingFont
+import com.unistack.app.feature_user.domain.ContrastLevel
 import com.unistack.app.feature_user.domain.CornerStyle
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.AccentIntensity
@@ -56,10 +59,41 @@ fun UniStackTheme(
     AppearanceRuntime.cornerStyle = appearance.cornerStyle
 
     val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = appearance)
+        .conContraste(accessibility.contrast, accessibility.highContrastEnabled, darkTheme)
+    /*
+     * Verde, ambar y rojo, o todo del color de acento.
+     *
+     * Apagado, la app deja de decir «bien o mal» con el color y lo dice solo con el numero y
+     * con la posicion. Es lo que pide quien no distingue ese par: sin esto, media app le
+     * cuenta las cosas en un idioma que no lee.
+     */
     val sections = SectionColors.forTheme(darkTheme)
+        .conPaleta(accessibility.colorBlindPalette)
+        .let { base -> if (appearance.sectionColorsEnabled) base else base.sinSemaforo(scheme) }
 
+    /*
+     * La letra sale de dos sitios, y Accesibilidad manda.
+     *
+     * La familia de lectura para dislexia y la negrita son ajustes de accesibilidad, asi que
+     * pisan a la familia elegida en Apariencia: quien las necesita las necesita, y no tiene
+     * sentido que elegir «Mono» en Tipografia las anule sin decirlo.
+     */
     val typography = expressiveTypography(
-        appearanceTypography(useSystemFont = appearance.typographyStyle == TypographyStyle.SYSTEM)
+        appearanceTypography(
+            estilo = if (accessibility.readingFont == ReadingFont.DISLEXIA) {
+                TypographyStyle.SYSTEM
+            } else {
+                appearance.typographyStyle
+            },
+            interlineado = if (accessibility.readingFont == ReadingFont.DISLEXIA) {
+                // La dislexia pide aire entre renglones ademas de letra abierta: las dos cosas
+                // juntas es lo que hace que un parrafo deje de saltar de linea.
+                LineHeightStyle.AMPLIO
+            } else {
+                appearance.lineHeightStyle
+            },
+            negrita = accessibility.boldText
+        )
     )
 
     // La preferencia de "texto grande" se aplica sobre el fontScale de la densidad, no
@@ -67,7 +101,15 @@ fun UniStackTheme(
     // incluidas las que se declaran sueltas en las pantallas; escalando solo la Typography,
     // cualquier `fontSize = 13.sp` se saltaba el ajuste.
     val density = LocalDensity.current
-    val textScale = if (accessibility.textScale == TextScalePreference.LARGE) 1.10f else 1f
+    /*
+     * El tamano del texto sale del porcentaje de Apariencia, y la preferencia vieja de
+     * Accesibilidad sigue sumando si estaba puesta.
+     *
+     * Los dos existen porque el porcentaje es nuevo: quien tuviera «grande» guardado de antes
+     * lo conserva sin tener que volver a elegirlo, y quien toque el deslizador manda.
+     */
+    val textScale = (appearance.textScalePercent.coerceIn(85, 135) / 100f) *
+        if (accessibility.textScale == TextScalePreference.LARGE) 1.10f else 1f
 
     CompositionLocalProvider(
         LocalSectionColors provides sections,
@@ -281,6 +323,8 @@ internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: AppTheme): Co
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.75f),
         outlineVariant = tema.background.mezclaCon(tema.ink, 0.05f)
     )
+    // El grosor del filete no se puede meter en un ColorScheme, asi que lo que se ajusta aqui
+    // es su contraste: un filete «grueso» que ademas se ve mas oscuro se lee como mas grueso.
     SurfaceStyle.OUTLINED -> copy(
         surfaceContainer = tema.background.mezclaCon(tema.surface, 0.35f),
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.6f),
@@ -295,5 +339,33 @@ internal fun ColorScheme.conSuperficie(estilo: SurfaceStyle, tema: AppTheme): Co
         surfaceContainer = tema.background.mezclaCon(tema.surface, 0.7f),
         surfaceContainerHigh = tema.background.mezclaCon(tema.surface, 0.85f),
         outlineVariant = tema.ink.copy(alpha = 0.20f).compuestoSobre(tema.background)
+    )
+}
+
+/**
+ * El contraste, subido a lo que se haya pedido.
+ *
+ * «Alto contraste» era un interruptor que se guardaba y no cambiaba nada, y ahora es el escalon
+ * del medio de un ajuste de tres. Lo que sube no es el color de acento sino **la tinta**: el
+ * texto se acerca al blanco o al negro puro y los contornos se marcan, que es lo que hace que
+ * un parrafo se lea con sol de frente.
+ */
+internal fun ColorScheme.conContraste(
+    nivel: ContrastLevel,
+    altoContrasteViejo: Boolean,
+    oscuro: Boolean
+): ColorScheme {
+    // El interruptor de antes sigue contando: quien lo tuviera puesto se queda en «alto» sin
+    // tener que volver a elegirlo.
+    val efectivo = if (altoContrasteViejo && nivel == ContrastLevel.ESTANDAR) ContrastLevel.ALTO else nivel
+    if (efectivo == ContrastLevel.ESTANDAR) return this
+    val extremo = if (oscuro) Color.White else Color.Black
+    val fuerza = if (efectivo == ContrastLevel.ALTO) 0.45f else 1f
+    return copy(
+        onSurface = onSurface.mezclaCon(extremo, fuerza),
+        onSurfaceVariant = onSurfaceVariant.mezclaCon(extremo, fuerza * 0.8f),
+        onBackground = onBackground.mezclaCon(extremo, fuerza),
+        outline = outline.mezclaCon(extremo, fuerza * 0.6f),
+        outlineVariant = outlineVariant.mezclaCon(extremo, fuerza * 0.6f)
     )
 }

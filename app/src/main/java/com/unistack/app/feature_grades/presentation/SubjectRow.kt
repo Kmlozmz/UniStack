@@ -6,6 +6,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.CircleShape
+import com.unistack.app.feature_user.domain.BadgeShape
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -243,7 +245,17 @@ fun SubjectRow(
  */
 @Composable
 internal fun SubjectMark(letter: String, color: Color, seed: String, markSize: Dp = 48.dp) {
-    val polygon = remember(seed) { markShapeFor(seed) }
+    /*
+     * La forma sale del ajuste, y solo cae en el sorteo por identificador cuando el ajuste
+     * dice «Aleatorio».
+     *
+     * El reparto por identificador estuvo fijo desde el principio y era lo unico que habia:
+     * quien queria todas las materias con la misma forma no tenia como pedirlo. Ahora es una
+     * de las seis opciones —y sigue siendo la interesante, porque es la que deja distinguir
+     * dos materias del mismo color— pero ya no es la unica.
+     */
+    val estilo = LocalAppearancePreferences.current.badgeShape
+    val polygon = remember(seed, estilo) { markShapeFor(seed, estilo) }
     val path = polygon.toPath()
 
     Box(modifier = Modifier.size(markSize), contentAlignment = Alignment.Center) {
@@ -294,9 +306,16 @@ private fun markPolygon(vertices: Int, innerRatio: Float, rounding: Float): Roun
  * la misma** para la misma materia. Una forma que cambiara en cada recomposición dejaría de
  * servir para reconocerla de un vistazo, que es justo para lo que está.
  */
-private fun markShapeFor(seed: String): RoundedPolygon {
-    val index = Math.floorMod(seed.hashCode(), MarkShapes.size)
-    return MarkShapes[index]()
+private fun markShapeFor(seed: String, estilo: BadgeShape): RoundedPolygon = when (estilo) {
+    BadgeShape.CIRCULO -> markPolygon(vertices = 30, innerRatio = 1f, rounding = 0f)
+    BadgeShape.GALLETA -> MarkShapes[0]()
+    BadgeShape.TREBOL -> MarkShapes[1]()
+    BadgeShape.SOL -> MarkShapes[3]()
+    BadgeShape.ROMBO -> markPolygon(vertices = 4, innerRatio = 1f, rounding = 0.06f)
+    // El reparto de siempre: sale del identificador y no de un sorteo, asi que es distinta de
+    // la de al lado pero **siempre la misma** para la misma materia. Una forma que cambiara en
+    // cada recomposicion dejaria de servir para reconocerla de un vistazo.
+    BadgeShape.ALEATORIO -> MarkShapes[Math.floorMod(seed.hashCode(), MarkShapes.size)]()
 }
 
 /**

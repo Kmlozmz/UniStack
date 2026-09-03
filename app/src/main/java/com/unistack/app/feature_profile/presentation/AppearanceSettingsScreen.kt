@@ -362,8 +362,10 @@ internal fun InterfaceDensity.label() = when (this) {
 }
 
 internal fun TypographyStyle.label() = when (this) {
-    TypographyStyle.UNISTACK -> "Letra UniStack"
-    TypographyStyle.SYSTEM -> "La del sistema"
+    TypographyStyle.UNISTACK -> "UniStack"
+    TypographyStyle.SYSTEM -> "Sistema"
+    TypographyStyle.SERIF -> "Serif"
+    TypographyStyle.MONO -> "Mono"
 }
 
 internal fun HomeSection.label() = when (this) {

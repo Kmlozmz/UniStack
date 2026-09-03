@@ -7,7 +7,12 @@ import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.feature_user.domain.ButtonShapeStyle
+import com.unistack.app.feature_user.domain.ButtonSizeStyle
 
 /**
  * Cómo son los botones de esta app, en un solo sitio.
@@ -20,11 +25,20 @@ import androidx.compose.ui.unit.Dp
  */
 object UniStackButtonDefaults {
 
-    /** 56dp: el tamaño «medium» de Material, el de una acción principal anclada. */
+    /**
+     * El alto de una accion principal anclada, con el tamano que se haya elegido.
+     *
+     * Estuvo fijo en los 56dp del «medium» de Material, que sigue siendo el de por defecto. El
+     * ajuste de tamano de boton existia en el diseno y no llegaba a ningun sitio.
+     */
     val PrimaryHeight: Dp
         @Composable
         @ReadOnlyComposable
-        get() = ButtonDefaults.MediumContainerHeight
+        get() = when (LocalAppearancePreferences.current.buttonSize) {
+            ButtonSizeStyle.PEQUENO -> ButtonDefaults.MinHeight
+            ButtonSizeStyle.MEDIO -> ButtonDefaults.MediumContainerHeight
+            ButtonSizeStyle.GRANDE -> ButtonDefaults.LargeContainerHeight
+        }
 
     /**
      * Cuadrado en reposo, esquinas cerradas bajo el dedo.
@@ -38,7 +52,13 @@ object UniStackButtonDefaults {
     val shapes: ButtonShapes
         @Composable
         get() = ButtonDefaults.shapes(
-            shape = ButtonDefaults.squareShape,
+            shape = when (LocalAppearancePreferences.current.buttonShape) {
+                ButtonShapeStyle.RECTO -> RoundedCornerShape(6.dp)
+                ButtonShapeStyle.MEDIO -> ButtonDefaults.squareShape
+                // Pastilla: la mitad del alto, que es lo que la deja siempre redonda del todo
+                // sea cual sea el tamano elegido.
+                ButtonShapeStyle.PASTILLA -> RoundedCornerShape(percent = 50)
+            },
             pressedShape = ButtonDefaults.pressedShape
         )
 }

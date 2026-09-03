@@ -15,6 +15,11 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
+import com.unistack.app.feature_user.domain.SurfaceStyle
+import com.unistack.app.feature_user.domain.ShadowIntensity
+import com.unistack.app.feature_user.domain.OutlineWeight
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import androidx.compose.ui.draw.shadow
 
 /**
  * La superficie sobre la que se apoya casi todo en la app.
@@ -44,11 +49,39 @@ fun UniCard(
 ) {
     val resolvedShape = shape ?: MaterialTheme.shapes.large
     val resolvedContentPadding = contentPadding ?: PaddingValues(LocalInterfaceSpacing.current.cardPadding)
-    val border = if (borderWidth > 0.dp) {
+    val apariencia = LocalAppearancePreferences.current
+
+    /*
+     * El estilo de superficie decide aqui, no en cada pantalla.
+     *
+     * `surfaceStyle` se elegia en Apariencia, se guardaba y viajaba en la copia de seguridad
+     * sin cambiar un pixel: «plana» y «con sombra» daban el mismo resultado porque nadie
+     * miraba el ajuste. La tarjeta es el sitio donde tiene que mirarse, porque es la pieza que
+     * se repite en las once pantallas.
+     *
+     * Un borde pedido a mano —`borderWidth` puesto por quien llama— manda sobre el estilo: es
+     * un borde con intencion, como el de una materia en riesgo, y no la decoracion general.
+     */
+    val filete = when (apariencia.outlineWeight) {
+        OutlineWeight.FINO -> 1.dp
+        OutlineWeight.MEDIO -> 1.5.dp
+        OutlineWeight.GRUESO -> 2.5.dp
+    }
+    val anchoDeBorde = when {
+        borderWidth > 0.dp -> borderWidth
+        apariencia.surfaceStyle == SurfaceStyle.OUTLINED -> filete
+        // Cristal: un filete tenue es lo que da el borde del vidrio; sin el, la tarjeta
+        // semitransparente se pierde contra el fondo.
+        apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT -> 1.dp
+        else -> 0.dp
+    }
+    val border = if (anchoDeBorde > 0.dp) {
         BorderStroke(
-            width = borderWidth,
+            width = anchoDeBorde,
             color = if (borderColor != Color.Transparent) {
                 borderColor
+            } else if (apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
             } else {
                 MaterialTheme.colorScheme.outlineVariant
             }
@@ -56,6 +89,16 @@ fun UniCard(
     } else {
         null
     }
+    val sombra = if (apariencia.surfaceStyle != SurfaceStyle.ELEVATED) {
+        0.dp
+    } else {
+        when (apariencia.shadowIntensity) {
+            ShadowIntensity.SUAVE -> 2.dp
+            ShadowIntensity.MEDIA -> 6.dp
+            ShadowIntensity.FUERTE -> 12.dp
+        }
+    }
+    val conSombra = if (sombra > 0.dp) modifier.shadow(sombra, resolvedShape) else modifier
 
     // Con degradado, el Surface va transparente y el pincel se pinta dentro: Surface solo
     // acepta un color liso, y perder el degradado cambiaría lo que dibujan las pantallas
@@ -71,7 +114,7 @@ fun UniCard(
     if (onClick != null) {
         Surface(
             onClick = onClick,
-            modifier = modifier,
+            modifier = conSombra,
             enabled = enabled,
             shape = resolvedShape,
             color = if (brush != null) Color.Transparent else color,
@@ -81,7 +124,7 @@ fun UniCard(
         )
     } else {
         Surface(
-            modifier = modifier,
+            modifier = conSombra,
             shape = resolvedShape,
             color = if (brush != null) Color.Transparent else color,
             tonalElevation = tonalElevation,

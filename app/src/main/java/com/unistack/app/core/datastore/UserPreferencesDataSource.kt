@@ -14,6 +14,11 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.AppUser
 import com.unistack.app.feature_user.domain.AppearancePreferences
+import com.unistack.app.feature_user.domain.ColorBlindPalette
+import com.unistack.app.feature_user.domain.ContrastLevel
+import com.unistack.app.feature_user.domain.ReadingFont
+import com.unistack.app.feature_user.domain.TouchTargetSize
+import com.unistack.app.feature_user.domain.UndoDuration
 import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
@@ -349,14 +354,27 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("customAccentColor", customAccentColor)
         .put("accentIntensity", accentIntensity.name)
         .put("surfaceStyle", surfaceStyle.name)
+        .put("shadowIntensity", shadowIntensity.name)
+        .put("outlineWeight", outlineWeight.name)
         .put("cornerStyle", cornerStyle.name)
         .put("interfaceDensity", interfaceDensity.name)
         .put("motionPreference", motionPreference.name)
         .put("motion", motion.toJson())
         .put("textScale", textScale.name)
         .put("typographyStyle", typographyStyle.name)
+        .put("textScalePercent", textScalePercent)
+        .put("lineHeightStyle", lineHeightStyle.name)
         .put("decimalPlaces", decimalPlaces)
         .put("bottomBarStyle", bottomBarStyle.name)
+        .put("buttonShape", buttonShape.name)
+        .put("buttonSize", buttonSize.name)
+        .put("textFieldStyle", textFieldStyle.name)
+        .put("chipStyle", chipStyle.name)
+        .put("iconStyle", iconStyle.name)
+        .put("badgeShape", badgeShape.name)
+        .put("listDividers", listDividers)
+        .put("firstDayOfWeek", firstDayOfWeek.name)
+        .put("sectionColorsEnabled", sectionColorsEnabled)
         .put("academicIndicatorStyle", academicIndicatorStyle.name)
         .put("switchIconStyle", switchIconStyle.name)
         .put("subjectOrder", JSONArray(subjectOrder))
@@ -381,6 +399,18 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("textScale", textScale.name)
         .put("motionPreference", motionPreference.name)
         .put("heroAnimationEnabled", heroAnimationEnabled)
+        .put("contrast", contrast.name)
+        .put("colorBlindPalette", colorBlindPalette.name)
+        .put("shapesBesidesColor", shapesBesidesColor)
+        .put("boldText", boldText)
+        .put("readingFont", readingFont.name)
+        .put("touchTargetSize", touchTargetSize.name)
+        .put("reduceTransparency", reduceTransparency)
+        .put("oneHandedMode", oneHandedMode)
+        .put("undoDuration", undoDuration.name)
+        .put("spokenDescriptions", spokenDescriptions)
+        .put("confirmIrreversible", confirmIrreversible)
+        .put("keepScreenOn", keepScreenOn)
         .toString()
 
     private fun parseAccessibilityPreferences(raw: String?): AccessibilityPreferences {
@@ -393,7 +423,19 @@ class UserPreferencesDataSource(private val context: Context) {
                 use24HourTime = json.optBoolean("use24HourTime", true),
                 textScale = json.enumOrDefault("textScale", TextScalePreference.STANDARD),
                 motionPreference = json.enumOrDefault("motionPreference", MotionPreference.FULL),
-                heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", true)
+                heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", true),
+                contrast = json.enumOrDefault("contrast", ContrastLevel.ESTANDAR),
+                colorBlindPalette = json.enumOrDefault("colorBlindPalette", ColorBlindPalette.NINGUNA),
+                shapesBesidesColor = json.optBoolean("shapesBesidesColor", false),
+                boldText = json.optBoolean("boldText", false),
+                readingFont = json.enumOrDefault("readingFont", ReadingFont.NORMAL),
+                touchTargetSize = json.enumOrDefault("touchTargetSize", TouchTargetSize.ESTANDAR),
+                reduceTransparency = json.optBoolean("reduceTransparency", false),
+                oneHandedMode = json.optBoolean("oneHandedMode", false),
+                undoDuration = json.enumOrDefault("undoDuration", UndoDuration.CORTA),
+                spokenDescriptions = json.optBoolean("spokenDescriptions", false),
+                confirmIrreversible = json.optBoolean("confirmIrreversible", true),
+                keepScreenOn = json.optBoolean("keepScreenOn", false)
             )
         }.getOrDefault(AccessibilityPreferences())
     }
@@ -412,14 +454,27 @@ class UserPreferencesDataSource(private val context: Context) {
                 customAccentColor = json.optIntOrNull("customAccentColor"),
                 accentIntensity = json.enumOrDefault("accentIntensity", defaults.accentIntensity),
                 surfaceStyle = json.enumOrDefault("surfaceStyle", defaults.surfaceStyle),
+                shadowIntensity = json.enumOrDefault("shadowIntensity", defaults.shadowIntensity),
+                outlineWeight = json.enumOrDefault("outlineWeight", defaults.outlineWeight),
                 cornerStyle = json.enumOrDefault("cornerStyle", defaults.cornerStyle),
                 interfaceDensity = json.enumOrDefault("interfaceDensity", defaults.interfaceDensity),
                 motionPreference = json.enumOrDefault("motionPreference", defaults.motionPreference),
                 motion = parseMotion(json.optJSONObject("motion")),
                 textScale = json.enumOrDefault("textScale", defaults.textScale),
                 typographyStyle = json.enumOrDefault("typographyStyle", defaults.typographyStyle),
+                textScalePercent = json.optInt("textScalePercent", defaults.textScalePercent),
+                lineHeightStyle = json.enumOrDefault("lineHeightStyle", defaults.lineHeightStyle),
                 decimalPlaces = json.optInt("decimalPlaces", defaults.decimalPlaces),
                 bottomBarStyle = json.enumOrDefault("bottomBarStyle", defaults.bottomBarStyle),
+                buttonShape = json.enumOrDefault("buttonShape", defaults.buttonShape),
+                buttonSize = json.enumOrDefault("buttonSize", defaults.buttonSize),
+                textFieldStyle = json.enumOrDefault("textFieldStyle", defaults.textFieldStyle),
+                chipStyle = json.enumOrDefault("chipStyle", defaults.chipStyle),
+                iconStyle = json.enumOrDefault("iconStyle", defaults.iconStyle),
+                badgeShape = json.enumOrDefault("badgeShape", defaults.badgeShape),
+                listDividers = json.optBoolean("listDividers", defaults.listDividers),
+                firstDayOfWeek = json.enumOrDefault("firstDayOfWeek", defaults.firstDayOfWeek),
+                sectionColorsEnabled = json.optBoolean("sectionColorsEnabled", defaults.sectionColorsEnabled),
                 // Clave nueva a propósito: la anterior guardaba «FADE» en los teléfonos que
                 // pasaron por las alphas, y ese valor —que entonces era el de por defecto, no una
                 // elección— se quedaba pisando el empuje. Con otra clave, todos empiezan por el

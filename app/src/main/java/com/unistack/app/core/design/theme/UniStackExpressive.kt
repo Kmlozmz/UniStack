@@ -4,6 +4,7 @@
 package com.unistack.app.core.design.theme
 
 import androidx.compose.material3.ColorScheme
+import com.unistack.app.feature_user.domain.ColorBlindPalette
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -404,3 +405,50 @@ data class VividAccents(
 }
 
 val LocalVividAccents = androidx.compose.runtime.staticCompositionLocalOf { VividAccents.Default }
+
+/**
+ * Los mismos colores de seccion, sin el verde y el rojo.
+ *
+ * Horario y Gastos se quedan como estan —son identidad de seccion, no un juicio— y lo que se
+ * apaga es el par que dice «bien o mal»: al dia y en riesgo pasan al acento y a un tono mas
+ * apagado del mismo, que se distinguen por claridad y no por tono.
+ */
+internal fun SectionColors.sinSemaforo(esquema: ColorScheme): SectionColors = copy(
+    onTrack = esquema.primary,
+    onOnTrack = esquema.onPrimary,
+    onTrackContainer = esquema.primaryContainer,
+    onOnTrackContainer = esquema.onPrimaryContainer,
+    atRisk = esquema.tertiary,
+    onAtRisk = esquema.onTertiary,
+    atRiskContainer = esquema.tertiaryContainer,
+    onAtRiskContainer = esquema.onTertiaryContainer
+)
+
+/**
+ * El par «al dia / en riesgo», en una paleta que no dependa del verde y el rojo.
+ *
+ * Es el unico sitio donde hay que cambiarlo: los dos colores viajan por toda la app desde
+ * [SectionColors], asi que cambiarlos aqui los cambia en las once pantallas que dicen «bien o
+ * mal» sin tocar ninguna.
+ */
+internal fun SectionColors.conPaleta(paleta: ColorBlindPalette): SectionColors = when (paleta) {
+    ColorBlindPalette.NINGUNA -> this
+    // Sin canal verde, el par que mas se separa es azul-naranja.
+    ColorBlindPalette.DEUTERANOPIA -> copy(
+        onTrack = Color(0xFF3A7DE0),
+        onTrackContainer = Color(0xFF12233F),
+        onOnTrackContainer = Color(0xFFBBD4FF),
+        atRisk = Color(0xFFE0A63C),
+        atRiskContainer = Color(0xFF3A2A08),
+        onAtRiskContainer = Color(0xFFFFE2AC)
+    )
+    // Sin canal azul, el verde se mueve hacia el magenta y el rojo se queda donde esta.
+    ColorBlindPalette.TRITANOPIA -> copy(
+        onTrack = Color(0xFF12B0A0),
+        onTrackContainer = Color(0xFF00312C),
+        onOnTrackContainer = Color(0xFFA8F0E7),
+        atRisk = Color(0xFFE0567F),
+        atRiskContainer = Color(0xFF3D0A1C),
+        onAtRiskContainer = Color(0xFFFFD9E2)
+    )
+}

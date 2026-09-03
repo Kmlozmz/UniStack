@@ -1557,7 +1557,8 @@ private fun UniStackBottomBarContent(
                         label = "tamaño del icono"
                     )
                     Icon(
-                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
+                        imageVector = item.iconFor(selected, appearance.iconStyle),
                         contentDescription = item.label,
                         modifier = Modifier
                             .offset(y = lift)

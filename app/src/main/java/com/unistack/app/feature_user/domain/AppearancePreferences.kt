@@ -19,6 +19,12 @@ data class AppearancePreferences(
     val customAccentColor: Int? = null,
     val accentIntensity: AccentIntensity = AccentIntensity.BALANCED,
     val surfaceStyle: SurfaceStyle = SurfaceStyle.OUTLINED,
+
+    /** Cuanta sombra proyecta una tarjeta. Solo cuenta con [SurfaceStyle.ELEVATED]. */
+    val shadowIntensity: ShadowIntensity = ShadowIntensity.MEDIA,
+
+    /** Lo grueso que es el filete. Solo cuenta con [SurfaceStyle.OUTLINED]. */
+    val outlineWeight: OutlineWeight = OutlineWeight.FINO,
     val cornerStyle: CornerStyle = CornerStyle.BALANCED,
     val interfaceDensity: InterfaceDensity = InterfaceDensity.BALANCED,
     val motionPreference: MotionPreference = MotionPreference.FULL,
@@ -35,8 +41,59 @@ data class AppearancePreferences(
     val motion: MotionPreferences = MotionPreferences(),
     val textScale: TextScalePreference = TextScalePreference.STANDARD,
     val typographyStyle: TypographyStyle = TypographyStyle.UNISTACK,
+
+    /**
+     * El tamano del texto, de 85 a 135 por ciento.
+     *
+     * Sustituye en la practica a [textScale], que solo tenia dos posiciones —normal y grande—
+     * y se quedaba corto en los dos extremos: quien queria un pelin mas grande solo podia dar
+     * el salto entero, y quien necesita el maximo no llegaba. [textScale] sigue guardandose
+     * para no romper las copias de seguridad viejas.
+     */
+    val textScalePercent: Int = 100,
+
+    /** El aire entre renglones. */
+    val lineHeightStyle: LineHeightStyle = LineHeightStyle.NORMAL,
     val decimalPlaces: Int = 1,
     val bottomBarStyle: BottomBarStyle = BottomBarStyle.LABELED,
+
+    /** La forma de los botones de accion. */
+    val buttonShape: ButtonShapeStyle = ButtonShapeStyle.MEDIO,
+
+    /** Cuanto ocupan. */
+    val buttonSize: ButtonSizeStyle = ButtonSizeStyle.MEDIO,
+
+    /** Como se ven los campos de texto. */
+    val textFieldStyle: TextFieldStyle = TextFieldStyle.RELLENO,
+
+    /** Como se ven los chips de filtro. */
+    val chipStyle: ChipStyle = ChipStyle.FILETE,
+
+    /** Redondeado, lineal o relleno: los iconos de la barra de abajo. */
+    val iconStyle: IconStyle = IconStyle.REDONDEADO,
+
+    /**
+     * La forma del distintivo de cada materia.
+     *
+     * Con [BadgeShape.ALEATORIO] cada materia se queda con una forma propia, sacada de su
+     * identificador: no cambia al reabrir la app, y dos materias del mismo color se distinguen
+     * de un vistazo por la forma.
+     */
+    val badgeShape: BadgeShape = BadgeShape.CIRCULO,
+
+    /** La linea fina entre filas de una lista. */
+    val listDividers: Boolean = true,
+
+    /** Con que dia empieza la semana en el calendario y en el grafico semanal. */
+    val firstDayOfWeek: FirstDayOfWeek = FirstDayOfWeek.LUNES,
+
+    /**
+     * Verde, ambar y rojo en las notas, o todo del color de acento.
+     *
+     * Apagado, la app deja de decir «bien o mal» con el color y lo dice solo con el numero.
+     * Es lo que pide quien no distingue ese par.
+     */
+    val sectionColorsEnabled: Boolean = true,
     val academicIndicatorStyle: AcademicIndicatorStyle = AcademicIndicatorStyle.RINGS,
     val switchIconStyle: SwitchIconStyle = SwitchIconStyle.BOTH,
     /**
@@ -63,6 +120,7 @@ data class AppearancePreferences(
 ) {
     fun normalized(): AppearancePreferences = copy(
         decimalPlaces = decimalPlaces.coerceIn(0, 2),
+        textScalePercent = textScalePercent.coerceIn(85, 135),
         homeSectionOrder = homeSectionOrder
             .distinct()
             .let { current -> current + HomeSection.entries.filterNot(current::contains) }
@@ -161,9 +219,18 @@ enum class TextScalePreference {
     LARGE
 }
 
+/**
+ * La familia de letra de toda la app.
+ *
+ * Serif y mono se anaden a las dos de siempre: la serif es lo que pide quien lee mejor con
+ * remates, y la mono alinea cifras por columnas, que en una lista de notas y de importes se
+ * nota. Las cuatro salen de las familias del sistema, asi que ninguna suma peso al APK.
+ */
 enum class TypographyStyle {
     UNISTACK,
-    SYSTEM
+    SYSTEM,
+    SERIF,
+    MONO
 }
 
 enum class BottomBarStyle {
@@ -242,4 +309,88 @@ enum class InitialTab {
     GRADES,
     TASKS,
     EXPENSES
+}
+
+/**
+ * Cuanta sombra, cuando la superficie es «Sombra».
+ *
+ * **No hay «nada».** Una sombra de cero es una superficie plana, y plana ya es una de las
+ * cuatro superficies: ofrecerla aqui otra vez daba dos caminos al mismo pixel.
+ */
+enum class ShadowIntensity {
+    SUAVE,
+    MEDIA,
+    FUERTE
+}
+
+/** Lo grueso que es el filete, cuando la superficie es «Filete». */
+enum class OutlineWeight {
+    FINO,
+    MEDIO,
+    GRUESO
+}
+
+/** El aire entre renglones de un parrafo. */
+enum class LineHeightStyle {
+    COMPACTO,
+    NORMAL,
+    AMPLIO
+}
+
+enum class ButtonShapeStyle {
+    RECTO,
+    MEDIO,
+    PASTILLA
+}
+
+enum class ButtonSizeStyle {
+    PEQUENO,
+    MEDIO,
+    GRANDE
+}
+
+enum class TextFieldStyle {
+    RELLENO,
+    FILETE,
+    SUBRAYADO
+}
+
+enum class ChipStyle {
+    FILETE,
+    RELLENO,
+    TEXTO
+}
+
+/**
+ * El trazo de los iconos de la barra de abajo.
+ *
+ * Redondeado y relleno son los dos juegos que Material trae —`Rounded` y `Filled`—; lineal es
+ * el contorno fino, que en la barra deja la pestana activa distinguiendose por el color y no
+ * por el peso.
+ */
+enum class IconStyle {
+    REDONDEADO,
+    LINEAL,
+    RELLENO
+}
+
+/**
+ * La forma del punto de color de cada materia.
+ *
+ * Las cinco primeras son formas de Material 3 Expressive. [ALEATORIO] no es una sexta forma:
+ * reparte las cinco entre las materias de forma estable, sacando la que toca del identificador
+ * de cada una, para que dos materias del mismo color no se confundan.
+ */
+enum class BadgeShape {
+    CIRCULO,
+    GALLETA,
+    TREBOL,
+    SOL,
+    ROMBO,
+    ALEATORIO
+}
+
+enum class FirstDayOfWeek {
+    LUNES,
+    DOMINGO
 }
