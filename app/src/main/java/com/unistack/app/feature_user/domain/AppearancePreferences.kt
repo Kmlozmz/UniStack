@@ -390,7 +390,7 @@ enum class BadgeShape {
     ALEATORIO
 }
 
-enum class FirstDayOfWeek {
-    LUNES,
-    DOMINGO
+enum class FirstDayOfWeek(val isoDay: Int) {
+    LUNES(1),
+    DOMINGO(7)
 }

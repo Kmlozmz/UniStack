@@ -4,6 +4,8 @@ package com.unistack.app.feature_expenses.presentation
 
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
+import com.unistack.app.core.utils.desde
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
 
 import androidx.compose.ui.draw.rotate
 import androidx.compose.material.icons.rounded.Tune
@@ -624,13 +626,21 @@ private fun WeeklyMiniChart(
     values: List<Int>,
     modifier: Modifier = Modifier
 ) {
-    val labels = DayLabels.short
+    /*
+     * Los rotulos y las barras se giran **a la vez**.
+     *
+     * `values` llega siempre empezando en lunes, que es como lo arma el dominio. Girar solo los
+     * rotulos dejaria el gasto del lunes bajo la letra del domingo, que es peor que no ofrecer
+     * el ajuste: seguiria pareciendo correcto.
+     */
+    val corte = LocalAppearancePreferences.current.firstDayOfWeek.isoDay - 1
+    val labels = DayLabels.desde(java.time.DayOfWeek.of(corte + 1))
     // Cual esta elegido, o -1. La eleccion vive en la barra y no en el modelo: es una mirada,
     // no un ajuste, y no tiene por que sobrevivir a salir de la pantalla.
     var elegido by remember { mutableIntStateOf(-1) }
     val normalizedValues = values.take(7).let { current ->
         if (current.size == 7) current else current + List(7 - current.size) { 0 }
-    }
+    }.let { semana -> semana.drop(corte) + semana.take(corte) }
     val hasData = normalizedValues.any { it > 0 }
     val bars = if (hasData) normalizedValues else List(7) { 1 }
     val max = bars.maxOrNull()?.takeIf { it > 0 } ?: 1

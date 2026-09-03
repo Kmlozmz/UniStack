@@ -84,6 +84,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
+import com.unistack.app.core.design.components.duracionDeDeshacer
 import com.unistack.app.core.design.components.latidoDeVencido
 import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.draw.clip
@@ -151,6 +152,9 @@ fun TasksScreen(
     var historySuggestionSubjectId by remember { mutableStateOf<String?>(null) }
     var pendingGradesExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    // Se lee aqui y no dentro del `launch`: leer un CompositionLocal desde una corrutina no
+    // compila, y ademas asi la duracion es la que habia al pintar la pantalla.
+    val duracionDeDeshacer = duracionDeDeshacer()
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val clearSearchFocus = { focusManager.clearFocus() }
@@ -527,7 +531,10 @@ fun TasksScreen(
                                 val result = snackbarHostState.showSnackbar(
                                     message = "Nota registrada y tarea completada.",
                                     actionLabel = "Deshacer",
-                                    duration = SnackbarDuration.Short
+                                    // Cinco segundos por defecto, y hasta treinta si se han
+                                    // pedido en Accesibilidad: un «Deshacer» que desaparece
+                                    // antes de poder pulsarlo deja el borrado hecho.
+                                    duration = duracionDeDeshacer
                                 )
                                 if (result == SnackbarResult.ActionPerformed) {
                                     viewModel.undoTaskGrade(prompt.task.id, gradeId)

@@ -69,6 +69,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.unistack.app.core.design.components.duracionDeDeshacer
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -185,6 +186,7 @@ fun NotesListScreen(
     var coloringSelection by rememberSaveable { mutableStateOf(false) }
     var reminderFor by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    val duracionParaDeshacer = duracionDeDeshacer()
     val alcance = rememberCoroutineScope()
 
     // Al abrir, lo que lleve mas de una semana en la papelera se va de verdad. Una papelera que
@@ -448,7 +450,8 @@ fun NotesListScreen(
                             val respuesta = snackbar.showSnackbar(
                                 message = "Movida a la papelera",
                                 actionLabel = "Deshacer",
-                                withDismissAction = true
+                                withDismissAction = true,
+                                duration = duracionParaDeshacer
                             )
                             if (respuesta == SnackbarResult.ActionPerformed) {
                                 viewModel.undoTrash(antes)
@@ -503,7 +506,8 @@ fun NotesListScreen(
                                 antes.size.toString() + " notas movidas a la papelera"
                             },
                             actionLabel = "Deshacer",
-                            withDismissAction = true
+                            withDismissAction = true,
+                            duration = duracionParaDeshacer
                         )
                         if (respuesta == SnackbarResult.ActionPerformed) {
                             antes.forEach { viewModel.undoTrash(it) }

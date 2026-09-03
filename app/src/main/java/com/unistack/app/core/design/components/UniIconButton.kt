@@ -3,6 +3,7 @@
 package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
@@ -56,7 +57,14 @@ fun UniIconButton(
     variant: UniIconButtonVariant = UniIconButtonVariant.Standard,
     enabled: Boolean = true
 ) {
-    val sized = Modifier.size(IconButtonDefaults.smallContainerSize())
+    /*
+     * El dibujo se queda igual; lo que crece es lo que responde al dedo.
+     *
+     * `sizeIn` va despues del `size`, asi que impone un minimo sin cambiar la forma pintada:
+     * el boton se ve del mismo tamano y acierta mas. Con «Maximo» son 64dp, que es lo que pide
+     * quien tiene temblor o usa el telefono en movimiento.
+     */
+    val sized = Modifier.size(IconButtonDefaults.smallContainerSize()).areaDeToqueMinima()
     val shapes = IconButtonDefaults.shapes()
     val glyph: @Composable () -> Unit = {
         Icon(

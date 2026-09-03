@@ -18,6 +18,7 @@ import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.feature_user.domain.SurfaceStyle
 import com.unistack.app.feature_user.domain.ShadowIntensity
 import com.unistack.app.feature_user.domain.OutlineWeight
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import androidx.compose.ui.draw.shadow
 
@@ -50,6 +51,21 @@ fun UniCard(
     val resolvedShape = shape ?: MaterialTheme.shapes.large
     val resolvedContentPadding = contentPadding ?: PaddingValues(LocalInterfaceSpacing.current.cardPadding)
     val apariencia = LocalAppearancePreferences.current
+    /*
+     * «Reducir transparencias» gana al estilo de superficie.
+     *
+     * Es un ajuste de accesibilidad y el otro es de gusto: quien pide que no haya cristal lo
+     * pide porque el texto sobre un fondo que se ve por debajo no se le lee, y eso no lo
+     * arregla elegir otra superficie en otra pantalla.
+     */
+    val superficie = if (
+        LocalAccessibilityPreferences.current.reduceTransparency &&
+        apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT
+    ) {
+        SurfaceStyle.OUTLINED
+    } else {
+        apariencia.surfaceStyle
+    }
 
     /*
      * El estilo de superficie decide aqui, no en cada pantalla.
@@ -69,10 +85,10 @@ fun UniCard(
     }
     val anchoDeBorde = when {
         borderWidth > 0.dp -> borderWidth
-        apariencia.surfaceStyle == SurfaceStyle.OUTLINED -> filete
+        superficie == SurfaceStyle.OUTLINED -> filete
         // Cristal: un filete tenue es lo que da el borde del vidrio; sin el, la tarjeta
         // semitransparente se pierde contra el fondo.
-        apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT -> 1.dp
+        superficie == SurfaceStyle.TRANSLUCENT -> 1.dp
         else -> 0.dp
     }
     val border = if (anchoDeBorde > 0.dp) {
@@ -80,7 +96,7 @@ fun UniCard(
             width = anchoDeBorde,
             color = if (borderColor != Color.Transparent) {
                 borderColor
-            } else if (apariencia.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
+            } else if (superficie == SurfaceStyle.TRANSLUCENT) {
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
             } else {
                 MaterialTheme.colorScheme.outlineVariant
@@ -89,7 +105,7 @@ fun UniCard(
     } else {
         null
     }
-    val sombra = if (apariencia.surfaceStyle != SurfaceStyle.ELEVATED) {
+    val sombra = if (superficie != SurfaceStyle.ELEVATED) {
         0.dp
     } else {
         when (apariencia.shadowIntensity) {

@@ -72,6 +72,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
+import com.unistack.app.core.design.components.MantenerPantallaEncendida
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -156,6 +158,11 @@ fun NoteEditorScreen(
     initialSubjectId: String? = null,
     viewModel: NotesViewModel = hiltViewModel()
 ) {
+    // Aqui y no en Inicio: «mantener la pantalla encendida» se pidio para estudiar con una
+    // nota abierta, y dejar la bandera puesta en toda la app mantendria el telefono despierto
+    // mirando el saludo.
+    MantenerPantallaEncendida(LocalAccessibilityPreferences.current.keepScreenOn)
+
     val notes by viewModel.notes.collectAsStateWithLifecycle()
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()

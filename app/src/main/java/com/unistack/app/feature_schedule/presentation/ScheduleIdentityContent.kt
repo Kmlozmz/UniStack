@@ -3,6 +3,9 @@
 package com.unistack.app.feature_schedule.presentation
 
 import com.unistack.app.core.utils.DayLabels
+import com.unistack.app.core.utils.mediumDesde
+import com.unistack.app.core.utils.huecosAntesDelUno
+import com.unistack.app.core.design.theme.LocalAppearancePreferences
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -1309,8 +1312,16 @@ private fun IdentityMonthCalendar(
     onDateSelected: (LocalDate) -> Unit
 ) {
     val month = YearMonth.from(selectedDate)
-    val firstCell = month.atDay(1).with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val leadingDays = month.atDay(1).dayOfWeek.value - 1
+    /*
+     * La rejilla arranca en el dia que diga el ajuste, no siempre en lunes.
+     *
+     * Estaba clavado en `previousOrSame(MONDAY)`, asi que el ajuste de «primer dia de la
+     * semana» no tenia por donde llegar aqui: se elegia domingo y el calendario seguia
+     * empezando en lunes.
+     */
+    val primerDia = DayOfWeek.of(LocalAppearancePreferences.current.firstDayOfWeek.isoDay)
+    val firstCell = month.atDay(1).with(TemporalAdjusters.previousOrSame(primerDia))
+    val leadingDays = huecosAntesDelUno(month.atDay(1).dayOfWeek, primerDia)
     val cellCount = ((leadingDays + month.lengthOfMonth() + 6) / 7) * 7
 
     // Sin caja alrededor. La rejilla ya es una forma cerrada por sí misma, y el contenedor
@@ -1358,7 +1369,7 @@ private fun IdentityMonthCalendar(
             }
         }
         Row(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-            DayLabels.medium.forEach { label ->
+            DayLabels.mediumDesde(primerDia).forEach { label ->
                 Text(
                     text = label.uppercase(IdentityLocale),
                     modifier = Modifier.weight(1f),
