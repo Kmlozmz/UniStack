@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.unistack.app.core.utils.performSafely
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -1546,14 +1547,33 @@ private fun UniStackBottomBarContent(
                      * El muelle sale del `motionScheme` del tema, así que respeta el ajuste de
                      * movimiento reducido: con las animaciones bajadas, salta sin rebotar.
                      */
+                    /*
+                     * «Barra inferior animada» decide si esto se desliza o salta.
+                     *
+                     * El interruptor se guardaba y no llegaba aqui: la pastilla y el icono se
+                     * movian con muelle pasara lo que pasara. Apagado, el cambio es
+                     * instantaneo —un `tween` de un milisegundo— que es exactamente lo que
+                     * pide quien no quiere que la barra se mueva bajo el pulgar.
+                     */
+                    val animada = motionActual().animatedBottomBar
+                    val compas = if (animada) {
+                        MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
+                    } else {
+                        androidx.compose.animation.core.tween(1)
+                    }
+                    val compasFloat = if (animada) {
+                        MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+                    } else {
+                        androidx.compose.animation.core.tween(1)
+                    }
                     val lift by animateDpAsState(
                         targetValue = if (selected) (-2).dp else 0.dp,
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        animationSpec = compas,
                         label = "elevación del icono"
                     )
                     val scale by animateFloatAsState(
                         targetValue = if (selected) 1.12f else 1f,
-                        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
+                        animationSpec = compasFloat,
                         label = "tamaño del icono"
                     )
                     Icon(

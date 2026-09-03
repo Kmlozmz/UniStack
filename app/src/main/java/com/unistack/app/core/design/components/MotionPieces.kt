@@ -21,6 +21,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -270,11 +273,20 @@ private fun PuntosQueSaltan(modifier: Modifier = Modifier) {
 @Composable
 fun numeroQueCuenta(objetivo: Float, etiqueta: String = "numero"): Float {
     if (!motionActual().countingNumbers || !hayMovimiento()) return objetivo
-    val recordado = remember { objetivo }
+    /*
+     * Arranca en cero la primera vez y despues persigue el valor nuevo.
+     *
+     * `arrancado` es lo que separa «contar al aparecer» de «saltar al cambiar»: sin el, la
+     * primera composicion ya tendria el objetivo puesto y no habria nada que contar; con el
+     * puesto para siempre, cada cambio posterior contaria otra vez desde cero, que en un gasto
+     * que sube de 61.000 a 61.400 seria absurdo.
+     */
+    var arrancado by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { arrancado = true }
     val valor by animateFloatAsState(
-        targetValue = objetivo,
-        animationSpec = tweenDeMovimiento(baseMs = 620),
+        targetValue = if (arrancado) objetivo else 0f,
+        animationSpec = tweenDeMovimiento(baseMs = 720),
         label = etiqueta
     )
-    return if (recordado == objetivo && valor == 0f) objetivo else valor
+    return valor
 }

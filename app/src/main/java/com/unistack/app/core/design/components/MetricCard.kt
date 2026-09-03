@@ -29,8 +29,23 @@ fun MetricCard(
     icon: ImageVector,
     iconColor: Color,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    /**
+     * El numero de detras, para que pueda contar desde cero.
+     *
+     * Es el interruptor «Numeros que cuentan» de Movimiento, que se guardaba y no hacia nada.
+     * Se pasa el valor crudo **y** su formateador porque un promedio se escribe «4,25» y un
+     * gasto «$61.400»: contando sobre el texto ya formateado saldrian cifras imposibles a
+     * mitad de camino.
+     */
+    rawValue: Double? = null,
+    valueFormatter: ((Double) -> String)? = null
 ) {
+    val mostrado = if (rawValue != null && valueFormatter != null) {
+        valueFormatter(numeroQueCuenta(rawValue.toFloat(), label).toDouble())
+    } else {
+        value
+    }
     UniCard(
         modifier = modifier.height(58.dp),
         shape = MaterialTheme.shapes.large,
@@ -63,7 +78,7 @@ fun MetricCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = value,
+                    text = mostrado,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     lineHeight = 17.sp,

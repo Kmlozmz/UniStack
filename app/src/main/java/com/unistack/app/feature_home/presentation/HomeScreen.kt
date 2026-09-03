@@ -75,6 +75,7 @@ import com.unistack.app.feature_home.domain.SubjectRiskSeverity
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.components.SaludoAnimado
+import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
 import kotlin.math.roundToInt
@@ -825,7 +826,12 @@ private fun HomeSnapshotRow(
         if (AppModule.GRADES in modules) {
             HomeTile(
                 label = "PROMEDIO",
-                value = summary.generalAverage?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
+                // «Numeros que cuentan»: el promedio sube desde cero al abrir Inicio. Se
+                // cuenta sobre el numero y se formatea despues, porque contar sobre el texto
+                // ya formateado daria cifras imposibles a mitad de camino.
+                value = summary.generalAverage
+                    ?.let { GradingScaleUtils.formatGrade(numeroQueCuenta(it.toFloat(), "promedio").toDouble(), scale) }
+                    ?: "—",
                 footerText = "de " + GradingScaleUtils.formatGrade(GradingScaleUtils.maxGradeFor(scale), scale),
                 onClick = onAverageClick,
                 modifier = Modifier.weight(1f)
@@ -836,7 +842,7 @@ private fun HomeSnapshotRow(
             val pending = summary.pendingTasks
             HomeTile(
                 label = "PENDIENTES",
-                value = pending.toString(),
+                value = numeroQueCuenta(pending.toFloat(), "pendientes").toInt().toString(),
                 onClick = onPendingClick,
                 modifier = Modifier.weight(1f),
                 footer = {
@@ -865,7 +871,7 @@ private fun HomeSnapshotRow(
             val actual = summary.weeklyExpenseTotal
             HomeTile(
                 label = "ESTA SEMANA",
-                value = CurrencyFormatter.formatCop(actual),
+                value = CurrencyFormatter.formatCop(numeroQueCuenta(actual.toFloat(), "semana").toInt()),
                 valueColor = sections.expenses,
                 // El pie compara con la semana pasada, que es lo unico que hace que la cifra
                 // signifique algo. Decia «en 1 dia», que sonaba a reproche y no ayudaba a

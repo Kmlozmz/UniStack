@@ -103,8 +103,6 @@ fun ThemeSettingsScreen(
             )
         }
 
-        item { TelefonoDePrueba() }
-
         item {
             Text(
                 "MODO",
