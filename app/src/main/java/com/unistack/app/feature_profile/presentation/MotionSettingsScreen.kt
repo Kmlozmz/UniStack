@@ -144,17 +144,16 @@ fun MotionSettingsScreen(
             ) {
                 // Escala en fila y no en rejilla: «Nada / Rápida / Normal / Lenta» se lee de
                 // izquierda a derecha, y en rejilla ese orden se pierde.
-                UniSegmentedControl(
-                    selected = gesto.read(motion).id,
-                    options = gesto.options.map { UniSegmentedOption(value = it.id, label = it.label) },
-                    onSelected = { id ->
-                        gesto.options.firstOrNull { it.id == id }?.let { opcion ->
-                            viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                SegmentoCompacto(
+                    opciones = gesto.options,
+                    elegida = gesto.read(motion).id,
+                    onElegir = { opcion ->
+                        viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
+                    }
                 )
-                DemoDesplegable(gestoId = gesto.id, variante = gesto.read(motion).id, animar = activo)
+                // El demo de verdad, no la miniatura de la rejilla ampliada: cinco barras
+                // con el muelle, un boton que se pulsa, el indicador real.
+                DemoDesplegable(gestoId = gesto.id) { DemoDeBase(gesto.id, motion) }
             }
         }
 
@@ -192,7 +191,6 @@ fun MotionSettingsScreen(
             TarjetaDeInterruptor(
                 toggle = toggle,
                 motion = motion,
-                animar = activo,
                 onCambio = { valor ->
                     viewModel.updateAppearance { p -> p.copy(motion = toggle.write(p.motion, valor)) }
                 }
@@ -202,6 +200,51 @@ fun MotionSettingsScreen(
 }
 
 // ------------------------------------------------------------------ piezas del diseño
+
+/**
+ * El segmentado del diseño: **una tira con filete**, no cuatro pastillas sueltas.
+ *
+ * `UniSegmentedControl` es el de los ajustes de la app y pinta cada opción como una pastilla
+ * ancha con aire entre ellas: correcto ahí, donde hay tres opciones y sitio de sobra, y muy
+ * distinto de esto. En Movimiento las opciones llegan a seis y comparten un solo contorno, con
+ * la elegida rellena por dentro. Es lo que hace que la tarjeta no se coma media pantalla.
+ */
+@Composable
+private fun SegmentoCompacto(
+    opciones: List<MotionChoice>,
+    elegida: String,
+    onElegir: (MotionChoice) -> Unit
+) {
+    val esquema = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .border(1.dp, esquema.outlineVariant, RoundedCornerShape(20.dp))
+    ) {
+        opciones.forEach { opcion ->
+            val puesta = opcion.id == elegida
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(if (puesta) esquema.primary else Color.Transparent)
+                    .cleanClickable { onElegir(opcion) }
+                    .padding(vertical = 7.dp, horizontal = 3.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = opcion.label,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (puesta) esquema.onPrimary else esquema.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
 
 /**
  * El rótulo de grupo: nombre a la izquierda, recuento a la derecha.
@@ -386,7 +429,6 @@ private fun CajaDeVariante(
 private fun TarjetaDeInterruptor(
     toggle: MotionToggle,
     motion: MotionPreferences,
-    animar: Boolean,
     onCambio: (Boolean) -> Unit
 ) {
     val marcado = toggle.read(motion)
@@ -427,7 +469,7 @@ private fun TarjetaDeInterruptor(
                 }
                 UniSwitch(checked = marcado, onCheckedChange = onCambio)
             }
-            DemoComparativo(toggle.id, marcado, animar)
+            DemoDesplegable(gestoId = toggle.id, texto = "Comparar") { DemoDeOtros(toggle.id, motion) }
         }
     }
 }
@@ -439,83 +481,51 @@ private fun TarjetaDeInterruptor(
  * arriba del todo empujan la lista media pantalla hacia abajo antes de haber elegido nada.
  */
 @Composable
-private fun DemoDesplegable(gestoId: String, variante: String, animar: Boolean) {
+private fun DemoDesplegable(
+    gestoId: String,
+    texto: String = "Ver",
+    contenido: @Composable () -> Unit
+) {
     var abierto by rememberSaveable(gestoId) { mutableStateOf(false) }
-    val tinta = tintaDemo()
-    val t = bucle(duracionMs = duracionDe(gestoId), etiqueta = "demo$gestoId")
-
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        BotonDeDemo(abierto = abierto, texto = "Ver") { abierto = !abierto }
+        BotonDeDemo(abierto = abierto, texto = texto) { abierto = !abierto }
         AnimatedVisibility(
             visible = abierto,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .padding(12.dp)
             ) {
-                LienzoDemo(t = if (animar) t else 0.55f) { reloj ->
-                    pintarVariante(gestoId, variante, reloj, tinta)
-                }
+                contenido()
             }
         }
     }
 }
 
-/** El demo de «Otros»: encendido a la izquierda, apagado a la derecha, para comparar. */
+/** Cual de los cuatro demos de base toca. */
 @Composable
-private fun DemoComparativo(toggleId: String, marcado: Boolean, animar: Boolean) {
-    var abierto by rememberSaveable(toggleId) { mutableStateOf(false) }
-    val tinta = tintaDemo()
-    val t = bucle(duracionMs = 2400, etiqueta = "cmp$toggleId")
+private fun DemoDeBase(gestoId: String, motion: MotionPreferences) {
+    when (gestoId) {
+        "velocidad" -> DemoDeVelocidad(motion)
+        "rebote" -> DemoDeRebote(motion)
+        "pulsacion" -> DemoDePulsacion(motion)
+        else -> DemoDeCarga(motion)
+    }
+}
 
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        BotonDeDemo(abierto = abierto, texto = "Comparar") { abierto = !abierto }
-        AnimatedVisibility(
-            visible = abierto,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                listOf(true, false).forEach { encendido ->
-                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(72.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                                .border(
-                                    width = if (encendido == marcado) 2.dp else 0.dp,
-                                    color = if (encendido == marcado) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .padding(8.dp)
-                        ) {
-                            LienzoDemo(t = if (animar) t else 0.55f) { reloj ->
-                                pintarInterruptor(toggleId, encendido, reloj, tinta)
-                            }
-                        }
-                        Text(
-                            text = if (encendido) "Encendido" else "Apagado",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (encendido == marcado) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            modifier = Modifier.padding(top = 5.dp)
-                        )
-                    }
-                }
-            }
-        }
+/** Cual de los cuatro comparativos de «Otros» toca. */
+@Composable
+private fun DemoDeOtros(toggleId: String, motion: MotionPreferences) {
+    when (toggleId) {
+        "barraAnim" -> DemoDeBarra(motion)
+        "gestos" -> DemoDeGesto(motion)
+        "numeros" -> DemoDeNumeros(motion)
+        else -> DemoDeParallax(motion)
     }
 }
 
