@@ -105,8 +105,12 @@ internal data class TintaDemo(
     val acento: Color,
     val tinta: Color,
     val verde: Color,
+    /** El de peligro: algo esta mal y hay que arreglarlo. */
     val rojo: Color,
-    val ambar: Color
+    /** El de aviso: vas justo, mira esto. */
+    val ambar: Color,
+    /** El de Gastos, que es identidad de seccion y no alarma. */
+    val gasto: Color
 )
 
 @Composable
@@ -122,8 +126,19 @@ internal fun tintaDemo(): TintaDemo {
         acento = esquema.primary,
         tinta = esquema.onSurface,
         verde = secciones.onTrack,
-        rojo = secciones.atRisk,
-        ambar = secciones.expenses
+        /*
+         * **Estaban cambiados**, y por eso todo lo de peligro salia amarillo.
+         *
+         * En esta app `atRisk` es el ambar de «vas justo» y `expenses` es el rojo de Gastos,
+         * que es identidad de seccion y no alarma. Yo los habia mapeado al reves: el aviso de
+         * error y el de presupuesto pintaban en ambar, que es exactamente el color que dice
+         * «cuidado» en vez de «esto esta mal».
+         *
+         * El rojo de peligro es el `error` del esquema, que es el unico que significa eso.
+         */
+        rojo = esquema.error,
+        ambar = secciones.atRisk,
+        gasto = secciones.expenses
     )
 }
 
@@ -384,30 +399,50 @@ private fun DrawScope.rebote(v: String, t: Float, c: TintaDemo) {
     )
 }
 
+/**
+ * Al pulsar, **con el dedo a la vista**.
+ *
+ * No se veia nada, y con razon: el boton medía la mitad del lienzo y se encogia un doce por
+ * ciento en el fotograma en que el dedo tocaba. En una caja de dos centimetros, eso es nada.
+ * Ahora el boton ocupa casi todo el ancho, el hundido baja al ochenta y dos por ciento, y hay
+ * un circulo haciendo de dedo que baja, toca y se va — que es lo que deja entender **cuando**
+ * pasa lo que pasa.
+ */
 private fun DrawScope.pulsacion(v: String, t: Float, c: TintaDemo) {
-    val golpe = tramo(t, 0.1f, 0.55f)
+    // El dedo baja, toca en el 0,35 y se retira. El golpe arranca justo al tocar.
+    val bajada = suave(tramo(t, 0.05f, 0.35f))
+    val subida = suave(tramo(t, 0.55f, 0.85f))
+    val tocando = bajada >= 1f && subida <= 0f
+    val golpe = tramo(t, 0.35f, 0.75f)
+
     val escala = when (v) {
-        "hundir" -> 1f - 0.12f * sin(golpe * PI.toFloat())
-        "rebote" -> if (golpe < 1f) 0.9f + 0.1f * muelle(golpe, 0.8f) else 1f
+        "hundir" -> if (tocando) 0.82f else 1f - 0.18f * (1f - subida) * (1f - golpe)
+        "rebote" -> if (golpe <= 0f) 1f else 0.82f + 0.18f * muelle(golpe, 0.9f)
         else -> 1f
     }
-    scale(escala, pivot = Offset(50f, 32f)) {
+    scale(escala.coerceIn(0.5f, 1.3f), pivot = Offset(50f, 34f)) {
         drawRoundRect(
             color = c.acento,
-            topLeft = Offset(26f, 22f),
-            size = Size(48f, 20f),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f)
+            topLeft = Offset(12f, 22f),
+            size = Size(76f, 24f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(12f, 12f)
         )
-    }
-    if (v == "onda" && golpe > 0f && golpe < 1f) {
-        clipRect(26f, 22f, 74f, 42f) {
-            drawCircle(
-                color = c.fondo.copy(alpha = 0.55f * (1f - golpe)),
-                radius = 34f * golpe,
-                center = Offset(50f, 32f)
-            )
+        // La onda nace donde toca el dedo y se abre hasta salirse del boton.
+        if (v == "onda" && golpe > 0f && golpe < 1f) {
+            clipRect(12f, 22f, 88f, 46f) {
+                drawCircle(
+                    color = c.fondo.copy(alpha = 0.75f * (1f - golpe)),
+                    radius = 48f * golpe,
+                    center = Offset(50f, 34f)
+                )
+            }
         }
     }
+    // El dedo: un circulo con su sombra, que es lo que da la sensacion de que baja y no de que
+    // aparece.
+    val y = 6f + 22f * bajada - 22f * subida
+    drawCircle(color = c.tinta.copy(alpha = 0.18f), radius = 9f, center = Offset(50f, y + 3f))
+    drawCircle(color = c.tinta.copy(alpha = 0.8f), radius = 8f, center = Offset(50f, y))
 }
 
 private fun DrawScope.carga(v: String, t: Float, c: TintaDemo) {
@@ -1370,7 +1405,6 @@ internal fun DrawScope.pintarInterruptor(id: String, encendido: Boolean, t: Floa
         "barraAnim" -> barraAnimada(encendido, t, c)
         "gestos" -> deslizarEnLista(encendido, t, c)
         "numeros" -> numerosQueCuentan(encendido, t, c)
-        "parallax" -> parallaxEnCarrusel(encendido, t, c)
     }
 }
 
@@ -1459,29 +1493,3 @@ private fun DrawScope.numerosQueCuentan(encendido: Boolean, t: Float, c: TintaDe
     )
 }
 
-/** La foto de un adjunto que se queda quieta mientras su tarjeta pasa, o que va con ella. */
-private fun DrawScope.parallaxEnCarrusel(encendido: Boolean, t: Float, c: TintaDemo) {
-    val recorrido = 100f
-    val x = 62f - (t * recorrido) % (recorrido + 46f)
-    clipRect(8f, 12f, 92f, 52f) {
-        listOf(x, x + 52f).forEach { tarjetaX ->
-            drawRoundRect(
-                color = c.pieza,
-                topLeft = Offset(tarjetaX, 14f),
-                size = Size(46f, 36f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
-            )
-            // Con parallax la foto se desplaza menos que su marco, asi que se queda atras: es
-            // exactamente lo que se ve al pasar los adjuntos de una nota.
-            val desvio = if (encendido) 12f * ((tarjetaX - 8f) / 84f) else 0f
-            clipRect(tarjetaX, 14f, tarjetaX + 46f, 50f) {
-                drawRoundRect(
-                    color = c.acento,
-                    topLeft = Offset(tarjetaX + 6f - desvio, 20f),
-                    size = Size(34f, 24f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
-                )
-            }
-        }
-    }
-}

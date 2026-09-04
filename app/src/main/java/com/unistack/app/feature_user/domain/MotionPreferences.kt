@@ -59,7 +59,6 @@ data class MotionPreferences(
     val animatedBottomBar: Boolean = true,
     val swipeGestures: Boolean = true,
     val countingNumbers: Boolean = true,
-    val carouselParallax: Boolean = true,
     val haptics: HapticStrength = HapticStrength.MEDIA
 ) {
     companion object {
@@ -548,12 +547,8 @@ object MotionCatalog {
             "numeros", "Números que cuentan",
             "Los importes y promedios suben desde cero.",
             { it.countingNumbers }, { p, v -> p.copy(countingNumbers = v) }
-        ),
-        MotionToggle(
-            "parallax", "Parallax en carruseles",
-            "La foto se queda quieta mientras la tarjeta se mueve.",
-            { it.carouselParallax }, { p, v -> p.copy(carouselParallax = v) }
         )
+
     )
 
     /** Los grupos en el orden en que se enseñan, con sus gestos dentro. */

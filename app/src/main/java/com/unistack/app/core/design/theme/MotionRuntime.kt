@@ -85,7 +85,6 @@ fun motionActual(): MotionPreferences {
             fabOnScroll = FabScrollMotion.FIJO,
             animatedBottomBar = false,
             countingNumbers = false,
-            carouselParallax = false,
             haptics = elegidas.haptics
         )
     }

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -22,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.foundation.layout.fillMaxHeight
-import com.unistack.app.core.design.theme.motionActual
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
@@ -141,20 +140,16 @@ private fun PhotoCarousel(
                 contentScale = ContentScale.Crop,
                 /*
                  * Ancho fijo, no `fillMaxWidth`: es lo que hace que la imagen se quede quieta
-                 * mientras la mascara se estrecha por encima. **Eso es el parallax**, y es lo
-                 * que enciende y apaga el interruptor de Movimiento.
+                 * mientras la mascara se estrecha por encima.
                  *
-                 * Apagado, la imagen se estira con su mascara y viaja con la tarjeta, que es
-                 * lo que hace cualquier carrusel sin parallax.
+                 * Estuvo detras de un interruptor en Movimiento y se quito: el efecto es tan
+                 * sutil en un carrusel de tres fotos que nadie llegaba a entender que hacia el
+                 * ajuste, y un ajuste que no se entiende es peor que no tenerlo. Como
+                 * comportamiento fijo si vale: es lo que hace que el carrusel se sienta con
+                 * profundidad sin que haya que explicarlo.
                  */
                 modifier = Modifier
-                    .then(
-                        if (motionActual().carouselParallax) {
-                            Modifier.width(anchoItem)
-                        } else {
-                            Modifier.fillMaxWidth()
-                        }
-                    )
+                    .width(anchoItem)
                     .fillMaxHeight()
                     .align(Alignment.Center)
             )

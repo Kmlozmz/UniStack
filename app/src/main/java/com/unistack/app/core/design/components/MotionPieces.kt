@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -251,16 +252,19 @@ private fun PuntosQueSaltan(modifier: Modifier = Modifier) {
                 ),
                 label = "punto$indice"
             )
+            /*
+             * **No se veia nada**, y el motivo era un `fillMaxWidth` de mas.
+             *
+             * El `Canvas` estaba dentro de una caja de ocho puntos pidiendo solo el ancho, asi
+             * que se quedaba con alto cero y no pintaba: los tres puntos estaban ahi, midiendo
+             * ocho por cero. Con `background` no hace falta lienzo ninguno.
+             */
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(9.dp)
                     .graphicsLayer { translationY = -10f * salto }
-                    .then(Modifier)
-            ) {
-                androidx.compose.foundation.Canvas(Modifier.fillMaxWidth()) {
-                    drawCircle(color = color, radius = size.minDimension / 2f)
-                }
-            }
+                    .background(color, androidx.compose.foundation.shape.CircleShape)
+            )
         }
     }
 }

@@ -521,8 +521,7 @@ private fun DemoDeOtros(toggleId: String, motion: MotionPreferences) {
     when (toggleId) {
         "barraAnim" -> DemoDeBarra(motion)
         "gestos" -> DemoDeGesto(motion)
-        "numeros" -> DemoDeNumeros(motion)
-        else -> DemoDeParallax(motion)
+        else -> DemoDeNumeros(motion)
     }
 }
 
@@ -645,7 +644,7 @@ private fun colorDe(id: String): Color = when (id) {
     "refresco" -> Color(0xFF3FC7B4)
     "subeNota", "barraAnim" -> Color(0xFFE062A8)
     "latido", "presupuesto", "errorShake" -> Color(0xFFEA5A52)
-    "guardado", "parallax" -> Color(0xFF8C93A8)
+    "guardado" -> Color(0xFF8C93A8)
     "fijar", "haptica" -> Color(0xFFC08BE0)
     else -> Color(0xFF7F77DD)
 }
@@ -664,7 +663,6 @@ private fun ventanaDe(id: String): String = when (id) {
     "barraAnim" -> "BARRA DE ABAJO"
     "gestos" -> "EN TAREAS"
     "numeros" -> "CIFRAS DE INICIO"
-    "parallax" -> "ADJUNTOS DE UNA NOTA"
     else -> "EN LA APP"
 }
 
