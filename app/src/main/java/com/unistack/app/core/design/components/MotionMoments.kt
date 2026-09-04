@@ -38,6 +38,8 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -287,25 +289,64 @@ fun Modifier.marcaDeAsistencia(marcada: Boolean, color: Color): Modifier {
     )
     if (avance <= 0f) return this
 
+    /*
+     * **Las cuatro se pintan por delante, y «trazo» existe.**
+     *
+     * Aqui habia dos fallos que dejaban el gesto en nada. «Trazo», que es el que viene puesto
+     * de fabrica, caia en un `else` vacio: marcar asistencia no hacia absolutamente nada para
+     * quien no hubiera cambiado el ajuste. Y «relleno» y «barrido» pintaban con `drawBehind`,
+     * o sea **por detras** del boton, que cuando queda elegido es opaco: el color se dibujaba
+     * donde no se puede ver.
+     *
+     * Ahora las tres que pintan lo hacen sobre el contenido y con transparencia, que deja leer
+     * el rotulo por debajo, y «trazo» dibuja el contorno del boton recorriendolo: es la unica
+     * de las cuatro que no tapa nada, y por eso es la de casa.
+     */
     return when (estilo) {
         AttendanceMotion.REBOTE -> this.scale(avance.coerceAtLeast(0.01f))
+
+        // El trazo recorre el contorno hasta cerrarlo.
+        AttendanceMotion.TRAZO -> this.drawWithContent {
+            drawContent()
+            val radio = size.height / 2f
+            val camino = Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        rect = androidx.compose.ui.geometry.Rect(
+                            Offset(1.5f, 1.5f),
+                            Size(size.width - 3f, size.height - 3f)
+                        ),
+                        cornerRadius = CornerRadius(radio, radio)
+                    )
+                )
+            }
+            val medida = PathMeasure().apply { setPath(camino, false) }
+            val trozo = Path()
+            medida.getSegment(0f, medida.length * avance, trozo, true)
+            drawPath(trozo, color = color, style = Stroke(3f, cap = StrokeCap.Round))
+        }
+
         // El relleno sube por dentro, como un vaso que se llena.
-        AttendanceMotion.RELLENO -> this.drawBehind {
+        AttendanceMotion.RELLENO -> this.drawWithContent {
+            drawContent()
             drawRect(
-                color = color,
+                color = color.copy(alpha = 0.30f),
                 topLeft = Offset(0f, size.height * (1f - avance)),
                 size = Size(size.width, size.height * avance)
             )
         }
-        // Una franja cruza de izquierda a derecha por detrás del contenido.
-        AttendanceMotion.BARRIDO -> this.drawBehind {
+
+        // Una franja cruza de izquierda a derecha.
+        AttendanceMotion.BARRIDO -> this.drawWithContent {
+            drawContent()
             drawRoundRect(
-                color = color.copy(alpha = 0.22f),
+                color = color.copy(alpha = 0.26f),
                 size = Size(size.width * avance, size.height),
-                cornerRadius = CornerRadius(size.height * 0.3f)
+                cornerRadius = CornerRadius(size.height * 0.5f, size.height * 0.5f)
             )
         }
-        else -> this
+
+        AttendanceMotion.NINGUNA -> this
     }
 }
 
