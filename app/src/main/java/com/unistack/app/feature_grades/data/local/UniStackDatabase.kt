@@ -42,7 +42,7 @@ import com.unistack.app.feature_schedule.data.local.AgendaEventEntity
         NoteEntity::class,
         NoteAttachmentEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = true
 )
 abstract class UniStackDatabase : RoomDatabase() {
@@ -468,6 +468,19 @@ abstract class UniStackDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * El corte cerrado a mano.
+         *
+         * Hasta ahora un corte con el 100 % repartido se daba por cerrado solo, y por eso el
+         * sello no lo veia nadie: pasaba mientras estabas en otra pantalla. El cierre pasa a
+         * ser una accion, y una accion hay que guardarla.
+         */
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE subjects ADD COLUMN closedPeriodIdsJson TEXT NOT NULL DEFAULT '[]'")
+            }
+        }
+
         fun getInstance(context: Context): UniStackDatabase {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -500,7 +513,8 @@ abstract class UniStackDatabase : RoomDatabase() {
             MIGRATION_16_17,
             MIGRATION_17_18,
             MIGRATION_18_19,
-            MIGRATION_19_20
+            MIGRATION_19_20,
+            MIGRATION_20_21
         )
     }
 }

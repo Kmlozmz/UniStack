@@ -132,7 +132,21 @@ fun AddGradeScreen(
     viewModel: GradesViewModel = hiltViewModel(),
     gradeId: String? = null,
     initialCutId: String? = null,
-    onCompleteHistoryClick: (String) -> Unit = {}
+    onCompleteHistoryClick: (String) -> Unit = {},
+    /**
+     * Si va dentro de una hoja en vez de ocupar la pantalla.
+     *
+     * **Es lo que hace que se vean los gestos de Académico.** Registrando la nota en una
+     * pantalla aparte, la materia se destruye mientras escribes y al volver nace con la nota
+     * ya puesta: no hay estado anterior contra el que animar, así que ni la fila entra, ni el
+     * promedio sube, ni el corte se sella. Dentro de una hoja la materia sigue viva debajo, y
+     * los tres momentos ocurren donde estás mirando.
+     *
+     * Lo único que cambia aquí es la envoltura: dentro de la hoja no hay barra de estado que
+     * esquivar, ni fondo que pintar —lo pone la hoja—, ni botón de volver, porque se sale
+     * tirando de ella hacia abajo.
+     */
+    enHoja: Boolean = false
 ) {
     val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     val subject = subjects.firstOrNull { it.id == subjectId }
@@ -256,31 +270,35 @@ fun AddGradeScreen(
 
     Box(
         modifier = modifier
-            .fillMaxSize()
+            .then(if (enHoja) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
             .dismissKeyboardOnTapOutside()
-            .background(MaterialTheme.colorScheme.background)
+            .then(
+                if (enHoja) Modifier else Modifier.background(MaterialTheme.colorScheme.background)
+            )
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .then(if (enHoja) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
                 .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
+                .then(if (enHoja) Modifier else Modifier.statusBarsPadding())
                 .padding(horizontal = 20.dp)
                 .padding(top = 10.dp, bottom = saveBarHeight + scrollBottomRoom),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                IconButton(
-                    onClick = requestLeave,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), CircleShape)
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                if (!enHoja) {
+                    IconButton(
+                        onClick = requestLeave,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), CircleShape)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
                 Text(
                     text = if (isEditing) "Editar nota" else "Nueva nota",
@@ -581,7 +599,13 @@ fun AddGradeScreen(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
-            color = MaterialTheme.colorScheme.background,
+            // Dentro de la hoja el fondo es el de la hoja: con el de la pantalla, la barra de
+            // guardar salia de otro tono que el resto del formulario.
+            color = if (enHoja) {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            } else {
+                MaterialTheme.colorScheme.background
+            },
             shadowElevation = 8.dp
         ) {
             Button(

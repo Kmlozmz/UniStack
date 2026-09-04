@@ -40,6 +40,7 @@ interface SubjectDao {
             activePeriodId = :activeCutId,
             historyPromptStatus = :historyPromptStatus,
             unknownPeriodIdsJson = :unknownPeriodIdsJson,
+            closedPeriodIdsJson = :closedPeriodIdsJson,
             termId = :termId,
             repeatedFromSubjectId = :repeatedFromSubjectId,
             updatedAt = :updatedAt
@@ -57,6 +58,7 @@ interface SubjectDao {
         activeCutId: String,
         historyPromptStatus: String,
         unknownPeriodIdsJson: String,
+        closedPeriodIdsJson: String,
         termId: String?,
         repeatedFromSubjectId: String?,
         updatedAt: Long

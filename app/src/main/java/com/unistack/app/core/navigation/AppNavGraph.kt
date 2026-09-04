@@ -892,7 +892,6 @@ fun MainNavGraph(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
-                    onAddGradeClick = { id, cutId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, cutId), enabledModules) },
                     onCutClick = { id, cutId -> navController.navigateIfModuleEnabled(AppRoutes.subjectCutDetail(id, cutId), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
@@ -938,7 +937,6 @@ fun MainNavGraph(
                     onBackClick = {
                         navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     },
-                    onAddGradeClick = { id, selectedCutId -> navController.navigateIfModuleEnabled(AppRoutes.addGrade(id, selectedCutId), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) }
                 )
             }

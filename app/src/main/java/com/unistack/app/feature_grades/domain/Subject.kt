@@ -22,6 +22,15 @@ data class Subject(
     val activeCutId: String = "",
     val historyPromptStatus: PriorHistoryPromptStatus = PriorHistoryPromptStatus.NOT_SHOWN,
     val unknownCutIds: Set<String> = emptySet(),
+    /**
+     * Los cortes que **el usuario** ha dado por cerrados.
+     *
+     * Repartir el 100 % del peso no cierra nada: eso solo dice que ya no cabe otra nota. El
+     * cierre es una decisión, y por eso se guarda aparte. Da margen a corregir una nota mal
+     * metida antes de fijar el corte, y hace que el sello signifique algo: lo estampa quien
+     * cierra, no una cuenta que llegó a cien.
+     */
+    val closedCutIds: Set<String> = emptySet(),
     /** El periodo academico al que pertenece, o nulo si es anterior a que existieran. */
     val termId: String? = null,
     /**

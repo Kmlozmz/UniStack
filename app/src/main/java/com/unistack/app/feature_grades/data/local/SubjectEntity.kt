@@ -16,6 +16,7 @@ data class SubjectEntity(
     val activePeriodId: String = "period-1",
     val historyPromptStatus: String = "NOT_SHOWN",
     val unknownPeriodIdsJson: String = "[]",
+    val closedPeriodIdsJson: String = "[]",
     /*
      * A que periodo academico pertenece esta materia.
      *

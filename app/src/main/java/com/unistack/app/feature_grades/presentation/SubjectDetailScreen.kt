@@ -60,6 +60,12 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -133,7 +139,6 @@ private val LargeCardShape: Shape
 fun SubjectDetailScreen(
     subjectId: String,
     onBackClick: () -> Unit,
-    onAddGradeClick: (String, String) -> Unit,
     onCutClick: (String, String) -> Unit,
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
@@ -190,19 +195,37 @@ fun SubjectDetailScreen(
     }
     // Los cortes cerrados se apartan: ni se pueden elegir como destino de notas nuevas ni
     // compiten por la atención con los que aún están en juego.
-    val openCutSummaries = orderedCutSummaries.filter { it.status != CutStatus.COMPLETED }
+    /*
+     * **Cerrado y completo no son lo mismo.**
+     *
+     * Completo quiere decir que ya no cabe otra nota: el 100 % del peso está repartido.
+     * Cerrado quiere decir que tú lo has dado por terminado. Antes eran la misma cosa, y por
+     * eso el corte se apartaba solo mientras estabas escribiendo en otra pantalla, con lo que
+     * el sello no lo veía nadie. Ahora el corte lleno se queda arriba, diciendo que está listo
+     * y con el botón puesto, hasta que lo cierres.
+     */
+    val cerrados = subject.closedCutIds
+    val openCutSummaries = orderedCutSummaries.filter { it.cut.id !in cerrados }
     val completedCutSummaries = cutSummaries
-        .filter { it.status == CutStatus.COMPLETED }
+        .filter { it.cut.id in cerrados }
         .sortedBy { it.cut.order }
+
+    /*
+     * La hoja de registrar una nota, encima de esta pantalla.
+     *
+     * Guarda **a qué corte** va, que es lo que antes viajaba en la ruta. Mientras está abierta
+     * la materia sigue compuesta debajo: por eso, al cerrarse, la fila nueva entra animada y
+     * el promedio cuenta desde el valor anterior. Con la pantalla aparte eso era imposible.
+     */
+    var hojaDeNota by rememberSaveable { mutableStateOf<String?>(null) }
 
     /*
      * **Qué corte se acaba de cerrar**, para estamparle el sello.
      *
      * Se compara con lo que había cerrado en la composición anterior y no con el estado a
-     * secas: al abrir la materia, todos los cortes cerrados lo estaban ya de antes, y sellarlos
-     * todos de golpe convertiría el gesto en un adorno de bienvenida.
+     * secas: al abrir la materia, los cerrados lo estaban ya de antes, y sellarlos todos de
+     * golpe convertiría el gesto en un adorno de bienvenida.
      */
-    val cerrados = completedCutSummaries.map { it.cut.id }.toSet()
     var cerradosVistos by remember { mutableStateOf<Set<String>?>(null) }
     var selloEn by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(cerrados) {
@@ -361,6 +384,32 @@ fun SubjectDetailScreen(
                                 }
                             }
                         )
+                        /*
+                         * **El corte lleno no se cierra solo: lo ofrece.**
+                         *
+                         * Aparece al repartir el 100 % y se queda ahí hasta que lo pulses, así
+                         * que hay margen para corregir una nota antes de fijar el corte. Y el
+                         * sello, que se estampa justo después, significa algo: lo pusiste tú.
+                         */
+                        if (summary.status == CutStatus.COMPLETED) {
+                            OutlinedButton(
+                                onClick = { viewModel.setCutClosed(subject.id, summary.cut.id, true) },
+                                shapes = UniStackButtonDefaults.shapes,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = LocalSectionColors.current.onTrack
+                                ),
+                                border = BorderStroke(1.5.dp, LocalSectionColors.current.onTrack)
+                            ) {
+                                Icon(
+                                    Icons.Rounded.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Cerrar ${cutDisplayName(summary.cut)}", fontWeight = FontWeight.ExtraBold)
+                            }
+                        }
                     }
                 }
             }
@@ -391,6 +440,20 @@ fun SubjectDetailScreen(
                                     onTerminado = { selloEn = null }
                                 )
                             )
+                            // Reabrir tiene que existir y costar lo mismo que cerrar: si al
+                            // cerrarlo ves que una nota estaba mal, el camino de vuelta no
+                            // puede ser borrar el corte.
+                            TextButton(
+                                onClick = { viewModel.setCutClosed(subject.id, summary.cut.id, false) },
+                                modifier = Modifier.align(Alignment.End)
+                            ) {
+                                Text(
+                                    "Reabrir",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -425,7 +488,7 @@ fun SubjectDetailScreen(
             }
             Button(
                 shapes = UniStackButtonDefaults.shapes,
-                onClick = { addTarget?.let { onAddGradeClick(subject.id, it.id) } },
+                onClick = { addTarget?.let { hojaDeNota = it.id } },
                 enabled = addTarget != null,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -487,14 +550,48 @@ fun SubjectDetailScreen(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
     }
-}
 
+    /*
+     * **La hoja de registrar una nota.**
+     *
+     * Va casi a pantalla completa porque el formulario es largo, pero no del todo: ese dedo de
+     * materia que se ve arriba es lo que dice que no has cambiado de sitio, y es la diferencia
+     * entre «guardo y vuelvo» y «guardo y lo veo pasar».
+     *
+     * `skipPartiallyExpanded` porque una hoja a media altura con un formulario dentro obliga a
+     * arrastrarla antes de poder escribir.
+     */
+    hojaDeNota?.let { cutId ->
+        val estadoHoja = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { hojaDeNota = null },
+            sheetState = estadoHoja,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            AddGradeScreen(
+                subjectId = subject.id,
+                initialCutId = cutId,
+                onBackClick = { hojaDeNota = null },
+                onCompleteHistoryClick = { id ->
+                    hojaDeNota = null
+                    onCompleteHistoryClick(id)
+                },
+                viewModel = viewModel,
+                enHoja = true,
+                modifier = Modifier
+                    .fillMaxHeight(0.92f)
+                    .navigationBarsPadding()
+            )
+        }
+    }}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubjectCutDetailScreen(
     subjectId: String,
     cutId: String,
     onBackClick: () -> Unit,
-    onAddGradeClick: (String, String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GradesViewModel = hiltViewModel()
@@ -507,6 +604,9 @@ fun SubjectCutDetailScreen(
     val cutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
     val cut = cutScheme.cuts.firstOrNull { it.id == cutId }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
+    // La misma hoja que en la materia: si esta pantalla se destruyera para escribir la nota,
+    // la fila nueva volveria a aparecer sin entrar.
+    var hojaDeNota by rememberSaveable { mutableStateOf(false) }
 
     if (subject == null || cut == null) {
         MissingSubjectState(onBackClick = onBackClick, modifier = modifier)
@@ -614,7 +714,7 @@ fun SubjectCutDetailScreen(
         ) {
             Button(
                 shapes = UniStackButtonDefaults.shapes,
-                onClick = { onAddGradeClick(subject.id, cut.id) },
+                onClick = { hojaDeNota = true },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -660,6 +760,27 @@ fun SubjectCutDetailScreen(
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         )
+    }
+
+    if (hojaDeNota) {
+        val estadoHoja = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { hojaDeNota = false },
+            sheetState = estadoHoja,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = MaterialTheme.shapes.extraLarge
+        ) {
+            AddGradeScreen(
+                subjectId = subject.id,
+                initialCutId = cut.id,
+                onBackClick = { hojaDeNota = false },
+                viewModel = viewModel,
+                enHoja = true,
+                modifier = Modifier
+                    .fillMaxHeight(0.92f)
+                    .navigationBarsPadding()
+            )
+        }
     }
 }
 

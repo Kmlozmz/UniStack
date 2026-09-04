@@ -30,6 +30,7 @@ fun SubjectEntity.toDomain(grades: List<GradeItem>): Subject {
         activeCutId = activePeriodId,
         historyPromptStatus = historyPromptStatus.toEnum(PriorHistoryPromptStatus.NOT_SHOWN),
         unknownCutIds = unknownPeriodIdsJson.toStringSet(),
+        closedCutIds = closedPeriodIdsJson.toStringSet(),
         termId = termId,
         repeatedFromSubjectId = repeatedFromSubjectId
     )
@@ -48,6 +49,7 @@ fun Subject.toEntity(userId: String): SubjectEntity {
         activePeriodId = activeCutId,
         historyPromptStatus = historyPromptStatus.name,
         unknownPeriodIdsJson = JSONArray(unknownCutIds.toList()).toString(),
+        closedPeriodIdsJson = JSONArray(closedCutIds.toList()).toString(),
         termId = termId,
         repeatedFromSubjectId = repeatedFromSubjectId,
         createdAt = now,

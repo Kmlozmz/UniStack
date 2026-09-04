@@ -416,6 +416,21 @@ class GradesViewModel @Inject constructor(
         return true
     }
 
+    /**
+     * Cierra un corte, o lo vuelve a abrir.
+     *
+     * Reabrir hace falta: si al cerrarlo te das cuenta de que una nota estaba mal, el camino
+     * de vuelta tiene que existir y costar lo mismo que la ida.
+     */
+    fun setCutClosed(subjectId: String, cutId: String, closed: Boolean): Boolean {
+        val subject = subjectById(subjectId) ?: return false
+        if (subject.cutScheme.cuts.none { it.id == cutId }) return false
+        val nuevos = if (closed) subject.closedCutIds + cutId else subject.closedCutIds - cutId
+        if (nuevos == subject.closedCutIds) return true
+        repository.updateSubject(subject.copy(closedCutIds = nuevos))
+        return true
+    }
+
     fun updateHistoryPromptStatus(
         subjectId: String,
         status: PriorHistoryPromptStatus

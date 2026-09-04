@@ -104,6 +104,7 @@ class RoomGradesRepository(
                 activeCutId = subject.activeCutId,
                 historyPromptStatus = subject.historyPromptStatus.name,
                 unknownPeriodIdsJson = JSONArray(subject.unknownCutIds.toList()).toString(),
+                closedPeriodIdsJson = JSONArray(subject.closedCutIds.toList()).toString(),
                 termId = subject.termId,
                 repeatedFromSubjectId = subject.repeatedFromSubjectId,
                 updatedAt = System.currentTimeMillis()
