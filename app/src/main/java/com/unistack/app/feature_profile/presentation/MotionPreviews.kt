@@ -740,38 +740,82 @@ private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
-    val avance = suave(tramo(t, 0.12f, 0.62f))
+    /*
+     * **Rediseno entero: la nota nueva llega con su nombre y su cifra, y el promedio la acusa.**
+     *
+     * Antes eran tres barras de las que una cambiaba de color, y no se entendia ni que fuera
+     * una nota ni de que corte. Registrar una nota tiene dos partes que hay que ver a la vez:
+     * **la fila que entra** —«Taller 2 · 4,5»— y **el promedio de arriba que se mueve por su
+     * causa**. Sin la segunda, cualquiera de las seis variantes es «una fila que aparece».
+     */
+    val avance = suave(tramo(t, 0.14f, 0.62f))
+
+    // La cabecera con el promedio: es la que dice que la nota nueva cambio algo.
+    texto("Promedio del corte", 12f, 12f, c, c.tinta.copy(alpha = 0.55f), tamano = 7.5f, negrita = false)
+    val promedio = if (v == "contar") 3.9f + 0.35f * avance else if (avance > 0.5f) 4.25f else 3.9f
+    texto("%.2f".format(promedio).replace('.', ','), 76f, 14f, c, c.verde, tamano = 12f, centrado = true)
+
+    // Las notas que ya estaban.
+    fun vieja(y: Float, nombre: String, valor: String, alfa: Float = 1f) {
+        drawRoundRect(
+            color = c.pieza.copy(alpha = c.pieza.alpha * alfa),
+            topLeft = Offset(12f, y),
+            size = Size(76f, 13f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        )
+        texto(nombre, 17f, y + 6.5f, c, c.tinta.copy(alpha = 0.7f * alfa), tamano = 7.5f, negrita = false)
+        texto(valor, 82f, y + 6.5f, c, c.tinta.copy(alpha = 0.7f * alfa), tamano = 8.5f, centrado = true)
+    }
+
+    // La nueva, en acento, con su nombre y su cifra.
+    fun nueva(y: Float, alfa: Float = 1f, x: Float = 12f) {
+        drawRoundRect(
+            color = c.acento.copy(alpha = alfa),
+            topLeft = Offset(x, y),
+            size = Size(76f, 13f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        )
+        texto("Taller 2", x + 5f, y + 6.5f, c, c.fondo, tamano = 7.5f, alfa = alfa)
+        texto("4,5", x + 70f, y + 6.5f, c, c.fondo, tamano = 8.5f, centrado = true, alfa = alfa)
+    }
+
     when (v) {
-        "ninguna" -> {
-            fila(14f, c.pieza); fila(30f, c.acento); fila(46f, c.pieza)
-        }
-        // Cae desde arriba y **empuja**: las de abajo bajan con ella, que es lo que la
-        // distingue de «se abre hueco», donde el hueco se abre antes de que llegue nada.
+        "ninguna" -> { vieja(22f, "Parcial", "4,0"); nueva(38f) }
+
+        // Cae desde arriba y empuja: la vieja baja con ella.
         "cae" -> {
-            fila(14f, c.pieza)
-            translate(top = -22f * (1f - avance)) { fila(30f, c.acento, alfa = avance) }
-            translate(top = 16f * avance) { fila(30f, c.pieza) }
+            translate(top = 16f * avance) { vieja(22f, "Parcial", "4,0") }
+            translate(top = -20f * (1f - avance)) { nueva(22f, avance) }
         }
+
         "lateral" -> {
-            fila(14f, c.pieza); fila(46f, c.pieza)
-            translate(left = 92f * (1f - avance)) { fila(30f, c.acento) }
+            vieja(38f, "Parcial", "4,0")
+            nueva(22f, 1f, x = 12f + 92f * (1f - avance))
         }
+
+        // Destello: ya esta puesta, y se enciende una vez.
         "destello" -> {
-            fila(14f, c.pieza); fila(46f, c.pieza)
-            fila(30f, c.acento)
-            fila(30f, c.fondo, alfa = (1f - avance) * 0.85f)
+            vieja(38f, "Parcial", "4,0")
+            nueva(22f)
+            drawRoundRect(
+                color = c.fondo.copy(alpha = (1f - avance) * 0.85f),
+                topLeft = Offset(12f, 22f),
+                size = Size(76f, 13f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
         }
-        // Aquí lo que se mueve no es la fila: es el número del promedio contando.
+
+        // Aqui lo que se mueve no es la fila: es el promedio de arriba contando.
         "contar" -> {
-            fila(14f, c.pieza); fila(46f, c.pieza)
-            val ancho = 10f + 44f * avance
-            fila(30f, c.acento, x = 12f, ancho = ancho)
-            drawCircle(c.acento, radius = 3f, center = Offset(12f + ancho + 6f, 35.5f))
+            vieja(38f, "Parcial", "4,0")
+            nueva(22f)
+            drawCircle(c.verde.copy(alpha = 0.25f * (1f - avance)), radius = 8f + 10f * avance, center = Offset(76f, 14f))
         }
+
+        // El hueco se abre primero, y la fila llega despues a ocuparlo.
         "abre" -> {
-            fila(14f, c.pieza)
-            translate(top = 16f * avance) { fila(30f, c.pieza) }
-            if (avance > 0.55f) fila(30f, c.acento, alfa = tramo(avance, 0.55f, 1f))
+            translate(top = 16f * avance) { vieja(22f, "Parcial", "4,0") }
+            if (avance > 0.55f) nueva(22f, tramo(avance, 0.55f, 1f))
         }
     }
 }
@@ -946,26 +990,60 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.cierreSemestre(v: String, t: Float, c: TintaDemo) {
+    /*
+     * **El resumen del semestre, con su titulo y sus cifras.**
+     *
+     * Eran cuatro rectangulos armandose: se entendia el orden pero no que fuera un resumen. Con
+     * el titulo y las tres cifras —promedio, materias, creditos— cada variante se lee como lo
+     * que es: la forma en que aparece el balance del semestre que acaba.
+     */
     val avance = suave(tramo(t, 0.12f, 0.72f))
-    val piezas = listOf(
-        Rect(14f, 10f, 86f, 22f),
-        Rect(14f, 26f, 46f, 54f),
-        Rect(52f, 26f, 86f, 38f),
-        Rect(52f, 42f, 86f, 54f)
-    )
+
+    fun titulo(alfa: Float) {
+        if (alfa <= 0.02f) return
+        drawRoundRect(
+            color = c.acento.copy(alpha = alfa),
+            topLeft = Offset(12f, 8f),
+            size = Size(76f, 16f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        )
+        texto("Semestre 2026-1", 50f, 16f, c, c.fondo, tamano = 8.5f, centrado = true, alfa = alfa)
+    }
+
+    fun cifra(indice: Int, alfa: Float, desvio: Float = 0f) {
+        if (alfa <= 0.02f) return
+        val datos = listOf("4,25" to "PROM", "6" to "MAT", "18" to "CRÉD")
+        val x = 12f + indice * 26f
+        translate(top = desvio) {
+            drawRoundRect(
+                color = c.pieza.copy(alpha = c.pieza.alpha * alfa),
+                topLeft = Offset(x, 30f),
+                size = Size(24f, 24f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            texto(datos[indice].first, x + 12f, 39f, c, c.verde, tamano = 9f, centrado = true, alfa = alfa)
+            texto(datos[indice].second, x + 12f, 49f, c, c.tinta.copy(alpha = 0.5f), tamano = 6f, centrado = true, alfa = alfa)
+        }
+    }
+
     when (v) {
-        "entero" -> piezas.forEach { r -> caja(r, c.acento, avance) }
-        // Pieza a pieza: cada trozo tiene su turno, y se ve el orden en que se arma.
-        "pieza" -> piezas.forEachIndexed { indice, r ->
-            caja(r, c.acento, suave(tramo(t, 0.1f + indice * 0.14f, 0.4f + indice * 0.14f)))
+        "entero" -> { titulo(avance); repeat(3) { cifra(it, avance) } }
+        // Pieza a pieza: primero el titulo, y las cifras en su turno.
+        "pieza" -> {
+            titulo(suave(tramo(t, 0.1f, 0.34f)))
+            repeat(3) { cifra(it, suave(tramo(t, 0.26f + it * 0.14f, 0.5f + it * 0.14f))) }
         }
-        "cortina" -> {
-            clipRect(0f, 0f, ANCHO, ALTO * avance) { piezas.forEach { r -> caja(r, c.acento, 1f) } }
+        // Cortina: todo esta puesto y lo que baja es el corte.
+        "cortina" -> clipRect(0f, 0f, ANCHO, ALTO * avance) {
+            titulo(1f); repeat(3) { cifra(it, 1f) }
         }
-        // Apilado: llegan una sobre otra desde abajo y se reparten al llegar.
-        "apilado" -> piezas.forEachIndexed { indice, r ->
-            val p = suave(tramo(t, 0.08f + indice * 0.12f, 0.5f + indice * 0.12f))
-            translate(top = (ALTO - r.top) * (1f - p)) { caja(r, c.acento, p) }
+        // Apilado: llegan desde abajo y se reparten al llegar.
+        "apilado" -> {
+            titulo(suave(tramo(t, 0.08f, 0.35f)))
+            repeat(3) { indice ->
+                val p = suave(tramo(t, 0.18f + indice * 0.12f, 0.6f + indice * 0.12f))
+                cifra(indice, p, desvio = 34f * (1f - p))
+            }
         }
     }
 }
@@ -1261,40 +1339,76 @@ private fun DrawScope.guardado(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.fijar(v: String, t: Float, c: TintaDemo) {
-    val avance = tramo(t, 0.12f, 0.68f)
+    /*
+     * **Sube a «Fijadas», y se ve a donde sube.**
+     *
+     * La nota viajaba de abajo arriba sobre dos barras grises y no habia forma de saber que
+     * arriba estaba la seccion de fijadas. Con el rotulo puesto, el viaje tiene destino: es lo
+     * que convierte «una fila que se mueve» en «esta nota queda arriba del todo».
+     */
+    val avance = tramo(t, 0.14f, 0.68f)
     val p = suave(avance)
-    fila(12f, c.pieza)
-    fila(44f, c.pieza, alfa = 0.5f)
     val desde = 44f
-    val hasta = 12f
+    val hasta = 20f
+
+    texto("FIJADAS", 12f, 11f, c, c.acento.copy(alpha = 0.75f), tamano = 6.5f)
+    drawLine(
+        color = c.pieza,
+        start = Offset(12f, 15f),
+        end = Offset(88f, 15f),
+        strokeWidth = 1f,
+        pathEffect = guiones
+    )
+    // La otra nota, la que se queda abajo.
+    drawRoundRect(
+        color = c.pieza,
+        topLeft = Offset(12f, 44f),
+        size = Size(76f, 12f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+    )
+    texto("Resumen tema 3", 17f, 50f, c, c.tinta.copy(alpha = 0.45f), tamano = 7f, negrita = false)
+
+    fun nota(y: Float, x: Float = 12f, alfa: Float = 1f, escala: Float = 1f) {
+        scale(escala, pivot = Offset(50f, y + 6f)) {
+            drawRoundRect(
+                color = c.acento.copy(alpha = alfa),
+                topLeft = Offset(x, y),
+                size = Size(76f, 12f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            texto("Fórmulas de examen", x + 5f, y + 6f, c, c.fondo, tamano = 7f, alfa = alfa)
+        }
+    }
+
     when (v) {
-        "seco" -> fila(if (avance < 0.5f) desde else hasta, c.acento)
-        "salta" -> {
-            val salto = sin(p * PI.toFloat()) * 10f
-            fila(desde + (hasta - desde) * p - salto, c.acento)
-        }
-        // Vuela en arco: se va por la derecha antes de subir, y entra por arriba.
-        "vuela" -> {
-            val arco = sin(p * PI.toFloat())
-            translate(left = 26f * arco) { fila(desde + (hasta - desde) * p, c.acento) }
-        }
-        // El imán acelera: al principio casi no se mueve y al final llega de golpe.
-        "iman" -> {
-            val acelera = p * p * p
-            fila(desde + (hasta - desde) * acelera, c.acento)
-        }
-        // Despega: primero se levanta —sombra debajo— y después viaja.
+        "seco" -> nota(if (avance < 0.5f) desde else hasta)
+        "salta" -> nota(desde + (hasta - desde) * p - sin(p * PI.toFloat()) * 10f)
+        // Vuela en arco: se va por la derecha antes de subir.
+        "vuela" -> nota(desde + (hasta - desde) * p, x = 12f + 24f * sin(p * PI.toFloat()))
+        // El iman acelera: casi no se mueve al principio y llega de golpe.
+        "iman" -> nota(desde + (hasta - desde) * (p * p * p))
+        // Despega: primero se levanta —con su sombra— y despues viaja.
         "despega" -> {
-            val alza = suave(tramo(t, 0.12f, 0.3f))
-            val viaje = suave(tramo(t, 0.3f, 0.68f))
+            val alza = suave(tramo(t, 0.14f, 0.32f))
+            val viaje = suave(tramo(t, 0.32f, 0.68f))
             val y = desde + (hasta - desde) * viaje
-            fila(y + 4f * alza, c.tinta.copy(alpha = 0.18f * alza), x = 12f + 2f, ancho = 76f)
-            scale(1f + 0.06f * alza, pivot = Offset(50f, y + 5f)) { fila(y, c.acento) }
+            drawRoundRect(
+                color = c.tinta.copy(alpha = 0.20f * alza),
+                topLeft = Offset(14f, y + 5f * alza),
+                size = Size(76f, 12f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            nota(y, escala = 1f + 0.07f * alza)
         }
         "destello" -> {
-            fila(desde + (hasta - desde) * p, c.acento)
+            nota(desde + (hasta - desde) * p)
             if (p > 0.8f) {
-                fila(hasta - 3f, c.acento.copy(alpha = 0.35f * (1f - tramo(p, 0.8f, 1f))), x = 9f, ancho = 82f, alto = 17f)
+                drawRoundRect(
+                    color = c.acento.copy(alpha = 0.35f * (1f - tramo(p, 0.8f, 1f))),
+                    topLeft = Offset(8f, hasta - 4f),
+                    size = Size(84f, 20f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
             }
         }
     }
@@ -1596,51 +1710,119 @@ private fun DrawScope.saludo(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.fabScroll(v: String, t: Float, c: TintaDemo) {
-    val recogido = suave(tramo(t, 0.25f, 0.6f))
-    fila(12f, c.pieza, x = 10f, ancho = 80f, alto = 7f)
-    fila(23f, c.pieza, x = 10f, ancho = 80f, alto = 7f)
-    when (v) {
-        "fijo" -> boton(52f, 1f, 1f, c.acento)
-        "encoge" -> boton(52f, 1f - 0.62f * recogido, 1f, c.acento)
-        "baja" -> translate(top = 26f * recogido) { boton(52f, 1f, 1f, c.acento) }
-        "desvanece" -> boton(52f, 1f, 1f - recogido, c.acento)
-    }
-}
-
-private fun DrawScope.boton(y: Float, extension: Float, alfa: Float, color: Color) {
-    val ancho = 20f + 34f * extension
-    drawRoundRect(
-        color = color.copy(alpha = alfa),
-        topLeft = Offset(88f - ancho, y - 10f),
-        size = Size(ancho, 20f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f)
-    )
-}
-
-private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {
-    val fuerza = when (v) {
-        "ninguna" -> 0f
-        "suave" -> 0.32f
-        "fuerte" -> 1f
-        else -> 0.62f
-    }
-    val pulso = exp(-4f * t) * sin(t * 22f * PI.toFloat())
-    drawLine(c.pieza, Offset(12f, 32f), Offset(88f, 32f), strokeWidth = 1.5f)
-    repeat(19) { indice ->
-        val x = 12f + indice * 4f
-        val decaimiento = exp(-2.2f * indice / 19f)
-        val alto = 22f * fuerza * decaimiento * abs(pulso + sin(indice * 1.7f) * 0.3f)
-        if (alto > 0.5f) {
-            drawLine(
-                color = c.acento,
-                start = Offset(x, 32f - alto),
-                end = Offset(x, 32f + alto),
-                strokeWidth = 2.5f,
-                cap = androidx.compose.ui.graphics.StrokeCap.Round
+    /*
+     * **Se ve la lista bajando, que es lo que dispara el gesto.**
+     *
+     * El boton se encogia solo, sin motivo a la vista: no se entendia que lo que lo recoge es
+     * **el scroll**. Ahora las filas suben mientras el se recoge, con su «+ Registrar» escrito,
+     * asi que la causa y el efecto van juntos.
+     */
+    val recogido = suave(tramo(t, 0.22f, 0.6f))
+    // Las filas suben: es el desplazamiento que recoge el boton.
+    val desplazamiento = 26f * recogido
+    clipRect(0f, 4f, ANCHO, 62f) {
+        repeat(4) { indice ->
+            val y = 10f + indice * 15f - desplazamiento
+            drawRoundRect(
+                color = c.pieza,
+                topLeft = Offset(8f, y),
+                size = Size(84f, 11f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
             )
         }
     }
-    if (fuerza == 0f) drawCircle(c.pieza, radius = 3f, center = Offset(50f, 32f))
+
+    val y = 50f
+    when (v) {
+        "fijo" -> botonDeCrear(y, 1f, 1f, c)
+        "encoge" -> botonDeCrear(y, 1f - recogido, 1f, c)
+        "baja" -> translate(top = 28f * recogido) { botonDeCrear(y, 1f, 1f, c) }
+        "desvanece" -> botonDeCrear(y, 1f, 1f - recogido, c)
+    }
+}
+
+/** El boton de crear, con su texto mientras quepa. */
+private fun DrawScope.botonDeCrear(y: Float, extension: Float, alfa: Float, c: TintaDemo) {
+    val ancho = 22f + 40f * extension
+    val izq = 90f - ancho
+    drawRoundRect(
+        color = c.acento.copy(alpha = alfa),
+        topLeft = Offset(izq, y - 11f),
+        size = Size(ancho, 22f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(11f, 11f)
+    )
+    texto("+", izq + 11f, y, c, c.fondo, tamano = 12f, centrado = true, alfa = alfa)
+    // El rotulo se va antes que el ancho: es lo que hace que «encoge» se lea como que pierde
+    // el texto y no como que se estruja.
+    texto("Registrar", izq + 20f, y, c, c.fondo, tamano = 8f, alfa = alfa * tramo(extension, 0.45f, 0.9f))
+}
+
+private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {
+    /*
+     * **Un telefono que vibra, no un ecualizador.**
+     *
+     * Las barras de onda parecian una app de musica, y con razon: una forma de onda es lo que
+     * dibuja un reproductor. Lo que hay que ensenar aqui es **cuanto se sacude el aparato en la
+     * mano**, asi que se dibuja el telefono moviendose y las ondas saliendo de el. Con «Nada»
+     * el telefono se queda quieto y no sale ninguna, que es exactamente la diferencia.
+     */
+    val fuerza = when (v) {
+        "ninguna" -> 0f
+        "suave" -> 0.3f
+        "fuerte" -> 1f
+        else -> 0.6f
+    }
+    // Dos golpes al principio del ciclo y silencio: una vibracion es un aviso, no un zumbido.
+    val golpe = when {
+        t < 0.12f -> (1f - t / 0.12f)
+        t in 0.18f..0.30f -> (1f - (t - 0.18f) / 0.12f)
+        else -> 0f
+    }
+    val sacudida = sin(t * 60f * PI.toFloat()) * 3.2f * fuerza * golpe
+
+    // Las ondas que salen a los lados, tantas como fuerza haya.
+    val ondas = (fuerza * 3f).toInt()
+    repeat(ondas) { indice ->
+        val radio = 20f + indice * 9f + 5f * golpe
+        val alfa = (0.5f - indice * 0.13f) * golpe
+        listOf(-1f, 1f).forEach { lado ->
+            drawArc(
+                color = c.acento.copy(alpha = alfa.coerceAtLeast(0f)),
+                startAngle = if (lado < 0) 120f else -60f,
+                sweepAngle = 120f,
+                useCenter = false,
+                topLeft = Offset(50f - radio, 32f - radio),
+                size = Size(radio * 2f, radio * 2f),
+                style = Stroke(2.4f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            )
+        }
+    }
+
+    translate(left = sacudida) {
+        // El telefono: marco, pantalla y su muesca.
+        drawRoundRect(
+            color = c.tinta.copy(alpha = 0.85f),
+            topLeft = Offset(41f, 13f),
+            size = Size(18f, 38f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.5f, 4.5f)
+        )
+        drawRoundRect(
+            color = c.fondo,
+            topLeft = Offset(43f, 17f),
+            size = Size(14f, 30f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.5f, 2.5f)
+        )
+        drawRoundRect(
+            color = c.tinta.copy(alpha = 0.85f),
+            topLeft = Offset(47f, 15f),
+            size = Size(6f, 1.6f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(1f, 1f)
+        )
+    }
+
+    if (fuerza == 0f) {
+        texto("sin aviso", 50f, 58f, c, c.tinta.copy(alpha = 0.4f), tamano = 7f, centrado = true, negrita = false)
+    }
 }
 
 // ---------------------------------------------------------------------- utilidad
