@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
@@ -182,10 +181,24 @@ internal fun LienzoDemo(
     dibujo: DrawScope.(Float) -> Unit
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
-        val escalaX = size.width / ANCHO
-        val escalaY = size.height / ALTO
-        scale(scaleX = escalaX, scaleY = escalaY, pivot = Offset.Zero) {
-            dibujo(t)
+        /*
+         * **La escala tiene que ser la misma en los dos ejes.**
+         *
+         * Estirando cada eje por su cuenta, la caja real —mas ancha que alta— aplastaba el
+         * dibujo: un circulo salia ovalado y cada letra un tercio mas ancha de lo que le toca.
+         * Eso es lo que se veia como «relacion de aspecto extrana», y ningun retoque de un
+         * dibujo suelto lo arreglaba porque el fallo estaba aqui.
+         *
+         * Con una sola escala y el lienzo centrado, lo que sobra es margen a los lados, no
+         * deformacion. La caja de variante mide justo para que ese margen sea casi nada.
+         */
+        val escala = minOf(size.width / ANCHO, size.height / ALTO)
+        val margenX = (size.width - ANCHO * escala) / 2f
+        val margenY = (size.height - ALTO * escala) / 2f
+        translate(left = margenX, top = margenY) {
+            scale(scaleX = escala, scaleY = escala, pivot = Offset.Zero) {
+                dibujo(t)
+            }
         }
     }
 }
@@ -214,14 +227,27 @@ internal fun DrawScope.texto(
     alfa: Float = 1f
 ) {
     if (alfa <= 0.02f) return
+    /*
+     * **El tamano y la medida van en unidades del lienzo, las dos.**
+     *
+     * Aqui habia el fallo que descolocaba los ciento treinta dibujos. `measure` devuelve
+     * pixeles, y dentro de la transformacion un pixel **es** una unidad del lienzo; al dividir
+     * por la densidad, el ancho salia casi tres veces menor que el de verdad. Con eso, centrar
+     * corria el texto a la derecha en vez de centrarlo y la `y` lo dejaba caido: de ahi los
+     * rotulos pisando los dibujos y las cifras saliendose por el borde.
+     *
+     * `toSp` es la conversion correcta —divide por densidad **y** por la escala de fuente del
+     * sistema—, asi que un texto de ocho mide ocho unidades tenga el movil la letra que tenga.
+     * Con `tamano / density` a secas, quien lleve la letra grande veia estos dibujos rotos.
+     */
     val estilo = TextStyle(
         color = color.copy(alpha = color.alpha * alfa),
-        fontSize = (tamano / density).sp,
+        fontSize = tamano.toSp(),
         fontWeight = if (negrita) FontWeight.ExtraBold else FontWeight.Normal
     )
     val medida = tinta.medidor.measure(valor, estilo)
-    val ancho = medida.size.width / density
-    val alto = medida.size.height / density
+    val ancho = medida.size.width.toFloat()
+    val alto = medida.size.height.toFloat()
     drawText(
         textLayoutResult = medida,
         topLeft = Offset(if (centrado) x - ancho / 2f else x, y - alto / 2f)
@@ -658,9 +684,11 @@ private fun DrawScope.listas(v: String, t: Float, c: TintaDemo) {
                 val p = suave(bruto)
                 translate(top = 14f * (1f - p)) { tarea(alfa = p) }
             }
+            // Cascada cae desde justo encima de su sitio y no desde el de la fila anterior:
+            // con dieciocho, la segunda se dibujaba sobre la primera y se veian cruzadas.
             "cascada" -> {
                 val p = suave(bruto)
-                translate(top = -18f * (1f - p)) { tarea(alfa = p) }
+                translate(top = -11f * (1f - p)) { tarea(alfa = p * p) }
             }
             // Escala no se desplaza: crece en su sitio, y las tres a la vez.
             "escala" -> {
@@ -1101,16 +1129,23 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
             estampa(1f, asentado)
         }
         // El lacre cae, se aplasta y se recupera: por eso el ovalo cambia de proporcion.
+        // El lacre cae a la esquina libre del corte, se aplasta y se recupera.
+        //
+        // Caia justo encima de la nota y tapaba lo unico que hay que ver debajo: el sello
+        // protege esa cifra, no la esconde. Ahora aterriza a la derecha, sobre el hueco.
         "lacre" -> {
             val caida = suave(tramo(t, 0.1f, 0.45f))
             val aplaste = 1f + 0.35f * tramo(t, 0.45f, 0.58f) - 0.35f * tramo(t, 0.58f, 0.75f)
-            val y = 6f + 28f * caida
+            val cx = 71f
+            val y = 8f + 26f * caida
             drawOval(
                 color = c.rojo,
-                topLeft = Offset(centro.x - 15f * aplaste, y - 15f / aplaste),
-                size = Size(30f * aplaste, 30f / aplaste)
+                topLeft = Offset(cx - 13f * aplaste, y - 13f / aplaste),
+                size = Size(26f * aplaste, 26f / aplaste)
             )
-            texto("✓", centro.x, y, c, c.fondo, tamano = 13f, centrado = true, alfa = tramo(t, 0.55f, 0.75f))
+            // El visto va con trazo, como los demas: la palomita escrita salia con la fuente
+            // que hubiera en el movil y no encajaba nunca dentro del ovalo.
+            visto(Offset(cx, y), 8f, tramo(t, 0.5f, 0.75f), c.fondo, grosor = 2.4f)
         }
         // La cinta cruza el corte entero y el sello llega despues.
         "cinta" -> {
@@ -1146,22 +1181,26 @@ private fun DrawScope.cierreSemestre(v: String, t: Float, c: TintaDemo) {
             size = Size(76f, 16f),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
         )
-        texto("Semestre 2026-1", 50f, 16f, c, c.fondo, tamano = 8.5f, centrado = true, alfa = alfa)
+        // 7,5 y no 8,5: quince letras a ocho y medio miden setenta y cuatro unidades y la
+        // pildora setenta y seis, asi que el titulo salia tocando los dos bordes.
+        texto("Semestre 2026-1", 50f, 16f, c, c.fondo, tamano = 7.5f, centrado = true, alfa = alfa)
     }
 
     fun cifra(indice: Int, alfa: Float, desvio: Float = 0f) {
         if (alfa <= 0.02f) return
         val datos = listOf("4,25" to "PROM", "6" to "MAT", "18" to "CRÉD")
-        val x = 12f + indice * 26f
+        // Veintiseis de ancho y no veinticuatro: la cifra a nueve mide veintiuna unidades, y
+        // en una caja de veinticuatro quedaba pegada a los dos lados.
+        val x = 10f + indice * 27f
         translate(top = desvio) {
             drawRoundRect(
                 color = c.pieza.copy(alpha = c.pieza.alpha * alfa),
                 topLeft = Offset(x, 30f),
-                size = Size(24f, 24f),
+                size = Size(26f, 24f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
             )
-            texto(datos[indice].first, x + 12f, 39f, c, c.verde, tamano = 9f, centrado = true, alfa = alfa)
-            texto(datos[indice].second, x + 12f, 49f, c, c.tinta.copy(alpha = 0.5f), tamano = 6f, centrado = true, alfa = alfa)
+            texto(datos[indice].first, x + 13f, 39f, c, c.verde, tamano = 8.5f, centrado = true, alfa = alfa)
+            texto(datos[indice].second, x + 13f, 49f, c, c.tinta.copy(alpha = 0.5f), tamano = 6f, centrado = true, alfa = alfa)
         }
     }
 
@@ -1262,7 +1301,9 @@ private fun DrawScope.celebracion(v: String, t: Float, c: TintaDemo) {
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f),
                     style = Stroke(2.5f)
                 )
-                texto("¡Todo hecho!", 50f, 32f, c, c.verde, tamano = 10f, centrado = true, alfa = entrada)
+                // 8,5 dentro del anillo: a diez, las doce letras miden setenta y dos unidades
+                // y el sello sesenta y ocho, o sea que el texto salia por los dos lados.
+                texto("¡Todo hecho!", 50f, 32f, c, c.verde, tamano = 8.5f, centrado = true, alfa = entrada)
             }
         }
 
@@ -1314,12 +1355,22 @@ private fun DrawScope.tachar(v: String, t: Float, c: TintaDemo) {
     )
     visto(caja, 7f, marcada, c.fondo, grosor = 2f)
 
-    // El nombre se apaga a la vez que se tacha: completada, la fila deja de pesar.
-    val tinta = c.tinta.copy(alpha = 1f - 0.55f * avance)
-    texto("Taller 2 de Cálculo", 28f, y, c, tinta, tamano = 9.5f, negrita = false)
-    texto("Vence hoy", 28f, 47f, c, c.tinta.copy(alpha = 0.4f * (1f - avance)), tamano = 7.5f, negrita = false)
+    /*
+     * El nombre se apaga a la vez que se tacha: completada, la fila deja de pesar.
+     *
+     * A nueve y medio el nombre media noventa unidades y empezaba en la veintiocho: se salia
+     * del lienzo y se leia cortado. A siete cabe entero, que es lo que hace falta para que se
+     * vea **que la raya cruza un nombre** y no media palabra.
+     *
+     * Con el visto encima el nombre se apaga mucho mas: ahi manda el trazo, y dos cosas al
+     * mismo tono se pisan.
+     */
+    val apagado = if (v == "visto") 0.80f else 0.55f
+    val tinta = c.tinta.copy(alpha = 1f - apagado * avance)
+    texto("Taller 2 de Cálculo", 24f, y, c, tinta, tamano = 6.5f, negrita = false)
+    texto("Vence hoy", 24f, 47f, c, c.tinta.copy(alpha = 0.4f * (1f - avance)), tamano = 6.5f, negrita = false)
 
-    val fin = 28f + 58f * avance
+    val fin = 24f + 66f * avance
     when (v) {
         "ninguna" -> Unit
         "linea" -> drawLine(tinta, Offset(28f, y), Offset(fin, y), strokeWidth = 1.8f)
@@ -1331,7 +1382,7 @@ private fun DrawScope.tachar(v: String, t: Float, c: TintaDemo) {
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
         )
         // Visto encima: el trazo grande se dibuja sobre el nombre, no al lado.
-        "visto" -> visto(Offset(56f, y), 16f, avance, c.verde, grosor = 3.5f)
+        "visto" -> visto(Offset(58f, y), 13f, avance, c.verde, grosor = 3.2f)
         "doble" -> {
             drawLine(tinta, Offset(28f, y - 2.5f), Offset(fin, y - 2.5f), strokeWidth = 1.4f)
             drawLine(tinta, Offset(28f, y + 2.5f), Offset(fin, y + 2.5f), strokeWidth = 1.4f)
@@ -1377,8 +1428,10 @@ private fun DrawScope.latido(v: String, t: Float, c: TintaDemo) {
                 style = Stroke(2f)
             )
         }
-        texto("Parcial de Costos", 20f, 28f, c, c.tinta, tamano = 8.5f, negrita = false)
-        texto("Venció hace 3 días", 20f, 40f, c, c.rojo, tamano = 8f)
+        // Los dos renglones cabian en el lienzo pero no **en la tarjeta**, que acaba en la
+        // ochenta y ocho: el nombre llegaba a la noventa y siete y el aviso a la ciento seis.
+        texto("Parcial de Costos", 19f, 29f, c, c.tinta, tamano = 7.5f, negrita = false)
+        texto("Venció hace 3 días", 19f, 40f, c, c.rojo, tamano = 6f)
     }
 
     when (v) {
@@ -1569,11 +1622,13 @@ private fun DrawScope.fijar(v: String, t: Float, c: TintaDemo) {
     val desde = 44f
     val hasta = 20f
 
-    texto("FIJADAS", 12f, 11f, c, c.acento.copy(alpha = 0.75f), tamano = 6.5f)
+    // El rotulo sube y la linea baja: a once y quince se tocaban, y los guiones cruzaban
+    // «FIJADAS» por debajo de las letras.
+    texto("FIJADAS", 12f, 9f, c, c.acento.copy(alpha = 0.75f), tamano = 6.5f)
     drawLine(
         color = c.pieza,
-        start = Offset(12f, 15f),
-        end = Offset(88f, 15f),
+        start = Offset(12f, 16f),
+        end = Offset(88f, 16f),
         strokeWidth = 1f,
         pathEffect = guiones
     )
@@ -1594,7 +1649,9 @@ private fun DrawScope.fijar(v: String, t: Float, c: TintaDemo) {
                 size = Size(76f, 12f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
             )
-            texto("Fórmulas de examen", x + 5f, y + 6f, c, c.fondo, tamano = 7f, alfa = alfa)
+            // El titulo corto: el largo media setenta y seis unidades y la nota tambien
+            // setenta y seis, o sea que el texto acababa fuera de su propia caja.
+            texto("Fórmulas", x + 6f, y + 6f, c, c.fondo, tamano = 7.5f, alfa = alfa)
         }
     }
 
@@ -1730,7 +1787,7 @@ private fun DrawScope.presupuesto(v: String, t: Float, c: TintaDemo) {
                 size = Size(84f, 16f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
             )
-            texto("Te pasaste $11.000", 50f, -8f + 20f * baja, c, c.fondo, tamano = 8f, centrado = true, alfa = baja)
+            texto("Te pasaste $11.000", 50f, -8f + 20f * baja, c, c.fondo, tamano = 7f, centrado = true, alfa = baja)
         }
         else -> Unit
     }
@@ -1766,25 +1823,38 @@ private fun DrawScope.claseAhora(v: String, t: Float, c: TintaDemo) {
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
         style = Stroke(1.8f)
     )
-    texto("Cálculo III", 26f, 26f, c, c.tinta, tamano = 9f)
-    texto("10:00 · 103F", 26f, 38f, c, c.tinta.copy(alpha = 0.6f), tamano = 7.5f, negrita = false)
-    texto("AHORA", 78f, 22f, c, c.verde, tamano = 7f, centrado = true)
+    /*
+     * **«AHORA» en su propia franja, y el nombre debajo.**
+     *
+     * En la misma linea se cruzaban: el nombre llegaba hasta la ochenta y cinco y la etiqueta
+     * empezaba en la sesenta y siete, asi que «AHORA» se leia encima del final del nombre.
+     * Puesta arriba y con fondo, se lee como la insignia que es.
+     */
+    drawRoundRect(
+        color = c.verde,
+        topLeft = Offset(62f, 17f),
+        size = Size(26f, 9f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.5f, 4.5f)
+    )
+    texto("AHORA", 75f, 21.5f, c, c.fondo, tamano = 6f, centrado = true)
+    texto("Cálculo III", 26f, 33f, c, c.tinta, tamano = 8.5f)
+    texto("10:00 · 103F", 26f, 43f, c, c.tinta.copy(alpha = 0.6f), tamano = 7f, negrita = false)
 
     when (v) {
-        "quieta" -> drawCircle(c.verde, radius = 4f, center = Offset(18f, 32f))
+        "quieta" -> drawCircle(c.verde, radius = 4f, center = Offset(17f, 33f))
         "respira" -> {
             val p = 0.5f + 0.5f * sin(t * 2f * PI.toFloat())
             caja(caja, c.verde.copy(alpha = 0.10f + 0.20f * p), 1f)
-            drawCircle(c.verde, radius = 4f, center = Offset(18f, 32f))
+            drawCircle(c.verde, radius = 4f, center = Offset(17f, 33f))
         }
         "punto" -> {
             val late = 0.5f + 0.5f * sin(t * 4f * PI.toFloat())
-            drawCircle(c.verde.copy(alpha = 0.35f), radius = 4f + 5f * late, center = Offset(18f, 32f))
-            drawCircle(c.verde, radius = 4f, center = Offset(18f, 32f))
+            drawCircle(c.verde.copy(alpha = 0.35f), radius = 4f + 5f * late, center = Offset(17f, 33f))
+            drawCircle(c.verde, radius = 4f, center = Offset(17f, 33f))
         }
         // Un punto de luz recorre el perimetro, esquinas incluidas.
         "recorre" -> {
-            drawCircle(c.verde, radius = 4f, center = Offset(18f, 32f))
+            drawCircle(c.verde, radius = 4f, center = Offset(17f, 33f))
             val perimetro = 2f * (caja.width + caja.height)
             val d = (t * perimetro) % perimetro
             val punto = when {
@@ -1797,7 +1867,7 @@ private fun DrawScope.claseAhora(v: String, t: Float, c: TintaDemo) {
             drawCircle(c.verde, radius = 3.5f, center = punto)
         }
         "barre" -> {
-            drawCircle(c.verde, radius = 4f, center = Offset(18f, 32f))
+            drawCircle(c.verde, radius = 4f, center = Offset(17f, 33f))
             clipRect(caja.left, caja.top, caja.right, caja.bottom) {
                 val x = caja.left - 22f + (caja.width + 44f) * t
                 rotate(degrees = 18f, pivot = Offset(x, caja.center.y)) {
@@ -1826,7 +1896,7 @@ private fun DrawScope.errorAviso(v: String, t: Float, c: TintaDemo) {
     val parpadeo = if (v == "parpadea" && (t * 6f).toInt() % 2 == 1) 0.35f else 1f
 
     // El rotulo, mas arriba y mas pequeno: pegado al campo se metia dentro de su contorno.
-    texto("Nombre de la materia", 13f, 11f, c, c.rojo.copy(alpha = parpadeo), tamano = 7f)
+    texto("Nombre de la materia", 13f, 11f, c, c.rojo.copy(alpha = parpadeo), tamano = 6f)
     translate(left = temblor) {
         drawRoundRect(
             color = c.rojo.copy(alpha = parpadeo),
@@ -1966,6 +2036,14 @@ private fun DrawScope.fabScroll(v: String, t: Float, c: TintaDemo) {
 private fun DrawScope.botonDeCrear(y: Float, extension: Float, alfa: Float, c: TintaDemo) {
     val ancho = 22f + 40f * extension
     val izq = 90f - ancho
+    // Un halo del color del fondo por detras: el boton **flota sobre** la lista, y sin ese
+    // hueco las filas le pasaban por encima y parecia que estuviera roto.
+    drawRoundRect(
+        color = c.fondo,
+        topLeft = Offset(izq - 3.5f, y - 14.5f),
+        size = Size(ancho + 7f, 29f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.5f, 14.5f)
+    )
     drawRoundRect(
         color = c.acento.copy(alpha = alfa),
         topLeft = Offset(izq, y - 11f),
@@ -1975,7 +2053,7 @@ private fun DrawScope.botonDeCrear(y: Float, extension: Float, alfa: Float, c: T
     texto("+", izq + 11f, y, c, c.fondo, tamano = 12f, centrado = true, alfa = alfa)
     // El rotulo se va antes que el ancho: es lo que hace que «encoge» se lea como que pierde
     // el texto y no como que se estruja.
-    texto("Registrar", izq + 20f, y, c, c.fondo, tamano = 8f, alfa = alfa * tramo(extension, 0.45f, 0.9f))
+    texto("Registrar", izq + 20f, y, c, c.fondo, tamano = 7f, alfa = alfa * tramo(extension, 0.45f, 0.9f))
 }
 
 private fun DrawScope.haptica(v: String, t: Float, c: TintaDemo) {

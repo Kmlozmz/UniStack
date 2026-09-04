@@ -363,7 +363,7 @@ private fun RejillaDeVariantes(
     }
 }
 
-/** Una variante: borde de 2dp, caja de 66dp con la animación, y el nombre debajo. */
+/** Una variante: borde de 2dp, caja de 88dp con la animación, y el nombre debajo. */
 @Composable
 private fun CajaDeVariante(
     gestoId: String,
@@ -397,12 +397,23 @@ private fun CajaDeVariante(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                // 76 y no 66: a dos columnas el ancho da de sobra, y con 66 los dibujos que
-                // llevan tres renglones de texto salian apretados contra los bordes.
-                .height(76.dp)
+                /*
+                 * **La altura sale de la proporcion del lienzo, no a ojo.**
+                 *
+                 * Los dibujos se pintan sobre cien por sesenta y cuatro y ahora se escalan sin
+                 * deformar, asi que una caja con otra proporcion solo anade margen muerto a los
+                 * lados. A dos columnas en un movil normal la caja mide unos ciento treinta y
+                 * cinco de ancho: con ochenta y ocho de alto y cinco de aire, lo de dentro
+                 * queda en ciento veinticinco por setenta y ocho, que es la proporcion del
+                 * lienzo casi clavada.
+                 *
+                 * De paso el dibujo sale un cuarto mas grande que con setenta y seis, y los
+                 * rotulos de dentro por fin se leen.
+                 */
+                .height(88.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(esquema.surfaceContainerHigh)
-                .padding(7.dp)
+                .padding(5.dp)
         ) {
             LienzoDemo(t = if (animar) t else 0.55f) { reloj ->
                 pintarVariante(gestoId, opcion.id, reloj, tinta)

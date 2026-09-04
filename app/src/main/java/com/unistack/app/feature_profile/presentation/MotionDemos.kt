@@ -164,8 +164,9 @@ fun DemoDePulsacion(motion: MotionPreferences) {
                  * exactamente lo que se veia.
                  */
                 modifier = Modifier
-                    .cleanClickable { }
-                    .clip(RoundedCornerShape(20.dp))
+                    // La forma va como parametro: sin ella la onda se recorta al rectangulo y
+                    // asoma por las esquinas del boton redondo.
+                    .cleanClickable(shape = RoundedCornerShape(20.dp)) { }
                     .background(MaterialTheme.colorScheme.primary)
                     .padding(horizontal = 26.dp, vertical = 12.dp)
             ) {
