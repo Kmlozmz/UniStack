@@ -656,77 +656,95 @@ private fun DrawScope.listas(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.refresco(v: String, t: Float, c: TintaDemo) {
-    val centro = Offset(50f, 30f)
+    /*
+     * **La lista bajando, y el indicador asomando por encima.**
+     *
+     * Los indicadores flotaban en el vacio: no se entendia que aquello era un gesto de tirar,
+     * porque no habia nada que se estuviera tirando. Ahora la lista baja, el indicador aparece
+     * en el hueco que deja, y al soltar todo vuelve a su sitio — que es el gesto entero.
+     */
+    val tirando = suave(tramo(t, 0.06f, 0.34f))
+    val soltando = suave(tramo(t, 0.7f, 0.94f))
+    val abierto = tirando - soltando
+    val hueco = 22f * abierto
+
+    // El indicador vive en el hueco, y se apaga con el.
+    val cy = 4f + hueco * 0.55f
     when (v) {
         "circulo" -> drawArc(
-            color = c.acento,
-            startAngle = t * 360f,
+            color = c.acento.copy(alpha = abierto),
+            startAngle = t * 720f,
             sweepAngle = 100f,
             useCenter = false,
-            topLeft = Offset(centro.x - 14f, centro.y - 14f),
-            size = Size(28f, 28f),
-            style = Stroke(4f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            topLeft = Offset(42f, cy - 8f),
+            size = Size(16f, 16f),
+            style = Stroke(3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
         )
         // La onda **viaja** por el arco y respira: dibujada una vez y rotada, lo que gira es
         // una onda congelada, que es justo lo que no hace el indicador de M3E.
         "ondacirc" -> {
-            val amplitud = 2f + 1.6f * sin(t * 4f * PI.toFloat())
+            val amplitud = 1.6f + 1.2f * sin(t * 6f * PI.toFloat())
             drawPath(
-                path = ondaCircular(centro, 14f, amplitud, 9, 0f, 1f, -t * 6f * PI.toFloat()),
-                color = c.pieza,
-                style = Stroke(3f)
+                path = ondaCircular(Offset(50f, cy), 8f, amplitud, 9, 0f, 1f, -t * 8f * PI.toFloat()),
+                color = c.pieza.copy(alpha = abierto),
+                style = Stroke(2.4f)
             )
             drawPath(
-                path = ondaCircular(centro, 14f, amplitud, 9, t, t + 0.35f, -t * 6f * PI.toFloat()),
-                color = c.acento,
-                style = Stroke(4f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                path = ondaCircular(Offset(50f, cy), 8f, amplitud, 9, t, t + 0.35f, -t * 8f * PI.toFloat()),
+                color = c.acento.copy(alpha = abierto),
+                style = Stroke(3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
             )
         }
         "formas" -> {
             val formas = listOf(9 to 0.10f, 4 to 0.18f, 12 to 0.13f)
-            val paso = t * formas.size
-            val indice = paso.toInt().coerceIn(0, formas.size - 1)
+            val indice = (t * formas.size).toInt().coerceIn(0, formas.size - 1)
             drawPath(
-                path = formaLobulada(centro, 15f, formas[indice].first, formas[indice].second, t * 2f * PI.toFloat()),
-                color = c.acento
+                path = formaLobulada(Offset(50f, cy), 8f, formas[indice].first, formas[indice].second, t * 3f * PI.toFloat()),
+                color = c.acento.copy(alpha = abierto)
             )
         }
+        // Elastico: se estira mientras se tira, que es lo que le da el nombre.
         "elastico" -> {
-            val estiron = sin(t * 2f * PI.toFloat())
+            val estiron = 1f + 0.9f * abierto
             drawRoundRect(
-                color = c.acento,
-                topLeft = Offset(centro.x - 13f, centro.y - 9f - 5f * estiron),
-                size = Size(26f, 18f + 10f * estiron),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(11f, 11f)
+                color = c.acento.copy(alpha = abierto),
+                topLeft = Offset(50f - 9f / estiron, cy - 4f * estiron),
+                size = Size(18f / estiron, 8f * estiron),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
             )
         }
         "barra" -> {
             drawRoundRect(
-                color = c.pieza,
-                topLeft = Offset(20f, 28f),
-                size = Size(60f, 5f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                color = c.pieza.copy(alpha = abierto),
+                topLeft = Offset(28f, cy - 2f),
+                size = Size(44f, 4f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
             )
-            val ancho = 22f
-            val x = 20f + (60f + ancho) * t - ancho
-            clipRect(20f, 26f, 80f, 35f) {
+            clipRect(28f, cy - 4f, 72f, cy + 4f) {
                 drawRoundRect(
-                    color = c.acento,
-                    topLeft = Offset(x, 28f),
-                    size = Size(ancho, 5f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                    color = c.acento.copy(alpha = abierto),
+                    topLeft = Offset(28f + 60f * ((t * 1.6f) % 1f) - 16f, cy - 2f),
+                    size = Size(16f, 4f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
                 )
             }
         }
+        // La gota se descuelga del borde mientras se tira: cuanto mas abajo, mas alargada.
         "gota" -> {
-            val caida = tramo(t, 0f, 0.7f)
-            val y = 12f + 26f * suave(caida)
-            val achate = 1f + 0.5f * tramo(t, 0.7f, 0.85f) - 0.5f * tramo(t, 0.85f, 1f)
+            val alargue = 1f + 0.5f * abierto
             drawOval(
-                color = c.acento,
-                topLeft = Offset(centro.x - 8f * achate, y - 8f / achate),
-                size = Size(16f * achate, 16f / achate)
+                color = c.acento.copy(alpha = abierto),
+                topLeft = Offset(50f - 6f / alargue, cy - 6f * alargue),
+                size = Size(12f / alargue, 12f * alargue)
             )
+        }
+    }
+
+    // La lista, bajando con el gesto. Es lo que convierte el indicador en «tirar para
+    // refrescar» en vez de en «algo dando vueltas».
+    translate(top = hueco) {
+        repeat(3) { indice ->
+            fila(12f + indice * 16f, c.acento)
         }
     }
 }
