@@ -121,7 +121,19 @@ enum class ScreenTransition(override val id: String, override val label: String)
     EJE("eje", "Eje"),
     CONTENEDOR("contenedor", "Contenedor"),
     ABAJO("abajo", "Desde abajo"),
-    ZOOM("zoom", "Zoom")
+    ZOOM("zoom", "Zoom"),
+
+    /** La de arriba: entra bajando, como un panel que se descuelga. */
+    ARRIBA("arriba", "Desde arriba"),
+
+    /** El empuje del eje, pero en vertical: la que sale sube un tercio y espera debajo. */
+    EJE_VERTICAL("ejeV", "Eje vertical"),
+
+    /** La nueva sube entera y la anterior se queda detrás, encogida y apagada. */
+    TARJETA("tarjeta", "Tarjeta"),
+
+    /** Entra desde la esquina, moviéndose en los dos ejes a la vez. */
+    DIAGONAL("diagonal", "Diagonal")
 }
 
 enum class ListEntry(override val id: String, override val label: String) : MotionChoice {

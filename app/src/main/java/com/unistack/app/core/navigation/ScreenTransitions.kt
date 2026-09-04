@@ -7,15 +7,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOut
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.unit.IntOffset
 import com.unistack.app.feature_user.domain.ScreenTransition
 
 /**
- * Las seis formas de entrar a una pantalla, elegibles en Movimiento.
+ * Las diez formas de entrar a una pantalla, elegibles en Movimiento.
  *
  * Hasta ahora el empuje lateral estaba escrito a mano en el `NavHost` y era el único: la app
  * entraba siempre igual, y el ajuste de movimiento solo podía apagarlo del todo. Aquí cada
@@ -87,5 +89,51 @@ internal fun transicionDe(
         sale = scaleOut(fundido, targetScale = 0.9f) + fadeOut(fundido),
         vuelveEntrando = scaleIn(fundido, initialScale = 0.9f) + fadeIn(fundido),
         vuelveSaliendo = scaleOut(fundido, targetScale = 1.18f) + fadeOut(fundido)
+    )
+
+    /*
+     * La de arriba se descuelga. Es el reverso de «desde abajo», y sirve para quien tiene la
+     * app en la mano y prefiere que lo nuevo caiga hacia el pulgar en vez de subir.
+     */
+    ScreenTransition.ARRIBA -> TransicionDePantalla(
+        entra = slideInVertically(desplazamiento) { alto -> -alto },
+        sale = fadeOut(fundido),
+        vuelveEntrando = fadeIn(fundido),
+        vuelveSaliendo = slideOutVertically(desplazamiento) { alto -> -alto }
+    )
+
+    /*
+     * El mismo empuje del eje, girado. La que sale recorre un tercio hacia arriba: se queda
+     * esperando debajo, igual que en horizontal.
+     */
+    ScreenTransition.EJE_VERTICAL -> TransicionDePantalla(
+        entra = slideInVertically(desplazamiento) { alto -> alto },
+        sale = slideOutVertically(desplazamiento) { alto -> -alto / 3 },
+        vuelveEntrando = slideInVertically(desplazamiento) { alto -> -alto / 3 },
+        vuelveSaliendo = slideOutVertically(desplazamiento) { alto -> alto }
+    )
+
+    /*
+     * Tarjeta: la nueva sube entera por encima y la anterior se queda **detrás**, encogida y a
+     * media luz. Es lo que separa esta de «desde abajo», donde la de debajo se va del todo:
+     * aquí sigue ahí, y por eso volver atrás se siente como cerrar algo, no como navegar.
+     */
+    ScreenTransition.TARJETA -> TransicionDePantalla(
+        entra = slideInVertically(desplazamiento) { alto -> alto },
+        sale = scaleOut(fundido, targetScale = 0.92f) + fadeOut(fundido, targetAlpha = 0.6f),
+        vuelveEntrando = scaleIn(fundido, initialScale = 0.92f) + fadeIn(fundido, initialAlpha = 0.6f),
+        vuelveSaliendo = slideOutVertically(desplazamiento) { alto -> alto }
+    )
+
+    /*
+     * Diagonal: los dos ejes a la vez, desde la esquina de abajo a la derecha. Es la más
+     * llamativa de las diez y por eso no es la de casa, pero para quien quiere que se note
+     * que cambió de sitio, se nota.
+     */
+    ScreenTransition.DIAGONAL -> TransicionDePantalla(
+        entra = slideIn(desplazamiento) { tam -> IntOffset(tam.width, tam.height) },
+        sale = fadeOut(fundido),
+        vuelveEntrando = fadeIn(fundido),
+        vuelveSaliendo = slideOut(desplazamiento) { tam -> IntOffset(tam.width, tam.height) }
     )
 }

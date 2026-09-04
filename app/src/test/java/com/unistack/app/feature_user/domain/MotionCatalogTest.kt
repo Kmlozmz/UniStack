@@ -102,10 +102,10 @@ class MotionCatalogTest {
      * alli iban aparte y aqui son gestos como los demas.
      */
     @Test
-    fun `el catalogo cubre los veinticuatro gestos y las ciento veinticuatro variantes`() {
+    fun `el catalogo cubre los veinticuatro gestos y las ciento veintiocho variantes`() {
         assertEquals(24, MotionCatalog.gestures.size)
         assertEquals(3, MotionCatalog.toggles.size)
-        assertEquals(124, MotionCatalog.variantCount)
+        assertEquals(128, MotionCatalog.variantCount)
     }
 
     @Test

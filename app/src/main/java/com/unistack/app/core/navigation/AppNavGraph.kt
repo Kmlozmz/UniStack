@@ -31,6 +31,18 @@ import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.material3.ShortNavigationBarItemDefaults
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -1514,14 +1526,66 @@ private fun UniStackBottomBarContent(
      * pestañas no caben en un teléfono estrecho sin cortar «Académico»; en columna, cada una
      * ocupa su quinto y el rótulo cabe entero.
      */
-    ShortNavigationBar(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        arrangement = ShortNavigationBarArrangement.EqualWeight
-    ) {
+    /*
+     * **La pastilla del activo la pinta la app, no Material.**
+     *
+     * «Barra inferior animada» prometia que la pastilla se desliza hasta la pestaña nueva, y
+     * eso no pasaba ni podia pasar: en una `NavigationBar` cada pestaña tiene **la suya**, y
+     * al cambiar se apaga una y se enciende otra. No hay nada que viaje, asi que el
+     * interruptor no se notaba: encendido y apagado se veian igual.
+     *
+     * Ahora la barra va sin indicador propio y encima de una pastilla que la app dibuja y
+     * mueve. Cada icono publica donde ha quedado, asi que la pastilla no adivina posiciones:
+     * las lee del propio reparto de la barra y funciona con cuatro pestañas o con cinco.
+     */
+    val animada = motionActual().animatedBottomBar
+    var origen by remember { mutableStateOf(Offset.Zero) }
+    val centros = remember { mutableStateMapOf<String, Offset>() }
+    val destino = centros[selectedRoute]
+    val esquema = MaterialTheme.colorScheme
+
+    // Apagada, la pastilla salta: un `tween` de un milisegundo, que es lo que pide quien no
+    // quiere que nada se mueva bajo el pulgar.
+    val compasPastilla: FiniteAnimationSpec<Float> =
+        if (animada) MaterialTheme.motionScheme.defaultSpatialSpec() else tween(1)
+    val pastillaX by animateFloatAsState(
+        targetValue = destino?.x ?: 0f,
+        animationSpec = compasPastilla,
+        label = "pastilla"
+    )
+
+    Surface(color = esquema.surfaceContainer, modifier = modifier) {
+        Box(modifier = Modifier.onGloballyPositioned { origen = it.positionInRoot() }) {
+            if (destino != null) {
+                val anchoPastilla = with(LocalDensity.current) { 64.dp.toPx() }
+                val altoPastilla = with(LocalDensity.current) { 32.dp.toPx() }
+                val colorPastilla = esquema.secondaryContainer
+                Canvas(modifier = Modifier.matchParentSize()) {
+                    // La `y` no se anima: las pestañas estan todas a la misma altura, y
+                    // animarla solo añadiria un temblor cuando cambia el alto de la barra.
+                    drawRoundRect(
+                        color = colorPastilla,
+                        topLeft = Offset(
+                            pastillaX - origen.x - anchoPastilla / 2f,
+                            destino.y - origen.y - altoPastilla / 2f
+                        ),
+                        size = Size(anchoPastilla, altoPastilla),
+                        cornerRadius = CornerRadius(altoPastilla / 2f, altoPastilla / 2f)
+                    )
+                }
+            }
+            ShortNavigationBar(
+                containerColor = Color.Transparent,
+                arrangement = ShortNavigationBarArrangement.EqualWeight
+            ) {
         items.forEach { item ->
             val selected = selectedRoute == item.route
             ShortNavigationBarItem(
+                colors = ShortNavigationBarItemDefaults.colors(
+                    // Sin indicador propio: el de la app ya esta debajo, y dos pastillas
+                    // superpuestas se ven como un borde de mas alrededor del icono.
+                    selectedIndicatorColor = Color.Transparent
+                ),
                 selected = selected,
                 onClick = {
                     /*
@@ -1555,7 +1619,6 @@ private fun UniStackBottomBarContent(
                      * instantaneo —un `tween` de un milisegundo— que es exactamente lo que
                      * pide quien no quiere que la barra se mueva bajo el pulgar.
                      */
-                    val animada = motionActual().animatedBottomBar
                     val compas = if (animada) {
                         MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
                     } else {
@@ -1576,17 +1639,30 @@ private fun UniStackBottomBarContent(
                         animationSpec = compasFloat,
                         label = "tamaño del icono"
                     )
-                    Icon(
-                        // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
-                        imageVector = item.iconFor(selected, appearance.iconStyle),
-                        contentDescription = item.label,
-                        modifier = Modifier
-                            .offset(y = lift)
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                            }
-                    )
+                    /*
+                     * La caja de fuera es la que dice donde va la pastilla, y no el icono.
+                     *
+                     * El icono lleva encima el desplazamiento y la escala del seleccionado; si
+                     * la medida saliera de el, la pastilla iria persiguiendo su rebote en vez
+                     * de quedarse quieta detras.
+                     */
+                    Box(
+                        modifier = Modifier.onGloballyPositioned { coords ->
+                            centros[item.route] = coords.boundsInRoot().center
+                        }
+                    ) {
+                        Icon(
+                            // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
+                            imageVector = item.iconFor(selected, appearance.iconStyle),
+                            contentDescription = item.label,
+                            modifier = Modifier
+                                .offset(y = lift)
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                }
+                        )
+                    }
                 },
                 label = if (showLabels) {
                     { Text(item.label, maxLines = 1) }
@@ -1595,6 +1671,8 @@ private fun UniStackBottomBarContent(
                 },
                 iconPosition = NavigationItemIconPosition.Top
             )
+        }
+            }
         }
     }
 }
