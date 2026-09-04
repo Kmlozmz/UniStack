@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.avisoDePresupuesto
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
@@ -581,11 +582,22 @@ private fun ExpensesHeroCard(
                     .background(ExpenseDivider)
             )
             Spacer(modifier = Modifier.height(13.dp))
+            /*
+             * El aviso de haberse pasado, con la variante elegida en Movimiento.
+             *
+             * Va sobre la fila entera y no solo sobre la barra: pasarse del presupuesto es algo
+             * que le pasa **al presupuesto**, y lo que hay que mirar es la cifra junto a la
+             * barra. Es condicion y no disparo —mientras se este por encima, el aviso sigue—
+             * porque un aviso de dinero que se apaga solo deja de avisar justo cuando mas
+             * falta hace.
+             */
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
                 onClick = onBudgetClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .avisoDePresupuesto(pasado = budget > 0 && budgetProgress >= 1f)
             )
         }
     }

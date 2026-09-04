@@ -72,6 +72,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import com.unistack.app.core.design.components.AvisoDeGuardado
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.components.MantenerPantallaEncendida
 import androidx.compose.runtime.LaunchedEffect
@@ -260,11 +262,20 @@ fun NoteEditorScreen(
             colorArgb != existing?.colorArgb
         )
 
+    /*
+     * El contador de guardados, para el aviso de Movimiento.
+     *
+     * Es un numero y no un booleano porque dos guardados seguidos tienen que dar dos avisos: con
+     * un booleano, el segundo no cambia nada y el aviso no vuelve a salir.
+     */
+    var guardadosHechos by remember { mutableIntStateOf(0) }
+
     LaunchedEffect(draft, loaded) {
         if (!loaded || !dirty) return@LaunchedEffect
         delay(600)
         val id = viewModel.saveNote(currentId, draft)
         if (id != null) currentId = id
+        guardadosHechos++
     }
 
     /*
@@ -482,7 +493,19 @@ fun NoteEditorScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = fondo,
-        snackbarHost = { SnackbarHost(avisos) },
+        /*
+         * El aviso de guardado va **encima del host de avisos**, no en su lugar.
+         *
+         * Un `Snackbar` es para lo que hay que leer y quiza deshacer; el guardado automatico es
+         * lo contrario —una senal de que todo va bien— y ocupando la barra de abajo taparia
+         * los avisos que si importan. Aqui flota, se apaga solo y no pide nada.
+         */
+        snackbarHost = {
+            Box(contentAlignment = Alignment.BottomCenter) {
+                SnackbarHost(avisos)
+                AvisoDeGuardado(marca = guardadosHechos, modifier = Modifier.padding(bottom = 8.dp))
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {},

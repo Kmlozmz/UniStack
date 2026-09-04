@@ -46,6 +46,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.notaFijada
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.presentation.subjectAccent
@@ -118,6 +119,9 @@ fun NoteCard(
     selected: Boolean = false
 ) {
     val accent = subject?.let { subjectAccent(it) }
+    // El gesto de subir a «Fijadas», con la variante elegida. Va en la tarjeta y no en la
+    // lista porque lo que se mueve es **esta** nota, no el orden de las demas.
+    val gestoDeFijar = Modifier.notaFijada(note.pinned)
     val portada = remember(attachments) {
         attachments.firstOrNull { it.kind == AttachmentKind.IMAGE }
     }
@@ -157,10 +161,11 @@ fun NoteCard(
             else -> 0.dp
         },
         modifier = if (onLongClick == null) {
-            modifier.fillMaxWidth()
+            modifier.fillMaxWidth().then(gestoDeFijar)
         } else {
             modifier
                 .fillMaxWidth()
+                .then(gestoDeFijar)
                 .clip(FormaNota)
                 .combinedClickable(onClick = onClick, onLongClick = onLongClick)
         },
