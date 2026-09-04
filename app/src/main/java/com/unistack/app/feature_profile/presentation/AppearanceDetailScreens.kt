@@ -26,6 +26,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableFloatStateOf
+import com.unistack.app.core.utils.performSafely
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -333,48 +337,40 @@ private fun MuestraDeLetra() {
  * Aquí el arrastre vive en estado local y solo se guarda **al levantar el dedo**. De paso, la
  * app deja de reconstruir su tipografía entera cincuenta veces por gesto.
  */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
-    // `key` sobre el valor guardado: si cambia desde fuera —restablecer apariencia, una copia
-    // de seguridad— el deslizador se entera. Mientras se arrastra, manda lo local.
+    /*
+     * Pasos de cinco, con las marcas que Material dibuja solo.
+     *
+     * Estuvo sin `steps` para poder arrastrar libre, y con eso pasaron dos cosas: se fueron las
+     * marcas —`steps` las dibuja y hace saltar a la vez— y las que dibuje a mano quedaban
+     * apinadas contra el borde derecho, porque tenia que recortarlas para que no se salieran.
+     *
+     * Con diez tramos de cinco por ciento no hace falta ninguna de las dos cosas: Material
+     * reparte las marcas el solo, y de todas formas nadie necesita el 97% pudiendo elegir el
+     * 95 o el 100.
+     */
+    val pasos = 9
     var arrastre by remember(porcentaje) { mutableFloatStateOf(porcentaje.toFloat()) }
-    val esquema = MaterialTheme.colorScheme
+    val haptica = LocalHapticFeedback.current
+    // El aviso al tacto se dispara al cambiar de tramo, no en cada pixel del arrastre: sin
+    // esto, un gesto de punta a punta daria cincuenta golpecitos seguidos.
+    var ultimoTramo by remember(porcentaje) { mutableIntStateOf(porcentaje / 5) }
+
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Slider(
             value = arrastre,
-            onValueChange = { arrastre = it },
-            onValueChangeFinished = { onSoltar(arrastre.toInt()) },
-            valueRange = 85f..135f,
-            /*
-             * Los puntos vuelven, **sin volver a enganchar el arrastre**.
-             *
-             * `steps` hace las dos cosas a la vez —dibuja las marcas y obliga a saltar de una a
-             * otra— y por eso al quitarlo para poder arrastrar libre se fueron tambien los
-             * puntos. Aqui la pista se pinta a mano: el carril de Material debajo, y las once
-             * marcas encima, una cada cinco por ciento. Sirven de referencia y no de reja.
-             */
-            track = { estado ->
-                Box(contentAlignment = Alignment.Center) {
-                    SliderDefaults.Track(sliderState = estado, modifier = Modifier.fillMaxWidth())
-                    Canvas(modifier = Modifier.fillMaxWidth().height(4.dp)) {
-                        val marcas = 11
-                        val fraccion = (estado.value - 85f) / 50f
-                        repeat(marcas) { indice ->
-                            val x = size.width * indice / (marcas - 1f)
-                            // La marca ya recorrida va sobre el relleno y la que falta sobre el
-                            // carril: cada una necesita el color que contrasta con lo que tiene
-                            // detras, o desaparece justo al pasar por encima.
-                            val pasada = indice / (marcas - 1f) <= fraccion
-                            drawCircle(
-                                color = if (pasada) esquema.onPrimary else esquema.primary,
-                                radius = 2.2.dp.toPx(),
-                                center = Offset(x.coerceIn(2.2.dp.toPx(), size.width - 2.2.dp.toPx()), size.height / 2f)
-                            )
-                        }
-                    }
+            onValueChange = { valor ->
+                arrastre = valor
+                val tramo = valor.toInt() / 5
+                if (tramo != ultimoTramo) {
+                    ultimoTramo = tramo
+                    haptica.performSafely(HapticFeedbackType.SegmentTick)
                 }
             },
+            onValueChangeFinished = { onSoltar(arrastre.toInt()) },
+            valueRange = 85f..135f,
+            steps = pasos,
             modifier = Modifier.fillMaxWidth()
         )
         Explicacion("Al ${arrastre.toInt()}%. Vale para toda la app, no solo para esta pantalla.")

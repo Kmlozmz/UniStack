@@ -67,6 +67,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -306,15 +307,24 @@ private fun TarjetaDeAjuste(
     detalle: String,
     contenido: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
-    Surface(
+    /*
+     * La tarjeta es **la de la app**, no una inventada aqui.
+     *
+     * Estuvo siendo un `Surface` con radio 16 y su propio tono, copiados del diseno web. El
+     * diseno web no tiene `UniCard`: tiene su propia escala de radios y sus propios grises, y
+     * traerlos tal cual dejaba estas veinticinco tarjetas con una forma que no existe en
+     * ninguna otra pantalla -- ni el radio de las esquinas, ni el filete, ni la sombra que
+     * pida el ajuste de superficie. Lo que hay que copiar del diseno es **lo de dentro**: el
+     * icono tenido, la rejilla a dos columnas, las medidas del texto. El envoltorio ya lo
+     * tiene la app resuelto, y ademas obedece a Forma y superficie como todo lo demas.
+     */
+    UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer
+        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        // UniCard pinta su contenido en un Box: sin la Column, el encabezado y lo de abajo se
+        // superponen. Es el mismo tropiezo que ya dio la pantalla de Gastos.
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                 Box(
                     modifier = Modifier
@@ -328,14 +338,12 @@ private fun TarjetaDeAjuste(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         nombre,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         detalle,
-                        fontSize = 10.5.sp,
-                        lineHeight = 15.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp)
                     )
@@ -450,15 +458,11 @@ private fun TarjetaDeInterruptor(
     onCambio: (Boolean) -> Unit
 ) {
     val marcado = toggle.read(motion)
-    Surface(
+    UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer
+        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                 val color = colorDe(toggle.id)
                 Box(
@@ -473,14 +477,12 @@ private fun TarjetaDeInterruptor(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         toggle.name,
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         toggle.detail,
-                        fontSize = 10.5.sp,
-                        lineHeight = 15.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp)
                     )
@@ -585,20 +587,17 @@ private fun InterruptorMaestro(
     activo: Boolean,
     viewModel: ProfileViewModel
 ) {
-    Surface(
+    UniCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        // Apagado, la tarjeta se tine: se nota que lo de abajo esta en pausa sin leer.
         color = if (activo) {
             MaterialTheme.colorScheme.surfaceContainerLow
         } else {
-            // Apagado, la tarjeta se tiñe: se nota que lo de abajo está en pausa sin leer.
             MaterialTheme.colorScheme.primaryContainer
-        }
+        },
+        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 13.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
                 Box(
                     modifier = Modifier
@@ -615,15 +614,14 @@ private fun InterruptorMaestro(
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Cuánto movimiento", fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                    Text("Cuánto movimiento", style = MaterialTheme.typography.titleSmallEmphasized)
                     Text(
                         text = if (activo) {
                             "Manda sobre los ${MotionCatalog.gestures.size} gestos de abajo."
                         } else {
                             "Los gestos de abajo quedan guardados, pero en pausa."
                         },
-                        fontSize = 10.5.sp,
-                        lineHeight = 15.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp)
                     )
