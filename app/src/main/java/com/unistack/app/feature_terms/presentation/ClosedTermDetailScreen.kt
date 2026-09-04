@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.unistack.app.core.design.components.resumenDePeriodo
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -126,8 +128,13 @@ fun ClosedTermDetailScreen(
         if (resumen.subjects.isEmpty()) {
             item { TermCard { TermEmptyNote("Este periodo no tiene materias registradas.") } }
         } else {
-            items(resumen.subjects, key = { it.id }) { materia ->
-                SubjectRowInTerm(subject = materia, onClick = { onSubjectClick(materia.id) })
+            itemsIndexed(resumen.subjects, key = { _, it -> it.id }) { indice, materia ->
+                // Como aparece el resumen del periodo, con la variante elegida en Movimiento.
+                // El indice es lo que deja escalonarlas: «pieza a pieza» y «apilado» necesitan
+                // saber cual va antes.
+                Box(modifier = Modifier.resumenDePeriodo(indice)) {
+                    SubjectRowInTerm(subject = materia, onClick = { onSubjectClick(materia.id) })
+                }
             }
         }
 

@@ -55,6 +55,7 @@ import com.unistack.app.feature_user.domain.FabScrollMotion
 import com.unistack.app.feature_user.domain.OverBudgetMotion
 import com.unistack.app.feature_user.domain.PinMotion
 import com.unistack.app.feature_user.domain.RecoveryMotion
+import com.unistack.app.feature_user.domain.TermCloseMotion
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -522,3 +523,55 @@ class DesplazamientoDeLista internal constructor() {
 
 @Composable
 fun rememberDesplazamientoDeLista(): DesplazamientoDeLista = remember { DesplazamientoDeLista() }
+
+// ------------------------------------------------------------------ cierre de semestre
+
+/**
+ * Cómo aparece el resumen de un periodo cerrado.
+ *
+ * Recibe el índice de la pieza para poder escalonarlas: «pieza a pieza» y «apilado» necesitan
+ * saber cuál va antes, y las otras dos lo ignoran. Se dispara una vez al abrir la pantalla,
+ * porque un resumen que se rearma al desplazarse cansa a la tercera vez.
+ */
+@Composable
+fun Modifier.resumenDePeriodo(indice: Int): Modifier {
+    val estilo = motionActual().termClose
+    if (!hayMovimiento()) return this
+
+    var dentro by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { dentro = true }
+    val retardo = when (estilo) {
+        TermCloseMotion.PIEZA -> indice * 90
+        TermCloseMotion.APILADO -> indice * 70
+        else -> 0
+    }
+    val avance by animateFloatAsState(
+        targetValue = if (dentro) 1f else 0f,
+        animationSpec = if (estilo == TermCloseMotion.APILADO) {
+            muelleDeMovimiento()
+        } else {
+            tweenDeMovimiento(baseMs = 420, retrasoMs = retardo)
+        },
+        label = "periodo$indice"
+    )
+
+    return when (estilo) {
+        TermCloseMotion.ENTERO -> this.alpha(avance)
+        TermCloseMotion.PIEZA -> this.graphicsLayer {
+            alpha = avance
+            translationY = 18f * (1f - avance)
+        }
+        // La cortina revela de arriba abajo: nada se mueve, lo que baja es el corte.
+        TermCloseMotion.CORTINA -> this.graphicsLayer {
+            alpha = if (avance > 0f) 1f else 0f
+            clip = true
+            scaleY = avance
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+        }
+        // Apilado: llegan desde abajo, una sobre otra, y se reparten al llegar.
+        TermCloseMotion.APILADO -> this.graphicsLayer {
+            alpha = avance
+            translationY = 90f * (1f - avance) * (indice + 1)
+        }
+    }
+}
