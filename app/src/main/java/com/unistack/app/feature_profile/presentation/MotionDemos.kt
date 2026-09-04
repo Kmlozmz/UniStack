@@ -154,10 +154,19 @@ fun DemoDePulsacion(motion: MotionPreferences) {
     Column {
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Box(
+                /*
+                 * `cleanClickable` **antes** del fondo, y ese es el arreglo.
+                 *
+                 * El efecto de pulsacion se aplica con un `graphicsLayer`, y un
+                 * `graphicsLayer` solo transforma lo que viene **despues** de el en la cadena.
+                 * Estando detras del `background`, el fondo ya se habia pintado sin
+                 * transformar: se hundia el texto y el boton se quedaba quieto, que es
+                 * exactamente lo que se veia.
+                 */
                 modifier = Modifier
+                    .cleanClickable { }
                     .clip(RoundedCornerShape(20.dp))
                     .background(MaterialTheme.colorScheme.primary)
-                    .cleanClickable { }
                     .padding(horizontal = 26.dp, vertical = 12.dp)
             ) {
                 Text(

@@ -349,6 +349,9 @@ private fun RejillaDeVariantes(
                         opcion = opcion,
                         elegida = opcion.id == elegida.id,
                         animar = animar,
+                        // Cada variante arranca un poco despues que la anterior: sin esto van
+                        // en fase y las cuatro se ven vacias en el mismo instante.
+                        desfase = gesto.options.indexOf(opcion) * 0.11f,
                         modifier = Modifier.weight(1f),
                         onClick = { onElegir(opcion) }
                     )
@@ -367,12 +370,13 @@ private fun CajaDeVariante(
     opcion: MotionChoice,
     elegida: Boolean,
     animar: Boolean,
+    desfase: Float,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val tinta = tintaDemo()
     val esquema = MaterialTheme.colorScheme
-    val t = bucle(duracionMs = duracionDe(gestoId), etiqueta = gestoId + opcion.id)
+    val t = bucle(duracionMs = duracionDe(gestoId), etiqueta = gestoId + opcion.id, desfase = desfase)
 
     Column(
         modifier = modifier
@@ -393,7 +397,9 @@ private fun CajaDeVariante(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp)
+                // 76 y no 66: a dos columnas el ancho da de sobra, y con 66 los dibujos que
+                // llevan tres renglones de texto salian apretados contra los bordes.
+                .height(76.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(esquema.surfaceContainerHigh)
                 .padding(7.dp)

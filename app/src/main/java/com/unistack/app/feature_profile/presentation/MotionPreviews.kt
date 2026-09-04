@@ -67,7 +67,7 @@ private const val ALTO = 64f
  * verse en fase.
  */
 @Composable
-internal fun bucle(duracionMs: Int, etiqueta: String = "bucle"): Float {
+internal fun bucle(duracionMs: Int, etiqueta: String = "bucle", desfase: Float = 0f): Float {
     val transicion = rememberInfiniteTransition(label = etiqueta)
     val valor by transicion.animateFloat(
         initialValue = 0f,
@@ -75,7 +75,18 @@ internal fun bucle(duracionMs: Int, etiqueta: String = "bucle"): Float {
         animationSpec = infiniteRepeatable(tween(duracionMs, easing = LinearEasing)),
         label = etiqueta
     )
-    return valor
+    /*
+     * **El desfase es lo que evita que las cuatro cajas salgan vacias a la vez.**
+     *
+     * Todas se componen en el mismo fotograma y con la misma duracion, asi que sin esto van en
+     * fase perfecta: en el instante en que la animacion esta en su tramo vacio —el resumen del
+     * semestre antes de armarse, la vibracion entre golpe y golpe— **las cuatro** se ven en
+     * blanco a la vez, y parece que el ajuste esta roto.
+     *
+     * El desfase es pequeno a proposito: lo justo para que nunca coincidan todas, sin llegar a
+     * romper la comparacion, que es para lo que estan una al lado de la otra.
+     */
+    return (valor + desfase) % 1f
 }
 
 /** El mismo reloj, de ida y vuelta: sirve para lo que respira o late. */
@@ -293,7 +304,22 @@ private fun DrawScope.panel(
         size = Size(ancho, alto),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f, 7f)
     )
-    texto(titulo, izq + ancho * 0.10f, arriba + alto * 0.17f, tinta, color.copy(alpha = a), tamano = 7.5f * escala)
+    /*
+     * El titulo se apaga **antes** que su panel.
+     *
+     * Con las dos pantallas encima —fundido, contenedor, zoom— los dos titulos quedaban
+     * legibles a la vez y se leia «MateriasCálculo III» encima de si mismo. Elevando la
+     * opacidad al cubo, el que se va desaparece pronto y el que llega tarda en aparecer: en
+     * ningun momento hay dos textos compitiendo por el mismo sitio.
+     */
+    texto(
+        titulo,
+        izq + ancho * 0.10f,
+        arriba + alto * 0.17f,
+        tinta,
+        color.copy(alpha = a * a * a),
+        tamano = 7.5f * escala
+    )
     // Dos filas dentro, como cualquier lista de la app.
     repeat(2) { indice ->
         val y = arriba + alto * (0.40f + indice * 0.26f)
@@ -827,9 +853,11 @@ private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
     val avance = suave(tramo(t, 0.14f, 0.62f))
 
     // La cabecera con el promedio: es la que dice que la nota nueva cambio algo.
-    texto("Promedio del corte", 12f, 12f, c, c.tinta.copy(alpha = 0.55f), tamano = 7.5f, negrita = false)
+    // «Promedio» a secas: con «Promedio del corte» el rotulo llegaba hasta donde empieza la
+    // cifra y las dos se pisaban. En una caja de dos centimetros no caben las dos cosas.
+    texto("Promedio", 12f, 11f, c, c.tinta.copy(alpha = 0.55f), tamano = 7f, negrita = false)
     val promedio = if (v == "contar") 3.9f + 0.35f * avance else if (avance > 0.5f) 4.25f else 3.9f
-    texto("%.2f".format(promedio).replace('.', ','), 76f, 14f, c, c.verde, tamano = 12f, centrado = true)
+    texto("%.2f".format(promedio).replace('.', ','), 88f, 11f, c, c.verde, tamano = 11f, centrado = true)
 
     // Las notas que ya estaban.
     fun vieja(y: Float, nombre: String, valor: String, alfa: Float = 1f) {
@@ -856,26 +884,26 @@ private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
     }
 
     when (v) {
-        "ninguna" -> { vieja(22f, "Parcial", "4,0"); nueva(38f) }
+        "ninguna" -> { vieja(26f, "Parcial", "4,0"); nueva(43f) }
 
         // Cae desde arriba y empuja: la vieja baja con ella.
         "cae" -> {
-            translate(top = 16f * avance) { vieja(22f, "Parcial", "4,0") }
-            translate(top = -20f * (1f - avance)) { nueva(22f, avance) }
+            translate(top = 17f * avance) { vieja(26f, "Parcial", "4,0") }
+            translate(top = -22f * (1f - avance)) { nueva(26f, avance) }
         }
 
         "lateral" -> {
-            vieja(38f, "Parcial", "4,0")
-            nueva(22f, 1f, x = 12f + 92f * (1f - avance))
+            vieja(43f, "Parcial", "4,0")
+            nueva(26f, 1f, x = 12f + 92f * (1f - avance))
         }
 
         // Destello: ya esta puesta, y se enciende una vez.
         "destello" -> {
-            vieja(38f, "Parcial", "4,0")
-            nueva(22f)
+            vieja(43f, "Parcial", "4,0")
+            nueva(26f)
             drawRoundRect(
                 color = c.fondo.copy(alpha = (1f - avance) * 0.85f),
-                topLeft = Offset(12f, 22f),
+                topLeft = Offset(12f, 26f),
                 size = Size(76f, 13f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
             )
@@ -883,15 +911,15 @@ private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
 
         // Aqui lo que se mueve no es la fila: es el promedio de arriba contando.
         "contar" -> {
-            vieja(38f, "Parcial", "4,0")
-            nueva(22f)
-            drawCircle(c.verde.copy(alpha = 0.25f * (1f - avance)), radius = 8f + 10f * avance, center = Offset(76f, 14f))
+            vieja(43f, "Parcial", "4,0")
+            nueva(26f)
+            drawCircle(c.verde.copy(alpha = 0.25f * (1f - avance)), radius = 7f + 9f * avance, center = Offset(88f, 11f))
         }
 
         // El hueco se abre primero, y la fila llega despues a ocuparlo.
         "abre" -> {
-            translate(top = 16f * avance) { vieja(22f, "Parcial", "4,0") }
-            if (avance > 0.55f) nueva(22f, tramo(avance, 0.55f, 1f))
+            translate(top = 17f * avance) { vieja(26f, "Parcial", "4,0") }
+            if (avance > 0.55f) nueva(26f, tramo(avance, 0.55f, 1f))
         }
     }
 }
@@ -982,15 +1010,20 @@ private fun DrawScope.recupera(v: String, t: Float, c: TintaDemo) {
         "viaje" -> barra(
             if (p < 0.5f) mezclar(c.rojo, c.ambar, p * 2f) else mezclar(c.ambar, c.verde, (p - 0.5f) * 2f)
         )
+        // El pulso tambien parte del rojo: pintando siempre verde, la barra decia «recuperada»
+        // mientras el texto de abajo seguia diciendo «En riesgo», y las dos cosas se
+        // contradecian en la misma caja.
         "pulso" -> {
-            barra(c.verde)
-            val pulso = abs(sin(t * 2f * PI.toFloat()))
-            drawRoundRect(
-                color = c.verde.copy(alpha = 0.28f * pulso),
-                topLeft = Offset(9f, y - 3f),
-                size = Size(58f, 18f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
-            )
+            barra(if (recuperada) c.verde else c.rojo)
+            if (recuperada) {
+                val pulso = abs(sin(t * 4f * PI.toFloat()))
+                drawRoundRect(
+                    color = c.verde.copy(alpha = 0.30f * pulso),
+                    topLeft = Offset(9f, y - 3f),
+                    size = Size(58f, 18f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
+            }
         }
         // El verde entra por la izquierda sobre el rojo, con su borde a la vista.
         "barrido" -> {
@@ -1037,21 +1070,23 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
     texto("Corte 2", 17f, 22f, c, c.tinta.copy(alpha = 0.55f), tamano = 8f, negrita = false)
     texto("4,25", 17f, 38f, c, c.tinta.copy(alpha = 0.5f), tamano = 14f)
 
-    val centro = Offset(62f, 34f)
+    val centro = Offset(56f, 36f)
     val golpe = tramo(t, 0.15f, 0.55f)
     val asentado = suave(golpe)
 
     fun estampa(escala: Float, alfa: Float, giro: Float = -14f) {
         rotate(degrees = giro, pivot = centro) {
             scale(escala, pivot = centro) {
+                // El sello, mas ancho y con la letra mas pequena: «CERRADO» a 8,5 no cabia en
+                // cincuenta y dos y salia partido por la mitad.
                 drawRoundRect(
                     color = c.verde.copy(alpha = alfa),
-                    topLeft = Offset(centro.x - 26f, centro.y - 13f),
-                    size = Size(52f, 26f),
+                    topLeft = Offset(centro.x - 30f, centro.y - 11f),
+                    size = Size(60f, 22f),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f),
-                    style = Stroke(2.5f)
+                    style = Stroke(2.2f)
                 )
-                texto("CERRADO", centro.x, centro.y, c, c.verde.copy(alpha = alfa), tamano = 8.5f, centrado = true)
+                texto("CERRADO", centro.x, centro.y, c, c.verde.copy(alpha = alfa), tamano = 7f, centrado = true)
             }
         }
     }
@@ -1471,17 +1506,20 @@ private fun DrawScope.guardado(v: String, t: Float, c: TintaDemo) {
         "ninguna" -> Unit
         "pildora" -> {
             val y = 16f - 5f * (1f - entra)
+            // 52 y no 40: «Guardado» a 7,5 no cabia en cuarenta y salia cortado.
             drawRoundRect(
                 color = c.verde.copy(alpha = alfa),
-                topLeft = Offset(30f, y - 8f),
-                size = Size(40f, 16f),
+                topLeft = Offset(24f, y - 8f),
+                size = Size(52f, 16f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
             )
-            texto("Guardado", 50f, y, c, c.fondo, tamano = 7.5f, centrado = true, alfa = alfa)
+            texto("Guardado", 50f, y, c, c.fondo, tamano = 7f, centrado = true, alfa = alfa)
         }
         "punto" -> {
-            drawCircle(c.verde.copy(alpha = alfa), radius = 4f, center = Offset(84f, 16f))
-            texto("Guardado", 78f, 16f, c, c.verde.copy(alpha = alfa), tamano = 7f, centrado = false)
+            // El punto a la derecha y el rotulo a su izquierda, centrado: escrito desde la x
+            // del punto se salia del lienzo y se veia «Guardad».
+            drawCircle(c.verde.copy(alpha = alfa), radius = 3.5f, center = Offset(86f, 16f))
+            texto("Guardado", 52f, 16f, c, c.verde.copy(alpha = alfa), tamano = 7f, centrado = true)
         }
         "visto" -> {
             visto(Offset(50f, 16f), 11f, entra, c.verde.copy(alpha = sale), grosor = 2.6f)
@@ -1608,17 +1646,19 @@ private fun DrawScope.presupuesto(v: String, t: Float, c: TintaDemo) {
      * te pasaste**. Antes iba todo del mismo tono, y con eso el aviso no avisaba de nada.
      */
     val avance = suave(tramo(t, 0.1f, 0.55f))
-    val pista = Rect(12f, 34f, 88f, 44f)
+    val pista = Rect(12f, 33f, 88f, 43f)
     val lleno = 0.72f + 0.45f * avance
     val pasado = lleno > 1f
     val tono = if (pasado) c.rojo else c.ambar
 
-    texto("Esta semana", 12f, 14f, c, c.tinta.copy(alpha = 0.6f), tamano = 8f, negrita = false)
+    // El limite va **debajo** y no al lado: en una caja de dos centimetros, «$61.000» y
+    // «de $50.000» en la misma linea se pisan, que es justo lo que pasaba.
+    texto("Esta semana", 12f, 12f, c, c.tinta.copy(alpha = 0.6f), tamano = 7f, negrita = false)
     texto(
-        if (pasado) "$61.000" else "$50.000",
-        12f, 26f, c, tono, tamano = 13f
+        if (pasado) "$61.000" else "$48.500",
+        12f, 24f, c, tono, tamano = 13f
     )
-    texto("de $50.000", 52f, 27f, c, c.tinta.copy(alpha = 0.45f), tamano = 7.5f, negrita = false)
+    texto("límite $50.000", 12f, 51f, c, c.tinta.copy(alpha = 0.45f), tamano = 7f, negrita = false)
 
     drawRoundRect(
         color = c.pieza,
@@ -1785,11 +1825,12 @@ private fun DrawScope.errorAviso(v: String, t: Float, c: TintaDemo) {
     val temblor = if (v == "sacude") sin(t * 24f * PI.toFloat()) * 4.5f * (1f - avance) else 0f
     val parpadeo = if (v == "parpadea" && (t * 6f).toInt() % 2 == 1) 0.35f else 1f
 
-    texto("Nombre de la materia", 14f, 14f, c, c.rojo.copy(alpha = parpadeo), tamano = 7.5f)
+    // El rotulo, mas arriba y mas pequeno: pegado al campo se metia dentro de su contorno.
+    texto("Nombre de la materia", 13f, 11f, c, c.rojo.copy(alpha = parpadeo), tamano = 7f)
     translate(left = temblor) {
         drawRoundRect(
             color = c.rojo.copy(alpha = parpadeo),
-            topLeft = Offset(12f, 20f),
+            topLeft = Offset(12f, 19f),
             size = Size(76f, 20f),
             cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f),
             style = Stroke(2f)
@@ -1797,8 +1838,8 @@ private fun DrawScope.errorAviso(v: String, t: Float, c: TintaDemo) {
         // El cursor dentro, para que se lea como un campo vacio y no como una caja.
         drawLine(
             color = c.rojo.copy(alpha = parpadeo),
-            start = Offset(19f, 25f),
-            end = Offset(19f, 35f),
+            start = Offset(19f, 24f),
+            end = Offset(19f, 34f),
             strokeWidth = 1.5f
         )
     }
@@ -1807,7 +1848,7 @@ private fun DrawScope.errorAviso(v: String, t: Float, c: TintaDemo) {
     val p = if (v == "entra") suave(avance) else 1f
     texto(
         "Escribe un nombre",
-        14f, 48f - 5f * (1f - p), c, c.rojo.copy(alpha = p * parpadeo), tamano = 7.5f, negrita = false
+        13f, 49f - 5f * (1f - p), c, c.rojo.copy(alpha = p * parpadeo), tamano = 7f, negrita = false
     )
 }
 
