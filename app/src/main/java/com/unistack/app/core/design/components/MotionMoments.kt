@@ -52,10 +52,13 @@ import com.unistack.app.feature_user.domain.AutosaveMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
+import com.unistack.app.feature_user.domain.NewGradeMotion
+import com.unistack.app.feature_user.domain.GradeUpMotion
 import com.unistack.app.feature_user.domain.OverBudgetMotion
 import com.unistack.app.feature_user.domain.PinMotion
 import com.unistack.app.feature_user.domain.RecoveryMotion
 import com.unistack.app.feature_user.domain.TermCloseMotion
+import com.unistack.app.feature_user.domain.UndoMotion
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -573,5 +576,169 @@ fun Modifier.resumenDePeriodo(indice: Int): Modifier {
             alpha = avance
             translationY = 90f * (1f - avance) * (indice + 1)
         }
+    }
+}
+
+// ------------------------------------------------------------------ registrar una nota
+
+/**
+ * Cómo entra una nota recién registrada en la lista de su corte.
+ *
+ * `esNueva` lo decide quien pinta la lista comparando con lo que había: una nota es nueva
+ * mientras sea la última añadida y la pantalla no se haya vuelto a abrir. Sin esa condición,
+ * todas las notas entrarían animadas cada vez que se abre la materia, y entonces la entrada
+ * deja de significar «acaba de pasar algo».
+ */
+@Composable
+fun Modifier.notaRecienRegistrada(esNueva: Boolean): Modifier {
+    val estilo = motionActual().newGrade
+    if (!esNueva || estilo == NewGradeMotion.NINGUNA || !hayMovimiento()) return this
+
+    var dentro by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { dentro = true }
+    val avance by animateFloatAsState(
+        targetValue = if (dentro) 1f else 0f,
+        animationSpec = tweenDeMovimiento(baseMs = 460),
+        label = "notaNueva"
+    )
+
+    return when (estilo) {
+        // Cae desde arriba y empuja: las de abajo se apartan con ella.
+        NewGradeMotion.CAE -> this.graphicsLayer {
+            alpha = avance
+            translationY = -34f * (1f - avance)
+        }
+        NewGradeMotion.LATERAL -> this.graphicsLayer { translationX = 160f * (1f - avance) }
+        // Un destello que se apaga: la fila ya esta puesta y lo que pasa es que se enciende.
+        NewGradeMotion.DESTELLO -> this.drawWithContent {
+            drawContent()
+            drawRect(color = Color.White.copy(alpha = 0.35f * (1f - avance)))
+        }
+        // El hueco se abre primero y la fila llega despues a ocuparlo.
+        NewGradeMotion.ABRE -> this.graphicsLayer {
+            alpha = ((avance - 0.45f) / 0.55f).coerceIn(0f, 1f)
+            scaleY = avance
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+        }
+        // Aqui lo que se mueve no es la fila: es el promedio, y de eso se encarga
+        // `numeroQueCuenta` en la cabecera.
+        NewGradeMotion.CONTAR -> this.alpha(avance)
+        NewGradeMotion.NINGUNA -> this
+    }
+}
+
+// ------------------------------------------------------------------ nota que sube
+
+/**
+ * El promedio cuando mejora.
+ *
+ * Solo cuando **sube**: bajar no es un logro y marcarlo con un salto seria celebrarlo. Se
+ * compara con el valor anterior de la propia composicion, asi que basta con pasarle la cifra.
+ */
+@Composable
+fun Modifier.promedioQueSube(promedio: Double?): Modifier {
+    val estilo = motionActual().gradeUp
+    if (promedio == null || estilo == GradeUpMotion.NINGUNA || !hayMovimiento()) return this
+
+    var anterior by remember { mutableStateOf(promedio) }
+    var subio by remember { mutableStateOf(false) }
+    LaunchedEffect(promedio) {
+        // Solo si hay un valor previo distinto: al abrir la pantalla no hay «antes» con el que
+        // comparar, y animar ahi seria inventarse una mejora.
+        if (promedio > anterior) {
+            subio = true
+            kotlinx.coroutines.delay(900)
+            subio = false
+        }
+        anterior = promedio
+    }
+
+    val avance by animateFloatAsState(
+        targetValue = if (subio) 1f else 0f,
+        animationSpec = tweenDeMovimiento(baseMs = 420),
+        label = "sube"
+    )
+    val pico = abs(sin(avance * PI.toFloat()))
+    if (pico <= 0.01f) return this
+
+    return when (estilo) {
+        GradeUpMotion.SALTO -> this.graphicsLayer { translationY = -14f * pico }
+        GradeUpMotion.FLECHA -> this.drawWithContent {
+            drawContent()
+            // Una flecha que sube y se apaga, a la derecha de la cifra.
+            val x = size.width + 10f
+            val y = size.height / 2f - 16f * pico
+            drawPath(
+                androidx.compose.ui.graphics.Path().apply {
+                    moveTo(x, y - 7f)
+                    lineTo(x - 6f, y + 4f)
+                    lineTo(x + 6f, y + 4f)
+                    close()
+                },
+                Color(0xFF11C045).copy(alpha = pico)
+            )
+        }
+        GradeUpMotion.BRILLO -> this.drawBehind {
+            drawCircle(
+                color = Color(0xFF11C045).copy(alpha = 0.30f * pico),
+                radius = size.maxDimension * (0.5f + 0.4f * pico)
+            )
+        }
+        GradeUpMotion.NINGUNA -> this
+    }
+}
+
+// ------------------------------------------------------------------ deshacer un borrado
+
+/**
+ * Cómo vuelve a su sitio una fila que se acaba de recuperar.
+ *
+ * `restaurada` es un disparo y no un estado: la fila **está** en la lista desde el momento en
+ * que se deshace el borrado, y lo que hay que animar es su llegada. Por eso quien lo use pasa
+ * el identificador de lo último restaurado y lo limpia al terminar.
+ */
+@Composable
+fun Modifier.filaRestaurada(restaurada: Boolean): Modifier {
+    val estilo = motionActual().undo
+    if (!restaurada || !hayMovimiento()) return this
+
+    var dentro by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { dentro = true }
+    val avance by animateFloatAsState(
+        targetValue = if (dentro) 1f else 0f,
+        animationSpec = if (estilo == UndoMotion.REBOTA) {
+            muelleDeMovimiento()
+        } else {
+            tweenDeMovimiento(baseMs = 460)
+        },
+        label = "restaurada"
+    )
+
+    return when (estilo) {
+        UndoMotion.APARECE -> this.alpha(avance)
+        UndoMotion.VUELVE, UndoMotion.REBOTA -> this.graphicsLayer { translationX = 200f * (1f - avance) }
+        UndoMotion.CAE -> this.graphicsLayer {
+            alpha = avance
+            translationY = -50f * (1f - avance)
+        }
+        // Se despliega: no llega de ningun sitio, crece de alto desde una linea.
+        UndoMotion.DESPLIEGA -> this.graphicsLayer {
+            clip = true
+            scaleY = avance
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 0f)
+        }
+        UndoMotion.GIRA -> this.graphicsLayer {
+            alpha = avance
+            rotationZ = -80f * (1f - avance)
+            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
+        }
+        UndoMotion.DESTELLO -> this
+            .graphicsLayer { translationX = 200f * (1f - avance) }
+            .drawWithContent {
+                drawContent()
+                if (avance > 0.8f) {
+                    drawRect(color = Color.White.copy(alpha = 0.4f * (1f - (avance - 0.8f) / 0.2f)))
+                }
+            }
     }
 }

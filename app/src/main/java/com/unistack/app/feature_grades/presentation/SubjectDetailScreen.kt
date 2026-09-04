@@ -45,6 +45,8 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.promedioQueSube
+import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
@@ -63,6 +65,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -546,12 +549,28 @@ fun SubjectCutDetailScreen(
                             .background(MaterialTheme.colorScheme.surfaceContainerLow)
                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, LargeCardShape)
                     ) {
+                        /*
+                         * Cual es la nota recien registrada.
+                         *
+                         * Se recuerda la ultima vista al entrar y se compara: la que no estaba
+                         * es la nueva. Sin esa comparacion, todas entrarian animadas cada vez
+                         * que se abre la materia y la entrada dejaria de significar «acaba de
+                         * pasar algo».
+                         */
+                        val vistasAntes = remember { mutableStateOf(grades.map { it.id }.toSet()) }
+                        val recienLlegada = grades.map { it.id }.firstOrNull { it !in vistasAntes.value }
+                        LaunchedEffect(grades.size) {
+                            kotlinx.coroutines.delay(1200)
+                            vistasAntes.value = grades.map { it.id }.toSet()
+                        }
+
                         grades.forEachIndexed { index, grade ->
                             GradeRowItem(
                                 grade = grade,
                                 scale = scale,
                                 onEditClick = { onEditGradeClick(subject.id, grade.id) },
-                                onDeleteClick = { gradeIdPendingDelete = grade.id }
+                                onDeleteClick = { gradeIdPendingDelete = grade.id },
+                                modifier = Modifier.notaRecienRegistrada(grade.id == recienLlegada)
                             )
                             if (index < grades.lastIndex) {
                                 UniDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -951,7 +970,10 @@ private fun SubjectOverviewCard(
                             Text(
                                 GradingScaleUtils.formatGrade(average, scale),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                style = MaterialTheme.typography.displaySmallEmphasized
+                                style = MaterialTheme.typography.displaySmallEmphasized,
+                                // «Nota que sube»: solo cuando mejora. Bajar no es un logro, y
+                                // marcarlo con un salto seria celebrarlo.
+                                modifier = Modifier.promedioQueSube(average)
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
@@ -1582,11 +1604,12 @@ private fun GradeRowItem(
     grade: GradeItem,
     scale: GradingScale,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
