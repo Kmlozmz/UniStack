@@ -143,14 +143,24 @@ fun MotionSettingsScreen(
                 nombre = gesto.name,
                 detalle = gesto.detail
             ) {
-                // Escala en fila y no en rejilla: «Nada / Rápida / Normal / Lenta» se lee de
-                // izquierda a derecha, y en rejilla ese orden se pierde.
-                SegmentoCompacto(
-                    opciones = gesto.options,
-                    elegida = gesto.read(motion).id,
-                    onElegir = { opcion ->
-                        viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
-                    }
+                /*
+                 * Escala en fila y no en rejilla: «Nada / Rapida / Normal / Lenta» se lee de
+                 * izquierda a derecha, y en rejilla ese orden se pierde.
+                 *
+                 * Y es **el segmentado de la app**, el mismo de «Completo / Reducido / Nada»
+                 * de la tarjeta de arriba. Estuvo siendo una tira estrecha con filete, copiada
+                 * del diseno web: en la misma pantalla salian dos segmentados distintos a dos
+                 * dedos de distancia, y no habia nada que explicara por que.
+                 */
+                UniSegmentedControl(
+                    selected = gesto.read(motion).id,
+                    options = gesto.options.map { UniSegmentedOption(value = it.id, label = it.label) },
+                    onSelected = { id ->
+                        gesto.options.firstOrNull { it.id == id }?.let { opcion ->
+                            viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
                 // El demo de verdad, no la miniatura de la rejilla ampliada: cinco barras
                 // con el muelle, un boton que se pulsa, el indicador real.
@@ -204,51 +214,6 @@ fun MotionSettingsScreen(
 }
 
 // ------------------------------------------------------------------ piezas del diseño
-
-/**
- * El segmentado del diseño: **una tira con filete**, no cuatro pastillas sueltas.
- *
- * `UniSegmentedControl` es el de los ajustes de la app y pinta cada opción como una pastilla
- * ancha con aire entre ellas: correcto ahí, donde hay tres opciones y sitio de sobra, y muy
- * distinto de esto. En Movimiento las opciones llegan a seis y comparten un solo contorno, con
- * la elegida rellena por dentro. Es lo que hace que la tarjeta no se coma media pantalla.
- */
-@Composable
-private fun SegmentoCompacto(
-    opciones: List<MotionChoice>,
-    elegida: String,
-    onElegir: (MotionChoice) -> Unit
-) {
-    val esquema = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, esquema.outlineVariant, RoundedCornerShape(20.dp))
-    ) {
-        opciones.forEach { opcion ->
-            val puesta = opcion.id == elegida
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(if (puesta) esquema.primary else Color.Transparent)
-                    .cleanClickable { onElegir(opcion) }
-                    .padding(vertical = 7.dp, horizontal = 3.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = opcion.label,
-                    fontSize = 9.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (puesta) esquema.onPrimary else esquema.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-}
 
 /**
  * El rótulo de grupo: nombre a la izquierda, recuento a la derecha.
@@ -317,9 +282,15 @@ private fun TarjetaDeAjuste(
      * pida el ajuste de superficie. Lo que hay que copiar del diseno es **lo de dentro**: el
      * icono tenido, la rejilla a dos columnas, las medidas del texto. El envoltorio ya lo
      * tiene la app resuelto, y ademas obedece a Forma y superficie como todo lo demas.
+     *
+     * `medium` y no `large`: sigue saliendo de la escala del tema —asi que el ajuste de
+     * esquinas la mueve como a todo lo demas— pero un escalon por debajo. Con `large`, una
+     * tarjeta de veinticinco lineas seguidas de otras veinticuatro se leia como una hilera de
+     * pastillas; el radio grande esta pensado para tarjetas sueltas, no para una lista larga.
      */
     UniCard(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         // UniCard pinta su contenido en un Box: sin la Column, el encabezado y lo de abajo se
@@ -460,6 +431,7 @@ private fun TarjetaDeInterruptor(
     val marcado = toggle.read(motion)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -595,6 +567,7 @@ private fun InterruptorMaestro(
         } else {
             MaterialTheme.colorScheme.primaryContainer
         },
+        shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
