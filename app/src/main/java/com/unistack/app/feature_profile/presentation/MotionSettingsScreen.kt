@@ -153,7 +153,10 @@ fun MotionSettingsScreen(
                 )
                 // El demo de verdad, no la miniatura de la rejilla ampliada: cinco barras
                 // con el muelle, un boton que se pulsa, el indicador real.
-                DemoDesplegable(gestoId = gesto.id) { DemoDeBase(gesto.id, motion) }
+                DemoDesplegable(
+                    gestoId = gesto.id,
+                    tituloDeVentana = ventanaDe(gesto.id)
+                ) { DemoDeBase(gesto.id, motion) }
             }
         }
 
@@ -484,7 +487,11 @@ private fun TarjetaDeInterruptor(
                 }
                 UniSwitch(checked = marcado, onCheckedChange = onCambio)
             }
-            DemoDesplegable(gestoId = toggle.id, texto = "Comparar") { DemoDeOtros(toggle.id, motion) }
+            DemoDesplegable(
+                gestoId = toggle.id,
+                texto = "Comparar",
+                tituloDeVentana = ventanaDe(toggle.id)
+            ) { DemoDeOtros(toggle.id, motion) }
         }
     }
 }
@@ -499,6 +506,7 @@ private fun TarjetaDeInterruptor(
 private fun DemoDesplegable(
     gestoId: String,
     texto: String = "Ver",
+    tituloDeVentana: String = "EN LA APP",
     contenido: @Composable () -> Unit
 ) {
     var abierto by rememberSaveable(gestoId) { mutableStateOf(false) }
@@ -509,15 +517,15 @@ private fun DemoDesplegable(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .padding(12.dp)
-            ) {
-                contenido()
-            }
+            /*
+             * El demo va dentro del marco de ventana, no en una caja lisa.
+             *
+             * Es el mismo que usan las muestras de Apariencia, y esta aqui por lo mismo: sin
+             * marco, un boton «Pulsame» dentro de una tarjeta de ajustes parece un boton **de
+             * la pantalla** y no un ejemplo. La cabecera con el punto dice «esto esta pasando»,
+             * que es justo lo que hace un demo que corre en bucle.
+             */
+            VentanaDeMuestra(titulo = tituloDeVentana) { contenido() }
         }
     }
 }
@@ -669,6 +677,24 @@ private fun colorDe(id: String): Color = when (id) {
     "guardado", "parallax" -> Color(0xFF8C93A8)
     "fijar", "haptica" -> Color(0xFFC08BE0)
     else -> Color(0xFF7F77DD)
+}
+
+/**
+ * De donde sale lo que ensena cada demo.
+ *
+ * El titulo de la ventana no es decorativo: dice en que parte de la app se va a ver eso. Un
+ * «Pulsame» bajo el rotulo «EN CUALQUIER TARJETA» se entiende sin leer la descripcion.
+ */
+private fun ventanaDe(id: String): String = when (id) {
+    "velocidad" -> "AL ABRIR UNA LISTA"
+    "rebote" -> "AL ENTRAR CUALQUIER COSA"
+    "pulsacion" -> "EN CUALQUIER TARJETA"
+    "carga" -> "MIENTRAS ESPERA"
+    "barraAnim" -> "BARRA DE ABAJO"
+    "gestos" -> "EN TAREAS"
+    "numeros" -> "CIFRAS DE INICIO"
+    "parallax" -> "ADJUNTOS DE UNA NOTA"
+    else -> "EN LA APP"
 }
 
 /** Cuánto dura una vuelta del bucle, por gesto. */

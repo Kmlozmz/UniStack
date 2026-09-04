@@ -14,6 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -328,17 +333,48 @@ private fun MuestraDeLetra() {
  * Aquí el arrastre vive en estado local y solo se guarda **al levantar el dedo**. De paso, la
  * app deja de reconstruir su tipografía entera cincuenta veces por gesto.
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
     // `key` sobre el valor guardado: si cambia desde fuera —restablecer apariencia, una copia
     // de seguridad— el deslizador se entera. Mientras se arrastra, manda lo local.
     var arrastre by remember(porcentaje) { mutableFloatStateOf(porcentaje.toFloat()) }
+    val esquema = MaterialTheme.colorScheme
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Slider(
             value = arrastre,
             onValueChange = { arrastre = it },
             onValueChangeFinished = { onSoltar(arrastre.toInt()) },
             valueRange = 85f..135f,
+            /*
+             * Los puntos vuelven, **sin volver a enganchar el arrastre**.
+             *
+             * `steps` hace las dos cosas a la vez —dibuja las marcas y obliga a saltar de una a
+             * otra— y por eso al quitarlo para poder arrastrar libre se fueron tambien los
+             * puntos. Aqui la pista se pinta a mano: el carril de Material debajo, y las once
+             * marcas encima, una cada cinco por ciento. Sirven de referencia y no de reja.
+             */
+            track = { estado ->
+                Box(contentAlignment = Alignment.Center) {
+                    SliderDefaults.Track(sliderState = estado, modifier = Modifier.fillMaxWidth())
+                    Canvas(modifier = Modifier.fillMaxWidth().height(4.dp)) {
+                        val marcas = 11
+                        val fraccion = (estado.value - 85f) / 50f
+                        repeat(marcas) { indice ->
+                            val x = size.width * indice / (marcas - 1f)
+                            // La marca ya recorrida va sobre el relleno y la que falta sobre el
+                            // carril: cada una necesita el color que contrasta con lo que tiene
+                            // detras, o desaparece justo al pasar por encima.
+                            val pasada = indice / (marcas - 1f) <= fraccion
+                            drawCircle(
+                                color = if (pasada) esquema.onPrimary else esquema.primary,
+                                radius = 2.2.dp.toPx(),
+                                center = Offset(x.coerceIn(2.2.dp.toPx(), size.width - 2.2.dp.toPx()), size.height / 2f)
+                            )
+                        }
+                    }
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         )
         Explicacion("Al ${arrastre.toInt()}%. Vale para toda la app, no solo para esta pantalla.")

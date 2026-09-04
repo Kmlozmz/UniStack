@@ -78,7 +78,7 @@ import com.unistack.app.feature_user.domain.TextFieldStyle
  * es exactamente lo que hacen las muestras que se animan.
  */
 @Composable
-private fun VentanaDeMuestra(
+internal fun VentanaDeMuestra(
     titulo: String,
     modifier: Modifier = Modifier,
     contenido: @Composable ColumnScope.() -> Unit
