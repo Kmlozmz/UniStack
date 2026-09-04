@@ -85,6 +85,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import com.unistack.app.core.design.components.botonQueSeRecoge
+import com.unistack.app.core.design.components.rememberDesplazamientoDeLista
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -186,6 +189,14 @@ fun NotesListScreen(
     var coloringSelection by rememberSaveable { mutableStateOf(false) }
     var reminderFor by rememberSaveable { mutableStateOf<String?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    /*
+     * El sentido del scroll, para el boton de crear.
+     *
+     * Se escucha con una conexion de scroll anidado y no con el estado de una lista concreta:
+     * Notas tiene dos disposiciones —rejilla y cuaderno— con dos tipos de estado distintos, y
+     * asi las dos alimentan lo mismo sin tocar sus firmas.
+     */
+    val desplazamiento = rememberDesplazamientoDeLista()
     val duracionParaDeshacer = duracionDeDeshacer()
     val alcance = rememberCoroutineScope()
 
@@ -332,10 +343,21 @@ fun NotesListScreen(
         floatingActionButton = {
             // En archivo y papelera no se crea nada: el boton llevaria a escribir una nota que
             // aparecería en otro sitio.
-            if (view == NotesView.NOTAS) NewNoteFab(onPick = onNewNoteClick)
+            if (view == NotesView.NOTAS) {
+                // Se recoge al bajar, con la variante elegida en Movimiento.
+                NewNoteFab(
+                    onPick = onNewNoteClick,
+                    modifier = Modifier.botonQueSeRecoge(desplazamiento.bajando)
+                )
+            }
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .nestedScroll(desplazamiento.conexion)
+        ) {
             when {
                 delMonton.isEmpty() && view == NotesView.ARCHIVO -> EmptyNotes(
                     headline = "El archivo está vacío",
@@ -874,7 +896,7 @@ private fun FilterBanner(subject: Subject, count: Int, onClear: () -> Unit) {
  * antes y la nota se abre ya con la cámara o el micrófono delante.
  */
 @Composable
-private fun NewNoteFab(onPick: (NewNoteStart) -> Unit) {
+private fun NewNoteFab(onPick: (NewNoteStart) -> Unit, modifier: Modifier = Modifier) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = expanded) { expanded = false }
 
@@ -888,6 +910,7 @@ private fun NewNoteFab(onPick: (NewNoteStart) -> Unit) {
 
     FloatingActionButtonMenu(
         expanded = expanded,
+        modifier = modifier,
         button = {
             ToggleFloatingActionButton(
                 checked = expanded,

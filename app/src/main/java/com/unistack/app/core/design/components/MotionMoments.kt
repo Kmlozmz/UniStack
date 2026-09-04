@@ -32,6 +32,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -49,6 +51,7 @@ import com.unistack.app.feature_user.domain.AttendanceMotion
 import com.unistack.app.feature_user.domain.AutosaveMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
+import com.unistack.app.feature_user.domain.FabScrollMotion
 import com.unistack.app.feature_user.domain.OverBudgetMotion
 import com.unistack.app.feature_user.domain.PinMotion
 import com.unistack.app.feature_user.domain.RecoveryMotion
@@ -452,3 +455,70 @@ fun Modifier.claseEnCurso(enCurso: Boolean, verde: Color): Modifier {
         ClassNowMotion.QUIETA -> this
     }
 }
+
+// ------------------------------------------------------------------ botón que se recoge
+
+/**
+ * El botón de crear, recogiéndose al bajar por una lista larga.
+ *
+ * `recogido` es «se está bajando ahora mismo», no «se ha bajado mucho»: lo que molesta es el
+ * botón tapando contenido **mientras se busca algo**, y en cuanto se para de bajar vuelve.
+ *
+ * «Encoge» pierde primero el ancho y después el resto, que es lo que hace que se lea como un
+ * botón que se recoge y no como uno que se estruja: en un botón sin rótulo —el de notas es un
+ * más— la escala es lo único que queda, y por eso baja al 72% en vez de al 88%.
+ */
+@Composable
+fun Modifier.botonQueSeRecoge(recogido: Boolean): Modifier {
+    val estilo = motionActual().fabOnScroll
+    if (estilo == FabScrollMotion.FIJO || !hayMovimiento()) return this
+
+    val avance by animateFloatAsState(
+        targetValue = if (recogido) 1f else 0f,
+        animationSpec = muelleDeMovimiento(),
+        label = "fab"
+    )
+    if (avance <= 0.01f) return this
+
+    return when (estilo) {
+        FabScrollMotion.ENCOGE -> this.graphicsLayer {
+            scaleX = 1f - 0.28f * avance
+            scaleY = 1f - 0.28f * avance
+        }
+        // Baja lo suyo y algo mas: tiene que salirse de la pantalla, no quedarse a medias.
+        FabScrollMotion.BAJA -> this.graphicsLayer { translationY = 190f * avance }
+        FabScrollMotion.DESVANECE -> this.graphicsLayer { alpha = 1f - avance }
+        FabScrollMotion.FIJO -> this
+    }
+}
+
+/**
+ * Si se esta bajando ahora mismo por la pantalla.
+ *
+ * Se mira el **sentido** del gesto y no la posicion: escondido por posicion, el boton se
+ * quedaria fuera al final de la lista, que es justo donde hace falta para crear algo nuevo.
+ *
+ * Escucha el scroll anidado en vez de un `LazyListState` a proposito. Notas tiene dos
+ * disposiciones —rejilla y cuaderno— con dos tipos de estado distintos, y la conexion sirve
+ * para las dos, para las que vengan, y para pantallas que ni siquiera usen una lista perezosa.
+ *
+ * Devuelve el estado y la conexion: el estado lo lee el boton, y la conexion se aplica al
+ * contenedor que se desplaza.
+ */
+class DesplazamientoDeLista internal constructor() {
+    var bajando by mutableStateOf(false)
+        internal set
+
+    val conexion: NestedScrollConnection = object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            // Un umbral pequeno: sin el, el temblor del dedo al parar cambia el sentido y el
+            // boton parpadea entre recogido y entero.
+            if (available.y < -1.5f) bajando = true
+            if (available.y > 1.5f) bajando = false
+            return Offset.Zero
+        }
+    }
+}
+
+@Composable
+fun rememberDesplazamientoDeLista(): DesplazamientoDeLista = remember { DesplazamientoDeLista() }

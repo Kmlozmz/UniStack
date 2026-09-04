@@ -6,6 +6,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.CircleShape
+import com.unistack.app.core.design.components.colorDeRecuperacion
 import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import androidx.compose.foundation.background
@@ -112,6 +113,23 @@ fun SubjectRow(
         else -> MaterialTheme.colorScheme.onSurface
     }
     val support = if (atRisk) sections.onAtRiskContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+    /*
+     * **Salir del rojo se ve pasar, con la variante elegida en Movimiento.**
+     *
+     * El estado cambiaba de golpe: una materia pasaba de «en riesgo» a «al dia» entre dos
+     * recomposiciones y no habia forma de notarlo. Con «viaje», el color cruza por el ambar
+     * antes de llegar al verde, que es lo que convierte un cambio en un acontecimiento.
+     *
+     * El rotulo del pronostico es donde mas se lee, porque es el que dice el estado con
+     * palabras; el fondo de la tarjeta se queda como estaba para no marear la lista entera.
+     */
+    val colorDelPronostico = colorDeRecuperacion(
+        recuperada = !atRisk,
+        riesgo = sections.onAtRiskContainer,
+        aviso = sections.atRisk,
+        alDia = sections.onTrack
+    )
 
     Surface(
         modifier = modifier
@@ -225,7 +243,7 @@ fun SubjectRow(
                 Text(
                     text = outlookLabel(calculation.outlook),
                     style = SectionLabelStyle,
-                    color = if (atRisk) sections.onAtRiskContainer else sections.onTrack
+                    color = colorDelPronostico
                 )
             }
 
