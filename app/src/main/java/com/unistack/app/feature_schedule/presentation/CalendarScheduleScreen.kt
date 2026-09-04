@@ -47,6 +47,7 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.marcaDeAsistencia
 import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -857,6 +858,16 @@ private fun ClassDetailsSheet(
                             .weight(1f)
                             .defaultMinSize(minHeight = 58.dp)
                             .animateWidth(interactionSource)
+                            /*
+                             * El gesto de «Marcar asistencia», solo en el boton de «Asisti».
+                             *
+                             * Es el momento que el ajuste describe —confirmar que fuiste— y no
+                             * cualquier cambio de estado: marcar una falta no se celebra.
+                             */
+                            .marcaDeAsistencia(
+                                marcada = selected && option == ClassAttendanceStatus.ATTENDED,
+                                color = option.color()
+                            )
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,

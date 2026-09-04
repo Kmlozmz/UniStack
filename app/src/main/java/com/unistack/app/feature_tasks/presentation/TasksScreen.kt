@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.DateRange
 import androidx.compose.material.icons.rounded.Today
+import com.unistack.app.core.design.components.celebracionDelDia
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSearchField
@@ -158,9 +159,27 @@ fun TasksScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val clearSearchFocus = { focusManager.clearFocus() }
+    /*
+     * **Cerrar la ultima pendiente del dia se celebra.**
+     *
+     * La app no lo detectaba: completar una tarea era completar una tarea, la sexta o la
+     * ultima. Era la mitad que faltaba del ajuste «Celebrar al terminar el dia», que se
+     * guardaba sin tener a que aplicarse.
+     *
+     * Se mira **antes** de marcarla, y con lo que queda vencido tambien: terminar lo de hoy
+     * dejando tres cosas atrasadas no es terminar el dia. Y solo al marcar, nunca al
+     * desmarcar, que ahi no hay nada que celebrar.
+     */
+    var celebrando by remember { mutableStateOf(false) }
     val onTaskChecked: (StudentTask, Boolean) -> Unit = { task, checked ->
         clearSearchFocus()
+        val eraLaUltima = checked &&
+            tasks.none {
+                !it.completed && it.id != task.id &&
+                    TaskDateUtils.fromMillis(it.dueDateMillis) <= TaskDateUtils.today()
+            }
         completionPrompt = viewModel.setTaskCompleted(task.id, checked)
+        if (eraLaUltima) celebrando = true
     }
     val clearFocusOnScroll = remember {
         object : NestedScrollConnection {
@@ -222,6 +241,9 @@ fun TasksScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            // La celebracion se pinta sobre la pantalla entera y sin ocupar sitio: si la lista
+            // diera un salto al aparecer, la celebracion seria una molestia.
+            .celebracionDelDia(disparada = celebrando, onTerminada = { celebrando = false })
     ) {
         LazyColumn(
             modifier = Modifier
