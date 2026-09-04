@@ -88,6 +88,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import com.unistack.app.core.design.components.botonQueSeRecoge
 import com.unistack.app.core.design.components.rememberDesplazamientoDeLista
+import androidx.compose.runtime.CompositionLocalProvider
+import com.unistack.app.core.design.components.LocalFilaRestaurada
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
@@ -197,6 +199,20 @@ fun NotesListScreen(
      * asi las dos alimentan lo mismo sin tocar sus firmas.
      */
     val desplazamiento = rememberDesplazamientoDeLista()
+    /*
+     * Cual es la nota que acaba de volver de la papelera.
+     *
+     * Es un disparo y no un estado: la nota **esta** en la lista desde el momento en que se
+     * deshace el borrado, y lo que hay que animar es su llegada. Se limpia sola pasado el
+     * gesto, para que no vuelva a animarse al desplazarse por la lista.
+     */
+    var recienRestaurada by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(recienRestaurada) {
+        if (recienRestaurada != null) {
+            kotlinx.coroutines.delay(900)
+            recienRestaurada = null
+        }
+    }
     val duracionParaDeshacer = duracionDeDeshacer()
     val alcance = rememberCoroutineScope()
 
@@ -352,6 +368,7 @@ fun NotesListScreen(
             }
         }
     ) { padding ->
+      CompositionLocalProvider(LocalFilaRestaurada provides recienRestaurada) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -426,6 +443,7 @@ fun NotesListScreen(
                 )
             }
         }
+      }
     }
 
     if (filtering) {
@@ -477,6 +495,7 @@ fun NotesListScreen(
                             )
                             if (respuesta == SnackbarResult.ActionPerformed) {
                                 viewModel.undoTrash(antes)
+                                recienRestaurada = antes.id
                             }
                         }
                     }
@@ -533,6 +552,9 @@ fun NotesListScreen(
                         )
                         if (respuesta == SnackbarResult.ActionPerformed) {
                             antes.forEach { viewModel.undoTrash(it) }
+                            // Con varias, se anima la primera: animar quince filas a la vez es
+                            // una sacudida, no una vuelta.
+                            recienRestaurada = antes.firstOrNull()?.id
                         }
                     }
                 }) {

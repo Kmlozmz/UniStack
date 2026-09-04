@@ -46,6 +46,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unistack.app.core.design.components.filaRestaurada
+import com.unistack.app.core.design.components.LocalFilaRestaurada
 import com.unistack.app.core.design.components.notaFijada
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_grades.domain.Subject
@@ -121,7 +123,11 @@ fun NoteCard(
     val accent = subject?.let { subjectAccent(it) }
     // El gesto de subir a «Fijadas», con la variante elegida. Va en la tarjeta y no en la
     // lista porque lo que se mueve es **esta** nota, no el orden de las demas.
-    val gestoDeFijar = Modifier.notaFijada(note.pinned)
+    val gestoDeFijar = Modifier
+        .notaFijada(note.pinned)
+        // La vuelta de la papelera. El local lo pone la pantalla que deshace el borrado; aqui
+        // solo se pregunta si esta nota es la que acaba de volver.
+        .filaRestaurada(LocalFilaRestaurada.current == note.id)
     val portada = remember(attachments) {
         attachments.firstOrNull { it.kind == AttachmentKind.IMAGE }
     }

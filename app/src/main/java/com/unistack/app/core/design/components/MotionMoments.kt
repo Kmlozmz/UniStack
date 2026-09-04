@@ -742,3 +742,15 @@ fun Modifier.filaRestaurada(restaurada: Boolean): Modifier {
             }
     }
 }
+
+/**
+ * Que fila acaba de volver de la papelera.
+ *
+ * Es un `CompositionLocal` y no un parametro a proposito: entre la pantalla que deshace el
+ * borrado y la tarjeta que tiene que animarse hay cuatro capas —dos disposiciones distintas y
+ * un envoltorio por cada una—, y ninguna de ellas tiene nada que ver con deshacer. Pasarlo a
+ * mano obligaria a que las cuatro conocieran un asunto que no es suyo.
+ *
+ * Es estado ambiental y momentaneo: exactamente para lo que sirve un local.
+ */
+val LocalFilaRestaurada = androidx.compose.runtime.compositionLocalOf<String?> { null }
