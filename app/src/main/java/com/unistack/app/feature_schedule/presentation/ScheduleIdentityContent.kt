@@ -61,6 +61,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import com.unistack.app.core.design.components.claseEnCurso
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -1037,12 +1040,41 @@ private fun WeekDayClassList(
                 )
             }
         }
+        /*
+         * **Que clase esta pasando ahora mismo.**
+         *
+         * La app no lo sabia: el horario ensenaba las clases del dia todas iguales, sin
+         * distinguir la que esta ocurriendo de la que fue esta manana o la de esta tarde. Es
+         * la mitad que faltaba del ajuste «Clase en curso» de Movimiento, que se guardaba sin
+         * tener a que aplicarse.
+         *
+         * `ahora` se recalcula por minuto —no en cada recomposicion— porque una clase que
+         * empieza a las diez tiene que marcarse a las diez, no cuando alguien toque la
+         * pantalla.
+         */
+        val hoy = LocalDate.now()
+        var minutoActual by remember { mutableIntStateOf(LocalTime.now().let { it.hour * 60 + it.minute }) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                minutoActual = LocalTime.now().let { it.hour * 60 + it.minute }
+                kotlinx.coroutines.delay(30_000)
+            }
+        }
+        val verde = LocalSectionColors.current.onTrack
+
         daySessions.forEach { session ->
             val subject = subjects.firstOrNull { it.id == session.subjectId }
             val detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
                 formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
                 session.identityPlace().room.ifBlank { "Sin aula" }
-            IdentityOutlinedRow(onClick = { onSessionClick(selectedDate, session) }) {
+            val enCurso = selectedDate == hoy &&
+                minutoActual >= session.startMinute &&
+                minutoActual < session.endMinute
+            IdentityOutlinedRow(
+                onClick = { onSessionClick(selectedDate, session) },
+                modifier = Modifier.claseEnCurso(enCurso, verde),
+                bordeColor = if (enCurso) verde else null
+            ) {
                 Box(
                     Modifier
                         .width(4.dp)
@@ -1123,14 +1155,17 @@ private fun AttendanceDot(status: ClassAttendanceStatus) {
 @Composable
 private fun IdentityOutlinedRow(
     onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    /** El borde, para que la clase en curso pueda marcarse en verde sin tocar el resto. */
+    bordeColor: Color? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val shape = MaterialTheme.shapes.medium
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+            .border(1.dp, bordeColor ?: MaterialTheme.colorScheme.outlineVariant, shape)
             .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
