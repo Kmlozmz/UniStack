@@ -38,6 +38,7 @@ import androidx.compose.material3.ShortNavigationBarItemDefaults
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
@@ -1540,8 +1541,8 @@ private fun UniStackBottomBarContent(
      */
     val animada = motionActual().animatedBottomBar
     var origen by remember { mutableStateOf(Offset.Zero) }
-    val centros = remember { mutableStateMapOf<String, Offset>() }
-    val destino = centros[selectedRoute]
+    val huecos = remember { mutableStateMapOf<String, Rect>() }
+    val destino = huecos[selectedRoute]
     val esquema = MaterialTheme.colorScheme
 
     // Apagada, la pastilla salta: un `tween` de un milisegundo, que es lo que pide quien no
@@ -1549,7 +1550,7 @@ private fun UniStackBottomBarContent(
     val compasPastilla: FiniteAnimationSpec<Float> =
         if (animada) MaterialTheme.motionScheme.defaultSpatialSpec() else tween(1)
     val pastillaX by animateFloatAsState(
-        targetValue = destino?.x ?: 0f,
+        targetValue = destino?.center?.x ?: 0f,
         animationSpec = compasPastilla,
         label = "pastilla"
     )
@@ -1557,8 +1558,19 @@ private fun UniStackBottomBarContent(
     Surface(color = esquema.surfaceContainer, modifier = modifier) {
         Box(modifier = Modifier.onGloballyPositioned { origen = it.positionInRoot() }) {
             if (destino != null) {
-                val anchoPastilla = with(LocalDensity.current) { 64.dp.toPx() }
-                val altoPastilla = with(LocalDensity.current) { 32.dp.toPx() }
+                /*
+                 * **La pastilla mide lo que mide el icono más el aire del indicador.**
+                 *
+                 * Con una medida fija de 64x32 salia mas ancha que la de Material y se veian
+                 * las dos, una dentro de la otra. Sacandola del hueco real del icono —24 de
+                 * icono, 16 de aire a cada lado y 4 arriba y abajo, que es lo que dice la
+                 * especificacion— cae exactamente donde caeria la de Material: si alguna vez
+                 * volviera a pintarse, quedarian superpuestas y no dobles.
+                 */
+                val aireX = with(LocalDensity.current) { 16.dp.toPx() }
+                val aireY = with(LocalDensity.current) { 4.dp.toPx() }
+                val anchoPastilla = destino.width + aireX * 2f
+                val altoPastilla = destino.height + aireY * 2f
                 val colorPastilla = esquema.secondaryContainer
                 Canvas(modifier = Modifier.matchParentSize()) {
                     // La `y` no se anima: las pestañas estan todas a la misma altura, y
@@ -1567,7 +1579,7 @@ private fun UniStackBottomBarContent(
                         color = colorPastilla,
                         topLeft = Offset(
                             pastillaX - origen.x - anchoPastilla / 2f,
-                            destino.y - origen.y - altoPastilla / 2f
+                            destino.center.y - origen.y - altoPastilla / 2f
                         ),
                         size = Size(anchoPastilla, altoPastilla),
                         cornerRadius = CornerRadius(altoPastilla / 2f, altoPastilla / 2f)
@@ -1648,7 +1660,7 @@ private fun UniStackBottomBarContent(
                      */
                     Box(
                         modifier = Modifier.onGloballyPositioned { coords ->
-                            centros[item.route] = coords.boundsInRoot().center
+                            huecos[item.route] = coords.boundsInRoot()
                         }
                     ) {
                         Icon(

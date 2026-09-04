@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.promedioQueSube
 import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniDivider
@@ -193,6 +194,22 @@ fun SubjectDetailScreen(
     val completedCutSummaries = cutSummaries
         .filter { it.status == CutStatus.COMPLETED }
         .sortedBy { it.cut.order }
+
+    /*
+     * **Qué corte se acaba de cerrar**, para estamparle el sello.
+     *
+     * Se compara con lo que había cerrado en la composición anterior y no con el estado a
+     * secas: al abrir la materia, todos los cortes cerrados lo estaban ya de antes, y sellarlos
+     * todos de golpe convertiría el gesto en un adorno de bienvenida.
+     */
+    val cerrados = completedCutSummaries.map { it.cut.id }.toSet()
+    var cerradosVistos by remember { mutableStateOf<Set<String>?>(null) }
+    var selloEn by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(cerrados) {
+        val previos = cerradosVistos
+        if (previos != null) (cerrados - previos).firstOrNull()?.let { selloEn = it }
+        cerradosVistos = cerrados
+    }
 
     // Una sola cuenta para toda la pantalla. Antes había tres: el promedio salía del
     // calculador, la proyección final se calculaba aquí a mano con otra fórmula —contaba un
@@ -368,7 +385,11 @@ fun SubjectDetailScreen(
                                 isActive = false,
                                 needsHistory = false,
                                 onClick = { onCutClick(subject.id, summary.cut.id) },
-                                dimmed = true
+                                dimmed = true,
+                                modifier = Modifier.selloDeCorte(
+                                    disparado = summary.cut.id == selloEn,
+                                    onTerminado = { selloEn = null }
+                                )
                             )
                         }
                     }
@@ -1355,7 +1376,8 @@ private fun CutCard(
     isActive: Boolean,
     needsHistory: Boolean,
     onClick: () -> Unit,
-    dimmed: Boolean = false
+    dimmed: Boolean = false,
+    modifier: Modifier = Modifier
 ) {
     val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
     val accent = when {
@@ -1369,7 +1391,7 @@ private fun CutCard(
     val highContrast = LocalAccessibilityPreferences.current.highContrastEnabled
     val cardAlpha = if (dimmed && !highContrast) 0.62f else 1f
     UniCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .alpha(cardAlpha)
             .bounceClick(onClick),

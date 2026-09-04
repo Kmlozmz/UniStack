@@ -557,7 +557,7 @@ object MotionCatalog {
         ),
         MotionToggle(
             "gestos", "Deslizar en las listas",
-            "Arrastra una fila para archivar o borrar.",
+            "Arrastra una tarea o un gasto hacia la izquierda para borrarlo.",
             { it.swipeGestures }, { p, v -> p.copy(swipeGestures = v) }
         ),
         MotionToggle(

@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
+import com.unistack.app.feature_user.domain.CutSealMotion
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -77,6 +78,99 @@ import kotlin.random.Random
  * preferencia. Así, apagar el movimiento apaga los veinticinco de golpe y añadir una variante
  * es tocar un solo sitio.
  */
+
+// ------------------------------------------------------------------ el corte que se cierra
+
+/**
+ * El sello de «cerrado» sobre el corte que se acaba de completar.
+ *
+ * **«Sello al cerrar un corte» era el único gesto del catálogo que no ocurría nunca.** Estaba
+ * dibujado en su vista previa, se guardaba y se leía de las preferencias, y ninguna pantalla lo
+ * llamaba: la tarjeta del corte pasaba a completada sin más.
+ *
+ * El disparo no puede vivir dentro de la tarjeta. Al completarse, el corte **cambia de lista**
+ * —sale de los abiertos y entra en los cerrados— y con eso su tarjeta se compone de cero: mire
+ * lo que mire, para ella el corte siempre ha estado cerrado. Por eso quien lo dispara es la
+ * pantalla, que es la única que ve las dos listas a la vez, igual que hace la celebración del
+ * día con la última pendiente.
+ */
+@Composable
+fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier {
+    val estilo = motionActual().cutSeal
+    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
+        LaunchedEffect(disparado) { if (disparado) onTerminado() }
+        return this
+    }
+
+    val avance by animateFloatAsState(
+        targetValue = if (disparado) 1f else 0f,
+        animationSpec = tweenDeMovimiento(baseMs = 1200),
+        label = "sello",
+        finishedListener = { if (it >= 1f) onTerminado() }
+    )
+    if (avance <= 0f) return this
+
+    return this.drawWithContent {
+        drawContent()
+        val centro = Offset(size.width / 2f, size.height / 2f)
+        val corto = size.minDimension
+        // Se apaga en el último cuarto: el sello marca el momento y despues deja ver la
+        // tarjeta, que es lo que se ha venido a consultar.
+        val vida = if (avance < 0.75f) 1f else 1f - (avance - 0.75f) / 0.25f
+        val verde = Color(0xFF11C045)
+
+        when (estilo) {
+            CutSealMotion.ESTAMPA, CutSealMotion.TINTA -> {
+                val posado = (avance / 0.35f).coerceAtMost(1f)
+                if (estilo == CutSealMotion.TINTA) {
+                    drawCircle(
+                        color = verde.copy(alpha = 0.16f * vida),
+                        radius = corto * 1.1f * posado,
+                        center = centro
+                    )
+                }
+                val escala = 2.2f - 1.2f * posado
+                rotate(degrees = -14f, pivot = centro) {
+                    drawRoundRect(
+                        color = verde.copy(alpha = vida),
+                        topLeft = Offset(
+                            centro.x - corto * 0.9f * escala,
+                            centro.y - corto * 0.30f * escala
+                        ),
+                        size = Size(corto * 1.8f * escala, corto * 0.60f * escala),
+                        cornerRadius = CornerRadius(corto * 0.14f, corto * 0.14f),
+                        style = Stroke(corto * 0.06f)
+                    )
+                }
+            }
+            // El lacre cae, se aplasta al llegar y se recupera.
+            CutSealMotion.LACRE -> {
+                val caida = (avance / 0.45f).coerceAtMost(1f)
+                val aplaste = 1f + 0.3f * ((avance - 0.45f) / 0.13f).coerceIn(0f, 1f) -
+                    0.3f * ((avance - 0.58f) / 0.17f).coerceIn(0f, 1f)
+                val y = size.height * (0.1f + 0.4f * caida)
+                val r = corto * 0.32f
+                drawOval(
+                    color = Color(0xFFD81C00).copy(alpha = vida),
+                    topLeft = Offset(size.width * 0.78f - r * aplaste, y - r / aplaste),
+                    size = Size(r * 2f * aplaste, r * 2f / aplaste)
+                )
+            }
+            // La cinta cruza la tarjeta entera, como el precinto de una caja.
+            CutSealMotion.CINTA -> {
+                val largo = size.width * 1.3f * (avance / 0.55f).coerceAtMost(1f)
+                rotate(degrees = -10f, pivot = centro) {
+                    drawRect(
+                        color = verde.copy(alpha = 0.85f * vida),
+                        topLeft = Offset(-size.width * 0.15f, centro.y - corto * 0.22f),
+                        size = Size(largo, corto * 0.44f)
+                    )
+                }
+            }
+            CutSealMotion.NINGUNA -> Unit
+        }
+    }
+}
 
 // ------------------------------------------------------------------ celebrar al terminar
 

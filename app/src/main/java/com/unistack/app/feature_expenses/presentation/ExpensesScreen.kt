@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.avisoDePresupuesto
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
@@ -1683,8 +1684,20 @@ private fun ExpenseDayGroup(
     }
 }
 
+/** El gasto, con el arrastre para borrar por delante. */
 @Composable
 private fun ExpenseRow(
+    expense: Expense,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    FilaDeslizable(onBorrar = onDeleteClick) {
+        FilaDeGasto(expense = expense, onEditClick = onEditClick, onDeleteClick = onDeleteClick)
+    }
+}
+
+@Composable
+private fun FilaDeGasto(
     expense: Expense,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit

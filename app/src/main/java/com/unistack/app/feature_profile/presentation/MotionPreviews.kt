@@ -844,56 +844,97 @@ private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
     val avance = tramo(t, 0.12f, 0.6f)
     val p = suave(avance)
 
-    texto("Cálculo III", 12f, 14f, c, c.tinta.copy(alpha = 0.8f), tamano = 8.5f, negrita = false)
-    texto("Lunes 10:00", 12f, 25f, c, c.tinta.copy(alpha = 0.45f), tamano = 7f, negrita = false)
+    /*
+     * **Es una fila de Horario, no tres cosas sueltas en una caja.**
+     *
+     * El nombre arriba a la izquierda, un circulo enorme flotando a la derecha y el estado
+     * descolgado abajo del todo: entre ellos no habia nada que los uniera, y por eso se veia
+     * raro. Metidos en la tarjeta —los tres renglones a la izquierda y el visto centrado a la
+     * derecha— se lee como la fila que se toca de verdad para marcar.
+     */
+    val tarjeta = Rect(8f, 10f, 92f, 54f)
+    drawRoundRect(
+        color = c.pieza,
+        topLeft = Offset(tarjeta.left, tarjeta.top),
+        size = Size(tarjeta.width, tarjeta.height),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f, 7f)
+    )
+    texto("Cálculo III", 16f, 21f, c, c.tinta.copy(alpha = 0.85f), tamano = 7.5f, negrita = false)
+    texto("Lunes 10:00", 16f, 31f, c, c.tinta.copy(alpha = 0.45f), tamano = 6.5f, negrita = false)
 
-    val centro = Offset(74f, 20f)
+    // El visto, centrado en el alto de la tarjeta: antes colgaba de la primera linea.
+    val centro = Offset(75f, tarjeta.center.y)
+    val r = 11f
+
+    /*
+     * **Cada variante marca en su momento, y el rotulo dice el mismo.**
+     *
+     * El estado se leia con un solo umbral para las cinco, asi que «Nada» salia con el visto
+     * puesto y «Sin marcar» debajo, diciendo dos cosas contrarias en la misma caja. Ahora cada
+     * una declara cuando queda marcada y el rotulo sale de ahi.
+     */
+    val marcado = when (v) {
+        "trazo" -> p > 0.72f
+        "barrido" -> p > 0.75f
+        else -> p > 0.5f
+    }
+
     when (v) {
+        // Sin animacion: el visto **aparece**, que es lo que significa «nada».
         "ninguna" -> {
-            drawCircle(c.verde, radius = 13f, center = centro)
-            visto(centro, 13f, 1f, c.fondo, grosor = 2.6f)
+            drawCircle(if (marcado) c.verde else c.pieza, radius = r, center = centro)
+            visto(centro, r, if (marcado) 1f else 0f, c.fondo, grosor = 2.4f)
         }
         "trazo" -> {
-            drawCircle(c.verde.copy(alpha = 0.22f), radius = 13f, center = centro)
-            visto(centro, 13f, p, c.verde, grosor = 2.8f)
+            drawCircle(c.verde.copy(alpha = 0.22f), radius = r, center = centro)
+            visto(centro, r, p, c.verde, grosor = 2.6f)
         }
         // El relleno sube por dentro, como un vaso que se llena.
         "relleno" -> {
-            drawCircle(c.pieza, radius = 13f, center = centro)
-            clipRect(centro.x - 13f, centro.y + 13f - 26f * p, centro.x + 13f, centro.y + 13f) {
-                drawCircle(c.verde, radius = 13f, center = centro)
+            drawCircle(c.pieza, radius = r, center = centro)
+            clipRect(centro.x - r, centro.y + r - 2f * r * p, centro.x + r, centro.y + r) {
+                drawCircle(c.verde, radius = r, center = centro)
             }
-            visto(centro, 13f, 1f, c.fondo.copy(alpha = p), grosor = 2.6f)
+            visto(centro, r, 1f, c.fondo.copy(alpha = p), grosor = 2.4f)
         }
         "rebote" -> {
             val escala = if (avance < 1f) muelle(avance, 0.9f) else 1f
             scale(escala.coerceAtLeast(0f), pivot = centro) {
-                drawCircle(c.verde, radius = 13f, center = centro)
-                visto(centro, 13f, 1f, c.fondo, grosor = 2.6f)
+                drawCircle(c.verde, radius = r, center = centro)
+                visto(centro, r, 1f, c.fondo, grosor = 2.4f)
             }
         }
-        // Una franja verde cruza la fila entera de izquierda a derecha.
+        // Una franja verde cruza la tarjeta entera de izquierda a derecha.
         "barrido" -> {
-            clipRect(8f, 6f, 8f + 84f * p, 34f) {
+            clipRect(tarjeta.left, tarjeta.top, tarjeta.left + tarjeta.width * p, tarjeta.bottom) {
                 drawRoundRect(
-                    color = c.verde.copy(alpha = 0.20f),
-                    topLeft = Offset(8f, 6f),
-                    size = Size(84f, 28f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                    color = c.verde.copy(alpha = 0.22f),
+                    topLeft = Offset(tarjeta.left, tarjeta.top),
+                    size = Size(tarjeta.width, tarjeta.height),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f, 7f)
                 )
             }
-            drawCircle(c.verde.copy(alpha = if (p > 0.75f) 1f else 0.2f), radius = 13f, center = centro)
-            visto(centro, 13f, if (p > 0.75f) 1f else 0f, c.fondo, grosor = 2.6f)
+            drawCircle(c.verde.copy(alpha = if (marcado) 1f else 0.2f), radius = r, center = centro)
+            visto(centro, r, if (marcado) 1f else 0f, c.fondo, grosor = 2.4f)
         }
     }
 
-    // El estado, que es lo que cambia al marcar.
-    val marcado = p > 0.6f
+    // El estado, dentro de la tarjeta y como chapa: suelto abajo no se leia como parte de la
+    // fila, que es justo lo que es.
+    val rotulo = if (marcado) "Asistí" else "Sin marcar"
+    val anchoChapa = if (marcado) 26f else 38f
+    drawRoundRect(
+        color = if (marcado) c.verde.copy(alpha = 0.22f) else c.tinta.copy(alpha = 0.08f),
+        topLeft = Offset(16f, 38f),
+        size = Size(anchoChapa, 10f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
+    )
     texto(
-        if (marcado) "Asistí" else "Sin marcar",
-        12f, 46f, c,
-        if (marcado) c.verde else c.tinta.copy(alpha = 0.4f),
-        tamano = 8f
+        rotulo,
+        16f + anchoChapa / 2f, 43f, c,
+        if (marcado) c.verde else c.tinta.copy(alpha = 0.45f),
+        tamano = 5.5f,
+        centrado = true
     )
 }
 

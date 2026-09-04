@@ -87,6 +87,10 @@ import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.duracionDeDeshacer
 import com.unistack.app.core.design.components.latidoDeVencido
+import com.unistack.app.core.design.components.tachadoDe
+import com.unistack.app.core.design.theme.motionActual
+import com.unistack.app.feature_user.domain.StrikeMotion
+import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -1247,8 +1251,45 @@ private fun PendingGradeTaskRow(
     }
 }
 
+/**
+ * La tarea de la lista, con el arrastre para borrar por delante.
+ *
+ * La envoltura va aqui y no en cada seccion de la pantalla: son cinco listas —vencidas, de hoy,
+ * proximas, sin fecha y completadas— y con el gesto puesto en cada una habria cinco sitios que
+ * mantener y cuatro donde olvidarse.
+ */
 @Composable
 private fun TaskCard(
+    task: StudentTask,
+    subjects: List<Subject>,
+    gradingScale: GradingScale,
+    onCardClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onCheckedChange: (Boolean) -> Unit,
+    onRegisterGradeClick: () -> Unit,
+    onNoGradeClick: () -> Unit,
+    onUnlinkGradeClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    FilaDeslizable(onBorrar = onDeleteClick, modifier = modifier) {
+        TarjetaDeTarea(
+            task = task,
+            subjects = subjects,
+            gradingScale = gradingScale,
+            onCardClick = onCardClick,
+            onCheckedChange = onCheckedChange,
+            onRegisterGradeClick = onRegisterGradeClick,
+            onNoGradeClick = onNoGradeClick,
+            onUnlinkGradeClick = onUnlinkGradeClick,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick
+        )
+    }
+}
+
+@Composable
+private fun TarjetaDeTarea(
     task: StudentTask,
     subjects: List<Subject>,
     gradingScale: GradingScale,
@@ -1330,14 +1371,32 @@ private fun TaskCard(
                         )
                     }
                 }
+                /*
+                 * **El tachado, con la forma elegida en Movimiento.**
+                 *
+                 * `tachadoDe` existía desde que se hizo el catálogo y no lo llamaba nadie: la
+                 * tarea completada salía con la raya de siempre eligieras lo que eligieras.
+                 *
+                 * Con un estilo puesto se quita la `textDecoration`, porque si no se pintan
+                 * las dos: la raya del sistema **y** la del gesto, cruzadas.
+                 */
+                val estiloTachado = motionActual().strikeThrough
                 Text(
                     text = task.title,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.ExtraBold,
-                    textDecoration = titleDecoration,
+                    textDecoration = if (estiloTachado == StrikeMotion.NINGUNA) {
+                        titleDecoration
+                    } else {
+                        TextDecoration.None
+                    },
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.tachadoDe(
+                        completado = task.completed,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                    )
                 )
                 if (task.description.isNotBlank()) {
                     Text(
