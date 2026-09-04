@@ -55,8 +55,23 @@ class UniStackApplication : Application(), Configuration.Provider {
             scheduleRepository = scheduleRepository,
             notesRepository = notesRepository
         )
+        /*
+         * **Que falle la comprobacion no puede cerrar la app.**
+         *
+         * `checkForUpdatesIfDue` lanza a proposito cuando GitHub o la red no responden: eso es
+         * para WorkManager, que necesita el fallo para reintentar mas tarde. Pero aqui la
+         * excepcion subia al `launch`, y una corrutina que revienta en un `CoroutineScope`
+         * suelto acaba en el manejador por defecto del hilo — es decir, cierra el proceso.
+         *
+         * El sintoma era exacto: abrir la app sin red y que se fuera al «Send feedback» de
+         * Android con un `IOException: No se pudo verificar actualizaciones`. Arrancar sin
+         * conexion es lo mas normal del mundo y no es motivo para nada.
+         *
+         * El reintento no se pierde: el trabajo programado justo debajo sigue haciendo la
+         * misma comprobacion, y ahi el fallo si sirve de algo.
+         */
         appScope.launch {
-            updateRepository.checkForUpdatesIfDue()
+            runCatching { updateRepository.checkForUpdatesIfDue() }
         }
         // Y que siga mirando aunque la app no se abra: sin esto, enterarse de una versión nueva
         // dependía de cerrar el proceso y volver a arrancarlo.

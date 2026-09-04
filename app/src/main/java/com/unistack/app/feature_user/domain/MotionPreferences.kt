@@ -399,6 +399,15 @@ object MotionCatalog {
         write = { prefs, choice -> write(prefs, choice as T) }
     )
 
+    /*
+     * **«Tirar para refrescar» no esta en la lista, y es a proposito.**
+     *
+     * La app lee de una base local: no hay nada que recargar, asi que el gesto no existe en
+     * ninguna pantalla. Ofrecer seis variantes de una animacion que nunca se va a ver es
+     * enganar a quien elige. El ajuste sigue guardandose —[MotionPreferences.refresh] y sus
+     * variantes se quedan— para que el dia que haya sincronizacion con la nube baste con
+     * devolver esta entrada a la lista y no haya que rehacer nada.
+     */
     val gestures: List<MotionGesture> = listOf(
         gesto<MotionSpeed>(
             "velocidad", GROUP_BASE, "Velocidad",
@@ -431,11 +440,7 @@ object MotionCatalog {
             "Cómo aparecen las filas al abrir.",
             { it.listEntry }, { p, v -> p.copy(listEntry = v) }
         ),
-        gesto<RefreshStyle>(
-            "refresco", GROUP_TRANSITIONS, "Tirar para refrescar",
-            "Qué aparece al tirar hacia abajo.",
-            { it.refresh }, { p, v -> p.copy(refresh = v) }
-        ),
+
 
         gesto<AttendanceMotion>(
             "asistencia", GROUP_ACADEMIC, "Marcar asistencia",

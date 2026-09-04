@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.circle
 import androidx.graphics.shapes.star
 import androidx.compose.material3.toPath
 import com.unistack.app.core.design.theme.LocalSectionColors
@@ -273,7 +274,7 @@ internal fun SubjectMark(letter: String, color: Color, seed: String, markSize: D
      * dos materias del mismo color— pero ya no es la unica.
      */
     val estilo = LocalAppearancePreferences.current.badgeShape
-    val polygon = remember(seed, estilo) { markShapeFor(seed, estilo) }
+    val polygon = remember(seed, estilo) { formaDeMateria(estilo, seed) }
     val path = polygon.toPath()
 
     Box(modifier = Modifier.size(markSize), contentAlignment = Alignment.Center) {
@@ -324,12 +325,27 @@ private fun markPolygon(vertices: Int, innerRatio: Float, rounding: Float): Roun
  * la misma** para la misma materia. Una forma que cambiara en cada recomposición dejaría de
  * servir para reconocerla de un vistazo, que es justo para lo que está.
  */
-private fun markShapeFor(seed: String, estilo: BadgeShape): RoundedPolygon = when (estilo) {
-    BadgeShape.CIRCULO -> markPolygon(vertices = 30, innerRatio = 1f, rounding = 0f)
+internal fun formaDeMateria(estilo: BadgeShape, seed: String): RoundedPolygon = when (estilo) {
+    /*
+     * **Aqui estaba el cierre de golpe de Academico.**
+     *
+     * «Circulo» y «Rombo» se pedian como estrellas con el radio interior **igual** al exterior,
+     * y `RoundedPolygon.star` no acepta eso: una estrella cuyas puntas y valles estan a la
+     * misma distancia no es una estrella, es un poligono, y hay que pedirlo con `RoundedPolygon`
+     * a secas. La excepcion saltaba al componer la primera fila de materia, asi que se llevaba
+     * la pantalla antes de pintar nada — de ahi que no hubiera ni registro ni dialogo.
+     */
+    BadgeShape.CIRCULO -> RoundedPolygon.circle(numVertices = 12, radius = 0.5f, centerX = 0.5f, centerY = 0.5f)
     BadgeShape.GALLETA -> MarkShapes[0]()
     BadgeShape.TREBOL -> MarkShapes[1]()
     BadgeShape.SOL -> MarkShapes[3]()
-    BadgeShape.ROMBO -> markPolygon(vertices = 4, innerRatio = 1f, rounding = 0.06f)
+    BadgeShape.ROMBO -> RoundedPolygon(
+        numVertices = 4,
+        radius = 0.5f,
+        centerX = 0.5f,
+        centerY = 0.5f,
+        rounding = CornerRounding(0.06f)
+    )
     // El reparto de siempre: sale del identificador y no de un sorteo, asi que es distinta de
     // la de al lado pero **siempre la misma** para la misma materia. Una forma que cambiara en
     // cada recomposicion dejaria de servir para reconocerla de un vistazo.
