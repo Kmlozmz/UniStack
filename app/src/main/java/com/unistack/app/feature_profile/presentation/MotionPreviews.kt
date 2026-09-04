@@ -267,13 +267,21 @@ private fun DrawScope.fila(
 }
 
 /**
- * Una pantalla entera de la app en miniatura: su cabecera y dos filas.
+ * Una pantalla de la app en miniatura, **con su nombre escrito**.
  *
- * Es lo que se mueve en las transiciones. Como rectángulo liso, «eje» y «zoom» se veían como
- * dos bloques de color deslizándose; con cabecera y filas dentro se entiende que lo que entra
- * es una pantalla y lo que sale es otra.
+ * Como rectangulo liso, «eje» y «zoom» eran dos bloques de color deslizandose y no se sabia
+ * cual era la que salia y cual la que entraba. Con «Materias» y «Cálculo III» escritos en la
+ * cabecera se lee de un vistazo que una pantalla deja paso a otra, que es de lo que va el
+ * ajuste.
  */
-private fun DrawScope.panel(x: Float, color: Color, alfa: Float = 1f, escala: Float = 1f) {
+private fun DrawScope.panel(
+    x: Float,
+    color: Color,
+    titulo: String,
+    tinta: TintaDemo,
+    alfa: Float = 1f,
+    escala: Float = 1f
+) {
     val ancho = 74f * escala
     val alto = 46f * escala
     val izq = x + (74f - ancho) / 2f
@@ -285,16 +293,10 @@ private fun DrawScope.panel(x: Float, color: Color, alfa: Float = 1f, escala: Fl
         size = Size(ancho, alto),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(7f, 7f)
     )
-    // La cabecera: el título de la pantalla.
-    drawRoundRect(
-        color = color.copy(alpha = color.alpha * a),
-        topLeft = Offset(izq + ancho * 0.10f, arriba + alto * 0.13f),
-        size = Size(ancho * 0.52f, alto * 0.11f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
-    )
+    texto(titulo, izq + ancho * 0.10f, arriba + alto * 0.17f, tinta, color.copy(alpha = a), tamano = 7.5f * escala)
     // Dos filas dentro, como cualquier lista de la app.
     repeat(2) { indice ->
-        val y = arriba + alto * (0.38f + indice * 0.26f)
+        val y = arriba + alto * (0.40f + indice * 0.26f)
         drawRoundRect(
             color = color.copy(alpha = color.alpha * a * 0.35f),
             topLeft = Offset(izq + ancho * 0.10f, y),
@@ -553,34 +555,50 @@ private fun DrawScope.carga(v: String, t: Float, c: TintaDemo) {
 
 private fun DrawScope.transicion(v: String, t: Float, c: TintaDemo) {
     val avance = suave(tramo(t, 0.15f, 0.7f))
+    // La que sale es «Materias» y la que entra «Cálculo III»: con los nombres puestos se sabe
+    // cual es cual sin tener que deducirlo del color.
+    val sale = "Materias"
+    val entra = "Cálculo III"
     when (v) {
-        "ninguna" -> panel(13f, if (avance < 0.5f) c.pieza else c.acento)
+        "ninguna" -> if (avance < 0.5f) {
+            panel(13f, c.pieza, sale, c)
+        } else {
+            panel(13f, c.acento, entra, c)
+        }
         "fundido" -> {
-            panel(13f, c.pieza, alfa = 1f - avance)
-            panel(13f, c.acento, alfa = avance)
+            panel(13f, c.pieza, sale, c, alfa = 1f - avance)
+            panel(13f, c.acento, entra, c, alfa = avance)
         }
         "eje" -> {
-            panel(13f - 90f * avance, c.pieza)
-            panel(13f + 90f * (1f - avance), c.acento)
+            panel(13f - 90f * avance, c.pieza, sale, c)
+            panel(13f + 90f * (1f - avance), c.acento, entra, c)
         }
         "contenedor" -> {
-            panel(13f, c.pieza, alfa = 1f - avance)
-            panel(13f, c.acento, alfa = avance, escala = 0.55f + 0.45f * avance)
+            panel(13f, c.pieza, sale, c, alfa = 1f - avance)
+            panel(13f, c.acento, entra, c, alfa = avance, escala = 0.55f + 0.45f * avance)
         }
         "abajo" -> {
-            panel(13f, c.pieza)
-            translate(top = 62f * (1f - avance)) { panel(13f, c.acento) }
+            panel(13f, c.pieza, sale, c)
+            translate(top = 62f * (1f - avance)) { panel(13f, c.acento, entra, c) }
         }
         "zoom" -> {
-            panel(13f, c.pieza, alfa = 1f - avance, escala = 1f + 0.35f * avance)
-            panel(13f, c.acento, alfa = avance, escala = 0.7f + 0.3f * avance)
+            panel(13f, c.pieza, sale, c, alfa = 1f - avance, escala = 1f + 0.35f * avance)
+            panel(13f, c.acento, entra, c, alfa = avance, escala = 0.7f + 0.3f * avance)
         }
     }
 }
 
 private fun DrawScope.listas(v: String, t: Float, c: TintaDemo) {
-    val filas = 3
-    repeat(filas) { indice ->
+    /*
+     * **Tres tareas con su nombre, no tres barras.**
+     *
+     * Con barras, «escalonada» y «cascada» se distinguen por la direccion y poco mas. Con los
+     * nombres puestos se ve **cual llega primero**, que es lo que de verdad las separa: la
+     * escalonada trae la de arriba antes, la cascada tambien pero cayendo, y el abanico las
+     * abre desde el borde como cartas.
+     */
+    val nombres = listOf("Taller 2", "Parcial", "Quiz 3")
+    repeat(3) { indice ->
         val y = 12f + indice * 16f
         val retardo = when (v) {
             "escalonada" -> indice * 0.10f
@@ -589,35 +607,49 @@ private fun DrawScope.listas(v: String, t: Float, c: TintaDemo) {
             else -> 0f
         }
         val bruto = tramo(t, 0.08f + retardo, 0.52f + retardo)
+
+        fun tarea(alfa: Float = 1f, giro: Float = 0f, ancho: Float = 76f, x: Float = 12f) {
+            rotate(degrees = giro, pivot = Offset(12f, y + 5f)) {
+                drawRoundRect(
+                    color = c.acento.copy(alpha = c.acento.alpha * alfa * 0.22f),
+                    topLeft = Offset(x, y),
+                    size = Size(ancho, 11f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
+                )
+                drawCircle(
+                    color = c.acento.copy(alpha = alfa),
+                    radius = 3.4f,
+                    center = Offset(x + 7f, y + 5.5f)
+                )
+                texto(nombres[indice], x + 14f, y + 5.5f, c, c.tinta.copy(alpha = 0.85f), tamano = 7f, negrita = false, alfa = alfa)
+            }
+        }
+
         when (v) {
-            "ninguna" -> fila(y, c.acento)
-            "fundido" -> fila(y, c.acento, alfa = suave(tramo(t, 0.1f, 0.6f)))
-            // Escalonada sube desde abajo, cascada **cae desde arriba** y con el doble de
-            // retardo entre filas: puestas una al lado de la otra ya no se confunden.
+            "ninguna" -> tarea()
+            "fundido" -> tarea(alfa = suave(tramo(t, 0.1f, 0.6f)))
             "escalonada" -> {
                 val p = suave(bruto)
-                translate(top = 14f * (1f - p)) { fila(y, c.acento, alfa = p) }
+                translate(top = 14f * (1f - p)) { tarea(alfa = p) }
             }
             "cascada" -> {
                 val p = suave(bruto)
-                translate(top = -18f * (1f - p)) { fila(y, c.acento, alfa = p) }
+                translate(top = -18f * (1f - p)) { tarea(alfa = p) }
             }
             // Escala no se desplaza: crece en su sitio, y las tres a la vez.
             "escala" -> {
                 val p = suave(tramo(t, 0.1f, 0.55f))
                 val ancho = 76f * (0.55f + 0.45f * p)
-                fila(y, c.acento, x = 12f + (76f - ancho) / 2f, ancho = ancho, alfa = p)
+                tarea(alfa = p, ancho = ancho, x = 12f + (76f - ancho) / 2f)
             }
             // Resorte llega desde muy abajo y se pasa de largo antes de asentarse.
             "resorte" -> {
                 val p = muelle(tramo(t, 0.08f, 0.75f), 0.85f)
-                translate(top = 30f * (1f - p)) { fila(y, c.acento) }
+                translate(top = 30f * (1f - p)) { tarea() }
             }
             "abanico" -> {
                 val p = suave(bruto)
-                rotate(degrees = -22f * (1f - p), pivot = Offset(12f, y + 5f)) {
-                    fila(y, c.acento, alfa = p)
-                }
+                tarea(alfa = p, giro = -22f * (1f - p))
             }
         }
     }
@@ -702,41 +734,67 @@ private fun DrawScope.refresco(v: String, t: Float, c: TintaDemo) {
 // ---------------------------------------------------------------------- académico
 
 private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
-    val centro = Offset(50f, 32f)
+    /*
+     * **La clase con su fecha, y el estado que cambia a «Asistí».**
+     *
+     * Un circulo verde con un visto no dice a que se asistio. Con la clase escrita arriba y el
+     * estado abajo se entiende el gesto entero: se marca una casilla y **la fila cambia de
+     * estado**, que es lo que pasa de verdad en Horario.
+     */
     val avance = tramo(t, 0.12f, 0.6f)
+    val p = suave(avance)
+
+    texto("Cálculo III", 12f, 14f, c, c.tinta.copy(alpha = 0.8f), tamano = 8.5f, negrita = false)
+    texto("Lunes 10:00", 12f, 25f, c, c.tinta.copy(alpha = 0.45f), tamano = 7f, negrita = false)
+
+    val centro = Offset(74f, 20f)
     when (v) {
         "ninguna" -> {
-            drawCircle(c.verde, radius = 16f, center = centro)
-            visto(centro, 16f, 1f, c.fondo)
+            drawCircle(c.verde, radius = 13f, center = centro)
+            visto(centro, 13f, 1f, c.fondo, grosor = 2.6f)
         }
         "trazo" -> {
-            drawCircle(c.verde.copy(alpha = 0.25f), radius = 16f, center = centro)
-            visto(centro, 16f, suave(avance), c.verde)
+            drawCircle(c.verde.copy(alpha = 0.22f), radius = 13f, center = centro)
+            visto(centro, 13f, p, c.verde, grosor = 2.8f)
         }
-        // El relleno sube por dentro del círculo, como un vaso que se llena.
+        // El relleno sube por dentro, como un vaso que se llena.
         "relleno" -> {
-            drawCircle(c.pieza, radius = 16f, center = centro)
-            clipRect(centro.x - 16f, centro.y + 16f - 32f * suave(avance), centro.x + 16f, centro.y + 16f) {
-                drawCircle(c.verde, radius = 16f, center = centro)
+            drawCircle(c.pieza, radius = 13f, center = centro)
+            clipRect(centro.x - 13f, centro.y + 13f - 26f * p, centro.x + 13f, centro.y + 13f) {
+                drawCircle(c.verde, radius = 13f, center = centro)
             }
-            visto(centro, 16f, 1f, c.fondo.copy(alpha = suave(avance)))
+            visto(centro, 13f, 1f, c.fondo.copy(alpha = p), grosor = 2.6f)
         }
         "rebote" -> {
             val escala = if (avance < 1f) muelle(avance, 0.9f) else 1f
             scale(escala.coerceAtLeast(0f), pivot = centro) {
-                drawCircle(c.verde, radius = 16f, center = centro)
-                visto(centro, 16f, 1f, c.fondo)
+                drawCircle(c.verde, radius = 13f, center = centro)
+                visto(centro, 13f, 1f, c.fondo, grosor = 2.6f)
             }
         }
-        // Una franja verde cruza la fila entera; el visto queda detrás y aparece al pasar.
+        // Una franja verde cruza la fila entera de izquierda a derecha.
         "barrido" -> {
-            fila(26f, c.pieza, x = 10f, ancho = 80f, alto = 12f)
-            clipRect(10f, 26f, 10f + 80f * suave(avance), 38f) {
-                fila(26f, c.verde, x = 10f, ancho = 80f, alto = 12f)
+            clipRect(8f, 6f, 8f + 84f * p, 34f) {
+                drawRoundRect(
+                    color = c.verde.copy(alpha = 0.20f),
+                    topLeft = Offset(8f, 6f),
+                    size = Size(84f, 28f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+                )
             }
-            visto(Offset(24f, 32f), 9f, if (avance > 0.25f) 1f else 0f, c.fondo, grosor = 2.5f)
+            drawCircle(c.verde.copy(alpha = if (p > 0.75f) 1f else 0.2f), radius = 13f, center = centro)
+            visto(centro, 13f, if (p > 0.75f) 1f else 0f, c.fondo, grosor = 2.6f)
         }
     }
+
+    // El estado, que es lo que cambia al marcar.
+    val marcado = p > 0.6f
+    texto(
+        if (marcado) "Asistí" else "Sin marcar",
+        12f, 46f, c,
+        if (marcado) c.verde else c.tinta.copy(alpha = 0.4f),
+        tamano = 8f
+    )
 }
 
 private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
@@ -877,41 +935,69 @@ private fun DrawScope.subeNota(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.recupera(v: String, t: Float, c: TintaDemo) {
+    /*
+     * **Sale del rojo: la nota cruza el aprobado y el estado cambia con ella.**
+     *
+     * Una barra que cambia de color no dice que se haya recuperado nada. Lo que lo dice es la
+     * cifra pasando de 2,8 a 3,4 y el estado de «En riesgo» a «Al dia»: el color acompana, no
+     * explica.
+     */
     val avance = tramo(t, 0.15f, 0.7f)
-    val y = 26f
+    val p = suave(avance)
+    val recuperada = p > 0.5f
+    val y = 30f
+
+    texto("Costos II", 12f, 15f, c, c.tinta.copy(alpha = 0.75f), tamano = 8.5f, negrita = false)
+
+    fun barra(color: Color, x: Float = 12f, ancho: Float = 52f) {
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(x, y),
+            size = Size(ancho, 12f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        )
+    }
+
     when (v) {
-        "seco" -> fila(y, if (avance < 0.5f) c.rojo else c.verde, x = 12f, ancho = 76f, alto = 13f)
-        // El color **viaja** por el ámbar: es un degradado en el tiempo, no un corte.
-        "viaje" -> {
-            val color = if (avance < 0.5f) {
-                mezclar(c.rojo, c.ambar, avance * 2f)
-            } else {
-                mezclar(c.ambar, c.verde, (avance - 0.5f) * 2f)
-            }
-            fila(y, color, x = 12f, ancho = 76f, alto = 13f)
-        }
+        "seco" -> barra(if (recuperada) c.verde else c.rojo)
+        // El color viaja por el ambar: es un degradado en el tiempo, no un corte.
+        "viaje" -> barra(
+            if (p < 0.5f) mezclar(c.rojo, c.ambar, p * 2f) else mezclar(c.ambar, c.verde, (p - 0.5f) * 2f)
+        )
         "pulso" -> {
-            fila(y, c.verde, x = 12f, ancho = 76f, alto = 13f)
+            barra(c.verde)
             val pulso = abs(sin(t * 2f * PI.toFloat()))
-            fila(y - 3f, c.verde.copy(alpha = 0.30f * pulso), x = 9f, ancho = 82f, alto = 19f)
+            drawRoundRect(
+                color = c.verde.copy(alpha = 0.28f * pulso),
+                topLeft = Offset(9f, y - 3f),
+                size = Size(58f, 18f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f)
+            )
         }
-        // Barrido: la franja verde **entra por la izquierda** sobre el rojo, con su borde a la vista.
+        // El verde entra por la izquierda sobre el rojo, con su borde a la vista.
         "barrido" -> {
-            fila(y, c.rojo, x = 12f, ancho = 76f, alto = 13f)
-            val borde = 12f + 76f * suave(avance)
-            clipRect(12f, y, borde, y + 13f) { fila(y, c.verde, x = 12f, ancho = 76f, alto = 13f) }
-            if (avance > 0f && avance < 1f) {
-                drawLine(c.fondo, Offset(borde, y), Offset(borde, y + 13f), strokeWidth = 2f)
+            barra(c.rojo)
+            val borde = 12f + 52f * p
+            clipRect(12f, y, borde, y + 12f) { barra(c.verde) }
+            if (p > 0f && p < 1f) {
+                drawLine(c.fondo, Offset(borde, y - 1f), Offset(borde, y + 13f), strokeWidth = 2f)
             }
         }
-        // Relevo: el rojo se **encoge** por la derecha mientras el verde crece por la izquierda.
-        // Son dos piezas que se ceden el sitio, no una capa encima de otra.
+        // Relevo: el rojo se encoge por la derecha mientras el verde crece por la izquierda.
         "relevo" -> {
-            val p = suave(avance)
-            fila(y, c.rojo, x = 12f + 76f * p, ancho = 76f * (1f - p), alto = 13f)
-            fila(y, c.verde, x = 12f, ancho = 76f * p, alto = 13f)
+            barra(c.rojo, x = 12f + 52f * p, ancho = 52f * (1f - p))
+            barra(c.verde, x = 12f, ancho = 52f * p)
         }
     }
+
+    // La cifra y el estado: lo que de verdad cuenta que se recupero.
+    texto(if (recuperada) "3,4" else "2,8", 78f, y + 6f, c, if (recuperada) c.verde else c.rojo, tamano = 14f, centrado = true)
+    texto(
+        if (recuperada) "Al día" else "En riesgo",
+        12f, 50f, c,
+        if (recuperada) c.verde else c.rojo,
+        tamano = 8f
+    )
 }
 
 private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
@@ -1264,75 +1350,151 @@ private fun DrawScope.latido(v: String, t: Float, c: TintaDemo) {
 }
 
 private fun DrawScope.deshacer(v: String, t: Float, c: TintaDemo) {
+    /*
+     * **El hueco que dejo el borrado, y la fila volviendo a ocuparlo.**
+     *
+     * La fila aparecia entre otras dos y no se entendia que estuviera **volviendo**. Con el
+     * hueco marcado con guiones se ve que ahi faltaba algo, y con el aviso de «Deshacer»
+     * abajo se sabe de donde viene.
+     */
     val avance = tramo(t, 0.12f, 0.68f)
     val p = suave(avance)
-    fila(12f, c.pieza); fila(44f, c.pieza)
-    when (v) {
-        "aparece" -> fila(28f, c.acento, alfa = p)
-        "vuelve" -> translate(left = 92f * (1f - p)) { fila(28f, c.acento) }
-        "cae" -> translate(top = -26f * (1f - p)) { fila(28f, c.acento, alfa = p) }
-        // Se despliega: no llega de ningún sitio, **crece de alto** desde una línea.
-        "despliega" -> {
-            val alto = 11f * p
-            fila(28f + (11f - alto) / 2f, c.acento, alto = max(alto, 1f))
-        }
-        "rebota" -> {
-            val m = if (avance < 1f) muelle(avance, 0.9f) else 1f
-            translate(left = 92f * (1f - m)) { fila(28f, c.acento) }
-        }
-        "gira" -> rotate(degrees = -80f * (1f - p), pivot = Offset(12f, 33.5f)) {
-            fila(28f, c.acento, alfa = p)
-        }
-        "destello" -> {
-            translate(left = 92f * (1f - p)) { fila(28f, c.acento) }
-            if (p > 0.85f) fila(28f, c.fondo, alfa = (1f - tramo(p, 0.85f, 1f)) * 0.8f)
+
+    fun otra(y: Float) {
+        drawRoundRect(
+            color = c.pieza,
+            topLeft = Offset(12f, y),
+            size = Size(76f, 12f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+        )
+    }
+    otra(10f)
+    otra(42f)
+
+    // El hueco: se ve mientras la fila no ha llegado.
+    if (p < 0.9f) {
+        drawRoundRect(
+            color = c.tinta.copy(alpha = 0.25f * (1f - p)),
+            topLeft = Offset(12f, 26f),
+            size = Size(76f, 12f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f),
+            style = Stroke(1.2f, pathEffect = guiones)
+        )
+    }
+
+    fun vuelta(y: Float, x: Float = 12f, alfa: Float = 1f, alto: Float = 12f, giro: Float = 0f) {
+        rotate(degrees = giro, pivot = Offset(12f, y + alto / 2f)) {
+            drawRoundRect(
+                color = c.acento.copy(alpha = alfa),
+                topLeft = Offset(x, y + (12f - alto) / 2f),
+                size = Size(76f, alto),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+            )
+            if (alto > 6f) texto("Taller 2", x + 5f, y + 6f, c, c.fondo, tamano = 7f, alfa = alfa)
         }
     }
+
+    when (v) {
+        "aparece" -> vuelta(26f, alfa = p)
+        "vuelve" -> vuelta(26f, x = 12f + 92f * (1f - p))
+        "cae" -> vuelta(26f - 24f * (1f - p), alfa = p)
+        "despliega" -> vuelta(26f, alto = (12f * p).coerceAtLeast(1f))
+        "rebota" -> {
+            val m = if (avance < 1f) muelle(avance, 0.9f) else 1f
+            vuelta(26f, x = 12f + 92f * (1f - m))
+        }
+        "gira" -> vuelta(26f, alfa = p, giro = -70f * (1f - p))
+        "destello" -> {
+            vuelta(26f, x = 12f + 92f * (1f - p))
+            if (p > 0.85f) {
+                drawRoundRect(
+                    color = c.fondo.copy(alpha = 0.7f * (1f - tramo(p, 0.85f, 1f))),
+                    topLeft = Offset(12f, 26f),
+                    size = Size(76f, 12f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                )
+            }
+        }
+    }
+
+    // El aviso de donde salio: sin el, la fila «aparece» en vez de «volver».
+    drawRoundRect(
+        color = c.tinta.copy(alpha = 0.14f),
+        topLeft = Offset(12f, 56f),
+        size = Size(76f, 0.1f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(0f, 0f)
+    )
+    texto("Deshacer", 12f, 58f, c, c.acento.copy(alpha = 0.9f), tamano = 7.5f)
 }
 
 private fun DrawScope.guardado(v: String, t: Float, c: TintaDemo) {
-    val entra = suave(tramo(t, 0.1f, 0.35f))
-    val sale = 1f - suave(tramo(t, 0.75f, 0.95f))
+    /*
+     * **La nota que se esta escribiendo, y el aviso de que quedo guardada.**
+     *
+     * El aviso salia sobre una barra gris y no se sabia que se estaba guardando. Con las lineas
+     * de la nota debajo se entiende: escribes, y arriba aparece la senal. Cada variante es una
+     * forma distinta de dar esa senal sin interrumpir.
+     */
+    val entra = suave(tramo(t, 0.12f, 0.34f))
+    val sale = 1f - suave(tramo(t, 0.72f, 0.94f))
     val alfa = entra * sale
-    fila(40f, c.pieza, x = 14f, ancho = 72f, alto = 8f)
+
+    texto("Resumen de Cálculo", 12f, 32f, c, c.tinta.copy(alpha = 0.75f), tamano = 8f, negrita = false)
+    listOf(42f, 50f).forEachIndexed { indice, y ->
+        drawRoundRect(
+            color = c.pieza,
+            topLeft = Offset(12f, y),
+            size = Size(if (indice == 0) 76f else 48f, 4f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+        )
+    }
+
     when (v) {
         "ninguna" -> Unit
         "pildora" -> {
+            val y = 16f - 5f * (1f - entra)
             drawRoundRect(
-                color = c.acento.copy(alpha = alfa),
-                topLeft = Offset(30f, 14f - 6f * (1f - entra)),
-                size = Size(40f, 15f),
+                color = c.verde.copy(alpha = alfa),
+                topLeft = Offset(30f, y - 8f),
+                size = Size(40f, 16f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
             )
+            texto("Guardado", 50f, y, c, c.fondo, tamano = 7.5f, centrado = true, alfa = alfa)
         }
-        "punto" -> drawCircle(c.verde.copy(alpha = alfa), radius = 5f, center = Offset(50f, 22f))
-        "visto" -> visto(Offset(50f, 22f), 11f, entra, c.verde.copy(alpha = sale), grosor = 3f)
-        // El anillo se **cierra** mientras guarda: la vuelta entera es el guardado terminado.
+        "punto" -> {
+            drawCircle(c.verde.copy(alpha = alfa), radius = 4f, center = Offset(84f, 16f))
+            texto("Guardado", 78f, 16f, c, c.verde.copy(alpha = alfa), tamano = 7f, centrado = false)
+        }
+        "visto" -> {
+            visto(Offset(50f, 16f), 11f, entra, c.verde.copy(alpha = sale), grosor = 2.6f)
+        }
+        // El anillo se cierra mientras guarda: la vuelta entera es el guardado terminado.
         "anillo" -> {
-            drawCircle(c.pieza, radius = 10f, center = Offset(50f, 22f), style = Stroke(3f))
+            drawCircle(c.pieza, radius = 9f, center = Offset(50f, 16f), style = Stroke(2.6f))
             drawArc(
-                color = c.acento,
+                color = c.verde,
                 startAngle = -90f,
-                sweepAngle = 360f * suave(tramo(t, 0.1f, 0.7f)),
+                sweepAngle = 360f * suave(tramo(t, 0.12f, 0.68f)),
                 useCenter = false,
-                topLeft = Offset(40f, 12f),
-                size = Size(20f, 20f),
-                style = Stroke(3f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                topLeft = Offset(41f, 7f),
+                size = Size(18f, 18f),
+                style = Stroke(2.6f, cap = androidx.compose.ui.graphics.StrokeCap.Round)
             )
         }
         "filete" -> {
-            val ancho = 100f * suave(tramo(t, 0.1f, 0.6f))
-            drawRect(c.acento.copy(alpha = sale), topLeft = Offset(0f, 0f), size = Size(ancho, 3f))
+            val ancho = 100f * suave(tramo(t, 0.12f, 0.6f))
+            drawRect(c.verde.copy(alpha = sale), topLeft = Offset(0f, 0f), size = Size(ancho, 3f))
+            texto("Guardado", 50f, 14f, c, c.verde.copy(alpha = alfa), tamano = 7.5f, centrado = true)
         }
         "nube" -> {
-            val y = 24f - 4f * entra
-            drawCircle(c.acento.copy(alpha = alfa), radius = 7f, center = Offset(45f, y))
-            drawCircle(c.acento.copy(alpha = alfa), radius = 9f, center = Offset(55f, y - 1f))
+            val y = 18f - 4f * entra
+            drawCircle(c.verde.copy(alpha = alfa), radius = 6f, center = Offset(45f, y))
+            drawCircle(c.verde.copy(alpha = alfa), radius = 8f, center = Offset(54f, y - 1f))
             drawRoundRect(
-                color = c.acento.copy(alpha = alfa),
-                topLeft = Offset(38f, y),
-                size = Size(24f, 8f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(4f, 4f)
+                color = c.verde.copy(alpha = alfa),
+                topLeft = Offset(39f, y),
+                size = Size(22f, 7f),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.5f, 3.5f)
             )
         }
     }
