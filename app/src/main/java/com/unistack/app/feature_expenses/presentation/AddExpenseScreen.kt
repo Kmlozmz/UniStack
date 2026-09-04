@@ -420,7 +420,7 @@ private fun ExpenseDateField(
 ) {
     PremiumFieldContainer(
         minHeight = 70.dp,
-        modifier = Modifier.cleanClickable(onClick)
+        modifier = Modifier.cleanClickable(onClick = onClick)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(
@@ -502,7 +502,7 @@ private fun ExpenseCategoryOption(
     Surface(
         modifier = modifier
             .height(56.dp)
-            .cleanClickable(onClick),
+            .cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         color = if (selected) tone else MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,

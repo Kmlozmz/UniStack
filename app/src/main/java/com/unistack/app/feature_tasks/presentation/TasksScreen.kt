@@ -1023,7 +1023,7 @@ private fun TaskFilterSummaryChip(
     )
 
     Surface(
-        modifier = Modifier.cleanClickable(onClick),
+        modifier = Modifier.cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainer
     ) {
@@ -1094,7 +1094,7 @@ private fun PendingGradesBanner(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
-                modifier = Modifier.cleanClickable(onToggle),
+                modifier = Modifier.cleanClickable(onClick = onToggle),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -1555,7 +1555,7 @@ private fun NewTaskFab(
     Surface(
         modifier = modifier
             .height(56.dp)
-            .cleanClickable(onClick),
+            .cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
@@ -1751,7 +1751,7 @@ private fun StatusFilterOption(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier.cleanClickable(onClick),
+        modifier = modifier.cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer
     ) {
@@ -1881,7 +1881,7 @@ private fun SubjectDropdownRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(44.dp)
-            .cleanClickable(onClick)
+            .cleanClickable(onClick = onClick)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

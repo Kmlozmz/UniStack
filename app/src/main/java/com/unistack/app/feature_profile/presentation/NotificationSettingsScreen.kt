@@ -390,7 +390,7 @@ private fun AlertRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .then(if (enabled) Modifier.cleanClickable(onToggle) else Modifier)
+            .then(if (enabled) Modifier.cleanClickable(onClick = onToggle) else Modifier)
             .padding(horizontal = 15.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(13.dp)

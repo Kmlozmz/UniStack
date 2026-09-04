@@ -884,7 +884,7 @@ private fun SemesterRow(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .cleanClickable(onEdit),
+                    .cleanClickable(onClick = onEdit),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -964,7 +964,7 @@ private fun NeededField(
                 .background(
                     if (active) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
                 )
-                .cleanClickable(onClick)
+                .cleanClickable(onClick = onClick)
                 .padding(horizontal = 15.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)

@@ -1,6 +1,8 @@
 package com.unistack.app.core.design.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,10 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
-import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.feature_user.domain.PressEffect
 
@@ -25,36 +29,54 @@ import com.unistack.app.feature_user.domain.PressEffect
  *
  * **«Al pulsar» era el ajuste más visible de los veinticinco y no hacía nada.** Se elegía entre
  * onda, hundir y rebote, se guardaba, y cada toque de la app seguía sin responder porque este
- * modificador tenía `indication = null` escrito a mano. Ahora las cuatro opciones pintan:
+ * modificador tenía `indication = null` escrito a mano.
  *
- * - **Nada**: como estaba, sin respuesta visual.
- * - **Onda**: la de Material, que es la que trae el tema.
- * - **Hundir**: el elemento se encoge un 4% mientras el dedo está encima.
- * - **Rebote**: se encoge y al soltar se pasa de largo con muelle.
+ * **El orden de dentro es lo que hace que funcione**, y costó dos intentos:
  *
- * Vivía copiado, palabra por palabra, en Gastos, en el formulario de gasto, en Materias y en
- * Tareas: cuatro copias idénticas que nadie iba a mantener a la vez.
+ * 1. El `graphicsLayer` del hundido va **antes** que nada. Un `graphicsLayer` solo transforma
+ *    lo que viene después en la cadena, así que puesto al final dejaba el fondo sin mover y
+ *    solo se hundía el texto.
+ * 2. El recorte va **antes** del `clickable`. La onda de Material se pinta en el nodo del
+ *    clic, así que sin recorte por delante se derrama fuera del botón —el cerco gris que se
+ *    salía por los lados—.
+ *
+ * @param shape la forma con la que recortar la onda. Sin ella se recorta al rectángulo, que es
+ *   lo correcto para una fila; un botón redondo tiene que pasar la suya o la onda le asoma por
+ *   las esquinas.
  */
 @Composable
-fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
+fun Modifier.cleanClickable(shape: Shape = RectangleShape, onClick: () -> Unit): Modifier {
     val efecto = motionActual().press
     val fuente = remember { MutableInteractionSource() }
     val pulsado by fuente.collectIsPressedAsState()
+    val enMovimiento = hayMovimiento()
 
+    /*
+     * Hundir y rebote **no pueden llegar al mismo sitio**, o se sienten iguales.
+     *
+     * Los dos bajaban al 96% y solo cambiaba la curva, que bajo el dedo no se distingue.
+     * Ahora hundir baja más y vuelve sin pasarse —es un botón que cede—, y rebote baja menos
+     * pero vuelve con un muelle muy suelto que **se pasa de 1**: al soltar da el saltito, que
+     * es de donde le viene el nombre.
+     */
+    val destino = when {
+        !pulsado || !enMovimiento -> 1f
+        efecto == PressEffect.HUNDIR -> 0.90f
+        efecto == PressEffect.REBOTE -> 0.94f
+        else -> 1f
+    }
     val escala by animateFloatAsState(
-        targetValue = when {
-            !pulsado || !hayMovimiento() -> 1f
-            efecto == PressEffect.HUNDIR || efecto == PressEffect.REBOTE -> 0.96f
-            else -> 1f
+        targetValue = destino,
+        animationSpec = if (efecto == PressEffect.REBOTE) {
+            spring(dampingRatio = 0.32f, stiffness = Spring.StiffnessMedium)
+        } else {
+            tweenDeMovimiento(baseMs = 90)
         },
-        // El rebote usa muelle y el hundido no: es lo unico que los separa, y sin ello las dos
-        // opciones se sentian iguales bajo el dedo.
-        animationSpec = if (efecto == PressEffect.REBOTE) muelleDeMovimiento() else tweenDeMovimiento(baseMs = 110),
         label = "pulsacion"
     )
 
     val conEscala = if (efecto == PressEffect.HUNDIR || efecto == PressEffect.REBOTE) {
-        graphicsLayer {
+        Modifier.graphicsLayer {
             scaleX = escala
             scaleY = escala
         }
@@ -64,11 +86,12 @@ fun Modifier.cleanClickable(onClick: () -> Unit): Modifier {
 
     return this
         .then(conEscala)
+        .clip(shape)
         .clickable(
             interactionSource = fuente,
-            // La onda sale de `LocalIndication`, que es la del tema: asi respeta el color de
-            // acento sin que haya que pasarselo.
-            indication = if (efecto == PressEffect.ONDA) LocalIndication.current else null,
+            // La onda sale de `LocalIndication`, que es la del tema: así respeta el color de
+            // acento sin que haya que pasárselo.
+            indication = if (efecto == PressEffect.ONDA && enMovimiento) LocalIndication.current else null,
             onClick = onClick
         )
 }

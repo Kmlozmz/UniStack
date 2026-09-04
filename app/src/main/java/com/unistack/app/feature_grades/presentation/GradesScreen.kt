@@ -391,7 +391,7 @@ private fun AddSubjectButton(
     Surface(
         modifier = modifier
             .height(56.dp)
-            .cleanClickable(onClick),
+            .cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,

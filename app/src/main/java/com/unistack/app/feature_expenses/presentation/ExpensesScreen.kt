@@ -928,7 +928,7 @@ private fun BudgetRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .cleanClickable(onClick),
+                .cleanClickable(onClick = onClick),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -1253,7 +1253,7 @@ private fun ExpenseCategorySheetOption(
     Surface(
         modifier = modifier
             .height(50.dp)
-            .cleanClickable(onClick),
+            .cleanClickable(onClick = onClick),
         shape = MaterialTheme.shapes.medium,
         color = if (selected) accent.copy(alpha = 0.12f) else ExpenseCardHigh,
         border = BorderStroke(
@@ -1398,11 +1398,20 @@ private fun RegisterExpenseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    /*
+     * La forma sale de **la escala de botones**, no de la de hojas.
+     *
+     * Estaba en `shapes.extraLarge`, que es el radio de una hoja o de una tarjeta grande: con
+     * el ajuste de esquinas en «Suaves» son cuarenta y dos puntos sobre un boton de cincuenta y
+     * seis de alto, o sea una pastilla entera, y el boton perdia su forma. `large` es lo que le
+     * toca a un boton de accion, y ademas la onda se recorta con ella para que no se salga.
+     */
+    val forma = MaterialTheme.shapes.large
     Surface(
         modifier = modifier
             .height(56.dp)
-            .cleanClickable(onClick),
-        shape = MaterialTheme.shapes.extraLarge,
+            .cleanClickable(shape = forma, onClick = onClick),
+        shape = forma,
         color = ExpenseCoral,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1828,7 +1837,7 @@ private fun ExpenseActionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .cleanClickable(onClick)
+            .cleanClickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
