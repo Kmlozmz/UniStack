@@ -2,6 +2,8 @@ package com.unistack.app.core.notifications
 
 import com.unistack.app.feature_user.domain.UserProfile
 import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 
 /** Qué hacer con un aviso concreto en este momento. */
@@ -95,5 +97,23 @@ internal object ReminderTiming {
         val restante = eventAtMillis - now
         if (restante <= 0L) return 0L
         return ((restante + 59_999L) / 60_000L).coerceAtLeast(1L)
+    }
+
+    /**
+     * ¿La ventana de asistencia del día [date] sigue abierta?
+     *
+     * La ventana cierra [delayMinutes] después de que la clase termina ([endMinuteOfDay]).
+     * Esto decide si la notificación de asistencia apunta a hoy o al próximo día: a
+     * diferencia del recordatorio previo (atado al inicio de la clase), la asistencia se
+     * ata al final.
+     */
+    fun isAttendanceWindowOpen(
+        endMinuteOfDay: Int,
+        delayMinutes: Long,
+        date: LocalDate,
+        now: LocalDateTime
+    ): Boolean {
+        val deadline = date.atStartOfDay().plusMinutes(endMinuteOfDay.toLong() + delayMinutes)
+        return deadline.isAfter(now)
     }
 }

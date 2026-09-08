@@ -82,6 +82,8 @@ private const val REARM_HOUR = 3
 
 /* Lo que se espera tras el final de una clase antes de preguntar si asististe. */
 private const val ATTENDANCE_PROMPT_DELAY_MINUTES = 20L
+private const val ATTENDANCE_CATCHUP_DELAY_MINUTES = 60L
+private const val ATTENDANCE_CATCHUP_REQUEST_CODE = 910060003
 private const val EXTRA_TITLE = "title"
 private const val EXTRA_BODY = "body"
 internal const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -304,8 +306,7 @@ class LocalReminderScheduler(private val context: Context) {
         sessions
             .filter(ClassSession::isValid)
             .mapNotNull { session ->
-                nextClassOccurrence(session)?.let { start ->
-                    val epochDay = start.toLocalDate().toEpochDay()
+                nextAttendanceTarget(session)?.let { (start, epochDay) ->
                     val occurrence = occurrences.firstOrNull {
                         it.sessionId == session.id && it.dateEpochDay == epochDay
                     }
@@ -349,6 +350,54 @@ class LocalReminderScheduler(private val context: Context) {
                     attendanceOf = session.id to epochDay
                 )
             }
+
+        // ── Repaso de fin de jornada ─────────────────────────────────────────────
+        // Si quedaron clases de hoy sin marcar, un aviso único después de la última.
+        // No sustituye al aviso individual de cada clase: lo complementa para el caso
+        // en que el usuario no atendió ninguno, y al final del día las preguntas se
+        // acumularon sin respuesta.
+        val ahora = LocalDateTime.now()
+        val hoy = ahora.toLocalDate()
+        val hoyEpochDay = hoy.toEpochDay()
+        val hoyDow = hoy.dayOfWeek.value
+
+        val sinMarcarHoy = sessions
+            .filter { it.isValid && it.occursOn(hoyEpochDay, hoyDow) }
+            .filter { session ->
+                hoy.atStartOfDay().plusMinutes(session.endMinute.toLong()).isBefore(ahora)
+            }
+            .filter { session ->
+                val occurrence = occurrences.firstOrNull {
+                    it.sessionId == session.id && it.dateEpochDay == hoyEpochDay
+                }
+                occurrence?.status == null || occurrence.status == ClassAttendanceStatus.PENDING
+            }
+
+        if (sinMarcarHoy.isNotEmpty()) {
+            val ultimaClase = sinMarcarHoy.maxOf { it.endMinute }
+            val triggerCatchup = hoy.atStartOfDay()
+                .plusMinutes(ultimaClase.toLong() + ATTENDANCE_CATCHUP_DELAY_MINUTES)
+
+            val cantidad = sinMarcarHoy.size
+            val nombres = sinMarcarHoy.mapNotNull { session ->
+                subjects.firstOrNull { it.id == session.subjectId }?.name
+            }
+            scheduleReminder(
+                profile = profile,
+                requestCode = ATTENDANCE_CATCHUP_REQUEST_CODE,
+                triggerAtMillis = triggerCatchup.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                subText = "Asistencia",
+                title = if (cantidad == 1) "Tienes 1 clase sin marcar hoy"
+                        else "Tienes $cantidad clases sin marcar hoy",
+                body = when {
+                    nombres.isEmpty() -> "Abre el calendario para revisar."
+                    nombres.size <= 2 -> "${nombres.joinToString(" y ")}. Toca para marcar."
+                    else -> "${nombres.take(2).joinToString(", ")} y ${nombres.size - 2} más. Toca para marcar."
+                },
+                targetRoute = AppRoutes.Calendar,
+                channelId = CHANNEL_ID_DIGEST
+            )
+        }
     }
 
     private fun scheduleAgendaEventReminders(profile: UserProfile, events: List<AgendaEvent>) {
@@ -392,6 +441,34 @@ class LocalReminderScheduler(private val context: Context) {
             .filter { session.occursOn(it.toEpochDay(), it.dayOfWeek.value) }
             .map { it.atTime(session.startMinute / 60, session.startMinute % 60) }
             .firstOrNull { it.isAfter(now) }
+    }
+
+    /**
+     * La siguiente fecha cuya ventana de asistencia no ha cerrado todavía.
+     *
+     * [nextClassOccurrence] busca la clase cuyo inicio esté en el futuro: una clase que ya
+     * empezó la salta. Eso mataba la notificación de asistencia del día, porque la ventana
+     * de asistencia se mide desde el **fin** de la clase, no desde su inicio. Una clase de
+     * 8 a 10 sigue necesitando su pregunta de asistencia hasta las 10:20 — pero a las 8:01
+     * [nextClassOccurrence] ya devolvía el día siguiente.
+     */
+    private fun nextAttendanceTarget(session: ClassSession): Pair<LocalDateTime, Long>? {
+        val now = LocalDateTime.now()
+        return (0L..84L).asSequence()
+            .map { now.toLocalDate().plusDays(it) }
+            .filter { session.occursOn(it.toEpochDay(), it.dayOfWeek.value) }
+            .firstOrNull { date ->
+                ReminderTiming.isAttendanceWindowOpen(
+                    endMinuteOfDay = session.endMinute,
+                    delayMinutes = ATTENDANCE_PROMPT_DELAY_MINUTES,
+                    date = date,
+                    now = now
+                )
+            }
+            ?.let { date ->
+                val start = date.atTime(session.startMinute / 60, session.startMinute % 60)
+                start to date.toEpochDay()
+            }
     }
 
     fun cancelScheduled(requestCode: Int) {

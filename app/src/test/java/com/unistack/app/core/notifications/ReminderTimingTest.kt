@@ -6,6 +6,8 @@ import com.unistack.app.feature_user.domain.UserProfile
 import java.time.LocalDateTime
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -227,6 +229,64 @@ class ReminderTimingTest {
                 perfil(quietHoursEnabled = true, quietHoursStartHour = 7, quietHoursEndHour = 7),
                 previsto,
                 zone
+            )
+        )
+    }
+
+    // --- isAttendanceWindowOpen() ---
+
+    @Test
+    fun `la ventana de asistencia sigue abierta con la clase en curso`() {
+        // Clase 8:00–10:00, con 20 min de margen. Ventana hasta 10:20.
+        val now = LocalDateTime.parse("2026-03-02T08:30")
+        assertTrue(
+            ReminderTiming.isAttendanceWindowOpen(
+                endMinuteOfDay = 10 * 60,
+                delayMinutes = 20L,
+                date = now.toLocalDate(),
+                now = now
+            )
+        )
+    }
+
+    @Test
+    fun `la ventana de asistencia sigue abierta justo despues de acabar la clase`() {
+        // Clase termina a las 10:00, ahora son las 10:05. Ventana hasta 10:20.
+        val now = LocalDateTime.parse("2026-03-02T10:05")
+        assertTrue(
+            ReminderTiming.isAttendanceWindowOpen(
+                endMinuteOfDay = 10 * 60,
+                delayMinutes = 20L,
+                date = now.toLocalDate(),
+                now = now
+            )
+        )
+    }
+
+    @Test
+    fun `la ventana de asistencia cierra pasados los minutos de margen`() {
+        // Clase termina a las 10:00, ahora son las 10:25. Ventana cerró a las 10:20.
+        val now = LocalDateTime.parse("2026-03-02T10:25")
+        assertFalse(
+            ReminderTiming.isAttendanceWindowOpen(
+                endMinuteOfDay = 10 * 60,
+                delayMinutes = 20L,
+                date = now.toLocalDate(),
+                now = now
+            )
+        )
+    }
+
+    @Test
+    fun `la ventana de asistencia de ayer esta cerrada`() {
+        val now = LocalDateTime.parse("2026-03-03T08:00")
+        val ayer = now.toLocalDate().minusDays(1)
+        assertFalse(
+            ReminderTiming.isAttendanceWindowOpen(
+                endMinuteOfDay = 10 * 60,
+                delayMinutes = 20L,
+                date = ayer,
+                now = now
             )
         )
     }
