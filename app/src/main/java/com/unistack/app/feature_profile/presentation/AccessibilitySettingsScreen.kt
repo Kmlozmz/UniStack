@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 
 package com.unistack.app.feature_profile.presentation
 
@@ -14,13 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Contrast
@@ -28,17 +28,18 @@ import androidx.compose.material.icons.rounded.FormatBold
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LayersClear
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.PanTool
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.RecordVoiceOver
 import androidx.compose.material.icons.rounded.Spellcheck
 import androidx.compose.material.icons.rounded.StayCurrentPortrait
-import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -47,6 +48,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,14 +59,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.SettingsCustomRow
 import com.unistack.app.core.design.components.SettingsGroup
-import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsRow
 import com.unistack.app.core.design.components.SettingsToggleRow
 import com.unistack.app.core.design.components.UniSegmentedControl
@@ -80,7 +83,6 @@ import com.unistack.app.feature_user.domain.ColorBlindPalette
 import com.unistack.app.feature_user.domain.ContrastLevel
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.ReadingFont
-import com.unistack.app.feature_user.domain.TouchTargetSize
 import com.unistack.app.feature_user.domain.UndoDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -107,16 +109,45 @@ fun AccessibilitySettingsScreen(
     val scope = rememberCoroutineScope()
     var testSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            LargeFlexibleTopAppBar(
+                title = {
+                    Text(
+                        text = "Accesibilidad",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                subtitle = {
+                    Text(
+                        text = "Visión, interacción, asistencia y sistema",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Atrás"
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
                 .padding(innerPadding),
             contentPadding = PaddingValues(
                 start = spacing.screenHorizontal,
@@ -126,14 +157,6 @@ fun AccessibilitySettingsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                SettingsHeader(
-                    title = "Accesibilidad",
-                    subtitle = "Visión, interacción, asistencia y sistema",
-                    onBackClick = onBackClick
-                )
-            }
-
             // ------------------------------------------------------------------ VISTA PREVIA
             item {
                 LiveAccessibilityPreview(
@@ -141,7 +164,8 @@ fun AccessibilitySettingsScreen(
                     colorBlindPalette = a11y.colorBlindPalette,
                     shapesBesidesColor = a11y.shapesBesidesColor,
                     boldText = a11y.boldText,
-                    readingFont = a11y.readingFont
+                    readingFont = a11y.readingFont,
+                    reduceTransparency = a11y.reduceTransparency
                 )
             }
 
@@ -180,9 +204,23 @@ fun AccessibilitySettingsScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UniSegmentedControl(
                                 selected = a11y.colorBlindPalette,
-                                options = ColorBlindPalette.entries.map {
-                                    UniSegmentedOption(value = it, label = it.etiqueta())
-                                },
+                                options = listOf(
+                                    UniSegmentedOption(
+                                        value = ColorBlindPalette.NINGUNA,
+                                        label = ColorBlindPalette.NINGUNA.etiqueta(),
+                                        weight = 0.85f
+                                    ),
+                                    UniSegmentedOption(
+                                        value = ColorBlindPalette.DEUTERANOPIA,
+                                        label = ColorBlindPalette.DEUTERANOPIA.etiqueta(),
+                                        weight = 1.35f
+                                    ),
+                                    UniSegmentedOption(
+                                        value = ColorBlindPalette.TRITANOPIA,
+                                        label = ColorBlindPalette.TRITANOPIA.etiqueta(),
+                                        weight = 1.05f
+                                    )
+                                ),
                                 onSelected = { valor ->
                                     viewModel.updateAccessibility { it.copy(colorBlindPalette = valor) }
                                 },
@@ -203,23 +241,18 @@ fun AccessibilitySettingsScreen(
                         }
                     )
 
-                    SettingsCustomRow(
+                    SettingsToggleRow(
                         icon = Icons.Rounded.Spellcheck,
-                        title = "Tipografía de lectura",
-                        subtitle = "Letra más abierta para facilitar la lectura continua",
-                        iconColor = sections.schedule
-                    ) {
-                        UniSegmentedControl(
-                            selected = a11y.readingFont,
-                            options = ReadingFont.entries.map {
-                                UniSegmentedOption(value = it, label = it.etiqueta())
-                            },
-                            onSelected = { valor ->
-                                viewModel.updateAccessibility { it.copy(readingFont = valor) }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                        title = "Tipografía para dislexia",
+                        subtitle = "Usa caracteres OpenDyslexic diseñados para evitar confusiones al leer",
+                        checked = a11y.readingFont == ReadingFont.DISLEXIA,
+                        iconColor = sections.schedule,
+                        onCheckedChange = { valor ->
+                            viewModel.updateAccessibility {
+                                it.copy(readingFont = if (valor) ReadingFont.DISLEXIA else ReadingFont.NORMAL)
+                            }
+                        }
+                    )
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.FormatBold,
@@ -247,7 +280,7 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ INTERACCIÓN Y MOVIMIENTO
             item {
-                SettingsGroup(label = "INTERACCIÓN Y MOVIMIENTO", rowCount = 4) {
+                SettingsGroup(label = "INTERACCIÓN Y MOVIMIENTO", rowCount = 2) {
                     SettingsCustomRow(
                         icon = Icons.Rounded.Animation,
                         title = "Movimiento",
@@ -261,24 +294,6 @@ fun AccessibilitySettingsScreen(
                             },
                             onSelected = { valor ->
                                 viewModel.updateAccessibility { it.copy(motionPreference = valor) }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    SettingsCustomRow(
-                        icon = Icons.Rounded.TouchApp,
-                        title = "Tamaño de los toques",
-                        subtitle = "Área táctil mínima (48dp, 56dp o 64dp) para botones e iconos",
-                        iconColor = sections.expenses
-                    ) {
-                        UniSegmentedControl(
-                            selected = a11y.touchTargetSize,
-                            options = TouchTargetSize.entries.map {
-                                UniSegmentedOption(value = it, label = it.etiqueta())
-                            },
-                            onSelected = { valor ->
-                                viewModel.updateAccessibility { it.copy(touchTargetSize = valor) }
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -326,17 +341,6 @@ fun AccessibilitySettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-
-                    SettingsToggleRow(
-                        icon = Icons.Rounded.PanTool,
-                        title = "Modo de una mano",
-                        subtitle = "Baja las cabeceras para alcanzarlas cómodamente con el pulgar",
-                        checked = a11y.oneHandedMode,
-                        iconColor = MaterialTheme.colorScheme.tertiary,
-                        onCheckedChange = { valor ->
-                            viewModel.updateAccessibility { it.copy(oneHandedMode = valor) }
-                        }
-                    )
                 }
             }
 
@@ -409,11 +413,12 @@ private fun LiveAccessibilityPreview(
     shapesBesidesColor: Boolean,
     boldText: Boolean,
     readingFont: ReadingFont,
+    reduceTransparency: Boolean,
     modifier: Modifier = Modifier
 ) {
     val sections = LocalSectionColors.current
     val borderColor = when (contrast) {
-        ContrastLevel.ESTANDAR -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ContrastLevel.ESTANDAR -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (reduceTransparency) 1f else 0.5f)
         ContrastLevel.ALTO -> MaterialTheme.colorScheme.outline
         ContrastLevel.MAXIMO -> MaterialTheme.colorScheme.primary
     }
@@ -495,9 +500,14 @@ private fun LiveAccessibilityPreview(
             }
 
             // Materia 2: En riesgo
+            val atRiskBg = if (reduceTransparency) {
+                sections.atRiskContainer
+            } else {
+                sections.atRiskContainer.copy(alpha = 0.6f)
+            }
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = sections.atRiskContainer.copy(alpha = 0.6f),
+                color = atRiskBg,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -669,11 +679,6 @@ private fun ReadingFont.etiqueta() = when (this) {
     ReadingFont.DISLEXIA -> "Dislexia"
 }
 
-private fun TouchTargetSize.etiqueta() = when (this) {
-    TouchTargetSize.ESTANDAR -> "Estándar"
-    TouchTargetSize.GRANDE -> "Grande"
-    TouchTargetSize.MAXIMO -> "Máximo"
-}
 
 private fun MotionPreference.etiquetaA11y() = when (this) {
     MotionPreference.FULL -> "Completo"

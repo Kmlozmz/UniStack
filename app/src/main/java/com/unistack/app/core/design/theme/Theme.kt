@@ -68,7 +68,13 @@ fun UniStackTheme(
         appearance.motion.haptics
     }
 
-    val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = appearance)
+    val effectiveAppearance = if (accessibility.reduceTransparency && appearance.surfaceStyle == SurfaceStyle.TRANSLUCENT) {
+        appearance.copy(surfaceStyle = SurfaceStyle.OUTLINED)
+    } else {
+        appearance
+    }
+
+    val scheme = expressiveColorScheme(darkTheme = darkTheme, oledTheme = oledTheme, appearance = effectiveAppearance)
         .conContraste(accessibility.contrast, accessibility.highContrastEnabled, darkTheme)
     /*
      * Verde, ambar y rojo, o todo del color de acento.
@@ -98,14 +104,15 @@ fun UniStackTheme(
      * despues que lo pise.
      */
     val typography = expressiveTypography(
-        appearanceTypography(
+        base = appearanceTypography(
             estilo = if (accessibility.readingFont == ReadingFont.DISLEXIA) {
                 TypographyStyle.SYSTEM
             } else {
                 appearance.typographyStyle
             },
             negrita = accessibility.boldText
-        )
+        ),
+        negrita = accessibility.boldText
     ).conInterlineado(
         if (accessibility.readingFont == ReadingFont.DISLEXIA) {
             // La dislexia pide aire entre renglones ademas de letra abierta: las dos cosas
@@ -135,7 +142,7 @@ fun UniStackTheme(
         LocalSectionColors provides sections,
         LocalVividAccents provides VividAccents.Default,
         LocalIsDarkTheme provides darkTheme,
-        LocalAppearancePreferences provides appearance,
+        LocalAppearancePreferences provides effectiveAppearance,
         LocalAccessibilityPreferences provides accessibility,
         LocalMotionDurationScale provides accessibility.motionScale(),
         LocalMotion provides appearance.motion,

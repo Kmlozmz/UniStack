@@ -258,52 +258,61 @@ data class SectionColors(
  * *cuándo* usar la variante enfatizada, y eso vive en las pantallas.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun expressiveTypography(base: Typography = Typography()): Typography = base.copy(
-    displayLarge = base.displayLarge.copy(fontSize = 57.sp, lineHeight = 64.sp, fontWeight = FontWeight.Normal),
-    displayLargeEmphasized = base.displayLarge.copy(fontSize = 57.sp, lineHeight = 64.sp, fontWeight = FontWeight.Bold),
+internal fun expressiveTypography(
+    base: Typography = Typography(),
+    negrita: Boolean = false
+): Typography {
+    val normalWeight = if (negrita) FontWeight.SemiBold else FontWeight.Normal
+    val mediumWeight = if (negrita) FontWeight.Bold else FontWeight.Medium
+    val boldWeight = if (negrita) FontWeight.ExtraBold else FontWeight.Bold
 
-    displayMedium = base.displayMedium.copy(fontSize = 45.sp, lineHeight = 52.sp, fontWeight = FontWeight.Normal),
-    displayMediumEmphasized = base.displayMedium.copy(fontSize = 45.sp, lineHeight = 52.sp, fontWeight = FontWeight.Bold),
+    return base.copy(
+        displayLarge = base.displayLarge.copy(fontSize = 57.sp, lineHeight = 64.sp, fontWeight = normalWeight),
+        displayLargeEmphasized = base.displayLarge.copy(fontSize = 57.sp, lineHeight = 64.sp, fontWeight = boldWeight),
 
-    displaySmall = base.displaySmall.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Normal),
-    displaySmallEmphasized = base.displaySmall.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold),
+        displayMedium = base.displayMedium.copy(fontSize = 45.sp, lineHeight = 52.sp, fontWeight = normalWeight),
+        displayMediumEmphasized = base.displayMedium.copy(fontSize = 45.sp, lineHeight = 52.sp, fontWeight = boldWeight),
 
-    headlineLarge = base.headlineLarge.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Normal),
-    headlineLargeEmphasized = base.headlineLarge.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold),
+        displaySmall = base.displaySmall.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = normalWeight),
+        displaySmallEmphasized = base.displaySmall.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = boldWeight),
 
-    headlineMedium = base.headlineMedium.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.Normal),
-    headlineMediumEmphasized = base.headlineMedium.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold),
+        headlineLarge = base.headlineLarge.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = normalWeight),
+        headlineLargeEmphasized = base.headlineLarge.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = boldWeight),
 
-    headlineSmall = base.headlineSmall.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Normal),
-    headlineSmallEmphasized = base.headlineSmall.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold),
+        headlineMedium = base.headlineMedium.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = normalWeight),
+        headlineMediumEmphasized = base.headlineMedium.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = boldWeight),
 
-    titleLarge = base.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Normal),
-    titleLargeEmphasized = base.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium),
+        headlineSmall = base.headlineSmall.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = normalWeight),
+        headlineSmallEmphasized = base.headlineSmall.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = boldWeight),
 
-    titleMedium = base.titleMedium.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium),
-    titleMediumEmphasized = base.titleMedium.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
+        titleLarge = base.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = normalWeight),
+        titleLargeEmphasized = base.titleLarge.copy(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = mediumWeight),
 
-    titleSmall = base.titleSmall.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
-    titleSmallEmphasized = base.titleSmall.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+        titleMedium = base.titleMedium.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = mediumWeight),
+        titleMediumEmphasized = base.titleMedium.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = boldWeight),
 
-    bodyLarge = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Normal),
-    bodyLargeEmphasized = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium),
+        titleSmall = base.titleSmall.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = mediumWeight),
+        titleSmallEmphasized = base.titleSmall.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = boldWeight),
 
-    bodyMedium = base.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal),
-    bodyMediumEmphasized = base.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
+        bodyLarge = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = normalWeight),
+        bodyLargeEmphasized = base.bodyLarge.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = mediumWeight),
 
-    bodySmall = base.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal),
-    bodySmallEmphasized = base.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
+        bodyMedium = base.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = normalWeight),
+        bodyMediumEmphasized = base.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = mediumWeight),
 
-    labelLarge = base.labelLarge.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
-    labelLargeEmphasized = base.labelLarge.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+        bodySmall = base.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = normalWeight),
+        bodySmallEmphasized = base.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = mediumWeight),
 
-    labelMedium = base.labelMedium.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
-    labelMediumEmphasized = base.labelMedium.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold),
+        labelLarge = base.labelLarge.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = mediumWeight),
+        labelLargeEmphasized = base.labelLarge.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = boldWeight),
 
-    labelSmall = base.labelSmall.copy(fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
-    labelSmallEmphasized = base.labelSmall.copy(fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold)
-)
+        labelMedium = base.labelMedium.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = mediumWeight),
+        labelMediumEmphasized = base.labelMedium.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = boldWeight),
+
+        labelSmall = base.labelSmall.copy(fontSize = 11.sp, lineHeight = 16.sp, fontWeight = mediumWeight),
+        labelSmallEmphasized = base.labelSmall.copy(fontSize = 11.sp, lineHeight = 16.sp, fontWeight = boldWeight)
+    )
+}
 
 /**
  * Estilo para rótulos de sección: versalitas espaciadas, como en las maquetas.

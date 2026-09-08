@@ -143,7 +143,12 @@ fun <T> UniSegmentedControl(
                 }
                 // Sin ajuste de línea: mientras `animateWidth` estrecha al vecino, el
                 // rótulo cabría en menos de lo que mide y `Text` lo partiría en dos.
-                Text(text = option.label, maxLines = 1, softWrap = false)
+                Text(
+                    text = option.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    softWrap = false
+                )
                 if (option.badge != null && option.badge > 0) {
                     Spacer(Modifier.size(8.dp))
                     Surface(

@@ -180,8 +180,15 @@ internal fun shapeFor(position: SettingsRowPosition): RoundedCornerShape {
 }
 
 @Composable
-internal fun shapesFor(position: SettingsRowPosition): ListItemShapes =
-    ListItemDefaults.shapes(shape = shapeFor(position))
+internal fun shapesFor(position: SettingsRowPosition): ListItemShapes {
+    val s = shapeFor(position)
+    return ListItemDefaults.shapes(
+        shape = s,
+        selectedShape = s,
+        focusedShape = s,
+        pressedShape = s
+    )
+}
 
 /**
  * Un rótulo de sección y, bajo él, sus filas.
@@ -314,8 +321,7 @@ fun SettingsGroupScope.SettingsToggleRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     SegmentedListItem(
-        checked = checked,
-        onCheckedChange = onCheckedChange,
+        onClick = { onCheckedChange(!checked) },
         shapes = shapesFor(nextPosition()),
         supportingContent = {
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall)
