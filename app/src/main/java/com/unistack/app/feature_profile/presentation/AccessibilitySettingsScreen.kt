@@ -418,7 +418,7 @@ private fun LiveAccessibilityPreview(
 ) {
     val sections = LocalSectionColors.current
     val borderColor = when (contrast) {
-        ContrastLevel.ESTANDAR -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (reduceTransparency) 1f else 0.5f)
+        ContrastLevel.ESTANDAR -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (reduceTransparency) 1f else 0.4f)
         ContrastLevel.ALTO -> MaterialTheme.colorScheme.outline
         ContrastLevel.MAXIMO -> MaterialTheme.colorScheme.primary
     }
@@ -430,130 +430,133 @@ private fun LiveAccessibilityPreview(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(borderWidth, borderColor)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "VISTA PREVIA EN VIVO",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${contrast.etiqueta()} · ${colorBlindPalette.etiqueta()}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Materia 1: Al día
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 4.dp, height = 36.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(sections.schedule)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Cálculo Multivariable",
-                            style = MaterialTheme.typography.titleSmallEmphasized
-                        )
-                        Text(
-                            text = "MAT-201 · Aula 302B",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "4.2",
-                            style = MaterialTheme.typography.titleMediumEmphasized
-                        )
-                        Text(
-                            text = if (shapesBesidesColor) "● Al día" else "Al día",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = sections.onTrack,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            // Materia 2: En riesgo
-            val atRiskBg = if (reduceTransparency) {
-                sections.atRiskContainer
-            } else {
-                sections.atRiskContainer.copy(alpha = 0.6f)
-            }
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = atRiskBg,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(width = 4.dp, height = 36.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(sections.atRisk)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Física Mecánica",
-                            style = MaterialTheme.typography.titleSmallEmphasized,
-                            color = sections.onAtRiskContainer
-                        )
-                        Text(
-                            text = "FIS-102 · Laboratorio 3",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = sections.onAtRiskContainer.copy(alpha = 0.8f)
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "2.8",
-                            style = MaterialTheme.typography.titleMediumEmphasized,
-                            color = sections.onAtRiskContainer
-                        )
-                        Text(
-                            text = if (shapesBesidesColor) "▲ En riesgo" else "En riesgo",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = sections.atRisk,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
             Text(
-                text = "Esta vista previa adapta sus colores, contrastes, formas y tipografías en tiempo real.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "VISTA PREVIA",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
             )
+
+            // Contenedor interior estilizado
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (reduceTransparency) 0.8f else 0.35f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Materia 1: Al día
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 4.dp, height = 32.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(sections.schedule)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Cálculo Multivariable",
+                                    style = MaterialTheme.typography.titleSmallEmphasized
+                                )
+                                Text(
+                                    text = "MAT-201 · Aula 302B",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "4.2",
+                                    style = MaterialTheme.typography.titleMediumEmphasized
+                                )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = sections.onTrackContainer.copy(alpha = if (reduceTransparency) 1f else 0.5f)
+                                ) {
+                                    Text(
+                                        text = if (shapesBesidesColor) "● Al día" else "Al día",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = sections.onTrack,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Materia 2: En riesgo
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, sections.atRisk.copy(alpha = if (reduceTransparency) 0.6f else 0.35f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 4.dp, height = 32.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(sections.atRisk)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Física Mecánica",
+                                    style = MaterialTheme.typography.titleSmallEmphasized
+                                )
+                                Text(
+                                    text = "FIS-102 · Laboratorio 3",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "2.8",
+                                    style = MaterialTheme.typography.titleMediumEmphasized
+                                )
+                                Surface(
+                                    shape = CircleShape,
+                                    color = sections.atRiskContainer.copy(alpha = if (reduceTransparency) 1f else 0.5f)
+                                ) {
+                                    Text(
+                                        text = if (shapesBesidesColor) "▲ En riesgo" else "En riesgo",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = sections.atRisk,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

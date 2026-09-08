@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -70,120 +70,107 @@ fun TermCloseScreen(
     var confirmando by rememberSaveable { mutableStateOf(false) }
     var escrito by rememberSaveable { mutableStateOf("") }
 
-    if (term == null) {
-        // Se puede llegar aquí con el periodo ya cerrado desde otra pantalla.
-        TermEmptyNote("No hay ningún periodo en curso que cerrar.", modifier.statusBarsPadding())
-        return
-    }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Antes de cerrar",
+        subtitle = term?.let { "${it.name} · desde el ${it.start.diaMes()}" },
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Antes de cerrar",
-                subtitle = term.name + " · desde el " + term.start.diaMes(),
-                onBackClick = onBackClick
-            )
-        }
-
-        if (report == null) {
+        if (term == null) {
+            item { TermEmptyNote("No hay ningún periodo en curso que cerrar.") }
+        } else if (report == null) {
             item { TermEmptyNote("Revisando el periodo…") }
-            return@LazyColumn
-        }
-
-        item {
-            TermCard {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = report.gaps.summaryLine(),
-                        color = if (report.isClean) colores.onTrack else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black
-                    )
-                    Text(
-                        text = if (report.isClean) {
-                            "El periodo está completo. Puedes cerrarlo cuando quieras."
-                        } else {
-                            "Puedes cerrar igualmente. Esto solo es para que no te enteres después."
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.5.sp,
-                        lineHeight = 17.sp
-                    )
-                }
-            }
-        }
-
-        if (report.gaps.isNotEmpty()) {
-            item { TermLabel("LO QUE FALTA", Modifier.padding(start = 4.dp, top = 6.dp)) }
-            items(report.gaps.size) { indice ->
-                val hueco: TermGap = report.gaps[indice]
-                TermGapRow(title = hueco.title(), detail = hueco.detail())
-            }
-        }
-
-        item { TermLabel("LO QUE SÍ ESTÁ COMPLETO", Modifier.padding(start = 4.dp, top = 6.dp)) }
-        item {
-            TermCard {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TermDoneRow(
-                        "${report.subjectsWithEverything} de ${report.subjectsTotal} " +
-                            "${if (report.subjectsTotal == 1) "materia" else "materias"} con todas las notas"
-                    )
-                    report.average?.let { promedio ->
-                        TermDoneRow("Promedio del periodo: $promedio")
-                    }
-                    if (report.failed.isNotEmpty()) {
-                        TermDoneRow(
-                            "${report.failed.size} " +
-                                "${if (report.failed.size == 1) "materia perdida" else "materias perdidas"}: " +
-                                report.failed.joinToString { it.name }
+        } else {
+            item {
+                TermCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = report.gaps.summaryLine(),
+                            color = if (report.isClean) colores.onTrack else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Black
+                        )
+                        Text(
+                            text = if (report.isClean) {
+                                "El periodo está completo. Puedes cerrarlo cuando quieras."
+                            } else {
+                                "Puedes cerrar igualmente. Esto solo es para que no te enteres después."
+                            },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.5.sp,
+                            lineHeight = 17.sp
                         )
                     }
                 }
             }
-        }
 
-        item {
-            Column(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (report.gaps.isNotEmpty()) {
+            if (report.gaps.isNotEmpty()) {
+                item { TermLabel("LO QUE FALTA", Modifier.padding(start = 4.dp, top = 6.dp)) }
+                items(report.gaps.size) { indice ->
+                    val hueco: TermGap = report.gaps[indice]
+                    TermGapRow(title = hueco.title(), detail = hueco.detail())
+                }
+            }
+
+            item { TermLabel("LO QUE SÍ ESTÁ COMPLETO", Modifier.padding(start = 4.dp, top = 6.dp)) }
+            item {
+                TermCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TermDoneRow(
+                            "${report.subjectsWithEverything} de ${report.subjectsTotal} " +
+                                "${if (report.subjectsTotal == 1) "materia" else "materias"} con todas las notas"
+                        )
+                        report.average?.let { promedio ->
+                            TermDoneRow("Promedio del periodo: $promedio")
+                        }
+                        if (report.failed.isNotEmpty()) {
+                            TermDoneRow(
+                                "${report.failed.size} " +
+                                    "${if (report.failed.size == 1) "materia perdida" else "materias perdidas"}: " +
+                                    report.failed.joinToString { it.name }
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (report.gaps.isNotEmpty()) {
+                        UniStackButton(
+                            text = "Ir a completarlas",
+                            onClick = onGoComplete,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                     UniStackButton(
-                        text = "Ir a completarlas",
-                        onClick = onGoComplete,
+                        text = if (report.isClean) "Cerrar el periodo" else "Cerrar de todas formas",
+                        onClick = {
+                            escrito = ""
+                            confirmando = true
+                        },
+                        // Con cosas a medias es la accion secundaria: la principal es ir a
+                        // terminarlas, y el relleno se lo lleva esa.
+                        variant = if (report.isClean) {
+                            UniStackButtonVariant.Filled
+                        } else {
+                            UniStackButtonVariant.Outlined
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                UniStackButton(
-                    text = if (report.isClean) "Cerrar el periodo" else "Cerrar de todas formas",
-                    onClick = {
-                        escrito = ""
-                        confirmando = true
-                    },
-                    // Con cosas a medias es la accion secundaria: la principal es ir a
-                    // terminarlas, y el relleno se lo lleva esa.
-                    variant = if (report.isClean) {
-                        UniStackButtonVariant.Filled
-                    } else {
-                        UniStackButtonVariant.Outlined
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
     }
 
-    if (confirmando) {
+    if (confirmando && term != null) {
         val limpio = report?.isClean != false
         val puedeCerrar = limpio || escrito.trim().equals(PALABRA_DE_CIERRE, ignoreCase = true)
         AlertDialog(

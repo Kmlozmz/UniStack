@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniCard
@@ -108,24 +108,16 @@ fun MotionSettingsScreen(
     val base = MotionCatalog.gestures.filter { it.group == MotionCatalog.GROUP_BASE }
     val porGrupo = MotionCatalog.grouped().filter { it.first != MotionCatalog.GROUP_BASE }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+    LargeTitleScaffold(
+        title = "Movimiento",
+        subtitle = "Cada gesto con sus variantes, comparables de un vistazo",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 6.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Movimiento",
-                subtitle = "Cada gesto con sus variantes, comparables de un vistazo",
-                onBackClick = onBackClick
-            )
-        }
-
         item { InterruptorMaestro(appearance.motionPreference, activo, viewModel) }
 
         item { RotuloDeGrupo("BASE", "${base.size} ajustes") }

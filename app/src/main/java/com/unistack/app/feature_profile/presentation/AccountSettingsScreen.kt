@@ -12,7 +12,7 @@ import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroupCard
 import com.unistack.app.core.design.components.SettingsRowIcon
 import androidx.compose.foundation.background
@@ -147,26 +147,16 @@ fun AccountSettingsScreen(
     }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .dismissKeyboardOnTapOutside(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Cuenta y perfil",
+        subtitle = "Nombre, foto y sincronización",
+        onBackClick = onBackClick,
+        modifier = modifier.dismissKeyboardOnTapOutside(),
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Cuenta y perfil",
-                subtitle = "Nombre, foto y sincronización",
-                onBackClick = onBackClick
-            )
-        }
         item {
             AccountPortrait(
                 name = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",

@@ -2,7 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.foundation.layout.Arrangement
@@ -85,25 +85,16 @@ fun AcademicSettingsScreen(
     }
     val cuts = current.gradingCutScheme.cuts.sortedBy { it.order }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Configuración académica",
+        subtitle = "Escala, metas y cortes",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Configuración académica",
-                subtitle = "Escala, metas y cortes",
-                onBackClick = onBackClick
-            )
-        }
         item {
             ScaleZoneBar(max = maxGrade, passing = current.passingGrade, target = current.targetAverage)
         }

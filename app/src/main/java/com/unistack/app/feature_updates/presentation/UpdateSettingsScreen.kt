@@ -2,12 +2,12 @@
 
 package com.unistack.app.feature_updates.presentation
 
+import com.unistack.app.core.design.components.LargeTitleScaffoldLayout
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniLoadingIndicator
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.theme.LocalSectionColors
-import com.unistack.app.core.design.components.SettingsHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterExitState
@@ -95,102 +95,96 @@ fun UpdateSettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val releases by viewModel.releases.collectAsStateWithLifecycle()
     val pendingApks by viewModel.pendingApks.collectAsStateWithLifecycle()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val installed = viewModel.currentVersionName
+    val pending = releases.filter { ReleaseVersion.isNewer(it.versionName, installed) }
 
     LaunchedEffect(Unit) {
         viewModel.refreshPendingApks()
         if (state is UpdateState.Idle) viewModel.checkForUpdates()
     }
 
-    // Solo lo que aún no tienes puesto. Las que ya instalaste no son novedad aquí; para eso
-    // está Novedades, que cuenta lo que trae la versión en la que estás.
-    val installed = viewModel.currentVersionName
-    val pending = releases.filter { ReleaseVersion.isNewer(it.versionName, installed) }
+    LargeTitleScaffoldLayout(
+        title = "Actualizaciones",
+        subtitle = "Comprueba y descarga",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        actions = {
+            UniIconButton(
+                icon = Icons.Rounded.Refresh,
+                contentDescription = "Volver a comprobar",
+                onClick = viewModel::checkForUpdates
+            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 8.dp,
+                    bottom = scrollBottomRoom + 96.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item("titular") { UpdateHeadline(state = state, installed = installed) }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding(),
-            contentPadding = PaddingValues(
-                start = 20.dp,
-                end = 20.dp,
-                top = 8.dp,
-                bottom = scrollBottomRoom + 96.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item("cabecera") {
-                SettingsHeader(
-                    title = "Actualizaciones",
-                    subtitle = "Comprueba y descarga",
-                    onBackClick = onBackClick,
-                    action = {
-                        UniIconButton(
-                            icon = Icons.Rounded.Refresh,
-                            contentDescription = "Volver a comprobar",
-                            onClick = viewModel::checkForUpdates
-                        )
+                if (state is UpdateState.Downloading) {
+                    item("progreso") {
+                        val downloading = state as UpdateState.Downloading
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SystemProgress(
+                                percent = downloading.progress
+                                    .takeIf { it != UpdateState.UNKNOWN_PROGRESS }
+                            )
+                            Text(
+                                text = "Descargando la v${downloading.info.versionName}…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                )
-            }
-            item("titular") { UpdateHeadline(state = state, installed = installed) }
+                }
 
-            if (state is UpdateState.Downloading) {
-                item("progreso") {
-                    val downloading = state as UpdateState.Downloading
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SystemProgress(
-                            percent = downloading.progress
-                                .takeIf { it != UpdateState.UNKNOWN_PROGRESS }
-                        )
-                        Text(
-                            text = "Descargando la v${downloading.info.versionName}…",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                items(pending, key = { it.versionName }) { release ->
+                    ReleaseEntry(release)
+                }
+
+                if (pending.isEmpty() && state !is UpdateState.Checking) {
+                    item("instalada") { InstalledCard(installed, viewModel.currentVersionCode) }
+                }
+
+                item("limpieza") {
+                    CleanupCard(
+                        visible = pendingApks > 0,
+                        apkCount = pendingApks,
+                        onClick = viewModel::clearDownload
+                    )
+                }
+
+                // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
+                // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
+                // minuto o hace una semana.
+                item("pie") {
+                    Text(
+                        text = "Tu versión: $installed.",
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
 
-            items(pending, key = { it.versionName }) { release ->
-                ReleaseEntry(release)
-            }
-
-            if (pending.isEmpty() && state !is UpdateState.Checking) {
-                item("instalada") { InstalledCard(installed, viewModel.currentVersionCode) }
-            }
-
-            item("limpieza") {
-                CleanupCard(
-                    visible = pendingApks > 0,
-                    apkCount = pendingApks,
-                    onClick = viewModel::clearDownload
-                )
-            }
-
-            // El pie dice qué versión llevas puesta y cada cuánto se mira: sin eso, una
-            // pantalla que dice «estás al día» no aclara si eso se comprobó hace un
-            // minuto o hace una semana.
-            item("pie") {
-                Text(
-                    text = "Tu versión: $installed.",
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            UpdateActions(
+                state = state,
+                canInstall = viewModel.canInstallPackages(),
+                onDownload = viewModel::downloadUpdate,
+                onInstall = viewModel::installUpdate,
+                onAllowInstall = viewModel::openInstallPermissionSettings,
+                onCheck = viewModel::checkForUpdates,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
-
-        UpdateActions(
-            state = state,
-            canInstall = viewModel.canInstallPackages(),
-            onDownload = viewModel::downloadUpdate,
-            onInstall = viewModel::installUpdate,
-            onAllowInstall = viewModel::openInstallPermissionSettings,
-            onCheck = viewModel::checkForUpdates,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 }
 

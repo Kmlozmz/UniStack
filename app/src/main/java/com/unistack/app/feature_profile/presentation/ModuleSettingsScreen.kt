@@ -2,9 +2,9 @@
 
 package com.unistack.app.feature_profile.presentation
 
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsSoloRow
 import com.unistack.app.feature_user.domain.offerableModules
-import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsToggleRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -63,25 +63,16 @@ fun ModuleSettingsScreen(
     val offerable = offerableModules()
     val off = offerable.count { it !in enabled }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Módulos",
+        subtitle = "Enciende solo lo que uses. Nada se borra al apagarlo",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Módulos",
-                subtitle = "Enciende solo lo que uses. Nada se borra al apagarlo",
-                onBackClick = onBackClick
-            )
-        }
         items(offerable, key = { it.name }) { module ->
             ModuleCard(
                 icon = module.icon(),

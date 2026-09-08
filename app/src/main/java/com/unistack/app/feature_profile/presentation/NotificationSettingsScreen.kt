@@ -2,7 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroupCard
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -131,25 +131,16 @@ fun NotificationSettingsScreen(
         }
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Notificaciones",
+        subtitle = "Avisos, permiso y silencio",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Notificaciones",
-                subtitle = "Avisos, permiso y silencio",
-                onBackClick = onBackClick
-            )
-        }
         item {
             NotificationPermissionCard(
                 granted = granted,

@@ -41,7 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -80,24 +80,16 @@ fun HomeSettingsScreen(
     val appearance = current.appearancePreferences
     val orden = appearance.homeSectionOrder
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Tu inicio",
+        subtitle = "Qué bloques salen, en qué orden y qué cuentan",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Tu inicio",
-                subtitle = "Qué bloques salen, en qué orden y qué cuentan",
-                onBackClick = onBackClick
-            )
-        }
-
         item {
             VentanaDeInicio(
                 nombre = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",

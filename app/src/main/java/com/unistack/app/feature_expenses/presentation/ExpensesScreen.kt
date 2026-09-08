@@ -63,6 +63,7 @@ import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.TrackChanges
 import androidx.compose.material.icons.rounded.Wallet
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -122,7 +123,6 @@ import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import com.unistack.app.core.design.theme.contentColorOn
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -1400,25 +1400,21 @@ private fun RegisterExpenseButton(
     modifier: Modifier = Modifier
 ) {
     /*
-     * La forma sale de **la escala de botones**, no de la de hojas.
-     *
-     * Estaba en `shapes.extraLarge`, que es el radio de una hoja o de una tarjeta grande: con
-     * el ajuste de esquinas en «Suaves» son cuarenta y dos puntos sobre un boton de cincuenta y
-     * seis de alto, o sea una pastilla entera, y el boton perdia su forma. `large` es lo que le
-     * toca a un boton de accion, y ademas la onda se recorta con ella para que no se salga.
+     * Botón de acción con morphing de Material 3 Expressive.
+     * En reposo usa forma cuadrada/redondeada y al pulsar aprieta las esquinas.
      */
-    val forma = MaterialTheme.shapes.large
-    Surface(
-        modifier = modifier
-            .height(56.dp)
-            .cleanClickable(shape = forma, onClick = onClick),
-        shape = forma,
-        color = ExpenseCoral,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        shapes = UniStackButtonDefaults.shapes,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = ExpenseCoral,
+            contentColor = contentColorOn(ExpenseCoral)
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
         ) {

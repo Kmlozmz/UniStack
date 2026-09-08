@@ -2,7 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
 import com.unistack.app.core.design.components.SettingsRow
 import androidx.compose.foundation.layout.Arrangement
@@ -53,25 +53,16 @@ fun DataSettingsScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
     var showRestartDialog by rememberSaveable { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Datos y respaldos",
+        subtitle = "Copias, exportar y restaurar",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Datos y respaldos",
-                subtitle = "Copias, exportar y restaurar",
-                onBackClick = onBackClick
-            )
-        }
         item {
             BackupSection(
                 viewModel = viewModel,

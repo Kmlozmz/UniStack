@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -52,24 +52,16 @@ fun AcademicHistoryScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Histórico académico",
+        subtitle = "Tus periodos, uno a uno",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Histórico académico",
-                subtitle = "Tus periodos, uno a uno",
-                onBackClick = onBackClick
-            )
-        }
-
         if (state.loaded && state.summaries.isEmpty()) {
             item {
                 TermCard {
@@ -79,67 +71,66 @@ fun AcademicHistoryScreen(
                     )
                 }
             }
-            return@LazyColumn
-        }
+        } else {
+            /*
+             * El acumulado solo cuenta lo cerrado.
+             *
+             * Meter el periodo en curso lo haría bailar cada vez que se registra una nota, y un
+             * promedio de carrera que cambia a diario no es un promedio de carrera.
+             */
+            item {
+                TermCard {
+                    Row(verticalAlignment = Alignment.Top) {
+                        TermStat(
+                            label = "Promedio acumulado",
+                            value = state.cumulativeAverage?.toString(),
+                            modifier = Modifier.weight(1f),
+                            note = if (state.closedCount == 0) {
+                                "Aparece al cerrar tu primer periodo"
+                            } else {
+                                "${state.closedCount} ${if (state.closedCount == 1) "periodo cerrado" else "periodos cerrados"} · " +
+                                    "${state.subjectsInHistory} ${if (state.subjectsInHistory == 1) "materia" else "materias"}"
+                            }
+                        )
+                    }
+                }
+            }
 
-        /*
-         * El acumulado solo cuenta lo cerrado.
-         *
-         * Meter el periodo en curso lo haría bailar cada vez que se registra una nota, y un
-         * promedio de carrera que cambia a diario no es un promedio de carrera.
-         */
-        item {
-            TermCard {
-                Row(verticalAlignment = Alignment.Top) {
-                    TermStat(
-                        label = "Promedio acumulado",
-                        value = state.cumulativeAverage?.toString(),
-                        modifier = Modifier.weight(1f),
-                        note = if (state.closedCount == 0) {
-                            "Aparece al cerrar tu primer periodo"
-                        } else {
-                            "${state.closedCount} ${if (state.closedCount == 1) "periodo cerrado" else "periodos cerrados"} · " +
-                                "${state.subjectsInHistory} ${if (state.subjectsInHistory == 1) "materia" else "materias"}"
-                        }
+            val activos = state.summaries.filter { it.term.isActive }
+            val cerrados = state.summaries.filter { !it.term.isActive }
+
+            if (activos.isNotEmpty()) {
+                item { TermLabel("EN CURSO", Modifier.padding(start = 4.dp, top = 6.dp)) }
+                items(activos, key = { it.term.id }) { resumen ->
+                    TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
+                }
+                item {
+                    UniStackButton(
+                        text = "Cerrar el periodo",
+                        onClick = onCloseTermClick,
+                        variant = UniStackButtonVariant.Outlined,
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
                     )
                 }
             }
-        }
 
-        val activos = state.summaries.filter { it.term.isActive }
-        val cerrados = state.summaries.filter { !it.term.isActive }
-
-        if (activos.isNotEmpty()) {
-            item { TermLabel("EN CURSO", Modifier.padding(start = 4.dp, top = 6.dp)) }
-            items(activos, key = { it.term.id }) { resumen ->
-                TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
+            if (cerrados.isNotEmpty()) {
+                item { TermLabel("CERRADOS", Modifier.padding(start = 4.dp, top = 10.dp)) }
+                items(cerrados, key = { it.term.id }) { resumen ->
+                    TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
+                }
             }
+
             item {
-                UniStackButton(
-                    text = "Cerrar el periodo",
-                    onClick = onCloseTermClick,
-                    variant = UniStackButtonVariant.Outlined,
-                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                Text(
+                    text = "Un periodo cerrado sigue siendo editable: las notas llegan tarde y los " +
+                        "profesores corrigen. Lo que no vuelve es a ser el periodo activo.",
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                    fontSize = 11.5.sp,
+                    lineHeight = 16.sp
                 )
             }
-        }
-
-        if (cerrados.isNotEmpty()) {
-            item { TermLabel("CERRADOS", Modifier.padding(start = 4.dp, top = 10.dp)) }
-            items(cerrados, key = { it.term.id }) { resumen ->
-                TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
-            }
-        }
-
-        item {
-            Text(
-                text = "Un periodo cerrado sigue siendo editable: las notas llegan tarde y los " +
-                    "profesores corrigen. Lo que no vuelve es a ser el periodo activo.",
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.outline,
-                fontSize = 11.5.sp,
-                lineHeight = 16.sp
-            )
         }
     }
 }

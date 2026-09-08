@@ -3,7 +3,7 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.feature_user.domain.portraitUrl
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
 import androidx.compose.material.icons.rounded.History
 import com.unistack.app.core.design.components.SettingsRow
@@ -74,25 +74,16 @@ fun SettingsHubScreen(
     val spacing = LocalInterfaceSpacing.current
     val sections = LocalSectionColors.current
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Configuración",
+        subtitle = "Tu experiencia, tus datos y tu semestre",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Configuración",
-                subtitle = "Tu experiencia, tus datos y tu semestre",
-                onBackClick = onBackClick
-            )
-        }
         item {
             SettingsIdentityCard(profile = profile, onClick = onProfileClick)
         }

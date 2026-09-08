@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -59,98 +59,92 @@ fun ClosedTermDetailScreen(
     val colores = LocalSectionColors.current
     val resumen = state.summaries.firstOrNull { it.term.id == termId }
 
-    if (resumen == null) {
-        Column(modifier.fillMaxSize().statusBarsPadding()) {
-            SettingsHeader(title = "Periodo", subtitle = "Histórico", onBackClick = onBackClick)
-            TermEmptyNote(
-                if (state.loaded) "Este periodo ya no existe." else "Cargando el periodo…"
+    val title = resumen?.term?.name ?: "Periodo"
+    val subtitle = resumen?.let { r ->
+        buildString {
+            append(r.term.start.diaMes())
+            append(" – ")
+            append(
+                r.term.closedEpochDay
+                    ?.let { LocalDate.ofEpochDay(it).diaMesAno() }
+                    ?: "en curso"
             )
+            append(" · ")
+            append(r.term.type.label)
         }
-        return
-    }
+    } ?: "Histórico"
 
-    val term = resumen.term
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = title,
+        subtitle = subtitle,
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = term.name,
-                subtitle = buildString {
-                    append(term.start.diaMes())
-                    append(" – ")
-                    append(
-                        term.closedEpochDay
-                            ?.let { LocalDate.ofEpochDay(it).diaMesAno() }
-                            ?: "en curso"
-                    )
-                    append(" · ")
-                    append(term.type.label)
-                },
-                onBackClick = onBackClick
-            )
-        }
-
-        item {
-            TermCard {
-                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    TermStat(
-                        label = "Promedio",
-                        value = resumen.average?.toString(),
-                        modifier = Modifier.weight(1f)
-                    )
-                    TermStat(
-                        label = "Asistencia",
-                        value = resumen.attendanceRate?.let { "$it%" },
-                        modifier = Modifier.weight(1f),
-                        // El alcance va pegado a la cifra: sin él, un 91% no dice de qué.
-                        note = resumen.attendanceSince?.let { "desde el ${it.diaMes()}" }
-                    )
-                    TermStat(
-                        label = if (resumen.failedCount == 1) "Perdida" else "Perdidas",
-                        value = resumen.failedCount.toString(),
-                        modifier = Modifier.weight(1f),
-                        tint = if (resumen.failedCount > 0) colores.atRisk else null
-                    )
-                }
+        if (resumen == null) {
+            item {
+                TermEmptyNote(
+                    if (state.loaded) "Este periodo ya no existe." else "Cargando el periodo…"
+                )
             }
-        }
-
-        item { TermLabel("MATERIAS", Modifier.padding(start = 4.dp, top = 6.dp)) }
-
-        if (resumen.subjects.isEmpty()) {
-            item { TermCard { TermEmptyNote("Este periodo no tiene materias registradas.") } }
         } else {
-            itemsIndexed(resumen.subjects, key = { _, it -> it.id }) { indice, materia ->
-                // Como aparece el resumen del periodo, con la variante elegida en Movimiento.
-                // El indice es lo que deja escalonarlas: «pieza a pieza» y «apilado» necesitan
-                // saber cual va antes.
-                Box(modifier = Modifier.resumenDePeriodo(indice)) {
-                    SubjectRowInTerm(subject = materia, onClick = { onSubjectClick(materia.id) })
+            val term = resumen.term
+            item {
+                TermCard {
+                    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        TermStat(
+                            label = "Promedio",
+                            value = resumen.average?.toString(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        TermStat(
+                            label = "Asistencia",
+                            value = resumen.attendanceRate?.let { "$it%" },
+                            modifier = Modifier.weight(1f),
+                            // El alcance va pegado a la cifra: sin él, un 91% no dice de qué.
+                            note = resumen.attendanceSince?.let { "desde el ${it.diaMes()}" }
+                        )
+                        TermStat(
+                            label = if (resumen.failedCount == 1) "Perdida" else "Perdidas",
+                            value = resumen.failedCount.toString(),
+                            modifier = Modifier.weight(1f),
+                            tint = if (resumen.failedCount > 0) colores.atRisk else null
+                        )
+                    }
                 }
             }
-        }
 
-        item {
-            Text(
-                text = if (term.isActive) {
-                    "Es el periodo en curso: lo que ves aquí sigue cambiando."
-                } else {
-                    "Puedes editar las notas de este periodo desde cada materia. Está cerrado, " +
-                        "pero cerrado no quiere decir bloqueado."
-                },
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.outline,
-                fontSize = 11.5.sp,
-                lineHeight = 16.sp
-            )
+            if (resumen.subjects.isNotEmpty()) {
+                item {
+                    TermLabel(
+                        "${resumen.subjects.size} ${if (resumen.subjects.size == 1) "MATERIA" else "MATERIAS"}",
+                        Modifier.padding(start = 4.dp, top = 6.dp)
+                    )
+                }
+                itemsIndexed(resumen.subjects, key = { _, it -> it.id }) { indice, materia ->
+                    Box(modifier = Modifier.resumenDePeriodo(indice)) {
+                        SubjectRowInTerm(subject = materia, onClick = { onSubjectClick(materia.id) })
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = if (term.isActive) {
+                        "Es el periodo en curso: lo que ves aquí sigue cambiando."
+                    } else {
+                        "Puedes editar las notas de este periodo desde cada materia. Está cerrado, " +
+                            "pero cerrado no quiere decir bloqueado."
+                    },
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.outline,
+                    fontSize = 11.5.sp,
+                    lineHeight = 16.sp
+                )
+            }
         }
     }
 }

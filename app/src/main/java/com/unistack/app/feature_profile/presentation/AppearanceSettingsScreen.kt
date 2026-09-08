@@ -36,8 +36,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.SettingsGroup
-import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.SettingsRow
 import com.unistack.app.core.design.theme.AppThemes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -89,25 +89,16 @@ fun AppearanceSettingsScreen(
     val sections = LocalSectionColors.current
     val current = profile
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Apariencia",
+        subtitle = "Tema, forma, letra y tu inicio",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Apariencia",
-                subtitle = "Tema, forma, letra y tu inicio",
-                onBackClick = onBackClick
-            )
-        }
         if (current == null) {
             item {
                 Text(
@@ -116,17 +107,10 @@ fun AppearanceSettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            return@LazyColumn
+            return@LargeTitleScaffold
         }
 
         val appearance = current.appearancePreferences
-        item {
-            HomePreviewCard(
-                name = current.preferredName,
-                photoUrl = current.portraitUrl,
-                appearance = appearance
-            )
-        }
         item {
             SettingsGroup(label = "SECCIONES", rowCount = 6) {
                 SettingsRow(
@@ -231,7 +215,7 @@ internal fun VisualPreference.orSystem(): VisualPreference =
  * de «Tu inicio», y el color y la letra son los del tema que esté puesto en ese momento.
  */
 @Composable
-private fun HomePreviewCard(
+internal fun HomePreviewCard(
     name: String,
     photoUrl: String?,
     appearance: AppearancePreferences

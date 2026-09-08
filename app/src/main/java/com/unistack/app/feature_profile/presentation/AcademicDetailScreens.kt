@@ -2,7 +2,7 @@
 
 package com.unistack.app.feature_profile.presentation
 
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,25 +131,16 @@ fun AcademicScaleScreen(
         }
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Escala y metas",
+        subtitle = "Cómo se convierten tus notas",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Escala y metas",
-                subtitle = "Cómo se convierten tus notas",
-                onBackClick = onBackClick
-            )
-        }
         item { ScaleZoneBar(max = maxGrade, passing = passing, target = target) }
         item {
             AcademicGroupLabel("LA ESCALA")
@@ -321,25 +312,16 @@ fun AcademicCutsScreen(
         termPlannedEnd = term?.plannedEnd
     )
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Tus cortes",
+        subtitle = "Cómo se reparte el peso del semestre",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Tus cortes",
-                subtitle = "Cómo se reparte el peso del semestre",
-                onBackClick = onBackClick
-            )
-        }
         item {
             AcademicGroupLabel("TUS CORTES")
             CutCountSection(
@@ -468,25 +450,16 @@ fun AcademicAbsenceScreen(
     var valor by rememberSaveable(current.userId) { mutableStateOf(current.absenceLimit ?: 6) }
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Faltas",
+        subtitle = "Tu tope de inasistencias",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Faltas",
-                subtitle = "Tu tope de inasistencias",
-                onBackClick = onBackClick
-            )
-        }
         item {
             Column(
                 modifier = Modifier
@@ -615,25 +588,16 @@ fun AcademicBreaksScreen(
     val breaks by viewModel.academicBreaks.collectAsStateWithLifecycle()
     val spacing = LocalInterfaceSpacing.current
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Días sin clase",
+        subtitle = "Festivos y semanas sin clase",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Días sin clase",
-                subtitle = "Festivos y semanas sin clase",
-                onBackClick = onBackClick
-            )
-        }
         item {
             AcademicBreaksSection(
                 breaks = breaks,
@@ -684,31 +648,18 @@ fun AcademicTermScreen(
     val valido = nombre.isNotBlank() && (fin == null || fin!!.isAfter(inicio))
     val focusManager = LocalFocusManager.current
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            // El campo de nombre se quedaba con el foco -- y el teclado en pantalla -- al
-            // tocar en cualquier otro sitio de la lista. Un toque fuera de un campo de texto
-            // cierra la edición en el resto de la app; aquí no lo hacía.
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            },
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Tu periodo",
+        subtitle = "Nombre, forma y fechas de ${current.name}",
+        onBackClick = onBackClick,
+        modifier = modifier.pointerInput(Unit) {
+            detectTapGestures(onTap = { focusManager.clearFocus() })
+        },
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Tu periodo",
-                subtitle = "Nombre, forma y fechas de ${current.name}",
-                onBackClick = onBackClick
-            )
-        }
         item {
             OutlinedTextField(
                 value = nombre,

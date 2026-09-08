@@ -41,10 +41,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.cleanClickable
+import com.unistack.app.feature_user.domain.portraitUrl
 import com.unistack.app.core.design.theme.AppTheme
 import com.unistack.app.core.design.theme.AppThemes
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -85,21 +86,21 @@ fun ThemeSettingsScreen(
     val appearance = current.appearancePreferences
     val oscuro = LocalIsDarkTheme.current
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LargeTitleScaffold(
+        title = "Tema y color",
+        subtitle = "Paleta, acentos y modo visual",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 12.dp
     ) {
         item {
-            SettingsHeader(
-                title = "Tema y color",
-                subtitle = "${AppThemes.catalog.size} temas, cada uno en claro y en oscuro",
-                onBackClick = onBackClick
+            HomePreviewCard(
+                name = current.preferredName,
+                photoUrl = current.portraitUrl,
+                appearance = appearance
             )
         }
 

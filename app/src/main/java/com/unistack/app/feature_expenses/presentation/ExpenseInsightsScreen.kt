@@ -49,7 +49,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -100,23 +100,16 @@ fun ExpenseInsightsScreen(
     val spacing = LocalInterfaceSpacing.current
     var vista by rememberSaveable { mutableStateOf(InsightView.COMPARAR) }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    LargeTitleScaffold(
+        title = "Tus gastos",
+        subtitle = "Tres formas de leer lo mismo",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 14.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Tus gastos",
-                subtitle = "Tres formas de leer lo mismo",
-                onBackClick = onBackClick
-            )
-        }
         item {
             UniSegmentedControl(
                 selected = vista,

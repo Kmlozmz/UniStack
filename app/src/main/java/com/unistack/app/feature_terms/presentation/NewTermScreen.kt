@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.unistack.app.core.design.components.SettingsHeader
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniStackButton
@@ -82,24 +82,17 @@ fun NewTermScreen(
     val valido = inicio != null && nombreFinal.isNotBlank() &&
         (fin == null || fin!!.isAfter(inicio))
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize().statusBarsPadding(),
-        contentPadding = PaddingValues(
-            start = spacing.screenHorizontal,
-            end = spacing.screenHorizontal,
-            top = 8.dp,
-            bottom = scrollBottomRoom
-        ),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    LargeTitleScaffold(
+        title = "Periodo nuevo",
+        subtitle = state.lastClosed?.let { "Traigo lo de ${it.term.name}" }
+            ?: "Empieza tu periodo",
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = spacing.screenHorizontal,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 10.dp
     ) {
-        item {
-            SettingsHeader(
-                title = "Periodo nuevo",
-                subtitle = state.lastClosed?.let { "Traigo lo de ${it.term.name}" }
-                    ?: "Empieza tu periodo",
-                onBackClick = onBackClick
-            )
-        }
 
         if (herencia != null) {
             item { TermLabel("SE MANTIENE", Modifier.padding(start = 4.dp, top = 4.dp)) }
