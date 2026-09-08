@@ -21,7 +21,7 @@ package com.unistack.app.feature_user.domain
 data class MotionPreferences(
     // ------------------------------------------------------------------ base
     val speed: MotionSpeed = MotionSpeed.NORMAL,
-    val bounce: SpringBounce = SpringBounce.MEDIO,
+    val bounce: SpringBounce = SpringBounce.VIVO,
     val press: PressEffect = PressEffect.ONDA,
     val loading: LoadingStyle = LoadingStyle.FORMAS,
 
@@ -36,13 +36,13 @@ data class MotionPreferences(
     val gradeUp: GradeUpMotion = GradeUpMotion.SALTO,
     val recovery: RecoveryMotion = RecoveryMotion.VIAJE,
     val cutSeal: CutSealMotion = CutSealMotion.ESTAMPA,
-    val termClose: TermCloseMotion = TermCloseMotion.PIEZA,
+    val termClose: TermCloseMotion = TermCloseMotion.APILADO,
 
     // ------------------------------------------------------------------ tareas y notas
     val celebration: CelebrationMotion = CelebrationMotion.CONFETI,
     val strikeThrough: StrikeMotion = StrikeMotion.LINEA,
     val overdueBeat: OverdueBeat = OverdueBeat.PULSO,
-    val undo: UndoMotion = UndoMotion.VUELVE,
+    val undo: UndoMotion = UndoMotion.REBOTA,
     val autosave: AutosaveMotion = AutosaveMotion.PILDORA,
     val pinNote: PinMotion = PinMotion.SALTA,
 
@@ -426,16 +426,6 @@ object MotionCatalog {
             "Multiplica todas las duraciones.",
             { it.speed }, { p, v -> p.copy(speed = v) }
         ),
-        gesto<SpringBounce>(
-            "rebote", GROUP_BASE, "Rebote de los muelles",
-            "Lo elástico que entra todo.",
-            { it.bounce }, { p, v -> p.copy(bounce = v) }
-        ),
-        gesto<PressEffect>(
-            "pulsacion", GROUP_BASE, "Al pulsar",
-            "Lo que hace un botón cuando lo tocas.",
-            { it.press }, { p, v -> p.copy(press = v) }
-        ),
         gesto<LoadingStyle>(
             "carga", GROUP_BASE, "Indicador de carga",
             "El de M3E cambia de forma mientras gira.",
@@ -452,7 +442,6 @@ object MotionCatalog {
             "Cómo aparecen las filas al abrir.",
             { it.listEntry }, { p, v -> p.copy(listEntry = v) }
         ),
-
 
         gesto<AttendanceMotion>(
             "asistencia", GROUP_ACADEMIC, "Marcar asistencia",
@@ -479,11 +468,6 @@ object MotionCatalog {
             "Al dar un corte por cerrado.",
             { it.cutSeal }, { p, v -> p.copy(cutSeal = v) }
         ),
-        gesto<TermCloseMotion>(
-            "cierreSem", GROUP_ACADEMIC, "Cierre de semestre",
-            "Cómo aparece el resumen del periodo.",
-            { it.termClose }, { p, v -> p.copy(termClose = v) }
-        ),
 
         gesto<CelebrationMotion>(
             "celebracion", GROUP_TASKS, "Celebrar al terminar el día",
@@ -499,11 +483,6 @@ object MotionCatalog {
             "latido", GROUP_TASKS, "Latido en lo vencido",
             "Lo que lleva días abierto.",
             { it.overdueBeat }, { p, v -> p.copy(overdueBeat = v) }
-        ),
-        gesto<UndoMotion>(
-            "deshacer", GROUP_TASKS, "Deshacer un borrado",
-            "Cuando la fila vuelve a su sitio.",
-            { it.undo }, { p, v -> p.copy(undo = v) }
         ),
         gesto<AutosaveMotion>(
             "guardado", GROUP_TASKS, "Guardado automático",
@@ -536,37 +515,10 @@ object MotionCatalog {
             "saludo", GROUP_GENERAL, "Saludo al abrir",
             "El saludo y tu nombre en Inicio.",
             { it.greeting }, { p, v -> p.copy(greeting = v) }
-        ),
-        gesto<FabScrollMotion>(
-            "fabScroll", GROUP_GENERAL, "Botón que se recoge",
-            "Al bajar por una lista larga.",
-            { it.fabOnScroll }, { p, v -> p.copy(fabOnScroll = v) }
-        ),
-        gesto<HapticStrength>(
-            "haptica", GROUP_GENERAL, "Vibración",
-            "Cuánto se nota el teléfono al confirmar algo.",
-            { it.haptics }, { p, v -> p.copy(haptics = v) }
         )
     )
 
-    val toggles: List<MotionToggle> = listOf(
-        MotionToggle(
-            "barraAnim", "Barra inferior animada",
-            "La pastilla del activo se desliza hasta la pestaña nueva.",
-            { it.animatedBottomBar }, { p, v -> p.copy(animatedBottomBar = v) }
-        ),
-        MotionToggle(
-            "gestos", "Deslizar en las listas",
-            "Arrastra una tarea o un gasto hacia la izquierda para borrarlo.",
-            { it.swipeGestures }, { p, v -> p.copy(swipeGestures = v) }
-        ),
-        MotionToggle(
-            "numeros", "Números que cuentan",
-            "Los importes y promedios suben desde cero.",
-            { it.countingNumbers }, { p, v -> p.copy(countingNumbers = v) }
-        )
-
-    )
+    val toggles: List<MotionToggle> = emptyList()
 
     /** Los grupos en el orden en que se enseñan, con sus gestos dentro. */
     fun grouped(): List<Pair<String, List<MotionGesture>>> =

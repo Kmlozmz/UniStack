@@ -54,9 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,11 +65,9 @@ import com.unistack.app.core.design.components.SettingsHeader
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniCard
-import com.unistack.app.core.design.components.UniSwitch
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.scrollBottomRoom
-import com.unistack.app.feature_user.domain.HapticStrength
 import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.MotionChoice
 import com.unistack.app.feature_user.domain.MotionGesture
@@ -109,7 +104,6 @@ fun MotionSettingsScreen(
     val appearance = current.appearancePreferences
     val motion = appearance.motion
     val activo = appearance.motionPreference == MotionPreference.FULL
-    val haptica = LocalHapticFeedback.current
 
     val base = MotionCatalog.gestures.filter { it.group == MotionCatalog.GROUP_BASE }
     val porGrupo = MotionCatalog.grouped().filter { it.first != MotionCatalog.GROUP_BASE }
@@ -191,24 +185,11 @@ fun MotionSettingsScreen(
                         motion = motion,
                         animar = activo,
                         onElegir = { opcion ->
-                            if (gesto.id == "haptica") (opcion as? HapticStrength)?.avisar(haptica)
                             viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
                         }
                     )
                 }
             }
-        }
-
-        item { RotuloDeGrupo("OTROS", "${MotionCatalog.toggles.size} ajustes") }
-        items(MotionCatalog.toggles.size, key = { MotionCatalog.toggles[it].id }) { indice ->
-            val toggle = MotionCatalog.toggles[indice]
-            TarjetaDeInterruptor(
-                toggle = toggle,
-                motion = motion,
-                onCambio = { valor ->
-                    viewModel.updateAppearance { p -> p.copy(motion = toggle.write(p.motion, valor)) }
-                }
-            )
         }
     }
 }
@@ -435,63 +416,6 @@ private fun CajaDeVariante(
     }
 }
 
-/**
- * El interruptor de «Otros», con su demo comparativo.
- *
- * No lleva rejilla porque aquí no hay variantes que comparar: hay tenerlo o no tenerlo, y eso
- * se juzga viendo las dos caras a la vez. Por eso el demo enseña las dos, encendida y apagada,
- * una al lado de la otra.
- */
-@Composable
-private fun TarjetaDeInterruptor(
-    toggle: MotionToggle,
-    motion: MotionPreferences,
-    onCambio: (Boolean) -> Unit
-) {
-    val marcado = toggle.read(motion)
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        shape = MaterialTheme.shapes.medium,
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-        borderWidth = 1.dp,
-        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                val color = colorDe(toggle.id)
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(color.copy(alpha = 0.13f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(iconoDe(toggle.id), contentDescription = null, tint = color, modifier = Modifier.size(17.dp))
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        toggle.name,
-                        style = MaterialTheme.typography.titleSmallEmphasized,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        toggle.detail,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                UniSwitch(checked = marcado, onCheckedChange = onCambio)
-            }
-            DemoDesplegable(
-                gestoId = toggle.id,
-                texto = "Comparar",
-                tituloDeVentana = ventanaDe(toggle.id)
-            ) { DemoDeOtros(toggle.id, motion) }
-        }
-    }
-}
 
 /**
  * El demo que se abre al pulsar, como el «▶ Ver» del diseño.
@@ -527,24 +451,12 @@ private fun DemoDesplegable(
     }
 }
 
-/** Cual de los cuatro demos de base toca. */
+/** Cual de los demos de base toca. */
 @Composable
 private fun DemoDeBase(gestoId: String, motion: MotionPreferences) {
     when (gestoId) {
         "velocidad" -> DemoDeVelocidad(motion)
-        "rebote" -> DemoDeRebote(motion)
-        "pulsacion" -> DemoDePulsacion(motion)
         else -> DemoDeCarga(motion)
-    }
-}
-
-/** Cual de los cuatro comparativos de «Otros» toca. */
-@Composable
-private fun DemoDeOtros(toggleId: String, motion: MotionPreferences) {
-    when (toggleId) {
-        "barraAnim" -> DemoDeBarra(motion)
-        "gestos" -> DemoDeGesto(motion)
-        else -> DemoDeNumeros(motion)
     }
 }
 
@@ -707,18 +619,4 @@ private fun MotionPreference.etiqueta() = when (this) {
     MotionPreference.NONE -> "Nada"
 }
 
-/**
- * El aviso que le toca a cada fuerza de vibración.
- *
- * Android no deja pedir «un poco de vibración»: lo que hay son tipos de aviso con intensidad
- * propia. `TextHandleMove` es el más leve, `LongPress` el que más se nota, y encadenar dos
- * seguidos es lo más cerca que se puede estar de un aviso «fuerte» sin permisos de vibrador.
- */
-private fun HapticStrength.avisar(haptica: HapticFeedback) {
-    when (this) {
-        HapticStrength.NINGUNA -> Unit
-        HapticStrength.SUAVE -> haptica.performHapticFeedback(HapticFeedbackType.SegmentTick)
-        HapticStrength.MEDIA -> haptica.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        HapticStrength.FUERTE -> haptica.performHapticFeedback(HapticFeedbackType.Confirm)
-    }
-}
+
