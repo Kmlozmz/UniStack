@@ -27,7 +27,10 @@ class MainActivity : ComponentActivity() {
      * LocaleHelper aplica esa preferencia al contexto base.
      */
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(com.unistack.app.core.utils.LocaleHelper.applyLocale(newBase))
+        val localizedBase = runCatching {
+            com.unistack.app.core.utils.LocaleHelper.applyLocale(newBase)
+        }.getOrDefault(newBase)
+        super.attachBaseContext(localizedBase)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

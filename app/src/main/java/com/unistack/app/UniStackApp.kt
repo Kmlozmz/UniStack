@@ -45,27 +45,16 @@ fun UniStackApp(
         GradingScaleUtils.configureDecimalPlaces(appearance.decimalPlaces)
     }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val localizedContext = androidx.compose.runtime.remember(context, accessibility.appLanguage) {
-        com.unistack.app.core.utils.LocaleHelper.persistLanguage(context, accessibility.appLanguage)
-        com.unistack.app.core.utils.LocaleHelper.applyLocale(context, accessibility.appLanguage)
-    }
-
-    androidx.compose.runtime.CompositionLocalProvider(
-        androidx.compose.ui.platform.LocalContext provides localizedContext,
-        androidx.compose.ui.platform.LocalConfiguration provides localizedContext.resources.configuration
+    UniStackTheme(
+        darkTheme = darkTheme,
+        oledTheme = visualPreference == VisualPreference.OLED,
+        appearance = appearance,
+        accessibility = accessibility
     ) {
-        UniStackTheme(
-            darkTheme = darkTheme,
-            oledTheme = visualPreference == VisualPreference.OLED,
-            appearance = appearance,
-            accessibility = accessibility
-        ) {
-            RootNavGraph(
-                modifier = modifier,
-                launchRoute = launchRoute,
-                onLaunchRouteConsumed = onLaunchRouteConsumed
-            )
-        }
+        RootNavGraph(
+            modifier = modifier,
+            launchRoute = launchRoute,
+            onLaunchRouteConsumed = onLaunchRouteConsumed
+        )
     }
 }

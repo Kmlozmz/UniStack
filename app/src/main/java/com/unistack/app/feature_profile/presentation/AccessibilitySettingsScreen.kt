@@ -433,11 +433,16 @@ fun AccessibilitySettingsScreen(
         }
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     if (showLanguageDialog) {
         LanguageSelectionDialog(
             current = a11y.appLanguage,
             onSelect = { selected ->
-                viewModel.updateAccessibility { it.copy(appLanguage = selected) }
+                if (selected != a11y.appLanguage) {
+                    viewModel.updateAccessibility { it.copy(appLanguage = selected) }
+                    com.unistack.app.core.utils.LocaleHelper.persistLanguage(context, selected)
+                    (context as? android.app.Activity)?.recreate()
+                }
                 showLanguageDialog = false
             },
             onDismiss = { showLanguageDialog = false }
