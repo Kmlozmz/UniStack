@@ -168,17 +168,20 @@ fun SettingsSoloRow(content: @Composable SettingsGroupScope.() -> Unit) {
 
 /** Las formas que le tocan a una fila según dónde esté. */
 @Composable
-internal fun shapesFor(position: SettingsRowPosition): ListItemShapes {
+internal fun shapeFor(position: SettingsRowPosition): RoundedCornerShape {
     val big = 18.dp
     val small = 4.dp
-    val shape = when (position) {
+    return when (position) {
         SettingsRowPosition.Only -> RoundedCornerShape(big)
         SettingsRowPosition.First -> RoundedCornerShape(topStart = big, topEnd = big, bottomStart = small, bottomEnd = small)
         SettingsRowPosition.Middle -> RoundedCornerShape(small)
         SettingsRowPosition.Last -> RoundedCornerShape(topStart = small, topEnd = small, bottomStart = big, bottomEnd = big)
     }
-    return ListItemDefaults.shapes(shape = shape)
 }
+
+@Composable
+internal fun shapesFor(position: SettingsRowPosition): ListItemShapes =
+    ListItemDefaults.shapes(shape = shapeFor(position))
 
 /**
  * Un rótulo de sección y, bajo él, sus filas.
@@ -331,5 +334,51 @@ fun SettingsGroupScope.SettingsToggleRow(
         )
     ) {
         Text(text = title, style = MaterialTheme.typography.titleMediumEmphasized)
+    }
+}
+
+/**
+ * Una fila de ajustes que aloja un bloque personalizado (como un selector segmentado).
+ *
+ * Mantiene la misma forma morfológica (18dp/4dp) y color de contenedor que el resto de las
+ * filas del grupo de Material 3 Expressive.
+ */
+@Composable
+fun SettingsGroupScope.SettingsCustomRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    iconColor: Color,
+    trailingAction: (@Composable () -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val shape = shapeFor(nextPosition())
+    Surface(
+        shape = shape,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                SettingsRowIcon(icon = icon, color = iconColor)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = title, style = MaterialTheme.typography.titleMediumEmphasized)
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                trailingAction?.invoke()
+            }
+            content()
+        }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import com.unistack.app.core.design.components.colorDeRecuperacion
 import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import androidx.compose.foundation.background
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
@@ -241,8 +242,9 @@ fun SubjectRow(
                         ?: "—",
                     style = MaterialTheme.typography.headlineSmallEmphasized
                 )
+                val showShapes = LocalAccessibilityPreferences.current.shapesBesidesColor
                 Text(
-                    text = outlookLabel(calculation.outlook),
+                    text = outlookLabel(calculation.outlook, showShapes),
                     style = SectionLabelStyle,
                     color = colorDelPronostico
                 )
@@ -392,10 +394,21 @@ private fun progressState(
     }
 }
 
-private fun outlookLabel(outlook: TargetOutlook): String = when (outlook) {
-    TargetOutlook.NO_DATA -> "SIN NOTAS"
-    TargetOutlook.SECURED -> "ASEGURADA"
-    TargetOutlook.ON_TRACK -> "AL DÍA"
-    TargetOutlook.AT_RISK -> "EN RIESGO"
-    TargetOutlook.UNREACHABLE -> "FUERA DE ALCANCE"
+private fun outlookLabel(outlook: TargetOutlook, showShapes: Boolean = false): String {
+    val prefix = if (showShapes) {
+        when (outlook) {
+            TargetOutlook.NO_DATA -> ""
+            TargetOutlook.SECURED, TargetOutlook.ON_TRACK -> "● "
+            TargetOutlook.AT_RISK -> "▲ "
+            TargetOutlook.UNREACHABLE -> "■ "
+        }
+    } else ""
+    val label = when (outlook) {
+        TargetOutlook.NO_DATA -> "SIN NOTAS"
+        TargetOutlook.SECURED -> "ASEGURADA"
+        TargetOutlook.ON_TRACK -> "AL DÍA"
+        TargetOutlook.AT_RISK -> "EN RIESGO"
+        TargetOutlook.UNREACHABLE -> "FUERA DE ALCANCE"
+    }
+    return "$prefix$label"
 }
