@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -59,6 +60,7 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.core.utils.DayLabels
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
@@ -138,7 +140,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("ESTA SEMANA", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            CurrencyFormatter.formatCop(c.actual),
+                            formatCurrency(c.actual),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
                             color = LocalSectionColors.current.expenses,
                             maxLines = 1
@@ -168,7 +170,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                         Text("LA ANTERIOR", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
-                            CurrencyFormatter.formatCop(c.anterior),
+                            formatCurrency(c.anterior),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
@@ -194,9 +196,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                         val baja = c.diferencia <= 0
                         Text(
                             text = if (baja) {
-                                "Gastaste " + CurrencyFormatter.formatCop(-c.diferencia) + " menos que la semana pasada."
+                                "Gastaste " + formatCurrency(-c.diferencia) + " menos que la semana pasada."
                             } else {
-                                "Gastaste " + CurrencyFormatter.formatCop(c.diferencia) + " más que la semana pasada."
+                                "Gastaste " + formatCurrency(c.diferencia) + " más que la semana pasada."
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
@@ -205,7 +207,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                         Text(
                             text = "La mayor parte viene de " + mayor.category.label().lowercase() +
                                 ", que " + (if (mayor.diferencia < 0) "bajó " else "subió ") +
-                                CurrencyFormatter.formatCop(kotlin.math.abs(mayor.diferencia)) + ".",
+                                formatCurrency(kotlin.math.abs(mayor.diferencia)) + ".",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -283,13 +285,13 @@ private fun ComparaBarra(rotulo: String, valor: Int, mayor: Int, color: Color, v
             )
         }
         Text(
-            CurrencyFormatter.formatCop(valor),
+            formatCurrency(valor),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
             maxLines = 1,
-            modifier = Modifier.padding(start = 10.dp).width(78.dp)
+            modifier = Modifier.padding(start = 10.dp).widthIn(min = 78.dp)
         )
     }
 }
@@ -312,7 +314,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    CurrencyFormatter.formatCop(r.proyeccion),
+                    formatCurrency(r.proyeccion),
                     style = MaterialTheme.typography.displaySmallEmphasized,
                     color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else sections.expenses,
                     maxLines = 1,
@@ -320,11 +322,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                 )
                 Text(
                     text = when {
-                        presupuesto <= 0 -> "Llevas " + CurrencyFormatter.formatCop(r.gastado) +
+                        presupuesto <= 0 -> "Llevas " + formatCurrency(r.gastado) +
                             " en " + r.diaDelMes + " días. Pon un presupuesto y te digo si vas bien."
-                        r.seVaAPasar -> CurrencyFormatter.formatCop(r.proyeccion - presupuesto) +
+                        r.seVaAPasar -> formatCurrency(r.proyeccion - presupuesto) +
                             " por encima de tu presupuesto"
-                        else -> "Dentro de tu presupuesto de " + CurrencyFormatter.formatCop(presupuesto)
+                        else -> "Dentro de tu presupuesto de " + formatCurrency(presupuesto)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -361,7 +363,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                     Text("PARA NO PASARTE", style = SectionLabelStyle, color = sections.onOnTrackContainer)
                     Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
                         Text(
-                            CurrencyFormatter.formatCop(diario),
+                            formatCurrency(diario),
                             style = MaterialTheme.typography.headlineMediumEmphasized,
                             color = sections.onOnTrackContainer,
                             maxLines = 1
@@ -375,7 +377,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                     }
                     Text(
                         text = "Te quedan " + r.diasRestantes + " días y " +
-                            CurrencyFormatter.formatCop((presupuesto - r.gastado).coerceAtLeast(0)) + " de presupuesto.",
+                            formatCurrency((presupuesto - r.gastado).coerceAtLeast(0)) + " de presupuesto.",
                         style = MaterialTheme.typography.bodySmall,
                         color = sections.onOnTrackContainer.copy(alpha = 0.85f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -478,7 +480,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.calendario(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("EN EL MES", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        CurrencyFormatter.formatCop(cal.total),
+                        formatCurrency(cal.total),
                         style = MaterialTheme.typography.headlineSmallEmphasized,
                         color = sections.expenses,
                         maxLines = 1
@@ -605,7 +607,7 @@ private fun DiaDetalle(dia: ExpenseInsights.DiaDelMes) {
             )
         } else {
             Text(
-                CurrencyFormatter.formatCop(dia.total),
+                formatCurrency(dia.total),
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 color = sections.expenses,
                 maxLines = 1,
@@ -629,7 +631,7 @@ private fun DiaDetalle(dia: ExpenseInsights.DiaDelMes) {
                         modifier = Modifier.padding(start = 11.dp).weight(1f)
                     )
                     Text(
-                        CurrencyFormatter.formatCop(gasto.amount),
+                        formatCurrency(gasto.amount),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = sections.expenses

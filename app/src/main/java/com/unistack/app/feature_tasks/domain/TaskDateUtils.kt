@@ -1,6 +1,10 @@
 package com.unistack.app.feature_tasks.domain
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.utils.NO_DATA
+import com.unistack.app.feature_user.domain.DateFormatPreference
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -17,7 +21,8 @@ object TaskDateUtils {
         .appendPattern("H:mm")
         .toFormatter(Locale.US)
     private val displayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CO"))
-    private val timeDisplayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
+    private val time24Formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
+    private val time12Formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
 
     fun today(): LocalDate = LocalDate.now()
 
@@ -40,7 +45,15 @@ object TaskDateUtils {
         }
     }
 
-    fun formatTimeInput(time: LocalTime): String = time.format(timeDisplayFormatter)
+    fun formatTimeInput(time: LocalTime): String = formatTime(time, use24HourTime = true)
+
+    fun formatTime(time: LocalTime, use24HourTime: Boolean = true): String {
+        return if (use24HourTime) time.format(time24Formatter) else time.format(time12Formatter)
+    }
+
+    fun formatDate(date: LocalDate, dateFormat: DateFormatPreference = DateFormatPreference.DMY): String {
+        return date.format(DateTimeFormatter.ofPattern(dateFormat.pattern))
+    }
 
     fun toMillis(date: LocalDate, time: LocalTime? = null): Long {
         return date.atTime(time ?: LocalTime.MIDNIGHT)
@@ -63,18 +76,23 @@ object TaskDateUtils {
 
     fun hasExplicitTime(value: Long): Boolean = timeFromMillis(value) != LocalTime.MIDNIGHT
 
-    fun dueText(dueDateMillis: Long, today: LocalDate = today()): String {
+    fun dueText(
+        dueDateMillis: Long,
+        today: LocalDate = today(),
+        dateFormat: DateFormatPreference = DateFormatPreference.DMY,
+        use24HourTime: Boolean = true
+    ): String {
         val dueDate = fromMillis(dueDateMillis)
         val time = timeFromMillis(dueDateMillis)
-        val timeText = if (time == LocalTime.MIDNIGHT) "" else " ${formatTimeInput(time)}"
+        val timeText = if (time == LocalTime.MIDNIGHT) "" else " ${formatTime(time, use24HourTime)}"
         val diff = ChronoUnit.DAYS.between(today, dueDate)
         return when (diff) {
             -1L -> "venció ayer$timeText"
             0L -> "vence hoy$timeText"
             1L -> "vence mañana$timeText"
-            in Long.MIN_VALUE..-2L -> "venció hace ${-diff} días"
+            in Long.MIN_VALUE..-2L -> "venció hace ${-diff} días$timeText"
             in 2L..6L -> "vence en $diff días$timeText"
-            else -> "vence ${dueDate.format(displayFormatter)}$timeText"
+            else -> "vence ${formatDate(dueDate, dateFormat)}$timeText"
         }
     }
 
@@ -94,4 +112,37 @@ object TaskDateUtils {
             "$hours h $remainingMinutes min"
         }
     }
+}
+
+/**
+ * Formatea el texto de vencimiento de la tarea adaptado a las preferencias globales
+ * de formato de fecha y reloj de 24 horas del usuario.
+ */
+@Composable
+@ReadOnlyComposable
+fun formatTaskDueText(dueDateMillis: Long): String {
+    val a11y = LocalAccessibilityPreferences.current
+    return TaskDateUtils.dueText(
+        dueDateMillis = dueDateMillis,
+        dateFormat = a11y.dateFormat,
+        use24HourTime = a11y.use24HourTime
+    )
+}
+
+/**
+ * Formatea una hora respetando el reloj de 24 horas de Accesibilidad.
+ */
+@Composable
+@ReadOnlyComposable
+fun formatTaskTime(time: LocalTime): String {
+    return TaskDateUtils.formatTime(time, LocalAccessibilityPreferences.current.use24HourTime)
+}
+
+/**
+ * Formatea una fecha respetando el orden numérico (DMY, MDY, YMD) de Accesibilidad.
+ */
+@Composable
+@ReadOnlyComposable
+fun formatTaskDate(date: LocalDate): String {
+    return TaskDateUtils.formatDate(date, LocalAccessibilityPreferences.current.dateFormat)
 }

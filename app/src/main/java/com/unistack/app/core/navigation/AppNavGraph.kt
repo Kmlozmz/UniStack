@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -1633,16 +1634,18 @@ private fun UniStackBottomBarContent(
                             },
                         contentAlignment = Alignment.Center
                     ) {
+                        val itemLabel = if (item.labelResId != 0) stringResource(item.labelResId) else item.label
                         Icon(
                             // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
                             imageVector = item.iconFor(selected, appearance.iconStyle),
-                            contentDescription = item.label,
+                            contentDescription = itemLabel,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 },
                 label = if (showLabels) {
-                    { Text(item.label, maxLines = 1) }
+                    val itemLabel = if (item.labelResId != 0) stringResource(item.labelResId) else item.label
+                    { Text(itemLabel, maxLines = 1) }
                 } else {
                     null
                 },

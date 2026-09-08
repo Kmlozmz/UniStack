@@ -46,6 +46,7 @@ import com.unistack.app.core.design.components.UniLoading
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.PressEffect
 import kotlinx.coroutines.delay
@@ -385,7 +386,7 @@ fun DemoDeNumeros(motion: MotionPreferences) {
         pie = "ajuste actual: " + if (motion.countingNumbers) "contando" else "directo"
     ) { contando ->
         Text(
-            text = CurrencyFormatter.formatCop(if (contando) valor.toInt() else 61000),
+            text = formatCurrency(if (contando) valor.toInt() else 61000),
             fontSize = 21.sp,
             fontWeight = FontWeight.ExtraBold,
             color = if (contando) {

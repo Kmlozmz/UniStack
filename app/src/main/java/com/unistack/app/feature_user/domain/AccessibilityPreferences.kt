@@ -146,11 +146,11 @@ enum class CurrencyPreference(
     val label: String,
     val preview: String
 ) {
-    COP("COP", "$", "Peso colombiano (COP)", "$ 50.000"),
-    USD("USD", "$", "Dólar estadounidense (USD)", "$ 50.00"),
-    EUR("EUR", "€", "Euro (EUR)", "50,00 €"),
-    MXN("MXN", "$", "Peso mexicano (MXN)", "$ 50.00"),
-    ARS("ARS", "$", "Peso argentino (ARS)", "$ 50.000"),
-    CLP("CLP", "$", "Peso chileno (CLP)", "$ 50.000"),
-    PEN("PEN", "S/", "Sol peruano (PEN)", "S/ 50.00")
+    COP("COP", "$", "Peso colombiano (COP)", "$ 50.000 COP"),
+    USD("USD", "$", "Dólar estadounidense (USD)", "$ 50 USD"),
+    EUR("EUR", "€", "Euro (EUR)", "50 € EUR"),
+    MXN("MXN", "$", "Peso mexicano (MXN)", "$ 50 MXN"),
+    ARS("ARS", "$", "Peso argentino (ARS)", "$ 50.000 ARS"),
+    CLP("CLP", "$", "Peso chileno (CLP)", "$ 50.000 CLP"),
+    PEN("PEN", "S/", "Sol peruano (PEN)", "S/ 50 PEN")
 }

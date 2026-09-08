@@ -12,6 +12,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.unistack.app.R
 import com.unistack.app.feature_user.domain.AppModule
 import com.unistack.app.feature_user.domain.IconStyle
 
@@ -144,32 +145,37 @@ data class BottomNavItem(
     val route: String,
     val label: String,
     val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val unselectedIcon: ImageVector,
+    val labelResId: Int = 0
 ) {
     companion object {
         private val homeItem = BottomNavItem(
             route = AppRoutes.Home,
             label = "Inicio",
             selectedIcon = Icons.Rounded.Home,
-            unselectedIcon = Icons.Outlined.Home
+            unselectedIcon = Icons.Outlined.Home,
+            labelResId = R.string.nav_home
         )
         private val academicItem = BottomNavItem(
             route = AppRoutes.Academic,
             label = "Académico",
             selectedIcon = Icons.AutoMirrored.Rounded.MenuBook,
-            unselectedIcon = Icons.AutoMirrored.Outlined.MenuBook
+            unselectedIcon = Icons.AutoMirrored.Outlined.MenuBook,
+            labelResId = R.string.nav_academic
         )
         private val calendarItem = BottomNavItem(
             route = AppRoutes.Calendar,
             label = "Horario",
             selectedIcon = Icons.Rounded.CalendarMonth,
-            unselectedIcon = Icons.Outlined.CalendarMonth
+            unselectedIcon = Icons.Outlined.CalendarMonth,
+            labelResId = R.string.nav_schedule
         )
         private val expensesItem = BottomNavItem(
             route = AppRoutes.Expenses,
             label = "Gastos",
             selectedIcon = Icons.Rounded.AccountBalanceWallet,
-            unselectedIcon = Icons.Outlined.AccountBalanceWallet
+            unselectedIcon = Icons.Outlined.AccountBalanceWallet,
+            labelResId = R.string.nav_expenses
         )
         /*
          * La quinta pestaña es la configuración, no el perfil.
@@ -187,7 +193,8 @@ data class BottomNavItem(
             route = AppRoutes.Settings,
             label = "Ajustes",
             selectedIcon = Icons.Rounded.Settings,
-            unselectedIcon = Icons.Outlined.Settings
+            unselectedIcon = Icons.Outlined.Settings,
+            labelResId = R.string.nav_settings
         )
 
         val items = listOf(homeItem, academicItem, calendarItem, expensesItem, settingsItem)

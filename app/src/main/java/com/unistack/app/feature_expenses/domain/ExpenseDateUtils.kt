@@ -1,5 +1,8 @@
 package com.unistack.app.feature_expenses.domain
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -52,4 +55,15 @@ object ExpenseDateUtils {
         val end = start.plusDays(6)
         return date in start..end
     }
+}
+
+/**
+ * Formatea la fecha de un gasto respetando la preferencia numérica de fecha
+ * activa en Accesibilidad.
+ */
+@Composable
+@ReadOnlyComposable
+fun formatExpenseDisplayDate(dateMillis: Long): String {
+    val pref = LocalAccessibilityPreferences.current.dateFormat
+    return ExpenseDateUtils.formatDisplay(dateMillis, pref)
 }

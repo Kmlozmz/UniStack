@@ -38,8 +38,10 @@ import androidx.compose.material.icons.rounded.StayCurrentPortrait
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -63,9 +65,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.EvaluationBar
@@ -116,6 +121,7 @@ fun AccessibilitySettingsScreen(
     var testSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showDateFormatDialog by remember { mutableStateOf(false) }
+    var pendingDateFormat by remember { mutableStateOf<DateFormatPreference?>(null) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -129,14 +135,14 @@ fun AccessibilitySettingsScreen(
             LargeFlexibleTopAppBar(
                 title = {
                     Text(
-                        text = "Accesibilidad",
+                        text = stringResource(R.string.a11y_title),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 },
                 subtitle = {
                     Text(
-                        text = "Visión, interacción, asistencia y sistema",
+                        text = stringResource(R.string.a11y_subtitle),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -349,10 +355,10 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ FORMATOS E IDIOMA
             item {
-                SettingsGroup(label = "FORMATOS E IDIOMA", rowCount = 4) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_formats), rowCount = 4) {
                     SettingsRow(
                         icon = Icons.Rounded.Translate,
-                        title = "Idioma de la aplicación",
+                        title = stringResource(R.string.a11y_language_title),
                         subtitle = "${a11y.appLanguage.etiqueta()} · ${a11y.appLanguage.estado()}",
                         iconColor = MaterialTheme.colorScheme.secondary,
                         onClick = { showLanguageDialog = true }
@@ -360,8 +366,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.AccessTime,
-                        title = "Reloj de 24 horas",
-                        subtitle = if (a11y.use24HourTime) "Formato 24h (ej. 14:30)" else "Formato 12h (ej. 2:30 PM)",
+                        title = stringResource(R.string.a11y_time_format_title),
+                        subtitle = if (a11y.use24HourTime) stringResource(R.string.a11y_time_format_24) else stringResource(R.string.a11y_time_format_12),
                         checked = a11y.use24HourTime,
                         iconColor = sections.schedule,
                         onCheckedChange = { valor ->
@@ -371,7 +377,7 @@ fun AccessibilitySettingsScreen(
 
                     SettingsRow(
                         icon = Icons.Rounded.CalendarMonth,
-                        title = "Formato de fecha",
+                        title = stringResource(R.string.a11y_date_format_title),
                         subtitle = "${a11y.dateFormat.label} · ${a11y.dateFormat.previewDate}",
                         iconColor = MaterialTheme.colorScheme.primary,
                         onClick = { showDateFormatDialog = true }
@@ -379,7 +385,7 @@ fun AccessibilitySettingsScreen(
 
                     SettingsRow(
                         icon = Icons.Rounded.AccountBalanceWallet,
-                        title = "Moneda de gastos",
+                        title = stringResource(R.string.a11y_currency_title),
                         subtitle = "${a11y.currency.label} · ${a11y.currency.preview}",
                         iconColor = sections.onTrack,
                         onClick = { showCurrencyDialog = true }
@@ -442,10 +448,24 @@ fun AccessibilitySettingsScreen(
         DateFormatSelectionDialog(
             current = a11y.dateFormat,
             onSelect = { selected ->
-                viewModel.updateAccessibility { it.copy(dateFormat = selected) }
                 showDateFormatDialog = false
+                if (selected != a11y.dateFormat) {
+                    pendingDateFormat = selected
+                }
             },
             onDismiss = { showDateFormatDialog = false }
+        )
+    }
+
+    pendingDateFormat?.let { pending ->
+        DateFormatWarningDialog(
+            currentFormat = a11y.dateFormat,
+            newFormat = pending,
+            onConfirm = {
+                viewModel.updateAccessibility { it.copy(dateFormat = pending) }
+                pendingDateFormat = null
+            },
+            onDismiss = { pendingDateFormat = null }
         )
     }
 
@@ -755,6 +775,118 @@ private fun DateFormatSelectionDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun DateFormatWarningDialog(
+    currentFormat: DateFormatPreference,
+    newFormat: DateFormatPreference,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Rounded.CalendarMonth,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
+        },
+        title = {
+            Text(
+                text = stringResource(R.string.a11y_date_warning_title),
+                style = MaterialTheme.typography.titleLargeEmphasized,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = stringResource(R.string.a11y_date_warning_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.a11y_date_warning_current),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = currentFormat.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Text(
+                                text = currentFormat.previewDate,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.a11y_date_warning_new),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = newFormat.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = newFormat.previewDate,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text(stringResource(R.string.action_apply_format))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

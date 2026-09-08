@@ -78,6 +78,7 @@ import com.unistack.app.core.design.components.SaludoAnimado
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.formatCurrency
 import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -871,7 +872,7 @@ private fun HomeSnapshotRow(
             val actual = summary.weeklyExpenseTotal
             HomeTile(
                 label = "ESTA SEMANA",
-                value = CurrencyFormatter.formatCop(numeroQueCuenta(actual.toFloat(), "semana").toInt()),
+                value = formatCurrency(numeroQueCuenta(actual.toFloat(), "semana").toInt()),
                 valueColor = sections.expenses,
                 // El pie compara con la semana pasada, que es lo unico que hace que la cifra
                 // signifique algo. Decia «en 1 dia», que sonaba a reproche y no ayudaba a

@@ -99,6 +99,7 @@ import com.unistack.app.core.utils.GradingScaleUtils
 import com.unistack.app.core.utils.bounceClick
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_tasks.domain.formatTaskDueText
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
@@ -226,7 +227,7 @@ fun AddTaskScreen(
         taskMissing = isEditing && task == null,
         titleIsValid = isTitleValid,
         titleError = titleValidation.errorMessage,
-        dueDateLabel = parsedDueDate?.let { TaskDateUtils.dueText(TaskDateUtils.toMillis(it, parsedDueTime)) }.orEmpty(),
+        dueDateLabel = parsedDueDate?.let { formatTaskDueText(TaskDateUtils.toMillis(it, parsedDueTime)) }.orEmpty(),
         dueTimeLabel = dueTime.ifBlank { "Sin hora" },
         subjects = subjects,
         selectedSubjectId = selectedSubjectId,

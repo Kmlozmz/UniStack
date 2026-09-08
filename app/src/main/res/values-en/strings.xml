@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher shortcuts -->
+    <string name="shortcut_note_short">Note</string>
+    <string name="shortcut_note_long">Write a note</string>
+
+    <!-- Main Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_academic">Academic</string>
+    <string name="nav_schedule">Schedule</string>
+    <string name="nav_expenses">Expenses</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_grades">Grades</string>
+    <string name="nav_tasks">Tasks</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_close">Close</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_back">Back</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_apply_format">Apply format</string>
+    <string name="action_create">Create</string>
+    <string name="action_add">Add</string>
+    <string name="action_search">Search</string>
+    <string name="action_accept">Accept</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_retry">Retry</string>
+
+    <!-- Accessibility and Formats -->
+    <string name="a11y_title">Accessibility</string>
+    <string name="a11y_subtitle">Vision, interaction, assistance and system</string>
+    <string name="a11y_preview_title">PREVIEW</string>
+    <string name="a11y_section_vision">VISION AND READING</string>
+    <string name="a11y_section_interaction">INTERACTION AND CONTROL</string>
+    <string name="a11y_section_formats">FORMATS AND LANGUAGE</string>
+    <string name="a11y_section_system">ASSISTANCE AND SYSTEM</string>
+
+    <string name="a11y_language_title">Application language</string>
+    <string name="a11y_time_format_title">24-hour clock</string>
+    <string name="a11y_time_format_24">24h format (e.g. 14:30)</string>
+    <string name="a11y_time_format_12">12h format (e.g. 2:30 PM)</string>
+    <string name="a11y_date_format_title">Date format</string>
+    <string name="a11y_currency_title">Expense currency</string>
+
+    <string name="a11y_date_warning_title">Change date format</string>
+    <string name="a11y_date_warning_message">This change will reorganize how numerical dates are displayed in tasks, deadlines, notes, expenses, and calendars across the entire app.</string>
+    <string name="a11y_date_warning_current">Current format</string>
+    <string name="a11y_date_warning_new">New format</string>
+
+    <string name="a11y_contrast_title">Contrast</string>
+    <string name="a11y_contrast_subtitle">Separation between text and background across the app</string>
+    <string name="a11y_colorblind_title">Color blind palette</string>
+    <string name="a11y_reading_font_title">Reading typography</string>
+    <string name="a11y_bold_text_title">Bold text</string>
+    <string name="a11y_shapes_besides_color_title">Shapes besides color</string>
+    <string name="a11y_reduce_transparency_title">Reduce transparency</string>
+    <string name="a11y_spoken_descriptions_title">Spoken descriptions</string>
+    <string name="a11y_keep_screen_on_title">Keep screen on</string>
+
+    <!-- Tasks -->
+    <string name="tasks_header_title">Tasks</string>
+    <string name="tasks_tab_pending">Pending</string>
+    <string name="tasks_tab_completed">Completed</string>
+    <string name="tasks_tab_overdue">Overdue</string>
+    <string name="tasks_today">Today</string>
+    <string name="tasks_tomorrow">Tomorrow</string>
+    <string name="tasks_new_task">New task</string>
+    <string name="tasks_edit_task">Edit task</string>
+
+    <!-- Expenses -->
+    <string name="expenses_header_title">Expenses</string>
+    <string name="expenses_hero_title">THIS WEEK</string>
+    <string name="expenses_add_expense">Add expense</string>
+    <string name="expenses_edit_expense">Edit expense</string>
+    <string name="expenses_budget">Budget</string>
+    <string name="expenses_no_budget">No budget</string>
+    <string name="expenses_category">Category</string>
+    <string name="expenses_amount">Amount</string>
+    <string name="expenses_date">Date</string>
+    <string name="expenses_insights">Insights</string>
+    <string name="expenses_no_expenses">No expenses</string>
+
+    <!-- Grades and Subjects -->
+    <string name="grades_header_title">Grades</string>
+    <string name="grades_average">Average</string>
+    <string name="grades_subjects">Subjects</string>
+    <string name="grades_cuts">Periods</string>
+    <string name="grades_add_subject">Add subject</string>
+
+    <!-- Schedule -->
+    <string name="schedule_header_title">Schedule</string>
+    <string name="schedule_today">Today</string>
+    <string name="schedule_classes">Classes</string>
+    <string name="schedule_no_classes">No scheduled classes</string>
+
+    <!-- Notes -->
+    <string name="notes_header_title">Notes</string>
+    <string name="notes_new_note">New note</string>
+    <string name="notes_search_placeholder">Search notes…</string>
+    <string name="notes_pinned">Pinned</string>
+    <string name="notes_trash">Trash</string>
+</resources>

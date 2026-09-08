@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -66,8 +67,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.rememberLeaveGuard
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.formatCurrency
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import java.time.LocalDate
@@ -356,6 +359,7 @@ private fun ExpenseAmountField(
     amount: String,
     onAmountChange: (String) -> Unit
 ) {
+    val currency = LocalAccessibilityPreferences.current.currency
     PremiumFieldContainer(minHeight = 78.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -366,7 +370,7 @@ private fun ExpenseAmountField(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "$ ",
+                    text = "${currency.symbol} ",
                     color = ExpenseFormText,
                     fontSize = 25.sp,
                     lineHeight = 29.sp,
@@ -399,6 +403,18 @@ private fun ExpenseAmountField(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = ExpenseFormCoral.copy(alpha = 0.14f)
+                ) {
+                    Text(
+                        text = currency.code,
+                        color = ExpenseFormCoral,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
         }
     }
@@ -409,6 +425,7 @@ private fun ExpenseDateField(
     date: LocalDate,
     onClick: () -> Unit
 ) {
+    val dateFormat = LocalAccessibilityPreferences.current.dateFormat
     PremiumFieldContainer(
         minHeight = 70.dp,
         modifier = Modifier.cleanClickable(onClick = onClick)
@@ -425,9 +442,9 @@ private fun ExpenseDateField(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = longDateFormatter.format(date),
+                    text = "${date.format(DateTimeFormatter.ofPattern(dateFormat.pattern))} (${longDateFormatter.format(date)})",
                     color = ExpenseFormText,
-                    fontSize = 18.sp,
+                    fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -573,7 +590,7 @@ private fun ExpensePreviewCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "${CurrencyFormatter.formatCop(amount)} · ${ExpenseDateUtils.formatDisplay(ExpenseDateUtils.toMillis(date))}",
+                        text = "${formatCurrency(amount)} · ${ExpenseDateUtils.formatDisplay(ExpenseDateUtils.toMillis(date), LocalAccessibilityPreferences.current.dateFormat)}",
                         color = ExpenseFormMuted,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium

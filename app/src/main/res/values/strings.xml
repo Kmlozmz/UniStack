@@ -1,12 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-        El atajo del icono de la app: dejar pulsado UniStack y escribir sin pasar por Inicio.
-
-        El rótulo corto es el que cabe debajo del icono en el escritorio; el largo, el que sale
-        en la lista de atajos. «Apunte» y no «Nota» a propósito: en esta app una nota es una
-        calificación, y el menú de crear ya usa esa palabra para eso.
-    -->
+    <!-- Atajos del lanzador -->
     <string name="shortcut_note_short">Apunte</string>
     <string name="shortcut_note_long">Escribir un apunte</string>
+
+    <!-- Navegación Principal -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_academic">Académico</string>
+    <string name="nav_schedule">Horario</string>
+    <string name="nav_expenses">Gastos</string>
+    <string name="nav_settings">Ajustes</string>
+    <string name="nav_grades">Notas</string>
+    <string name="nav_tasks">Tareas</string>
+    <string name="nav_notes">Apuntes</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Acciones Comunes -->
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_back">Atrás</string>
+    <string name="action_apply">Aplicar</string>
+    <string name="action_apply_format">Aplicar formato</string>
+    <string name="action_create">Crear</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_search">Buscar</string>
+    <string name="action_accept">Aceptar</string>
+    <string name="action_undo">Deshacer</string>
+    <string name="action_retry">Reintentar</string>
+
+    <!-- Accesibilidad y Formatos -->
+    <string name="a11y_title">Accesibilidad</string>
+    <string name="a11y_subtitle">Visión, interacción, asistencia y sistema</string>
+    <string name="a11y_preview_title">VISTA PREVIA</string>
+    <string name="a11y_section_vision">VISIÓN Y LECTURA</string>
+    <string name="a11y_section_interaction">INTERACCIÓN Y CONTROL</string>
+    <string name="a11y_section_formats">FORMATOS E IDIOMA</string>
+    <string name="a11y_section_system">ASISTENCIA Y SISTEMA</string>
+
+    <string name="a11y_language_title">Idioma de la aplicación</string>
+    <string name="a11y_time_format_title">Reloj de 24 horas</string>
+    <string name="a11y_time_format_24">Formato 24h (ej. 14:30)</string>
+    <string name="a11y_time_format_12">Formato 12h (ej. 2:30 PM)</string>
+    <string name="a11y_date_format_title">Formato de fecha</string>
+    <string name="a11y_currency_title">Moneda de gastos</string>
+
+    <string name="a11y_date_warning_title">Cambiar formato de fecha</string>
+    <string name="a11y_date_warning_message">Este cambio reorganizará la visualización de fechas numéricas en tareas, vencimientos, notas, gastos y calendarios de toda la app.</string>
+    <string name="a11y_date_warning_current">Formato actual</string>
+    <string name="a11y_date_warning_new">Nuevo formato</string>
+
+    <string name="a11y_contrast_title">Contraste</string>
+    <string name="a11y_contrast_subtitle">Separación entre el texto y su fondo en toda la app</string>
+    <string name="a11y_colorblind_title">Paleta de daltonismo</string>
+    <string name="a11y_reading_font_title">Tipografía de lectura</string>
+    <string name="a11y_bold_text_title">Texto en negrita</string>
+    <string name="a11y_shapes_besides_color_title">Formas además del color</string>
+    <string name="a11y_reduce_transparency_title">Reducir transparencias</string>
+    <string name="a11y_spoken_descriptions_title">Descripciones habladas</string>
+    <string name="a11y_keep_screen_on_title">Mantener pantalla encendida</string>
+
+    <!-- Tareas -->
+    <string name="tasks_header_title">Tareas</string>
+    <string name="tasks_tab_pending">Pendientes</string>
+    <string name="tasks_tab_completed">Completadas</string>
+    <string name="tasks_tab_overdue">Vencidas</string>
+    <string name="tasks_today">Hoy</string>
+    <string name="tasks_tomorrow">Mañana</string>
+    <string name="tasks_new_task">Nueva tarea</string>
+    <string name="tasks_edit_task">Editar tarea</string>
+
+    <!-- Gastos -->
+    <string name="expenses_header_title">Gastos</string>
+    <string name="expenses_hero_title">ESTA SEMANA</string>
+    <string name="expenses_add_expense">Registrar gasto</string>
+    <string name="expenses_edit_expense">Editar gasto</string>
+    <string name="expenses_budget">Presupuesto</string>
+    <string name="expenses_no_budget">Sin presupuesto</string>
+    <string name="expenses_category">Categoría</string>
+    <string name="expenses_amount">Valor</string>
+    <string name="expenses_date">Fecha</string>
+    <string name="expenses_insights">Estadísticas</string>
+    <string name="expenses_no_expenses">Sin gastos</string>
+
+    <!-- Calificaciones y Materias -->
+    <string name="grades_header_title">Calificaciones</string>
+    <string name="grades_average">Promedio</string>
+    <string name="grades_subjects">Materias</string>
+    <string name="grades_cuts">Cortes</string>
+    <string name="grades_add_subject">Añadir materia</string>
+
+    <!-- Horario -->
+    <string name="schedule_header_title">Horario</string>
+    <string name="schedule_today">Hoy</string>
+    <string name="schedule_classes">Clases</string>
+    <string name="schedule_no_classes">No hay clases programadas</string>
+
+    <!-- Apuntes -->
+    <string name="notes_header_title">Apuntes</string>
+    <string name="notes_new_note">Nuevo apunte</string>
+    <string name="notes_search_placeholder">Buscar en apuntes…</string>
+    <string name="notes_pinned">Fijados</string>
+    <string name="notes_trash">Papelera</string>
 </resources>

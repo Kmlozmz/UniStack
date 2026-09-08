@@ -118,6 +118,7 @@ import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.PriorHistoryPromptStatus
 import com.unistack.app.feature_tasks.domain.StudentTask
 import com.unistack.app.feature_tasks.domain.TaskDateUtils
+import com.unistack.app.feature_tasks.domain.formatTaskDueText
 import com.unistack.app.feature_tasks.domain.TaskDifficulty
 import com.unistack.app.feature_tasks.domain.TaskGradingStatus
 import com.unistack.app.feature_tasks.domain.TaskType
@@ -995,7 +996,7 @@ private fun TaskStatSheet(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        TaskDateUtils.dueText(task.dueDateMillis),
+                                        formatTaskDueText(task.dueDateMillis),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1,
@@ -1193,7 +1194,7 @@ private fun PendingGradeTaskRow(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "$subjectName · ${TaskDateUtils.dueText(task.dueDateMillis)}",
+                text = "$subjectName · ${formatTaskDueText(task.dueDateMillis)}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Normal,

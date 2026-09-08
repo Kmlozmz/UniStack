@@ -114,11 +114,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.theme.UniStackTheme
 import com.unistack.app.core.utils.CurrencyFormatter
+import com.unistack.app.core.utils.formatCurrency
+import com.unistack.app.feature_user.domain.CurrencyPreference
 import com.unistack.app.feature_expenses.domain.Expense
 import com.unistack.app.feature_expenses.domain.ExpenseCategory
 import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import kotlin.math.roundToInt
 
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.LocalIsDarkTheme
@@ -537,7 +540,7 @@ private fun ExpensesHeroCard(
             }
             Spacer(modifier = Modifier.height(9.dp))
             Text(
-                text = CurrencyFormatter.formatCop(amount),
+                text = formatCurrency(amount),
                 color = ExpenseCoral,
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.ExtraBold,
@@ -753,7 +756,7 @@ private fun WeeklyMiniChart(
             Text(
                 text = normalizedValues.getOrElse(elegido.coerceAtLeast(0)) { 0 }
                     .takeIf { it > 0 }
-                    ?.let { CurrencyFormatter.formatCop(it) }
+                    ?.let { formatCurrency(it) }
                     ?: "sin gastos",
                 color = ExpenseCoral,
                 style = MaterialTheme.typography.labelMedium,
@@ -810,8 +813,9 @@ private fun CategoryRingChart(
         // hay que sumar los tres numeros de la leyenda para saber el total. La forma existe
         // para sostener esta cifra, no como adorno.
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val currency = LocalAccessibilityPreferences.current.currency
             Text(
-                text = compactCop(total),
+                text = compactAmount(total, currency),
                 color = ExpenseText,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.ExtraBold,
@@ -883,7 +887,7 @@ private fun CategoryRingChart(
                         modifier = Modifier.padding(start = 8.dp).weight(1f)
                     )
                     Text(
-                        text = CurrencyFormatter.formatCop(monto),
+                        text = formatCurrency(monto),
                         color = ExpenseMuted,
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1
@@ -945,7 +949,7 @@ private fun BudgetRow(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = if (hasBudget) "Presupuesto: ${CurrencyFormatter.formatCop(budget)}" else "Sin presupuesto",
+                    text = if (hasBudget) "Presupuesto: ${formatCurrency(budget)}" else "Sin presupuesto",
                     color = ExpenseText,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -1659,7 +1663,7 @@ private fun ExpenseDayGroup(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = CurrencyFormatter.formatCop(expenses.sumOf { it.amount }),
+                    text = formatCurrency(expenses.sumOf { it.amount }),
                     color = ExpenseMuted,
                     fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.bodyMedium
@@ -1761,7 +1765,7 @@ private fun FilaDeGasto(
             // no guarda nada más que su categoría y su importe.
         }
         Text(
-            text = CurrencyFormatter.formatCop(expense.amount),
+            text = formatCurrency(expense.amount),
             color = ExpenseCoral,
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.titleMedium,
@@ -1810,8 +1814,8 @@ private fun ExpenseActionsSheet(
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        text = ExpenseDateUtils.formatDisplay(expense.dateMillis) +
-                            "  •  " + CurrencyFormatter.formatCop(expense.amount),
+                        text = ExpenseDateUtils.formatDisplay(expense.dateMillis, LocalAccessibilityPreferences.current.dateFormat) +
+                            "  •  " + formatCurrency(expense.amount),
                         color = ExpenseMuted,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -1958,12 +1962,14 @@ private fun previousTotalForPeriod(
  * ilegible: dentro de la galleta se dice «$60,5k» y el importe exacto vive en la cifra grande
  * de arriba, a dos centimetros.
  */
-private fun compactCop(monto: Int): String = when {
-    monto >= 1_000_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000_000.0) + "M"
-    monto >= 10_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
-    monto >= 1_000 -> "$" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
-    else -> CurrencyFormatter.formatCop(monto)
+private fun compactAmount(monto: Int, currency: CurrencyPreference = CurrencyPreference.COP): String = when {
+    monto >= 1_000_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000_000.0) + "M"
+    monto >= 10_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
+    monto >= 1_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
+    else -> CurrencyFormatter.format(monto, currency)
 }
+
+private fun compactCop(monto: Int): String = compactAmount(monto, CurrencyPreference.COP)
 
 private fun recordCountLabel(count: Int): String =
     if (count == 1) "1 registro" else "$count registros"
