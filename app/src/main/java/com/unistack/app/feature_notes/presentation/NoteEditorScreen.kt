@@ -113,6 +113,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniDropdownMenu
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.feature_grades.domain.Subject
@@ -511,7 +512,7 @@ fun NoteEditorScreen(
                 title = {},
                 navigationIcon = {
                     Box(modifier = Modifier.padding(start = 6.dp)) {
-                        RoundIconButton(Icons.AutoMirrored.Rounded.ArrowBack, "Atrás", leave, enFondo)
+                        UniBackButton(onClick = leave)
                     }
                 },
                 actions = {

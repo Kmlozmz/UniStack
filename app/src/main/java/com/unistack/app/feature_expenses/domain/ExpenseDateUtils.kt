@@ -25,8 +25,13 @@ object ExpenseDateUtils {
 
     fun formatInput(date: LocalDate): String = date.format(inputFormatter)
 
-    fun formatDisplay(dateMillis: Long): String {
-        return fromMillis(dateMillis).format(displayFormatter)
+    fun formatDisplay(dateMillis: Long, preference: com.unistack.app.feature_user.domain.DateFormatPreference? = null): String {
+        val date = fromMillis(dateMillis)
+        return if (preference != null) {
+            date.format(DateTimeFormatter.ofPattern(preference.pattern))
+        } else {
+            date.format(displayFormatter)
+        }
     }
 
     fun toMillis(date: LocalDate): Long {

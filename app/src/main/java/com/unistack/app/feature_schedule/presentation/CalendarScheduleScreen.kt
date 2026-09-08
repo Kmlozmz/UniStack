@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.design.components.UniBackButton
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -518,13 +519,8 @@ private fun SubjectHistoryDialog(
                         .padding(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    UniBackButton(onClick = onDismiss)
+                    Spacer(Modifier.width(8.dp))
                     Text(
                         text = subject.name,
                         modifier = Modifier.weight(1f),

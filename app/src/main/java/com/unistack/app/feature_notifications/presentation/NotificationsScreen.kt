@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.theme.scrollBottomRoom
@@ -232,14 +233,8 @@ private fun NotificationHistoryHeader(
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onBackClick, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = NotificationAccentText
-            )
-        }
-        Spacer(modifier = Modifier.width(5.dp))
+        UniBackButton(onClick = onBackClick)
+        Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = "Notificaciones",
@@ -568,11 +563,7 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UniIconButton(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            contentDescription = "Volver",
-            onClick = onBackClick
-        )
+        UniBackButton(onClick = onBackClick)
         Text(
             text = "Detalle del aviso",
             color = NotificationText,

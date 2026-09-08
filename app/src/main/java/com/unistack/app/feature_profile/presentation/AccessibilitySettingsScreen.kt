@@ -21,7 +21,10 @@ import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Animation
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.FormatBold
@@ -72,6 +75,7 @@ import com.unistack.app.core.design.components.SettingsRow
 import com.unistack.app.core.design.components.SettingsToggleRow
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.duracionDeDeshacer
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -81,6 +85,8 @@ import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.AppLanguage
 import com.unistack.app.feature_user.domain.ColorBlindPalette
 import com.unistack.app.feature_user.domain.ContrastLevel
+import com.unistack.app.feature_user.domain.CurrencyPreference
+import com.unistack.app.feature_user.domain.DateFormatPreference
 import com.unistack.app.feature_user.domain.MotionPreference
 import com.unistack.app.feature_user.domain.ReadingFont
 import com.unistack.app.feature_user.domain.UndoDuration
@@ -109,6 +115,8 @@ fun AccessibilitySettingsScreen(
     val scope = rememberCoroutineScope()
     var testSnackbarJob by remember { mutableStateOf<Job?>(null) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showDateFormatDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     Scaffold(
@@ -134,12 +142,7 @@ fun AccessibilitySettingsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Atrás"
-                        )
-                    }
+                    UniBackButton(onClick = onBackClick)
                 },
                 scrollBehavior = scrollBehavior
             )
@@ -344,9 +347,49 @@ fun AccessibilitySettingsScreen(
                 }
             }
 
+            // ------------------------------------------------------------------ FORMATOS E IDIOMA
+            item {
+                SettingsGroup(label = "FORMATOS E IDIOMA", rowCount = 4) {
+                    SettingsRow(
+                        icon = Icons.Rounded.Translate,
+                        title = "Idioma de la aplicación",
+                        subtitle = "${a11y.appLanguage.etiqueta()} · ${a11y.appLanguage.estado()}",
+                        iconColor = MaterialTheme.colorScheme.secondary,
+                        onClick = { showLanguageDialog = true }
+                    )
+
+                    SettingsToggleRow(
+                        icon = Icons.Rounded.AccessTime,
+                        title = "Reloj de 24 horas",
+                        subtitle = if (a11y.use24HourTime) "Formato 24h (ej. 14:30)" else "Formato 12h (ej. 2:30 PM)",
+                        checked = a11y.use24HourTime,
+                        iconColor = sections.schedule,
+                        onCheckedChange = { valor ->
+                            viewModel.updateAccessibility { it.copy(use24HourTime = valor) }
+                        }
+                    )
+
+                    SettingsRow(
+                        icon = Icons.Rounded.CalendarMonth,
+                        title = "Formato de fecha",
+                        subtitle = "${a11y.dateFormat.label} · ${a11y.dateFormat.previewDate}",
+                        iconColor = MaterialTheme.colorScheme.primary,
+                        onClick = { showDateFormatDialog = true }
+                    )
+
+                    SettingsRow(
+                        icon = Icons.Rounded.AccountBalanceWallet,
+                        title = "Moneda de gastos",
+                        subtitle = "${a11y.currency.label} · ${a11y.currency.preview}",
+                        iconColor = sections.onTrack,
+                        onClick = { showCurrencyDialog = true }
+                    )
+                }
+            }
+
             // ------------------------------------------------------------------ ASISTENCIA Y SISTEMA
             item {
-                SettingsGroup(label = "ASISTENCIA Y SISTEMA", rowCount = 4) {
+                SettingsGroup(label = "ASISTENCIA Y SISTEMA", rowCount = 3) {
                     SettingsToggleRow(
                         icon = Icons.Rounded.RecordVoiceOver,
                         title = "Descripciones habladas",
@@ -379,14 +422,6 @@ fun AccessibilitySettingsScreen(
                             viewModel.updateAccessibility { it.copy(keepScreenOn = valor) }
                         }
                     )
-
-                    SettingsRow(
-                        icon = Icons.Rounded.Translate,
-                        title = "Idioma de la aplicación",
-                        subtitle = "${a11y.appLanguage.etiqueta()} · ${a11y.appLanguage.estado()}",
-                        iconColor = MaterialTheme.colorScheme.secondary,
-                        onClick = { showLanguageDialog = true }
-                    )
                 }
             }
         }
@@ -400,6 +435,28 @@ fun AccessibilitySettingsScreen(
                 showLanguageDialog = false
             },
             onDismiss = { showLanguageDialog = false }
+        )
+    }
+
+    if (showDateFormatDialog) {
+        DateFormatSelectionDialog(
+            current = a11y.dateFormat,
+            onSelect = { selected ->
+                viewModel.updateAccessibility { it.copy(dateFormat = selected) }
+                showDateFormatDialog = false
+            },
+            onDismiss = { showDateFormatDialog = false }
+        )
+    }
+
+    if (showCurrencyDialog) {
+        CurrencySelectionDialog(
+            current = a11y.currency,
+            onSelect = { selected ->
+                viewModel.updateAccessibility { it.copy(currency = selected) }
+                showCurrencyDialog = false
+            },
+            onDismiss = { showCurrencyDialog = false }
         )
     }
 }
@@ -635,6 +692,110 @@ private fun LanguageSelectionDialog(
                             )
                             Text(
                                 text = idioma.estado(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun DateFormatSelectionDialog(
+    current: DateFormatPreference,
+    onSelect: (DateFormatPreference) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Formato de fecha",
+                style = MaterialTheme.typography.titleLargeEmphasized
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                DateFormatPreference.entries.forEach { format ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .cleanClickable { onSelect(format) }
+                            .padding(vertical = 10.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RadioButton(
+                            selected = current == format,
+                            onClick = { onSelect(format) }
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = format.label,
+                                style = MaterialTheme.typography.titleSmallEmphasized
+                            )
+                            Text(
+                                text = "Muestra: ${format.previewDate} (${format.pattern})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun CurrencySelectionDialog(
+    current: CurrencyPreference,
+    onSelect: (CurrencyPreference) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Moneda de gastos",
+                style = MaterialTheme.typography.titleLargeEmphasized
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                CurrencyPreference.entries.forEach { divisa ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .cleanClickable { onSelect(divisa) }
+                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RadioButton(
+                            selected = current == divisa,
+                            onClick = { onSelect(divisa) }
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = divisa.label,
+                                style = MaterialTheme.typography.titleSmallEmphasized
+                            )
+                            Text(
+                                text = "Muestra: ${divisa.preview} · Símbolo: ${divisa.symbol}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

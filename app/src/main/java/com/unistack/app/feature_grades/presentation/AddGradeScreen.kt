@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
 import com.unistack.app.core.design.components.avisoDeError
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -287,18 +288,7 @@ fun AddGradeScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (!enHoja) {
-                    IconButton(
-                        onClick = requestLeave,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.52f), CircleShape)
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    UniBackButton(onClick = requestLeave)
                 }
                 Text(
                     text = if (isEditing) "Editar nota" else "Nueva nota",

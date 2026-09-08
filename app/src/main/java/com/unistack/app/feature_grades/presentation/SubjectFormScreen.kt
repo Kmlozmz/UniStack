@@ -43,6 +43,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.unistack.app.core.design.components.avisoDeError
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
@@ -513,14 +514,7 @@ private fun SubjectFormHeader(
     onBackClick: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .size(40.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f), CircleShape)
-        ) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-        }
+        UniBackButton(onClick = onBackClick)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             // Relleno con el color elegido y no teñido al 14%: es la muestra grande de cómo
             // se verá la materia en el resto de la app.
@@ -692,8 +686,7 @@ private fun CustomSubjectColorDialog(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    UniIconButton(
-                        icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    UniBackButton(
                         contentDescription = "Cancelar",
                         onClick = onDismiss
                     )

@@ -3,6 +3,7 @@
 package com.unistack.app.feature_support.presentation
 
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import androidx.compose.foundation.layout.imePadding
@@ -153,11 +154,7 @@ private fun CalculatorHeader(onBackClick: () -> Unit, onHelpClick: () -> Unit) {
             .padding(start = spacing.screenHorizontal - 12.dp, end = spacing.screenHorizontal, top = 4.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UniIconButton(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            contentDescription = "Volver",
-            onClick = onBackClick
-        )
+        UniBackButton(onClick = onBackClick)
         Text(
             text = "Calculadora",
             modifier = Modifier

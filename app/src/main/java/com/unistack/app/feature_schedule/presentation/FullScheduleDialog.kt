@@ -1,5 +1,6 @@
 package com.unistack.app.feature_schedule.presentation
 
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.utils.DayLabels
 
@@ -179,11 +180,11 @@ private fun FullScheduleHeader(
             .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UniIconButton(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+        UniBackButton(
             contentDescription = "Cerrar horario completo",
             onClick = onDismiss
         )
+        Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
                 "Horario completo",

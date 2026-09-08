@@ -48,6 +48,7 @@ import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.promedioQueSube
 import com.unistack.app.core.design.components.notaRecienRegistrada
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
@@ -793,11 +794,7 @@ private fun MissingSubjectState(onBackClick: () -> Unit, modifier: Modifier = Mo
             .statusBarsPadding()
             .padding(20.dp)
     ) {
-        UniIconButton(
-            icon = Icons.AutoMirrored.Rounded.ArrowBack,
-            contentDescription = "Volver",
-            onClick = onBackClick
-        )
+        UniBackButton(onClick = onBackClick)
         Text("Materia no encontrada", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
@@ -821,16 +818,7 @@ private fun SubjectHeader(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
-        ) {
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
-        }
+        UniBackButton(onClick = onBackClick)
         Column(
             modifier = Modifier
                 .weight(1f)

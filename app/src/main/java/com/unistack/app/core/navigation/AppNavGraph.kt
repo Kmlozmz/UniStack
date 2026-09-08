@@ -50,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -1622,55 +1623,21 @@ private fun UniStackBottomBarContent(
                      * movimiento reducido: con las animaciones bajadas, salta sin rebotar.
                      */
                     /*
-                     * «Barra inferior animada» decide si esto se desliza o salta.
-                     *
-                     * El interruptor se guardaba y no llegaba aqui: la pastilla y el icono se
-                     * movian con muelle pasara lo que pasara. Apagado, el cambio es
-                     * instantaneo —un `tween` de un milisegundo— que es exactamente lo que
-                     * pide quien no quiere que la barra se mueva bajo el pulgar.
-                     */
-                    val compas = if (animada) {
-                        MaterialTheme.motionScheme.defaultSpatialSpec<Dp>()
-                    } else {
-                        androidx.compose.animation.core.tween(1)
-                    }
-                    val compasFloat = if (animada) {
-                        MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-                    } else {
-                        androidx.compose.animation.core.tween(1)
-                    }
-                    val lift by animateDpAsState(
-                        targetValue = if (selected) (-2).dp else 0.dp,
-                        animationSpec = compas,
-                        label = "elevación del icono"
-                    )
-                    val scale by animateFloatAsState(
-                        targetValue = if (selected) 1.12f else 1f,
-                        animationSpec = compasFloat,
-                        label = "tamaño del icono"
-                    )
-                    /*
-                     * La caja de fuera es la que dice donde va la pastilla, y no el icono.
-                     *
-                     * El icono lleva encima el desplazamiento y la escala del seleccionado; si
-                     * la medida saliera de el, la pastilla iria persiguiendo su rebote en vez
-                     * de quedarse quieta detras.
+                     * Centrado exacto del icono dentro del contorno.
                      */
                     Box(
-                        modifier = Modifier.onGloballyPositioned { coords ->
-                            huecos[item.route] = coords.boundsInRoot()
-                        }
+                        modifier = Modifier
+                            .size(24.dp)
+                            .onGloballyPositioned { coords ->
+                                huecos[item.route] = coords.boundsInRoot()
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             // Redondeado, lineal o relleno: lo que se haya elegido en Componentes.
                             imageVector = item.iconFor(selected, appearance.iconStyle),
                             contentDescription = item.label,
-                            modifier = Modifier
-                                .offset(y = lift)
-                                .graphicsLayer {
-                                    scaleX = scale
-                                    scaleY = scale
-                                }
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 },

@@ -20,6 +20,8 @@ data class AccessibilityPreferences(
     val textScale: TextScalePreference = TextScalePreference.STANDARD,
     val motionPreference: MotionPreference = MotionPreference.FULL,
     val heroAnimationEnabled: Boolean = true,
+    val dateFormat: DateFormatPreference = DateFormatPreference.DMY,
+    val currency: CurrencyPreference = CurrencyPreference.COP,
 
     // ------------------------------------------------------------------ ver
 
@@ -120,4 +122,35 @@ enum class UndoDuration(val segundos: Int) {
     CORTA(5),
     LARGA(10),
     MAXIMA(30)
+}
+
+/**
+ * Formato de visualización de fechas numéricas, independiente del idioma.
+ */
+enum class DateFormatPreference(
+    val pattern: String,
+    val label: String,
+    val previewDate: String
+) {
+    DMY("dd/MM/yyyy", "Día / Mes / Año", "31/12/2026"),
+    MDY("MM/dd/yyyy", "Mes / Día / Año", "12/31/2026"),
+    YMD("yyyy/MM/dd", "Año / Mes / Día", "2026/12/31")
+}
+
+/**
+ * Divisa principal de la app para presupuestos y gastos, independiente del idioma.
+ */
+enum class CurrencyPreference(
+    val code: String,
+    val symbol: String,
+    val label: String,
+    val preview: String
+) {
+    COP("COP", "$", "Peso colombiano (COP)", "$ 50.000"),
+    USD("USD", "$", "Dólar estadounidense (USD)", "$ 50.00"),
+    EUR("EUR", "€", "Euro (EUR)", "50,00 €"),
+    MXN("MXN", "$", "Peso mexicano (MXN)", "$ 50.00"),
+    ARS("ARS", "$", "Peso argentino (ARS)", "$ 50.000"),
+    CLP("CLP", "$", "Peso chileno (CLP)", "$ 50.000"),
+    PEN("PEN", "S/", "Sol peruano (PEN)", "S/ 50.00")
 }

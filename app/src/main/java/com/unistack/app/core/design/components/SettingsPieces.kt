@@ -61,14 +61,8 @@ fun SettingsHeader(
         // Sin flecha cuando la pantalla es raíz de pestaña: una flecha que no lleva a
         // ninguna parte es peor que no tenerla.
         if (onBackClick != null) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Spacer(Modifier.width(4.dp))
+            UniBackButton(onClick = onBackClick)
+            Spacer(Modifier.width(8.dp))
         } else {
             Spacer(Modifier.width(4.dp))
         }

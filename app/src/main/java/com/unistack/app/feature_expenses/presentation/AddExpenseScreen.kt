@@ -3,6 +3,7 @@
 package com.unistack.app.feature_expenses.presentation
 
 
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
@@ -248,17 +249,7 @@ private fun AddExpenseContent(
             .padding(top = 16.dp, bottom = scrollBottomRoom),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier.size(IconButtonDefaults.smallContainerSize())
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
-                tint = ExpenseFormText,
-                modifier = Modifier.size(28.dp)
-            )
-        }
+        UniBackButton(onClick = onBackClick)
 
         AddExpenseHeader(isEditing = isEditing)
         ExpenseInfoCard(

@@ -390,6 +390,20 @@ class LocalJsonBackupRepository(
         .put("textScale", value.textScale.name)
         .put("motionPreference", value.motionPreference.name)
         .put("heroAnimationEnabled", value.heroAnimationEnabled)
+        .put("dateFormat", value.dateFormat.name)
+        .put("currency", value.currency.name)
+        .put("contrast", value.contrast.name)
+        .put("colorBlindPalette", value.colorBlindPalette.name)
+        .put("shapesBesidesColor", value.shapesBesidesColor)
+        .put("boldText", value.boldText)
+        .put("readingFont", value.readingFont.name)
+        .put("touchTargetSize", value.touchTargetSize.name)
+        .put("reduceTransparency", value.reduceTransparency)
+        .put("oneHandedMode", value.oneHandedMode)
+        .put("undoDuration", value.undoDuration.name)
+        .put("spokenDescriptions", value.spokenDescriptions)
+        .put("confirmIrreversible", value.confirmIrreversible)
+        .put("keepScreenOn", value.keepScreenOn)
 
     private fun parseAccessibility(
         json: JSONObject?,
@@ -402,7 +416,21 @@ class LocalJsonBackupRepository(
             use24HourTime = json.optBoolean("use24HourTime", current.use24HourTime),
             textScale = json.optString("textScale").toEnum(current.textScale),
             motionPreference = json.optString("motionPreference").toEnum(current.motionPreference),
-            heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", current.heroAnimationEnabled)
+            heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", current.heroAnimationEnabled),
+            dateFormat = json.optString("dateFormat").toEnum(current.dateFormat),
+            currency = json.optString("currency").toEnum(current.currency),
+            contrast = json.optString("contrast").toEnum(current.contrast),
+            colorBlindPalette = json.optString("colorBlindPalette").toEnum(current.colorBlindPalette),
+            shapesBesidesColor = json.optBoolean("shapesBesidesColor", current.shapesBesidesColor),
+            boldText = json.optBoolean("boldText", current.boldText),
+            readingFont = json.optString("readingFont").toEnum(current.readingFont),
+            touchTargetSize = json.optString("touchTargetSize").toEnum(current.touchTargetSize),
+            reduceTransparency = json.optBoolean("reduceTransparency", current.reduceTransparency),
+            oneHandedMode = json.optBoolean("oneHandedMode", current.oneHandedMode),
+            undoDuration = json.optString("undoDuration").toEnum(current.undoDuration),
+            spokenDescriptions = json.optBoolean("spokenDescriptions", current.spokenDescriptions),
+            confirmIrreversible = json.optBoolean("confirmIrreversible", current.confirmIrreversible),
+            keepScreenOn = json.optBoolean("keepScreenOn", current.keepScreenOn)
         )
     }
 

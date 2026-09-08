@@ -1,5 +1,6 @@
 package com.unistack.app.feature_grades.presentation
 
+import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
@@ -75,35 +76,16 @@ fun PriorHistoryScreen(
         if (subject != null) viewModel.refreshHistoryCompletion(subject.id)
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, top = 8.dp, end = 20.dp, bottom = scrollBottomRoom),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    LargeTitleScaffold(
+        title = "Completar historial",
+        subtitle = subject?.name.orEmpty(),
+        onBackClick = onBackClick,
+        modifier = modifier,
+        horizontalPadding = 20.dp,
+        topPadding = 8.dp,
+        bottomPadding = scrollBottomRoom,
+        itemSpacing = 14.dp
     ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                UniIconButton(
-                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = "Volver",
-                    onClick = onBackClick
-                )
-                Column(modifier = Modifier.padding(start = 4.dp)) {
-                    Text(
-                        "Completar historial",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        subject?.name.orEmpty(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
         item {
             Surface(
                 shape = MaterialTheme.shapes.medium,

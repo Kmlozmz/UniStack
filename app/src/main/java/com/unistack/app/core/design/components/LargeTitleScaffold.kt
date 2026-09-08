@@ -98,9 +98,10 @@ fun LargeTitleScaffoldLayout(
                 },
                 navigationIcon = {
                     if (onBackClick != null) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Atrás")
-                        }
+                        UniBackButton(
+                            onClick = onBackClick,
+                            modifier = Modifier.padding(start = 6.dp)
+                        )
                     }
                 },
                 actions = { actions() },

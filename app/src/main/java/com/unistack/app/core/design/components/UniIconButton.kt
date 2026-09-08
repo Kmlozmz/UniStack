@@ -4,6 +4,8 @@ package com.unistack.app.core.design.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
@@ -123,4 +125,26 @@ fun UniIconButton(
         ) { glyph() }
     }
     }
+}
+
+/**
+ * Botón de retroceso estándar con contorno (Outlined) de Material 3 Expressive.
+ *
+ * Enmarca la flecha dentro de una pastilla o círculo con borde sutil, evitando que quede
+ * como una flecha flotante sin contenedor visual.
+ */
+@Composable
+fun UniBackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+    contentDescription: String = "Volver"
+) {
+    UniIconButton(
+        icon = icon,
+        contentDescription = contentDescription,
+        onClick = onClick,
+        modifier = modifier,
+        variant = UniIconButtonVariant.Outlined
+    )
 }

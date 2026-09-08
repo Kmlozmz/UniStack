@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
 
@@ -638,17 +639,7 @@ private fun TaskHeader(
     var menuExpanded by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f),
-                        shape = CircleShape
-                    )
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver")
-            }
+            UniBackButton(onClick = onBackClick)
             Spacer(modifier = Modifier.weight(1f))
             if (onDeleteClick != null || onDuplicateClick != null || onCompleteClick != null) {
                 Box {

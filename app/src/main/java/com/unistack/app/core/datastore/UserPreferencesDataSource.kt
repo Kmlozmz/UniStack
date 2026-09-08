@@ -23,6 +23,8 @@ import com.unistack.app.feature_user.domain.MotionCatalog
 import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.AccessibilityPreferences
 import com.unistack.app.feature_user.domain.AppLanguage
+import com.unistack.app.feature_user.domain.DateFormatPreference
+import com.unistack.app.feature_user.domain.CurrencyPreference
 import com.unistack.app.feature_user.domain.GradingCut
 import com.unistack.app.feature_user.domain.Corte
 import com.unistack.app.feature_user.domain.GradingCutScheme
@@ -411,6 +413,8 @@ class UserPreferencesDataSource(private val context: Context) {
         .put("spokenDescriptions", spokenDescriptions)
         .put("confirmIrreversible", confirmIrreversible)
         .put("keepScreenOn", keepScreenOn)
+        .put("dateFormat", dateFormat.name)
+        .put("currency", currency.name)
         .toString()
 
     private fun parseAccessibilityPreferences(raw: String?): AccessibilityPreferences {
@@ -424,6 +428,8 @@ class UserPreferencesDataSource(private val context: Context) {
                 textScale = json.enumOrDefault("textScale", TextScalePreference.STANDARD),
                 motionPreference = json.enumOrDefault("motionPreference", MotionPreference.FULL),
                 heroAnimationEnabled = json.optBoolean("heroAnimationEnabled", true),
+                dateFormat = json.enumOrDefault("dateFormat", DateFormatPreference.DMY),
+                currency = json.enumOrDefault("currency", CurrencyPreference.COP),
                 contrast = json.enumOrDefault("contrast", ContrastLevel.ESTANDAR),
                 colorBlindPalette = json.enumOrDefault("colorBlindPalette", ColorBlindPalette.NINGUNA),
                 shapesBesidesColor = json.optBoolean("shapesBesidesColor", false),

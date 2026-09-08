@@ -109,6 +109,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniTimePickerDialog
+import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniChoiceRow
@@ -660,7 +661,7 @@ private fun NotesSearchBar(
             .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UniIconButton(
+        UniBackButton(
             icon = if (searching) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
             contentDescription = if (searching) "Cerrar la búsqueda" else "Atrás",
             onClick = { if (searching) onSearchingChange(false) else onBackClick() }
