@@ -1162,10 +1162,11 @@ private fun IdentityOutlinedRow(
 ) {
     val shape = MaterialTheme.shapes.medium
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .border(1.dp, bordeColor ?: MaterialTheme.colorScheme.outlineVariant, shape)
+            .then(modifier)
             .then(if (onClick == null) Modifier else Modifier.clickable(onClick = onClick))
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

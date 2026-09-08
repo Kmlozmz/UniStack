@@ -290,7 +290,10 @@ private fun TarjetaDeAjuste(
      */
     UniCard(
         modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.medium,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+        borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         // UniCard pinta su contenido en un Box: sin la Column, el encabezado y lo de abajo se
@@ -448,7 +451,10 @@ private fun TarjetaDeInterruptor(
     val marcado = toggle.read(motion)
     UniCard(
         modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.medium,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+        borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -579,11 +585,13 @@ private fun InterruptorMaestro(
         modifier = Modifier.fillMaxWidth(),
         // Apagado, la tarjeta se tine: se nota que lo de abajo esta en pausa sin leer.
         color = if (activo) {
-            MaterialTheme.colorScheme.surfaceContainerLow
+            MaterialTheme.colorScheme.surfaceContainer
         } else {
             MaterialTheme.colorScheme.primaryContainer
         },
         shape = MaterialTheme.shapes.medium,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+        borderWidth = 1.dp,
         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -709,11 +717,8 @@ private fun MotionPreference.etiqueta() = when (this) {
 private fun HapticStrength.avisar(haptica: HapticFeedback) {
     when (this) {
         HapticStrength.NINGUNA -> Unit
-        HapticStrength.SUAVE -> haptica.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        HapticStrength.MEDIA -> haptica.performHapticFeedback(HapticFeedbackType.LongPress)
-        HapticStrength.FUERTE -> {
-            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
-            haptica.performHapticFeedback(HapticFeedbackType.LongPress)
-        }
+        HapticStrength.SUAVE -> haptica.performHapticFeedback(HapticFeedbackType.SegmentTick)
+        HapticStrength.MEDIA -> haptica.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        HapticStrength.FUERTE -> haptica.performHapticFeedback(HapticFeedbackType.Confirm)
     }
 }

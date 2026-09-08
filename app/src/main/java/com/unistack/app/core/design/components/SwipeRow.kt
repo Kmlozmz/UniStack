@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
@@ -16,6 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
@@ -46,6 +51,8 @@ import com.unistack.app.core.utils.performSafely
 fun FilaDeslizable(
     onBorrar: () -> Unit,
     modifier: Modifier = Modifier,
+    shape: Shape = RectangleShape,
+    containerColor: Color = Color.Unspecified,
     apagado: Boolean = false,
     contenido: @Composable () -> Unit
 ) {
@@ -69,27 +76,36 @@ fun FilaDeslizable(
 
     SwipeToDismissBox(
         state = estado,
-        modifier = modifier,
+        modifier = modifier.clip(shape),
         enableDismissFromStartToEnd = false,
         backgroundContent = {
-            // El fondo se pinta siempre: si solo apareciera al pasar el umbral, el gesto no
-            // avisaria de lo que va a hacer hasta que ya es tarde para soltarlo.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(rojo.copy(alpha = 0.18f))
-                    .padding(end = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.DeleteOutline,
-                    contentDescription = null,
-                    tint = rojo
-                )
+            // El fondo solo es visible cuando el usuario realmente está deslizando
+            val esDeslizando = estado.dismissDirection == SwipeToDismissBoxValue.EndToStart
+            val progreso = if (esDeslizando) estado.progress.coerceIn(0f, 1f) else 0f
+            if (progreso > 0.05f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .background(rojo.copy(alpha = 0.20f * progreso))
+                        .padding(end = 20.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.DeleteOutline,
+                        contentDescription = "Borrar",
+                        tint = rojo.copy(alpha = progreso)
+                    )
+                }
             }
         }
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) { contenido() }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = shape,
+            color = if (containerColor != Color.Unspecified) containerColor else Color.Transparent
+        ) {
+            contenido()
+        }
     }
 }

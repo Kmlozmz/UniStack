@@ -122,6 +122,12 @@ fun <T> UniSegmentedControl(
                     onSelected(option.value)
                 },
                 shapes = shapes,
+                colors = ToggleButtonDefaults.toggleButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    checkedContainerColor = MaterialTheme.colorScheme.primary,
+                    checkedContentColor = MaterialTheme.colorScheme.onPrimary
+                ),
                 interactionSource = interactionSource,
                 modifier = Modifier
                     .weight(option.weight)

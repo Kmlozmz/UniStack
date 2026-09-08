@@ -1272,7 +1272,11 @@ private fun TaskCard(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    FilaDeslizable(onBorrar = onDeleteClick, modifier = modifier) {
+    FilaDeslizable(
+        onBorrar = onDeleteClick,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier
+    ) {
         TarjetaDeTarea(
             task = task,
             subjects = subjects,

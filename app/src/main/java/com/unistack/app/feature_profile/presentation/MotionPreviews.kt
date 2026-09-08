@@ -953,7 +953,7 @@ private fun DrawScope.notaNueva(v: String, t: Float, c: TintaDemo) {
     // «Promedio» a secas: con «Promedio del corte» el rotulo llegaba hasta donde empieza la
     // cifra y las dos se pisaban. En una caja de dos centimetros no caben las dos cosas.
     texto("Promedio", 12f, 11f, c, c.tinta.copy(alpha = 0.55f), tamano = 7f, negrita = false)
-    val promedio = if (v == "contar") 3.9f + 0.35f * avance else if (avance > 0.5f) 4.25f else 3.9f
+    val promedio = if (v == "ninguna") 4.25f else 3.9f + 0.35f * avance
     // Centrada en la 76 y no en la 88: a once, «4,25» mide veintiseis y desbordaba el lienzo
     // por la derecha. Asi acaba justo donde acaban las filas de abajo.
     texto("%.2f".format(promedio).replace('.', ','), 76f, 11f, c, c.verde, tamano = 10f, centrado = true)

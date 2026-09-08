@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -554,41 +556,52 @@ fun Modifier.claseEnCurso(enCurso: Boolean, verde: Color): Modifier {
     )
 
     return when (estilo) {
-        ClassNowMotion.RESPIRA -> this.drawBehind {
+        ClassNowMotion.RESPIRA -> this.clipToBounds().drawBehind {
+            val p = 0.5f + 0.5f * sin(t * 2f * PI.toFloat())
             drawRoundRect(
-                color = verde.copy(alpha = 0.08f + 0.16f * (0.5f + 0.5f * sin(t * 2f * PI.toFloat()))),
-                cornerRadius = CornerRadius(size.height * 0.2f)
+                color = verde.copy(alpha = 0.04f + 0.12f * p),
+                cornerRadius = CornerRadius(14.dp.toPx(), 14.dp.toPx())
             )
         }
-        ClassNowMotion.PUNTO -> this.drawWithContent {
+        ClassNowMotion.PUNTO -> this.clipToBounds().drawWithContent {
             drawContent()
             val late = 0.5f + 0.5f * sin(t * 4f * PI.toFloat())
-            val centro = Offset(size.width - 14f, size.height / 2f)
-            drawCircle(verde.copy(alpha = 0.35f), radius = 6f + 6f * late, center = centro)
-            drawCircle(verde, radius = 5f, center = centro)
+            val r = 3.dp.toPx()
+            val centro = Offset(8.dp.toPx(), size.height / 2f)
+            drawCircle(verde.copy(alpha = 0.35f * late), radius = r * 2f, center = centro)
+            drawCircle(verde, radius = r, center = centro)
         }
-        // Un punto de luz recorre el perímetro, esquinas incluidas.
-        ClassNowMotion.RECORRE -> this.drawWithContent {
+        // Un punto de luz recorre el perímetro interior, esquinas incluidas e inset para no salirse.
+        ClassNowMotion.RECORRE -> this.clipToBounds().drawWithContent {
             drawContent()
-            val perimetro = 2f * (size.width + size.height)
-            val d = (t * perimetro) % perimetro
-            val punto = when {
-                d < size.width -> Offset(d, 0f)
-                d < size.width + size.height -> Offset(size.width, d - size.width)
-                d < 2f * size.width + size.height -> Offset(size.width - (d - size.width - size.height), size.height)
-                else -> Offset(0f, size.height - (d - 2f * size.width - size.height))
+            clipRect(0f, 0f, size.width, size.height) {
+                val r = 2.5.dp.toPx()
+                val inset = 3.dp.toPx()
+                val w = (size.width - 2 * inset).coerceAtLeast(1f)
+                val h = (size.height - 2 * inset).coerceAtLeast(1f)
+                val perimetro = 2f * (w + h)
+                val d = (t * perimetro) % perimetro
+                val punto = when {
+                    d < w -> Offset(inset + d, inset)
+                    d < w + h -> Offset(size.width - inset, inset + (d - w))
+                    d < 2f * w + h -> Offset(size.width - inset - (d - w - h), size.height - inset)
+                    else -> Offset(inset, size.height - inset - (d - 2f * w - h))
+                }
+                drawCircle(verde.copy(alpha = 0.35f), radius = r * 1.8f, center = punto)
+                drawCircle(verde, radius = r, center = punto)
             }
-            drawCircle(verde, radius = 5f, center = punto)
         }
-        ClassNowMotion.BARRE -> this.drawWithContent {
+        ClassNowMotion.BARRE -> this.clipToBounds().drawWithContent {
             drawContent()
-            val x = -size.width * 0.2f + size.width * 1.4f * t
-            rotate(degrees = 18f, pivot = Offset(x, size.height / 2f)) {
-                drawRect(
-                    color = verde.copy(alpha = 0.20f),
-                    topLeft = Offset(x - 24f, -size.height),
-                    size = Size(48f, size.height * 3f)
-                )
+            clipRect(0f, 0f, size.width, size.height) {
+                val x = -size.width * 0.3f + size.width * 1.6f * t
+                rotate(degrees = 15f, pivot = Offset(x, size.height / 2f)) {
+                    drawRect(
+                        color = verde.copy(alpha = 0.16f),
+                        topLeft = Offset(x - 20.dp.toPx(), -size.height),
+                        size = Size(40.dp.toPx(), size.height * 3f)
+                    )
+                }
             }
         }
         ClassNowMotion.QUIETA -> this

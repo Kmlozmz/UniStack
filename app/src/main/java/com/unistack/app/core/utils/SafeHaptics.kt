@@ -30,15 +30,14 @@ fun HapticFeedback.performSafely(type: HapticFeedbackType) {
     val ajustada = when (HapticRuntime.strength) {
         HapticStrength.NINGUNA -> return
         // El aviso mas leve que da Android, para quien quiere notarlo sin que le sobresalte.
-        HapticStrength.SUAVE -> HapticFeedbackType.TextHandleMove
+        HapticStrength.SUAVE -> HapticFeedbackType.SegmentTick
         HapticStrength.MEDIA -> type
-        HapticStrength.FUERTE -> HapticFeedbackType.LongPress
+        HapticStrength.FUERTE -> {
+            if (type == HapticFeedbackType.SegmentTick) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress
+        }
     }
     try {
         performHapticFeedback(ajustada)
-        // Dos seguidos es lo mas cerca que se puede estar de subir la intensidad sin pedir
-        // permiso de vibrador.
-        if (HapticRuntime.strength == HapticStrength.FUERTE) performHapticFeedback(ajustada)
     } catch (_: SecurityException) {
         // Sin vibración; la acción que la acompañaba sigue su curso.
     }

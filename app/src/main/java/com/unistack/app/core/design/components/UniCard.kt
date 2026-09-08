@@ -127,13 +127,21 @@ fun UniCard(
         }
     }
 
+    val effectiveColor = if (brush != null) {
+        Color.Transparent
+    } else if (superficie == SurfaceStyle.TRANSLUCENT) {
+        color.copy(alpha = 0.72f)
+    } else {
+        color
+    }
+
     if (onClick != null) {
         Surface(
             onClick = onClick,
             modifier = conSombra,
             enabled = enabled,
             shape = resolvedShape,
-            color = if (brush != null) Color.Transparent else color,
+            color = effectiveColor,
             tonalElevation = tonalElevation,
             border = border,
             content = painted
@@ -142,7 +150,7 @@ fun UniCard(
         Surface(
             modifier = conSombra,
             shape = resolvedShape,
-            color = if (brush != null) Color.Transparent else color,
+            color = effectiveColor,
             tonalElevation = tonalElevation,
             border = border,
             content = painted

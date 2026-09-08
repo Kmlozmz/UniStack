@@ -1691,7 +1691,10 @@ private fun ExpenseRow(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    FilaDeslizable(onBorrar = onDeleteClick) {
+    FilaDeslizable(
+        onBorrar = onDeleteClick,
+        containerColor = ExpenseCard
+    ) {
         FilaDeGasto(expense = expense, onEditClick = onEditClick, onDeleteClick = onDeleteClick)
     }
 }
