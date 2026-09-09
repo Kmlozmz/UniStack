@@ -93,6 +93,8 @@ import com.unistack.app.core.design.components.floatingOffset
 import com.unistack.app.feature_home.domain.HomePriorityTimeframe
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 private val SpanishLocale: Locale = Locale.forLanguageTag("es")
 
@@ -362,8 +364,8 @@ private fun HomeHeader(
             ) {
                 AccountAvatar(
                     photoUrl = photoUrl,
-                    contentDescription = "Tu perfil",
-                    initial = name.take(1).uppercase(SpanishLocale),
+                    contentDescription = stringResource(R.string.profile_picture),
+                    initial = name.take(1).uppercase(Locale.getDefault()),
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -373,10 +375,10 @@ private fun HomeHeader(
                 contentAlignment = Alignment.TopEnd
             ) {
                 UniIconButton(
-    icon = Icons.Rounded.NotificationsNone,
-    contentDescription = "Avisos",
-    onClick = onNotificationsClick
-)
+                    icon = Icons.Rounded.NotificationsNone,
+                    contentDescription = stringResource(R.string.settings_notifications),
+                    onClick = onNotificationsClick
+                )
                 if (hasUnread) {
                     Box(
                         modifier = Modifier
@@ -396,7 +398,7 @@ private fun HomeHeader(
          * siete variantes propias en vez de heredar la entrada generica de las listas.
          */
         SaludoAnimado(
-            rotulo = greetingForNow().uppercase(SpanishLocale),
+            rotulo = greetingForNow().uppercase(Locale.getDefault()),
             nombre = name,
             estiloRotulo = SectionLabelStyle,
             estiloNombre = MaterialTheme.typography.headlineLargeEmphasized,
@@ -979,23 +981,27 @@ private fun HomeTile(
  * Antes ponía «lo primero de hoy» siempre, y con la próxima clase a dos días vista eso era
  * sencillamente falso.
  */
+@Composable
 private fun heroLabel(timeframe: HomePriorityTimeframe): String = when (timeframe) {
-    HomePriorityTimeframe.TODAY -> "LO PRIMERO DE HOY"
-    HomePriorityTimeframe.TOMORROW -> "LO PRIMERO DE MAÑANA"
-    HomePriorityTimeframe.LATER -> "LO SIGUIENTE"
+    HomePriorityTimeframe.TODAY -> stringResource(R.string.home_hero_today)
+    HomePriorityTimeframe.TOMORROW -> stringResource(R.string.home_hero_tomorrow)
+    HomePriorityTimeframe.LATER -> stringResource(R.string.home_hero_later)
 }
 
+@Composable
 private fun primaryActionLabel(action: HomePriorityAction): String = when (action) {
-    HomePriorityAction.SUBJECT -> "Registrar nota"
-    HomePriorityAction.SUBJECTS -> "Ver materias"
-    HomePriorityAction.TASKS -> "Ver tareas"
-    HomePriorityAction.EXPENSES -> "Ver gastos"
-    HomePriorityAction.TEMPLATES -> "Ver trabajos"
-    HomePriorityAction.SCHEDULE -> "Ver horario"
+    HomePriorityAction.SUBJECT -> stringResource(R.string.home_action_grade)
+    HomePriorityAction.SUBJECTS -> stringResource(R.string.home_action_subjects)
+    HomePriorityAction.TASKS -> stringResource(R.string.home_action_tasks)
+    HomePriorityAction.EXPENSES -> stringResource(R.string.home_action_expenses)
+    HomePriorityAction.TEMPLATES -> stringResource(R.string.home_action_templates)
+    HomePriorityAction.SCHEDULE -> stringResource(R.string.home_action_schedule)
 }
 
+@Composable
 private fun todayLabel(): String {
     val today = LocalDate.now()
-    val formatter = DateTimeFormatter.ofPattern("EEEE d", SpanishLocale)
-    return "Hoy, " + today.format(formatter)
+    val formatter = DateTimeFormatter.ofPattern("EEEE d", Locale.getDefault())
+    val formatted = today.format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    return stringResource(R.string.home_today_prefix, formatted)
 }

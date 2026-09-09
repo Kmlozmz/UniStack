@@ -8,10 +8,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
@@ -30,6 +32,9 @@ enum class UniIconButtonVariant {
 
     /** Fondo suave del acento. Una acción que quieres que se vea, sin ser la principal. */
     Tonal,
+
+    /** Fondo contenedor de superficie (surfaceContainerHigh). Dibuja una pastilla/círculo detrás del icono. */
+    Surface,
 
     /** Solo contorno. Alterna con el tonal cuando dos van juntos y hay que distinguirlos. */
     Outlined
@@ -117,6 +122,17 @@ fun UniIconButton(
             shapes = shapes
         ) { glyph() }
 
+        UniIconButtonVariant.Surface -> FilledIconButton(
+            onClick = onClick,
+            modifier = sized,
+            enabled = enabled,
+            shapes = shapes,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            )
+        ) { glyph() }
+
         UniIconButtonVariant.Outlined -> OutlinedIconButton(
             onClick = onClick,
             modifier = sized,
@@ -128,10 +144,10 @@ fun UniIconButton(
 }
 
 /**
- * Botón de retroceso estándar con contorno (Outlined) de Material 3 Expressive.
+ * Botón de retroceso estándar con fondo contenedor suave dibujado detrás de la flecha.
  *
- * Enmarca la flecha dentro de una pastilla o círculo con borde sutil, evitando que quede
- * como una flecha flotante sin contenedor visual.
+ * Enmarca la flecha dentro de un círculo con fondo de superficie (`surfaceContainerHigh`),
+ * dándole presencia visual como botón táctil sin ser una simple línea de contorno.
  */
 @Composable
 fun UniBackButton(
@@ -145,6 +161,6 @@ fun UniBackButton(
         contentDescription = contentDescription,
         onClick = onClick,
         modifier = modifier,
-        variant = UniIconButtonVariant.Outlined
+        variant = UniIconButtonVariant.Surface
     )
 }

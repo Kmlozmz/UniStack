@@ -46,6 +46,8 @@ import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.feature_user.domain.UserProfile
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /**
  * El centro de configuración: quién eres, y las ocho puertas.
@@ -75,8 +77,8 @@ fun SettingsHubScreen(
     val sections = LocalSectionColors.current
 
     LargeTitleScaffold(
-        title = "Configuración",
-        subtitle = "Tu experiencia, tus datos y tu semestre",
+        title = stringResource(R.string.settings_title),
+        subtitle = stringResource(R.string.settings_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -88,29 +90,29 @@ fun SettingsHubScreen(
             SettingsIdentityCard(profile = profile, onClick = onProfileClick)
         }
         item {
-            SettingsGroup(label = "PERSONALIZACIÓN", rowCount = 2) {
+            SettingsGroup(label = stringResource(R.string.settings_section_customization), rowCount = 2) {
                 SettingsRow(
                     icon = Icons.Rounded.Palette,
-                    title = "Apariencia",
-                    subtitle = "Tema, color, densidad y tu inicio",
+                    title = stringResource(R.string.settings_appearance),
+                    subtitle = stringResource(R.string.settings_appearance_desc),
                     iconColor = MaterialTheme.colorScheme.primary,
                     onClick = onAppearanceClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Accessibility,
-                    title = "Accesibilidad",
-                    subtitle = "Lectura, movimiento y formatos",
+                    title = stringResource(R.string.settings_accessibility),
+                    subtitle = stringResource(R.string.settings_accessibility_desc),
                     iconColor = MaterialTheme.colorScheme.tertiary,
                     onClick = onAccessibilityClick
                 )
             }
         }
         item {
-            SettingsGroup(label = "TU SEMESTRE", rowCount = 3) {
+            SettingsGroup(label = stringResource(R.string.settings_section_semester), rowCount = 3) {
                 SettingsRow(
                     icon = Icons.Rounded.School,
-                    title = "Configuración académica",
-                    subtitle = "Escala, metas y cortes",
+                    title = stringResource(R.string.settings_academic),
+                    subtitle = stringResource(R.string.settings_academic_desc),
                     iconColor = sections.schedule,
                     onClick = onAcademicClick
                 )
@@ -123,40 +125,40 @@ fun SettingsHubScreen(
                  */
                 SettingsRow(
                     icon = Icons.Rounded.History,
-                    title = "Histórico académico",
-                    subtitle = "Tus periodos y cómo acabaron",
+                    title = stringResource(R.string.settings_academic_history),
+                    subtitle = stringResource(R.string.settings_academic_history_desc),
                     iconColor = sections.onTrack,
                     onClick = onAcademicHistoryClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Widgets,
-                    title = "Módulos",
-                    subtitle = "Qué áreas usas",
+                    title = stringResource(R.string.settings_modules),
+                    subtitle = stringResource(R.string.settings_modules_desc),
                     iconColor = sections.onTrack,
                     onClick = onModulesClick
                 )
             }
         }
         item {
-            SettingsGroup(label = "LA APP", rowCount = 3) {
+            SettingsGroup(label = stringResource(R.string.settings_section_app), rowCount = 3) {
                 SettingsRow(
                     icon = Icons.Rounded.Notifications,
-                    title = "Notificaciones",
-                    subtitle = "Avisos, permiso y silencio",
+                    title = stringResource(R.string.settings_notifications),
+                    subtitle = stringResource(R.string.settings_notifications_desc),
                     iconColor = MaterialTheme.colorScheme.tertiary,
                     onClick = onNotificationsClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Backup,
-                    title = "Datos y respaldos",
-                    subtitle = "Copias, exportar y restaurar",
+                    title = stringResource(R.string.settings_data),
+                    subtitle = stringResource(R.string.settings_data_desc),
                     iconColor = sections.schedule,
                     onClick = onDataClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Refresh,
-                    title = "Actualizaciones",
-                    subtitle = "Comprueba y descarga",
+                    title = stringResource(R.string.settings_updates),
+                    subtitle = stringResource(R.string.settings_updates_desc),
                     iconColor = sections.expenses,
                     onClick = onUpdatesClick
                 )
@@ -180,8 +182,10 @@ fun SettingsHubScreen(
  */
 @Composable
 private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
-    val name = profile?.preferredName?.takeIf { it.isNotBlank() } ?: "Estudiante"
-    val detail = remember(profile) { profile?.let(::settingsIdentityDetail) ?: "Sin configurar" }
+    val defaultName = stringResource(R.string.settings_student_default)
+    val notConfigured = stringResource(R.string.settings_not_configured)
+    val name = profile?.preferredName?.takeIf { it.isNotBlank() } ?: defaultName
+    val detail = remember(profile, notConfigured) { profile?.let(::settingsIdentityDetail) ?: notConfigured }
 
     Surface(
         onClick = onClick,
@@ -196,7 +200,7 @@ private fun SettingsIdentityCard(profile: UserProfile?, onClick: () -> Unit) {
         ) {
             AccountAvatar(
                 photoUrl = profile?.portraitUrl,
-                contentDescription = "Foto de perfil",
+                contentDescription = stringResource(R.string.profile_picture),
                 initial = name.first().uppercase(),
                 modifier = Modifier.size(52.dp)
             )

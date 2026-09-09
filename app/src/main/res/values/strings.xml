@@ -55,13 +55,96 @@
 
     <string name="a11y_contrast_title">Contraste</string>
     <string name="a11y_contrast_subtitle">Separación entre el texto y su fondo en toda la app</string>
+    <string name="a11y_contrast_standard">Estándar</string>
+    <string name="a11y_contrast_high">Alto</string>
+    <string name="a11y_contrast_max">Máximo</string>
+
     <string name="a11y_colorblind_title">Paleta de daltonismo</string>
+    <string name="a11y_colorblind_subtitle">Sustituye la combinación verde-rojo por tonos distinguibles</string>
+    <string name="a11y_colorblind_normal">Normal</string>
+    <string name="a11y_colorblind_deuteranopia">Deuteranopía</string>
+    <string name="a11y_colorblind_tritanopia">Tritanopía</string>
+
     <string name="a11y_reading_font_title">Tipografía de lectura</string>
+    <string name="a11y_reading_font_subtitle">Usa caracteres OpenDyslexic diseñados para evitar confusiones al leer</string>
+    <string name="a11y_reading_font_dyslexia">Dislexia</string>
+
     <string name="a11y_bold_text_title">Texto en negrita</string>
+    <string name="a11y_bold_text_subtitle">Aumenta el grosor y peso de todas las letras</string>
+
     <string name="a11y_shapes_besides_color_title">Formas además del color</string>
+    <string name="a11y_shapes_besides_color_subtitle">● Círculo, ▲ triángulo y ■ cuadrado junto al estado de cada nota</string>
+
     <string name="a11y_reduce_transparency_title">Reducir transparencias</string>
+    <string name="a11y_reduce_transparency_subtitle">Quita efectos de cristal y fondos translúcidos</string>
+
+    <string name="a11y_motion_title">Movimiento</string>
+    <string name="a11y_motion_subtitle">Manda sobre Apariencia: si eliges «Nada», apaga toda animación</string>
+    <string name="a11y_motion_normal">Normal</string>
+    <string name="a11y_motion_reduced">Reducido</string>
+    <string name="a11y_motion_none">Nada</string>
+
+    <string name="a11y_undo_title">Tiempo para deshacer</string>
+    <string name="a11y_undo_subtitle">Cuánto dura el aviso en pantalla tras borrar un elemento</string>
+    <string name="a11y_test_snackbar">Probar aviso</string>
+    <string name="a11y_test_snackbar_message">Este es el tiempo que tendrás para deshacer</string>
+
     <string name="a11y_spoken_descriptions_title">Descripciones habladas</string>
+    <string name="a11y_spoken_descriptions_subtitle">TalkBack lee «tres coma cuatro sobre cinco» en vez de «3,4/5»</string>
+    <string name="a11y_confirm_irreversible_title">Confirmar acciones irreversibles</string>
+    <string name="a11y_confirm_irreversible_subtitle">Pide confirmación antes de borrar materias, notas o vaciar la papelera</string>
     <string name="a11y_keep_screen_on_title">Mantener pantalla encendida</string>
+    <string name="a11y_keep_screen_on_subtitle">Evita que el teléfono se suspenda mientras estudias con una nota abierta</string>
+
+    <string name="a11y_lang_system">Predeterminado del sistema</string>
+    <string name="a11y_lang_system_desc">Sigue el idioma configurado en tu teléfono</string>
+    <string name="a11y_lang_spanish">Español</string>
+    <string name="a11y_lang_spanish_desc">Español</string>
+    <string name="a11y_lang_english">English</string>
+    <string name="a11y_lang_english_desc">Inglés</string>
+    <string name="a11y_currency_preview_sample">Muestra: %1$s · Símbolo: %2$s</string>
+    <string name="a11y_date_preview_sample">Muestra: %1$s (%2$s)</string>
+
+    <!-- Centro de Configuración -->
+    <string name="settings_title">Configuración</string>
+    <string name="settings_subtitle">Tu experiencia, tus datos y tu semestre</string>
+    <string name="settings_section_customization">PERSONALIZACIÓN</string>
+    <string name="settings_section_semester">TU SEMESTRE</string>
+    <string name="settings_section_app">LA APP</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_appearance_desc">Tema, color, densidad y tu inicio</string>
+    <string name="settings_accessibility">Accesibilidad</string>
+    <string name="settings_accessibility_desc">Lectura, movimiento y formatos</string>
+    <string name="settings_academic">Configuración académica</string>
+    <string name="settings_academic_desc">Escala, metas y cortes</string>
+    <string name="settings_academic_history">Histórico académico</string>
+    <string name="settings_academic_history_desc">Tus periodos y cómo acabaron</string>
+    <string name="settings_modules">Módulos</string>
+    <string name="settings_modules_desc">Qué áreas usas</string>
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_notifications_desc">Avisos, permiso y silencio</string>
+    <string name="settings_data">Datos y respaldos</string>
+    <string name="settings_data_desc">Copias, exportar y restaurar</string>
+    <string name="settings_updates">Actualizaciones</string>
+    <string name="settings_updates_desc">Comprueba y descarga</string>
+    <string name="settings_student_default">Estudiante</string>
+    <string name="settings_not_configured">Sin configurar</string>
+    <string name="profile_picture">Foto de perfil</string>
+
+    <!-- Inicio y Saludos -->
+    <string name="greeting_morning">☀️ Buenos días</string>
+    <string name="greeting_afternoon">🌤️ Buenas tardes</string>
+    <string name="greeting_night">🌙 Buenas noches</string>
+    <string name="home_hero_today">LO PRIMERO DE HOY</string>
+    <string name="home_hero_tomorrow">LO PRIMERO DE MAÑANA</string>
+    <string name="home_hero_later">LO SIGUIENTE</string>
+    <string name="home_action_grade">Registrar nota</string>
+    <string name="home_action_subjects">Ver materias</string>
+    <string name="home_action_tasks">Ver tareas</string>
+    <string name="home_action_expenses">Ver gastos</string>
+    <string name="home_action_templates">Ver trabajos</string>
+    <string name="home_action_schedule">Ver horario</string>
+    <string name="home_today_prefix">Hoy, %1$s</string>
 
     <!-- Tareas -->
     <string name="tasks_header_title">Tareas</string>

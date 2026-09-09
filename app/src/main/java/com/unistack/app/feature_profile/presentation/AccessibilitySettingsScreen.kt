@@ -180,11 +180,11 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ VISIÓN Y LECTURA
             item {
-                SettingsGroup(label = "VISIÓN Y LECTURA", rowCount = 6) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_vision), rowCount = 5) {
                     SettingsCustomRow(
                         icon = Icons.Rounded.Contrast,
-                        title = "Contraste",
-                        subtitle = "Separación entre el texto y su fondo en toda la app",
+                        title = stringResource(R.string.a11y_contrast_title),
+                        subtitle = stringResource(R.string.a11y_contrast_subtitle),
                         iconColor = MaterialTheme.colorScheme.primary
                     ) {
                         UniSegmentedControl(
@@ -206,8 +206,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsCustomRow(
                         icon = Icons.Rounded.Palette,
-                        title = "Paleta para daltonismo",
-                        subtitle = "Sustituye la combinación verde-rojo por tonos distinguibles",
+                        title = stringResource(R.string.a11y_colorblind_title),
+                        subtitle = stringResource(R.string.a11y_colorblind_subtitle),
                         iconColor = sections.onTrack
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -241,8 +241,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.Category,
-                        title = "Formas además del color",
-                        subtitle = "● Círculo, ▲ triángulo y ■ cuadrado junto al estado de cada nota",
+                        title = stringResource(R.string.a11y_shapes_besides_color_title),
+                        subtitle = stringResource(R.string.a11y_shapes_besides_color_subtitle),
                         checked = a11y.shapesBesidesColor,
                         iconColor = sections.onTrack,
                         onCheckedChange = { valor ->
@@ -252,8 +252,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.Spellcheck,
-                        title = "Tipografía para dislexia",
-                        subtitle = "Usa caracteres OpenDyslexic diseñados para evitar confusiones al leer",
+                        title = stringResource(R.string.a11y_reading_font_title),
+                        subtitle = stringResource(R.string.a11y_reading_font_subtitle),
                         checked = a11y.readingFont == ReadingFont.DISLEXIA,
                         iconColor = sections.schedule,
                         onCheckedChange = { valor ->
@@ -265,8 +265,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.FormatBold,
-                        title = "Texto en negrita",
-                        subtitle = "Aumenta el grosor y peso de todas las letras",
+                        title = stringResource(R.string.a11y_bold_text_title),
+                        subtitle = stringResource(R.string.a11y_bold_text_subtitle),
                         checked = a11y.boldText,
                         iconColor = MaterialTheme.colorScheme.tertiary,
                         onCheckedChange = { valor ->
@@ -276,8 +276,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.LayersClear,
-                        title = "Reducir transparencias",
-                        subtitle = "Quita efectos de cristal y fondos translúcidos",
+                        title = stringResource(R.string.a11y_reduce_transparency_title),
+                        subtitle = stringResource(R.string.a11y_reduce_transparency_subtitle),
                         checked = a11y.reduceTransparency,
                         iconColor = MaterialTheme.colorScheme.outline,
                         onCheckedChange = { valor ->
@@ -289,11 +289,11 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ INTERACCIÓN Y MOVIMIENTO
             item {
-                SettingsGroup(label = "INTERACCIÓN Y MOVIMIENTO", rowCount = 2) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_interaction), rowCount = 2) {
                     SettingsCustomRow(
                         icon = Icons.Rounded.Animation,
-                        title = "Movimiento",
-                        subtitle = "Manda sobre Apariencia: si eliges «Nada», apaga toda animación",
+                        title = stringResource(R.string.a11y_motion_title),
+                        subtitle = stringResource(R.string.a11y_motion_subtitle),
                         iconColor = MaterialTheme.colorScheme.primary
                     ) {
                         UniSegmentedControl(
@@ -310,19 +310,21 @@ fun AccessibilitySettingsScreen(
 
                     SettingsCustomRow(
                         icon = Icons.Rounded.History,
-                        title = "Tiempo para deshacer",
-                        subtitle = "Cuánto dura el aviso en pantalla tras borrar un elemento",
+                        title = stringResource(R.string.a11y_undo_title),
+                        subtitle = stringResource(R.string.a11y_undo_subtitle),
                         iconColor = sections.schedule,
                         trailingAction = {
                             val duration = duracionDeDeshacer()
                             val seconds = a11y.undoDuration.segundos
+                            val testMsg = stringResource(R.string.a11y_test_snackbar_message)
+                            val undoLabel = stringResource(R.string.action_undo)
                             TextButton(
                                 onClick = {
                                     testSnackbarJob?.cancel()
                                     testSnackbarJob = scope.launch {
                                         snackbarHostState.showSnackbar(
-                                            message = "Aviso de prueba ($seconds s)",
-                                            actionLabel = "Deshacer",
+                                            message = "$testMsg ($seconds s)",
+                                            actionLabel = undoLabel,
                                             withDismissAction = true,
                                             duration = duration
                                         )
@@ -335,7 +337,7 @@ fun AccessibilitySettingsScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Probar", style = MaterialTheme.typography.labelMedium)
+                                Text(stringResource(R.string.a11y_test_snackbar), style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     ) {
@@ -356,10 +358,15 @@ fun AccessibilitySettingsScreen(
             // ------------------------------------------------------------------ FORMATOS E IDIOMA
             item {
                 SettingsGroup(label = stringResource(R.string.a11y_section_formats), rowCount = 4) {
+                    val langLabel = when (a11y.appLanguage) {
+                        AppLanguage.SYSTEM -> stringResource(R.string.a11y_lang_system)
+                        AppLanguage.SPANISH -> stringResource(R.string.a11y_lang_spanish)
+                        AppLanguage.ENGLISH -> stringResource(R.string.a11y_lang_english)
+                    }
                     SettingsRow(
                         icon = Icons.Rounded.Translate,
                         title = stringResource(R.string.a11y_language_title),
-                        subtitle = "${a11y.appLanguage.etiqueta()} · ${a11y.appLanguage.estado()}",
+                        subtitle = langLabel,
                         iconColor = MaterialTheme.colorScheme.secondary,
                         onClick = { showLanguageDialog = true }
                     )
@@ -395,11 +402,11 @@ fun AccessibilitySettingsScreen(
 
             // ------------------------------------------------------------------ ASISTENCIA Y SISTEMA
             item {
-                SettingsGroup(label = "ASISTENCIA Y SISTEMA", rowCount = 3) {
+                SettingsGroup(label = stringResource(R.string.a11y_section_system), rowCount = 3) {
                     SettingsToggleRow(
                         icon = Icons.Rounded.RecordVoiceOver,
-                        title = "Descripciones habladas",
-                        subtitle = "TalkBack lee «tres coma cuatro sobre cinco» en vez de «3,4/5»",
+                        title = stringResource(R.string.a11y_spoken_descriptions_title),
+                        subtitle = stringResource(R.string.a11y_spoken_descriptions_subtitle),
                         checked = a11y.spokenDescriptions,
                         iconColor = MaterialTheme.colorScheme.primary,
                         onCheckedChange = { valor ->
@@ -409,8 +416,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.Warning,
-                        title = "Confirmar acciones críticas",
-                        subtitle = "Preguntar antes de borrar materias o cerrar periodos",
+                        title = stringResource(R.string.a11y_confirm_irreversible_title),
+                        subtitle = stringResource(R.string.a11y_confirm_irreversible_subtitle),
                         checked = a11y.confirmIrreversible,
                         iconColor = MaterialTheme.colorScheme.error,
                         onCheckedChange = { valor ->
@@ -420,8 +427,8 @@ fun AccessibilitySettingsScreen(
 
                     SettingsToggleRow(
                         icon = Icons.Rounded.StayCurrentPortrait,
-                        title = "Mantener pantalla encendida",
-                        subtitle = "Evita que el teléfono se suspenda mientras estudias con una nota abierta",
+                        title = stringResource(R.string.a11y_keep_screen_on_title),
+                        subtitle = stringResource(R.string.a11y_keep_screen_on_subtitle),
                         checked = a11y.keepScreenOn,
                         iconColor = sections.schedule,
                         onCheckedChange = { valor ->
@@ -691,13 +698,27 @@ private fun LanguageSelectionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Idioma de la aplicación",
+                text = stringResource(R.string.a11y_language_title),
                 style = MaterialTheme.typography.titleLargeEmphasized
             )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 AppLanguage.entries.forEach { idioma ->
+                    val (title, subtitle) = when (idioma) {
+                        AppLanguage.SYSTEM -> Pair(
+                            stringResource(R.string.a11y_lang_system),
+                            stringResource(R.string.a11y_lang_system_desc)
+                        )
+                        AppLanguage.SPANISH -> Pair(
+                            stringResource(R.string.a11y_lang_spanish),
+                            stringResource(R.string.a11y_lang_spanish_desc)
+                        )
+                        AppLanguage.ENGLISH -> Pair(
+                            stringResource(R.string.a11y_lang_english),
+                            stringResource(R.string.a11y_lang_english_desc)
+                        )
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -712,11 +733,11 @@ private fun LanguageSelectionDialog(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = idioma.etiqueta(),
+                                text = title,
                                 style = MaterialTheme.typography.titleSmallEmphasized
                             )
                             Text(
-                                text = idioma.estado(),
+                                text = subtitle,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -727,7 +748,7 @@ private fun LanguageSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -743,7 +764,7 @@ private fun DateFormatSelectionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Formato de fecha",
+                text = stringResource(R.string.a11y_date_format_title),
                 style = MaterialTheme.typography.titleLargeEmphasized
             )
         },
@@ -768,7 +789,7 @@ private fun DateFormatSelectionDialog(
                                 style = MaterialTheme.typography.titleSmallEmphasized
                             )
                             Text(
-                                text = "Muestra: ${format.previewDate} (${format.pattern})",
+                                text = stringResource(R.string.a11y_date_preview_sample, format.previewDate, format.pattern),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -779,7 +800,7 @@ private fun DateFormatSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -907,7 +928,7 @@ private fun CurrencySelectionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Moneda de gastos",
+                text = stringResource(R.string.a11y_currency_title),
                 style = MaterialTheme.typography.titleLargeEmphasized
             )
         },
@@ -932,7 +953,7 @@ private fun CurrencySelectionDialog(
                                 style = MaterialTheme.typography.titleSmallEmphasized
                             )
                             Text(
-                                text = "Muestra: ${divisa.preview} · Símbolo: ${divisa.symbol}",
+                                text = stringResource(R.string.a11y_currency_preview_sample, divisa.preview, divisa.symbol),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -943,7 +964,7 @@ private fun CurrencySelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -951,38 +972,29 @@ private fun CurrencySelectionDialog(
 
 // ------------------------------------------------------------------ extensiones de etiquetas
 
-private fun AppLanguage.etiqueta() = when (this) {
-    AppLanguage.SYSTEM -> "Seguir al sistema"
-    AppLanguage.SPANISH -> "Español"
-    AppLanguage.ENGLISH -> "English"
-}
-
-private fun AppLanguage.estado() = when (this) {
-    AppLanguage.SYSTEM -> "El del teléfono, si está disponible"
-    AppLanguage.SPANISH -> "Traducción completa"
-    AppLanguage.ENGLISH -> "Traducción en curso"
-}
-
+@Composable
 private fun ContrastLevel.etiqueta() = when (this) {
-    ContrastLevel.ESTANDAR -> "Estándar"
-    ContrastLevel.ALTO -> "Alto"
-    ContrastLevel.MAXIMO -> "Máximo"
+    ContrastLevel.ESTANDAR -> stringResource(R.string.a11y_contrast_standard)
+    ContrastLevel.ALTO -> stringResource(R.string.a11y_contrast_high)
+    ContrastLevel.MAXIMO -> stringResource(R.string.a11y_contrast_max)
 }
 
+@Composable
 private fun ColorBlindPalette.etiqueta() = when (this) {
-    ColorBlindPalette.NINGUNA -> "Normal"
-    ColorBlindPalette.DEUTERANOPIA -> "Deuteranopía"
-    ColorBlindPalette.TRITANOPIA -> "Tritanopía"
+    ColorBlindPalette.NINGUNA -> stringResource(R.string.a11y_colorblind_normal)
+    ColorBlindPalette.DEUTERANOPIA -> stringResource(R.string.a11y_colorblind_deuteranopia)
+    ColorBlindPalette.TRITANOPIA -> stringResource(R.string.a11y_colorblind_tritanopia)
 }
 
+@Composable
 private fun ReadingFont.etiqueta() = when (this) {
-    ReadingFont.NORMAL -> "Normal"
-    ReadingFont.DISLEXIA -> "Dislexia"
+    ReadingFont.NORMAL -> stringResource(R.string.a11y_colorblind_normal)
+    ReadingFont.DISLEXIA -> stringResource(R.string.a11y_reading_font_dyslexia)
 }
 
-
+@Composable
 private fun MotionPreference.etiquetaA11y() = when (this) {
-    MotionPreference.FULL -> "Completo"
-    MotionPreference.REDUCED -> "Reducido"
-    MotionPreference.NONE -> "Nada"
+    MotionPreference.FULL -> stringResource(R.string.a11y_motion_normal)
+    MotionPreference.REDUCED -> stringResource(R.string.a11y_motion_reduced)
+    MotionPreference.NONE -> stringResource(R.string.a11y_motion_none)
 }

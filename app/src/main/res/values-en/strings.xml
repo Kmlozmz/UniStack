@@ -55,13 +55,96 @@
 
     <string name="a11y_contrast_title">Contrast</string>
     <string name="a11y_contrast_subtitle">Separation between text and background across the app</string>
+    <string name="a11y_contrast_standard">Standard</string>
+    <string name="a11y_contrast_high">High</string>
+    <string name="a11y_contrast_max">Maximum</string>
+
     <string name="a11y_colorblind_title">Color blind palette</string>
+    <string name="a11y_colorblind_subtitle">Replaces red-green combinations with distinguishable tones</string>
+    <string name="a11y_colorblind_normal">Normal</string>
+    <string name="a11y_colorblind_deuteranopia">Deuteranopia</string>
+    <string name="a11y_colorblind_tritanopia">Tritanopia</string>
+
     <string name="a11y_reading_font_title">Reading typography</string>
+    <string name="a11y_reading_font_subtitle">Uses OpenDyslexic type designed to prevent reading confusion</string>
+    <string name="a11y_reading_font_dyslexia">Dyslexia</string>
+
     <string name="a11y_bold_text_title">Bold text</string>
+    <string name="a11y_bold_text_subtitle">Increases font weight across the app</string>
+
     <string name="a11y_shapes_besides_color_title">Shapes besides color</string>
+    <string name="a11y_shapes_besides_color_subtitle">● Circle, ▲ triangle, and ■ square beside each grade status</string>
+
     <string name="a11y_reduce_transparency_title">Reduce transparency</string>
+    <string name="a11y_reduce_transparency_subtitle">Removes glass effects and translucent backgrounds</string>
+
+    <string name="a11y_motion_title">Motion</string>
+    <string name="a11y_motion_subtitle">Overrides Appearance: disables all animations when set to None</string>
+    <string name="a11y_motion_normal">Normal</string>
+    <string name="a11y_motion_reduced">Reduced</string>
+    <string name="a11y_motion_none">None</string>
+
+    <string name="a11y_undo_title">Undo duration</string>
+    <string name="a11y_undo_subtitle">How long notifications stay on screen after deleting an item</string>
+    <string name="a11y_test_snackbar">Test message</string>
+    <string name="a11y_test_snackbar_message">This is how long you will have to undo</string>
+
     <string name="a11y_spoken_descriptions_title">Spoken descriptions</string>
+    <string name="a11y_spoken_descriptions_subtitle">TalkBack reads "three point four out of five" instead of "3.4/5"</string>
+    <string name="a11y_confirm_irreversible_title">Confirm irreversible actions</string>
+    <string name="a11y_confirm_irreversible_subtitle">Asks for confirmation before deleting subjects, grades, or emptying trash</string>
     <string name="a11y_keep_screen_on_title">Keep screen on</string>
+    <string name="a11y_keep_screen_on_subtitle">Prevents screen sleep while studying with a note open</string>
+
+    <string name="a11y_lang_system">System default</string>
+    <string name="a11y_lang_system_desc">Follows your device language</string>
+    <string name="a11y_lang_spanish">Spanish</string>
+    <string name="a11y_lang_spanish_desc">Spanish</string>
+    <string name="a11y_lang_english">English</string>
+    <string name="a11y_lang_english_desc">English</string>
+    <string name="a11y_currency_preview_sample">Sample: %1$s · Symbol: %2$s</string>
+    <string name="a11y_date_preview_sample">Sample: %1$s (%2$s)</string>
+
+    <!-- Settings Hub -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Your experience, your data, and your semester</string>
+    <string name="settings_section_customization">PERSONALIZATION</string>
+    <string name="settings_section_semester">YOUR SEMESTER</string>
+    <string name="settings_section_app">THE APP</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_appearance_desc">Theme, color, density, and home</string>
+    <string name="settings_accessibility">Accessibility</string>
+    <string name="settings_accessibility_desc">Reading, motion, and formats</string>
+    <string name="settings_academic">Academic settings</string>
+    <string name="settings_academic_desc">Scale, goals, and periods</string>
+    <string name="settings_academic_history">Academic history</string>
+    <string name="settings_academic_history_desc">Your terms and how they ended</string>
+    <string name="settings_modules">Modules</string>
+    <string name="settings_modules_desc">Features you use</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_desc">Alerts, permissions, and quiet hours</string>
+    <string name="settings_data">Data &amp; backups</string>
+    <string name="settings_data_desc">Backups, export, and restore</string>
+    <string name="settings_updates">Updates</string>
+    <string name="settings_updates_desc">Check and download</string>
+    <string name="settings_student_default">Student</string>
+    <string name="settings_not_configured">Not configured</string>
+    <string name="profile_picture">Profile picture</string>
+
+    <!-- Home & Greetings -->
+    <string name="greeting_morning">☀️ Good morning</string>
+    <string name="greeting_afternoon">🌤️ Good afternoon</string>
+    <string name="greeting_night">🌙 Good evening</string>
+    <string name="home_hero_today">FIRST FOR TODAY</string>
+    <string name="home_hero_tomorrow">FIRST FOR TOMORROW</string>
+    <string name="home_hero_later">UP NEXT</string>
+    <string name="home_action_grade">Add grade</string>
+    <string name="home_action_subjects">See subjects</string>
+    <string name="home_action_tasks">See tasks</string>
+    <string name="home_action_expenses">See expenses</string>
+    <string name="home_action_templates">See templates</string>
+    <string name="home_action_schedule">See schedule</string>
+    <string name="home_today_prefix">Today, %1$s</string>
 
     <!-- Tasks -->
     <string name="tasks_header_title">Tasks</string>
