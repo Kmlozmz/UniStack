@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_updates.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import com.unistack.app.core.design.components.LargeTitleScaffoldLayout
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniLoadingIndicator
@@ -104,14 +107,14 @@ fun UpdateSettingsScreen(
     }
 
     LargeTitleScaffoldLayout(
-        title = "Actualizaciones",
-        subtitle = "Comprueba y descarga",
+        title = stringResource(R.string.updates_title),
+        subtitle = stringResource(R.string.updates_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         actions = {
             UniIconButton(
                 icon = Icons.Rounded.Refresh,
-                contentDescription = "Volver a comprobar",
+                contentDescription = stringResource(R.string.updates_check_again),
                 onClick = viewModel::checkForUpdates
             )
         }
@@ -138,7 +141,7 @@ fun UpdateSettingsScreen(
                                     .takeIf { it != UpdateState.UNKNOWN_PROGRESS }
                             )
                             Text(
-                                text = "Descargando la v${downloading.info.versionName}…",
+                                text = stringResource(R.string.updates_downloading_v, downloading.info.versionName),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -167,7 +170,7 @@ fun UpdateSettingsScreen(
                 // minuto o hace una semana.
                 item("pie") {
                     Text(
-                        text = "Tu versión: $installed.",
+                        text = stringResource(R.string.updates_your_version, installed),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -198,41 +201,34 @@ fun UpdateSettingsScreen(
 @Composable
 private fun UpdateHeadline(state: UpdateState, installed: String) {
     val sections = LocalSectionColors.current
+    val availableTitle = stringResource(R.string.updates_version_available)
+    val availableDesc = stringResource(R.string.updates_version_available_desc, installed, (state as? UpdateState.Available)?.info?.versionName.orEmpty())
+    val readyTitle = stringResource(R.string.updates_ready_to_install)
+    val readyDesc = stringResource(R.string.updates_ready_to_install_desc, (state as? UpdateState.ReadyToInstall)?.info?.versionName.orEmpty())
+    val dlTitle = stringResource(R.string.updates_downloading)
+    val dlDesc = stringResource(R.string.updates_downloading_desc)
+    val checkTitle = stringResource(R.string.updates_checking)
+    val checkDesc = stringResource(R.string.updates_checking_desc)
+    val upToDateTitle = stringResource(R.string.updates_up_to_date)
+    val upToDateDesc = stringResource(R.string.updates_up_to_date_desc)
+    val aheadTitle = stringResource(R.string.updates_ahead)
+    val aheadDesc = stringResource(R.string.updates_ahead_desc, installed, (state as? UpdateState.Ahead)?.info?.versionName.orEmpty())
+    val noRelTitle = stringResource(R.string.updates_nothing_to_install)
+    val noRelDesc = stringResource(R.string.updates_nothing_to_install_desc)
+    val errTitle = stringResource(R.string.updates_could_not_check)
+    val idleTitle = stringResource(R.string.updates_title)
+    val idleDesc = stringResource(R.string.updates_could_not_check_desc)
+
     val (icon, title, support) = when (state) {
-        is UpdateState.Available -> Triple(
-            Icons.Rounded.NewReleases,
-            "Hay una versión disponible",
-            "Tienes la v$installed. La versión más reciente es la v${state.info.versionName}."
-        )
-
-        is UpdateState.ReadyToInstall -> Triple(
-            Icons.Rounded.Download,
-            "Lista para instalar",
-            "La v${state.info.versionName} ya está descargada."
-        )
-
-        is UpdateState.Downloading -> Triple(
-            Icons.Rounded.Download,
-            "Descargando",
-            "No cierres la app hasta que termine."
-        )
-
-        UpdateState.Checking -> Triple(Icons.Rounded.Refresh, "Comprobando…", "Buscando actualizaciones.")
-        UpdateState.UpToDate -> Triple(Icons.Rounded.CheckCircle, "Estás al día", "Tienes la versión más reciente.")
-        is UpdateState.Ahead -> Triple(
-            Icons.Rounded.CheckCircle,
-            "Vas por delante",
-            "Tu v$installed es más nueva que la última disponible, la v${state.info.versionName}."
-        )
-
-        UpdateState.NoReleases -> Triple(
-            Icons.Rounded.CheckCircle,
-            "Nada que instalar",
-            "No hay actualizaciones disponibles."
-        )
-
-        is UpdateState.Error -> Triple(Icons.Rounded.CloudOff, "No se pudo comprobar", state.message)
-        UpdateState.Idle -> Triple(Icons.Rounded.Refresh, "Actualizaciones", "Comprueba si hay algo más nuevo.")
+        is UpdateState.Available -> Triple(Icons.Rounded.NewReleases, availableTitle, availableDesc)
+        is UpdateState.ReadyToInstall -> Triple(Icons.Rounded.Download, readyTitle, readyDesc)
+        is UpdateState.Downloading -> Triple(Icons.Rounded.Download, dlTitle, dlDesc)
+        UpdateState.Checking -> Triple(Icons.Rounded.Refresh, checkTitle, checkDesc)
+        UpdateState.UpToDate -> Triple(Icons.Rounded.CheckCircle, upToDateTitle, upToDateDesc)
+        is UpdateState.Ahead -> Triple(Icons.Rounded.CheckCircle, aheadTitle, aheadDesc)
+        UpdateState.NoReleases -> Triple(Icons.Rounded.CheckCircle, noRelTitle, noRelDesc)
+        is UpdateState.Error -> Triple(Icons.Rounded.CloudOff, errTitle, state.message)
+        UpdateState.Idle -> Triple(Icons.Rounded.Refresh, idleTitle, idleDesc)
     }
     val tones: Pair<Color, Color> = when (state) {
         is UpdateState.Available, is UpdateState.ReadyToInstall ->
@@ -373,14 +369,14 @@ private fun InstalledCard(versionName: String, versionCode: Int) {
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text("VERSIÓN INSTALADA", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.updates_installed_version_header), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 text = "v$versionName",
                 style = MaterialTheme.typography.titleLargeEmphasized,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Compilación $versionCode",
+                text = stringResource(R.string.updates_build, versionCode),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -405,11 +401,15 @@ private fun UpdateActions(
     onCheck: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dlText = stringResource(R.string.updates_btn_download)
+    val installText = stringResource(R.string.updates_btn_install)
+    val allowInstallText = stringResource(R.string.updates_btn_allow_install)
+    val recheckText = stringResource(R.string.updates_check_again)
     val action: Triple<String, ImageVector, () -> Unit>? = when {
-        state is UpdateState.Available -> Triple("Descargar", Icons.Rounded.Download, onDownload)
-        state is UpdateState.ReadyToInstall && canInstall -> Triple("Instalar", Icons.Rounded.Download, onInstall)
-        state is UpdateState.ReadyToInstall -> Triple("Permitir instalar", Icons.Rounded.Download, onAllowInstall)
-        state is UpdateState.Error -> Triple("Volver a comprobar", Icons.Rounded.Refresh, onCheck)
+        state is UpdateState.Available -> Triple(dlText, Icons.Rounded.Download, onDownload)
+        state is UpdateState.ReadyToInstall && canInstall -> Triple(installText, Icons.Rounded.Download, onInstall)
+        state is UpdateState.ReadyToInstall -> Triple(allowInstallText, Icons.Rounded.Download, onAllowInstall)
+        state is UpdateState.Error -> Triple(recheckText, Icons.Rounded.Refresh, onCheck)
         else -> null
     }
     if (action == null) return
@@ -477,16 +477,16 @@ private fun CleanupCard(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        if (apkCount > 1) "Limpiar descargas" else "Limpiar descarga",
+                        if (apkCount > 1) stringResource(R.string.updates_btn_clean_downloads) else stringResource(R.string.updates_btn_clean_download),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         if (apkCount > 1) {
-                            "$apkCount APK ocupando espacio en el teléfono"
+                            stringResource(R.string.updates_apks_space, apkCount)
                         } else {
-                            "1 APK ocupando espacio en el teléfono"
+                            stringResource(R.string.updates_one_apk_space)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall

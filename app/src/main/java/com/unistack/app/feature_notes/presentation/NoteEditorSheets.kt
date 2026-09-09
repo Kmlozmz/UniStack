@@ -40,6 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -64,12 +66,12 @@ enum class NoteInsert { CAMARA, GALERIA, GRABACION, CASILLAS, TABLA, ARCHIVO }
 @Composable
 fun NoteInsertSheet(onPick: (NoteInsert) -> Unit, onDismiss: () -> Unit) {
     val opciones = listOf(
-        Triple(NoteInsert.CAMARA, "Hacer foto", Icons.Rounded.PhotoCamera),
-        Triple(NoteInsert.GALERIA, "Añadir imagen", Icons.Rounded.Image),
-        Triple(NoteInsert.GRABACION, "Grabación", Icons.Rounded.Mic),
-        Triple(NoteInsert.CASILLAS, "Casillas", Icons.Rounded.CheckBox),
-        Triple(NoteInsert.TABLA, "Tabla", Icons.Rounded.TableChart),
-        Triple(NoteInsert.ARCHIVO, "Archivo", Icons.Rounded.AttachFile)
+        Triple(NoteInsert.CAMARA, stringResource(R.string.notes_action_take_photo), Icons.Rounded.PhotoCamera),
+        Triple(NoteInsert.GALERIA, stringResource(R.string.notes_action_add_image), Icons.Rounded.Image),
+        Triple(NoteInsert.GRABACION, stringResource(R.string.notes_action_recording), Icons.Rounded.Mic),
+        Triple(NoteInsert.CASILLAS, stringResource(R.string.notes_action_checkboxes), Icons.Rounded.CheckBox),
+        Triple(NoteInsert.TABLA, stringResource(R.string.notes_action_table), Icons.Rounded.TableChart),
+        Triple(NoteInsert.ARCHIVO, stringResource(R.string.notes_action_file), Icons.Rounded.AttachFile)
     )
 
     ModalBottomSheet(
@@ -94,14 +96,14 @@ fun NoteInsertSheet(onPick: (NoteInsert) -> Unit, onDismiss: () -> Unit) {
                 .padding(start = 20.dp, end = 20.dp, bottom = 24.dp)
         ) {
             Text(
-                "Añadir a la nota",
+                stringResource(R.string.notes_sheet_insert_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.padding(top = 18.dp)
             )
             Text(
-                "Inserta contenido sin salir del editor",
+                stringResource(R.string.notes_sheet_insert_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
@@ -207,14 +209,14 @@ fun NoteColorSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                "Color de la nota",
+                stringResource(R.string.notes_color_sheet_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
                 modifier = Modifier.padding(top = 18.dp)
             )
             Text(
-                "Elige un tono para reconocerla de un vistazo",
+                stringResource(R.string.notes_color_sheet_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -271,7 +273,7 @@ private fun ColorDot(
             )
             sinColor -> Icon(
                 Icons.Rounded.Close,
-                contentDescription = "Sin color",
+                contentDescription = stringResource(R.string.notes_color_default),
                 tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(17.dp)
             )
@@ -322,7 +324,7 @@ fun NoteFormatToolbar(
         ) {
             Icon(
                 Icons.Rounded.Close,
-                contentDescription = "Cerrar el formato",
+                contentDescription = stringResource(R.string.notes_format_close),
                 modifier = Modifier.padding(9.dp).size(19.dp)
             )
         }

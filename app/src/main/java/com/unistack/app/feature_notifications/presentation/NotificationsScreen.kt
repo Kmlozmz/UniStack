@@ -43,6 +43,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,14 +84,14 @@ import com.unistack.app.core.design.theme.LocalIsDarkTheme
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
-private enum class NotificationFilter(val label: String) {
-    ALL("Todas"),
-    ACTIONS("Acción"),
-    ACADEMIC("Académico"),
-    TASKS("Tareas"),
-    CLASSES("Clases"),
-    UNREAD("No leídas"),
-    READ("Vistas");
+private enum class NotificationFilter(val labelRes: Int) {
+    ALL(R.string.notif_tab_all),
+    ACTIONS(R.string.notif_tab_actions),
+    ACADEMIC(R.string.notif_tab_academic),
+    TASKS(R.string.notif_tab_tasks),
+    CLASSES(R.string.notif_tab_classes),
+    UNREAD(R.string.notif_tab_unread),
+    READ(R.string.notif_tab_read);
 
     fun matches(item: NotificationHistoryItem): Boolean {
         val category = item.category()
@@ -237,7 +239,7 @@ private fun NotificationHistoryHeader(
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "Notificaciones",
+                text = stringResource(R.string.notif_title),
                 color = NotificationText,
                 fontSize = 28.sp,
                 lineHeight = 32.sp,
@@ -245,9 +247,9 @@ private fun NotificationHistoryHeader(
             )
             Text(
                 text = when (unreadCount) {
-                    0 -> "Historial de avisos recibidos"
-                    1 -> "1 aviso sin revisar"
-                    else -> "$unreadCount avisos sin revisar"
+                    0 -> stringResource(R.string.notif_subtitle)
+                    1 -> stringResource(R.string.notif_unread_single)
+                    else -> stringResource(R.string.notif_unread_multiple, unreadCount)
                 },
                 color = NotificationMuted,
                 fontSize = 12.sp,
@@ -256,7 +258,7 @@ private fun NotificationHistoryHeader(
         }
         Box {
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = "Mas opciones", tint = NotificationAccentText)
+                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.notif_more_options), tint = NotificationAccentText)
             }
             UniDropdownMenu(
                 expanded = menuExpanded,
@@ -266,7 +268,7 @@ private fun NotificationHistoryHeader(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            "Marcar todo como visto",
+                            stringResource(R.string.notif_mark_all_read),
                             color = if (canMarkAllRead) NotificationText else NotificationMuted.copy(alpha = 0.55f)
                         )
                     },
@@ -284,7 +286,7 @@ private fun NotificationHistoryHeader(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Configurar recordatorios", color = NotificationText) },
+                    text = { Text(stringResource(R.string.notif_configure_reminders), color = NotificationText) },
                     leadingIcon = {
                         Icon(Icons.Rounded.Settings, contentDescription = null, tint = NotificationPrimary)
                     },
@@ -325,16 +327,16 @@ private fun NotificationInboxSummary(
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    if (unreadCount == 0) "Todo revisado" else "$unreadCount sin revisar",
+                    if (unreadCount == 0) stringResource(R.string.notif_all_reviewed) else stringResource(R.string.notif_unreviewed_count, unreadCount),
                     color = NotificationText,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     if (unreadCount == 0) {
-                        "Aquí queda lo que te ha llegado."
+                        stringResource(R.string.notif_history_desc_1)
                     } else {
-                        "Toca uno para abrir lo que lo provocó."
+                        stringResource(R.string.notif_history_desc_2)
                     },
                     color = NotificationMuted,
                     fontSize = 12.sp,
@@ -347,7 +349,7 @@ private fun NotificationInboxSummary(
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.13f)
                 ) {
                     Text(
-                        "$actionCount con acción",
+                        stringResource(R.string.notif_with_action_count, actionCount),
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -384,7 +386,7 @@ private fun NotificationFilterBar(
                 tonalElevation = 0.dp
             ) {
                 Text(
-                    text = filter.label,
+                    text = stringResource(filter.labelRes),
                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else NotificationMuted,
                     fontSize = 11.sp,
                     lineHeight = 14.sp,
@@ -466,7 +468,7 @@ private fun NotificationHistoryCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (category.requiresAction) {
                     Text(
-                        "Requiere accion",
+                        stringResource(R.string.notif_requires_action),
                         color = category.color,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -565,7 +567,7 @@ private fun NotificationDetailHeader(onBackClick: () -> Unit) {
     ) {
         UniBackButton(onClick = onBackClick)
         Text(
-            text = "Detalle del aviso",
+            text = stringResource(R.string.notif_detail_title),
             color = NotificationText,
             fontSize = 19.sp,
             lineHeight = 23.sp,
@@ -607,7 +609,7 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
                         NotificationStatusPill(item = item, compact = true)
                     }
                     Text(
-                        text = if (item.read) "Aviso revisado" else "Aviso nuevo",
+                        text = if (item.read) stringResource(R.string.notif_reviewed_badge) else stringResource(R.string.notif_new_badge),
                         color = NotificationMuted,
                         fontSize = 12.sp,
                         lineHeight = 15.sp,
@@ -639,7 +641,9 @@ private fun NotificationDetailHero(item: NotificationHistoryItem) {
 @Composable
 private fun NotificationMetaCard(item: NotificationHistoryItem) {
     val zoned = Instant.ofEpochMilli(item.timestampMillis).atZone(ZoneId.systemDefault())
-    val date = zoned.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("es-CO")))
+    val isEn = Locale.getDefault().language == "en"
+    val datePattern = if (isEn) "MMMM d, yyyy" else "d 'de' MMMM, yyyy"
+    val date = zoned.format(DateTimeFormatter.ofPattern(datePattern, Locale.getDefault()))
     val time = zoned.format(DateTimeFormatter.ofPattern("HH:mm", Locale.US))
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -650,7 +654,7 @@ private fun NotificationMetaCard(item: NotificationHistoryItem) {
         Column(modifier = Modifier.padding(horizontal = 15.dp, vertical = 4.dp)) {
             NotificationMetaRow(
                 icon = Icons.Rounded.Campaign,
-                label = "Recibida",
+                label = stringResource(R.string.notif_received_label),
                 value = date
             )
             Box(
@@ -661,7 +665,7 @@ private fun NotificationMetaCard(item: NotificationHistoryItem) {
             )
             NotificationMetaRow(
                 icon = Icons.Rounded.AccessTime,
-                label = "Hora",
+                label = stringResource(R.string.notif_time_label),
                 value = time
             )
         }
@@ -733,7 +737,7 @@ private fun NotificationHintCard(item: NotificationHistoryItem) {
             Spacer(modifier = Modifier.width(12.dp))
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = "Siguiente paso",
+                    text = stringResource(R.string.notif_next_step),
                     color = category.color,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
@@ -784,7 +788,7 @@ private fun NotificationDetailActions(
                 ) {
                     Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(19.dp))
                     Spacer(modifier = Modifier.width(7.dp))
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.notif_btn_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                 }
             }
             if (onOpenRelated != null) {
@@ -801,7 +805,7 @@ private fun NotificationDetailActions(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Abrir", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.notif_btn_open), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(7.dp))
                         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(19.dp))
                     }
@@ -814,7 +818,7 @@ private fun NotificationDetailActions(
                 ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = LocalSectionColors.current.onTrack, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(7.dp))
-                    Text("Vista", color = NotificationMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.notif_seen_badge), color = NotificationMuted, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -884,7 +888,7 @@ private fun EmptyNotifications(
             )
         }
         Text(
-            if (inboxIsEmpty) "Todavía no te ha llegado nada" else "Nada con este filtro",
+            if (inboxIsEmpty) stringResource(R.string.notif_empty_title_default) else stringResource(R.string.notif_empty_title_filtered),
             color = NotificationText,
             fontSize = 17.sp,
             fontWeight = FontWeight.SemiBold,
@@ -892,17 +896,16 @@ private fun EmptyNotifications(
         )
         Text(
             text = if (inboxIsEmpty) {
-                "Cuando la app te avise de una entrega, una clase o una nota, el aviso queda " +
-                    "guardado aquí para que puedas volver a leerlo."
+                stringResource(R.string.notif_empty_desc_default)
             } else {
                 when (filter) {
-                    NotificationFilter.ACTIONS -> "Ningún aviso pide que hagas algo ahora mismo."
-                    NotificationFilter.ACADEMIC -> "No hay avisos de notas ni de cortes."
-                    NotificationFilter.TASKS -> "No hay avisos de tareas ni de entregas."
-                    NotificationFilter.CLASSES -> "No hay avisos de clases ni de asistencia."
-                    NotificationFilter.UNREAD -> "No te queda ninguno por revisar."
-                    NotificationFilter.READ -> "Todavía no has revisado ninguno."
-                    NotificationFilter.ALL -> "No hay avisos guardados."
+                    NotificationFilter.ACTIONS -> stringResource(R.string.notif_empty_actions)
+                    NotificationFilter.ACADEMIC -> stringResource(R.string.notif_empty_academic)
+                    NotificationFilter.TASKS -> stringResource(R.string.notif_empty_tasks)
+                    NotificationFilter.CLASSES -> stringResource(R.string.notif_empty_classes)
+                    NotificationFilter.UNREAD -> stringResource(R.string.notif_empty_unread)
+                    NotificationFilter.READ -> stringResource(R.string.notif_empty_read)
+                    NotificationFilter.ALL -> stringResource(R.string.notif_empty_saved)
                 }
             },
             color = NotificationMuted,
@@ -921,7 +924,7 @@ private fun EmptyNotifications(
                 color = NotificationPrimary.copy(alpha = 0.14f)
             ) {
                 Text(
-                    "Elegir qué te avisa",
+                    stringResource(R.string.notif_choose_what_notifies),
                     color = NotificationPrimary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -946,10 +949,10 @@ private fun EmptyNotificationDetail(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Este aviso ya no esta disponible.", color = NotificationText, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.notif_unavailable), color = NotificationText, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(10.dp))
         TextButton(onClick = onBackClick) {
-            Text("Volver")
+            Text(stringResource(R.string.notif_back))
         }
     }
 }
@@ -998,48 +1001,50 @@ private val NotificationCategory.color: Color
 @Composable
 @ReadOnlyComposable
 private fun NotificationHistoryItem.visual(): NotificationVisual {
+    val isEn = Locale.getDefault().language == "en"
     return when {
-        read -> NotificationVisual("Vista", LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
-        else -> NotificationVisual("Nueva", LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
+        read -> NotificationVisual(if (isEn) "Seen" else "Vista", LocalSectionColors.current.onTrack, Icons.Rounded.CheckCircle)
+        else -> NotificationVisual(if (isEn) "New" else "Nueva", LocalSectionColors.current.schedule, Icons.Rounded.Campaign)
     }
 }
 
 private fun NotificationHistoryItem.category(): NotificationCategory {
     val text = "$title $body".lowercase(Locale.ROOT)
+    val isEn = Locale.getDefault().language == "en"
     return when {
-        "resumen" in text || "dia despejado" in text || "día despejado" in text -> NotificationCategory(
-            label = "Resumen",
+        "resumen" in text || "summary" in text || "dia despejado" in text || "clear day" in text || "día despejado" in text -> NotificationCategory(
+            label = if (isEn) "Summary" else "Resumen",
             kind = NotificationKind.SUMMARY,
             icon = Icons.Rounded.Event,
-            hint = "Revisa tu agenda y decide el siguiente movimiento del dia.",
+            hint = if (isEn) "Check your schedule and decide the next move of the day." else "Revisa tu agenda y decide el siguiente movimiento del dia.",
             requiresAction = false
         )
-        "clase" in text || "asististe" in text -> NotificationCategory(
-            label = "Clase",
+        "clase" in text || "class" in text || "asististe" in text || "attend" in text -> NotificationCategory(
+            label = if (isEn) "Class" else "Clase",
             kind = NotificationKind.CLASS,
             icon = Icons.Rounded.School,
-            hint = "Registra asistencia, modalidad o cambios para mantener tu horario al dia.",
-            requiresAction = "asististe" in text || "asistencia" in text
+            hint = if (isEn) "Record attendance, location, or changes to keep your schedule up to date." else "Registra asistencia, modalidad o cambios para mantener tu horario al dia.",
+            requiresAction = "asististe" in text || "asistencia" in text || "attendance" in text
         )
-        "tarea" in text || "trabajo" in text || "entrega" in text -> NotificationCategory(
-            label = "Entrega",
+        "tarea" in text || "task" in text || "trabajo" in text || "assignment" in text || "entrega" in text || "due" in text -> NotificationCategory(
+            label = if (isEn) "Assignment" else "Entrega",
             kind = NotificationKind.TASK,
             icon = Icons.Rounded.TaskAlt,
-            hint = "Abre la actividad para actualizar estado, hora limite o nota obtenida.",
+            hint = if (isEn) "Open the activity to update status, deadline, or grade received." else "Abre la actividad para actualizar estado, hora limite o nota obtenida.",
             requiresAction = true
         )
-        "nota" in text || "promedio" in text || "corte" in text || "materia" in text -> NotificationCategory(
-            label = "Academico",
+        "nota" in text || "grade" in text || "promedio" in text || "gpa" in text || "corte" in text || "materia" in text || "subject" in text -> NotificationCategory(
+            label = if (isEn) "Academic" else "Academico",
             kind = NotificationKind.ACADEMIC,
             icon = Icons.Rounded.School,
-            hint = "Completa notas, pesos o cortes anteriores para mejorar la proyeccion.",
+            hint = if (isEn) "Complete grades, weights, or past periods to improve projections." else "Completa notas, pesos o cortes anteriores para mejorar la proyeccion.",
             requiresAction = true
         )
         else -> NotificationCategory(
-            label = "Aviso",
+            label = if (isEn) "Notice" else "Aviso",
             kind = NotificationKind.SYSTEM,
             icon = Icons.Rounded.NotificationsNone,
-            hint = "Mantener tus datos al dia ayuda a UniStack a priorizar mejor.",
+            hint = if (isEn) "Keeping your data up to date helps UniStack prioritize better." else "Mantener tus datos al dia ayuda a UniStack a priorizar mejor.",
             requiresAction = false
         )
     }
@@ -1054,9 +1059,13 @@ private fun NotificationHistoryItem.timeLabel(): String {
 private fun NotificationHistoryItem.dateSectionLabel(): String {
     val date = Instant.ofEpochMilli(timestampMillis).atZone(ZoneId.systemDefault()).toLocalDate()
     val today = LocalDate.now()
+    val isEn = Locale.getDefault().language == "en"
     return when (date) {
-        today -> "Hoy"
-        today.minusDays(1) -> "Ayer"
-        else -> date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale.forLanguageTag("es-CO")))
+        today -> if (isEn) "Today" else "Hoy"
+        today.minusDays(1) -> if (isEn) "Yesterday" else "Ayer"
+        else -> date.format(
+            if (isEn) DateTimeFormatter.ofPattern("MMMM d", Locale.ENGLISH)
+            else DateTimeFormatter.ofPattern("d 'de' MMMM", Locale.forLanguageTag("es-CO"))
+        )
     }
 }

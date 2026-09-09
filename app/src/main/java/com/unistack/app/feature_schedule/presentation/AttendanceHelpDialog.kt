@@ -11,6 +11,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,56 +42,46 @@ internal fun AttendanceHelpDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cómo leer esto") },
+        title = { Text(stringResource(R.string.attendance_help_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Parrafo(
                     if (hasLimit) {
-                        "Arriba, cuántas faltas te quedan de las que admite la materia. " +
-                            "Ese tope lo pones tú, y sale de tu reglamento."
+                        stringResource(R.string.attendance_help_limit_desc)
                     } else {
-                        "Arriba, tu porcentaje de asistencia y sobre cuántas clases se " +
-                            "calcula. Si pones un tope de faltas, pasa a decirte cuántas te " +
-                            "quedan, que suele ser lo que importa."
+                        stringResource(R.string.attendance_help_no_limit_desc)
                     }
                 )
 
-                Parrafo(
-                    "Debajo, una fila por clase dada. El color dice cómo quedó:"
-                )
+                Parrafo(stringResource(R.string.attendance_help_legend_title))
 
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                    Fila(ClassAttendanceStatus.ATTENDED, "Fuiste.")
-                    Fila(ClassAttendanceStatus.ABSENT, "No fuiste, y cuenta para el tope.")
-                    Fila(ClassAttendanceStatus.CANCELLED, "No la hubo. No cuenta ni a favor ni en contra.")
-                    Fila(ClassAttendanceStatus.PENDING, "Ya pasó y no la marcaste.")
+                    Fila(ClassAttendanceStatus.ATTENDED, stringResource(R.string.attendance_help_legend_attended))
+                    Fila(ClassAttendanceStatus.ABSENT, stringResource(R.string.attendance_help_legend_absent))
+                    Fila(ClassAttendanceStatus.CANCELLED, stringResource(R.string.attendance_help_legend_canceled))
+                    Fila(ClassAttendanceStatus.PENDING, stringResource(R.string.attendance_help_legend_unmarked))
                 }
 
                 if (hasCuts) {
                     Parrafo(
-                        "Arriba del todo puedes mirar el periodo entero o un ${Corte.Singular.lowercase()} " +
-                            "suelto. Dentro de uno la cifra pasa a ser el porcentaje: el tope " +
-                            "de faltas es del semestre y contarlo por ${Corte.Plural.lowercase()} " +
-                            "diría que te quedan más de las que te quedan."
+                        stringResource(R.string.attendance_help_corte_desc, Corte.Singular.lowercase(), Corte.Plural.lowercase())
                     )
                 }
 
                 if (hasWeekNumbers) {
                     Parrafo(
-                        "Las semanas se cuentan desde que empezó tu periodo, así que " +
-                            "«Semana 8» es la octava del semestre."
+                        stringResource(R.string.attendance_help_weeks_desc)
                     )
                 }
 
                 Parrafo(
-                    "Lo que aún no ha pasado sale arriba, en «Próxima», y no lleva estado: " +
-                        "no hay nada que decir de una clase que no ha ocurrido."
+                    stringResource(R.string.attendance_help_upcoming_desc)
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Entendido", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.common_understood), fontWeight = FontWeight.Bold)
             }
         }
     )

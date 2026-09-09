@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -102,7 +104,7 @@ fun NoteSuggestionPill(
                 modifier = Modifier.size(14.dp)
             )
             Text(
-                text = "Estás en $subjectName",
+                text = stringResource(R.string.notes_suggestion_in_subject, subjectName),
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -114,7 +116,7 @@ fun NoteSuggestionPill(
                 contentColor = accent
             ) {
                 Text(
-                    "Vincular",
+                    stringResource(R.string.notes_suggestion_link),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
@@ -128,7 +130,7 @@ fun NoteSuggestionPill(
             ) {
                 Icon(
                     Icons.Rounded.Close,
-                    contentDescription = "Quitar la sugerencia",
+                    contentDescription = stringResource(R.string.notes_suggestion_dismiss),
                     modifier = Modifier.padding(4.dp).size(14.dp)
                 )
             }

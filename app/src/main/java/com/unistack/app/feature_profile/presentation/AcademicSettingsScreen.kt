@@ -30,6 +30,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.ScaleZoneBar
@@ -86,8 +88,8 @@ fun AcademicSettingsScreen(
     val cuts = current.gradingCutScheme.cuts.sortedBy { it.order }
 
     LargeTitleScaffold(
-        title = "Configuración académica",
-        subtitle = "Escala, metas y cortes",
+        title = stringResource(R.string.settings_academic_title),
+        subtitle = stringResource(R.string.settings_academic_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -99,29 +101,32 @@ fun AcademicSettingsScreen(
             ScaleZoneBar(max = maxGrade, passing = current.passingGrade, target = current.targetAverage)
         }
         item {
-            SettingsGroup(label = "SECCIONES", rowCount = if (activeTerm != null) 5 else 4) {
+            SettingsGroup(label = stringResource(R.string.settings_academic_sections), rowCount = if (activeTerm != null) 5 else 4) {
                 activeTerm?.let { term ->
                     SettingsRow(
                         icon = Icons.Rounded.CalendarMonth,
-                        title = "Tu periodo",
+                        title = stringResource(R.string.settings_academic_term_title),
                         subtitle = term.name + " · " + term.type.label +
-                            (term.plannedEnd?.let { " · hasta " + fechaLargaDeCorte(it) } ?: ""),
+                            (term.plannedEnd?.let { stringResource(R.string.settings_academic_term_until, fechaLargaDeCorte(it)) } ?: ""),
                         iconColor = sections.schedule,
                         onClick = onTermClick
                     )
                 }
                 SettingsRow(
                     icon = Icons.Rounded.BarChart,
-                    title = "Escala y metas",
-                    subtitle = "0 a " + academicGradeInput(maxGrade, current.gradingScale) +
-                        " · apruebas con " + academicGradeInput(current.passingGrade, current.gradingScale) +
-                        " · meta " + academicGradeInput(current.targetAverage, current.gradingScale),
+                    title = stringResource(R.string.settings_academic_scale_title),
+                    subtitle = stringResource(
+                        R.string.settings_academic_scale_sub,
+                        academicGradeInput(maxGrade, current.gradingScale),
+                        academicGradeInput(current.passingGrade, current.gradingScale),
+                        academicGradeInput(current.targetAverage, current.gradingScale)
+                    ),
                     iconColor = MaterialTheme.colorScheme.primary,
                     onClick = onScaleClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.PieChart,
-                    title = "Tus cortes",
+                    title = stringResource(R.string.settings_academic_cuts_title),
                     subtitle = cuts.size.toString() + " " +
                         (if (cuts.size == 1) Corte.Singular else Corte.Plural).lowercase() +
                         " · " + cuts.joinToString("/") { academicPercentInput(it.weight) } + "%",
@@ -130,18 +135,20 @@ fun AcademicSettingsScreen(
                 )
                 SettingsRow(
                     icon = Icons.Rounded.PersonOff,
-                    title = "Faltas",
-                    subtitle = current.absenceLimit?.let { "Pierdes con $it faltas" } ?: "Sin tope puesto",
+                    title = stringResource(R.string.settings_academic_absences_title),
+                    subtitle = current.absenceLimit?.let { stringResource(R.string.settings_academic_absences_limit, it) } ?: stringResource(R.string.settings_academic_absences_none),
                     iconColor = sections.atRisk,
                     onClick = onAbsenceClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.EventBusy,
-                    title = "Días sin clase",
+                    title = stringResource(R.string.settings_academic_breaks_title),
                     subtitle = if (breaks.isEmpty()) {
-                        "Ninguno todavía"
+                        stringResource(R.string.settings_academic_breaks_none)
+                    } else if (breaks.size == 1) {
+                        stringResource(R.string.settings_academic_breaks_single)
                     } else {
-                        breaks.size.toString() + if (breaks.size == 1) " tramo configurado" else " tramos configurados"
+                        stringResource(R.string.settings_academic_breaks_multiple, breaks.size)
                     },
                     iconColor = sections.onTrack,
                     onClick = onBreaksClick
@@ -161,11 +168,9 @@ fun AcademicSettingsScreen(
 internal fun CutDatesExplainer(hasDates: Boolean) {
     Text(
         text = if (hasDates) {
-            "Cada nota que registres se va sola al ${Corte.Singular.lowercase()} que le toca " +
-                "por su fecha."
+            stringResource(R.string.settings_academic_cut_dates_note_dates, Corte.Singular.lowercase())
         } else {
-            "Si escribes el último día de cada ${Corte.Singular.lowercase()}, cada nota se va " +
-                "sola al que le toca por su fecha. Mientras no estén, lo eliges tú en cada nota."
+            stringResource(R.string.settings_academic_cut_dates_note_nodates, Corte.Singular.lowercase())
         },
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -177,16 +182,17 @@ internal fun CutDatesExplainer(hasDates: Boolean) {
 @Composable
 internal fun CutDatesProblemNote(problem: CutDateProblem) {
     val corte = Corte.Singular.lowercase()
+    val isEn = java.util.Locale.getDefault().language == "en"
     Text(
         text = when (problem) {
             CutDateProblem.INCOMPLETAS ->
-                "Faltan fechas. O están todas, o ninguna: a medias no se puede repartir."
+                if (isEn) "Missing dates. All dates must be set, or none." else "Faltan fechas. O están todas, o ninguna: a medias no se puede repartir."
             CutDateProblem.DESORDENADAS ->
-                "Cada $corte tiene que acabar después del anterior."
+                if (isEn) "Each $corte must end after the previous one." else "Cada $corte tiene que acabar después del anterior."
             CutDateProblem.ANTES_DEL_INICIO ->
-                "El primer $corte no puede acabar antes de que empiece el periodo."
+                if (isEn) "The first $corte cannot end before the term begins." else "El primer $corte no puede acabar antes de que empiece el periodo."
             CutDateProblem.DESPUES_DEL_FINAL ->
-                "El último $corte se queda sin días: acaba con el periodo."
+                if (isEn) "The last $corte must end with the term." else "El último $corte se queda sin días: acaba con el periodo."
         },
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
         color = MaterialTheme.colorScheme.error,
@@ -243,22 +249,25 @@ internal fun ScaleWarningNote() {
 
 @Composable
 private fun buildScaleWarning() = androidx.compose.ui.text.buildAnnotatedString {
-    append("Cambiar la escala ")
+    append(stringResource(R.string.settings_academic_scale_warning_pre))
     pushStyle(
         androidx.compose.ui.text.SpanStyle(
             color = MaterialTheme.colorScheme.error,
             fontWeight = FontWeight.Bold
         )
     )
-    append("borra todas tus notas")
+    append(stringResource(R.string.settings_academic_scale_warning_bold))
     pop()
-    append(". Continua solo si estás seguro de lo que haces.")
+    append(stringResource(R.string.settings_academic_scale_warning_post))
 }
 
-internal fun GradingScale.shortLabel(): String = when (this) {
-    GradingScale.ZERO_TO_FIVE -> "0 a 5"
-    GradingScale.ZERO_TO_HUNDRED -> "0 a 100"
-    GradingScale.CUSTOM -> "Otra"
+internal fun GradingScale.shortLabel(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        GradingScale.ZERO_TO_FIVE -> "0 - 5"
+        GradingScale.ZERO_TO_HUNDRED -> "0 - 100"
+        GradingScale.CUSTOM -> if (isEn) "Other" else "Otra"
+    }
 }
 
 internal fun academicGradeInput(value: Double, scale: GradingScale): String =

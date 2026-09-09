@@ -43,9 +43,16 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 
-private enum class AcademicTab(val label: String) {
-    SUBJECTS("Materias"),
-    TASKS("Tareas")
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
+private enum class AcademicTab(@StringRes val labelRes: Int) {
+    SUBJECTS(R.string.academic_tab_subjects),
+    TASKS(R.string.academic_tab_tasks);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }
 
 /**
@@ -105,8 +112,8 @@ fun AcademicScreen(
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 SectionHeader(
-                    title = "Académico",
-                    subtitle = "Materias, notas y entregas en un mismo lugar.",
+                    title = stringResource(R.string.academic_header_title),
+                    subtitle = stringResource(R.string.academic_header_subtitle),
                     modifier = Modifier.padding(end = 12.dp),
                     action = {
                         /*
@@ -118,7 +125,7 @@ fun AcademicScreen(
                         if (selectedTab == AcademicTab.SUBJECTS) {
                             UniIconButton(
                                 icon = if (searching) Icons.Rounded.Close else Icons.Rounded.Search,
-                                contentDescription = if (searching) "Cerrar la búsqueda" else "Buscar materias",
+                                contentDescription = if (searching) stringResource(R.string.academic_search_close) else stringResource(R.string.academic_search_open),
                                 onClick = {
                                     searching = !searching
                                     if (!searching) query = ""
@@ -133,7 +140,7 @@ fun AcademicScreen(
                     UniSearchField(
                         query = query,
                         onQueryChange = { query = it },
-                        placeholder = "Buscar entre tus materias",
+                        placeholder = stringResource(R.string.academic_search_placeholder),
                         modifier = Modifier.padding(top = 8.dp, end = 12.dp)
                     )
                 }

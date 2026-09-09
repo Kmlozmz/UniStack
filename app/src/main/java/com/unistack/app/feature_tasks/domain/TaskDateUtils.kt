@@ -20,7 +20,7 @@ object TaskDateUtils {
     private val timeInputFormatter: DateTimeFormatter = DateTimeFormatterBuilder()
         .appendPattern("H:mm")
         .toFormatter(Locale.US)
-    private val displayFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CO"))
+    private val displayFormatter: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
     private val time24Formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
     private val time12Formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", Locale.US)
 
@@ -86,13 +86,25 @@ object TaskDateUtils {
         val time = timeFromMillis(dueDateMillis)
         val timeText = if (time == LocalTime.MIDNIGHT) "" else " ${formatTime(time, use24HourTime)}"
         val diff = ChronoUnit.DAYS.between(today, dueDate)
-        return when (diff) {
-            -1L -> "venció ayer$timeText"
-            0L -> "vence hoy$timeText"
-            1L -> "vence mañana$timeText"
-            in Long.MIN_VALUE..-2L -> "venció hace ${-diff} días$timeText"
-            in 2L..6L -> "vence en $diff días$timeText"
-            else -> "vence ${formatDate(dueDate, dateFormat)}$timeText"
+        val isEn = Locale.getDefault().language == "en"
+        return if (isEn) {
+            when (diff) {
+                -1L -> "overdue yesterday$timeText"
+                0L -> "due today$timeText"
+                1L -> "due tomorrow$timeText"
+                in Long.MIN_VALUE..-2L -> "overdue ${-diff} days ago$timeText"
+                in 2L..6L -> "due in $diff days$timeText"
+                else -> "due ${formatDate(dueDate, dateFormat)}$timeText"
+            }
+        } else {
+            when (diff) {
+                -1L -> "venció ayer$timeText"
+                0L -> "vence hoy$timeText"
+                1L -> "vence mañana$timeText"
+                in Long.MIN_VALUE..-2L -> "venció hace ${-diff} días$timeText"
+                in 2L..6L -> "vence en $diff días$timeText"
+                else -> "vence ${formatDate(dueDate, dateFormat)}$timeText"
+            }
         }
     }
 

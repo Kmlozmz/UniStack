@@ -39,6 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.LargeTitleScaffold
@@ -81,8 +83,8 @@ fun HomeSettingsScreen(
     val orden = appearance.homeSectionOrder
 
     LargeTitleScaffold(
-        title = "Tu inicio",
-        subtitle = "Qué bloques salen, en qué orden y qué cuentan",
+        title = stringResource(R.string.settings_home_title),
+        subtitle = stringResource(R.string.settings_home_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -92,13 +94,13 @@ fun HomeSettingsScreen(
     ) {
         item {
             VentanaDeInicio(
-                nombre = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",
+                nombre = current.preferredName.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_profile_student),
                 appearance = appearance
             )
         }
 
         item {
-            Text("EL SALUDO", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.settings_home_greeting_sec), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
         }
         item {
             // Fuera de la lista ordenable: el saludo **siempre encabeza**, y tenerlo dentro con
@@ -109,8 +111,8 @@ fun HomeSettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 FilaDeBloque(
-                    titulo = "Saludo y tu nombre",
-                    detalle = "«Buenas tardes» y cómo te llamas. Siempre va lo primero.",
+                    titulo = stringResource(R.string.settings_home_greeting_title),
+                    detalle = stringResource(R.string.settings_home_greeting_desc),
                     marcado = appearance.showHomeGreeting,
                     onCambio = { valor -> viewModel.updateAppearance { it.copy(showHomeGreeting = valor) } }
                 )
@@ -123,13 +125,13 @@ fun HomeSettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "BLOQUES, EN ORDEN",
+                    stringResource(R.string.settings_home_blocks_order),
                     style = SectionLabelStyle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${orden.count(appearance::showsSection)} de ${orden.size} encendidos",
+                    stringResource(R.string.settings_home_blocks_count, orden.count(appearance::showsSection), orden.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -164,7 +166,7 @@ fun HomeSettingsScreen(
         if (appearance.showHomeHero) {
             item {
                 Text(
-                    "QUÉ CUENTA «LO SIGUIENTE»",
+                    stringResource(R.string.settings_home_hero_sec),
                     style = SectionLabelStyle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 6.dp)
@@ -172,8 +174,7 @@ fun HomeSettingsScreen(
             }
             item {
                 Text(
-                    text = "La tarjeta grande enseña lo más urgente de lo que dejes encendido. " +
-                        "Con los tres apagados se queda con las clases del día.",
+                    text = stringResource(R.string.settings_home_hero_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -186,20 +187,20 @@ fun HomeSettingsScreen(
                 ) {
                     Column {
                         FilaDeBloque(
-                            titulo = "Notas",
-                            detalle = "Materias en riesgo y promedios que bajan",
+                            titulo = stringResource(R.string.settings_home_grades_title),
+                            detalle = stringResource(R.string.settings_home_grades_desc),
                             marcado = appearance.heroShowsGrades,
                             onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsGrades = valor) } }
                         )
                         FilaDeBloque(
-                            titulo = "Tareas",
-                            detalle = "Entregas vencidas y las que vencen hoy",
+                            titulo = stringResource(R.string.settings_home_tasks_title),
+                            detalle = stringResource(R.string.settings_home_tasks_desc),
                             marcado = appearance.heroShowsTasks,
                             onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsTasks = valor) } }
                         )
                         FilaDeBloque(
-                            titulo = "Gastos",
-                            detalle = "Cuando te pasas del presupuesto del mes",
+                            titulo = stringResource(R.string.settings_home_expenses_title),
+                            detalle = stringResource(R.string.settings_home_expenses_desc),
                             marcado = appearance.heroShowsExpenses,
                             onCambio = { valor -> viewModel.updateAppearance { it.copy(heroShowsExpenses = valor) } }
                         )
@@ -286,13 +287,13 @@ private fun BloqueOrdenable(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 FlechaDeOrden(
                     icono = Icons.Rounded.KeyboardArrowUp,
-                    descripcion = "Subir ${seccion.label()}",
+                    descripcion = stringResource(R.string.settings_home_move_up, seccion.label()),
                     activa = posicion > 0,
                     onClick = { onMover(posicion, posicion - 1) }
                 )
                 FlechaDeOrden(
                     icono = Icons.Rounded.KeyboardArrowDown,
-                    descripcion = "Bajar ${seccion.label()}",
+                    descripcion = stringResource(R.string.settings_home_move_down, seccion.label()),
                     activa = posicion < total - 1,
                     onClick = { onMover(posicion, posicion + 1) }
                 )
@@ -404,7 +405,7 @@ private fun VentanaDeInicio(nombre: String, appearance: AppearancePreferences) {
             }
             if (!appearance.showHomeGreeting && appearance.homeSectionOrder.none(appearance::showsSection)) {
                 Text(
-                    "Inicio se queda solo con el logo.",
+                    stringResource(R.string.settings_home_preview_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = esquema.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 18.dp)

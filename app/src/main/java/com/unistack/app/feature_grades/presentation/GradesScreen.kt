@@ -48,6 +48,9 @@ import com.unistack.app.core.design.components.UniConfirmDeleteDialog
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniSelectionToolbar
 import com.unistack.app.core.design.components.UniChoiceRow
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.cleanClickable
 import androidx.compose.ui.draw.clip
@@ -174,8 +177,8 @@ fun GradesScreen(
             if (!embedded) {
                 item {
                     FeatureHeader(
-                        title = "Materias",
-                        subtitle = "Administra tus materias, notas y porcentajes."
+                        title = stringResource(R.string.academic_tab_subjects),
+                        subtitle = stringResource(R.string.grades_header_subtitle)
                     )
                 }
             }
@@ -203,10 +206,10 @@ fun GradesScreen(
                 item("vacio-filtro") {
                     Text(
                         text = when (filter) {
-                            SubjectFilter.ACTIVE -> "No tienes materias en curso."
-                            SubjectFilter.AT_RISK -> "Ninguna materia está en riesgo. Bien ahí."
-                            SubjectFilter.CLOSED -> "Todavía no has cerrado ninguna materia."
-                        }.takeIf { query.isBlank() } ?: "Ninguna materia se llama así.",
+                            SubjectFilter.ACTIVE -> stringResource(R.string.grades_empty_ongoing)
+                            SubjectFilter.AT_RISK -> stringResource(R.string.grades_empty_risk)
+                            SubjectFilter.CLOSED -> stringResource(R.string.grades_empty_closed)
+                        }.takeIf { query.isBlank() } ?: stringResource(R.string.grades_empty_search),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp)
@@ -229,7 +232,7 @@ fun GradesScreen(
                             {
                             Icon(
                                 imageVector = Icons.Rounded.DragHandle,
-                                contentDescription = "Mover la materia",
+                                contentDescription = stringResource(R.string.grades_move),
                                 tint = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier
                                     .padding(start = 8.dp)
@@ -287,7 +290,7 @@ fun GradesScreen(
         ) {
             UniIconButton(
                 icon = Icons.Rounded.Close,
-                contentDescription = "Quitar la selección",
+                contentDescription = stringResource(R.string.action_clear_selection),
                 onClick = { selectedIds = emptyList() }
             )
             /*
@@ -302,7 +305,7 @@ fun GradesScreen(
             if (selectedIds.size == 1 && onEditSubjectClick != null) {
                 UniIconButton(
                     icon = Icons.Rounded.Edit,
-                    contentDescription = "Editar la materia",
+                    contentDescription = stringResource(R.string.grades_edit),
                     onClick = {
                         val only = selectedIds.first()
                         selectedIds = emptyList()
@@ -312,24 +315,24 @@ fun GradesScreen(
             } else {
                 UniIconButton(
                     icon = Icons.Rounded.SelectAll,
-                    contentDescription = "Marcar todas las de la lista",
+                    contentDescription = stringResource(R.string.grades_select_all),
                     onClick = { selectedIds = visible.map { it.id } }
                 )
             }
             UniIconButton(
                 icon = Icons.Rounded.Delete,
-                contentDescription = if (selectedIds.size == 1) "Eliminar la materia" else "Eliminar las materias",
+                contentDescription = if (selectedIds.size == 1) stringResource(R.string.grades_delete_one) else stringResource(R.string.grades_delete_multiple),
                 onClick = { pendingBulkDelete = true }
             )
         }
 
         if (pendingBulkDelete) {
             UniConfirmDeleteDialog(
-                title = if (selectedIds.size == 1) "¿Eliminar la materia?" else "¿Eliminar ${selectedIds.size} materias?",
+                title = if (selectedIds.size == 1) stringResource(R.string.grades_delete_confirm_one) else stringResource(R.string.grades_delete_confirm_multiple, selectedIds.size),
                 body = if (selectedIds.size == 1) {
-                    "Se borran también sus notas. No se puede deshacer."
+                    stringResource(R.string.grades_delete_desc_one)
                 } else {
-                    "Se borran también todas sus notas. No se puede deshacer."
+                    stringResource(R.string.grades_delete_desc_multiple)
                 },
                 onConfirm = {
                     selectedIds.forEach(viewModel::deleteSubject)
@@ -372,8 +375,8 @@ private fun EmptyGradesCard() {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Text("Aún no tienes materias.", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
-            Text("Crea tu primera materia para empezar a calcular tu promedio.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.grades_empty_title), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.grades_empty_desc), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -417,7 +420,7 @@ private fun AddSubjectButton(
                 )
             }
             Text(
-                text = "Agregar materia",
+                text = stringResource(R.string.grades_add_subject),
                 color = contentColorOn(MaterialTheme.colorScheme.primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
@@ -454,8 +457,11 @@ fun subjectAccent(subject: Subject): Color {
 
 
 /** Los tres estados por los que se filtra la lista de materias. */
-private enum class SubjectFilter(val label: String) {
-    ACTIVE("En curso"),
-    AT_RISK("En riesgo"),
-    CLOSED("Cerradas")
+private enum class SubjectFilter(@StringRes val labelRes: Int) {
+    ACTIVE(R.string.grades_filter_ongoing),
+    AT_RISK(R.string.grades_filter_at_risk),
+    CLOSED(R.string.grades_filter_closed);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }

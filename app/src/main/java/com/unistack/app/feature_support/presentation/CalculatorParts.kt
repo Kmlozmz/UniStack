@@ -40,6 +40,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
@@ -118,7 +120,7 @@ internal fun CalculatorKeypad(
             Key(
                 label = null,
                 icon = Icons.AutoMirrored.Rounded.Backspace,
-                contentDescription = "Borrar un dígito",
+                contentDescription = stringResource(R.string.calculator_delete_digit),
                 modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,
                 muted = true,
@@ -128,7 +130,7 @@ internal fun CalculatorKeypad(
                 }
             )
             Key(
-                label = "Limpiar",
+                label = if (java.util.Locale.getDefault().language == "en") "Clear" else "Limpiar",
                 modifier = Modifier.fillMaxWidth(),
                 height = TallKeyHeight,
                 small = true,
@@ -326,7 +328,7 @@ internal fun SlotAction(
                     } else {
                         Icons.Rounded.Check
                     },
-                    contentDescription = if (arrow) "Pasar al siguiente dato" else "Añadir",
+                    contentDescription = if (arrow) stringResource(R.string.calculator_next_data) else stringResource(R.string.calculator_add),
                     modifier = Modifier.size(if (arrow) 24.dp else 26.dp)
                 )
             }

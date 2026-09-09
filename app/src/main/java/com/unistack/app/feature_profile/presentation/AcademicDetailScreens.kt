@@ -3,6 +3,8 @@
 package com.unistack.app.feature_profile.presentation
 
 import com.unistack.app.core.design.components.LargeTitleScaffold
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,22 +120,24 @@ fun AcademicScaleScreen(
     val scaleIsValid = passing != null && target != null &&
         passing in 0.0..maxGrade && target in 0.0..maxGrade && target >= passing
 
+    val scaleUpdatedMsg = stringResource(R.string.settings_scale_updated)
+    val scaleReviewMsg = stringResource(R.string.settings_scale_review_msg)
     fun saveScale() {
         val impact = viewModel.gradingScaleChangeImpact()
         if (selectedScale != current.gradingScale && impact.isDestructive) {
             pendingScaleChange = impact
         } else {
             feedback = if (viewModel.updateGradingSettings(selectedScale, passingInput, targetInput)) {
-                "Escala actualizada."
+                scaleUpdatedMsg
             } else {
-                "Revisa que las notas estén dentro de la escala."
+                scaleReviewMsg
             }
         }
     }
 
     LargeTitleScaffold(
-        title = "Escala y metas",
-        subtitle = "Cómo se convierten tus notas",
+        title = stringResource(R.string.settings_academic_scale_title),
+        subtitle = stringResource(R.string.settings_scale_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -143,7 +147,7 @@ fun AcademicScaleScreen(
     ) {
         item { ScaleZoneBar(max = maxGrade, passing = passing, target = target) }
         item {
-            AcademicGroupLabel("LA ESCALA")
+            AcademicGroupLabel(stringResource(R.string.settings_scale_sec_scale))
             UniSegmentedControl(
                 selected = selectedScale,
                 options = listOf(
@@ -163,7 +167,7 @@ fun AcademicScaleScreen(
         }
         item {
             GradeStepperRow(
-                label = "Apruebas con",
+                label = stringResource(R.string.settings_scale_pass_with),
                 value = passingInput,
                 max = maxGrade,
                 floorValue = 0.0,
@@ -174,7 +178,7 @@ fun AcademicScaleScreen(
         }
         item {
             GradeStepperRow(
-                label = "Tu meta",
+                label = stringResource(R.string.settings_scale_your_target),
                 value = targetInput,
                 max = maxGrade,
                 floorValue = passing ?: 0.0,
@@ -193,7 +197,7 @@ fun AcademicScaleScreen(
                     .fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
-                Text("Guardar escala")
+                Text(stringResource(R.string.settings_scale_btn_save))
             }
         }
         item { ScaleWarningNote() }
@@ -216,13 +220,9 @@ fun AcademicScaleScreen(
     pendingScaleChange?.let { impact ->
         AlertDialog(
             onDismissRequest = { pendingScaleChange = null },
-            title = { Text("¿Cambiar la escala de notas?") },
+            title = { Text(stringResource(R.string.settings_scale_dialog_title)) },
             text = {
-                Text(
-                    "Esto borrará ${impact.describe()}. Una nota registrada en otra escala " +
-                        "no se puede reexpresar sin inventar el número, así que se elimina en " +
-                        "vez de convertirse. Las metas de tus materias vuelven al valor del perfil."
-                )
+                Text(stringResource(R.string.settings_scale_dialog_desc, impact.describe()))
             },
             confirmButton = {
                 TextButton(
@@ -246,12 +246,9 @@ fun AcademicScaleScreen(
     confirmingScaleChange?.let { impact ->
         AlertDialog(
             onDismissRequest = { confirmingScaleChange = null },
-            title = { Text("Esto no se puede deshacer") },
+            title = { Text(stringResource(R.string.settings_scale_dialog_permanent)) },
             text = {
-                Text(
-                    "Vas a borrar ${impact.describe()} de forma permanente. No hay copia " +
-                        "de seguridad ni forma de recuperarlas después."
-                )
+                Text(stringResource(R.string.settings_scale_dialog_perm_desc, impact.describe()))
             },
             confirmButton = {
                 TextButton(
@@ -264,7 +261,7 @@ fun AcademicScaleScreen(
                         }
                     }
                 ) {
-                    Text("Sí, borrar definitivamente", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_scale_btn_delete_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -313,8 +310,8 @@ fun AcademicCutsScreen(
     )
 
     LargeTitleScaffold(
-        title = "Tus cortes",
-        subtitle = "Cómo se reparte el peso del semestre",
+        title = stringResource(R.string.settings_cuts_title),
+        subtitle = stringResource(R.string.settings_cuts_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -323,7 +320,7 @@ fun AcademicCutsScreen(
         itemSpacing = 10.dp
     ) {
         item {
-            AcademicGroupLabel("TUS CORTES")
+            AcademicGroupLabel(stringResource(R.string.settings_cuts_sec_cuts))
             CutCountSection(
                 count = weights.size,
                 onCountSelected = { count ->
@@ -361,7 +358,7 @@ fun AcademicCutsScreen(
         }
         if (weights.size > 1) {
             item {
-                AcademicGroupLabel("CUÁNDO CIERRA CADA ${Corte.Singular.uppercase()}")
+                AcademicGroupLabel(stringResource(R.string.settings_cuts_sec_dates, Corte.Singular.uppercase()))
                 CutDatesExplainer(hasDates = cutDates.any { it != null })
             }
             item {
@@ -389,19 +386,21 @@ fun AcademicCutsScreen(
                             feedback = null
                         }
                     ) {
-                        Text("Quitar las fechas", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_cuts_btn_clear_dates), fontWeight = FontWeight.Bold)
                     }
                 }
             }
         }
         item {
+            val cutsUpdatedMsg = stringResource(R.string.settings_cuts_updated)
+            val cutsReviewWeightsMsg = stringResource(R.string.settings_cuts_review_weights)
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     feedback = if (viewModel.updateGradingCutSettings(weights, cutDates)) {
-                        "Cortes actualizados."
+                        cutsUpdatedMsg
                     } else {
-                        "Revisa que los pesos sumen 100%."
+                        cutsReviewWeightsMsg
                     }
                 },
                 enabled = weightsAreValid && dateProblem == null,
@@ -410,7 +409,7 @@ fun AcademicCutsScreen(
                     .fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
-                Text("Guardar cortes")
+                Text(stringResource(R.string.settings_cuts_btn_save))
             }
         }
         feedback?.let { message ->
@@ -451,8 +450,8 @@ fun AcademicAbsenceScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LargeTitleScaffold(
-        title = "Faltas",
-        subtitle = "Tu tope de inasistencias",
+        title = stringResource(R.string.settings_absences_title),
+        subtitle = stringResource(R.string.settings_absences_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -473,19 +472,19 @@ fun AcademicAbsenceScreen(
                     style = MaterialTheme.typography.displayLargeEmphasized
                 )
                 Text(
-                    text = "faltas y pierdes la materia",
+                    text = stringResource(R.string.settings_absences_fail_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.height(26.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
-                    AbsenceStepButton(Icons.Rounded.Remove, "Una menos", valor > 1) {
+                    AbsenceStepButton(Icons.Rounded.Remove, stringResource(R.string.settings_absences_one_less), valor > 1) {
                         haptics.performSafely(HapticFeedbackType.SegmentTick)
                         valor = (valor - 1).coerceAtLeast(1)
                         feedback = null
                     }
-                    AbsenceStepButton(Icons.Rounded.Add, "Una más", valor < 40) {
+                    AbsenceStepButton(Icons.Rounded.Add, stringResource(R.string.settings_absences_one_more), valor < 40) {
                         haptics.performSafely(HapticFeedbackType.SegmentTick)
                         valor = (valor + 1).coerceAtMost(40)
                         feedback = null
@@ -495,8 +494,7 @@ fun AcademicAbsenceScreen(
         }
         item {
             Text(
-                text = "El número a partir del cual pierdes una materia. Lo dice el reglamento " +
-                    "de tu universidad, y vale para todas tus materias.",
+                text = stringResource(R.string.settings_absences_explanation),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
@@ -510,7 +508,8 @@ fun AcademicAbsenceScreen(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
                     viewModel.setAbsenceLimit(valor)
-                    feedback = "Tope actualizado."
+                    val isEn = java.util.Locale.getDefault().language == "en"
+                    feedback = if (isEn) "Limit updated." else "Tope actualizado."
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
@@ -526,11 +525,12 @@ fun AcademicAbsenceScreen(
                     onClick = {
                         viewModel.setAbsenceLimit(null)
                         valor = 6
-                        feedback = "Quitaste el tope."
+                        val isEn = java.util.Locale.getDefault().language == "en"
+                        feedback = if (isEn) "Limit removed." else "Quitaste el tope."
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Quitar el tope", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_absences_btn_clear), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -589,8 +589,8 @@ fun AcademicBreaksScreen(
     val spacing = LocalInterfaceSpacing.current
 
     LargeTitleScaffold(
-        title = "Días sin clase",
-        subtitle = "Festivos y semanas sin clase",
+        title = stringResource(R.string.settings_academic_breaks_title),
+        subtitle = stringResource(R.string.settings_breaks_desc),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -649,8 +649,8 @@ fun AcademicTermScreen(
     val focusManager = LocalFocusManager.current
 
     LargeTitleScaffold(
-        title = "Tu periodo",
-        subtitle = "Nombre, forma y fechas de ${current.name}",
+        title = stringResource(R.string.settings_term_screen_title),
+        subtitle = stringResource(R.string.settings_term_screen_subtitle, current.name),
         onBackClick = onBackClick,
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures(onTap = { focusManager.clearFocus() })
@@ -664,14 +664,14 @@ fun AcademicTermScreen(
             OutlinedTextField(
                 value = nombre,
                 onValueChange = { nombre = it.take(40) },
-                label = { Text("Cómo se llama") },
+                label = { Text(stringResource(R.string.settings_term_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         }
         item {
             Text(
-                text = "¿CÓMO SE ORGANIZAN LOS PERIODOS EN TU UNIVERSIDAD?",
+                text = stringResource(R.string.settings_term_type_prompt),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
@@ -697,15 +697,15 @@ fun AcademicTermScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TermFechaField(
-                    label = "Empieza",
+                    label = stringResource(R.string.settings_term_start),
                     date = inicio,
                     modifier = Modifier.weight(1f),
                     onClick = { eligiendo = FechaDePeriodo.EMPIEZA }
                 )
                 TermFechaField(
-                    label = "Acaba (previsto)",
+                    label = stringResource(R.string.settings_term_end_projected),
                     date = fin,
-                    vacio = "Elegir",
+                    vacio = stringResource(R.string.settings_term_choose),
                     modifier = Modifier.weight(1f),
                     onClick = { eligiendo = FechaDePeriodo.ACABA }
                 )
@@ -713,8 +713,7 @@ fun AcademicTermScreen(
         }
         item {
             Text(
-                text = "El fin es solo una previsión, para avisarte cuando llegue. El periodo " +
-                    "no se cierra ese día: se cierra cuando tú lo cierres, desde el histórico.",
+                text = stringResource(R.string.settings_term_end_explanation),
                 modifier = Modifier.padding(horizontal = 4.dp),
                 color = MaterialTheme.colorScheme.outline,
                 fontSize = 11.sp,
@@ -725,10 +724,11 @@ fun AcademicTermScreen(
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
+                    val isEn = java.util.Locale.getDefault().language == "en"
                     feedback = if (viewModel.updateActiveTerm(nombre, tipo, inicio, fin)) {
-                        "Periodo actualizado."
+                        if (isEn) "Term updated." else "Periodo actualizado."
                     } else {
-                        "Revisa el nombre y las fechas."
+                        if (isEn) "Check the name and dates." else "Revisa el nombre y las fechas."
                     }
                 },
                 enabled = valido,
@@ -817,7 +817,11 @@ private fun TermFechaField(
         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             Text(
-                text = date?.let { "${it.dayOfMonth} ${TermMeses[it.monthValue - 1]} ${it.year}" } ?: vacio,
+                text = date?.let {
+                    val isEn = java.util.Locale.getDefault().language == "en"
+                    val meses = if (isEn) TermMesesEn else TermMeses
+                    "${it.dayOfMonth} ${meses[it.monthValue - 1]} ${it.year}"
+                } ?: vacio,
                 color = if (date != null) {
                     MaterialTheme.colorScheme.onSurface
                 } else {
@@ -832,6 +836,8 @@ private fun TermFechaField(
 
 private val TermMeses =
     listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+private val TermMesesEn =
+    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 /** Las fechas sobreviven a un giro de pantalla; el `Bundle` solo entiende texto. */
 private val TermFechaSaver = androidx.compose.runtime.saveable.Saver<LocalDate?, String>(

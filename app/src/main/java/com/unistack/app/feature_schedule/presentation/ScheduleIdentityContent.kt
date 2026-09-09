@@ -57,6 +57,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
@@ -123,7 +125,7 @@ private val IdentityAccent: Color
     @Composable
     @ReadOnlyComposable
     get() = MaterialTheme.colorScheme.primary
-private val IdentityLocale = Locale.forLanguageTag("es")
+private val IdentityLocale: Locale get() = Locale.getDefault()
 
 @Composable
 internal fun ScheduleIdentityContent(
@@ -464,7 +466,7 @@ private fun TimetableMetrics(
             icon = Icons.Rounded.Today,
             iconColor = MaterialTheme.colorScheme.tertiary,
             value = todayCount.toString(),
-            label = "Hoy",
+            label = stringResource(R.string.schedule_identity_today),
             onClick = onTodayClick
         )
         MetricCard(
@@ -472,7 +474,7 @@ private fun TimetableMetrics(
             icon = Icons.Rounded.Schedule,
             iconColor = LocalSectionColors.current.onTrack,
             value = weeklyHoursLabel(weekMinutes),
-            label = "Semana",
+            label = stringResource(R.string.schedule_identity_week),
             onClick = onWeekClick
         )
     }
@@ -515,7 +517,7 @@ private fun CalendarMetrics(
             icon = Icons.Rounded.CalendarMonth,
             iconColor = LocalSectionColors.current.schedule,
             value = eventCount.toString(),
-            label = "Eventos",
+            label = stringResource(R.string.schedule_identity_events),
             onClick = onEventsClick
         )
         MetricCard(
@@ -523,7 +525,7 @@ private fun CalendarMetrics(
             icon = Icons.AutoMirrored.Rounded.Assignment,
             iconColor = MaterialTheme.colorScheme.tertiary,
             value = deliveries.toString(),
-            label = "Entregas",
+            label = stringResource(R.string.schedule_identity_due_dates),
             onClick = onDeliveriesClick
         )
         MetricCard(
@@ -531,7 +533,7 @@ private fun CalendarMetrics(
             icon = Icons.Rounded.School,
             iconColor = LocalSectionColors.current.atRisk,
             value = exams.toString(),
-            label = "Exámenes",
+            label = stringResource(R.string.schedule_identity_exams),
             onClick = onExamsClick
         )
     }
@@ -599,10 +601,10 @@ private fun IdentityMetricDetailsSheet(
     }
 
     val title = when (detail) {
-        IdentityMetricDetail.SUBJECTS -> "Materias del horario"
+        IdentityMetricDetail.SUBJECTS -> stringResource(R.string.schedule_identity_subjects_in_schedule)
         IdentityMetricDetail.TODAY -> "Clases de hoy"
         IdentityMetricDetail.WEEK -> "Horas de clase"
-        IdentityMetricDetail.EVENTS -> "Eventos de ${month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized()}"
+        IdentityMetricDetail.EVENTS -> stringResource(R.string.schedule_identity_events_of_month, month.format(DateTimeFormatter.ofPattern("MMMM", IdentityLocale)).identityCapitalized())
         IdentityMetricDetail.DELIVERIES -> "Entregas pendientes"
         IdentityMetricDetail.EXAMS -> "Exámenes pendientes"
     }
@@ -630,7 +632,7 @@ private fun IdentityMetricDetailsSheet(
      */
     val subtitle = when (detail) {
         IdentityMetricDetail.TODAY ->
-            today.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized()
+            today.format(DateTimeFormatter.ofPattern(if (IdentityLocale.language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized()
         IdentityMetricDetail.WEEK -> {
             val weekStart = selectedDate.weekStartIdentity()
             val range = "${weekStart.format(DateTimeFormatter.ofPattern("d MMM", IdentityLocale))} - " +
@@ -640,9 +642,9 @@ private fun IdentityMetricDetailsSheet(
         else -> "$count ${if (count == 1) "elemento" else "elementos"}"
     }
     val emptyMessage = when (detail) {
-        IdentityMetricDetail.TODAY -> "Hoy no tienes clases."
-        IdentityMetricDetail.WEEK -> "Esta semana no tienes clases."
-        else -> "No hay información para mostrar."
+        IdentityMetricDetail.TODAY -> stringResource(R.string.schedule_identity_no_classes_today)
+        IdentityMetricDetail.WEEK -> stringResource(R.string.schedule_identity_no_classes_this_week)
+        else -> stringResource(R.string.schedule_identity_no_info)
     }
 
     ModalBottomSheet(
@@ -709,7 +711,7 @@ private fun IdentityMetricDetailsSheet(
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = subject?.name ?: "Materia",
-                                    detail = "$days  \u2022  ${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  \u2022  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
+                                    detail = "$days  \u2022  ${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  \u2022  ${session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) }}",
                                     onClick = { onSessionClick(occurrenceDate, session) }
                                 )
                             }
@@ -724,7 +726,7 @@ private fun IdentityMetricDetailsSheet(
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = subject?.name ?: "Clase",
-                                    detail = "${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  •  ${session.identityPlace().room.ifBlank { "Sin aula" }}",
+                                    detail = "${formatIdentityMinute(session.startMinute, uiState.accessibility.use24HourTime)} - ${formatIdentityMinute(session.endMinute, uiState.accessibility.use24HourTime)}  •  ${session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) }}",
                                     onClick = { onSessionClick(today, session) }
                                 )
                             }
@@ -768,7 +770,7 @@ private fun IdentityMetricDetailsSheet(
                                 IdentityEventRow(
                                     color = subject.identityColor(),
                                     title = task.title,
-                                    detail = "${task.dueLocalDate().format(DateTimeFormatter.ofPattern("EEE d 'de' MMM", IdentityLocale)).identityCapitalized()}${subject?.name?.let { "  \u2022  $it" }.orEmpty()}",
+                                    detail = "${task.dueLocalDate().format(DateTimeFormatter.ofPattern(if (IdentityLocale.language == "en") "EEE, MMM d" else "EEE d 'de' MMM", IdentityLocale)).identityCapitalized()}${subject?.name?.let { "  \u2022  $it" }.orEmpty()}",
                                     onClick = { onTaskClick(task.id) }
                                 )
                             }
@@ -982,7 +984,7 @@ private fun IdentityWeeklyTimeline(
                                     .height(cardHeight),
                                 height = cardHeight,
                                 color = subject.identityColor(),
-                                name = subject?.name ?: "Clase",
+                                name = subject?.name ?: stringResource(R.string.schedule_detail_class),
                                 room = session.identityPlace().room,
                                 startLabel = formatIdentityMinute(session.startMinute, use24Hour),
                                 onClick = { onSessionClick(date, session) }
@@ -1033,7 +1035,7 @@ private fun WeekDayClassList(
         if (daySessions.isEmpty()) {
             IdentitySurface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                 Text(
-                    text = "Sin clases el $dayName.",
+                    text = stringResource(R.string.schedule_identity_no_classes_on_day, dayName),
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -1066,7 +1068,7 @@ private fun WeekDayClassList(
             val subject = subjects.firstOrNull { it.id == session.subjectId }
             val detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
                 formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
-                session.identityPlace().room.ifBlank { "Sin aula" }
+                session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) }
             val enCurso = selectedDate == hoy &&
                 minutoActual >= session.startMinute &&
                 minutoActual < session.endMinute
@@ -1377,7 +1379,7 @@ private fun IdentityMonthCalendar(
             ) {
                 Icon(
                     Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                    contentDescription = "Mes anterior",
+                    contentDescription = stringResource(R.string.schedule_identity_prev_month),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -1399,7 +1401,7 @@ private fun IdentityMonthCalendar(
             ) {
                 Icon(
                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                    contentDescription = "Mes siguiente",
+                    contentDescription = stringResource(R.string.schedule_identity_next_month),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -1526,7 +1528,7 @@ private fun SelectedDayPanel(
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized(),
+            text = date.format(DateTimeFormatter.ofPattern(if (IdentityLocale.language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM", IdentityLocale)).identityCapitalized(),
             modifier = Modifier.padding(start = 4.dp),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleSmall,
@@ -1535,7 +1537,7 @@ private fun SelectedDayPanel(
         if (daySessions.isEmpty() && dayTasks.isEmpty() && dayAgendaEvents.isEmpty()) {
             IdentitySurface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
                 Text(
-                    "No hay eventos para este día.",
+                    stringResource(R.string.schedule_identity_no_events_day),
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -1561,7 +1563,7 @@ private fun SelectedDayPanel(
                 title = subject?.name ?: "Clase",
                 detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
                     formatIdentityMinute(session.endMinute, use24Hour) + "  •  " +
-                    session.identityPlace().room.ifBlank { "Sin aula" },
+                    session.identityPlace().room.ifBlank { stringResource(R.string.schedule_detail_no_room) },
                 onClick = { onSessionClick(date, session) }
             )
         }
@@ -1580,7 +1582,7 @@ private fun SelectedDayPanel(
         val hidden = dayAgendaEvents.size + daySessions.size + dayTasks.size - 2
         if (hidden > 0) {
             Text(
-                "+$hidden eventos más",
+                stringResource(R.string.schedule_identity_more_events, hidden),
                 modifier = Modifier.padding(start = 6.dp),
                 color = IdentityAccent,
                 style = MaterialTheme.typography.labelMedium,
@@ -1755,7 +1757,7 @@ private fun formatIdentityMinute(value: Int, use24Hour: Boolean): String {
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
-    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (if (IdentityLocale.language == "en") "AM" else "a. m.") else (if (IdentityLocale.language == "en") "PM" else "p. m."))
 }
 
 private fun nextOccurrenceDate(fromDate: LocalDate, session: ClassSession): LocalDate? =

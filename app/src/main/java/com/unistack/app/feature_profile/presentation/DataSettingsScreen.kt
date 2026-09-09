@@ -24,6 +24,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
@@ -54,8 +56,8 @@ fun DataSettingsScreen(
     var showRestartDialog by rememberSaveable { mutableStateOf(false) }
 
     LargeTitleScaffold(
-        title = "Datos y respaldos",
-        subtitle = "Copias, exportar y restaurar",
+        title = stringResource(R.string.settings_data_title),
+        subtitle = stringResource(R.string.settings_data_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -75,11 +77,11 @@ fun DataSettingsScreen(
             )
         }
         item {
-            SettingsGroup(label = "REINICIO", labelColor = MaterialTheme.colorScheme.error, rowCount = 1) {
+            SettingsGroup(label = stringResource(R.string.settings_data_reset_section), labelColor = MaterialTheme.colorScheme.error, rowCount = 1) {
                 SettingsRow(
                     icon = Icons.Rounded.RestartAlt,
-                    title = "Repetir configuración inicial",
-                    subtitle = "Vuelves al onboarding. Tus datos se quedan.",
+                    title = stringResource(R.string.settings_data_repeat_setup_title),
+                    subtitle = stringResource(R.string.settings_data_repeat_setup_subtitle),
                     iconColor = MaterialTheme.colorScheme.error,
                     onClick = { showRestartDialog = true }
                 )
@@ -90,7 +92,7 @@ fun DataSettingsScreen(
                 Text(
                     message,
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    color = if (message.startsWith("No se pudo")) {
+                    color = if (message.startsWith("No se pudo") || message.startsWith("Could not") || message.startsWith("Failed")) {
                         MaterialTheme.colorScheme.error
                     } else {
                         LocalSectionColors.current.onTrack
@@ -114,12 +116,9 @@ fun DataSettingsScreen(
     if (showRestartDialog) {
         AlertDialog(
             onDismissRequest = { showRestartDialog = false },
-            title = { Text("¿Repetir la configuración inicial?") },
+            title = { Text(stringResource(R.string.settings_data_repeat_setup_dialog_title)) },
             text = {
-                Text(
-                    "Volverás al flujo inicial para configurar tus datos. Tus materias, " +
-                        "tareas y gastos locales no se eliminan."
-                )
+                Text(stringResource(R.string.settings_data_repeat_setup_dialog_msg))
             },
             confirmButton = {
                 TextButton(
@@ -128,12 +127,12 @@ fun DataSettingsScreen(
                         viewModel.restartOnboarding()
                     }
                 ) {
-                    Text("Repetir", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_data_repeat_setup_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRestartDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
             containerColor = MaterialTheme.colorScheme.background

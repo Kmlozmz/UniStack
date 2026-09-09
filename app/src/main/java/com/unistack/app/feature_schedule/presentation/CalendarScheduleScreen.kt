@@ -66,6 +66,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -131,10 +134,13 @@ internal val ScheduleShape: Shape
     @ReadOnlyComposable
     get() = MaterialTheme.shapes.medium
 
-private enum class CalendarMode(val label: String) {
-    MONTH("Mes"),
-    AGENDA("Agenda"),
-    LIST("Lista")
+private enum class CalendarMode(val labelRes: Int) {
+    MONTH(R.string.schedule_tab_month),
+    AGENDA(R.string.schedule_tab_agenda),
+    LIST(R.string.schedule_tab_list);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }
 
 private enum class ScheduleView {
@@ -458,8 +464,8 @@ private fun SubjectHistoryDialog(
                 name = corte.name,
                 range = when {
                     desde != null && hasta != null -> desde.dayMonth() + " \u2192 " + hasta.dayMonth()
-                    desde != null -> "Desde el " + desde.dayMonth()
-                    hasta != null -> "Hasta el " + hasta.dayMonth()
+                    desde != null -> (if (Locale.getDefault().language == "en") "From " else "Desde el ") + desde.dayMonth()
+                    hasta != null -> (if (Locale.getDefault().language == "en") "To " else "Hasta el ") + hasta.dayMonth()
                     else -> null
                 }
             )
@@ -493,7 +499,8 @@ private fun SubjectHistoryDialog(
         SubjectAttendanceHistory.byWeek(enAlcance, hoy, term?.start)
     }
     val upcoming = remember(enAlcance) { SubjectAttendanceHistory.upcoming(enAlcance, hoy) }
-    val nombreDelAlcance = cortes.firstOrNull { it.id == alcance }?.let { "el " + it.name } ?: "el periodo"
+    val termLabel = stringResource(R.string.attendance_history_term)
+    val nombreDelAlcance = cortes.firstOrNull { it.id == alcance }?.let { if (Locale.getDefault().language == "en") it.name else "el " + it.name } ?: termLabel
     val sinMarcar = remember(entries) {
         SubjectAttendanceHistory.pendingToCatchUp(entries, LocalDateTime.now())
     }
@@ -536,7 +543,7 @@ private fun SubjectHistoryDialog(
                     IconButton(onClick = { ayudaVisible = true }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-                            contentDescription = "Cómo se lee esta pantalla",
+                            contentDescription = stringResource(R.string.schedule_how_to_read),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(19.dp)
                         )
@@ -562,7 +569,7 @@ private fun SubjectHistoryDialog(
                     absenceLimit = absenceLimit
                 )
                 Text(
-                    text = "HISTORIAL",
+                    text = stringResource(R.string.schedule_section_history),
                     modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 8.dp),
                     color = MaterialTheme.colorScheme.outline,
                     fontWeight = FontWeight.Black,
@@ -590,9 +597,9 @@ private fun SubjectHistoryDialog(
                             if (enAlcance.isEmpty()) {
                                 Text(
                                     if (alcance == null) {
-                                        "A\u00fan no hay clases en el historial"
+                                        stringResource(R.string.schedule_history_empty)
                                     } else {
-                                        "Ninguna clase cae en este " + Corte.Singular.lowercase()
+                                        stringResource(R.string.schedule_history_empty_scope) + Corte.Singular.lowercase()
                                     },
                                     Modifier.fillMaxWidth().padding(24.dp),
                                     textAlign = TextAlign.Center,
@@ -631,9 +638,9 @@ private fun SubjectHistoryDialog(
                 ) {
                     Text(
                         text = when {
-                            sinMarcar.size > 1 -> "Ponerse al d\u00eda \u00b7 ${sinMarcar.size} sin marcar"
-                            pending != null -> "Marcar la del ${pending.date.dayMonth()}"
-                            else -> "Todo al d\u00eda"
+                            sinMarcar.size > 1 -> stringResource(R.string.schedule_catch_up_unmarked, sinMarcar.size)
+                            pending != null -> stringResource(R.string.schedule_mark_date, pending.date.dayMonth())
+                            else -> stringResource(R.string.schedule_all_caught_up)
                         },
                         fontWeight = FontWeight.Bold
                     )
@@ -681,7 +688,7 @@ private fun HistoryRow(entry: AttendanceHistoryEntry) {
         Icon(Icons.Rounded.Event, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
         Text(
-            entry.date.format(DateTimeFormatter.ofPattern("d MMM (EEE)", SpanishLocale)),
+            entry.date.format(DateTimeFormatter.ofPattern("d MMM (EEE)", AppLocale)),
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 11.sp
@@ -763,7 +770,7 @@ private fun ClassDetailsSheet(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        subject?.name ?: "Clase",
+                        subject?.name ?: stringResource(R.string.schedule_detail_class),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
@@ -786,12 +793,12 @@ private fun ClassDetailsSheet(
             val fichas: @Composable () -> Unit = {
                 ClassInfoGrid(
                     listOf(
-                        ClassInfo(Icons.Rounded.Schedule, "Horario", "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
-                        ClassInfo(Icons.Rounded.HourglassBottom, "Duración", durationLabel(session.endMinute - session.startMinute)),
-                        ClassInfo(Icons.Rounded.Place, "Aula", session.place.room.ifBlank { "Sin aula" }),
-                        ClassInfo(Icons.Rounded.Person, "Profesor", session.place.professor.ifBlank { "Sin profesor" }),
-                        ClassInfo(Icons.Rounded.Repeat, "Repetición", repeatLabel(session.repeatEveryWeeks)),
-                        ClassInfo(Icons.Rounded.NotificationsNone, "Recordatorio", reminderLabel(session.reminderMinutes))
+                        ClassInfo(Icons.Rounded.Schedule, stringResource(R.string.schedule_detail_time), "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}"),
+                        ClassInfo(Icons.Rounded.HourglassBottom, stringResource(R.string.schedule_detail_duration), durationLabel(session.endMinute - session.startMinute)),
+                        ClassInfo(Icons.Rounded.Place, stringResource(R.string.schedule_detail_room), session.place.room.ifBlank { stringResource(R.string.schedule_detail_no_room) }),
+                        ClassInfo(Icons.Rounded.Person, stringResource(R.string.schedule_detail_professor), session.place.professor.ifBlank { stringResource(R.string.schedule_detail_no_professor) }),
+                        ClassInfo(Icons.Rounded.Repeat, stringResource(R.string.schedule_detail_repetition), repeatLabel(session.repeatEveryWeeks)),
+                        ClassInfo(Icons.Rounded.NotificationsNone, stringResource(R.string.schedule_detail_reminder), reminderLabel(session.reminderMinutes))
                     )
                 )
             }
@@ -809,7 +816,7 @@ private fun ClassDetailsSheet(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            SheetGroupLabel("REGISTRAR ASISTENCIA")
+            SheetGroupLabel(stringResource(R.string.schedule_log_attendance_action))
             // Un grupo conectado, como el de Horario y Calendario arriba: tres piezas que se
             // tocan y una sola elegida. Eran tres rectángulos sueltos con borde, que es la
             // forma que tenía la app antes de este diseño.
@@ -900,24 +907,22 @@ private fun ClassDetailsSheet(
             SheetActionRow(
                 icon = Icons.Rounded.CalendarMonth,
                 tone = LocalSectionColors.current.schedule,
-                title = "Ver historial",
-                subtitle = "Las asistencias que llevas de esta materia",
+                title = stringResource(R.string.schedule_view_history),
+                subtitle = stringResource(R.string.schedule_view_history_desc),
                 onClick = onHistory
             )
             SheetActionRow(
                 icon = Icons.Rounded.Edit,
                 tone = MaterialTheme.colorScheme.tertiary,
-                title = "Editar clase",
-                subtitle = "Días, hora, aula y profesor",
+                title = stringResource(R.string.schedule_edit_class),
+                subtitle = stringResource(R.string.schedule_edit_class_desc),
                 onClick = onEdit
             )
             SheetActionRow(
                 icon = Icons.Rounded.DeleteOutline,
                 tone = MaterialTheme.colorScheme.error,
-                title = "Eliminar clase",
-                // Dicho aquí porque es justo lo que confunde: esto vacía el horario de la
-                // materia, no borra la materia ni sus notas.
-                subtitle = "Se quita del horario; la materia sigue en Académico",
+                title = stringResource(R.string.schedule_delete_class),
+                subtitle = stringResource(R.string.schedule_delete_class_desc),
                 onClick = onDelete,
                 titleColor = MaterialTheme.colorScheme.error
             )
@@ -1030,37 +1035,37 @@ private fun AddClassSheet(
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        "Agregar clase",
+                        stringResource(R.string.schedule_add_class),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "Ponle horario a una materia que ya tienes, o crea una nueva.",
+                        stringResource(R.string.schedule_add_class_subtitle),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            SheetGroupLabel("SIN HORARIO TODAVÍA")
+            SheetGroupLabel(stringResource(R.string.schedule_section_no_schedule_yet))
             pendingSubjects.forEach { subject ->
                 val tone = subject.scheduleColor()
                 SheetActionRow(
                     icon = Icons.AutoMirrored.Rounded.MenuBook,
                     tone = tone,
                     title = subject.name,
-                    subtitle = "Ya está en Académico; le faltan los días y la hora",
+                    subtitle = stringResource(R.string.schedule_no_schedule_yet_desc),
                     onClick = { onPickSubject(subject.id) }
                 )
             }
 
-            SheetGroupLabel("O EMPEZAR DE CERO")
+            SheetGroupLabel(stringResource(R.string.schedule_section_start_scratch))
             SheetActionRow(
                 icon = Icons.Rounded.Add,
                 tone = MaterialTheme.colorScheme.primary,
-                title = "Materia nueva",
-                subtitle = "Crea la materia y su horario a la vez",
+                title = stringResource(R.string.schedule_new_subject),
+                subtitle = stringResource(R.string.schedule_new_subject_desc),
                 onClick = onNewSubject
             )
         }
@@ -1083,7 +1088,7 @@ private fun StatusPill(status: ClassAttendanceStatus) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Text(
-            status.label().uppercase(SpanishLocale),
+            status.label().uppercase(AppLocale),
             color = contentColorOn(tone),
             style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.5.sp)
         )
@@ -1144,13 +1149,22 @@ private fun durationLabel(minutes: Int): String {
     }
 }
 
-private fun repeatLabel(everyWeeks: Int): String =
-    if (everyWeeks <= 1) "Cada semana" else "Cada $everyWeeks semanas"
+private fun repeatLabel(everyWeeks: Int): String {
+    val isEn = Locale.getDefault().language == "en"
+    return if (everyWeeks <= 1) {
+        if (isEn) "Every week" else "Cada semana"
+    } else {
+        if (isEn) "Every $everyWeeks weeks" else "Cada $everyWeeks semanas"
+    }
+}
 
-private fun reminderLabel(minutes: Int): String = when {
-    minutes <= 0 -> "Sin recordatorio"
-    minutes % 60 == 0 -> "${minutes / 60} h antes"
-    else -> "$minutes min antes"
+private fun reminderLabel(minutes: Int): String {
+    val isEn = Locale.getDefault().language == "en"
+    return when {
+        minutes <= 0 -> if (isEn) "No reminder" else "Sin recordatorio"
+        minutes % 60 == 0 -> if (isEn) "${minutes / 60} h before" else "${minutes / 60} h antes"
+        else -> if (isEn) "$minutes min before" else "$minutes min antes"
+    }
 }
 
 private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.ImageVector = when (this) {
@@ -1161,7 +1175,7 @@ private fun ClassAttendanceStatus.icon(): androidx.compose.ui.graphics.vector.Im
     ClassAttendanceStatus.PENDING -> Icons.Rounded.Schedule
 }
 
-private val SpanishLocale: Locale = Locale.forLanguageTag("es")
+private val AppLocale: Locale get() = Locale.getDefault()
 
 @Composable
 @ReadOnlyComposable
@@ -1169,26 +1183,30 @@ private fun Subject?.scheduleColor(): Color = this?.customColor?.let(::Color) ?:
 
 /** «24 ago», para decir de qué clase habla un botón sin escribir la fecha entera. */
 private fun LocalDate.dayMonth(): String =
-    format(DateTimeFormatter.ofPattern("d MMM", SpanishLocale))
+    format(DateTimeFormatter.ofPattern("d MMM", AppLocale))
 
-private fun LocalDate.longTitle(): String = format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", SpanishLocale)).capitalized()
+private fun LocalDate.longTitle(): String = format(DateTimeFormatter.ofPattern(if (AppLocale.language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM", AppLocale)).capitalized()
 
-private fun String.capitalized(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(SpanishLocale) else it.toString() }
+private fun String.capitalized(): String = replaceFirstChar { if (it.isLowerCase()) it.titlecase(AppLocale) else it.toString() }
 
 private fun formatMinute(value: Int, use24Hour: Boolean): String {
     val hour = value / 60
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
-    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
+    val isEn = Locale.getDefault().language == "en"
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (if (isEn) "AM" else "a. m.") else (if (isEn) "PM" else "p. m."))
 }
 
-private fun ClassAttendanceStatus.label(): String = when (this) {
-    ClassAttendanceStatus.PENDING -> "Pendiente"
-    ClassAttendanceStatus.ATTENDED -> "Asist\u00ed"
-    ClassAttendanceStatus.ABSENT -> "Falta"
-    ClassAttendanceStatus.CANCELLED -> "Cancelada"
-    ClassAttendanceStatus.RESCHEDULED -> "Reprogramada"
+private fun ClassAttendanceStatus.label(): String {
+    val isEn = Locale.getDefault().language == "en"
+    return when (this) {
+        ClassAttendanceStatus.PENDING -> if (isEn) "Pending" else "Pendiente"
+        ClassAttendanceStatus.ATTENDED -> if (isEn) "Attended" else "Asist\u00ed"
+        ClassAttendanceStatus.ABSENT -> if (isEn) "Absent" else "Falta"
+        ClassAttendanceStatus.CANCELLED -> if (isEn) "Canceled" else "Cancelada"
+        ClassAttendanceStatus.RESCHEDULED -> if (isEn) "Rescheduled" else "Reprogramada"
+    }
 }
 
 @Composable

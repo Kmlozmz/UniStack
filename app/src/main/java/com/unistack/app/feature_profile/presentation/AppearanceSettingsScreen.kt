@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.LargeTitleScaffold
@@ -90,8 +92,8 @@ fun AppearanceSettingsScreen(
     val current = profile
 
     LargeTitleScaffold(
-        title = "Apariencia",
-        subtitle = "Tema, forma, letra y tu inicio",
+        title = stringResource(R.string.settings_appearance_title),
+        subtitle = stringResource(R.string.settings_appearance_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -102,7 +104,7 @@ fun AppearanceSettingsScreen(
         if (current == null) {
             item {
                 Text(
-                    "Cargando preferencias...",
+                    stringResource(R.string.settings_appearance_loading),
                     modifier = Modifier.padding(12.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -112,10 +114,10 @@ fun AppearanceSettingsScreen(
 
         val appearance = current.appearancePreferences
         item {
-            SettingsGroup(label = "SECCIONES", rowCount = 6) {
+            SettingsGroup(label = stringResource(R.string.settings_appearance_sections), rowCount = 6) {
                 SettingsRow(
                     icon = Icons.Rounded.Palette,
-                    title = "Tema y color",
+                    title = stringResource(R.string.settings_appearance_theme_title),
                     // El resumen dice las dos cosas que decide esta puerta —el modo y el
                     // tema— porque son las que más se cambian y las que más se olvida cuál
                     // quedó puesta.
@@ -126,16 +128,19 @@ fun AppearanceSettingsScreen(
                 )
                 SettingsRow(
                     icon = Icons.Rounded.RoundedCorner,
-                    title = "Forma y superficie",
-                    subtitle = appearance.surfaceStyle.label() + " · esquinas " +
-                        appearance.cornerStyle.label().lowercase() + " · " +
-                        appearance.interfaceDensity.label().lowercase(),
+                    title = stringResource(R.string.settings_appearance_surface_title),
+                    subtitle = stringResource(
+                        R.string.settings_appearance_surface_sub,
+                        appearance.surfaceStyle.label(),
+                        appearance.cornerStyle.label().lowercase(),
+                        appearance.interfaceDensity.label().lowercase()
+                    ),
                     iconColor = sections.schedule,
                     onClick = onSurfaceClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.TextFields,
-                    title = "Tipografía",
+                    title = stringResource(R.string.settings_appearance_typo_title),
                     subtitle = appearance.typographyStyle.label() + " · " +
                         appearance.decimalPlaces.ejemploDeNota(),
                     iconColor = sections.onTrack,
@@ -143,23 +148,29 @@ fun AppearanceSettingsScreen(
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Tune,
-                    title = "Componentes",
-                    subtitle = "Barra " + appearance.bottomBarStyle.label().lowercase() +
-                        " · barras " + appearance.academicProgressShape.label().lowercase(),
+                    title = stringResource(R.string.settings_appearance_components_title),
+                    subtitle = stringResource(
+                        R.string.settings_appearance_components_sub,
+                        appearance.bottomBarStyle.label().lowercase(),
+                        appearance.academicProgressShape.label().lowercase()
+                    ),
                     iconColor = MaterialTheme.colorScheme.tertiary,
                     onClick = onComponentsClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Animation,
-                    title = "Movimiento",
-                    subtitle = "${MotionCatalog.gestures.size} gestos · " +
-                        "${MotionCatalog.variantCount} variantes",
+                    title = stringResource(R.string.settings_appearance_motion_title),
+                    subtitle = stringResource(
+                        R.string.settings_appearance_motion_sub,
+                        MotionCatalog.gestures.size,
+                        MotionCatalog.variantCount
+                    ),
                     iconColor = MaterialTheme.colorScheme.secondary,
                     onClick = onMotionClick
                 )
                 SettingsRow(
                     icon = Icons.Rounded.Home,
-                    title = "Tu inicio",
+                    title = stringResource(R.string.settings_appearance_home_title),
                     subtitle = appearance.resumenDeInicio(),
                     iconColor = sections.expenses,
                     onClick = onHomeClick
@@ -173,7 +184,7 @@ fun AppearanceSettingsScreen(
             ) {
                 Icon(Icons.Rounded.RestartAlt, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Restablecer apariencia")
+                Text(stringResource(R.string.settings_appearance_reset))
             }
         }
     }
@@ -181,18 +192,22 @@ fun AppearanceSettingsScreen(
 
 /** «3 de 4 bloques» y no la lista entera: en una fila no caben cuatro nombres. */
 private fun AppearancePreferences.resumenDeInicio(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     val encendidos = listOf(showHomeGreeting, showHomeHero, showHomeAgenda, showHomeSnapshot).count { it }
     return when (encendidos) {
-        4 -> "Los 4 bloques encendidos"
-        0 -> "Sin bloques: solo el logo"
-        else -> "$encendidos de 4 bloques"
+        4 -> if (isEn) "All 4 blocks turned on" else "Los 4 bloques encendidos"
+        0 -> if (isEn) "No blocks: logo only" else "Sin bloques: solo el logo"
+        else -> if (isEn) "$encendidos of 4 blocks" else "$encendidos de 4 bloques"
     }
 }
 
-private fun Int.ejemploDeNota(): String = when (this) {
-    0 -> "notas como 3"
-    1 -> "notas como 3,5"
-    else -> "notas como 3,50"
+private fun Int.ejemploDeNota(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        0 -> if (isEn) "grades like 3" else "notas como 3"
+        1 -> if (isEn) "grades like 3.5" else "notas como 3,5"
+        else -> if (isEn) "grades like 3.50" else "notas como 3,50"
+    }
 }
 
 /** Los cuatro modos que se pueden elegir. */
@@ -318,90 +333,129 @@ internal fun AppearancePreferences.showsSection(section: HomeSection): Boolean =
     HomeSection.SNAPSHOT -> showHomeSnapshot
 }
 
-internal fun VisualPreference.label() = when (this) {
-    VisualPreference.SYSTEM -> "Sistema"
-    VisualPreference.LIGHT -> "Claro"
-    VisualPreference.DARK -> "Oscuro"
-    VisualPreference.OLED -> "OLED"
-    VisualPreference.CUSTOM -> "Personalizado"
+internal fun VisualPreference.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        VisualPreference.SYSTEM -> if (isEn) "System" else "Sistema"
+        VisualPreference.LIGHT -> if (isEn) "Light" else "Claro"
+        VisualPreference.DARK -> if (isEn) "Dark" else "Oscuro"
+        VisualPreference.OLED -> "OLED"
+        VisualPreference.CUSTOM -> if (isEn) "Custom" else "Personalizado"
+    }
 }
 
-internal fun VisualPreference.themeDescription() = when (this) {
-    VisualPreference.SYSTEM -> "Sigue el tema de Android."
-    VisualPreference.LIGHT -> "Siempre claro, aunque Android esté oscuro."
-    VisualPreference.DARK -> "Siempre oscuro, aunque Android esté claro."
-    VisualPreference.OLED -> "Negro puro: en pantallas OLED gasta menos batería."
-    VisualPreference.CUSTOM -> ""
+internal fun VisualPreference.themeDescription(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        VisualPreference.SYSTEM -> if (isEn) "Follows Android theme." else "Sigue el tema de Android."
+        VisualPreference.LIGHT -> if (isEn) "Always light, even if Android is dark." else "Siempre claro, aunque Android esté oscuro."
+        VisualPreference.DARK -> if (isEn) "Always dark, even if Android is light." else "Siempre oscuro, aunque Android esté claro."
+        VisualPreference.OLED -> if (isEn) "Pure black: uses less battery on OLED screens." else "Negro puro: en pantallas OLED gasta menos batería."
+        VisualPreference.CUSTOM -> ""
+    }
 }
 
-internal fun InterfaceDensity.label() = when (this) {
-    InterfaceDensity.COMPACT -> "Compacta"
-    InterfaceDensity.BALANCED -> "Equilibrada"
-    InterfaceDensity.COMFORTABLE -> "Cómoda"
+internal fun InterfaceDensity.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        InterfaceDensity.COMPACT -> if (isEn) "Compact" else "Compacta"
+        InterfaceDensity.BALANCED -> if (isEn) "Balanced" else "Equilibrada"
+        InterfaceDensity.COMFORTABLE -> if (isEn) "Comfortable" else "Cómoda"
+    }
 }
 
-internal fun TypographyStyle.label() = when (this) {
-    TypographyStyle.SANS -> "Sans"
-    TypographyStyle.SYSTEM -> "Sistema"
-    TypographyStyle.SERIF -> "Serif"
-    TypographyStyle.MONO -> "Mono"
-    TypographyStyle.ESTRECHA -> "Estrecha"
-    TypographyStyle.REDONDEADA -> "Redondeada"
+internal fun TypographyStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        TypographyStyle.SANS -> "Sans"
+        TypographyStyle.SYSTEM -> if (isEn) "System" else "Sistema"
+        TypographyStyle.SERIF -> "Serif"
+        TypographyStyle.MONO -> "Mono"
+        TypographyStyle.ESTRECHA -> if (isEn) "Narrow" else "Estrecha"
+        TypographyStyle.REDONDEADA -> if (isEn) "Rounded" else "Redondeada"
+    }
 }
 
-internal fun TypographyStyle.explicacion() = when (this) {
-    TypographyStyle.SANS -> "La sans-serif del sistema. Es la de siempre."
-    TypographyStyle.SYSTEM -> "La que traiga tu teléfono como suya."
-    TypographyStyle.SERIF -> "Con remates: se lee mejor en párrafos largos."
-    TypographyStyle.MONO -> "Ancho fijo: las cifras quedan alineadas en columna."
-    TypographyStyle.ESTRECHA -> "Condensada: cabe más nombre de materia antes de cortarse."
-    TypographyStyle.REDONDEADA -> "De trazo más blando. Si tu teléfono no la tiene, usa la Sans."
+internal fun TypographyStyle.explicacion(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        TypographyStyle.SANS -> if (isEn) "System sans-serif. The default." else "La sans-serif del sistema. Es la de siempre."
+        TypographyStyle.SYSTEM -> if (isEn) "Whatever font your phone comes with." else "La que traiga tu teléfono como suya."
+        TypographyStyle.SERIF -> if (isEn) "With serifs: easier to read in long paragraphs." else "Con remates: se lee mejor en párrafos largos."
+        TypographyStyle.MONO -> if (isEn) "Monospace: digits align cleanly in columns." else "Ancho fijo: las cifras quedan alineadas en columna."
+        TypographyStyle.ESTRECHA -> if (isEn) "Condensed: fits longer course names without truncating." else "Condensada: cabe más nombre de materia antes de cortarse."
+        TypographyStyle.REDONDEADA -> if (isEn) "Softer stroke. If unavailable on your phone, uses Sans." else "De trazo más blando. Si tu teléfono no la tiene, usa la Sans."
+    }
 }
 
-internal fun HomeSection.label() = when (this) {
-    HomeSection.HERO -> "Lo siguiente"
-    HomeSection.AGENDA -> "Hoy"
-    HomeSection.SNAPSHOT -> "Cifras"
+internal fun HomeSection.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        HomeSection.HERO -> if (isEn) "Up next" else "Lo siguiente"
+        HomeSection.AGENDA -> if (isEn) "Today" else "Hoy"
+        HomeSection.SNAPSHOT -> if (isEn) "Stats" else "Cifras"
+    }
 }
 
-internal fun HomeSection.detail() = when (this) {
-    HomeSection.HERO -> "La tarjeta con lo más urgente"
-    HomeSection.AGENDA -> "Clases y entregas del día"
-    HomeSection.SNAPSHOT -> "Promedio, pendientes y gasto"
+internal fun HomeSection.detail(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        HomeSection.HERO -> if (isEn) "Card with the most urgent item" else "La tarjeta con lo más urgente"
+        HomeSection.AGENDA -> if (isEn) "Today's classes and deadlines" else "Clases y entregas del día"
+        HomeSection.SNAPSHOT -> if (isEn) "Average, pending, and spending" else "Promedio, pendientes y gasto"
+    }
 }
 
-internal fun BottomBarStyle.label() = when (this) {
-    BottomBarStyle.LABELED -> "Con texto"
-    BottomBarStyle.ICONS_ONLY -> "Solo iconos"
+internal fun BottomBarStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        BottomBarStyle.LABELED -> if (isEn) "With text" else "Con texto"
+        BottomBarStyle.ICONS_ONLY -> if (isEn) "Icons only" else "Solo iconos"
+    }
 }
 
-internal fun ProgressShape.label() = when (this) {
-    ProgressShape.FLAT -> "Rectas"
-    ProgressShape.WAVY -> "Onduladas"
+internal fun ProgressShape.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ProgressShape.FLAT -> if (isEn) "Straight" else "Rectas"
+        ProgressShape.WAVY -> if (isEn) "Wavy" else "Onduladas"
+    }
 }
 
-internal fun SwitchIconStyle.label() = when (this) {
-    SwitchIconStyle.BOTH -> "Siempre"
-    SwitchIconStyle.CHECKED_ONLY -> "Al encender"
-    SwitchIconStyle.NONE -> "Nunca"
+internal fun SwitchIconStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        SwitchIconStyle.BOTH -> if (isEn) "Always" else "Siempre"
+        SwitchIconStyle.CHECKED_ONLY -> if (isEn) "When checked" else "Al encender"
+        SwitchIconStyle.NONE -> if (isEn) "Never" else "Nunca"
+    }
 }
 
-internal fun SurfaceStyle.label() = when (this) {
-    SurfaceStyle.FLAT -> "Plana"
-    SurfaceStyle.OUTLINED -> "Filete"
-    SurfaceStyle.ELEVATED -> "Sombra"
-    SurfaceStyle.TRANSLUCENT -> "Cristal"
+internal fun SurfaceStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        SurfaceStyle.FLAT -> if (isEn) "Flat" else "Plana"
+        SurfaceStyle.OUTLINED -> if (isEn) "Outlined" else "Filete"
+        SurfaceStyle.ELEVATED -> if (isEn) "Elevated" else "Sombra"
+        SurfaceStyle.TRANSLUCENT -> if (isEn) "Glass" else "Cristal"
+    }
 }
 
-internal fun SurfaceStyle.explicacion() = when (this) {
-    SurfaceStyle.FLAT -> "Sin bordes ni sombra: la tarjeta se distingue solo por su tono."
-    SurfaceStyle.OUTLINED -> "Un filete fino marca dónde acaba cada tarjeta."
-    SurfaceStyle.ELEVATED -> "Las tarjetas proyectan sombra y se leen como capas."
-    SurfaceStyle.TRANSLUCENT -> "Semitransparentes, dejando ver el fondo por debajo."
+internal fun SurfaceStyle.explicacion(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        SurfaceStyle.FLAT -> if (isEn) "No borders or shadow: card distinguished only by tone." else "Sin bordes ni sombra: la tarjeta se distingue solo por su tono."
+        SurfaceStyle.OUTLINED -> if (isEn) "A thin stroke outlines each card edge." else "Un filete fino marca dónde acaba cada tarjeta."
+        SurfaceStyle.ELEVATED -> if (isEn) "Cards cast shadows and appear layered." else "Las tarjetas proyectan sombra y se leen como capas."
+        SurfaceStyle.TRANSLUCENT -> if (isEn) "Semi-transparent, showing the background underneath." else "Semitransparentes, dejando ver el fondo por debajo."
+    }
 }
 
-internal fun CornerStyle.label() = when (this) {
-    CornerStyle.COMPACT -> "Rectas"
-    CornerStyle.BALANCED -> "Medias"
-    CornerStyle.SOFT -> "Suaves"
+internal fun CornerStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        CornerStyle.COMPACT -> if (isEn) "Sharp" else "Rectas"
+        CornerStyle.BALANCED -> if (isEn) "Medium" else "Medias"
+        CornerStyle.SOFT -> if (isEn) "Soft" else "Suaves"
+    }
 }

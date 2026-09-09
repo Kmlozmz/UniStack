@@ -29,6 +29,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackBrandMark
 import com.unistack.app.core.design.components.UniStackBrandPill
 import com.unistack.app.core.design.theme.LocalMotionDurationScale
@@ -192,7 +194,7 @@ fun SetupFinishTransition(
             Text(
                 // Sirve para cualquier carrera, la diga el catalogo o la escriba el usuario.
                 // Hablar de «semestre» habría dejado fuera a media app.
-                text = "Mucho éxito en tus estudios",
+                text = stringResource(R.string.setup_finish_best_wishes),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 18.sp,
                 lineHeight = 24.sp,

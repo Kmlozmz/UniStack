@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_templates.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import com.unistack.app.feature_templates.domain.buildApaReferenceDraft
 import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
@@ -103,7 +106,7 @@ fun AcademicWorkScreen(
             IconButton(onClick = { editing = !editing }) {
                 Icon(
                     Icons.Rounded.Edit,
-                    contentDescription = if (editing) "Cerrar la edición" else "Editar trabajo"
+                    contentDescription = if (editing) stringResource(R.string.templates_work_close_edit) else stringResource(R.string.templates_edit_work)
                 )
             }
         }
@@ -134,13 +137,13 @@ fun AcademicWorkScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "$done de ${steps.size}",
+                            stringResource(R.string.templates_work_steps_of, done, steps.size),
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             style = MaterialTheme.typography.headlineMediumEmphasized,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            "pasos del checklist",
+                            stringResource(R.string.templates_work_checklist_steps),
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -162,7 +165,8 @@ fun AcademicWorkScreen(
                     viewModel = viewModel,
                     onSaved = {
                         editing = false
-                        feedback = "Trabajo actualizado."
+                        val isEn = java.util.Locale.getDefault().language == "en"
+                        feedback = if (isEn) "Work updated." else "Trabajo actualizado."
                     }
                 )
             }
@@ -179,7 +183,8 @@ fun AcademicWorkScreen(
                 referenceDraft = draft,
                 onCopyClick = {
                     copyToClipboard(draft)
-                    feedback = "Referencias APA copiadas."
+                    val isEn = java.util.Locale.getDefault().language == "en"
+                    feedback = if (isEn) "APA references copied." else "Referencias APA copiadas."
                 }
             )
         }
@@ -191,12 +196,12 @@ fun AcademicWorkScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                     Text(
-                        "Llevarlo a tu editor",
+                        stringResource(R.string.templates_work_export_title),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold
                     )
                     Text(
-                        "Copia la estructura, el checklist y las notas para pegarlas donde vayas a escribir.",
+                        stringResource(R.string.templates_work_export_desc),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                         lineHeight = 18.sp
@@ -205,12 +210,13 @@ fun AcademicWorkScreen(
                         shapes = UniStackButtonDefaults.shapes,
                         onClick = {
                             copyToClipboard(work.exportText(subjects))
-                            feedback = "Trabajo copiado al portapapeles."
+                            val isEn = java.util.Locale.getDefault().language == "en"
+                            feedback = if (isEn) "Work copied to clipboard." else "Trabajo copiado al portapapeles."
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("  Copiar el trabajo", fontWeight = FontWeight.Bold)
+                        Text("  " + stringResource(R.string.templates_work_btn_copy), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -243,7 +249,7 @@ fun AcademicWorkScreen(
                     Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
                 Text(
-                    if (delivered) "  Volver a ponerlo en curso" else "  Marcar entregado",
+                    "  " + (if (delivered) stringResource(R.string.templates_work_reopen) else stringResource(R.string.templates_work_mark_delivered)),
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -345,7 +351,8 @@ private fun WorkEditorSection(
                 sources = sources,
                 notes = notes
             )
-            if (saved) onSaved() else error = "Revisa el título y la fecha antes de guardar."
+            val isEn = java.util.Locale.getDefault().language == "en"
+            if (saved) onSaved() else error = if (isEn) "Check title and date before saving." else "Revisa el título y la fecha antes de guardar."
         }
     )
 }

@@ -1,5 +1,8 @@
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButton
@@ -77,7 +80,7 @@ fun PriorHistoryScreen(
     }
 
     LargeTitleScaffold(
-        title = "Completar historial",
+        title = stringResource(R.string.prior_history_title),
         subtitle = subject?.name.orEmpty(),
         onBackClick = onBackClick,
         modifier = modifier,
@@ -103,7 +106,7 @@ fun PriorHistoryScreen(
                         modifier = Modifier.size(28.dp)
                     )
                     Text(
-                        "Registra lo que recuerdes. Una nota final del corte es suficiente; no necesitas inventar actividades ni porcentajes.",
+                        stringResource(R.string.prior_history_desc),
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
@@ -112,7 +115,7 @@ fun PriorHistoryScreen(
         if (subject == null || previousCuts.isEmpty()) {
             item {
                 Text(
-                    "No hay cortes anteriores pendientes.",
+                    stringResource(R.string.prior_history_none_pending),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 28.dp)
                 )
@@ -127,11 +130,12 @@ fun PriorHistoryScreen(
                         cut = cut,
                         resultLabel = when {
                             calculation.usesOfficialResult ->
-                                "Nota final: ${GradingScaleUtils.formatGrade(calculation.average, profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE)}"
+                                stringResource(R.string.prior_history_final_grade_label, GradingScaleUtils.formatGrade(calculation.average, profile?.gradingScale ?: GradingScale.ZERO_TO_FIVE))
                             grades.isNotEmpty() ->
-                                "${grades.size} ${if (grades.size == 1) "actividad" else "actividades"} registradas"
-                            unknown -> "Marcado como información no disponible"
-                            else -> "Sin información"
+                                if (grades.size == 1) stringResource(R.string.prior_history_grades_count_single)
+                                else stringResource(R.string.prior_history_grades_count_multiple, grades.size)
+                            unknown -> stringResource(R.string.prior_history_marked_no_info)
+                            else -> stringResource(R.string.prior_history_no_info)
                         },
                         resolved = calculation.average != null || unknown,
                         onFinalResultClick = { cutForFinalResult = cut },
@@ -154,6 +158,7 @@ fun PriorHistoryScreen(
     }
 
     cutForFinalResult?.let { cut ->
+        val finalResultName = stringResource(R.string.grade_final_result, cut.name)
         FinalCutGradeDialog(
             cut = cut,
             maxGrade = profile?.let(GradingScaleUtils::maxGradeFor) ?: 5.0,
@@ -161,7 +166,7 @@ fun PriorHistoryScreen(
             onSave = { value ->
                 val outcome = viewModel.saveGrade(
                     subjectId = subjectId,
-                    name = "Resultado final ${cut.name}",
+                    name = finalResultName,
                     value = value,
                     percentageInput = 100.0,
                     cutId = cut.id,
@@ -216,17 +221,17 @@ private fun HistoryCutCard(
             // la acción principal, desglosarla en actividades es la alternativa, y decir que
             // no tienes el dato es salir sin registrar nada.
             UniStackButton(
-                text = "Registrar nota final del corte",
+                text = stringResource(R.string.prior_history_record_final_grade),
                 onClick = onFinalResultClick,
                 variant = UniStackButtonVariant.Filled
             )
             UniStackButton(
-                text = "Registrar actividades individuales",
+                text = stringResource(R.string.prior_history_record_activities),
                 onClick = onActivitiesClick,
                 variant = UniStackButtonVariant.Tonal
             )
             UniStackButton(
-                text = if (unknown) "Volver a completar este corte" else "No tengo esta información",
+                text = if (unknown) stringResource(R.string.prior_history_redo_cut) else stringResource(R.string.prior_history_dont_have_info),
                 onClick = onUnknownClick,
                 variant = UniStackButtonVariant.Outlined
             )
@@ -243,19 +248,21 @@ private fun FinalCutGradeDialog(
 ) {
     var value by remember(cut.id) { mutableStateOf("") }
     var error by remember(cut.id) { mutableStateOf<String?>(null) }
+    val rangeErrorMsg = stringResource(R.string.prior_history_grade_range_error, maxGrade.toString().removeSuffix(".0"))
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nota final de ${cut.name}") },
+        title = { Text(stringResource(R.string.prior_history_final_grade_cut, cut.name)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Esta nota representará el corte completo y tendrá prioridad sobre sus actividades.")
+                Text(stringResource(R.string.prior_history_final_grade_desc))
                 OutlinedTextField(
                     value = value,
                     onValueChange = {
                         value = it
                         error = null
                     },
-                    label = { Text("Nota obtenida") },
+                    label = { Text(stringResource(R.string.grade_obtained)) },
                     suffix = { Text("/ ${maxGrade.toString().removeSuffix(".0")}") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true
@@ -268,13 +275,13 @@ private fun FinalCutGradeDialog(
                 onClick = {
                     val parsed = value.toDoubleOrNull()
                     if (parsed == null || parsed !in 0.0..maxGrade || !onSave(parsed)) {
-                        error = "Ingresa una nota válida entre 0 y $maxGrade."
+                        error = rangeErrorMsg
                     }
                 }
-            ) { Text("Guardar") }
+            ) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }

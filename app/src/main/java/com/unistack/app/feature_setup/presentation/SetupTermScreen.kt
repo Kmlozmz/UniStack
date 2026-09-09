@@ -45,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.CutDatesSection
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniDatePickerDialog
@@ -89,7 +91,7 @@ fun SetupTermTypeScreen(
         modifier = modifier,
         actions = {
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 enabled = type != null,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -101,8 +103,8 @@ fun SetupTermTypeScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SetupPlainTitle(
-                title = "Tu periodo",
-                subtitle = "Cómo se organiza el calendario de tu universidad."
+                title = stringResource(R.string.setup_term_title),
+                subtitle = stringResource(R.string.setup_term_subtitle)
             )
 
             ResueltoAntes(
@@ -110,7 +112,7 @@ fun SetupTermTypeScreen(
                 detalle = cutWeights.filter { it.isNotBlank() }.joinToString(" · ") { "$it%" }
             )
 
-            SetupSectionLabel("¿Cómo se manejan los periodos académicos en tu universidad?")
+            SetupSectionLabel(stringResource(R.string.setup_term_prompt))
 
             Row(
                 modifier = Modifier
@@ -155,7 +157,7 @@ private fun AnoPartido(type: AcademicTermType) {
     UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Así queda tu año:",
+                text = stringResource(R.string.setup_term_year_preview),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
@@ -190,7 +192,7 @@ private fun AnoPartido(type: AcademicTermType) {
                                     horizontalArrangement = Arrangement.spacedBy(3.dp)
                                 ) {
                                     Text(
-                                        text = "Estás aquí",
+                                        text = stringResource(R.string.setup_term_you_are_here),
                                         color = MaterialTheme.colorScheme.primary,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.ExtraBold,
@@ -199,11 +201,7 @@ private fun AnoPartido(type: AcademicTermType) {
                                     )
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-                                        contentDescription = if (porqueVisible) {
-                                            "Ocultar el porqué"
-                                        } else {
-                                            "Por qué este tramo"
-                                        },
+                                        contentDescription = if (porqueVisible) stringResource(R.string.setup_term_hide_reason) else stringResource(R.string.setup_term_show_reason),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(12.dp)
                                     )
@@ -256,12 +254,12 @@ private fun AnoPartido(type: AcademicTermType) {
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 // Los extremos del año natural, que es el eje que dibuja la barra.
-                Text("enero", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                Text("diciembre", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                Text(stringResource(R.string.setup_term_month_january), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                Text(stringResource(R.string.setup_term_month_december), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
             }
             Revelado(visible = porqueVisible) {
                 Text(
-                    text = "Hoy es ${fechaLarga(hoy)}, y esa fecha cae en el $actual.º de los $cuantos tramos del año. Es solo para orientarte: las fechas exactas las pones tú en el paso siguiente.",
+                    text = stringResource(R.string.setup_term_today_falls_desc, fechaLarga(hoy), actual, cuantos),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
@@ -269,9 +267,9 @@ private fun AnoPartido(type: AcademicTermType) {
             }
             Text(
                 text = if (cuantos == 1) {
-                    "Dura el año entero, unas ${type.weeks} semanas de clase."
+                    stringResource(R.string.setup_term_full_year_desc, type.weeks)
                 } else {
-                    "Cada uno dura unos ${type.months} meses: $cuantos al año, de unas ${type.weeks} semanas de clase. Hoy estarías en el $actual.º, que es el que vas a configurar."
+                    stringResource(R.string.setup_term_multi_desc, type.months, cuantos, type.weeks, actual)
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
@@ -330,7 +328,7 @@ fun SetupTermDatesScreen(
         modifier = modifier,
         actions = {
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 enabled = listo,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -342,11 +340,11 @@ fun SetupTermDatesScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SetupPlainTitle(
-                title = "Cuándo empieza",
-                subtitle = "Con esto podremos llevar un mejor orden de tus fechas."
+                title = stringResource(R.string.setup_term_dates_title),
+                subtitle = stringResource(R.string.setup_term_dates_subtitle)
             )
 
-            SetupSectionLabel("Tu periodo")
+            SetupSectionLabel(stringResource(R.string.setup_term_dates_header))
             UniCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
@@ -394,18 +392,18 @@ fun SetupTermDatesScreen(
              * fecha hacia atras o hacia delante. Quitada la propuesta, la pregunta no decidia
              * nada: era un paso mas para llegar al mismo sitio.
              */
-            SetupSectionLabel("Fechas")
+            SetupSectionLabel(stringResource(R.string.setup_term_dates_header))
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 TermDateField(
-                    label = "Empieza",
+                    label = stringResource(R.string.setup_term_dates_start),
                     date = start,
                     modifier = Modifier.weight(1f),
                     onClick = { picking = TermDateTarget.START }
                 )
                 TermDateField(
-                    label = "Acaba (si lo sabes)",
+                    label = stringResource(R.string.setup_term_dates_end_projected),
                     date = plannedEnd,
-                    vacio = "Aún no",
+                    vacio = stringResource(R.string.setup_term_dates_not_yet),
                     modifier = Modifier.weight(1f),
                     onClick = { picking = TermDateTarget.PLANNED_END }
                 )
@@ -424,7 +422,7 @@ fun SetupTermDatesScreen(
                     ) {
                         Text("👌", fontSize = 15.sp)
                         Text(
-                            text = "Puedes seguir sin ella. Es solo una previsión para avisarte cuando llegue el final, y la pones cuando la sepas en Ajustes › Configuración académica.",
+                            text = stringResource(R.string.setup_term_dates_skip_info),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 17.sp
@@ -441,8 +439,7 @@ fun SetupTermDatesScreen(
                     ) {
                         Text("💡", fontSize = 15.sp)
                         Text(
-                            text = "Son ${semanasEntre(start!!, plannedEnd!!)} semanas. " +
-                                "El periodo no se cierra en esa fecha: se cierra cuando tú lo cierres.",
+                            text = "${stringResource(R.string.setup_term_weeks_count, semanasEntre(start!!, plannedEnd!!))} ${stringResource(R.string.setup_term_wont_close_notice)}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
                             lineHeight = 17.sp
@@ -471,10 +468,10 @@ fun SetupTermDatesScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        SetupSectionLabel("¿Cuándo cierra cada ${Corte.Singular.lowercase()}?")
+                        SetupSectionLabel(stringResource(R.string.setup_cuts_dates_question, Corte.Singular.lowercase()))
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-                            contentDescription = if (ayudaVisible) "Ocultar la explicación" else "Qué es esto",
+                            contentDescription = if (ayudaVisible) stringResource(R.string.setup_cuts_hide_expl) else stringResource(R.string.setup_cuts_what_is),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier
                                 .size(16.dp)
@@ -489,7 +486,7 @@ fun SetupTermDatesScreen(
                             color = MaterialTheme.colorScheme.surfaceContainerLow
                         ) {
                             Text(
-                                text = "Cada ${Corte.Singular.lowercase()} termina un día concreto. Si escribes esos días, cada nota que registres se va sola al ${Corte.Singular.lowercase()} que le toca por su fecha. Si no, lo eliges tú a mano en cada nota.",
+                                text = stringResource(R.string.setup_cuts_dates_explanation, Corte.Singular.lowercase()),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                                 lineHeight = 17.sp
@@ -499,8 +496,8 @@ fun SetupTermDatesScreen(
                     UniSegmentedControl(
                         selected = knowsCutDates,
                         options = listOf(
-                            UniSegmentedOption<Boolean?>(value = true, label = "Ponerlas ahora"),
-                            UniSegmentedOption<Boolean?>(value = false, label = "Más adelante")
+                            UniSegmentedOption<Boolean?>(value = true, label = stringResource(R.string.setup_cuts_dates_now)),
+                            UniSegmentedOption<Boolean?>(value = false, label = stringResource(R.string.setup_cuts_dates_later))
                         ),
                         onSelected = { valor -> valor?.let(onKnowsCutDatesChange) },
                         modifier = Modifier.fillMaxWidth()
@@ -524,7 +521,7 @@ fun SetupTermDatesScreen(
                             ) {
                                 Text("🗓", fontSize = 15.sp)
                                 Text(
-                                    text = "Sin problema. Mientras tanto eliges a mano el ${Corte.Singular.lowercase()} de cada nota que pongas, y en cuanto las sepas las añades en Ajustes › Configuración académica.",
+                                    text = stringResource(R.string.setup_cuts_dates_skip_info, Corte.Singular.lowercase()),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 12.sp,
                                     lineHeight = 17.sp
@@ -581,7 +578,7 @@ fun SetupTermCutDatesScreen(
         modifier = modifier,
         actions = {
             UniStackButton(
-                text = "Terminar",
+                text = stringResource(R.string.setup_cuts_finish_btn),
                 onClick = onContinueClick,
                 enabled = isValid,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -593,10 +590,10 @@ fun SetupTermCutDatesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             SetupPlainTitle(
-                title = "¿Dónde se corta?",
+                title = stringResource(R.string.setup_cuts_where_cut),
                 subtitle = plannedEnd?.let {
-                    "Tu periodo va del ${fechaCorta(start)} al ${fechaCorta(it)}. Pon el último día de cada ${Corte.Singular.lowercase()}."
-                } ?: "Pon el último día de cada ${Corte.Singular.lowercase()}."
+                    stringResource(R.string.setup_cuts_range_header, fechaCorta(start), fechaCorta(it), Corte.Singular.lowercase())
+                } ?: stringResource(R.string.setup_cuts_no_range_header, Corte.Singular.lowercase())
             )
 
             /*
@@ -617,7 +614,7 @@ fun SetupTermCutDatesScreen(
                 ) {
                     Text("💡", fontSize = 15.sp)
                     Text(
-                        text = "Solo el último día. Cada ${Corte.Singular.lowercase()} empieza al día siguiente del anterior, y el último acaba con el periodo.",
+                        text = stringResource(R.string.setup_cuts_only_last_day, Corte.Singular.lowercase()),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 17.sp
@@ -690,7 +687,7 @@ private fun EsperandoEleccion() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Elige una para ver cómo queda tu año",
+            text = stringResource(R.string.setup_term_pick_to_see),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp
         )
@@ -784,7 +781,7 @@ private fun TermDateField(
     date: LocalDate?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    vacio: String = "Elegir",
+    vacio: String = stringResource(R.string.setup_term_choose),
     enabled: Boolean = true
 ) {
     UniCard(
@@ -817,15 +814,18 @@ private fun TermDateField(
     }
 }
 
-private val MesesCortos =
+private fun getShortMonths(): List<String> = if (java.util.Locale.getDefault().language == "en") {
+    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+} else {
     listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+}
 
 private fun fechaLarga(date: LocalDate): String =
-    "${date.dayOfMonth} ${MesesCortos[date.monthValue - 1]} ${date.year}"
+    "${date.dayOfMonth} ${getShortMonths()[date.monthValue - 1]} ${date.year}"
 
 /** Sin el año: en un tramo del mismo periodo, repetirlo tres veces es ruido. */
 private fun fechaCorta(date: LocalDate): String =
-    "${date.dayOfMonth} ${MesesCortos[date.monthValue - 1]}"
+    "${date.dayOfMonth} ${getShortMonths()[date.monthValue - 1]}"
 
 /** Redondeadas: «5 semanas» informa, «4,7 semanas» no. Nunca menos de una. */
 private fun semanasEntre(desde: LocalDate, hasta: LocalDate): Long =

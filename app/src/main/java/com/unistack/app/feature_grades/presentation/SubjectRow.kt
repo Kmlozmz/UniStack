@@ -22,6 +22,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -146,7 +148,7 @@ fun SubjectRow(
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
-                onLongClickLabel = if (onLongClick != null) "Marcar la materia" else null
+                onLongClickLabel = if (onLongClick != null) stringResource(R.string.subject_row_mark) else null
             ),
         shape = MaterialTheme.shapes.large,
         color = container,
@@ -186,7 +188,7 @@ fun SubjectRow(
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.Check,
-                            contentDescription = "Marcada",
+                            contentDescription = stringResource(R.string.subject_row_marked),
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(22.dp)
                         )
@@ -360,6 +362,7 @@ internal fun formaDeMateria(estilo: BadgeShape, seed: String): RoundedPolygon = 
  * Con la meta en riesgo cambia de tema a propósito: cuánto queda por evaluar deja de ser lo
  * útil, y lo que hace falta saber es qué nota hay que sacar en lo que falta para alcanzarla.
  */
+@Composable
 private fun supportLine(
     subject: Subject,
     calculation: SubjectGradeCalculation,
@@ -378,6 +381,7 @@ private fun supportLine(
     return listOfNotNull(cut, state).joinToString(" · ").replaceFirstChar(Char::uppercase)
 }
 
+@Composable
 private fun progressState(
     calculation: SubjectGradeCalculation,
     gradingScale: GradingScale
@@ -385,15 +389,16 @@ private fun progressState(
     val remaining = ((1.0 - calculation.evaluatedSemesterFraction) * 100).toInt().coerceIn(0, 100)
     val needed = calculation.neededForTarget
     return when {
-        calculation.outlook == TargetOutlook.UNREACHABLE -> "la meta ya no se alcanza"
+        calculation.outlook == TargetOutlook.UNREACHABLE -> stringResource(R.string.subject_goal_unreachable)
         calculation.outlook == TargetOutlook.AT_RISK && needed != null ->
-            "necesitas ${GradingScaleUtils.formatGrade(needed, gradingScale)} en lo que falta"
-        calculation.outlook == TargetOutlook.NO_DATA -> "sin notas todavía"
-        remaining == 0 -> "todo evaluado"
-        else -> "falta el $remaining %"
+            stringResource(R.string.subject_needed_in_remaining, GradingScaleUtils.formatGrade(needed, gradingScale))
+        calculation.outlook == TargetOutlook.NO_DATA -> stringResource(R.string.subject_no_grades_yet)
+        remaining == 0 -> stringResource(R.string.subject_all_evaluated)
+        else -> stringResource(R.string.subject_remaining_percentage, remaining)
     }
 }
 
+@Composable
 private fun outlookLabel(outlook: TargetOutlook, showShapes: Boolean = false): String {
     val prefix = if (showShapes) {
         when (outlook) {
@@ -404,11 +409,11 @@ private fun outlookLabel(outlook: TargetOutlook, showShapes: Boolean = false): S
         }
     } else ""
     val label = when (outlook) {
-        TargetOutlook.NO_DATA -> "SIN NOTAS"
-        TargetOutlook.SECURED -> "ASEGURADA"
-        TargetOutlook.ON_TRACK -> "AL DÍA"
-        TargetOutlook.AT_RISK -> "EN RIESGO"
-        TargetOutlook.UNREACHABLE -> "FUERA DE ALCANCE"
+        TargetOutlook.NO_DATA -> stringResource(R.string.outlook_no_data)
+        TargetOutlook.SECURED -> stringResource(R.string.outlook_secured)
+        TargetOutlook.ON_TRACK -> stringResource(R.string.outlook_on_track)
+        TargetOutlook.AT_RISK -> stringResource(R.string.outlook_at_risk)
+        TargetOutlook.UNREACHABLE -> stringResource(R.string.outlook_unreachable)
     }
     return "$prefix$label"
 }

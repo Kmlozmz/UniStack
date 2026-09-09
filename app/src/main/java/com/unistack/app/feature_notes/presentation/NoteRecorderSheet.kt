@@ -34,6 +34,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -168,7 +170,7 @@ fun NoteRecorderSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                if (grabando) "Grabando" else "Grabar una nota de voz",
+                if (grabando) stringResource(R.string.notes_recorder_title_recording) else stringResource(R.string.notes_recorder_title_idle),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
@@ -176,8 +178,7 @@ fun NoteRecorderSheet(
 
             if (denegado && !permitido) {
                 Text(
-                    "Sin permiso de micrófono no se puede grabar. Se concede desde los ajustes " +
-                        "del sistema, en los permisos de UniStack.",
+                    stringResource(R.string.notes_recorder_permission_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
@@ -220,9 +221,9 @@ fun NoteRecorderSheet(
 
                 Text(
                     if (grabando) {
-                        "Toca otra vez para parar. Se guarda en la nota."
+                        stringResource(R.string.notes_recorder_hint_recording)
                     } else {
-                        "Se guarda dentro de UniStack, con la nota. Máximo 10 minutos."
+                        stringResource(R.string.notes_recorder_hint_idle)
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
@@ -263,7 +264,7 @@ private fun RecordButton(grabando: Boolean, enabled: Boolean, onClick: () -> Uni
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 if (grabando) Icons.Rounded.Stop else Icons.Rounded.Mic,
-                contentDescription = if (grabando) "Parar" else "Empezar a grabar",
+                contentDescription = if (grabando) stringResource(R.string.notes_recorder_btn_stop) else stringResource(R.string.notes_recorder_btn_start),
                 modifier = Modifier.size(34.dp)
             )
         }

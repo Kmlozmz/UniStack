@@ -16,6 +16,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -83,9 +85,9 @@ fun NewTermScreen(
         (fin == null || fin!!.isAfter(inicio))
 
     LargeTitleScaffold(
-        title = "Periodo nuevo",
-        subtitle = state.lastClosed?.let { "Traigo lo de ${it.term.name}" }
-            ?: "Empieza tu periodo",
+        title = stringResource(R.string.terms_new_title),
+        subtitle = state.lastClosed?.let { stringResource(R.string.terms_new_subtitle_inherit, it.term.name) }
+            ?: stringResource(R.string.terms_new_subtitle_fresh),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -95,18 +97,18 @@ fun NewTermScreen(
     ) {
 
         if (herencia != null) {
-            item { TermLabel("SE MANTIENE", Modifier.padding(start = 4.dp, top = 4.dp)) }
+            item { TermLabel(stringResource(R.string.terms_section_retained), Modifier.padding(start = 4.dp, top = 4.dp)) }
             item {
                 TermCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TermDoneRow("Escala ${herencia.scaleLabel} · apruebas con ${herencia.passingLabel}")
+                        TermDoneRow(stringResource(R.string.terms_retain_scale, herencia.scaleLabel, herencia.passingLabel))
                         TermDoneRow(
                             "${herencia.cutCount} ${Corte.Plural.lowercase()} · " +
                                 herencia.cutWeights.joinToString(" · ") { "$it%" }
                         )
                         TermDoneRow(herencia.type.label)
                         Text(
-                            text = "Se cambia en Ajustes › Configuración académica, cuando quieras.",
+                            text = stringResource(R.string.terms_retain_setting_hint),
                             color = MaterialTheme.colorScheme.outline,
                             fontSize = 11.sp,
                             lineHeight = 15.sp
@@ -116,22 +118,22 @@ fun NewTermScreen(
             }
         }
 
-        item { TermLabel("HAY QUE PONER", Modifier.padding(start = 4.dp, top = 6.dp)) }
+        item { TermLabel(stringResource(R.string.terms_section_required), Modifier.padding(start = 4.dp, top = 6.dp)) }
         item {
             TermCard {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FechaDelPeriodo(
-                            label = "Empieza",
+                            label = stringResource(R.string.terms_field_starts),
                             date = inicio,
-                            vacio = "Elegir",
+                            vacio = stringResource(R.string.terms_field_choose),
                             modifier = Modifier.weight(1f),
                             onClick = { eligiendo = QueFecha.EMPIEZA }
                         )
                         FechaDelPeriodo(
-                            label = "Acaba (previsto)",
+                            label = stringResource(R.string.terms_field_ends_planned),
                             date = fin,
-                            vacio = "Elegir",
+                            vacio = stringResource(R.string.terms_field_choose),
                             modifier = Modifier.weight(1f),
                             onClick = { eligiendo = QueFecha.ACABA }
                         )
@@ -139,15 +141,14 @@ fun NewTermScreen(
                     OutlinedTextField(
                         value = nombre,
                         onValueChange = { nombre = it.take(40) },
-                        label = { Text("Cómo se llama") },
+                        label = { Text(stringResource(R.string.terms_field_name)) },
                         placeholder = { Text(nombreFinal.ifBlank { "2026-2" }) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
                         // El fin es una prevision, y decirlo evita que parezca un compromiso.
-                        text = "El fin es solo una previsión, para avisarte cuando llegue. El " +
-                            "periodo no se cierra ese día: se cierra cuando tú lo cierres.",
+                        text = stringResource(R.string.terms_planned_end_hint),
                         color = MaterialTheme.colorScheme.outline,
                         fontSize = 11.sp,
                         lineHeight = 15.sp
@@ -157,7 +158,7 @@ fun NewTermScreen(
         }
 
         if (perdidas.isNotEmpty()) {
-            item { TermLabel("MATERIAS QUE PERDISTE", Modifier.padding(start = 4.dp, top = 6.dp)) }
+            item { TermLabel(stringResource(R.string.terms_failed_subjects_section), Modifier.padding(start = 4.dp, top = 6.dp)) }
             items(perdidas, key = { it.id }) { materia ->
                 val elegida = materia.id in aRepetir
                 TermCard(
@@ -174,13 +175,13 @@ fun NewTermScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Cerró en ${materia.average} · bajo el aprobado",
+                                text = stringResource(R.string.terms_failed_closed_at, materia.average ?: "—"),
                                 color = colores.atRisk,
                                 fontSize = 11.5.sp
                             )
                         }
                         Text(
-                            text = if (elegida) "Quitar" else "Traerla",
+                            text = if (elegida) stringResource(R.string.terms_btn_remove) else stringResource(R.string.terms_btn_bring),
                             color = if (elegida) {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             } else {
@@ -194,7 +195,7 @@ fun NewTermScreen(
             }
             item {
                 Text(
-                    text = "Se crean vacías, sin las notas ni el horario del periodo anterior.",
+                    text = stringResource(R.string.terms_failed_empty_note),
                     modifier = Modifier.padding(horizontal = 4.dp),
                     color = MaterialTheme.colorScheme.outline,
                     fontSize = 11.5.sp,
@@ -205,7 +206,7 @@ fun NewTermScreen(
 
         item {
             UniStackButton(
-                text = "Crear periodo",
+                text = stringResource(R.string.terms_btn_create),
                 onClick = {
                     viewModel.startTerm(
                         name = nombreFinal,

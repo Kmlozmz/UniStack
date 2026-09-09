@@ -97,7 +97,7 @@ class SetupViewModel @Inject constructor(
         get() {
             val area = studyArea ?: return false
             val program = selectedProgram ?: return false
-            if (area == StudyArea.OTHER || program == OTHER_OPTION) {
+            if (area == StudyArea.OTHER || isOtherOption(program)) {
                 return customProgramValidation.isValid
             }
             return true
@@ -243,7 +243,7 @@ class SetupViewModel @Inject constructor(
 
     fun updateSelectedProgram(value: String) {
         selectedProgram = value
-        if (value != OTHER_OPTION) {
+        if (!isOtherOption(value)) {
             customProgram = ""
         }
     }
@@ -393,7 +393,7 @@ class SetupViewModel @Inject constructor(
     private fun academicInfoValue(): String? {
         val area = studyArea ?: return null
         val program = selectedProgram ?: return null
-        return if (area == StudyArea.OTHER || program == OTHER_OPTION) {
+        return if (area == StudyArea.OTHER || isOtherOption(program)) {
             TextValidators.normalizeText(customProgram).takeIf { TextValidators.validateCustomCareer(it).isValid }
         } else {
             program

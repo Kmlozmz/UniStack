@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
@@ -176,13 +179,17 @@ fun SubjectFormScreen(
             targetAverage != GradingScaleUtils.formatGrade(subject.targetAverage, scale) ||
             customColor != subject.customColor
     }
+    val toastUpdated = stringResource(R.string.subject_form_updated_toast)
+    val toastCreated = stringResource(R.string.subject_form_created_toast)
+    val validationErrorMsg = stringResource(R.string.subject_form_validation_error)
+    val scheduleWarningMsg = stringResource(R.string.subject_form_schedule_warning)
     val requestLeave = rememberLeaveGuard(
         hasUnsavedChanges = hasUnsavedChanges,
         onLeave = onBackClick,
         message = if (subject == null) {
-            "La materia no se ha creado todavía."
+            stringResource(R.string.subject_form_leave_create)
         } else {
-            "Los cambios de esta materia se van a perder."
+            stringResource(R.string.subject_form_leave_edit)
         }
     )
 
@@ -253,11 +260,11 @@ fun SubjectFormScreen(
             verticalArrangement = Arrangement.spacedBy(spacing.section)
         ) {
             SubjectFormHeader(
-                title = if (isEditing) "Editar materia" else "Agregar materia",
+                title = if (isEditing) stringResource(R.string.subject_form_edit_title) else stringResource(R.string.subject_form_create_title),
                 subtitle = when {
                     name.isNotBlank() -> name
-                    mode == SubjectFormMode.SCHEDULE -> "Se añadirá a tu horario"
-                    else -> "Configura tu materia"
+                    mode == SubjectFormMode.SCHEDULE -> stringResource(R.string.subject_form_edit_subtitle)
+                    else -> stringResource(R.string.subject_form_create_subtitle)
                 },
                 accent = accent,
                 initial = name.trim().firstOrNull()?.uppercaseChar(),
@@ -270,11 +277,11 @@ fun SubjectFormScreen(
                     shape = MaterialTheme.shapes.large,
                     tonalElevation = 0.dp,
                 ) {
-                    Text("Materia no encontrada.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.subject_not_found), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             FormBlock(
-                title = "Identidad",
+                title = stringResource(R.string.subject_form_identity_card),
                 icon = Icons.Rounded.School,
                 accent = accent,
                 // El único bloque teñido con el color de la materia: es el que lo elige, y
@@ -287,8 +294,8 @@ fun SubjectFormScreen(
                         name = it.take(40)
                         error = null
                     },
-                    label = { Text("Nombre") },
-                    placeholder = { Text("Ej: Estadística inferencial") },
+                    label = { Text(stringResource(R.string.subject_form_name)) },
+                    placeholder = { Text(stringResource(R.string.subject_form_name_placeholder)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
                     // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto anade
@@ -297,7 +304,7 @@ fun SubjectFormScreen(
                     isError = !isNameValid,
                     supportingText = {
                         if (!isNameValid) {
-                            Text(nameValidation.errorMessage ?: "Ingresa un nombre de materia válido")
+                            Text(nameValidation.errorMessage ?: stringResource(R.string.subject_form_name_error))
                         }
                     }
                 )
@@ -313,15 +320,15 @@ fun SubjectFormScreen(
                 // silencio.
                 val professorHint: (@Composable () -> Unit)? =
                     if (!scheduleDraft.enabled && scheduleDraft.professor.isNotBlank()) {
-                        { Text("Sin clases en el horario no se guarda el profesor.") }
+                        { Text(stringResource(R.string.subject_form_professor_hint)) }
                     } else {
                         null
                     }
                 OutlinedTextField(
                     value = scheduleDraft.professor,
                     onValueChange = { scheduleDraft = scheduleDraft.copy(professor = it.take(60)) },
-                    label = { Text("Profesor") },
-                    placeholder = { Text("Prof. Pérez") },
+                    label = { Text(stringResource(R.string.subject_form_professor)) },
+                    placeholder = { Text(stringResource(R.string.subject_form_professor_placeholder)) },
                     leadingIcon = { Icon(Icons.Rounded.Person, null) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
@@ -331,7 +338,7 @@ fun SubjectFormScreen(
             }
 
             FormBlock(
-                title = "Cuándo",
+                title = stringResource(R.string.subject_form_schedule_section),
                 icon = Icons.Rounded.CalendarMonth,
                 accent = accent,
                 summary = scheduleDraft.whenSummary(),
@@ -357,7 +364,7 @@ fun SubjectFormScreen(
             }
 
             FormBlock(
-                title = "Académico",
+                title = stringResource(R.string.subject_form_academic_section),
                 icon = Icons.Rounded.AutoAwesome,
                 accent = accent,
                 summary = academicSummary(
@@ -375,7 +382,7 @@ fun SubjectFormScreen(
                         targetAverage = it
                         error = null
                     },
-                    label = { Text("Meta de promedio (0 a $maxGradeLabel)") },
+                    label = { Text(stringResource(R.string.subject_form_target_average, maxGradeLabel)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
                     modifier = Modifier.fillMaxWidth(),
@@ -418,7 +425,7 @@ fun SubjectFormScreen(
             shadowElevation = 8.dp
         ) {
             UniStackButton(
-                text = if (isEditing) "Guardar cambios" else "Guardar materia",
+                text = if (isEditing) stringResource(R.string.subject_form_save_changes) else stringResource(R.string.subject_form_save_subject),
                 enabled = isValid,
                 onClick = {
                     val editingSubjectId = subjectId
@@ -455,16 +462,16 @@ fun SubjectFormScreen(
 
                     when {
                         savedSubjectId == null -> {
-                            error = "Revisa el nombre y la meta antes de guardar."
+                            error = validationErrorMsg
                         }
                         !scheduleSaved -> {
-                            error = "La materia se guardó, pero revisa la configuración del horario."
+                            error = scheduleWarningMsg
                         }
                         else -> {
                             scope.launch {
                                 launch {
                                     snackbarHostState.showSnackbar(
-                                        if (isEditing) "Materia y horario actualizados" else "Materia y horario creados"
+                                        if (isEditing) toastUpdated else toastCreated
                                     )
                                 }
                                 delay(650)
@@ -491,6 +498,7 @@ fun SubjectFormScreen(
 
 
 /** Resumen del bloque académico, para leerlo de un vistazo cuando llega plegado. */
+@Composable
 private fun academicSummary(
     targetAverage: String,
     cutScheme: GradingCutScheme,
@@ -499,9 +507,9 @@ private fun academicSummary(
 ): String {
     val cut = cutScheme.cuts.firstOrNull { it.id == activeCutId }
     return buildList {
-        add("Meta ${targetAverage.ifBlank { NO_DATA }}")
-        if (cutScheme.cuts.size > 1 && cut != null) add("Corte ${cut.order}")
-        if (reminderMinutes > 0) add("Aviso $reminderMinutes min")
+        add(stringResource(R.string.subject_target_label, targetAverage.ifBlank { NO_DATA }))
+        if (cutScheme.cuts.size > 1 && cut != null) add(stringResource(R.string.subject_cut_order, cut.order))
+        if (reminderMinutes > 0) add(stringResource(R.string.schedule_reminder_min, reminderMinutes))
     }.joinToString("  ·  ")
 }
 
@@ -576,7 +584,7 @@ private fun SubjectColorField(
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Color",
+                stringResource(R.string.subject_form_color_title),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold
@@ -606,14 +614,14 @@ private fun SubjectColorField(
                         .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.28f), CircleShape)
                         .clickable(
-                            onClickLabel = "Abrir editor de color",
+                            onClickLabel = stringResource(R.string.subject_form_open_color_editor),
                             onClick = { showEditor = true }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         Icons.Rounded.ColorLens,
-                        contentDescription = "Color personalizado",
+                        contentDescription = stringResource(R.string.subject_form_custom_color),
                         tint = selected,
                         modifier = Modifier.size(22.dp)
                     )
@@ -687,17 +695,17 @@ private fun CustomSubjectColorDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     UniBackButton(
-                        contentDescription = "Cancelar",
+                        contentDescription = stringResource(R.string.action_cancel),
                         onClick = onDismiss
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Color personalizado",
+                            stringResource(R.string.subject_form_custom_color),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.ExtraBold
                         )
                         Text(
-                            "Arrastra el selector para ajustar el tono con precisión.",
+                            stringResource(R.string.subject_form_custom_color_desc),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -735,7 +743,7 @@ private fun CustomSubjectColorDialog(
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "Tono",
+                        stringResource(R.string.subject_form_tone),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
@@ -767,7 +775,7 @@ private fun CustomSubjectColorDialog(
                             value = parsed[2]
                         }
                     },
-                    label = { Text("Hexadecimal") },
+                    label = { Text(stringResource(R.string.subject_form_hex)) },
                     placeholder = { Text("#6750F5") },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
@@ -785,7 +793,7 @@ private fun CustomSubjectColorDialog(
                         ),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.action_cancel))
                     }
                     Button(
                         shapes = UniStackButtonDefaults.shapes,
@@ -794,7 +802,7 @@ private fun CustomSubjectColorDialog(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            "Aplicar",
+                            stringResource(R.string.action_apply),
                             color = contentColorOn(selected)
                         )
                     }
@@ -869,6 +877,11 @@ private fun ColorSwatch(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val clickLabel = stringResource(R.string.subject_color_select_accessibility, label)
+    val colorTitle = stringResource(R.string.subject_form_color_title)
+    val selectedDesc = stringResource(R.string.subject_color_selected)
+    val notSelectedDesc = stringResource(R.string.subject_color_not_selected)
+
     Box(
         modifier = modifier
             .size(46.dp)
@@ -880,13 +893,13 @@ private fun ColorSwatch(
                 shape = CircleShape
             )
             .clickable(
-                onClickLabel = "Seleccionar color $label",
+                onClickLabel = clickLabel,
                 role = Role.RadioButton,
                 onClick = onClick
             )
             .semantics {
-                contentDescription = "Color $label"
-                stateDescription = if (selected) "Seleccionado" else "No seleccionado"
+                contentDescription = "$colorTitle $label"
+                stateDescription = if (selected) selectedDesc else notSelectedDesc
             }
             .padding(12.dp),
         contentAlignment = Alignment.Center
@@ -913,17 +926,18 @@ private fun closestVisualType(color: Color, accents: Map<SubjectVisualType, Int>
  * El lector de pantalla decía «Color almohadilla 1 0 B 8 A C»: el hexadecimal es exacto y no
  * significa nada en voz alta.
  */
+@Composable
 private fun SubjectVisualType.accessibilityLabel(): String = when (this) {
-    SubjectVisualType.TEAL -> "turquesa"
-    SubjectVisualType.BLUE -> "azul"
-    SubjectVisualType.CORAL -> "coral"
-    SubjectVisualType.PURPLE -> "morado"
-    SubjectVisualType.GREEN -> "verde"
-    SubjectVisualType.YELLOW -> "amarillo"
-    SubjectVisualType.ROSE -> "rosa"
-    SubjectVisualType.INDIGO -> "indigo"
-    SubjectVisualType.ORANGE -> "naranja"
-    SubjectVisualType.CYAN -> "cian"
-    SubjectVisualType.LIME -> "lima"
-    SubjectVisualType.SLATE -> "gris azulado"
+    SubjectVisualType.TEAL -> stringResource(R.string.color_teal)
+    SubjectVisualType.BLUE -> stringResource(R.string.color_blue)
+    SubjectVisualType.CORAL -> stringResource(R.string.color_coral)
+    SubjectVisualType.PURPLE -> stringResource(R.string.color_purple)
+    SubjectVisualType.GREEN -> stringResource(R.string.color_green)
+    SubjectVisualType.YELLOW -> stringResource(R.string.color_yellow)
+    SubjectVisualType.ROSE -> stringResource(R.string.color_rose)
+    SubjectVisualType.INDIGO -> stringResource(R.string.color_indigo)
+    SubjectVisualType.ORANGE -> stringResource(R.string.color_orange)
+    SubjectVisualType.CYAN -> stringResource(R.string.color_cyan)
+    SubjectVisualType.LIME -> stringResource(R.string.color_lime)
+    SubjectVisualType.SLATE -> stringResource(R.string.color_slate)
 }

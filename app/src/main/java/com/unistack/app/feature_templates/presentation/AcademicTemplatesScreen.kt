@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_templates.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.material.icons.rounded.Description
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -113,8 +116,8 @@ fun AcademicTemplatesScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         LargeTitleScaffold(
-            title = "Trabajos",
-            subtitle = "Plantilla, checklist y entrega.",
+            title = stringResource(R.string.templates_title),
+            subtitle = stringResource(R.string.templates_subtitle),
             onBackClick = onBackClick,
             bottomPadding = scrollBottomRoom
         ) {
@@ -124,13 +127,13 @@ fun AcademicTemplatesScreen(
                     options = listOf(
                         UniSegmentedOption(
                             value = false,
-                            label = "En curso",
+                            label = stringResource(R.string.templates_tab_in_progress),
                             icon = Icons.Rounded.Edit,
                             badge = open.size.takeIf { it > 0 }
                         ),
                         UniSegmentedOption(
                             value = true,
-                            label = "Entregados",
+                            label = stringResource(R.string.templates_tab_delivered),
                             icon = Icons.Rounded.CheckCircle,
                             badge = finished.size.takeIf { it > 0 }
                         )
@@ -143,15 +146,14 @@ fun AcademicTemplatesScreen(
                 item(key = "vacio") {
                     UniEmptyStateCard(
                         title = if (showFinished) {
-                            "Todavía no has entregado ninguno."
+                            stringResource(R.string.templates_empty_delivered_title)
                         } else {
-                            "No tienes trabajos en curso."
+                            stringResource(R.string.templates_empty_in_progress_title)
                         },
                         body = if (showFinished) {
-                            "Los que marques como entregados se guardan aquí, con su checklist tal " +
-                                "como lo dejaste."
+                            stringResource(R.string.templates_empty_delivered_desc)
                         } else {
-                            "Empieza uno desde una plantilla: trae los apartados y el checklist puestos."
+                            stringResource(R.string.templates_empty_in_progress_desc)
                         },
                         icon = Icons.AutoMirrored.Rounded.Assignment,
                         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -178,7 +180,7 @@ fun AcademicTemplatesScreen(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-            text = { Text("Nuevo", fontWeight = FontWeight.Bold) }
+            text = { Text(stringResource(R.string.templates_btn_new), fontWeight = FontWeight.Bold) }
         )
     }
 
@@ -203,18 +205,18 @@ fun AcademicTemplatesScreen(
         val name = works.firstOrNull { it.id == pendingId }?.title.orEmpty()
         AlertDialog(
             onDismissRequest = { workIdPendingDelete = null },
-            title = { Text("¿Eliminar trabajo?") },
-            text = { Text("Se borra «" + name + "» con su checklist y sus notas. No se puede deshacer.") },
+            title = { Text(stringResource(R.string.templates_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.templates_delete_dialog_msg, name)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteWork(pendingId)
                     workIdPendingDelete = null
                 }) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { workIdPendingDelete = null }) { Text("Cancelar") }
+                TextButton(onClick = { workIdPendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -250,13 +252,13 @@ private fun NewWorkSheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "¿De qué tipo?",
+                    stringResource(R.string.templates_choose_type_title),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.headlineSmallEmphasized,
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    "Cada plantilla trae sus apartados y su checklist. Podrás cambiarlo todo después.",
+                    stringResource(R.string.templates_choose_type_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -278,14 +280,14 @@ private fun NewWorkSheet(
                         contentColor = MaterialTheme.colorScheme.onSurface
                     )
                 ) {
-                    Text("Cancelar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_cancel), fontWeight = FontWeight.Bold)
                 }
                 Button(
                     shapes = UniStackButtonDefaults.shapes,
                     onClick = { onCreate(chosen) },
                     modifier = Modifier.weight(1.4f)
                 ) {
-                    Text("Crear", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.templates_btn_create), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -474,7 +476,7 @@ internal fun WorkEditorCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = if (isEditing) "Editar trabajo" else "Crear trabajo desde plantilla",
+                text = if (isEditing) stringResource(R.string.templates_edit_work) else stringResource(R.string.templates_create_from_template),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp
@@ -482,7 +484,7 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = title,
                 onValueChange = onTitleChange,
-                label = { Text("Título") },
+                label = { Text(stringResource(R.string.templates_field_title)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large
@@ -490,27 +492,27 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = dueDate,
                 onValueChange = onDueDateChange,
-                label = { Text("Fecha de entrega") },
-                placeholder = { Text("YYYY-MM-DD") },
+                label = { Text(stringResource(R.string.templates_field_due_date)) },
+                placeholder = { Text(stringResource(R.string.templates_field_due_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 isError = dueDate.isNotBlank() && TaskDateUtils.parseInput(dueDate) == null
             )
-            Text("Materia", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(R.string.templates_field_subject), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
-                options = listOf(UniFilterOption<String?>(null, "General")) +
+                options = listOf(UniFilterOption<String?>(null, stringResource(R.string.templates_general_subject))) +
                     subjects.map { UniFilterOption<String?>(it.id, it.name) },
                 selected = subjectId,
                 onSelected = onSubjectSelected
             )
-            Text("Estado", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(R.string.templates_field_status), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
                 options = AcademicWorkStatus.entries.map { UniFilterOption(it, it.label()) },
                 selected = status,
                 onSelected = onStatusSelected
             )
-            Text("Prioridad", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(R.string.templates_field_priority), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
             UniFilterChipRow(
                 options = AcademicWorkPriority.entries.map { UniFilterOption(it, it.label()) },
                 selected = priority,
@@ -519,7 +521,7 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = thesis,
                 onValueChange = onThesisChange,
-                label = { Text("Tesis u objetivo") },
+                label = { Text(stringResource(R.string.templates_field_thesis)) },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large
@@ -527,7 +529,7 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = outline,
                 onValueChange = onOutlineChange,
-                label = { Text("Esquema") },
+                label = { Text(stringResource(R.string.templates_field_outline)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large
@@ -535,7 +537,7 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = sources,
                 onValueChange = onSourcesChange,
-                label = { Text("Fuentes") },
+                label = { Text(stringResource(R.string.templates_field_sources)) },
                 minLines = 2,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -545,7 +547,7 @@ internal fun WorkEditorCard(
             OutlinedTextField(
                 value = notes,
                 onValueChange = onNotesChange,
-                label = { Text("Notas") },
+                label = { Text(stringResource(R.string.templates_field_notes)) },
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large
@@ -560,7 +562,7 @@ internal fun WorkEditorCard(
                 modifier = Modifier.fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
             ) {
-                Text(if (isEditing) "Guardar trabajo" else "Crear trabajo")
+                Text(if (isEditing) stringResource(R.string.templates_btn_save_work) else stringResource(R.string.templates_btn_create))
             }
         }
     }
@@ -584,8 +586,8 @@ internal fun PersistentChecklistCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(Icons.Rounded.CheckCircle, LocalSectionColors.current.onTrackContainer, LocalSectionColors.current.onTrack)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Checklist persistente", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-                    Text("$completedCount de ${items.size} pasos listos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(stringResource(R.string.templates_checklist_title), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                    Text(stringResource(R.string.templates_checklist_progress, completedCount, items.size), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             items.forEach { item ->
@@ -638,8 +640,8 @@ internal fun ApaReferenceGeneratorCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBadge(Icons.Rounded.AutoAwesome, LocalSectionColors.current.onTrackContainer, LocalSectionColors.current.onTrack)
                 Column(modifier = Modifier.padding(start = 12.dp)) {
-                    Text("Generador de referencias", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
-                    Text("Autor | Año | Título | Medio", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(stringResource(R.string.templates_ref_generator), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.ExtraBold)
+                    Text(stringResource(R.string.templates_ref_format), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
             }
             Text(
@@ -657,21 +659,50 @@ internal fun ApaReferenceGeneratorCard(
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
                     .testTag("copy-apa-references")
             ) {
-                Text("Copiar referencias")
+                Text(stringResource(R.string.templates_btn_copy_references))
             }
         }
     }
 }
 
 internal fun AcademicWork.exportText(subjects: List<Subject>): String {
-    val subjectName = subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: "General"
+    val isEn = java.util.Locale.getDefault().language == "en"
+    val defaultSubject = if (isEn) "General" else "General"
+    val subjectName = subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name } ?: defaultSubject
     val checklist = AcademicTemplateLibrary.checklist.joinToString(separator = "\n") { item ->
         val mark = if (item.id in completedChecklistIds) "[x]" else "[ ]"
         "$mark ${item.title}: ${item.detail}"
     }
-    val due = dueDateMillis?.let { TaskDateUtils.fromMillis(it).toString() } ?: "Sin fecha"
+    val due = dueDateMillis?.let { TaskDateUtils.fromMillis(it).toString() } ?: if (isEn) "No date" else "Sin fecha"
     val apaReferences = buildApaReferenceDraft(sources)
-    return """
+    return if (isEn) {
+        """
+        $title
+        Course: $subjectName
+        Date: $due
+        Status: ${status.label()}
+        Priority: ${priority.label()}
+
+        Checklist
+        $checklist
+
+        Thesis or objective
+        $thesis
+
+        Outline
+        $outline
+
+        Sources
+        $sources
+
+        APA References
+        $apaReferences
+
+        Notes
+        $notes
+        """.trimIndent()
+    } else {
+        """
         $title
         Materia: $subjectName
         Fecha: $due
@@ -695,16 +726,18 @@ internal fun AcademicWork.exportText(subjects: List<Subject>): String {
 
         Notas
         $notes
-    """.trimIndent()
+        """.trimIndent()
+    }
 }
 
 internal fun AcademicWorkStatus.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AcademicWorkStatus.IDEA -> "Idea"
-        AcademicWorkStatus.DRAFT -> "Borrador"
-        AcademicWorkStatus.REVIEW -> "Revisión"
-        AcademicWorkStatus.READY -> "Listo"
-        AcademicWorkStatus.SUBMITTED -> "Entregado"
+        AcademicWorkStatus.IDEA -> if (isEn) "Idea" else "Idea"
+        AcademicWorkStatus.DRAFT -> if (isEn) "Draft" else "Borrador"
+        AcademicWorkStatus.REVIEW -> if (isEn) "Review" else "Revisión"
+        AcademicWorkStatus.READY -> if (isEn) "Ready" else "Listo"
+        AcademicWorkStatus.SUBMITTED -> if (isEn) "Delivered" else "Entregado"
     }
 }
 
@@ -721,10 +754,11 @@ internal fun AcademicWorkStatus.color(): Color {
 }
 
 internal fun AcademicWorkPriority.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     return when (this) {
-        AcademicWorkPriority.LOW -> "Baja"
-        AcademicWorkPriority.MEDIUM -> "Media"
-        AcademicWorkPriority.HIGH -> "Alta"
+        AcademicWorkPriority.LOW -> if (isEn) "Low" else "Baja"
+        AcademicWorkPriority.MEDIUM -> if (isEn) "Medium" else "Media"
+        AcademicWorkPriority.HIGH -> if (isEn) "High" else "Alta"
     }
 }
 

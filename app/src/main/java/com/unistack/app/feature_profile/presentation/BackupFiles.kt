@@ -57,7 +57,8 @@ object BackupFiles {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        context.startActivity(Intent.createChooser(intent, "Compartir"))
+        val isEn = java.util.Locale.getDefault().language == "en"
+        context.startActivity(Intent.createChooser(intent, if (isEn) "Share" else "Compartir"))
     }
 
     /** El nombre del archivo elegido, para que se vea cuál se va a restaurar. */
@@ -68,7 +69,8 @@ object BackupFiles {
                 if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
             }
         }.getOrNull()
-        return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: "Archivo elegido"
+        val isEn = java.util.Locale.getDefault().language == "en"
+        return fromProvider ?: uri.lastPathSegment?.substringAfterLast('/') ?: (if (isEn) "Chosen file" else "Archivo elegido")
     }
 
     fun rememberBackupDone(context: Context) {

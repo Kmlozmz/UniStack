@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniDatePickerDialog
 import com.unistack.app.feature_terms.domain.AcademicBreak
 import java.time.LocalDate
@@ -60,8 +62,7 @@ internal fun AcademicBreaksSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Text(
-            text = "Festivos, paros y semanas de receso. Las clases de esos días no cuentan " +
-                "como faltas.",
+            text = stringResource(R.string.settings_breaks_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 17.sp
@@ -88,7 +89,7 @@ internal fun AcademicBreaksSection(
                         text = if (tramo.days == 1) {
                             tramo.start.format(Corta)
                         } else {
-                            "${tramo.start.format(Corta)} → ${tramo.end.format(Corta)} · ${tramo.days} días"
+                            stringResource(R.string.settings_breaks_days_count, tramo.days).let { "${tramo.start.format(Corta)} → ${tramo.end.format(Corta)} · $it" }
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.5.sp
@@ -104,7 +105,7 @@ internal fun AcademicBreaksSection(
                 ) {
                     Icon(
                         Icons.Rounded.DeleteOutline,
-                        contentDescription = "Quitar ${tramo.name}",
+                        contentDescription = stringResource(R.string.settings_breaks_remove, tramo.name),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(18.dp)
                     )
@@ -128,7 +129,7 @@ internal fun AcademicBreaksSection(
             )
             Spacer(Modifier.width(9.dp))
             Text(
-                text = if (breaks.isEmpty()) "Añadir el primero" else "Añadir otro",
+                text = if (breaks.isEmpty()) stringResource(R.string.settings_breaks_add_first) else stringResource(R.string.settings_breaks_add_another),
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.Bold
@@ -172,29 +173,29 @@ private fun BreakEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (existente == null) "Días sin clase" else "Cambiar el tramo") },
+        title = { Text(if (existente == null) stringResource(R.string.settings_breaks_dialog_title_new) else stringResource(R.string.settings_breaks_dialog_title_edit)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = { nombre = it.take(60) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Qué es") },
-                    placeholder = { Text("Semana de receso") },
+                    label = { Text(stringResource(R.string.settings_breaks_field_what)) },
+                    placeholder = { Text(stringResource(R.string.settings_breaks_field_hint)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     CampoDeFecha(
-                        etiqueta = "Empieza",
+                        etiqueta = stringResource(R.string.settings_breaks_start),
                         fecha = desde,
                         modifier = Modifier.weight(1f),
                         onClick = { eligiendo = Extremo.DESDE }
                     )
                     CampoDeFecha(
-                        etiqueta = "Acaba",
+                        etiqueta = stringResource(R.string.settings_breaks_end),
                         fecha = hasta,
-                        vacio = "El mismo día",
+                        vacio = stringResource(R.string.settings_breaks_same_day),
                         modifier = Modifier.weight(1f),
                         onClick = { eligiendo = Extremo.HASTA }
                     )
@@ -209,12 +210,12 @@ private fun BreakEditorDialog(
                 },
                 enabled = valido
             ) {
-                Text("Guardar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.common_save), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.common_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

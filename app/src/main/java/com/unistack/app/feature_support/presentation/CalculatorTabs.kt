@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.components.ScaleZoneBar
 import com.unistack.app.core.design.components.cleanClickable
@@ -93,6 +95,7 @@ internal fun SubjectCalculator(
     val average = CalculatorMath.subjectAverage(entries)
     val complete = free <= 0.0
     val typed = parseTyped(draft) != null && draft != "0"
+    val allDistributedMsg = stringResource(R.string.calculator_all_distributed)
 
     fun reset() {
         draft = "0"
@@ -114,7 +117,7 @@ internal fun SubjectCalculator(
                         enabled = typed && !complete,
                         onClick = {
                             if (complete) {
-                                onToast("Ya está repartido el 100 % de la materia. Quita una nota para cambiarla.")
+                                onToast(allDistributedMsg)
                                 return@SlotAction
                             }
                             val value = parseTyped(draft) ?: return@SlotAction
@@ -134,7 +137,7 @@ internal fun SubjectCalculator(
                 }
             ) {
                 NumberSlot(
-                    label = "NOTA",
+                    label = stringResource(R.string.calculator_label_grade),
                     value = if (slot == Slot.FIRST) draft else pending?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
                     active = slot == Slot.FIRST,
                     onClick = {
@@ -145,7 +148,7 @@ internal fun SubjectCalculator(
                     }
                 )
                 NumberSlot(
-                    label = if (complete) "SIN SITIO" else "VALE · queda ${percentText(free)} %",
+                    label = if (complete) (if (java.util.Locale.getDefault().language == "en") "NO SPACE" else "SIN SITIO") else (if (java.util.Locale.getDefault().language == "en") "WORTH · ${percentText(free)}% left" else "VALE · queda ${percentText(free)} %"),
                     value = if (slot == Slot.SECOND) "$draft %" else "—",
                     active = slot == Slot.SECOND,
                     enabled = !complete && pending != null,
@@ -164,9 +167,9 @@ internal fun SubjectCalculator(
                 max = if (slot == Slot.FIRST) maxGrade else free,
                 fresh = fresh,
                 blockedMessage = if (slot == Slot.FIRST) {
-                    "La escala llega hasta ${GradingScaleUtils.formatGrade(maxGrade, scale)}: no hay notas por encima."
+                    stringResource(R.string.calculator_max_scale_limit, GradingScaleUtils.formatGrade(maxGrade, scale))
                 } else {
-                    "Solo queda el ${percentText(free)} % por repartir. Lo que pongas tiene que caber ahí."
+                    stringResource(R.string.calculator_free_percent_left, percentText(free))
                 },
                 onDraft = {
                     draft = it
@@ -185,7 +188,7 @@ internal fun SubjectCalculator(
     ) {
         item("resultado") {
             ResultCard(
-                label = "LLEVAS EN LA MATERIA",
+                label = stringResource(R.string.calculator_label_course_progress),
                 // Sin notas se enseña un cero apagado y no un guion: a ese tamaño y con ese
                 // grosor, un «—» se lee como una barra gris rota, no como «todavía nada».
                 value = GradingScaleUtils.formatGrade(average ?: 0.0, scale),
@@ -207,9 +210,9 @@ internal fun SubjectCalculator(
                 )
                 Text(
                     text = if (complete) {
-                        "El 100 % está repartido: esta es la nota final."
+                        stringResource(R.string.calculator_all_distributed_final)
                     } else {
-                        "Llevas evaluado el ${percentText(used)} %. Queda libre el ${percentText(free)} %."
+                        stringResource(R.string.calculator_progress_summary, percentText(used), percentText(free))
                     },
                     modifier = Modifier.padding(top = 7.dp),
                     style = MaterialTheme.typography.bodySmall,
@@ -264,7 +267,7 @@ internal fun SubjectCalculator(
             }
         } else {
             item("vacio") {
-                CalculatorFootnote("Teclea la nota, toca la flecha, escribe cuánto vale y toca el más.")
+                CalculatorFootnote(stringResource(R.string.calculator_instructions_course))
             }
         }
     }
@@ -341,7 +344,7 @@ internal fun SemesterCalculator(
                                 grades = grades.mapIndexed { i, old -> if (i == editing) (pending ?: old) else old }
                                 credits = credits.mapIndexed { i, old -> if (i == editing) value else old }
                             } else {
-                                names = names + "Materia ${rows.count { !it.fromApp } + 1}" 
+                                names = names + (if (java.util.Locale.getDefault().language == "en") "Course ${rows.count { !it.fromApp } + 1}" else "Materia ${rows.count { !it.fromApp } + 1}") 
                                 grades = grades + (pending ?: 0.0)
                                 credits = credits + value
                                 fromApp = fromApp + false
@@ -354,7 +357,7 @@ internal fun SemesterCalculator(
                 }
             ) {
                 NumberSlot(
-                    label = if (editing >= 0) "CORRIGIENDO" else "NOTA FINAL",
+                    label = if (editing >= 0) (if (java.util.Locale.getDefault().language == "en") "EDITING" else "CORRIGIENDO") else stringResource(R.string.calculator_label_final_grade),
                     value = if (slot == Slot.FIRST) draft else pending?.let { GradingScaleUtils.formatGrade(it, scale) } ?: "—",
                     active = slot == Slot.FIRST,
                     onClick = {
@@ -365,7 +368,7 @@ internal fun SemesterCalculator(
                     }
                 )
                 NumberSlot(
-                    label = "CRÉDITOS",
+                    label = stringResource(R.string.calculator_label_credits),
                     value = if (slot == Slot.SECOND) draft else "—",
                     active = slot == Slot.SECOND,
                     enabled = pending != null || editing >= 0,
@@ -384,9 +387,9 @@ internal fun SemesterCalculator(
                 max = if (slot == Slot.FIRST) maxGrade else 40.0,
                 fresh = fresh,
                 blockedMessage = if (slot == Slot.FIRST) {
-                    "La escala llega hasta ${GradingScaleUtils.formatGrade(maxGrade, scale)}."
+                    stringResource(R.string.calculator_max_scale_limit, GradingScaleUtils.formatGrade(maxGrade, scale))
                 } else {
-                    "Como mucho 40 créditos en una materia."
+                    stringResource(R.string.calculator_max_credits_limit)
                 },
                 onDraft = {
                     draft = it
@@ -407,18 +410,18 @@ internal fun SemesterCalculator(
     ) {
         item("resultado") {
             ResultCard(
-                label = "PROMEDIO DEL SEMESTRE",
+                label = stringResource(R.string.calculator_label_semester_gpa),
                 value = GradingScaleUtils.formatGrade(average ?: 0.0, scale),
                 suffix = "/ ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
                 accent = accent,
-                trailing = if (totalCredits > 0.0) "${percentText(totalCredits)} créditos" else null
+                trailing = if (totalCredits > 0.0) stringResource(R.string.calculator_total_credits, percentText(totalCredits)) else null
             ) {
                 if (withoutCredits > 0) {
                     Text(
                         text = if (withoutCredits == 1) {
-                            "Una materia no cuenta todavía: le faltan los créditos."
+                            stringResource(R.string.calculator_one_missing_credits)
                         } else {
-                            "$withoutCredits materias no cuentan todavía: les faltan los créditos."
+                            stringResource(R.string.calculator_multi_missing_credits, withoutCredits)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = LocalSectionColors.current.atRisk,
@@ -456,14 +459,15 @@ internal fun SemesterCalculator(
             }
         }
         item("acciones") {
+            val isEn = java.util.Locale.getDefault().language == "en"
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlineChip(
-                    text = "Traer mis materias",
+                    text = if (isEn) "Import my courses" else "Traer mis materias",
                     icon = Icons.Rounded.Add,
                     onClick = { pickerOpen = true }
                 )
                 if (rows.isNotEmpty()) {
-                    OutlineChip(text = "Vaciar", icon = null, onClick = {
+                    OutlineChip(text = if (isEn) "Clear all" else "Vaciar", icon = null, onClick = {
                         names = emptyList()
                         grades = emptyList()
                         credits = emptyList()
@@ -545,9 +549,9 @@ internal fun NeededCalculator(
                 max = if (field == 1) 100.0 else maxGrade,
                 fresh = fresh,
                 blockedMessage = if (field == 1) {
-                    "El curso evaluado va de 0 a 100 %."
+                    stringResource(R.string.calculator_course_percent_range)
                 } else {
-                    "La escala llega hasta ${GradingScaleUtils.formatGrade(maxGrade, scale)}."
+                    stringResource(R.string.calculator_max_scale_limit, GradingScaleUtils.formatGrade(maxGrade, scale))
                 },
                 onDraft = { value ->
                     when (field) {
@@ -579,24 +583,24 @@ internal fun NeededCalculator(
             ) {
                 Column {
                     NeededField(
-                        label = "Mi promedio ahora",
-                        hint = "Lo que llevas en la materia",
+                        label = stringResource(R.string.calculator_target_current_gpa),
+                        hint = stringResource(R.string.calculator_target_current_desc),
                         value = have,
                         suffix = "",
                         active = field == 0,
                         onClick = { field = 0; fresh = true; onToast(null) }
                     )
                     NeededField(
-                        label = "Del curso ya evaluado",
-                        hint = "Cuánto se ha calificado, en porcentaje",
+                        label = stringResource(R.string.calculator_target_evaluated),
+                        hint = stringResource(R.string.calculator_target_evaluated_desc),
                         value = done,
                         suffix = " %",
                         active = field == 1,
                         onClick = { field = 1; fresh = true; onToast(null) }
                     )
                     NeededField(
-                        label = "Quiero acabar con",
-                        hint = "La nota con la que quieres terminar",
+                        label = stringResource(R.string.calculator_target_desired),
+                        hint = stringResource(R.string.calculator_target_desired_desc),
                         value = goal,
                         suffix = "",
                         active = field == 2,
@@ -614,7 +618,7 @@ internal fun NeededCalculator(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 HalfBox(
-                    label = "HECHO",
+                    label = if (java.util.Locale.getDefault().language == "en") "DONE" else "HECHO",
                     value = have.ifBlank { "—" },
                     // El mínimo sube a un tercio: con el 18 % la caja medía 60 dp y el
                     // rótulo salía cortado como «HEC».
@@ -622,7 +626,7 @@ internal fun NeededCalculator(
                     container = MaterialTheme.colorScheme.surfaceContainerHigh
                 )
                 HalfBox(
-                    label = "TE FALTA SACAR",
+                    label = if (java.util.Locale.getDefault().language == "en") "SCORE NEEDED" else "TE FALTA SACAR",
                     value = when {
                         needed == null -> "—"
                         already -> GradingScaleUtils.formatGrade(0.0, scale)
@@ -639,10 +643,10 @@ internal fun NeededCalculator(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 CalculatorFootnote(
-                    if (doneValue == null) "sin evaluar" else "${percentText(doneValue)} % evaluado"
+                    if (doneValue == null) (if (java.util.Locale.getDefault().language == "en") "not evaluated" else "sin evaluar") else (if (java.util.Locale.getDefault().language == "en") "${percentText(doneValue)}% evaluated" else "${percentText(doneValue)} % evaluado")
                 )
                 CalculatorFootnote(
-                    if (doneValue == null) "sin rellenar" else "${percentText(remaining)} % por evaluar"
+                    if (doneValue == null) (if (java.util.Locale.getDefault().language == "en") "unfilled" else "sin rellenar") else stringResource(R.string.calculator_remaining_to_eval, percentText(remaining))
                 )
             }
         }
@@ -655,13 +659,15 @@ internal fun NeededCalculator(
             ) {
                 Text(
                     text = when {
-                        !ready -> "Rellena los tres datos de arriba y aquí sale la nota que te hace falta."
-                        needed == null -> "Con el 100 % evaluado ya no queda nota que sacar: lo que llevas es lo que hay."
-                        already -> "Ya la tienes: aunque saques cero en lo que falta, acabas con tu meta o por encima."
-                        impossible -> "Necesitarías más de ${GradingScaleUtils.formatGrade(maxGrade, scale)}, y eso no existe. " +
-                            "Con esa meta ya no da: bájala o cuenta con no llegar."
-                        else -> "Necesitas sacar ${GradingScaleUtils.formatGrade(needed, scale)} " +
-                            "en el ${percentText(remaining)} % que te queda."
+                        !ready -> stringResource(R.string.calculator_target_fill_fields)
+                        needed == null -> stringResource(R.string.calculator_target_all_evaluated)
+                        already -> stringResource(R.string.calculator_target_already_achieved)
+                        impossible -> stringResource(R.string.calculator_target_impossible, GradingScaleUtils.formatGrade(maxGrade, scale))
+                        else -> if (java.util.Locale.getDefault().language == "en") {
+                            "You need to score ${GradingScaleUtils.formatGrade(needed, scale)} on the remaining ${percentText(remaining)}%."
+                        } else {
+                            "Necesitas sacar ${GradingScaleUtils.formatGrade(needed, scale)} en el ${percentText(remaining)} % que te queda."
+                        }
                     },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     style = MaterialTheme.typography.bodyMedium,
@@ -818,7 +824,7 @@ private fun GradeRow(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = "vale un $weight % de la materia",
+                    text = stringResource(R.string.calculator_weight_badge, weight),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -831,7 +837,11 @@ private fun GradeRow(
                 modifier = Modifier.size(28.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Close, contentDescription = "Quitar", modifier = Modifier.size(15.dp))
+                    Icon(
+                        Icons.Rounded.Close,
+                        contentDescription = if (java.util.Locale.getDefault().language == "en") "Remove" else "Quitar",
+                        modifier = Modifier.size(15.dp)
+                    )
                 }
             }
         }
@@ -910,7 +920,7 @@ private fun SemesterRow(
                     fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = if (subject.credits > 0.0) "${percentText(subject.credits)} cr" else "sin cr",
+                    text = if (subject.credits > 0.0) "${percentText(subject.credits)} cr" else (if (java.util.Locale.getDefault().language == "en") "no cr" else "sin cr"),
                     modifier = Modifier.width(46.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (subject.credits > 0.0) {
@@ -930,7 +940,7 @@ private fun SemesterRow(
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Rounded.Close,
-                        contentDescription = "Quitar ${subject.name}",
+                        contentDescription = (if (java.util.Locale.getDefault().language == "en") "Remove " else "Quitar ") + subject.name,
                         modifier = Modifier.size(15.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

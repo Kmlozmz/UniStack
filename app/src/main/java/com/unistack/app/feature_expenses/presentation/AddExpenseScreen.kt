@@ -83,6 +83,10 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.annotation.StringRes
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 private val ExpenseFormBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseFormBorder: Color
@@ -97,7 +101,8 @@ private val ExpenseFieldShape: Shape
     @Composable
     @ReadOnlyComposable
     get() = MaterialTheme.shapes.medium
-private val longDateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.forLanguageTag("es-CO"))
+private val longDateFormatter: DateTimeFormatter
+    get() = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
 
 @Composable
 fun AddExpenseScreen(
@@ -106,6 +111,7 @@ fun AddExpenseScreen(
     viewModel: ExpensesViewModel = hiltViewModel(),
     expenseId: String? = null
 ) {
+    val context = LocalContext.current
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     val expense = expenseId?.let { id -> expenses.firstOrNull { it.id == id } }
@@ -113,17 +119,14 @@ fun AddExpenseScreen(
 
     // Sin categoría de partida. Venía con «Comida» puesta, que ahorra un toque en el caso
     // frecuente pero hace igual de fácil guardar un transporte etiquetado como comida sin
-    // que nadie lo elija: un gasto mal clasificado ensucia el resumen y cuesta más
-    // encontrarlo que el toque que se ahorra.
-    var category by rememberSaveable(expenseId) { mutableStateOf<ExpenseCategory?>(null) }
-    var amount by rememberSaveable(expenseId) { mutableStateOf("") }
-    var date by rememberSaveable(expenseId) { mutableStateOf(ExpenseDateUtils.formatInput(ExpenseDateUtils.today())) }
-    var initialized by rememberSaveable(expenseId) { mutableStateOf(false) }
-    var error by rememberSaveable(expenseId) { mutableStateOf<String?>(null) }
+    // darse cuenta. Obligar a elegir una evita el error silencioso.
+    var category by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(ExpenseDateUtils.formatInput(ExpenseDateUtils.today())) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    var initialized by rememberSaveable(expenseId) { mutableStateOf(false) }
 
-    // Hay algo que perder si lo escrito no es lo que había al entrar. En un gasto nuevo
-    // basta con que se haya tocado cualquiera de los dos campos.
     val hasUnsavedChanges = if (expense == null) {
         category != null || amount.isNotBlank()
     } else {
@@ -135,9 +138,9 @@ fun AddExpenseScreen(
         hasUnsavedChanges = hasUnsavedChanges,
         onLeave = onBackClick,
         message = if (expense == null) {
-            "El gasto no se ha registrado todavía."
+            stringResource(R.string.expenses_unsaved_leave_create)
         } else {
-            "Los cambios de este gasto se van a perder."
+            stringResource(R.string.expenses_unsaved_leave_edit)
         }
     )
 
@@ -184,7 +187,7 @@ fun AddExpenseScreen(
         onBackClick = requestLeave,
         onSaveClick = {
             val chosenCategory = category ?: run {
-                error = "Elige una categoría para el gasto."
+                error = context.getString(R.string.expenses_choose_category_error)
                 return@AddExpenseContent
             }
             val editingExpenseId = expenseId
@@ -206,7 +209,7 @@ fun AddExpenseScreen(
             if (saved) {
                 onBackClick()
             } else {
-                error = "Revisa el valor, la fecha y la categoría antes de guardar."
+                error = context.getString(R.string.expenses_validation_error)
             }
         },
         modifier = modifier
@@ -280,7 +283,7 @@ private fun AddExpenseContent(
             )
         }
         SaveExpenseButton(
-            text = if (isEditing) "Guardar cambios" else "Guardar gasto",
+            text = if (isEditing) stringResource(R.string.action_save_changes) else stringResource(R.string.expenses_save_expense),
             enabled = isValid,
             onClick = onSaveClick
         )
@@ -292,14 +295,14 @@ private fun AddExpenseContent(
 private fun AddExpenseHeader(isEditing: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = if (isEditing) "Editar gasto" else "Registrar gasto",
+            text = if (isEditing) stringResource(R.string.expenses_edit_expense) else stringResource(R.string.expenses_add_expense),
             color = ExpenseFormText,
             fontSize = 32.sp,
             lineHeight = 37.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Guarda valor, fecha y categoría con el mismo formato del resumen.",
+            text = stringResource(R.string.expenses_add_subtitle),
             color = ExpenseFormMuted,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -329,7 +332,7 @@ private fun ExpenseInfoCard(
                     modifier = Modifier.size(27.dp)
                 )
                 Text(
-                    text = "Información del gasto",
+                    text = stringResource(R.string.expenses_info_title),
                     color = ExpenseFormText,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
@@ -337,7 +340,7 @@ private fun ExpenseInfoCard(
             }
             if (expenseMissing) {
                 Text(
-                    text = "Gasto no encontrado.",
+                    text = stringResource(R.string.expenses_not_found),
                     color = ExpenseFormMuted,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -363,7 +366,7 @@ private fun ExpenseAmountField(
     PremiumFieldContainer(minHeight = 78.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Valor",
+                text = stringResource(R.string.expenses_amount_label),
                 color = ExpenseFormMuted,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -380,7 +383,7 @@ private fun ExpenseAmountField(
                     if (amount.isBlank()) {
                         Text(
                             text = "0",
-                            color = ExpenseFormText,
+                            color = ExpenseFormMuted.copy(alpha = 0.5f),
                             fontSize = 25.sp,
                             lineHeight = 29.sp,
                             fontWeight = FontWeight.SemiBold
@@ -436,7 +439,7 @@ private fun ExpenseDateField(
                 verticalArrangement = Arrangement.spacedBy(7.dp)
             ) {
                 Text(
-                    text = "Fecha",
+                    text = stringResource(R.string.expenses_date),
                     color = ExpenseFormMuted,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
@@ -473,7 +476,7 @@ private fun ExpenseCategorySection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "Categoría",
+            text = stringResource(R.string.expenses_category),
             color = ExpenseFormText,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold
@@ -548,7 +551,7 @@ private fun ExpensePreviewCard(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(
-            text = "Vista previa",
+            text = stringResource(R.string.expenses_preview),
             color = ExpenseFormText,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold
@@ -584,7 +587,7 @@ private fun ExpensePreviewCard(
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text(
-                        text = category?.label() ?: "Elige una categoría",
+                        text = category?.label() ?: stringResource(R.string.expenses_choose_category),
                         color = if (category != null) ExpenseFormText else ExpenseFormMuted,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
@@ -679,15 +682,17 @@ private fun ExpenseCategory.icon(): ImageVector {
 
 
 
-fun ExpenseCategory.label(): String {
-    return when (this) {
-        ExpenseCategory.TRANSPORT -> "Transporte"
-        ExpenseCategory.FOOD -> "Comida"
-        ExpenseCategory.COPIES -> "Copias"
-        ExpenseCategory.MATERIALS -> "Materiales"
-        ExpenseCategory.OUTINGS -> "Salidas"
-        ExpenseCategory.OTHER -> "Otros"
-    }
+@Composable
+fun ExpenseCategory.label(): String = stringResource(labelRes())
+
+@StringRes
+fun ExpenseCategory.labelRes(): Int = when (this) {
+    ExpenseCategory.TRANSPORT -> R.string.expense_cat_transport
+    ExpenseCategory.FOOD -> R.string.expense_cat_food
+    ExpenseCategory.COPIES -> R.string.expense_cat_copies
+    ExpenseCategory.MATERIALS -> R.string.expense_cat_materials
+    ExpenseCategory.OUTINGS -> R.string.expense_cat_outings
+    ExpenseCategory.OTHER -> R.string.expense_cat_other
 }
 
 @Preview(name = "Registrar gasto dark", widthDp = 430, heightDp = 932, showBackground = true)

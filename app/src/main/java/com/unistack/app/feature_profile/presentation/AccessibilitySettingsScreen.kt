@@ -528,7 +528,7 @@ private fun LiveAccessibilityPreview(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "VISTA PREVIA",
+                text = stringResource(R.string.settings_a11y_preview),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
@@ -584,7 +584,7 @@ private fun LiveAccessibilityPreview(
                                     color = sections.onTrackContainer.copy(alpha = if (reduceTransparency) 1f else 0.5f)
                                 ) {
                                     Text(
-                                        text = if (shapesBesidesColor) "● Al día" else "Al día",
+                                        text = if (shapesBesidesColor) "● " + stringResource(R.string.settings_a11y_status_on_track) else stringResource(R.string.settings_a11y_status_on_track),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = sections.onTrack,
                                         fontWeight = FontWeight.Bold,
@@ -634,7 +634,7 @@ private fun LiveAccessibilityPreview(
                                     color = sections.atRiskContainer.copy(alpha = if (reduceTransparency) 1f else 0.5f)
                                 ) {
                                     Text(
-                                        text = if (shapesBesidesColor) "▲ En riesgo" else "En riesgo",
+                                        text = if (shapesBesidesColor) "▲ " + stringResource(R.string.settings_a11y_status_at_risk) else stringResource(R.string.settings_a11y_status_at_risk),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = sections.atRisk,
                                         fontWeight = FontWeight.Bold,
@@ -662,7 +662,7 @@ private fun MuestraDePaleta(paleta: ColorBlindPalette) {
         ColorBlindPalette.TRITANOPIA -> listOf(Color(0xFF12B0A0), Color(0xFFE0567F), Color(0xFF7A2E4C))
     }
     val formas = listOf(CircleShape, CutCornerShape(percent = 50), RoundedCornerShape(4.dp))
-    val nombres = listOf("Al día", "En riesgo", "Suspenso")
+    val nombres = listOf(stringResource(R.string.settings_a11y_status_on_track), stringResource(R.string.settings_a11y_status_at_risk), stringResource(R.string.settings_a11y_status_failing))
     Row(
         modifier = Modifier.padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp)

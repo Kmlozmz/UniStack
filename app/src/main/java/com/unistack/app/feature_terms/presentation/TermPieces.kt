@@ -18,6 +18,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,12 +33,22 @@ import androidx.compose.ui.unit.sp
 import com.unistack.app.core.design.theme.LocalSectionColors
 import java.time.LocalDate
 
-private val MesesCortos =
+private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
+
+private val MesesCortosEs =
     listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+private val MesesCortosEn =
+    listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
-internal fun LocalDate.diaMes(): String = "$dayOfMonth ${MesesCortos[monthValue - 1]}"
+internal fun LocalDate.diaMes(): String {
+    val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
+    return if (isEnglish) "$m $dayOfMonth" else "$dayOfMonth $m"
+}
 
-internal fun LocalDate.diaMesAno(): String = "$dayOfMonth ${MesesCortos[monthValue - 1]} $year"
+internal fun LocalDate.diaMesAno(): String {
+    val m = if (isEnglish) MesesCortosEn[monthValue - 1] else MesesCortosEs[monthValue - 1]
+    return if (isEnglish) "$m $dayOfMonth, $year" else "$dayOfMonth $m $year"
+}
 
 /** El rótulo pequeño en versales que separa bloques, igual que en el historial de asistencia. */
 @Composable
@@ -185,7 +197,7 @@ internal fun TermStateChip(active: Boolean) {
         color = if (active) colores.onTrack.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceContainerHighest
     ) {
         Text(
-            text = if (active) "En curso" else "Cerrado",
+            text = if (active) stringResource(R.string.terms_state_active) else stringResource(R.string.terms_state_closed),
             modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp),
             color = if (active) colores.onTrack else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.5.sp,

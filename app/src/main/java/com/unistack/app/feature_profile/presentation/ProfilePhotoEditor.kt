@@ -44,6 +44,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import kotlin.math.max
 import kotlin.math.min
@@ -106,7 +108,7 @@ internal fun ProfilePhotoEditor(
         containerColor = MaterialTheme.colorScheme.background,
         title = {
             Text(
-                "Ajusta tu foto",
+                stringResource(R.string.settings_photo_adjust),
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -114,7 +116,7 @@ internal fun ProfilePhotoEditor(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Arrastra para mover y pellizca para acercar.",
+                    stringResource(R.string.settings_photo_hint),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -130,7 +132,7 @@ internal fun ProfilePhotoEditor(
                     val image = bitmap
                     when {
                         failed -> Text(
-                            "No se pudo abrir esa imagen.",
+                            stringResource(R.string.settings_photo_error),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -180,7 +182,7 @@ internal fun ProfilePhotoEditor(
                     ) {
                         Icon(
                             Icons.Rounded.Refresh,
-                            contentDescription = "Volver al encuadre inicial",
+                            contentDescription = stringResource(R.string.settings_photo_reset),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -194,12 +196,12 @@ internal fun ProfilePhotoEditor(
                  */
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     TextButton(onClick = onPickAnother, enabled = !saving) {
-                        Text("Elegir otra", style = MaterialTheme.typography.labelLarge)
+                        Text(stringResource(R.string.settings_photo_choose_another), style = MaterialTheme.typography.labelLarge)
                     }
                     if (canRemove) {
                         TextButton(onClick = onRemove, enabled = !saving) {
                             Text(
-                                "Quitar foto",
+                                stringResource(R.string.settings_photo_remove),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -209,7 +211,7 @@ internal fun ProfilePhotoEditor(
             }
         },
         dismissButton = {
-            TextButton(onClick = onCancel, enabled = !saving) { Text("Cancelar") }
+            TextButton(onClick = onCancel, enabled = !saving) { Text(stringResource(R.string.common_cancel)) }
         },
         confirmButton = {
             Button(
@@ -235,7 +237,7 @@ internal fun ProfilePhotoEditor(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text(if (saving) "Guardando…" else "Guardar", fontWeight = FontWeight.Bold)
+                Text(if (saving) stringResource(R.string.settings_photo_saving) else stringResource(R.string.common_save), fontWeight = FontWeight.Bold)
             }
         }
     )

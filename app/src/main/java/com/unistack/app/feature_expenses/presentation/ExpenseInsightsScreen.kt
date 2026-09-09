@@ -67,12 +67,18 @@ import com.unistack.app.feature_expenses.domain.ExpenseDateUtils
 import com.unistack.app.feature_expenses.domain.ExpenseInsights
 import java.time.LocalDate
 import java.time.YearMonth
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 
 /** Las tres maneras de leer lo mismo. */
-private enum class InsightView(val label: String) {
-    COMPARAR("Comparado"),
-    RITMO("Ritmo"),
-    CALENDARIO("Calendario")
+private enum class InsightView(@StringRes val labelRes: Int) {
+    COMPARAR(R.string.insights_tab_compare),
+    RITMO(R.string.insights_tab_pace),
+    CALENDARIO(R.string.insights_tab_calendar);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }
 
 /**
@@ -103,8 +109,8 @@ fun ExpenseInsightsScreen(
     var vista by rememberSaveable { mutableStateOf(InsightView.COMPARAR) }
 
     LargeTitleScaffold(
-        title = "Tus gastos",
-        subtitle = "Tres formas de leer lo mismo",
+        title = stringResource(R.string.insights_title),
+        subtitle = stringResource(R.string.insights_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -138,7 +144,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
             UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("ESTA SEMANA", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.insights_this_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             formatCurrency(c.actual),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
@@ -168,7 +174,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                         }
                     }
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                        Text("LA ANTERIOR", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.insights_previous_week), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             formatCurrency(c.anterior),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
@@ -181,12 +187,12 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
 
             if (c.categorias.isEmpty()) {
                 Text(
-                    "Todavía no hay dos semanas que comparar.",
+                    stringResource(R.string.insights_not_enough_data),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                Text("DÓNDE ESTÁ LA DIFERENCIA", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.insights_where_difference), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
                 c.categorias.forEach { cat -> CategoriaComparadaRow(cat) }
                 c.categoriaQueMasCambia?.let { mayor ->
                     UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(15.dp)) {
@@ -196,18 +202,20 @@ private fun androidx.compose.foundation.lazy.LazyListScope.comparado(
                         val baja = c.diferencia <= 0
                         Text(
                             text = if (baja) {
-                                "Gastaste " + formatCurrency(-c.diferencia) + " menos que la semana pasada."
+                                stringResource(R.string.insights_spent_less, formatCurrency(-c.diferencia))
                             } else {
-                                "Gastaste " + formatCurrency(c.diferencia) + " más que la semana pasada."
+                                stringResource(R.string.insights_spent_more, formatCurrency(c.diferencia))
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "La mayor parte viene de " + mayor.category.label().lowercase() +
-                                ", que " + (if (mayor.diferencia < 0) "bajó " else "subió ") +
-                                formatCurrency(kotlin.math.abs(mayor.diferencia)) + ".",
+                            text = if (mayor.diferencia < 0) {
+                                stringResource(R.string.insights_diff_source_down, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
+                            } else {
+                                stringResource(R.string.insights_diff_source_up, mayor.category.label().lowercase(), formatCurrency(kotlin.math.abs(mayor.diferencia)))
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)
@@ -247,8 +255,8 @@ private fun CategoriaComparadaRow(cat: ExpenseInsights.CategoriaComparada) {
                 )
             }
         }
-        ComparaBarra("ahora", cat.actual, mayor, tono, visible)
-        ComparaBarra("antes", cat.anterior, mayor, MaterialTheme.colorScheme.outline, visible)
+        ComparaBarra(stringResource(R.string.insights_now), cat.actual, mayor, tono, visible)
+        ComparaBarra(stringResource(R.string.insights_before), cat.anterior, mayor, MaterialTheme.colorScheme.outline, visible)
     }
 }
 
@@ -309,7 +317,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
             UniCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(18.dp)) {
               Column {
                 Text(
-                    if (presupuesto > 0) "SI SIGUES ASÍ, ACABAS EN" else "SI SIGUES ASÍ, EL MES CIERRA EN",
+                    if (presupuesto > 0) stringResource(R.string.insights_projected_end) else stringResource(R.string.insights_projected_month_end),
                     style = SectionLabelStyle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -322,11 +330,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                 )
                 Text(
                     text = when {
-                        presupuesto <= 0 -> "Llevas " + formatCurrency(r.gastado) +
-                            " en " + r.diaDelMes + " días. Pon un presupuesto y te digo si vas bien."
-                        r.seVaAPasar -> formatCurrency(r.proyeccion - presupuesto) +
-                            " por encima de tu presupuesto"
-                        else -> "Dentro de tu presupuesto de " + formatCurrency(presupuesto)
+                        presupuesto <= 0 -> stringResource(R.string.insights_pace_no_budget, formatCurrency(r.gastado), r.diaDelMes)
+                        r.seVaAPasar -> stringResource(R.string.insights_pace_over_budget, formatCurrency(r.proyeccion - presupuesto))
+                        else -> stringResource(R.string.insights_pace_within_budget, formatCurrency(presupuesto))
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (r.seVaAPasar) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -340,15 +346,15 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                     modifier = Modifier.fillMaxWidth().height(96.dp).padding(top = 14.dp)
                 )
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
-                    Text("día 1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.insights_pace_day_one), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        "hoy, día " + r.diaDelMes,
+                        stringResource(R.string.insights_pace_today, r.diaDelMes),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.weight(1f)
                     )
-                    Text("día " + r.diasDelMes, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.insights_pace_day_n, r.diasDelMes), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
               }
             }
@@ -360,7 +366,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                     contentPadding = PaddingValues(18.dp)
                 ) {
                   Column {
-                    Text("PARA NO PASARTE", style = SectionLabelStyle, color = sections.onOnTrackContainer)
+                    Text(stringResource(R.string.insights_to_not_exceed), style = SectionLabelStyle, color = sections.onOnTrackContainer)
                     Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
                         Text(
                             formatCurrency(diario),
@@ -369,15 +375,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ritmo(
                             maxLines = 1
                         )
                         Text(
-                            " al día",
+                            " " + stringResource(R.string.insights_per_day_suffix),
                             style = MaterialTheme.typography.titleSmall,
                             color = sections.onOnTrackContainer.copy(alpha = 0.8f),
                             modifier = Modifier.padding(bottom = 3.dp)
                         )
                     }
                     Text(
-                        text = "Te quedan " + r.diasRestantes + " días y " +
-                            formatCurrency((presupuesto - r.gastado).coerceAtLeast(0)) + " de presupuesto.",
+                        text = stringResource(R.string.insights_days_budget_left, r.diasRestantes, formatCurrency((presupuesto - r.gastado).coerceAtLeast(0))),
                         style = MaterialTheme.typography.bodySmall,
                         color = sections.onOnTrackContainer.copy(alpha = 0.85f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -478,7 +483,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.calendario(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("EN EL MES", style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.insights_in_month), style = SectionLabelStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
                         formatCurrency(cal.total),
                         style = MaterialTheme.typography.headlineSmallEmphasized,
@@ -600,7 +605,7 @@ private fun DiaDetalle(dia: ExpenseInsights.DiaDelMes) {
         )
         if (dia.total <= 0) {
             Text(
-                "Sin gastos ese día",
+                stringResource(R.string.insights_no_expenses_day),
                 style = MaterialTheme.typography.titleSmallEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 4.dp)

@@ -17,6 +17,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -70,9 +72,10 @@ fun TermCloseScreen(
     var confirmando by rememberSaveable { mutableStateOf(false) }
     var escrito by rememberSaveable { mutableStateOf("") }
 
+    val isEn = java.util.Locale.getDefault().language == "en"
     LargeTitleScaffold(
-        title = "Antes de cerrar",
-        subtitle = term?.let { "${it.name} · desde el ${it.start.diaMes()}" },
+        title = stringResource(R.string.terms_close_screen_title),
+        subtitle = term?.let { "${it.name} · " + stringResource(R.string.terms_attendance_since, it.start.diaMes()) },
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -81,9 +84,9 @@ fun TermCloseScreen(
         itemSpacing = 10.dp
     ) {
         if (term == null) {
-            item { TermEmptyNote("No hay ningún periodo en curso que cerrar.") }
+            item { TermEmptyNote(stringResource(R.string.terms_close_empty_term)) }
         } else if (report == null) {
-            item { TermEmptyNote("Revisando el periodo…") }
+            item { TermEmptyNote(stringResource(R.string.terms_close_reviewing)) }
         } else {
             item {
                 TermCard {
@@ -96,9 +99,9 @@ fun TermCloseScreen(
                         )
                         Text(
                             text = if (report.isClean) {
-                                "El periodo está completo. Puedes cerrarlo cuando quieras."
+                                stringResource(R.string.terms_close_clean_msg)
                             } else {
-                                "Puedes cerrar igualmente. Esto solo es para que no te enteres después."
+                                stringResource(R.string.terms_close_unclean_msg)
                             },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.5.sp,
@@ -109,28 +112,28 @@ fun TermCloseScreen(
             }
 
             if (report.gaps.isNotEmpty()) {
-                item { TermLabel("LO QUE FALTA", Modifier.padding(start = 4.dp, top = 6.dp)) }
+                item { TermLabel(stringResource(R.string.terms_section_missing), Modifier.padding(start = 4.dp, top = 6.dp)) }
                 items(report.gaps.size) { indice ->
                     val hueco: TermGap = report.gaps[indice]
                     TermGapRow(title = hueco.title(), detail = hueco.detail())
                 }
             }
 
-            item { TermLabel("LO QUE SÍ ESTÁ COMPLETO", Modifier.padding(start = 4.dp, top = 6.dp)) }
+            item { TermLabel(stringResource(R.string.terms_section_complete), Modifier.padding(start = 4.dp, top = 6.dp)) }
             item {
                 TermCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val subText = if (report.subjectsTotal == 1) stringResource(R.string.terms_subjects_count_single) else stringResource(R.string.terms_subjects_count_multiple, report.subjectsTotal)
                         TermDoneRow(
-                            "${report.subjectsWithEverything} de ${report.subjectsTotal} " +
-                                "${if (report.subjectsTotal == 1) "materia" else "materias"} con todas las notas"
+                            stringResource(R.string.terms_done_subjects_notes, report.subjectsWithEverything, report.subjectsTotal, subText)
                         )
                         report.average?.let { promedio ->
-                            TermDoneRow("Promedio del periodo: $promedio")
+                            TermDoneRow(stringResource(R.string.terms_done_average, promedio))
                         }
                         if (report.failed.isNotEmpty()) {
+                            val failLabel = if (report.failed.size == 1) stringResource(R.string.terms_stat_failed_single) else stringResource(R.string.terms_stat_failed_multiple)
                             TermDoneRow(
-                                "${report.failed.size} " +
-                                    "${if (report.failed.size == 1) "materia perdida" else "materias perdidas"}: " +
+                                "${report.failed.size} $failLabel: " +
                                     report.failed.joinToString { it.name }
                             )
                         }
@@ -145,13 +148,13 @@ fun TermCloseScreen(
                 ) {
                     if (report.gaps.isNotEmpty()) {
                         UniStackButton(
-                            text = "Ir a completarlas",
+                            text = stringResource(R.string.terms_btn_go_complete),
                             onClick = onGoComplete,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                     UniStackButton(
-                        text = if (report.isClean) "Cerrar el periodo" else "Cerrar de todas formas",
+                        text = if (report.isClean) stringResource(R.string.terms_btn_close_term) else stringResource(R.string.terms_btn_close_anyway),
                         onClick = {
                             escrito = ""
                             confirmando = true
@@ -172,10 +175,11 @@ fun TermCloseScreen(
 
     if (confirmando && term != null) {
         val limpio = report?.isClean != false
-        val puedeCerrar = limpio || escrito.trim().equals(PALABRA_DE_CIERRE, ignoreCase = true)
+        val closeTargetWord = if (isEn) "CLOSE" else PALABRA_DE_CIERRE
+        val puedeCerrar = limpio || escrito.trim().equals(PALABRA_DE_CIERRE, ignoreCase = true) || escrito.trim().equals("CLOSE", ignoreCase = true)
         AlertDialog(
             onDismissRequest = { confirmando = false },
-            title = { Text("Cerrar ${term.name}") },
+            title = { Text(stringResource(R.string.terms_dialog_close_title, term.name)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     /*
@@ -187,21 +191,20 @@ fun TermCloseScreen(
                      */
                     Text(
                         text = if (limpio) {
-                            "El periodo pasará al histórico y no podrá volver a ser el activo."
+                            stringResource(R.string.terms_dialog_clean_desc)
                         } else {
-                            "Vas a cerrar con ${report?.gaps?.size} cosas sin terminar. El " +
-                                "periodo pasará al histórico y no podrá volver a ser el activo."
+                            stringResource(R.string.terms_dialog_unclean_desc, report?.gaps?.size ?: 0)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        TermDoneRow("Editar notas desde el histórico")
-                        TermDoneRow("Consultar asistencias y promedios")
+                        TermDoneRow(stringResource(R.string.terms_dialog_row_edit_grades))
+                        TermDoneRow(stringResource(R.string.terms_dialog_row_view_stats))
                         Row {
                             Text(
-                                text = "✕  Volver a activarlo — esto no",
+                                text = stringResource(R.string.terms_dialog_row_cannot_reactivate),
                                 color = MaterialTheme.colorScheme.error,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.Bold
@@ -212,7 +215,7 @@ fun TermCloseScreen(
                         OutlinedTextField(
                             value = escrito,
                             onValueChange = { escrito = it.take(10) },
-                            label = { Text("Escribe $PALABRA_DE_CIERRE") },
+                            label = { Text(stringResource(R.string.terms_dialog_type_prompt, closeTargetWord)) },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Characters
@@ -231,7 +234,7 @@ fun TermCloseScreen(
                     enabled = puedeCerrar
                 ) {
                     Text(
-                        "Cerrar el periodo",
+                        stringResource(R.string.terms_btn_close_term),
                         color = if (puedeCerrar) {
                             MaterialTheme.colorScheme.error
                         } else {
@@ -243,7 +246,7 @@ fun TermCloseScreen(
             },
             dismissButton = {
                 TextButton(onClick = { confirmando = false }) {
-                    Text("Volver", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_back), fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.background

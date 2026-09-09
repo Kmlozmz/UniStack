@@ -94,20 +94,22 @@ internal fun AccountAvatar(
  * queda no informa de nada. Ahora manda la carrera, y la institucion la acompana cuando esta.
  */
 internal fun UserProfile.educationSummary(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     val programa = careerOrProgram?.takeIf { it.isNotBlank() }
     val centro = institutionName?.takeIf { it.isNotBlank() }
     return when {
         programa != null && centro != null -> "$programa · $centro"
         programa != null -> programa
         centro != null -> centro
-        else -> "Estudiante"
+        else -> if (isEn) "Student" else "Estudiante"
     }
 }
 
 internal fun AppUser.accountLabel(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     return when (authProvider) {
-        AuthProvider.LOCAL -> "Cuenta local"
-        AuthProvider.GOOGLE -> "Google conectado"
+        AuthProvider.LOCAL -> if (isEn) "Local account" else "Cuenta local"
+        AuthProvider.GOOGLE -> if (isEn) "Google connected" else "Google conectado"
     }
 }
 

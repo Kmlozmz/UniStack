@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.AttendanceSummary
 import com.unistack.app.feature_schedule.domain.AttendanceWeek
@@ -48,11 +50,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val Espanol: Locale = Locale.forLanguageTag("es")
-private val DiaMes = DateTimeFormatter.ofPattern("d MMM", Espanol)
-private val SoloDia = DateTimeFormatter.ofPattern("d", Espanol)
-private val Mes = DateTimeFormatter.ofPattern("MMMM", Espanol)
-private val DiaSemanaYfecha = DateTimeFormatter.ofPattern("EEE d 'de' MMMM", Espanol)
+private val AppLocale: Locale get() = Locale.getDefault()
+private val DiaMes: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", AppLocale)
+private val SoloDia: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d", AppLocale)
+private val Mes: DateTimeFormatter get() = DateTimeFormatter.ofPattern("MMMM", AppLocale)
+private val DiaSemanaYfecha: DateTimeFormatter get() = DateTimeFormatter.ofPattern(
+    if (AppLocale.language == "en") "EEE, MMMM d" else "EEE d 'de' MMMM",
+    AppLocale
+)
 
 /**
  * El color con que se pinta cada estado en la tira y en las semanas.
@@ -87,7 +92,7 @@ internal fun AttendanceSummaryCard(
     onLimitClick: () -> Unit,
     modifier: Modifier = Modifier,
     /** Cómo se llama lo que se está mirando: «el periodo», «el Corte 2». */
-    scopeName: String = "el periodo",
+    scopeName: String = stringResource(R.string.attendance_history_term),
     /**
      * El tope de la materia, que existe aunque no se esté aplicando.
      *
@@ -116,7 +121,7 @@ internal fun AttendanceSummaryCard(
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = if (restantes != null) "Te quedan" else "Asistencia",
+                        text = if (restantes != null) stringResource(R.string.attendance_history_you_have_left) else stringResource(R.string.attendance_history_attendance),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
@@ -139,7 +144,7 @@ internal fun AttendanceSummaryCard(
                         if (restantes != null) {
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                text = "de ${summary.absenceLimit} faltas",
+                                text = stringResource(R.string.attendance_history_of_absences, summary.absenceLimit ?: 0),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
@@ -185,9 +190,9 @@ internal fun AttendanceSummaryCard(
             ) {
                 Text(
                     text = if (absenceLimit == null) {
-                        "Poner un tope de faltas"
+                        stringResource(R.string.attendance_history_set_limit)
                     } else {
-                        "Cambiar el tope · $absenceLimit"
+                        stringResource(R.string.attendance_history_change_limit, absenceLimit.toString())
                     },
                     modifier = Modifier.padding(horizontal = 13.dp, vertical = 7.dp),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -201,7 +206,7 @@ internal fun AttendanceSummaryCard(
                 Spacer(Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
                 if (mapaAbierto) {
                     AlternaMapa(
-                        texto = "${scopeName.replaceFirstChar { it.uppercase() }} · por semana",
+                        texto = stringResource(R.string.attendance_history_by_week, scopeName.replaceFirstChar { it.uppercase() }),
                         abierto = true,
                         onClick = { mapaAbierto = false }
                     )
@@ -213,7 +218,7 @@ internal fun AttendanceSummaryCard(
                         onClick = { mapaAbierto = true }
                     )
                     AlternaMapa(
-                        texto = "Ver $scopeName por semanas",
+                        texto = stringResource(R.string.attendance_history_view_by_weeks, scopeName),
                         abierto = false,
                         onClick = { mapaAbierto = true }
                     )
@@ -247,7 +252,7 @@ internal fun AlcanceDeCortes(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             FichaDeAlcance(
-                texto = "Todo el periodo",
+                texto = stringResource(R.string.attendance_history_whole_term),
                 activa = seleccionado == null,
                 onClick = { onSelect(null) }
             )
@@ -297,15 +302,22 @@ private fun FichaDeAlcance(texto: String, activa: Boolean, onClick: () -> Unit) 
 }
 
 /** La frase de apoyo bajo la cifra, que cambia según lo que se pueda afirmar. */
+@Composable
 private fun leyendaDeApoyo(summary: AttendanceSummary): String = when {
-    summary.decided == 0 -> "Marca tus clases y aparece aquí."
-    summary.atLimit -> "Ya no te queda ninguna. ${summary.absent} faltas de ${summary.absenceLimit}."
-    summary.oneLeft -> "Te queda una. ${summary.absent} faltas de ${summary.absenceLimit}."
+    summary.decided == 0 -> stringResource(R.string.attendance_history_empty)
+    summary.atLimit -> stringResource(R.string.attendance_history_none_left, summary.absent, summary.absenceLimit ?: 0)
+    summary.oneLeft -> stringResource(R.string.attendance_history_one_left, summary.absent, summary.absenceLimit ?: 0)
     summary.absenceLimit != null ->
-        "${summary.absent} faltas · ${summary.attended} asistencias · ${summary.decided} clases dadas"
-    summary.tooFewToTrust ->
-        "Sobre ${summary.decided} ${if (summary.decided == 1) "clase" else "clases"}. Aún son pocas para fiarse."
-    else -> "${summary.attended} asistencias · ${summary.absent} faltas"
+        stringResource(R.string.attendance_history_held_summary, summary.absent, summary.attended, summary.decided)
+    summary.tooFewToTrust -> {
+        val classWord = if (Locale.getDefault().language == "en") {
+            if (summary.decided == 1) "class" else "classes"
+        } else {
+            if (summary.decided == 1) "clase" else "clases"
+        }
+        stringResource(R.string.attendance_history_too_few, summary.decided, classWord)
+    }
+    else -> stringResource(R.string.attendance_history_simple_summary, summary.attended, summary.absent)
 }
 
 @Composable
@@ -315,7 +327,7 @@ private fun RachaChip(racha: Int) {
         color = ScheduleAccent.copy(alpha = 0.16f)
     ) {
         Text(
-            text = "🔥 $racha seguidas",
+            text = if (Locale.getDefault().language == "en") "🔥 $racha in a row" else "🔥 $racha seguidas",
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             color = ScheduleAccent,
             fontSize = 11.5.sp,
@@ -358,9 +370,9 @@ private fun TiraDeClases(pasadas: List<AttendanceHistoryEntry>, onClick: () -> U
          */
         Rotulo(
             text = when {
-                visibles.size < ordenadas.size -> "Tus últimas ${visibles.size} clases"
-                ordenadas.size == 1 -> "Tu primera clase"
-                else -> "Tus ${ordenadas.size} clases"
+                visibles.size < ordenadas.size -> if (Locale.getDefault().language == "en") "Your last ${visibles.size} classes" else "Tus últimas ${visibles.size} clases"
+                ordenadas.size == 1 -> if (Locale.getDefault().language == "en") "Your first class" else "Tu primera clase"
+                else -> if (Locale.getDefault().language == "en") "Your ${ordenadas.size} classes" else "Tus ${ordenadas.size} clases"
             }
         )
         /*
@@ -455,7 +467,7 @@ private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
         )
         Icon(
             imageVector = if (abierto) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-            contentDescription = if (abierto) "Cerrar el mapa" else "Abrir el mapa",
+            contentDescription = if (abierto) (if (Locale.getDefault().language == "en") "Close map" else "Cerrar el mapa") else (if (Locale.getDefault().language == "en") "Open map" else "Abrir el mapa"),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(17.dp)
         )
@@ -466,7 +478,7 @@ private fun AlternaMapa(texto: String, abierto: Boolean, onClick: () -> Unit) {
 @Composable
 private fun Rotulo(text: String) {
     Text(
-        text = text.uppercase(Espanol),
+        text = text.uppercase(AppLocale),
         // `outline` y no `onSurfaceVariant`: es un rotulo de seccion, el escalon mas tenue.
         color = MaterialTheme.colorScheme.outline,
         fontSize = 10.sp,
@@ -536,7 +548,7 @@ internal fun AttendanceWeekList(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (upcoming.isNotEmpty()) {
-            EtiquetaDeGrupo("Próxima")
+            EtiquetaDeGrupo(if (Locale.getDefault().language == "en") "Upcoming" else "Próxima")
             upcoming.take(2).forEach { entrada ->
                 Row(
                     modifier = Modifier
@@ -622,14 +634,14 @@ private fun FilaDeClase(
                 .background(entrada.status.cuadro())
         )
         Text(
-            text = entrada.date.format(DiaSemanaYfecha).replaceFirstChar { it.titlecase(Espanol) },
+            text = entrada.date.format(DiaSemanaYfecha).replaceFirstChar { it.titlecase(AppLocale) },
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 13.sp,
             fontWeight = if (esHoy) FontWeight.Bold else FontWeight.Normal
         )
         Text(
-            text = entrada.status.legendName().replaceFirstChar { it.titlecase(Espanol) },
+            text = entrada.status.legendName().replaceFirstChar { it.titlecase(AppLocale) },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.5.sp
         )
@@ -641,5 +653,5 @@ private fun formatoDeHora(minuto: Int): String = "%02d:%02d".format(minuto / 60,
 /** «Semana 8 · 24–30 ago», o solo el rango si no hay periodo del que contar semanas. */
 private fun tituloDeSemana(semana: AttendanceWeek): String {
     val rango = "${semana.start.format(SoloDia)}–${semana.end.format(DiaMes)}"
-    return semana.number?.let { "Semana $it · $rango" } ?: rango
+    return semana.number?.let { if (Locale.getDefault().language == "en") "Week $it · $rango" else "Semana $it · $rango" } ?: rango
 }

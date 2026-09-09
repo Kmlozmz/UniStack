@@ -39,6 +39,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.LargeTitleScaffold
@@ -87,8 +89,8 @@ fun ThemeSettingsScreen(
     val oscuro = LocalIsDarkTheme.current
 
     LargeTitleScaffold(
-        title = "Tema y color",
-        subtitle = "Paleta, acentos y modo visual",
+        title = stringResource(R.string.settings_theme_title),
+        subtitle = stringResource(R.string.settings_theme_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -106,7 +108,7 @@ fun ThemeSettingsScreen(
 
         item {
             Text(
-                "MODO",
+                stringResource(R.string.settings_theme_section_mode),
                 style = SectionLabelStyle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 6.dp)
@@ -132,7 +134,7 @@ fun ThemeSettingsScreen(
 
         item {
             Text(
-                "TEMA",
+                stringResource(R.string.settings_theme_section_theme),
                 style = SectionLabelStyle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 6.dp)
@@ -189,7 +191,7 @@ fun ThemeSettingsScreen(
                 text = buildString {
                     append(tema.name)
                     if (tema.family.isNotEmpty()) append(" · ").append(tema.family)
-                    append(" · cada tema decide fondo, tarjetas y tinta a la vez, no solo el acento.")
+                    append(stringResource(R.string.settings_theme_desc_suffix))
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -198,18 +200,15 @@ fun ThemeSettingsScreen(
 
         item {
             Text(
-                "ACENTO",
+                stringResource(R.string.settings_theme_section_accent),
                 style = SectionLabelStyle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 6.dp)
             )
         }
         item {
-            // El rótulo por sí solo no decía qué eran los doce puntos. Esta línea sí, y va
-            // antes y no después: se lee para qué sirven *antes* de tocar uno.
             Text(
-                text = "El color de los botones, los rótulos y lo marcado. Va por encima del tema; " +
-                    "el primero es el que trae el tema puesto.",
+                text = stringResource(R.string.settings_theme_accent_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -229,7 +228,7 @@ fun ThemeSettingsScreen(
 
         item {
             Text(
-                "INTENSIDAD",
+                stringResource(R.string.settings_theme_section_intensity),
                 style = SectionLabelStyle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 6.dp)
@@ -245,7 +244,7 @@ fun ThemeSettingsScreen(
         }
         item {
             Text(
-                text = "Suave lo aclara, vivo lo satura. Mira los botones de arriba mientras eliges.",
+                text = stringResource(R.string.settings_theme_intensity_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -393,7 +392,7 @@ private fun ThemeCard(
                 if (elegido) {
                     Icon(
                         Icons.Rounded.Check,
-                        contentDescription = "Elegido",
+                        contentDescription = stringResource(R.string.settings_theme_selected),
                         tint = anillo,
                         modifier = Modifier.size(16.dp)
                     )
@@ -420,8 +419,11 @@ private fun ThemeCard(
     }
 }
 
-internal fun AccentIntensity.label() = when (this) {
-    AccentIntensity.SOFT -> "Suave"
-    AccentIntensity.BALANCED -> "Medio"
-    AccentIntensity.VIBRANT -> "Vivo"
+internal fun AccentIntensity.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        AccentIntensity.SOFT -> if (isEn) "Soft" else "Suave"
+        AccentIntensity.BALANCED -> if (isEn) "Medium" else "Medio"
+        AccentIntensity.VIBRANT -> if (isEn) "Vibrant" else "Vivo"
+    }
 }

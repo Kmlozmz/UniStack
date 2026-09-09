@@ -45,6 +45,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -132,8 +134,8 @@ fun NotificationSettingsScreen(
     }
 
     LargeTitleScaffold(
-        title = "Notificaciones",
-        subtitle = "Avisos, permiso y silencio",
+        title = stringResource(R.string.settings_notif_title),
+        subtitle = stringResource(R.string.settings_notif_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -144,16 +146,16 @@ fun NotificationSettingsScreen(
         item {
             NotificationPermissionCard(
                 granted = granted,
-                actionLabel = if (context.canAskForNotificationPermission(alreadyAsked)) "Activar" else "Ajustes",
+                actionLabel = if (context.canAskForNotificationPermission(alreadyAsked)) stringResource(R.string.settings_notif_btn_activate) else stringResource(R.string.settings_notif_btn_settings),
                 onRequestPermission = askForPermission
             )
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroupCard(label = "AVISOS") {
+                SettingsGroupCard(label = stringResource(R.string.settings_notif_sec_alerts)) {
                     AlertRow(
-                        title = "Tareas",
-                        detail = "Antes de que venza una tarea",
+                        title = stringResource(R.string.settings_notif_tasks_title),
+                        detail = stringResource(R.string.settings_notif_tasks_desc),
                         checked = current.taskRemindersEnabled,
                         enabled = granted
                     ) {
@@ -162,8 +164,8 @@ fun NotificationSettingsScreen(
                     // El aviso de Trabajos solo se ofrece donde Trabajos se puede abrir.
                     if (BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) {
                         AlertRow(
-                            title = "Trabajos",
-                            detail = "Antes de una entrega académica",
+                            title = stringResource(R.string.settings_notif_works_title),
+                            detail = stringResource(R.string.settings_notif_works_desc),
                             checked = current.academicWorkRemindersEnabled,
                             enabled = granted
                         ) {
@@ -171,16 +173,16 @@ fun NotificationSettingsScreen(
                         }
                     }
                     AlertRow(
-                        title = "Vencidos",
-                        detail = "Cuando algo pasó de fecha sin entregar",
+                        title = stringResource(R.string.settings_notif_overdue_title),
+                        detail = stringResource(R.string.settings_notif_overdue_desc),
                         checked = current.overdueRemindersEnabled,
                         enabled = granted
                     ) {
                         setReminders(current.taskRemindersEnabled, current.academicWorkRemindersEnabled, !current.overdueRemindersEnabled, lead)
                     }
                     AlertRow(
-                        title = "Notas y cortes",
-                        detail = "Si una meta deja de estar a tu alcance",
+                        title = stringResource(R.string.settings_notif_grades_cuts_title),
+                        detail = stringResource(R.string.settings_notif_grades_cuts_desc),
                         checked = current.gradeInsightRemindersEnabled,
                         enabled = granted
                     ) {
@@ -191,8 +193,8 @@ fun NotificationSettingsScreen(
                         )
                     }
                     AlertRow(
-                        title = "Resultados pendientes",
-                        detail = "Para registrar la nota de lo ya entregado",
+                        title = stringResource(R.string.settings_notif_pending_results_title),
+                        detail = stringResource(R.string.settings_notif_pending_results_desc),
                         checked = current.pendingGradeRemindersEnabled,
                         enabled = granted
                     ) {
@@ -207,7 +209,7 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroupLabel("ANTICIPACIÓN")
+                SettingsGroupLabel(stringResource(R.string.settings_notif_sec_lead_time))
                 // Siete opciones en botones y no un campo de texto con su botón de guardar:
                 // la anticipación se elige, no se redacta.
                 Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -228,7 +230,7 @@ fun NotificationSettingsScreen(
                     }
                 }
                 Text(
-                    text = "Los avisos de tareas y trabajos llegan " + leadLabel(lead) + " de la fecha.",
+                    text = stringResource(R.string.settings_notif_lead_time_desc, leadLabel(lead)),
                     modifier = Modifier.padding(top = 8.dp, start = 4.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -237,7 +239,7 @@ fun NotificationSettingsScreen(
         }
         item {
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroupCard(label = "RESUMEN DIARIO") {
+                SettingsGroupCard(label = stringResource(R.string.settings_notif_sec_daily_summary)) {
                     DailyDigestRow(
                         profile = current,
                         enabled = granted,
@@ -250,8 +252,9 @@ fun NotificationSettingsScreen(
             }
         }
         item {
+            val dndHoursWarning = stringResource(R.string.settings_notif_dnd_different_hours)
             Column(modifier = Modifier.alpha(if (granted) 1f else 0.45f)) {
-                SettingsGroupCard(label = "NO MOLESTAR") {
+                SettingsGroupCard(label = stringResource(R.string.settings_notif_sec_dnd)) {
                     QuietHoursRow(
                         profile = current,
                         enabled = granted,
@@ -261,7 +264,7 @@ fun NotificationSettingsScreen(
                             feedback = if (viewModel.updateQuietHours(on, from, to)) {
                                 null
                             } else {
-                                "El horario silencioso necesita dos horas distintas."
+                                dndHoursWarning
                             }
                         }
                     )
@@ -676,8 +679,11 @@ private fun leadChipLabel(hours: Int): String = when {
     else -> "${hours / 24}d"
 }
 
-private fun leadLabel(hours: Int): String = when {
-    hours < 24 -> "$hours horas antes"
-    hours == 24 -> "un día antes"
-    else -> "${hours / 24} días antes"
+private fun leadLabel(hours: Int): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when {
+        hours < 24 -> if (isEn) "$hours hours before" else "$hours horas antes"
+        hours == 24 -> if (isEn) "one day before" else "un día antes"
+        else -> if (isEn) "${hours / 24} days before" else "${hours / 24} días antes"
+    }
 }

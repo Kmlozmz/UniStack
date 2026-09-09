@@ -41,9 +41,9 @@ internal fun ClassAttendanceStatus.attendanceColor(): Color? = when (this) {
 
 /** Cómo se llama cada estado en minúsculas, para la leyenda. */
 internal fun ClassAttendanceStatus.legendName(): String = when (this) {
-    ClassAttendanceStatus.ATTENDED -> "asistí"
-    ClassAttendanceStatus.ABSENT -> "falta"
-    ClassAttendanceStatus.CANCELLED -> "cancelada"
-    ClassAttendanceStatus.RESCHEDULED -> "reprogramada"
-    ClassAttendanceStatus.PENDING -> "sin marcar"
+    ClassAttendanceStatus.ATTENDED -> if (java.util.Locale.getDefault().language == "en") "attended" else "asistí"
+    ClassAttendanceStatus.ABSENT -> if (java.util.Locale.getDefault().language == "en") "absent" else "falta"
+    ClassAttendanceStatus.CANCELLED -> if (java.util.Locale.getDefault().language == "en") "canceled" else "cancelada"
+    ClassAttendanceStatus.RESCHEDULED -> if (java.util.Locale.getDefault().language == "en") "rescheduled" else "reprogramada"
+    ClassAttendanceStatus.PENDING -> if (java.util.Locale.getDefault().language == "en") "unmarked" else "sin marcar"
 }

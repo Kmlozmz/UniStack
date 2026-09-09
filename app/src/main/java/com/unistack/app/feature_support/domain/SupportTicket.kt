@@ -8,10 +8,21 @@ package com.unistack.app.feature_support.domain
  * un fallo o una petición, y obligarle a elegir antes de contar nada dejaba fuera todo lo que
  * no era ninguna de las dos.
  */
-enum class TicketKind(val label: String, val emoji: String) {
+enum class TicketKind(private val spanishLabel: String, val emoji: String) {
     BUG("Fallo", "🐞"),
     IDEA("Sugerencia", "💡"),
-    OTHER("Otro", "💬")
+    OTHER("Otro", "💬");
+
+    val label: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                BUG -> "Bug"
+                IDEA -> "Suggestion"
+                OTHER -> "Other"
+            }
+        } else {
+            spanishLabel
+        }
 }
 
 /**

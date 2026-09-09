@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -148,8 +150,8 @@ fun AccountSettingsScreen(
     var feedback by rememberSaveable { mutableStateOf<String?>(null) }
 
     LargeTitleScaffold(
-        title = "Cuenta y perfil",
-        subtitle = "Nombre, foto y sincronización",
+        title = stringResource(R.string.settings_account_title),
+        subtitle = stringResource(R.string.settings_account_subtitle),
         onBackClick = onBackClick,
         modifier = modifier.dismissKeyboardOnTapOutside(),
         horizontalPadding = spacing.screenHorizontal,
@@ -159,7 +161,7 @@ fun AccountSettingsScreen(
     ) {
         item {
             AccountPortrait(
-                name = current.preferredName.takeIf { it.isNotBlank() } ?: "Estudiante",
+                name = current.preferredName.takeIf { it.isNotBlank() } ?: stringResource(R.string.settings_profile_student),
                 detail = current.educationSummary(),
                 photoUrl = current.portraitUrl,
 
@@ -192,7 +194,7 @@ fun AccountSettingsScreen(
         item {
             Column {
                 Text(
-                    text = "QUÉ ESTUDIAS",
+                    text = stringResource(R.string.settings_account_sec_study),
                     style = SectionLabelStyle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp, bottom = 9.dp)
@@ -209,7 +211,7 @@ fun AccountSettingsScreen(
         item {
             Column {
                 Text(
-                    text = "TU PROGRESO",
+                    text = stringResource(R.string.settings_account_sec_progress),
                     style = SectionLabelStyle,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp, bottom = 9.dp)
@@ -223,16 +225,16 @@ fun AccountSettingsScreen(
             }
         }
         item {
-            SettingsGroupCard(label = "CUENTA") {
+            SettingsGroupCard(label = stringResource(R.string.settings_account_sec_account)) {
                 AccountLinkRow(
                     linked = currentUser.isLinked,
                     available = viewModel.accountLinkAvailable,
-                    title = if (currentUser.isLinked) currentUser.accountLabel() else "Sin cuenta vinculada",
+                    title = if (currentUser.isLinked) currentUser.accountLabel() else stringResource(R.string.settings_account_no_account),
                     detail = currentUser.email
                         ?: if (viewModel.accountLinkAvailable) {
-                            "Vincula una para respaldar en la nube"
+                            stringResource(R.string.settings_account_link_cloud)
                         } else {
-                            "Podrás respaldar tus datos y recuperarlos si cambias de teléfono"
+                            stringResource(R.string.settings_account_link_desc)
                         },
                     isBusy = actionState.isAccountBusy,
                     onClick = {
@@ -271,17 +273,17 @@ fun AccountSettingsScreen(
         val validation = TextValidators.validateDisplayName(nameInput)
         AlertDialog(
             onDismissRequest = { editingName = false },
-            title = { Text("Tu nombre") },
+            title = { Text(stringResource(R.string.settings_account_name_title)) },
             text = {
                 OutlinedTextField(
                     value = nameInput,
                     onValueChange = { nameInput = it.take(30) },
-                    label = { Text("Nombre preferido") },
+                    label = { Text(stringResource(R.string.settings_account_preferred_name)) },
                     singleLine = true,
                     isError = nameInput.isNotBlank() && !validation.isValid,
                     supportingText = {
                         if (nameInput.isNotBlank() && !validation.isValid) {
-                            Text(validation.errorMessage ?: "Ingresa un nombre válido")
+                            Text(validation.errorMessage ?: stringResource(R.string.settings_account_valid_name))
                         }
                     },
                     shape = MaterialTheme.shapes.large,
@@ -289,18 +291,20 @@ fun AccountSettingsScreen(
                 )
             },
             confirmButton = {
+                val nameUpdatedMsg = stringResource(R.string.settings_account_name_updated)
+                val reviewNameMsg = stringResource(R.string.settings_account_review_name)
                 TextButton(
                     enabled = validation.isValid,
                     onClick = {
                         feedback = if (viewModel.updatePreferredName(nameInput)) {
                             editingName = false
-                            "Nombre actualizado."
+                            nameUpdatedMsg
                         } else {
-                            "Revisa el nombre antes de guardar."
+                            reviewNameMsg
                         }
                     }
                 ) {
-                    Text("Guardar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.common_save), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -310,7 +314,7 @@ fun AccountSettingsScreen(
                         editingName = false
                     }
                 ) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -341,8 +345,8 @@ fun AccountSettingsScreen(
     if (showUnlinkDialog) {
         AlertDialog(
             onDismissRequest = { showUnlinkDialog = false },
-            title = { Text("¿Desvincular cuenta?") },
-            text = { Text("Tus datos locales se mantienen en este dispositivo.") },
+            title = { Text(stringResource(R.string.settings_account_unlink_dialog_title)) },
+            text = { Text(stringResource(R.string.settings_account_unlink_dialog_msg)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -350,7 +354,7 @@ fun AccountSettingsScreen(
                         viewModel.unlinkAccount()
                     }
                 ) {
-                    Text("Desvincular", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.settings_account_btn_unlink), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -616,8 +620,8 @@ private fun AcademicIdentityFields(
                 value = areaDraft,
                 validation = null,
                 onValueChange = { areaDraft = it; onCustomAreaChange(it) },
-                label = "Nombre del área",
-                placeholder = "Ej: Ciencias del deporte"
+                label = stringResource(R.string.settings_account_field_area_label),
+                placeholder = stringResource(R.string.settings_account_field_area_hint)
             )
         }
 
@@ -628,13 +632,13 @@ private fun AcademicIdentityFields(
                 value = programDraft,
                 validation = null,
                 onValueChange = { programDraft = it; onProgramChange(it) },
-                label = "Programa o carrera",
-                placeholder = "Escribe tu programa"
+                label = stringResource(R.string.settings_account_field_program_label),
+                placeholder = stringResource(R.string.settings_account_field_program_hint)
             )
         } else {
             Revelado(visible = profile.studyArea != null) {
                 SetupDropdownField(
-                    label = "Programa o carrera",
+                    label = stringResource(R.string.settings_account_field_program_label),
                     value = if (programIsCustom) OTHER_OPTION else profile.careerOrProgram.orEmpty(),
                     options = catalogPrograms,
                     enabled = profile.studyArea != null,
@@ -657,16 +661,16 @@ private fun AcademicIdentityFields(
                     value = programDraft,
                     validation = null,
                     onValueChange = { programDraft = it; onProgramChange(it) },
-                    label = "Nombre del programa",
-                    placeholder = "Ej: Ingeniería Biomédica"
+                    label = stringResource(R.string.settings_account_field_program_label),
+                    placeholder = stringResource(R.string.settings_account_field_program_hint)
                 )
             }
         }
 
         InstitutionField(
             value = profile.institutionName.orEmpty(),
-            label = "Institución",
-            placeholder = "Nombre de tu universidad",
+            label = stringResource(R.string.settings_account_field_institution),
+            placeholder = stringResource(R.string.settings_account_field_institution_label),
             onValueChange = onInstitutionChange
         )
     }
@@ -705,16 +709,16 @@ private fun SemesterProgressCard(
                 val percent = if (totalSemesters > 0) currentSemester * 100 / totalSemesters else 0
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = if (goalReached) "Tu último semestre" else "Semestre $currentSemester de $totalSemesters",
+                        text = if (goalReached) stringResource(R.string.settings_account_last_semester) else stringResource(R.string.settings_account_semester_progress, currentSemester, totalSemesters),
                         style = MaterialTheme.typography.titleMediumEmphasized,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (goalReached) {
-                            "Cuando lo cierres, tu carrera queda completa."
+                            stringResource(R.string.settings_account_career_complete)
                         } else {
-                            "Llevas $percent% de tu carrera recorrido."
+                            stringResource(R.string.settings_account_percent_complete, percent)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         lineHeight = 17.sp,
@@ -797,13 +801,13 @@ private fun EmptyProgressPrompt(onClick: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "Aún no dijiste en qué semestre vas",
+                text = stringResource(R.string.settings_account_no_semester),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Añádelo y arma el camino hasta tu meta.",
+                text = stringResource(R.string.settings_account_no_semester_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -815,7 +819,7 @@ private fun EmptyProgressPrompt(onClick: () -> Unit) {
             contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
             Text(
-                "Añadir",
+                stringResource(R.string.settings_account_btn_add),
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
@@ -989,22 +993,22 @@ private fun SemesterProgressDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tu progreso") },
+        title = { Text(stringResource(R.string.settings_account_progress_dialog_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Text(
-                    "¿En qué semestre vas, y cuántos dura tu programa en total?",
+                    stringResource(R.string.settings_account_progress_dialog_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 SemesterStepperRow(
-                    label = "Semestre actual",
+                    label = stringResource(R.string.settings_account_current_semester),
                     value = draftCurrent,
                     onDecrement = { if (draftCurrent > 1) draftCurrent-- },
                     onIncrement = { if (draftCurrent < draftTotal) draftCurrent++ }
                 )
                 SemesterStepperRow(
-                    label = "Total de semestres",
+                    label = stringResource(R.string.settings_account_total_semesters),
                     value = draftTotal,
                     onDecrement = {
                         if (draftTotal > 1) {

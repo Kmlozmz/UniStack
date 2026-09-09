@@ -29,6 +29,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -64,8 +66,8 @@ fun ModuleSettingsScreen(
     val off = offerable.count { it !in enabled }
 
     LargeTitleScaffold(
-        title = "Módulos",
-        subtitle = "Enciende solo lo que uses. Nada se borra al apagarlo",
+        title = stringResource(R.string.settings_modules_title),
+        subtitle = stringResource(R.string.settings_modules_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -74,6 +76,7 @@ fun ModuleSettingsScreen(
         itemSpacing = 10.dp
     ) {
         items(offerable, key = { it.name }) { module ->
+            val minWarning = stringResource(R.string.settings_modules_min_warning)
             ModuleCard(
                 icon = module.icon(),
                 title = module.moduleLabel(),
@@ -81,7 +84,7 @@ fun ModuleSettingsScreen(
                 checked = module in enabled,
                 iconColor = module.tone(sections.schedule, sections.expenses, sections.onTrack, MaterialTheme.colorScheme.tertiary)
             ) {
-                feedback = if (viewModel.toggleModule(module)) null else "Debe quedar al menos un módulo encendido."
+                feedback = if (viewModel.toggleModule(module)) null else minWarning
             }
         }
         item {
@@ -135,9 +138,9 @@ private fun ModuleNote(off: Int) {
     ) {
         Text(
             text = if (off == 0) {
-                "Todo encendido. Apagar uno esconde su pestaña; lo que tengas dentro se queda donde está."
+                stringResource(R.string.settings_modules_all_on)
             } else {
-                "Apagados $off. Su pestaña desaparece, pero nada se borra: al volver a encenderlo está todo."
+                stringResource(R.string.settings_modules_some_off, off)
             },
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -153,18 +156,24 @@ private fun AppModule.icon(): ImageVector = when (this) {
     AppModule.ACADEMIC_TEMPLATES -> Icons.Rounded.Description
 }
 
-private fun AppModule.moduleLabel(): String = when (this) {
-    AppModule.GRADES -> "Notas y materias"
-    AppModule.TASKS -> "Tareas"
-    AppModule.EXPENSES -> "Gastos"
-    AppModule.ACADEMIC_TEMPLATES -> "Trabajos"
+private fun AppModule.moduleLabel(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        AppModule.GRADES -> if (isEn) "Grades & subjects" else "Notas y materias"
+        AppModule.TASKS -> if (isEn) "Tasks" else "Tareas"
+        AppModule.EXPENSES -> if (isEn) "Expenses" else "Gastos"
+        AppModule.ACADEMIC_TEMPLATES -> if (isEn) "Academic works" else "Trabajos"
+    }
 }
 
-private fun AppModule.moduleDetail(): String = when (this) {
-    AppModule.GRADES -> "Promedios, porcentajes y metas"
-    AppModule.TASKS -> "Entregas, fechas y pendientes"
-    AppModule.EXPENSES -> "Registros y resumen semanal"
-    AppModule.ACADEMIC_TEMPLATES -> "Plantillas y entregas largas"
+private fun AppModule.moduleDetail(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        AppModule.GRADES -> if (isEn) "Averages, percentages, and targets" else "Promedios, porcentajes y metas"
+        AppModule.TASKS -> if (isEn) "Due dates, deadlines, and pending tasks" else "Entregas, fechas y pendientes"
+        AppModule.EXPENSES -> if (isEn) "Records and weekly summary" else "Registros y resumen semanal"
+        AppModule.ACADEMIC_TEMPLATES -> if (isEn) "Templates and long assignments" else "Plantillas y entregas largas"
+    }
 }
 
 private fun AppModule.tone(schedule: Color, expenses: Color, onTrack: Color, tertiary: Color): Color =

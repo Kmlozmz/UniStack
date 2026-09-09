@@ -2,6 +2,9 @@
 
 package com.unistack.app.feature_updates.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,13 +61,13 @@ fun UpdateDetailSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                "Nueva actualización v${info.versionName}",
+                stringResource(R.string.updates_sheet_new, info.versionName),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                "Publicado el ${info.releaseDate} · ${String.format(Locale.US, "%.1f", info.sizeMb)} MB",
+                stringResource(R.string.updates_sheet_published_info, info.releaseDate, String.format(Locale.US, "%.1f", info.sizeMb)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -97,7 +100,7 @@ fun UpdateDetailSheet(
                         }
                     )
                     Text(
-                        if (unknown) "Descargando..." else "${state.progress}%",
+                        if (unknown) stringResource(R.string.updates_sheet_downloading) else "${state.progress}%",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -116,7 +119,7 @@ fun UpdateDetailSheet(
                     // el texto se queda sin sitio y se recorta a puntos.
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
-                    Text("Más tarde", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(stringResource(R.string.updates_sheet_later), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Button(
                     shapes = UniStackButtonDefaults.shapes,
@@ -129,14 +132,13 @@ fun UpdateDetailSheet(
                     ),
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
+                    val isEn = java.util.Locale.getDefault().language == "en"
                     Text(
                         when (state) {
-                            // Si falta autorizar el origen, el botón lleva a Ajustes y no
-                            // al instalador. Decirlo evita que el desvío parezca un fallo.
                             is UpdateState.ReadyToInstall ->
-                                if (canInstall) "Instalar" else "Autorizar"
-                            is UpdateState.Downloading -> "Descargando..."
-                            else -> "Descargar"
+                                if (canInstall) (if (isEn) "Install" else "Instalar") else (if (isEn) "Authorize" else "Autorizar")
+                            is UpdateState.Downloading -> if (isEn) "Downloading..." else "Descargando..."
+                            else -> if (isEn) "Download" else "Descargar"
                         },
                         // El botón mide la mitad del ancho y tiene alto fijo: «Permitir
                         // instalación» partía en dos líneas y la segunda se salía por abajo.

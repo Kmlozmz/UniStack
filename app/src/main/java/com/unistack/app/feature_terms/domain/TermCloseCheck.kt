@@ -196,29 +196,37 @@ object TermCloseCheck {
 }
 
 /** Cómo se dice un hueco en una línea, para la lista de la comprobación. */
+private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
+
 fun TermGap.title(): String = when (this) {
-    is TermGap.MissingCut -> "$subjectName — falta el $cutName"
+    is TermGap.MissingCut -> if (isEnglish) "$subjectName — missing $cutName" else "$subjectName — falta el $cutName"
     is TermGap.UnmarkedClasses ->
-        "$subjectName — $count ${if (count == 1) "clase" else "clases"} sin marcar"
-    is TermGap.OverdueTask -> "$title — sin entregar"
+        if (isEnglish) "$subjectName — $count ${if (count == 1) "class" else "classes"} unmarked"
+        else "$subjectName — $count ${if (count == 1) "clase" else "clases"} sin marcar"
+    is TermGap.OverdueTask -> if (isEnglish) "$title — not submitted" else "$title — sin entregar"
 }
 
 fun TermGap.detail(): String = when (this) {
-    is TermGap.MissingCut -> "$weightPercent% de la nota sin registrar"
-    is TermGap.UnmarkedClasses -> "La asistencia queda incompleta"
-    is TermGap.OverdueTask -> "Venció el ${dueDate.dayOfMonth} de ${mesLargo(dueDate)}"
+    is TermGap.MissingCut -> if (isEnglish) "$weightPercent% of grade unrecorded" else "$weightPercent% de la nota sin registrar"
+    is TermGap.UnmarkedClasses -> if (isEnglish) "Attendance remains incomplete" else "La asistencia queda incompleta"
+    is TermGap.OverdueTask -> if (isEnglish) "Due on ${mesLargo(dueDate)} ${dueDate.dayOfMonth}" else "Venció el ${dueDate.dayOfMonth} de ${mesLargo(dueDate)}"
 }
 
 /** Qué palabra usar para el conjunto, que cambia con el número. */
 fun List<TermGap>.summaryLine(): String = when (size) {
-    0 -> "No falta nada por terminar"
-    1 -> "Hay 1 cosa sin terminar"
-    else -> "Hay $size cosas sin terminar"
+    0 -> if (isEnglish) "Nothing left to complete" else "No falta nada por terminar"
+    1 -> if (isEnglish) "1 thing left to finish" else "Hay 1 cosa sin terminar"
+    else -> if (isEnglish) "$size things left to finish" else "Hay $size cosas sin terminar"
 }
 
-private val MesesLargos = listOf(
+private val MesesLargosEs = listOf(
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
 )
+private val MesesLargosEn = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+)
 
-private fun mesLargo(date: LocalDate): String = MesesLargos[date.monthValue - 1]
+private fun mesLargo(date: LocalDate): String =
+    if (isEnglish) MesesLargosEn[date.monthValue - 1] else MesesLargosEs[date.monthValue - 1]

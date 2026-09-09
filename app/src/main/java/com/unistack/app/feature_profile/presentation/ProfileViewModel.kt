@@ -59,9 +59,18 @@ data class GradingScaleChangeImpact(
     val isDestructive: Boolean get() = gradeCount > 0
 
     fun describe(): String {
-        val notas = if (gradeCount == 1) "1 nota" else "$gradeCount notas"
-        val materias = if (subjectCount == 1) "1 materia" else "$subjectCount materias"
-        return "$notas en $materias"
+        val isEn = java.util.Locale.getDefault().language == "en"
+        val notas = if (isEn) {
+            if (gradeCount == 1) "1 grade" else "$gradeCount grades"
+        } else {
+            if (gradeCount == 1) "1 nota" else "$gradeCount notas"
+        }
+        val materias = if (isEn) {
+            if (subjectCount == 1) "1 subject" else "$subjectCount subjects"
+        } else {
+            if (subjectCount == 1) "1 materia" else "$subjectCount materias"
+        }
+        return if (isEn) "$notas in $materias" else "$notas en $materias"
     }
 }
 
@@ -521,20 +530,22 @@ class ProfileViewModel @Inject constructor(
             accountAuthService.signInWithGoogle(context)
                 .onSuccess { account ->
                     userRepository.linkAccount(account)
+                    val isEn = java.util.Locale.getDefault().language == "en"
                     _actionState.update {
                         it.copy(
                             isAccountBusy = false,
-                            message = "Cuenta de Google conectada.",
+                            message = if (isEn) "Google account connected." else "Cuenta de Google conectada.",
                             errorMessage = null
                         )
                     }
                 }
                 .onFailure { throwable ->
+                    val isEn = java.util.Locale.getDefault().language == "en"
                     _actionState.update {
                         it.copy(
                             isAccountBusy = false,
                             message = null,
-                            errorMessage = throwable.message ?: "No se pudo conectar con Google."
+                            errorMessage = throwable.message ?: if (isEn) "Could not connect with Google." else "No se pudo conectar con Google."
                         )
                     }
                 }
@@ -548,19 +559,21 @@ class ProfileViewModel @Inject constructor(
             accountAuthService.signOut()
             if (currentUser.value.isLinked) {
                 userRepository.unlinkAccount()
+                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         isAccountBusy = false,
-                        message = "Cuenta desvinculada.",
+                        message = if (isEn) "Account unlinked." else "Cuenta desvinculada.",
                         errorMessage = null
                     )
                 }
             } else {
+                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
                     it.copy(
                         isAccountBusy = false,
                         message = null,
-                        errorMessage = "No hay cuenta vinculada."
+                        errorMessage = if (isEn) "No linked account." else "No hay cuenta vinculada."
                     )
                 }
             }
@@ -600,7 +613,13 @@ class ProfileViewModel @Inject constructor(
         localBackupRepository.exportAcademicPdf(context)
             .map { path -> File(path) }
             .onFailure { throwable ->
-                _actionState.update { it.copy(message = null, errorMessage = throwable.message ?: "No se pudo crear el PDF.") }
+                val isEn = java.util.Locale.getDefault().language == "en"
+                _actionState.update {
+                    it.copy(
+                        message = null,
+                        errorMessage = throwable.message ?: if (isEn) "Could not create PDF." else "No se pudo crear el PDF."
+                    )
+                }
             }
             .getOrNull()
 
@@ -609,10 +628,22 @@ class ProfileViewModel @Inject constructor(
     fun exportAcademicPdf(context: Context): Boolean {
         return localBackupRepository.exportAcademicPdf(context)
             .onSuccess { path ->
-                _actionState.update { it.copy(message = "PDF académico creado: $path", errorMessage = null) }
+                val isEn = java.util.Locale.getDefault().language == "en"
+                _actionState.update {
+                    it.copy(
+                        message = if (isEn) "Academic PDF created: $path" else "PDF académico creado: $path",
+                        errorMessage = null
+                    )
+                }
             }
             .onFailure { throwable ->
-                _actionState.update { it.copy(message = null, errorMessage = throwable.message ?: "No se pudo crear el PDF.") }
+                val isEn = java.util.Locale.getDefault().language == "en"
+                _actionState.update {
+                    it.copy(
+                        message = null,
+                        errorMessage = throwable.message ?: (if (isEn) "Could not create PDF." else "No se pudo crear el PDF.")
+                    )
+                }
             }
             .isSuccess
     }
@@ -634,20 +665,31 @@ class ProfileViewModel @Inject constructor(
         return localBackupRepository.previewBackupJson(json)
             .fold(
                 onSuccess = { it.summary() },
-                onFailure = { it.message ?: "Backup inválido." }
+                onFailure = {
+                    val isEn = java.util.Locale.getDefault().language == "en"
+                    it.message ?: if (isEn) "Invalid backup." else "Backup inválido."
+                }
             )
     }
 
     fun restoreLocalBackup(json: String): Boolean {
         return localBackupRepository.restoreBackupJson(json)
             .onSuccess { preview ->
+                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
-                    it.copy(message = "Backup local restaurado: ${preview.summary()}", errorMessage = null)
+                    it.copy(
+                        message = if (isEn) "Local backup restored: ${preview.summary()}" else "Backup local restaurado: ${preview.summary()}",
+                        errorMessage = null
+                    )
                 }
             }
             .onFailure { throwable ->
+                val isEn = java.util.Locale.getDefault().language == "en"
                 _actionState.update {
-                    it.copy(message = null, errorMessage = throwable.message ?: "No se pudo restaurar el backup.")
+                    it.copy(
+                        message = null,
+                        errorMessage = throwable.message ?: (if (isEn) "Could not restore backup." else "No se pudo restaurar el backup.")
+                    )
                 }
             }
             .isSuccess

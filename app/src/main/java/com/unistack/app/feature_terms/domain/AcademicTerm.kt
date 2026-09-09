@@ -10,12 +10,25 @@ import java.time.LocalDate
  * usan de verdad; no hay una opción «otro» porque cualquier calendario cabe en alguna de ellas
  * en cuanto se le ponen fechas propias.
  */
-enum class AcademicTermType(val label: String, val perYear: Int, val weeks: Int) {
+enum class AcademicTermType(private val spanishLabel: String, val perYear: Int, val weeks: Int) {
     SEMESTER("Semestral", 2, 16),
     TRIMESTER("Trimestral", 4, 11),
     QUARTER("Cuatrimestral", 3, 14),
     ANNUAL("Anual", 1, 36),
     BLOCKS("Por bloques", 6, 8);
+
+    val label: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                SEMESTER -> "Semester"
+                TRIMESTER -> "Trimester"
+                QUARTER -> "Quarter"
+                ANNUAL -> "Annual"
+                BLOCKS -> "Blocks"
+            }
+        } else {
+            spanishLabel
+        }
 
     /**
      * En cual de los tramos del año cae [date], contando desde 1.

@@ -32,6 +32,7 @@ fun EssayTemplate.exportText(completedChecklistIds: List<String>): String {
 }
 
 fun buildApaReferenceDraft(sourcesText: String): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
     val sources = sourcesText
         .lineSequence()
         .map { line -> line.trim().trimStart('-', '*', ' ') }
@@ -40,20 +41,32 @@ fun buildApaReferenceDraft(sourcesText: String): String {
         .toList()
 
     if (sources.isEmpty()) {
-        return listOf(
-            "Apellido, N. (Año). Título del libro. Editorial.",
-            "Apellido, N. (Año). Título del artículo. Revista, volumen(número), páginas.",
-            "Institución. (Año). Título del recurso. URL"
-        ).joinToString(separator = "\n")
+        return if (isEn) {
+            listOf(
+                "Author, A. (Year). Book title. Publisher.",
+                "Author, A. (Year). Article title. Journal, volume(issue), pages.",
+                "Institution. (Year). Resource title. URL"
+            ).joinToString(separator = "\n")
+        } else {
+            listOf(
+                "Apellido, N. (Año). Título del libro. Editorial.",
+                "Apellido, N. (Año). Título del artículo. Revista, volumen(número), páginas.",
+                "Institución. (Año). Título del recurso. URL"
+            ).joinToString(separator = "\n")
+        }
     }
+
+    val pendingMedium = if (isEn) "Medium or publisher pending." else "Medio o editorial pendiente."
+    val pendingTitle = if (isEn) "Title pending." else "Título pendiente."
+    val nd = if (isEn) "n.d." else "s. f."
 
     return sources.joinToString(separator = "\n") { source ->
         val parts = source.split("|").map { it.trim() }.filter { it.isNotBlank() }
         when {
             parts.size >= 4 -> "${parts[0].withoutTrailingDot()}. (${parts[1]}). ${parts[2].withoutTrailingDot()}. ${parts[3].withoutTrailingDot()}."
-            parts.size == 3 -> "${parts[0].withoutTrailingDot()}. (${parts[1]}). ${parts[2].withoutTrailingDot()}. Medio o editorial pendiente."
-            parts.size == 2 -> "${parts[0].withoutTrailingDot()}. (s. f.). ${parts[1].withoutTrailingDot()}. Medio o editorial pendiente."
-            else -> "${source.withoutTrailingDot()}. (s. f.). Título pendiente. Medio o editorial pendiente."
+            parts.size == 3 -> "${parts[0].withoutTrailingDot()}. (${parts[1]}). ${parts[2].withoutTrailingDot()}. $pendingMedium"
+            parts.size == 2 -> "${parts[0].withoutTrailingDot()}. ($nd). ${parts[1].withoutTrailingDot()}. $pendingMedium"
+            else -> "${source.withoutTrailingDot()}. ($nd). $pendingTitle $pendingMedium"
         }
     }
 }

@@ -63,6 +63,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -180,20 +182,20 @@ private fun FeedbackForm(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Escríbenos",
+                text = stringResource(R.string.support_feedback_title),
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
             UniIconButton(
                 icon = Icons.Rounded.Close,
-                contentDescription = "Cerrar",
+                contentDescription = stringResource(R.string.support_feedback_close),
                 onClick = onDismiss
             )
         }
 
         Text(
-            text = "Reporta un fallo, sugiere algo o cuéntanos lo que se te ocurra.",
+            text = stringResource(R.string.support_feedback_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -203,8 +205,8 @@ private fun FeedbackForm(
         OutlinedTextField(
             value = text,
             onValueChange = { onTextChange(it.take(1500)) },
-            label = { Text("Mensaje") },
-            placeholder = { Text("¿Qué pasó, o qué te gustaría ver?") },
+            label = { Text(stringResource(R.string.support_feedback_field_message)) },
+            placeholder = { Text(stringResource(R.string.support_feedback_field_message_hint)) },
             minLines = 4,
             maxLines = 8,
             shape = MaterialTheme.shapes.medium,
@@ -215,14 +217,14 @@ private fun FeedbackForm(
             OutlinedTextField(
                 value = contact,
                 onValueChange = { onContactChange(it.take(120)) },
-                label = { Text("Contacto (opcional)") },
-                placeholder = { Text("Correo o usuario") },
+                label = { Text(stringResource(R.string.support_feedback_field_contact)) },
+                placeholder = { Text(stringResource(R.string.support_feedback_field_contact_hint)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = "Solo si quieres que podamos responderte.",
+                text = stringResource(R.string.support_feedback_field_contact_helper),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp)
@@ -242,7 +244,7 @@ private fun FeedbackForm(
                 modifier = Modifier.size(18.dp)
             )
             Text(
-                text = "El grupo es público, así que no escribas nada que no quieras que se lea.",
+                text = stringResource(R.string.support_feedback_public_warning),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -252,7 +254,7 @@ private fun FeedbackForm(
         // lleva al paso donde se explica lo que va a pasar. Prometer el destino aquí y llevar
         // a otro sitio es justo lo que hacía dudar de si el mensaje había salido.
         UniStackButton(
-            text = "Enviar",
+            text = stringResource(R.string.support_feedback_btn_send),
             onClick = onSend,
             enabled = enoughWritten
         )
@@ -308,14 +310,13 @@ private fun BeforeSending(onSend: () -> Unit) {
         }
 
         Text(
-            text = "Cómo se envía",
+            text = stringResource(R.string.support_feedback_how_title),
             style = MaterialTheme.typography.headlineSmallEmphasized,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Telegram no deja que una app escriba en un grupo por ti, así que el último " +
-                "paso lo das tú. Son dos toques:",
+            text = stringResource(R.string.support_feedback_how_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -330,13 +331,13 @@ private fun BeforeSending(onSend: () -> Unit) {
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                SendingStep(number = "1", text = "Se copia tu mensaje y se abre el tema del grupo.")
-                SendingStep(number = "2", text = "Mantén pulsado en el campo de Telegram, pega y envía.")
+                SendingStep(number = "1", text = stringResource(R.string.support_feedback_step1))
+                SendingStep(number = "2", text = stringResource(R.string.support_feedback_step2))
             }
         }
 
         UniStackButton(
-            text = "Enviar por Telegram",
+            text = stringResource(R.string.support_feedback_btn_telegram),
             onClick = onSend,
             leadingIcon = Icons.AutoMirrored.Rounded.Send
         )
@@ -517,7 +518,7 @@ private fun WhatWillBeSent(ticketContext: TicketContext) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Qué se va a enviar",
+                text = stringResource(R.string.support_feedback_send_info_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
@@ -525,7 +526,7 @@ private fun WhatWillBeSent(ticketContext: TicketContext) {
             )
             Icon(
                 Icons.Rounded.ExpandMore,
-                contentDescription = if (open) "Ocultar" else "Ver",
+                contentDescription = if (open) stringResource(R.string.support_feedback_btn_hide) else stringResource(R.string.support_feedback_btn_view),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .size(20.dp)
@@ -534,9 +535,9 @@ private fun WhatWillBeSent(ticketContext: TicketContext) {
         }
         AnimatedVisibility(visible = open) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SentRow("Dispositivo", ticketContext.device)
+                SentRow(stringResource(R.string.support_feedback_device), ticketContext.device)
                 SentRow("Android", "${ticketContext.androidVersion} (SDK ${ticketContext.androidSdk})")
-                SentRow("Versión de la app", ticketContext.appVersion)
+                SentRow(stringResource(R.string.support_feedback_app_version), ticketContext.appVersion)
             }
         }
     }
@@ -631,7 +632,7 @@ private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
         }
 
         Text(
-            text = if (telegramOpened) "Copiado y abierto" else "Telegram no se abrió",
+            text = if (telegramOpened) stringResource(R.string.support_feedback_copied_and_opened) else stringResource(R.string.support_feedback_telegram_failed),
             style = MaterialTheme.typography.headlineSmallEmphasized,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
@@ -639,10 +640,9 @@ private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
 
         Text(
             text = if (telegramOpened) {
-                "Ya sabes el resto: mantén pulsado en el campo de Telegram, pega y envía."
+                stringResource(R.string.support_feedback_sent_success)
             } else {
-                "Tu mensaje quedó copiado, pero no se pudo abrir Telegram. Busca el grupo " +
-                    "@${SupportChannel.HANDLE}, pega el mensaje y envíalo."
+                stringResource(R.string.support_feedback_sent_fallback, SupportChannel.HANDLE)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -650,7 +650,7 @@ private fun Copied(telegramOpened: Boolean, onClose: () -> Unit) {
         )
 
         UniStackButton(
-            text = "Cerrar",
+            text = stringResource(R.string.support_feedback_close),
             onClick = onClose
         )
     }

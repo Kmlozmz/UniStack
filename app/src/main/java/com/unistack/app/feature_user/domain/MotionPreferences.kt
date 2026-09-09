@@ -76,6 +76,49 @@ data class MotionPreferences(
 interface MotionChoice {
     val id: String
     val label: String
+    val displayLabel: String get() {
+        if (java.util.Locale.getDefault().language != "en") return label
+        return when (id) {
+            "instant" -> "None"
+            "rapida" -> "Fast"
+            "normal" -> "Normal"
+            "lenta" -> "Slow"
+            "suave" -> "Soft"
+            "medio" -> "Medium"
+            "vivo" -> "Vibrant"
+            "ninguna" -> "None"
+            "onda" -> "Wave"
+            "formas" -> "Shapes"
+            "puntos" -> "Dots"
+            "circular" -> "Circular"
+            "eje" -> "Axis"
+            "fundido" -> "Fade"
+            "desliza" -> "Slide"
+            "escalonada" -> "Staggered"
+            "cascada" -> "Waterfall"
+            "trazo" -> "Trace"
+            "pulso" -> "Pulse"
+            "cae" -> "Drop"
+            "rebota" -> "Bounce"
+            "salto" -> "Jump"
+            "brillo" -> "Glow"
+            "viaje" -> "Shift"
+            "estampa" -> "Stamp"
+            "apilado" -> "Stacked"
+            "confeti" -> "Confetti"
+            "estrellas" -> "Stars"
+            "linea" -> "Line"
+            "desvanece" -> "Fade"
+            "pildora" -> "Pill"
+            "salta" -> "Jump"
+            "alerta" -> "Alert"
+            "respira" -> "Breathe"
+            "sacude" -> "Shake"
+            "escalonado" -> "Staggered"
+            "encoge" -> "Shrink"
+            else -> label
+        }
+    }
 }
 
 // ---------------------------------------------------------------------- base
@@ -375,7 +418,57 @@ data class MotionGesture(
     val options: List<MotionChoice>,
     val read: (MotionPreferences) -> MotionChoice,
     val write: (MotionPreferences, MotionChoice) -> MotionPreferences
-)
+) {
+    val displayName: String get() {
+        if (java.util.Locale.getDefault().language != "en") return name
+        return when (id) {
+            "velocidad" -> "Speed"
+            "carga" -> "Loading indicator"
+            "transicion" -> "Between screens"
+            "listas" -> "List entry"
+            "asistencia" -> "Mark attendance"
+            "notaNueva" -> "Log a grade"
+            "subeNota" -> "Grade increase"
+            "recupera" -> "Subject recovery"
+            "sello" -> "Term close seal"
+            "celebracion" -> "Day completion celebration"
+            "tachar" -> "Cross off on complete"
+            "latido" -> "Overdue heartbeat"
+            "guardado" -> "Autosave"
+            "fijar" -> "Pin note"
+            "presupuesto" -> "Over budget"
+            "claseAhora" -> "Class in session"
+            "errorShake" -> "Error alert"
+            "saludo" -> "Greeting on open"
+            else -> name
+        }
+    }
+
+    val displayDetail: String get() {
+        if (java.util.Locale.getDefault().language != "en") return detail
+        return when (id) {
+            "velocidad" -> "Multiplies all animation durations."
+            "carga" -> "Material 3 Expressive morphs while spinning."
+            "transicion" -> "How a new screen enters."
+            "listas" -> "How rows appear when opening."
+            "asistencia" -> "When confirming attendance to class."
+            "notaNueva" -> "When a new grade is entered for the term."
+            "subeNota" -> "When your average improves."
+            "recupera" -> "When rising out of the red."
+            "sello" -> "When closing a term."
+            "celebracion" -> "When completing the last pending item."
+            "tachar" -> "Before disappearing from the list."
+            "latido" -> "For items open for multiple days."
+            "guardado" -> "Notice that changes were saved."
+            "fijar" -> "When moving note to pinned section."
+            "presupuesto" -> "When crossing limit. An alert, not a decoration."
+            "claseAhora" -> "Class currently ongoing. Green indicates «active»."
+            "errorShake" -> "When a field is filled incorrectly."
+            "saludo" -> "Greeting and your name on Home."
+            else -> detail
+        }
+    }
+}
 
 /** Un interruptor de movimiento, que no tiene variantes sino sí o no. */
 data class MotionToggle(

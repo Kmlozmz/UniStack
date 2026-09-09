@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 @Composable
@@ -54,13 +56,13 @@ fun UpdateAvailableBanner(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Nueva actualización",
+                    text = stringResource(R.string.updates_banner_new),
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "UniStack $versionName disponible • Toca para descargar",
+                    text = stringResource(R.string.updates_banner_desc, versionName),
                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                     fontSize = 12.sp
                 )

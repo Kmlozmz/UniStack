@@ -34,6 +34,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -229,7 +232,7 @@ fun NoteCard(
                         if (note.pinned) {
                             Icon(
                                 Icons.Rounded.PushPin,
-                                contentDescription = "Fijada",
+                                contentDescription = stringResource(R.string.notes_badge_pinned),
                                 tint = suave,
                                 modifier = Modifier.size(12.dp)
                             )
@@ -342,8 +345,14 @@ private fun NoteCardBody(
         )
     }
     if (hechas > 0 && showDoneCount) {
+        val isEn = Locale.getDefault().language == "en"
+        val hechasSuffix = if (isEn) {
+            if (hechas == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural)
+        } else {
+            if (hechas == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural)
+        }
         Text(
-            text = "+ " + hechas + if (hechas == 1) " marcada" else " marcadas",
+            text = "+ $hechas $hechasSuffix",
             color = suave.copy(alpha = 0.7f),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 3.dp)
@@ -405,17 +414,17 @@ private fun NoteTypeRow(
         when {
             casillasTotal > 0 -> {
                 ChecklistRing(casillasHechas, casillasTotal, content)
-                NoteTypeCaption("Lista", "$casillasHechas de $casillasTotal hechas", content, soft)
+                NoteTypeCaption(stringResource(R.string.notes_badge_list), stringResource(R.string.notes_badge_list_summary, casillasHechas, casillasTotal), content, soft)
             }
             audioName != null -> {
                 AudioWaveform(content)
-                NoteTypeCaption("Audio", "nota de voz", content, soft)
+                NoteTypeCaption(stringResource(R.string.notes_badge_audio), stringResource(R.string.notes_badge_voice_note), content, soft)
             }
             reminderAt != null -> {
                 val vencido = NoteReminders.isDue(reminderAt)
                 NoteDateTile(reminderAt, vencido, content, error)
                 NoteTypeCaption(
-                    if (vencido) "Venció" else "Recordatorio",
+                    if (vencido) stringResource(R.string.notes_badge_expired) else stringResource(R.string.notes_badge_reminder),
                     NoteReminders.label(reminderAt),
                     if (vencido) error else content,
                     soft
@@ -428,7 +437,7 @@ private fun NoteTypeRow(
                     tint = soft,
                     modifier = Modifier.size(22.dp)
                 )
-                NoteTypeCaption("Archivo", archivoName, content, soft)
+                NoteTypeCaption(stringResource(R.string.notes_badge_file), archivoName, content, soft)
             }
         }
     }
@@ -490,9 +499,11 @@ private fun AudioWaveform(tint: Color) {
     }
 }
 
-private val MesesAbrev = listOf(
-    "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"
-)
+private val MesesAbrev get() = if (Locale.getDefault().language == "en") {
+    listOf("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+} else {
+    listOf("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
+}
 
 /** El recordatorio, como una fecha de calendario: el día grande, el mes debajo. */
 @Composable
@@ -568,7 +579,7 @@ fun NoteSubjectFilters(
         verticalAlignment = Alignment.CenterVertically
     ) {
         FilterPill(
-            label = "Todas",
+            label = stringResource(R.string.notes_filter_all),
             selected = selectedSubjectId == null,
             accent = MaterialTheme.colorScheme.primary,
             onClick = { onSelect(null) }

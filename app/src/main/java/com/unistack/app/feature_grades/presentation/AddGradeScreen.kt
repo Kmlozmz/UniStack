@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -112,16 +116,17 @@ private fun formFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
 )
 
-/** Los tipos de actividad y su rótulo, para no repetir la lista en dos sitios. */
-private val ActivityTypeLabels = listOf(
-    "Taller" to GradeType.WORKSHOP,
-    "Exposición" to GradeType.PRESENTATION,
-    "Quiz" to GradeType.QUIZ,
-    "Parcial" to GradeType.EXAM,
-    "Proyecto" to GradeType.PROJECT,
-    "Investigación" to GradeType.RESEARCH,
-    "Práctica" to GradeType.PRACTICE,
-    "Otra" to GradeType.OTHER
+private data class ActivityTypeItem(@StringRes val labelRes: Int, val type: GradeType)
+
+private val ActivityTypeItems = listOf(
+    ActivityTypeItem(R.string.grade_type_workshop, GradeType.WORKSHOP),
+    ActivityTypeItem(R.string.grade_type_presentation, GradeType.PRESENTATION),
+    ActivityTypeItem(R.string.grade_type_quiz, GradeType.QUIZ),
+    ActivityTypeItem(R.string.grade_type_midterm, GradeType.EXAM),
+    ActivityTypeItem(R.string.grade_type_project, GradeType.PROJECT),
+    ActivityTypeItem(R.string.grade_type_research, GradeType.RESEARCH),
+    ActivityTypeItem(R.string.grade_type_practice, GradeType.PRACTICE),
+    ActivityTypeItem(R.string.grade_type_other, GradeType.OTHER)
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -205,9 +210,9 @@ fun AddGradeScreen(
         hasUnsavedChanges = hasUnsavedChanges,
         onLeave = onBackClick,
         message = if (grade == null) {
-            "La nota no se ha registrado todavía."
+            stringResource(R.string.grade_form_leave_create)
         } else {
-            "Los cambios de esta nota se van a perder."
+            stringResource(R.string.grade_form_leave_edit)
         }
     )
 
@@ -263,9 +268,11 @@ fun AddGradeScreen(
     }
 
     val remainingWeight = ((1.0 - currentPercentage) * 100.0).coerceAtLeast(0.0)
+    val activityTypes = ActivityTypeItems.map { stringResource(it.labelRes) to it.type }
+    val validationErrorMsg = stringResource(R.string.grade_validation_error, maxGradeLabel, cutDisplayName(selectedPeriod))
     // El nombre que se pone solo cuando registras la nota final del corte. Se compara
     // con lo escrito para saber si sigue siendo automático o si el usuario lo cambió.
-    val cutFinalName = "Resultado final ${cutDisplayName(selectedPeriod)}"
+    val cutFinalName = stringResource(R.string.grade_final_result, cutDisplayName(selectedPeriod))
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
@@ -291,7 +298,7 @@ fun AddGradeScreen(
                     UniBackButton(onClick = requestLeave)
                 }
                 Text(
-                    text = if (isEditing) "Editar nota" else "Nueva nota",
+                    text = if (isEditing) stringResource(R.string.grade_form_edit_title) else stringResource(R.string.grade_form_new_title),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold
@@ -302,7 +309,7 @@ fun AddGradeScreen(
                     text = listOfNotNull(
                         subject?.name,
                         cutDisplayName(selectedPeriod),
-                        "${formatPercent(selectedPeriod.weight * 100)}% de la materia"
+                        stringResource(R.string.subject_weight_of_subject_simple, formatPercent(selectedPeriod.weight * 100))
                     ).joinToString("  ·  "),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
@@ -310,7 +317,7 @@ fun AddGradeScreen(
             }
 
             FormBlock(
-                title = "Qué registras",
+                title = stringResource(R.string.grade_what_recording),
                 icon = Icons.AutoMirrored.Rounded.Assignment,
                 accent = MaterialTheme.colorScheme.primary
             ) {
@@ -319,7 +326,7 @@ fun AddGradeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ActivityChip(
-                        label = "Una actividad",
+                        label = stringResource(R.string.grade_an_activity),
                         isSelected = selectedSource == GradeSource.ACTIVITY,
                         onClick = {
                             selectedSource = GradeSource.ACTIVITY
@@ -331,7 +338,7 @@ fun AddGradeScreen(
                         }
                     )
                     ActivityChip(
-                        label = "La nota final del corte",
+                        label = stringResource(R.string.grade_final_cut_grade),
                         isSelected = selectedSource == GradeSource.PERIOD_FINAL,
                         onClick = {
                             selectedSource = GradeSource.PERIOD_FINAL
@@ -344,9 +351,9 @@ fun AddGradeScreen(
                 }
                 Text(
                     if (selectedSource == GradeSource.PERIOD_FINAL) {
-                        "Sustituye el cálculo del corte por la nota que puso el profesor."
+                        stringResource(R.string.grade_final_cut_grade_desc)
                     } else {
-                        "Se combina con las demás según el peso que tenga dentro del corte."
+                        stringResource(R.string.grade_activity_desc)
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
@@ -362,7 +369,7 @@ fun AddGradeScreen(
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(
-                                text = "Va al",
+                                text = stringResource(R.string.grade_goes_to),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.labelMedium
                             )
@@ -373,7 +380,7 @@ fun AddGradeScreen(
                                 fontWeight = FontWeight.ExtraBold
                             )
                             Text(
-                                text = "Elegido por la fecha de hoy.",
+                                text = stringResource(R.string.grade_chosen_today_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp
                             )
@@ -381,14 +388,14 @@ fun AddGradeScreen(
                                 onClick = { changingCut = true },
                                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
                             ) {
-                                Text("Cambiar corte")
+                                Text(stringResource(R.string.grade_change_cut))
                             }
                         }
                     }
                 }
                 if (!isEditing && lockedCut == null && (cutByDate == null || changingCut)) {
                     Text(
-                        text = "Corte",
+                        text = stringResource(R.string.tasks_field_cut),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
@@ -415,8 +422,8 @@ fun AddGradeScreen(
                         name = it.take(50)
                         error = null
                     },
-                    label = { Text("Nombre") },
-                    placeholder = { Text("Ej. Taller 2, Parcial de mitad…") },
+                    label = { Text(stringResource(R.string.grade_activity_name)) },
+                    placeholder = { Text(stringResource(R.string.grade_activity_name_placeholder)) },
                     singleLine = true,
                     // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto
                     // anade lo que el rojo no dice, que es que **acaba** de pasar.
@@ -427,7 +434,7 @@ fun AddGradeScreen(
                     supportingText = {
                         if (!isNameValid) {
                             Text(
-                                nameValidation.errorMessage ?: "Ingresa un nombre de actividad válido",
+                                nameValidation.errorMessage ?: stringResource(R.string.grade_activity_name_error),
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
@@ -435,7 +442,7 @@ fun AddGradeScreen(
                 )
                 if (selectedSource == GradeSource.ACTIVITY) {
                     Text(
-                        text = "Tipo (opcional)",
+                        text = stringResource(R.string.grade_activity_type_optional),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold
@@ -445,7 +452,7 @@ fun AddGradeScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        ActivityTypeLabels.forEach { (label, type) ->
+                        activityTypes.forEach { (label, type) ->
                             ActivityChip(
                                 label = label,
                                 isSelected = selectedType == type,
@@ -453,7 +460,7 @@ fun AddGradeScreen(
                                     // El tipo ya no pisa el nombre escrito. Antes lo
                                     // sobreescribía siempre: escribías «Parcial 2», tocabas
                                     // «Quiz» y la actividad pasaba a llamarse «Quiz».
-                                    if (name.isBlank() || ActivityTypeLabels.any { it.first == name }) {
+                                    if (name.isBlank() || activityTypes.any { it.first == name }) {
                                         name = label
                                     }
                                     selectedType = type
@@ -466,7 +473,7 @@ fun AddGradeScreen(
             }
 
             FormBlock(
-                title = "Cuánto vale",
+                title = stringResource(R.string.grade_value_section),
                 icon = Icons.Rounded.BarChart,
                 accent = MaterialTheme.colorScheme.primary
             ) {
@@ -476,7 +483,7 @@ fun AddGradeScreen(
                         value = it
                         error = null
                     },
-                    label = { Text("Nota obtenida") },
+                    label = { Text(stringResource(R.string.grade_obtained)) },
                     placeholder = { Text("0") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -500,13 +507,13 @@ fun AddGradeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "No conozco el peso",
+                                text = stringResource(R.string.grade_unknown_weight),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
                             Text(
-                                text = "La nota queda registrada y no entra en el cálculo hasta que le pongas peso.",
+                                text = stringResource(R.string.grade_unknown_weight_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
@@ -530,7 +537,7 @@ fun AddGradeScreen(
                             percentage = it
                             error = null
                         },
-                        label = { Text("Peso dentro de ${cutDisplayName(selectedPeriod)}") },
+                        label = { Text(stringResource(R.string.grade_weight_within_cut, cutDisplayName(selectedPeriod))) },
                         placeholder = { Text("0") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -551,13 +558,11 @@ fun AddGradeScreen(
                             Text(
                                 text = when {
                                     percentage.isNotBlank() && !isPercentageValid ->
-                                        "Te pasas del 100%: en ${cutDisplayName(selectedPeriod)} solo queda " +
-                                            "${formatPercent(remainingWeight)}% por repartir."
+                                        stringResource(R.string.grade_weight_exceeds, cutDisplayName(selectedPeriod), formatPercent(remainingWeight))
                                     remainingWeight <= 0.05 ->
-                                        "${cutDisplayName(selectedPeriod)} ya tiene repartido el 100%."
+                                        stringResource(R.string.grade_weight_already_full, cutDisplayName(selectedPeriod))
                                     else ->
-                                        "Queda ${formatPercent(remainingWeight)}% por repartir en " +
-                                            "${cutDisplayName(selectedPeriod)}."
+                                        stringResource(R.string.grade_weight_remaining, formatPercent(remainingWeight), cutDisplayName(selectedPeriod))
                                 },
                                 color = if (percentage.isNotBlank() && !isPercentageValid) {
                                     MaterialTheme.colorScheme.error
@@ -646,7 +651,7 @@ fun AddGradeScreen(
                             onBackClick()
                         }
                     } else {
-                        error = "Revisa que la nota esté entre 0 y $maxGradeLabel y que el peso acumulado no supere 100% en ${cutDisplayName(selectedPeriod)}."
+                        error = validationErrorMsg
                     }
                 },
                 enabled = isValid,
@@ -664,7 +669,7 @@ fun AddGradeScreen(
                     .height(56.dp)
             ) {
                 Text(
-                    text = if (isEditing) "Guardar cambios" else "Guardar nota",
+                    text = if (isEditing) stringResource(R.string.grade_save_changes) else stringResource(R.string.grade_save_grade),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -681,11 +686,9 @@ fun AddGradeScreen(
                 showHistorySuggestion = false
                 onBackClick()
             },
-            title = { Text("Completa tu historial cuando puedas") },
+            title = { Text(stringResource(R.string.grade_complete_history_title)) },
             text = {
-                Text(
-                    "La nota ya quedó guardada. Agregar los cortes anteriores hará más precisas tus metas y proyecciones."
-                )
+                Text(stringResource(R.string.grade_complete_history_desc))
             },
             confirmButton = {
                 TextButton(
@@ -694,7 +697,7 @@ fun AddGradeScreen(
                         showHistorySuggestion = false
                         onCompleteHistoryClick(subjectId)
                     }
-                ) { Text("Completar historial") }
+                ) { Text(stringResource(R.string.grade_complete_history_button)) }
             },
             dismissButton = {
                 TextButton(
@@ -703,7 +706,7 @@ fun AddGradeScreen(
                         showHistorySuggestion = false
                         onBackClick()
                     }
-                ) { Text("Más tarde") }
+                ) { Text(stringResource(R.string.grade_complete_history_later)) }
             }
         )
     }
@@ -739,6 +742,7 @@ private fun ActivityChip(
     }
 }
 
-private fun cutDisplayName(cut: GradingCut): String = "Corte ${cut.order}"
+@Composable
+private fun cutDisplayName(cut: GradingCut): String = cut.name.takeIf { it.isNotBlank() } ?: stringResource(R.string.subject_cut_order, cut.order)
 
 private fun formatPercent(value: Double): String = String.format(Locale.US, "%.0f", value)

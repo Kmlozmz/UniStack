@@ -28,23 +28,31 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_schedule.domain.ClassAbsenceReason
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
 import com.unistack.app.feature_schedule.domain.ClassModality
 
-internal fun ClassAbsenceReason.label(): String = when (this) {
-    ClassAbsenceReason.HEALTH -> "Salud"
-    ClassAbsenceReason.TRANSPORT -> "Transporte"
-    ClassAbsenceReason.PERSONAL -> "Personal"
-    ClassAbsenceReason.ACADEMIC_CONFLICT -> "Otra clase"
-    ClassAbsenceReason.OTHER -> "Otro"
+internal fun ClassAbsenceReason.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ClassAbsenceReason.HEALTH -> if (isEn) "Health" else "Salud"
+        ClassAbsenceReason.TRANSPORT -> if (isEn) "Transport" else "Transporte"
+        ClassAbsenceReason.PERSONAL -> if (isEn) "Personal" else "Personal"
+        ClassAbsenceReason.ACADEMIC_CONFLICT -> if (isEn) "Another class" else "Otra clase"
+        ClassAbsenceReason.OTHER -> if (isEn) "Other" else "Otro"
+    }
 }
 
-internal fun ClassModality.label(): String = when (this) {
-    ClassModality.IN_PERSON -> "Presencial"
-    ClassModality.VIRTUAL -> "Virtual"
-    ClassModality.HYBRID -> "Híbrida"
+internal fun ClassModality.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ClassModality.IN_PERSON -> if (isEn) "In-person" else "Presencial"
+        ClassModality.VIRTUAL -> if (isEn) "Online" else "Virtual"
+        ClassModality.HYBRID -> if (isEn) "Hybrid" else "Híbrida"
+    }
 }
 
 /**
@@ -83,8 +91,8 @@ internal fun AttendanceDetail(
         Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Text(
                 text = when (status) {
-                    ClassAttendanceStatus.ABSENT -> "Guardada. ¿Por qué faltaste?"
-                    else -> "Guardada. ¿Cómo fue la clase?"
+                    ClassAttendanceStatus.ABSENT -> stringResource(R.string.attendance_saved_why_absent)
+                    else -> stringResource(R.string.attendance_saved_how_class)
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
@@ -129,7 +137,7 @@ internal fun AttendanceDetail(
                 value = note,
                 onValueChange = { onNoteChange(it.take(140)) },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Una nota, si hace falta", fontSize = 13.sp) },
+                placeholder = { Text(stringResource(R.string.attendance_note_optional), fontSize = 13.sp) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

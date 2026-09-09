@@ -35,18 +35,19 @@ data class LocalBackupPreview(
      * hay ninguna se dice una vez.
      */
     fun summary(): String {
+        val isEn = java.util.Locale.getDefault().language == "en"
         val partes = listOfNotNull(
-            cuenta(subjects, "materia", "materias"),
-            cuenta(grades, "nota", "notas"),
-            cuenta(tasks, "tarea", "tareas"),
-            cuenta(expenses, "gasto", "gastos"),
-            cuenta(academicWorks, "trabajo", "trabajos"),
-            cuenta(agendaEvents, "evento", "eventos"),
-            // «Apunte» y no «nota»: en esta app una nota es una calificación, y decir
-            // «12 notas» al lado de «8 notas» sería contar dos cosas distintas igual.
-            cuenta(notes, "apunte", "apuntes")
+            cuenta(subjects, if (isEn) "subject" else "materia", if (isEn) "subjects" else "materias"),
+            cuenta(grades, if (isEn) "grade" else "nota", if (isEn) "grades" else "notas"),
+            cuenta(tasks, if (isEn) "task" else "tarea", if (isEn) "tasks" else "tareas"),
+            cuenta(expenses, if (isEn) "expense" else "gasto", if (isEn) "expenses" else "gastos"),
+            cuenta(academicWorks, if (isEn) "work" else "trabajo", if (isEn) "works" else "trabajos"),
+            cuenta(agendaEvents, if (isEn) "event" else "evento", if (isEn) "events" else "eventos"),
+            cuenta(notes, if (isEn) "note" else "apunte", if (isEn) "notes" else "apuntes")
         )
-        return if (partes.isEmpty()) "Todavía no has registrado nada" else partes.joinToString(" · ")
+        return if (partes.isEmpty()) {
+            if (isEn) "You haven't recorded anything yet" else "Todavía no has registrado nada"
+        } else partes.joinToString(" · ")
     }
 
     private fun cuenta(total: Int, singular: String, plural: String): String? =

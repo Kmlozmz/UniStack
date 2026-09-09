@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.utils.GradingScaleUtils
@@ -70,13 +72,9 @@ internal fun CalculatorHelpSheet(
             )
             Text(
                 text = when (tab) {
-                    CalculatorTab.SUBJECT ->
-                        "Para saber cómo vas en una sola materia, cuando cada nota vale un porcentaje distinto del curso."
-                    CalculatorTab.SEMESTER ->
-                        "Para el promedio de todo el semestre, donde cada materia pesa según sus créditos. " +
-                            "Sirve igual para tus materias que para las de otra persona."
-                    CalculatorTab.NEEDED ->
-                        "Para saber qué nota necesitas en lo que te queda por evaluar si quieres acabar con una nota concreta."
+                    CalculatorTab.SUBJECT -> stringResource(R.string.calculator_sheet_course_desc)
+                    CalculatorTab.SEMESTER -> stringResource(R.string.calculator_sheet_semester_desc)
+                    CalculatorTab.NEEDED -> stringResource(R.string.calculator_sheet_target_desc)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -87,20 +85,12 @@ internal fun CalculatorHelpSheet(
                 color = MaterialTheme.colorScheme.surfaceContainerHigh
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("UN EJEMPLO", style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.calculator_sheet_example_header), style = SectionLabelStyle, color = MaterialTheme.colorScheme.primary)
                     Text(
                         text = when (tab) {
-                            CalculatorTab.SUBJECT ->
-                                "Sacaste 4,2 en el primer parcial, que vale el 30 %. Escribes 4,2, tocas la flecha, " +
-                                    "escribes 30 y tocas el más. Arriba verás 4,20 y que llevas el 30 % evaluado: " +
-                                    "es tu nota si el curso acabara ahí."
-                            CalculatorTab.SEMESTER ->
-                                "Cálculo con 4,1 y 4 créditos, Álgebra con 3,0 y 3 créditos. El promedio no es 3,55: " +
-                                    "es 3,63, porque Cálculo pesa más. Escribes la nota, tocas la flecha, escribes los " +
-                                    "créditos y tocas el más."
-                            CalculatorTab.NEEDED ->
-                                "Llevas 3,5 con el 60 % evaluado y quieres acabar con 4,0. Hace falta un 4,75 en el 40 % " +
-                                    "que queda. Si te pidiera más de $top, esa meta ya no se alcanza."
+                            CalculatorTab.SUBJECT -> stringResource(R.string.calculator_sheet_example_course)
+                            CalculatorTab.SEMESTER -> stringResource(R.string.calculator_sheet_example_semester)
+                            CalculatorTab.NEEDED -> stringResource(R.string.calculator_sheet_example_target, top)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -109,15 +99,9 @@ internal fun CalculatorHelpSheet(
             }
             Text(
                 text = when (tab) {
-                    CalculatorTab.SUBJECT ->
-                        "Los porcentajes no pueden pasar de 100 entre todos: si te pasas, te avisa y te dice cuánto " +
-                            "queda libre. El nombre de arriba es opcional y solo sirve para no perderte si calculas " +
-                            "varias materias seguidas."
-                    CalculatorTab.SEMESTER ->
-                        "Los créditos los pones tú: la app no los guarda por materia. Una materia sin créditos no " +
-                            "entra en el promedio, y se avisa arriba."
-                    CalculatorTab.NEEDED ->
-                        "Nada de lo que hagas aquí toca tus notas registradas."
+                    CalculatorTab.SUBJECT -> stringResource(R.string.calculator_sheet_footer_percentages)
+                    CalculatorTab.SEMESTER -> stringResource(R.string.calculator_sheet_footer_credits)
+                    CalculatorTab.NEEDED -> stringResource(R.string.calculator_sheet_footer_safe)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -154,7 +138,7 @@ internal fun SubjectPickerSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         title = {
             Text(
-                text = "Traer mis materias",
+                text = if (java.util.Locale.getDefault().language == "en") "Import my courses" else "Traer mis materias",
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 fontWeight = FontWeight.Bold
             )
@@ -162,7 +146,7 @@ internal fun SubjectPickerSheet(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Elige cuáles quieres en la cuenta. Nada de esto toca lo que tienes registrado.",
+                    text = stringResource(R.string.calculator_picker_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -174,8 +158,7 @@ internal fun SubjectPickerSheet(
                         color = MaterialTheme.colorScheme.surfaceContainerLowest
                     ) {
                         Text(
-                            text = "Todavía no tienes materias registradas. Cuando las tengas, aparecerán aquí " +
-                                "para traerlas de un toque.",
+                            text = stringResource(R.string.calculator_picker_empty),
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -199,7 +182,7 @@ internal fun SubjectPickerSheet(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Traer también sus notas",
+                                    text = stringResource(R.string.calculator_picker_import_grades),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = if (withGrades) {
@@ -209,11 +192,7 @@ internal fun SubjectPickerSheet(
                                     }
                                 )
                                 Text(
-                                    text = if (withGrades) {
-                                        "Con el promedio que llevas. Podrás cambiarlo aquí."
-                                    } else {
-                                        "En blanco, para que pongas tú la nota final."
-                                    },
+                                    text = if (withGrades) stringResource(R.string.calculator_picker_with_gpa) else stringResource(R.string.calculator_picker_blank_grade),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = if (withGrades) {
                                         MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
@@ -291,9 +270,9 @@ internal fun SubjectPickerSheet(
                                         )
                                         Text(
                                             text = when {
-                                                subject.average == null -> "Sin notas registradas"
-                                                withGrades -> "Entra con " + GradingScaleUtils.formatGrade(subject.average, scale)
-                                                else -> "Llevas " + GradingScaleUtils.formatGrade(subject.average, scale)
+                                                subject.average == null -> (if (java.util.Locale.getDefault().language == "en") "No grades recorded" else "Sin notas registradas")
+                                                withGrades -> stringResource(R.string.calculator_picker_enters_with) + GradingScaleUtils.formatGrade(subject.average, scale)
+                                                else -> (if (java.util.Locale.getDefault().language == "en") "Current: " else "Llevas ") + GradingScaleUtils.formatGrade(subject.average, scale)
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -305,7 +284,7 @@ internal fun SubjectPickerSheet(
                     }
 
                     Text(
-                        text = "Los créditos los pones tú: la app no los guarda por materia.",
+                        text = stringResource(R.string.calculator_picker_credits_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -313,7 +292,7 @@ internal fun SubjectPickerSheet(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(if (java.util.Locale.getDefault().language == "en") "Cancel" else "Cancelar") }
         },
         confirmButton = {
             TextButton(
@@ -322,9 +301,9 @@ internal fun SubjectPickerSheet(
             ) {
                 Text(
                     text = when (picked.size) {
-                        0 -> "Traer"
-                        1 -> "Traer 1"
-                        else -> "Traer " + picked.size
+                        0 -> (if (java.util.Locale.getDefault().language == "en") "Import" else "Traer")
+                        1 -> (if (java.util.Locale.getDefault().language == "en") "Import 1" else "Traer 1")
+                        else -> (if (java.util.Locale.getDefault().language == "en") "Import " else "Traer ") + picked.size
                     },
                     fontWeight = FontWeight.Bold
                 )

@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,13 +63,13 @@ internal fun SubjectPickerSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                "¿En qué materia?",
+                stringResource(R.string.home_which_subject_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                "La nota se registra dentro de una materia.",
+                stringResource(R.string.home_which_subject_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )

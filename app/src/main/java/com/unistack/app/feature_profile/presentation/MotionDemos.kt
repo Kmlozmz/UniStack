@@ -171,8 +171,9 @@ fun DemoDePulsacion(motion: MotionPreferences) {
                     .background(MaterialTheme.colorScheme.primary)
                     .padding(horizontal = 26.dp, vertical = 12.dp)
             ) {
+                val isEn = java.util.Locale.getDefault().language == "en"
                 Text(
-                    "Púlsame",
+                    if (isEn) "Tap me" else "Púlsame",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -180,9 +181,12 @@ fun DemoDePulsacion(motion: MotionPreferences) {
             }
         }
         PieDeDemo(
-            texto = when (motion.press) {
-                PressEffect.NINGUNA -> "nada · el botón no responde al tacto"
-                else -> "${motion.press.label.lowercase()} · toca varias veces"
+            texto = run {
+                val isEn = java.util.Locale.getDefault().language == "en"
+                when (motion.press) {
+                    PressEffect.NINGUNA -> if (isEn) "none · button does not respond to touch" else "nada · el botón no responde al tacto"
+                    else -> "${motion.press.displayLabel.lowercase()} · ${if (isEn) "tap several times" else "toca varias veces"}"
+                }
             },
             centrado = true
         )
@@ -202,11 +206,14 @@ fun DemoDeCarga(motion: MotionPreferences) {
             UniLoading(modifier = Modifier.size(46.dp))
         }
         PieDeDemo(
-            texto = when (motion.loading.id) {
-                "formas" -> "gira y cambia de forma"
-                "onda" -> "la onda de M3E, girando"
-                "puntos" -> "tres puntos por turnos"
-                else -> "el círculo de siempre"
+            texto = run {
+                val isEn = java.util.Locale.getDefault().language == "en"
+                when (motion.loading.id) {
+                    "formas" -> if (isEn) "morphs while spinning" else "gira y cambia de forma"
+                    "onda" -> if (isEn) "M3E wave, spinning" else "la onda de M3E, girando"
+                    "puntos" -> if (isEn) "three rotating dots" else "tres puntos por turnos"
+                    else -> if (isEn) "standard circular indicator" else "el círculo de siempre"
+                }
             },
             centrado = true
         )
@@ -258,11 +265,12 @@ fun DemoDeVelocidad(motion: MotionPreferences) {
                     .background(MaterialTheme.colorScheme.primary)
             )
         }
+        val isEnSpeed = java.util.Locale.getDefault().language == "en"
         PieDeDemo(
             texto = if (motion.speed.factor == 0f) {
-                "nada · la fila aparece puesta, sin recorrido"
+                if (isEnSpeed) "none · row appears instantly without transition" else "nada · la fila aparece puesta, sin recorrido"
             } else {
-                "${(420 * motion.speed.factor).toInt()} ms · ${motion.speed.label.lowercase()}"
+                "${(420 * motion.speed.factor).toInt()} ms · ${motion.speed.displayLabel.lowercase()}"
             }
         )
     }
@@ -306,10 +314,12 @@ fun DemoDeBarra(motion: MotionPreferences) {
             pestana = (pestana + 1) % 3
         }
     }
+    val isEnBar = java.util.Locale.getDefault().language == "en"
     Comparativo(
-        izquierda = "CON ANIMACIÓN",
-        derecha = "SIN ANIMACIÓN",
-        pie = "ajuste actual: " + if (motion.animatedBottomBar) "con animación" else "salta"
+        izquierda = if (isEnBar) "WITH ANIMATION" else "CON ANIMACIÓN",
+        derecha = if (isEnBar) "WITHOUT ANIMATION" else "SIN ANIMACIÓN",
+        pie = (if (isEnBar) "current setting: " else "ajuste actual: ") +
+            (if (motion.animatedBottomBar) (if (isEnBar) "with animation" else "con animación") else (if (isEnBar) "instant jump" else "salta"))
     ) { animada ->
         val esquema = MaterialTheme.colorScheme
         val destino by animateFloatAsState(
@@ -380,10 +390,12 @@ fun DemoDeNumeros(motion: MotionPreferences) {
         animationSpec = tween((720 * motion.speed.factor).toInt().coerceAtLeast(1)),
         label = "cuenta"
     )
+    val isEnCount = java.util.Locale.getDefault().language == "en"
     Comparativo(
-        izquierda = "CONTANDO",
-        derecha = "DIRECTO",
-        pie = "ajuste actual: " + if (motion.countingNumbers) "contando" else "directo"
+        izquierda = if (isEnCount) "COUNTING" else "CONTANDO",
+        derecha = if (isEnCount) "DIRECT" else "DIRECTO",
+        pie = (if (isEnCount) "current setting: " else "ajuste actual: ") +
+            (if (motion.countingNumbers) (if (isEnCount) "counting" else "contando") else (if (isEnCount) "direct" else "directo"))
     ) { contando ->
         Text(
             text = formatCurrency(if (contando) valor.toInt() else 61000),
@@ -410,10 +422,12 @@ fun DemoDeGesto(motion: MotionPreferences) {
         animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing)),
         label = "gesto"
     )
+    val isEnSwipe = java.util.Locale.getDefault().language == "en"
     Comparativo(
-        izquierda = "CON GESTO",
-        derecha = "SIN ÉL",
-        pie = "ajuste actual: " + if (motion.swipeGestures) "se puede deslizar" else "no se desliza"
+        izquierda = if (isEnSwipe) "WITH GESTURE" else "CON GESTO",
+        derecha = if (isEnSwipe) "WITHOUT IT" else "SIN ÉL",
+        pie = (if (isEnSwipe) "current setting: " else "ajuste actual: ") +
+            (if (motion.swipeGestures) (if (isEnSwipe) "swipe enabled" else "se puede deslizar") else (if (isEnSwipe) "swipe disabled" else "no se desliza"))
     ) { conGesto ->
         val esquema = MaterialTheme.colorScheme
         val avance = if (!conGesto) 0f else {
@@ -428,8 +442,9 @@ fun DemoDeGesto(motion: MotionPreferences) {
                 .clip(RoundedCornerShape(12.dp))
                 .background(esquema.errorContainer)
         ) {
+            val isEnDel = java.util.Locale.getDefault().language == "en"
             Text(
-                "Borrar",
+                if (isEnDel) "Delete" else "Borrar",
                 fontSize = 9.5.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = esquema.onErrorContainer,
@@ -443,8 +458,9 @@ fun DemoDeGesto(motion: MotionPreferences) {
                     .background(esquema.surfaceContainerHighest),
                 contentAlignment = Alignment.CenterStart
             ) {
+                val isEnTask = java.util.Locale.getDefault().language == "en"
                 Text(
-                    "Taller 2",
+                    if (isEnTask) "Workshop 2" else "Taller 2",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = esquema.onSurface,

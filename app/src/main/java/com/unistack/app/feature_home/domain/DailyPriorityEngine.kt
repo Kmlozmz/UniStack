@@ -15,6 +15,7 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 object DailyPriorityEngine {
+    private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
     fun primaryPriority(
         subjectsCount: Int,
         pendingTasks: List<StudentTask>,
@@ -47,11 +48,11 @@ object DailyPriorityEngine {
         if (subjectsCount == 0) {
             return listOf(
                 DailyFocusItem(
-                    slotLabel = "Ahora",
-                    title = "Crear primera materia",
-                    detail = "Activa notas, tareas y prioridades reales.",
+                    slotLabel = if (isEnglish) "Now" else "Ahora",
+                    title = if (isEnglish) "Create first subject" else "Crear primera materia",
+                    detail = if (isEnglish) "Enables grades, tasks, and real priorities." else "Activa notas, tareas y prioridades reales.",
                     minutesText = "3 min",
-                    actionLabel = "Materias",
+                    actionLabel = if (isEnglish) "Subjects" else "Materias",
                     action = HomePriorityAction.SUBJECTS
                 )
             )
@@ -74,19 +75,19 @@ object DailyPriorityEngine {
         return focused.ifEmpty {
             listOf(
                 DailyFocusItem(
-                    slotLabel = "Ahora",
-                    title = "Repaso breve",
-                    detail = "Mantén una materia caliente antes de que aparezca una urgencia.",
+                    slotLabel = if (isEnglish) "Now" else "Ahora",
+                    title = if (isEnglish) "Quick review" else "Repaso breve",
+                    detail = if (isEnglish) "Keep a subject fresh before an emergency comes up." else "Mantén una materia caliente antes de que aparezca una urgencia.",
                     minutesText = "15 min",
-                    actionLabel = "Materias",
+                    actionLabel = if (isEnglish) "Subjects" else "Materias",
                     action = HomePriorityAction.SUBJECTS
                 ),
                 DailyFocusItem(
-                    slotLabel = "Luego",
-                    title = "Ordenar pendientes",
-                    detail = "Revisa si hay una tarea pequeña que puedas cerrar hoy.",
+                    slotLabel = if (isEnglish) "Later" else "Luego",
+                    title = if (isEnglish) "Sort out pending tasks" else "Ordenar pendientes",
+                    detail = if (isEnglish) "Check if there's a small task you can finish today." else "Revisa si hay una tarea pequeña que puedas cerrar hoy.",
                     minutesText = "10 min",
-                    actionLabel = "Tareas",
+                    actionLabel = if (isEnglish) "Tasks" else "Tareas",
                     action = HomePriorityAction.TASKS
                 )
             )
@@ -196,11 +197,15 @@ object DailyPriorityEngine {
             title = risk.subjectName,
             minutes = if (critical) 25 else 15,
             summary = HomePrioritySummary(
-                title = if (critical) "${risk.subjectName} necesita atención" else "${risk.subjectName} está cerca de la meta",
-                shortDescription = if (critical) {
-                    "Repasa esta materia antes de abrir más frentes."
+                title = if (critical) {
+                    if (isEnglish) "${risk.subjectName} needs attention" else "${risk.subjectName} necesita atención"
                 } else {
-                    "Vigila esta materia con un repaso corto hoy."
+                    if (isEnglish) "${risk.subjectName} is close to target" else "${risk.subjectName} está cerca de la meta"
+                },
+                shortDescription = if (critical) {
+                    if (isEnglish) "Review this subject before opening more fronts." else "Repasa esta materia antes de abrir más frentes."
+                } else {
+                    if (isEnglish) "Keep an eye on this subject with a short review today." else "Vigila esta materia con un repaso corto hoy."
                 },
                 action = HomePriorityAction.SUBJECT,
                 subjectId = risk.subjectId
@@ -225,11 +230,19 @@ object DailyPriorityEngine {
         val overBudget = weeklyExpenseTotal > weeklyBudget
         return PriorityCandidate(
             score = if (overBudget) 820 else 570,
-            title = if (overBudget) "Gastos sobre el límite" else "Gastos cerca del límite",
+            title = if (overBudget) {
+                if (isEnglish) "Expenses over limit" else "Gastos sobre el límite"
+            } else {
+                if (isEnglish) "Expenses near limit" else "Gastos cerca del límite"
+            },
             minutes = 8,
             summary = HomePrioritySummary(
-                title = if (overBudget) "Gastos sobre el límite" else "Gastos cerca del límite",
-                shortDescription = "Revisa tu semana antes de registrar más gastos.",
+                title = if (overBudget) {
+                    if (isEnglish) "Expenses over limit" else "Gastos sobre el límite"
+                } else {
+                    if (isEnglish) "Expenses near limit" else "Gastos cerca del límite"
+                },
+                shortDescription = if (isEnglish) "Review your week before logging more expenses." else "Revisa tu semana antes de registrar más gastos.",
                 action = HomePriorityAction.EXPENSES
             )
         )
@@ -240,36 +253,36 @@ object DailyPriorityEngine {
         val timeText = TaskDateUtils.estimatedTimeText(estimatedMinutes)
         val isExamLike = type == TaskType.EXAM || type == TaskType.TEST
         val titleText = when {
-            days < 0 -> "$title está vencida"
-            days == 0L && isExamLike -> "$title es hoy"
-            days == 0L -> "$title vence hoy"
-            days == 1L -> "$title es mañana"
-            else -> "$title es lo siguiente"
+            days < 0 -> if (isEnglish) "$title is overdue" else "$title está vencida"
+            days == 0L && isExamLike -> if (isEnglish) "$title is today" else "$title es hoy"
+            days == 0L -> if (isEnglish) "$title is due today" else "$title vence hoy"
+            days == 1L -> if (isEnglish) "$title is tomorrow" else "$title es mañana"
+            else -> if (isEnglish) "$title is next" else "$title es lo siguiente"
         }
-        val actionVerb = if (isExamLike) "repasar" else "avanzar"
+        val actionVerb = if (isExamLike) (if (isEnglish) "review" else "repasar") else (if (isEnglish) "make progress" else "avanzar")
         return HomePrioritySummary(
             title = titleText,
             shortDescription = when {
-                days < 0 -> "Cierra esta pendiente antes de abrir más frentes."
-                days == 0L -> "Atiéndela hoy para mantener el día bajo control."
-                else -> "Reserva un bloque corto antes de que se acerque."
+                days < 0 -> if (isEnglish) "Close this pending task before opening more fronts." else "Cierra esta pendiente antes de abrir más frentes."
+                days == 0L -> if (isEnglish) "Handle it today to keep the day under control." else "Atiéndela hoy para mantener el día bajo control."
+                else -> if (isEnglish) "Reserve a short block before it gets closer." else "Reserva un bloque corto antes de que se acerque."
             },
             action = HomePriorityAction.TASKS
         )
     }
 
     private fun AcademicWork.prioritySummary(days: Long): HomePrioritySummary {
-        val dueText = dueDateMillis?.let(TaskDateUtils::dueText) ?: "sin fecha"
+        val dueText = dueDateMillis?.let(TaskDateUtils::dueText) ?: if (isEnglish) "no due date" else "sin fecha"
         return HomePrioritySummary(
             title = when {
-                days < 0 -> "$title está vencido"
-                days == 0L -> "$title vence hoy"
-                days == 1L -> "$title es mañana"
-                else -> "$title es lo siguiente"
+                days < 0 -> if (isEnglish) "$title is overdue" else "$title está vencido"
+                days == 0L -> if (isEnglish) "$title is due today" else "$title vence hoy"
+                days == 1L -> if (isEnglish) "$title is tomorrow" else "$title es mañana"
+                else -> if (isEnglish) "$title is next" else "$title es lo siguiente"
             },
             shortDescription = when {
-                days <= 0 -> "Dale prioridad antes de sumar nuevas tareas."
-                else -> "Avanza un poco antes de que se acumule."
+                days <= 0 -> if (isEnglish) "Give it priority before adding new tasks." else "Dale prioridad antes de sumar nuevas tareas."
+                else -> if (isEnglish) "Make some progress before it piles up." else "Avanza un poco antes de que se acumule."
             },
             action = HomePriorityAction.TEMPLATES,
             subjectId = subjectId
@@ -290,28 +303,28 @@ object DailyPriorityEngine {
 
     private fun HomePriorityAction.focusActionLabel(): String {
         return when (this) {
-            HomePriorityAction.SUBJECT -> "Abrir"
-            HomePriorityAction.SUBJECTS -> "Materias"
-            HomePriorityAction.TASKS -> "Tareas"
-            HomePriorityAction.EXPENSES -> "Gastos"
-            HomePriorityAction.TEMPLATES -> "Trabajos"
-            HomePriorityAction.SCHEDULE -> "Horario"
+            HomePriorityAction.SUBJECT -> if (isEnglish) "Open" else "Abrir"
+            HomePriorityAction.SUBJECTS -> if (isEnglish) "Subjects" else "Materias"
+            HomePriorityAction.TASKS -> if (isEnglish) "Tasks" else "Tareas"
+            HomePriorityAction.EXPENSES -> if (isEnglish) "Expenses" else "Gastos"
+            HomePriorityAction.TEMPLATES -> if (isEnglish) "Assignments" else "Trabajos"
+            HomePriorityAction.SCHEDULE -> if (isEnglish) "Schedule" else "Horario"
         }
     }
 
     private fun slotLabel(index: Int): String {
         return when (index) {
-            0 -> "Ahora"
-            1 -> "Luego"
-            else -> "Si tienes 30 min"
+            0 -> if (isEnglish) "Now" else "Ahora"
+            1 -> if (isEnglish) "Later" else "Luego"
+            else -> if (isEnglish) "If you have 30 min" else "Si tienes 30 min"
         }
     }
 
     private fun heroActionPrefix(): String {
         return when (LocalTime.now().hour) {
-            in 5..11 -> "Arranca con"
-            in 18..23 -> "Deja listo"
-            else -> "Siguiente paso"
+            in 5..11 -> if (isEnglish) "Start with" else "Arranca con"
+            in 18..23 -> if (isEnglish) "Wrap up" else "Deja listo"
+            else -> if (isEnglish) "Next step" else "Siguiente paso"
         }
     }
 

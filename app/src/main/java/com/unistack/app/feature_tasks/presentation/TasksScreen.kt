@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.DateRange
@@ -158,6 +162,9 @@ fun TasksScreen(
     var historySuggestionSubjectId by remember { mutableStateOf<String?>(null) }
     var pendingGradesExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarGradeSaved = stringResource(R.string.tasks_snackbar_grade_saved)
+    val undoLabel = stringResource(R.string.tasks_snackbar_undo)
+    val taskTypeLabels = TaskType.values().associateWith { it.label() }
     // Se lee aqui y no dentro del `launch`: leer un CompositionLocal desde una corrutina no
     // compila, y ademas asi la duracion es la que habia al pintar la pantalla.
     val duracionDeDeshacer = duracionDeDeshacer()
@@ -212,7 +219,7 @@ fun TasksScreen(
                     true
                 } else {
                     val subjectName = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name }.orEmpty()
-                    listOf(task.title, subjectName, task.type.label())
+                    listOf(task.title, subjectName, taskTypeLabels[task.type].orEmpty())
                         .any { it.lowercase(Locale.ROOT).contains(query) }
                 }
             }
@@ -336,7 +343,7 @@ fun TasksScreen(
                 }
                 else -> {
                     if (overdueTasks.isNotEmpty()) {
-                        item { SectionTitle("Vencidas", overdueTasks.size) }
+                        item { SectionTitle(stringResource(R.string.tasks_tab_overdue), overdueTasks.size) }
                         itemsIndexed(overdueTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
                                 modifier = Modifier.entradaDeLista(indice)
@@ -365,7 +372,7 @@ fun TasksScreen(
                         }
                     }
                     if (todayTasks.isNotEmpty()) {
-                        item { SectionTitle("Hoy", todayTasks.size) }
+                        item { SectionTitle(stringResource(R.string.tasks_today), todayTasks.size) }
                         itemsIndexed(todayTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
                                 modifier = Modifier.entradaDeLista(indice)
@@ -394,7 +401,7 @@ fun TasksScreen(
                         }
                     }
                     if (upcomingTasks.isNotEmpty()) {
-                        item { SectionTitle("Próximas", upcomingTasks.size) }
+                        item { SectionTitle(stringResource(R.string.tasks_upcoming), upcomingTasks.size) }
                         itemsIndexed(upcomingTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
                                 modifier = Modifier.entradaDeLista(indice)
@@ -423,7 +430,7 @@ fun TasksScreen(
                         }
                     }
                     if (laterTasks.isNotEmpty()) {
-                        item { SectionTitle("Más adelante", laterTasks.size) }
+                        item { SectionTitle(stringResource(R.string.tasks_later), laterTasks.size) }
                         itemsIndexed(laterTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
                                 modifier = Modifier.entradaDeLista(indice)
@@ -452,7 +459,7 @@ fun TasksScreen(
                         }
                     }
                     if (completedTasks.isNotEmpty()) {
-                        item { SectionTitle("Completadas", completedTasks.size) }
+                        item { SectionTitle(stringResource(R.string.tasks_tab_completed), completedTasks.size) }
                         itemsIndexed(completedTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
                                 modifier = Modifier.entradaDeLista(indice)
@@ -556,8 +563,8 @@ fun TasksScreen(
                         if (gradeId != null) {
                             coroutineScope.launch {
                                 val result = snackbarHostState.showSnackbar(
-                                    message = "Nota registrada y tarea completada.",
-                                    actionLabel = "Deshacer",
+                                    message = snackbarGradeSaved,
+                                    actionLabel = undoLabel,
                                     // Cinco segundos por defecto, y hasta treinta si se han
                                     // pedido en Accesibilidad: un «Deshacer» que desaparece
                                     // antes de poder pulsarlo deja el borrado hecho.
@@ -585,11 +592,13 @@ fun TasksScreen(
                 viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
                 historySuggestionSubjectId = null
             },
-            title = { Text("Tu historial puede mejorar la proyección") },
+            title = { Text(stringResource(R.string.tasks_history_prompt_title)) },
             text = {
                 Text(
-                    "Registraste la primera nota de ${subject?.name ?: "esta materia"} en un corte avanzado. " +
-                        "Puedes agregar ahora las notas de los cortes anteriores o hacerlo más tarde."
+                    stringResource(
+                        R.string.tasks_history_prompt_desc_1,
+                        subject?.name ?: stringResource(R.string.tasks_field_subject)
+                    ) + " " + stringResource(R.string.tasks_history_prompt_desc_2)
                 )
             },
             confirmButton = {
@@ -599,7 +608,7 @@ fun TasksScreen(
                         historySuggestionSubjectId = null
                         onCompleteHistoryClick(subjectId)
                     }
-                ) { Text("Completar historial") }
+                ) { Text(stringResource(R.string.grade_complete_history_button)) }
             },
             dismissButton = {
                 TextButton(
@@ -607,15 +616,15 @@ fun TasksScreen(
                         viewModel.updateHistoryPromptStatus(subjectId, PriorHistoryPromptStatus.SNOOZED)
                         historySuggestionSubjectId = null
                     }
-                ) { Text("Más tarde") }
+                ) { Text(stringResource(R.string.grade_complete_history_later)) }
             }
         )
     }
 
     taskIdPendingDelete?.let { taskId ->
         UniConfirmDeleteDialog(
-            title = "¿Eliminar tarea?",
-            body = "Esta acción no se puede deshacer.",
+            title = stringResource(R.string.tasks_delete_dialog_title),
+            body = stringResource(R.string.tasks_delete_dialog_body),
             onConfirm = {
                 viewModel.deleteTask(taskId)
                 taskIdPendingDelete = null
@@ -642,6 +651,8 @@ private fun TaskGradeResultSheet(
         mutableStateOf(task.cutId ?: subject.defaultCutId)
     }
     var error by remember(task.id) { mutableStateOf<String?>(null) }
+    val validationErrorMsg = stringResource(R.string.tasks_validation_error)
+    val saveErrorMsg = stringResource(R.string.tasks_save_error)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -656,7 +667,7 @@ private fun TaskGradeResultSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = if (enteringGrade) "Registrar resultado" else "Tarea completada",
+                text = if (enteringGrade) stringResource(R.string.tasks_record_grade_title) else stringResource(R.string.tasks_completed_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -664,7 +675,7 @@ private fun TaskGradeResultSheet(
                 text = if (enteringGrade) {
                     "${task.title} · ${subject.name}"
                 } else {
-                    "¿Recibiste una nota por “${task.title}”?"
+                    stringResource(R.string.tasks_record_grade_question, task.title)
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -675,15 +686,15 @@ private fun TaskGradeResultSheet(
                     onClick = { enteringGrade = true },
                     modifier = Modifier.fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) { Text("Sí, registrar nota") }
+                ) { Text(stringResource(R.string.tasks_record_grade_yes)) }
                 TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text("Todavía no la recibo")
+                    Text(stringResource(R.string.tasks_record_grade_not_yet))
                 }
                 TextButton(onClick = onNoGrade, modifier = Modifier.fillMaxWidth()) {
-                    Text("Esta tarea no recibe nota")
+                    Text(stringResource(R.string.tasks_record_grade_never))
                 }
             } else {
-                Text("Corte", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.tasks_field_cut), fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     subject.cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
                         Surface(
@@ -709,7 +720,7 @@ private fun TaskGradeResultSheet(
                         valueInput = it
                         error = null
                     },
-                    label = { Text("Nota obtenida") },
+                    label = { Text(stringResource(R.string.tasks_grade_obtained)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth()
@@ -719,9 +730,9 @@ private fun TaskGradeResultSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("No conozco el porcentaje", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.tasks_unknown_weight), fontWeight = FontWeight.SemiBold)
                         Text(
-                            "La nota se guardará sin alterar la proyección.",
+                            stringResource(R.string.tasks_unknown_weight_hint),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -741,7 +752,7 @@ private fun TaskGradeResultSheet(
                             percentageInput = it.filter { char -> char.isDigit() || char == '.' }
                             error = null
                         },
-                        label = { Text("Peso dentro del corte") },
+                        label = { Text(stringResource(R.string.tasks_weight_in_cut)) },
                         suffix = { Text("%") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -757,14 +768,14 @@ private fun TaskGradeResultSheet(
                         val value = valueInput.toDoubleOrNull()
                         val percentage = if (weightUnknown) null else percentageInput.toDoubleOrNull()
                         if (value == null || (!weightUnknown && percentage == null)) {
-                            error = "Revisa la nota y el porcentaje."
+                            error = validationErrorMsg
                         } else if (!onSaveGrade(value, percentage, selectedCutId)) {
-                            error = "No fue posible guardar. Revisa el rango y el peso acumulado."
+                            error = saveErrorMsg
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                     .heightIn(min = UniStackButtonDefaults.PrimaryHeight)
-                ) { Text("Guardar nota") }
+                ) { Text(stringResource(R.string.tasks_save_grade)) }
             }
         }
     }
@@ -777,13 +788,13 @@ private fun TasksHeader() {
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text = "Tareas",
+            text = stringResource(R.string.tasks_header_title),
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.ExtraBold
         )
         Text(
-            text = "Organiza tus entregas y actividades",
+            text = stringResource(R.string.tasks_header_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
@@ -800,7 +811,7 @@ private fun TaskSearchBar(
     UniSearchField(
         query = query,
         onQueryChange = onQueryChange,
-        placeholder = "Buscar tarea, materia o tipo",
+        placeholder = stringResource(R.string.tasks_search_field_placeholder),
         onSearchDone = onSearchDone
     )
 }
@@ -831,6 +842,16 @@ private fun TaskStatsRow(
         .filter { TaskDateUtils.fromMillis(it.dueDateMillis).isBefore(today) }
     var selectedStat by remember { mutableStateOf<TaskStatDetail?>(null) }
 
+    val todayLabel = stringResource(R.string.tasks_today)
+    val todayTitle = stringResource(R.string.tasks_filter_today_title)
+    val todayDesc = stringResource(R.string.tasks_filter_today_subtitle)
+    val weekLabel = stringResource(R.string.tasks_week)
+    val weekTitle = stringResource(R.string.tasks_filter_week_title)
+    val weekDesc = stringResource(R.string.tasks_filter_week_subtitle)
+    val overdueLabel = stringResource(R.string.tasks_tab_overdue)
+    val overdueTitle = stringResource(R.string.tasks_filter_overdue_title)
+    val overdueDesc = stringResource(R.string.tasks_filter_overdue_subtitle)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -840,12 +861,12 @@ private fun TaskStatsRow(
             icon = Icons.Rounded.Today,
             iconColor = LocalSectionColors.current.onTrack,
             value = todayTasks.size.toString(),
-            label = "Hoy",
+            label = todayLabel,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Tareas de hoy",
-                    description = "Lo que vence hoy y sigue sin marcar.",
+                    title = todayTitle,
+                    description = todayDesc,
                     tasks = todayTasks
                 )
             }
@@ -855,12 +876,12 @@ private fun TaskStatsRow(
             icon = Icons.Rounded.DateRange,
             iconColor = LocalSectionColors.current.schedule,
             value = weekTasks.size.toString(),
-            label = "Semana",
+            label = weekLabel,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Tareas de la semana",
-                    description = "Lo que vence entre hoy y los próximos seis días.",
+                    title = weekTitle,
+                    description = weekDesc,
                     tasks = weekTasks
                 )
             }
@@ -870,12 +891,12 @@ private fun TaskStatsRow(
             icon = Icons.Rounded.ErrorOutline,
             iconColor = MaterialTheme.colorScheme.error,
             value = overdueTasks.size.toString(),
-            label = "Vencidas",
+            label = overdueLabel,
             onClick = {
                 onUserInteraction()
                 selectedStat = TaskStatDetail(
-                    title = "Tareas vencidas",
-                    description = "Pasó su fecha límite y siguen pendientes.",
+                    title = overdueTitle,
+                    description = overdueDesc,
                     tasks = overdueTasks
                 )
             }
@@ -954,7 +975,7 @@ private fun TaskStatSheet(
                     color = MaterialTheme.colorScheme.surfaceContainer
                 ) {
                     Text(
-                        "Nada aquí. Cuando algo entre en este grupo, aparecerá en esta lista.",
+                        stringResource(R.string.tasks_empty_group),
                         modifier = Modifier.padding(18.dp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
@@ -1047,7 +1068,7 @@ private fun TaskFilterSummaryChip(
             )
             Icon(
                 imageVector = Icons.Rounded.KeyboardArrowDown,
-                contentDescription = "Abrir filtros",
+                contentDescription = stringResource(R.string.tasks_open_filters),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -1116,14 +1137,14 @@ private fun PendingGradesBanner(
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (count == 1) "1 resultado pendiente" else "$count resultados pendientes",
+                        text = if (count == 1) stringResource(R.string.tasks_pending_result_single) else stringResource(R.string.tasks_pending_result_multiple, count),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     if (!expanded) {
                         Text(
-                            text = "Toca para registrar o descartar resultados",
+                            text = stringResource(R.string.tasks_pending_result_hint),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Normal
@@ -1131,14 +1152,14 @@ private fun PendingGradesBanner(
                     }
                 }
                 Text(
-                    text = if (expanded) "Ocultar" else "Revisar",
+                    text = if (expanded) stringResource(R.string.tasks_hide) else stringResource(R.string.tasks_review),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Icon(
                     imageVector = if (expanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Ocultar resultados pendientes" else "Ver resultados pendientes",
+                    contentDescription = if (expanded) stringResource(R.string.tasks_hide_pending_results) else stringResource(R.string.tasks_view_pending_results),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -1155,7 +1176,7 @@ private fun PendingGradesBanner(
                         task = task,
                         subjectName = task.subjectId
                             ?.let { id -> subjects.firstOrNull { it.id == id }?.name }
-                            ?: "Sin materia",
+                            ?: stringResource(R.string.tasks_no_subject),
                         onRegisterGradeClick = { onRegisterGradeClick(task) },
                         onNoGradeClick = { onNoGradeClick(task) },
                         onEditClick = { onEditClick(task) },
@@ -1203,18 +1224,18 @@ private fun PendingGradeTaskRow(
             )
         }
         TextButton(onClick = onRegisterGradeClick) {
-            Text("Registrar", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.tasks_action_record), fontWeight = FontWeight.Bold)
         }
         Box {
             IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(IconButtonDefaults.smallContainerSize())) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
+                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(R.string.tasks_more_options))
             }
             UniDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar tarea") },
+                    text = { Text(stringResource(R.string.tasks_edit_task)) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
@@ -1222,7 +1243,7 @@ private fun PendingGradeTaskRow(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("No tuvo nota") },
+                    text = { Text(stringResource(R.string.tasks_action_no_grade)) },
                     leadingIcon = { Icon(Icons.Rounded.CheckCircle, contentDescription = null) },
                     onClick = {
                         menuExpanded = false
@@ -1236,7 +1257,7 @@ private fun PendingGradeTaskRow(
                 // línea no impide el toque, pero rompe la lista en dos y obliga a mirar.
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
-                    text = { Text("Eliminar") },
+                    text = { Text(stringResource(R.string.action_delete)) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                     colors = MenuDefaults.itemColors(
                         textColor = MaterialTheme.colorScheme.error,
@@ -1309,12 +1330,12 @@ private fun TarjetaDeTarea(
     onDeleteClick: () -> Unit
 ) {
     val subject = task.subjectId?.let { id -> subjects.firstOrNull { it.id == id } }
-    val subjectName = subject?.name ?: "Sin materia"
+    val subjectName = subject?.name ?: stringResource(R.string.tasks_no_subject)
     val linkedGrade = task.linkedGradeId?.let { gradeId ->
         subject?.grades?.firstOrNull { it.id == gradeId }
     }
     val gradeSummary = linkedGrade?.let { grade ->
-        val cutName = subject?.cutScheme?.cutName(grade.cutId) ?: "Corte"
+        val cutName = subject?.cutScheme?.cutName(grade.cutId) ?: stringResource(R.string.tasks_field_cut)
         "${GradingScaleUtils.formatGrade(grade.value, gradingScale)} · $cutName"
     }
     val awaitingGrade = task.completed && task.gradingStatus == TaskGradingStatus.AWAITING_GRADE
@@ -1368,7 +1389,7 @@ private fun TarjetaDeTarea(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "ENTREGADA · ESPERANDO NOTA",
+                            text = stringResource(R.string.tasks_delivered_waiting_grade),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelSmall,
@@ -1464,7 +1485,7 @@ private fun TarjetaDeTarea(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Registrar nota",
+                                    text = stringResource(R.string.tasks_record_grade_button),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -1473,7 +1494,7 @@ private fun TarjetaDeTarea(
                     }
                     TaskGradingStatus.GRADED -> {
                         Text(
-                            text = gradeSummary?.let { "Nota $it" } ?: "Nota registrada",
+                            text = gradeSummary?.let { stringResource(R.string.tasks_grade_prefix, it) } ?: stringResource(R.string.tasks_grade_recorded),
                             color = LocalSectionColors.current.onTrack,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
@@ -1485,7 +1506,7 @@ private fun TarjetaDeTarea(
             Box(modifier = Modifier.padding(top = 8.dp, end = 6.dp)) {
                 UniIconButton(
                     icon = Icons.Rounded.MoreVert,
-                    contentDescription = "Más opciones de ${task.title}",
+                    contentDescription = stringResource(R.string.tasks_more_options_for, task.title),
                     onClick = { menuExpanded = true }
                 )
                 UniDropdownMenu(
@@ -1493,7 +1514,7 @@ private fun TarjetaDeTarea(
                     onDismissRequest = { menuExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Editar") },
+                        text = { Text(stringResource(R.string.action_edit)) },
                         leadingIcon = {
                             Icon(Icons.Rounded.Edit, contentDescription = null)
                         },
@@ -1504,7 +1525,7 @@ private fun TarjetaDeTarea(
                     )
                     if (task.gradingStatus == TaskGradingStatus.AWAITING_GRADE) {
                         DropdownMenuItem(
-                            text = { Text("No tuvo nota") },
+                            text = { Text(stringResource(R.string.tasks_action_no_grade)) },
                             leadingIcon = {
                                 Icon(Icons.Rounded.CheckCircle, contentDescription = null)
                             },
@@ -1516,7 +1537,7 @@ private fun TarjetaDeTarea(
                     }
                     if (task.gradingStatus == TaskGradingStatus.GRADED) {
                         DropdownMenuItem(
-                            text = { Text("Desvincular nota") },
+                            text = { Text(stringResource(R.string.tasks_action_unlink_grade)) },
                             leadingIcon = {
                                 Icon(Icons.Rounded.Grade, contentDescription = null)
                             },
@@ -1528,7 +1549,7 @@ private fun TarjetaDeTarea(
                     }
                     HorizontalDivider(Modifier.padding(vertical = 4.dp))
                     DropdownMenuItem(
-                        text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                        text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
                         leadingIcon = {
                             Icon(
                                 Icons.Rounded.Delete,
@@ -1566,13 +1587,13 @@ private fun TasksEmptyState() {
                 tint = MaterialTheme.colorScheme.secondary
             )
             Text(
-                text = "Aún no tienes tareas.",
+                text = stringResource(R.string.tasks_empty_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                text = "Crea tu primera tarea para organizar fechas, materias y prioridades.",
+                text = stringResource(R.string.tasks_empty_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
@@ -1594,18 +1615,18 @@ private fun FilteredEmptyState(onOpenFilters: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "No hay tareas con estos filtros.",
+                text = stringResource(R.string.tasks_empty_filtered_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                text = "Ajusta estado, materia o prioridad para revisar otros pendientes.",
+                text = stringResource(R.string.tasks_empty_filtered_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
             TextButton(onClick = onOpenFilters) {
-                Text("Cambiar filtros", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.tasks_change_filters), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -1645,7 +1666,7 @@ private fun NewTaskFab(
                 )
             }
             Text(
-                text = "Nueva tarea",
+                text = stringResource(R.string.tasks_new_task),
                 color = contentColorOn(MaterialTheme.colorScheme.primary),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
@@ -1705,7 +1726,7 @@ private fun TasksFilterBottomSheet(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                FilterSheetSection(title = "Estado") {
+                FilterSheetSection(title = stringResource(R.string.tasks_status_title)) {
                     StatusFilterGrid(
                         selectedStatus = selectedStatus,
                         onStatusSelected = onStatusSelected
@@ -1718,14 +1739,14 @@ private fun TasksFilterBottomSheet(
                     onSubjectSelected = onSubjectSelected
                 )
 
-                FilterSheetSection(title = "Prioridad") {
+                FilterSheetSection(title = stringResource(R.string.tasks_priority_title)) {
                     PrioritySegmentedControl(
                         selectedPriority = selectedPriority,
                         onPrioritySelected = onPrioritySelected
                     )
                 }
 
-                FilterSheetSection(title = "Ordenar por") {
+                FilterSheetSection(title = stringResource(R.string.tasks_sort_title)) {
                     SortRadioGroup(
                         selected = sortOrder,
                         onSelected = onSortSelected
@@ -1745,7 +1766,7 @@ private fun FiltersSheetHeader(onClear: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Filtros",
+            text = stringResource(R.string.tasks_filter_title),
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.headlineSmall,
@@ -1753,7 +1774,7 @@ private fun FiltersSheetHeader(onClear: () -> Unit) {
         )
         TextButton(onClick = onClear) {
             Text(
-                text = "Limpiar",
+                text = stringResource(R.string.tasks_filter_clear),
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold
@@ -1852,9 +1873,10 @@ private fun SubjectDropdownSelector(
     onSubjectSelected: (String?) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = subjects.firstOrNull { it.id == selectedSubjectId }?.name ?: "Todas las materias"
+    val allSubjectsLabel = stringResource(R.string.tasks_all_subjects)
+    val selectedLabel = subjects.firstOrNull { it.id == selectedSubjectId }?.name ?: allSubjectsLabel
 
-    FilterSheetSection(title = "Materia") {
+    FilterSheetSection(title = stringResource(R.string.tasks_field_subject)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Surface(
                 modifier = Modifier
@@ -1911,7 +1933,7 @@ private fun SubjectDropdownSelector(
                             .padding(vertical = 6.dp)
                     ) {
                         SubjectDropdownRow(
-                            label = "Todas las materias",
+                            label = allSubjectsLabel,
                             selected = selectedSubjectId == null,
                             onClick = {
                                 onSubjectSelected(null)
@@ -1979,10 +2001,10 @@ private fun PrioritySegmentedControl(
     UniSegmentedControl(
         selected = selectedPriority,
         options = listOf<Pair<TaskDifficulty?, String>>(
-            null to "Todas",
-            TaskDifficulty.EASY to "Baja",
-            TaskDifficulty.MEDIUM to "Media",
-            TaskDifficulty.HARD to "Alta"
+            null to stringResource(R.string.tasks_priority_all),
+            TaskDifficulty.EASY to stringResource(R.string.tasks_priority_low),
+            TaskDifficulty.MEDIUM to stringResource(R.string.tasks_priority_medium),
+            TaskDifficulty.HARD to stringResource(R.string.tasks_priority_high)
         ).map { (priority, label) ->
             UniSegmentedOption(
                 value = priority,
@@ -2042,7 +2064,7 @@ private fun FiltersSheetFooter(onDismiss: () -> Unit) {
         )
     ) {
         Text(
-            "Ver resultados",
+            stringResource(R.string.tasks_filter_apply),
             color = MaterialTheme.colorScheme.onPrimary,
             fontWeight = FontWeight.ExtraBold
         )
@@ -2070,30 +2092,32 @@ private fun List<StudentTask>.sortFor(
                 .thenBy { it.dueDateMillis }
         )
         TaskSortOrder.SUBJECT -> sortedWith(
-            compareBy<StudentTask> { task -> subjects.firstOrNull { it.id == task.subjectId }?.name ?: "Sin materia" }
+            compareBy<StudentTask> { task -> subjects.firstOrNull { it.id == task.subjectId }?.name.orEmpty() }
                 .thenBy { it.dueDateMillis }
         )
         TaskSortOrder.RECENT -> sortedByDescending { it.createdAt }
     }
 }
 
+@Composable
 private fun taskDueLabel(dueDateMillis: Long): String {
     val dueDate = TaskDateUtils.fromMillis(dueDateMillis)
     val today = TaskDateUtils.today()
     return when (dueDate) {
-        today -> "Hoy"
-        today.plusDays(1) -> "Mañana"
+        today -> stringResource(R.string.tasks_today)
+        today.plusDays(1) -> stringResource(R.string.tasks_tomorrow)
         else -> dueDate.format(shortDateFormatter)
     }
 }
 
-private val shortDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM", Locale.forLanguageTag("es-CO"))
+private val shortDateFormatter: DateTimeFormatter get() = DateTimeFormatter.ofPattern("d MMM", Locale.getDefault())
 
+@Composable
 private fun TaskDifficulty.shortLabel(): String {
     return when (this) {
-        TaskDifficulty.EASY -> "Baja"
-        TaskDifficulty.MEDIUM -> "Media"
-        TaskDifficulty.HARD -> "Alta"
+        TaskDifficulty.EASY -> stringResource(R.string.tasks_priority_low)
+        TaskDifficulty.MEDIUM -> stringResource(R.string.tasks_priority_medium)
+        TaskDifficulty.HARD -> stringResource(R.string.tasks_priority_high)
     }
 }
 
@@ -2115,21 +2139,23 @@ private fun TaskDifficulty.color(): Color {
     }
 }
 
+@Composable
 private fun TaskType.label(): String {
     return when (this) {
-        TaskType.WORKSHOP -> "Taller"
-        TaskType.EXAM -> "Parcial"
-        TaskType.ESSAY -> "Ensayo"
-        TaskType.PRESENTATION -> "Exposición"
-        TaskType.RESEARCH -> "Investigación"
-        TaskType.TEST -> "Examen"
-        TaskType.PRACTICE -> "Práctica"
-        TaskType.PROJECT -> "Proyecto"
-        TaskType.READING -> "Lectura"
-        TaskType.OTHER -> "Otro"
+        TaskType.WORKSHOP -> stringResource(R.string.tasks_type_workshop)
+        TaskType.EXAM -> stringResource(R.string.tasks_type_midterm)
+        TaskType.ESSAY -> stringResource(R.string.tasks_type_essay)
+        TaskType.PRESENTATION -> stringResource(R.string.tasks_type_presentation)
+        TaskType.RESEARCH -> stringResource(R.string.tasks_type_research)
+        TaskType.TEST -> stringResource(R.string.tasks_type_exam)
+        TaskType.PRACTICE -> stringResource(R.string.tasks_type_practice)
+        TaskType.PROJECT -> stringResource(R.string.tasks_type_project)
+        TaskType.READING -> stringResource(R.string.tasks_type_reading)
+        TaskType.OTHER -> stringResource(R.string.tasks_type_other)
     }
 }
 
+@Composable
 private fun filterSummaryLabel(
     selectedStatus: TaskListFilter,
     selectedSubjectName: String?,
@@ -2143,9 +2169,9 @@ private fun filterSummaryLabel(
         if (sortOrder != TaskSortOrder.DUE_DATE) add(sortOrder.label)
     }
     return if (activeFilters.isEmpty()) {
-        "Materia: Todas"
+        stringResource(R.string.tasks_filter_subject_all)
     } else {
-        "Filtros: ${activeFilters.joinToString(" · ")}"
+        stringResource(R.string.tasks_filters_active, activeFilters.joinToString(" · "))
     }
 }
 
@@ -2162,11 +2188,14 @@ private val visibleStatusFilters = listOf(
     TaskListFilter.OVERDUE
 )
 
-private enum class TaskListFilter(val label: String) {
-    ALL("Todas"),
-    PENDING("Pendientes"),
-    OVERDUE("Vencidas"),
-    COMPLETED("Completadas");
+private enum class TaskListFilter(@StringRes val labelRes: Int) {
+    ALL(R.string.tasks_status_all),
+    PENDING(R.string.tasks_tab_pending),
+    OVERDUE(R.string.tasks_tab_overdue),
+    COMPLETED(R.string.tasks_tab_completed);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 
     fun matches(task: StudentTask): Boolean {
         return when (this) {
@@ -2178,9 +2207,12 @@ private enum class TaskListFilter(val label: String) {
     }
 }
 
-private enum class TaskSortOrder(val label: String) {
-    DUE_DATE("Fecha de vencimiento"),
-    PRIORITY("Prioridad"),
-    SUBJECT("Materia"),
-    RECENT("Más recientes")
+private enum class TaskSortOrder(@StringRes val labelRes: Int) {
+    DUE_DATE(R.string.tasks_sort_due_date),
+    PRIORITY(R.string.tasks_sort_priority),
+    SUBJECT(R.string.tasks_sort_subject),
+    RECENT(R.string.tasks_sort_recent);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }

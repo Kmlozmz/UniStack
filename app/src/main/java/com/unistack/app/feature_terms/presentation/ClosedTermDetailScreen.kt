@@ -20,6 +20,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,7 +61,8 @@ fun ClosedTermDetailScreen(
     val colores = LocalSectionColors.current
     val resumen = state.summaries.firstOrNull { it.term.id == termId }
 
-    val title = resumen?.term?.name ?: "Periodo"
+    val title = resumen?.term?.name ?: stringResource(R.string.terms_detail_default_title)
+    val inProgLabel = stringResource(R.string.terms_row_in_progress)
     val subtitle = resumen?.let { r ->
         buildString {
             append(r.term.start.diaMes())
@@ -67,12 +70,12 @@ fun ClosedTermDetailScreen(
             append(
                 r.term.closedEpochDay
                     ?.let { LocalDate.ofEpochDay(it).diaMesAno() }
-                    ?: "en curso"
+                    ?: inProgLabel
             )
             append(" · ")
             append(r.term.type.label)
         }
-    } ?: "Histórico"
+    } ?: stringResource(R.string.terms_detail_default_subtitle)
 
     LargeTitleScaffold(
         title = title,
@@ -87,7 +90,7 @@ fun ClosedTermDetailScreen(
         if (resumen == null) {
             item {
                 TermEmptyNote(
-                    if (state.loaded) "Este periodo ya no existe." else "Cargando el periodo…"
+                    if (state.loaded) stringResource(R.string.terms_term_not_found) else stringResource(R.string.terms_loading)
                 )
             }
         } else {
@@ -96,19 +99,19 @@ fun ClosedTermDetailScreen(
                 TermCard {
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         TermStat(
-                            label = "Promedio",
+                            label = stringResource(R.string.terms_stat_average),
                             value = resumen.average?.toString(),
                             modifier = Modifier.weight(1f)
                         )
                         TermStat(
-                            label = "Asistencia",
+                            label = stringResource(R.string.terms_stat_attendance),
                             value = resumen.attendanceRate?.let { "$it%" },
                             modifier = Modifier.weight(1f),
                             // El alcance va pegado a la cifra: sin él, un 91% no dice de qué.
-                            note = resumen.attendanceSince?.let { "desde el ${it.diaMes()}" }
+                            note = resumen.attendanceSince?.let { stringResource(R.string.terms_attendance_since, it.diaMes()) }
                         )
                         TermStat(
-                            label = if (resumen.failedCount == 1) "Perdida" else "Perdidas",
+                            label = if (resumen.failedCount == 1) stringResource(R.string.terms_stat_failed_single) else stringResource(R.string.terms_stat_failed_multiple),
                             value = resumen.failedCount.toString(),
                             modifier = Modifier.weight(1f),
                             tint = if (resumen.failedCount > 0) colores.atRisk else null
@@ -119,8 +122,9 @@ fun ClosedTermDetailScreen(
 
             if (resumen.subjects.isNotEmpty()) {
                 item {
+                    val headerLabel = if (resumen.subjects.size == 1) stringResource(R.string.terms_subjects_header_single) else stringResource(R.string.terms_subjects_header_multiple, resumen.subjects.size)
                     TermLabel(
-                        "${resumen.subjects.size} ${if (resumen.subjects.size == 1) "MATERIA" else "MATERIAS"}",
+                        headerLabel,
                         Modifier.padding(start = 4.dp, top = 6.dp)
                     )
                 }
@@ -134,10 +138,9 @@ fun ClosedTermDetailScreen(
             item {
                 Text(
                     text = if (term.isActive) {
-                        "Es el periodo en curso: lo que ves aquí sigue cambiando."
+                        stringResource(R.string.terms_active_explainer)
                     } else {
-                        "Puedes editar las notas de este periodo desde cada materia. Está cerrado, " +
-                            "pero cerrado no quiere decir bloqueado."
+                        stringResource(R.string.terms_closed_explainer)
                     },
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                     color = MaterialTheme.colorScheme.outline,
@@ -178,8 +181,9 @@ private fun SubjectRowInTerm(subject: SubjectInTerm, onClick: () -> Unit) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
+                val attRateText = subject.attendanceRate?.let { stringResource(R.string.terms_attendance_rate, it) } ?: stringResource(R.string.terms_no_classes_marked)
                 Text(
-                    text = subject.attendanceRate?.let { "Asistencia $it%" } ?: "Sin clases marcadas",
+                    text = attRateText,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.5.sp
                 )
@@ -194,7 +198,7 @@ private fun SubjectRowInTerm(subject: SubjectInTerm, onClick: () -> Unit) {
                 if (subject.passed == false) {
                     Surface(shape = CircleShape, color = colores.atRisk.copy(alpha = 0.18f)) {
                         Text(
-                            text = "Perdida",
+                            text = stringResource(R.string.terms_stat_failed_single),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                             color = colores.atRisk,
                             fontSize = 10.sp,

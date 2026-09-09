@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_tasks.presentation
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniIconButton
@@ -141,6 +145,7 @@ fun AddTaskScreen(
     var error by rememberSaveable(taskId) { mutableStateOf<String?>(null) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    val validationErrorMsg = stringResource(R.string.tasks_form_validation_error)
     // El título y la descripción sueltan el foco antes de que se abra un selector: si no, al
     // cerrarlo el campo lo recupera y el teclado vuelve a subir sobre el formulario.
     val focusManager = LocalFocusManager.current
@@ -165,9 +170,9 @@ fun AddTaskScreen(
         hasUnsavedChanges = hasUnsavedChanges,
         onLeave = onBackClick,
         message = if (task == null) {
-            "La tarea no se ha creado todavía."
+            stringResource(R.string.tasks_unsaved_leave_create)
         } else {
-            "Los cambios de esta tarea se van a perder."
+            stringResource(R.string.tasks_unsaved_leave_edit)
         }
     )
 
@@ -228,7 +233,7 @@ fun AddTaskScreen(
         titleIsValid = isTitleValid,
         titleError = titleValidation.errorMessage,
         dueDateLabel = parsedDueDate?.let { formatTaskDueText(TaskDateUtils.toMillis(it, parsedDueTime)) }.orEmpty(),
-        dueTimeLabel = dueTime.ifBlank { "Sin hora" },
+        dueTimeLabel = dueTime.ifBlank { stringResource(R.string.tasks_no_time) },
         subjects = subjects,
         selectedSubjectId = selectedSubjectId,
         selectedCutId = selectedCutId,
@@ -246,9 +251,9 @@ fun AddTaskScreen(
         },
         linkedGradeWeight = linkedGrade?.let { grade ->
             if (grade.weightStatus == com.unistack.app.feature_grades.domain.GradeWeightStatus.UNKNOWN) {
-                "Porcentaje pendiente"
+                stringResource(R.string.tasks_weight_pending)
             } else {
-                "${(grade.percentage * 100).toInt()}% del corte"
+                stringResource(R.string.tasks_weight_of_cut, (grade.percentage * 100).toInt())
             }
         },
         linkedGradeChanged = linkedGradeChanged,
@@ -360,7 +365,7 @@ fun AddTaskScreen(
             if (saved) {
                 onBackClick()
             } else {
-                error = "Revisa la actividad, fecha y hora antes de guardar."
+                error = validationErrorMsg
             }
         },
         modifier = modifier
@@ -385,21 +390,21 @@ fun AddTaskScreen(
                 error = null
             },
             onDismiss = { showTimePicker = false },
-            title = "Hora límite",
+            title = stringResource(R.string.tasks_time_limit),
             extraAction = {
                 TextButton(onClick = {
                     dueTime = ""
                     error = null
                     showTimePicker = false
-                }) { Text("Dejar sin hora") }
+                }) { Text(stringResource(R.string.tasks_field_no_time)) }
             }
         )
     }
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Eliminar tarea") },
-            text = { Text("Esta acción no se puede deshacer.") },
+            title = { Text(stringResource(R.string.tasks_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.tasks_delete_dialog_body)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -408,12 +413,12 @@ fun AddTaskScreen(
                         onBackClick()
                     }
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -421,8 +426,8 @@ fun AddTaskScreen(
     if (showUnlinkConfirmation) {
         AlertDialog(
             onDismissRequest = { showUnlinkConfirmation = false },
-            title = { Text("Desvincular nota") },
-            text = { Text("La nota seguirá guardada en la materia, pero dejará de estar asociada a esta tarea.") },
+            title = { Text(stringResource(R.string.tasks_unlink_grade_title)) },
+            text = { Text(stringResource(R.string.tasks_unlink_grade_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -430,12 +435,12 @@ fun AddTaskScreen(
                         task?.let { viewModel.unlinkTaskGrade(it.id) }
                     }
                 ) {
-                    Text("Desvincular")
+                    Text(stringResource(R.string.tasks_action_unlink))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showUnlinkConfirmation = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -487,8 +492,8 @@ private fun AddTaskContent(
     val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectId }
     val headerContext = listOfNotNull(
         selectedSubject?.name,
-        linkedGradeValue?.let { "Nota $it" }
-    ).joinToString(" · ").ifBlank { "Organiza los detalles de la actividad" }
+        linkedGradeValue?.let { stringResource(R.string.tasks_grade_prefix, it) }
+    ).joinToString(" · ").ifBlank { stringResource(R.string.tasks_form_subtitle) }
 
     Box(
         modifier = modifier
@@ -505,14 +510,14 @@ private fun AddTaskContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             TaskHeader(
-                title = if (isEditing) "Editar tarea" else "Nueva tarea",
+                title = if (isEditing) stringResource(R.string.tasks_edit_task) else stringResource(R.string.tasks_new_task),
                 subtitle = headerContext,
                 onBackClick = onBackClick,
                 onDeleteClick = onDeleteClick,
                 onDuplicateClick = onDuplicateClick,
                 onCompleteClick = onCompleteClick
             )
-            FormSection(title = "Detalles principales") {
+            FormSection(title = stringResource(R.string.tasks_details_title)) {
                 BasicInfoCard(
                     title = title,
                     titleIsValid = titleIsValid,
@@ -530,13 +535,13 @@ private fun AddTaskContent(
                     onCreateSubjectClick = onCreateSubjectClick
                 )
             }
-            FormSection(title = "Clasificación") {
+            FormSection(title = stringResource(R.string.tasks_classification_title)) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     TaskTypeSelector(selected = selectedType, onSelected = onTypeSelected)
                     PrioritySegmentedControl(selected = selectedPriority, onSelected = onPrioritySelected)
                 }
             }
-            FormSection(title = "Calificación") {
+            FormSection(title = stringResource(R.string.tasks_evaluation_title)) {
                 if (linkedGradeValue != null) {
                     LinkedGradeCard(
                         value = linkedGradeValue,
@@ -573,7 +578,7 @@ private fun AddTaskContent(
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = if (description.isBlank()) "Añadir descripción" else "Descripción",
+                            text = if (description.isBlank()) stringResource(R.string.tasks_add_description) else stringResource(R.string.tasks_field_description),
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 12.dp),
@@ -598,7 +603,7 @@ private fun AddTaskContent(
                 }
             }
             if (taskMissing) {
-                Text("Tarea no encontrada.", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.tasks_not_found), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
             }
             error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
@@ -616,7 +621,7 @@ private fun AddTaskContent(
             shadowElevation = 8.dp
         ) {
             CreateTaskButton(
-                text = if (isEditing) "Guardar cambios" else "Crear tarea",
+                text = if (isEditing) stringResource(R.string.tasks_save_changes) else stringResource(R.string.tasks_button_create),
                 enabled = isSaveEnabled,
                 onClick = onSaveClick,
                 modifier = Modifier
@@ -646,13 +651,13 @@ private fun TaskHeader(
                 Box {
                     UniIconButton(
                         icon = Icons.Rounded.MoreVert,
-                        contentDescription = "Más acciones",
+                        contentDescription = stringResource(R.string.tasks_more_actions),
                         onClick = { menuExpanded = true }
                     )
                     UniDropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                         onCompleteClick?.let { action ->
                             DropdownMenuItem(
-                                text = { Text("Marcar completada") },
+                                text = { Text(stringResource(R.string.tasks_action_mark_completed)) },
                                 leadingIcon = { Icon(Icons.Rounded.CheckCircle, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -662,7 +667,7 @@ private fun TaskHeader(
                         }
                         onDuplicateClick?.let { action ->
                             DropdownMenuItem(
-                                text = { Text("Duplicar") },
+                                text = { Text(stringResource(R.string.tasks_action_duplicate)) },
                                 leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -672,7 +677,7 @@ private fun TaskHeader(
                         }
                         onDeleteClick?.let { action ->
                             DropdownMenuItem(
-                                text = { Text("Eliminar") },
+                                text = { Text(stringResource(R.string.action_delete)) },
                                 leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
@@ -769,14 +774,14 @@ private fun BasicInfoCard(
             CompactInfoAction(
                 modifier = Modifier.weight(1.35f),
                 icon = Icons.Rounded.CalendarMonth,
-                label = "Fecha",
-                value = dueDateLabel.ifBlank { "Seleccionar" },
+                label = stringResource(R.string.tasks_field_date),
+                value = dueDateLabel.ifBlank { stringResource(R.string.tasks_select_date) },
                 onClick = onDateClick
             )
             CompactInfoAction(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Rounded.AccessTime,
-                label = "Hora",
+                label = stringResource(R.string.tasks_field_time),
                 value = dueTimeLabel,
                 onClick = onTimeClick
             )
@@ -861,7 +866,7 @@ private fun TaskNameRow(
 ) {
     BasicInfoRowShell(
         icon = Icons.Rounded.Edit,
-        label = "Título"
+        label = stringResource(R.string.tasks_field_title)
     ) {
         BasicTextField(
             value = value,
@@ -876,7 +881,7 @@ private fun TaskNameRow(
                 Box {
                     if (value.isBlank()) {
                         Text(
-                            text = "Ej: Ensayo sobre Hume",
+                            text = stringResource(R.string.tasks_field_title_hint),
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Normal
@@ -890,7 +895,7 @@ private fun TaskNameRow(
         if (!isValid) {
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = error ?: "Ingresa una actividad válida",
+                text = error ?: stringResource(R.string.tasks_title_error),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Normal
@@ -1007,7 +1012,7 @@ private fun LinkedGradeCard(
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = "Nota vinculada",
+                    text = stringResource(R.string.tasks_linked_grade),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
@@ -1044,7 +1049,7 @@ private fun LinkedGradeCard(
                         modifier = Modifier.size(19.dp)
                     )
                     Text(
-                        text = "Al guardar, estos cambios también actualizarán la nota vinculada.",
+                        text = stringResource(R.string.tasks_linked_grade_hint),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Normal
@@ -1059,12 +1064,12 @@ private fun LinkedGradeCard(
                     TextButton(onClick = action) {
                         Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Editar nota")
+                        Text(stringResource(R.string.tasks_edit_linked_grade))
                     }
                 }
                 onUnlinkClick?.let { action ->
                     TextButton(onClick = action) {
-                        Text("Desvincular")
+                        Text(stringResource(R.string.tasks_action_unlink))
                     }
                 }
             }
@@ -1080,14 +1085,14 @@ private fun GradingIntentSelector(
 ) {
     FormSectionCard {
         Text(
-            "¿Esta tarea tendrá nota?",
+            stringResource(R.string.tasks_will_have_grade),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            "Así sabremos si debemos pedirte el resultado al completarla.",
+            stringResource(R.string.tasks_will_have_grade_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
         )
@@ -1124,7 +1129,7 @@ private fun GradingIntentSelector(
         if (selected == TaskGradingChoice.YES && !hasSubject) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                "Selecciona una materia para poder registrar la nota.",
+                stringResource(R.string.tasks_select_subject_for_grade_hint),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -1132,10 +1137,13 @@ private fun GradingIntentSelector(
     }
 }
 
-private enum class TaskGradingChoice(val label: String) {
-    YES("Calificable"),
-    NO("Sin nota"),
-    UNSURE("Aún no sé")
+private enum class TaskGradingChoice(@StringRes val labelRes: Int) {
+    YES(R.string.tasks_gradeable),
+    NO(R.string.tasks_ungraded),
+    UNSURE(R.string.tasks_grade_undecided);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }
 
 private fun TaskGradingChoice?.toInitialGradingStatus(): TaskGradingStatus {
@@ -1170,9 +1178,9 @@ private fun SubjectDropdown(
 
     BasicInfoActionRow(
         icon = Icons.AutoMirrored.Rounded.MenuBook,
-        label = "Materia",
+        label = stringResource(R.string.tasks_field_subject),
         value = selectedLabel.orEmpty(),
-        placeholder = "Seleccionar materia",
+        placeholder = stringResource(R.string.tasks_field_subject_select),
         onClick = { showSheet = true }
     )
 
@@ -1206,7 +1214,7 @@ private fun SubjectDropdown(
                     .padding(start = 22.dp, end = 22.dp, bottom = 24.dp)
             ) {
                 Text(
-                    text = "Seleccionar materia",
+                    text = stringResource(R.string.tasks_field_subject_select),
                     color = SubjectSheetText,
                     fontSize = 23.sp,
                     lineHeight = 28.sp,
@@ -1215,7 +1223,7 @@ private fun SubjectDropdown(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Elige la materia que corresponda a esta tarea.",
+                    text = stringResource(R.string.tasks_select_subject_desc),
                     color = SubjectSheetMuted,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
@@ -1236,8 +1244,8 @@ private fun SubjectDropdown(
                 ) {
                     item(key = "none") {
                         SubjectSheetOption(
-                            title = "Sin materia asignada",
-                            subtitle = "Tarea general",
+                            title = stringResource(R.string.tasks_no_subject_assigned),
+                            subtitle = stringResource(R.string.tasks_general_task),
                             selected = selectedSubjectId == null,
                             onClick = {
                                 onSubjectSelected(null)
@@ -1249,7 +1257,7 @@ private fun SubjectDropdown(
                     items(filteredSubjects, key = { it.id }) { subject ->
                         SubjectSheetOption(
                             title = subject.name,
-                            subtitle = "Materia disponible",
+                            subtitle = stringResource(R.string.tasks_available_subject),
                             selected = selectedSubjectId == subject.id,
                             onClick = {
                                 onSubjectSelected(subject.id)
@@ -1262,7 +1270,7 @@ private fun SubjectDropdown(
                     if (filteredSubjects.isEmpty() && subjectQuery.isNotBlank()) {
                         item(key = "empty") {
                             Text(
-                                text = "No encontramos materias con ese nombre.",
+                                text = stringResource(R.string.tasks_no_subjects_found),
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                                 color = SubjectSheetMuted,
                                 fontSize = 13.sp,
@@ -1297,9 +1305,9 @@ private fun CutDropdown(
 
     BasicInfoActionRow(
         icon = Icons.Rounded.CalendarMonth,
-        label = "Corte",
+        label = stringResource(R.string.tasks_field_cut),
         value = selected?.name.orEmpty(),
-        placeholder = "Seleccionar corte",
+        placeholder = stringResource(R.string.tasks_field_cut_select),
         onClick = { showSheet = true }
     )
 
@@ -1319,20 +1327,20 @@ private fun CutDropdown(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    "Seleccionar corte",
+                    stringResource(R.string.tasks_field_cut_select),
                     color = SubjectSheetText,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "Las notas obtenidas por esta tarea se registrarán aquí por defecto.",
+                    stringResource(R.string.tasks_cut_default_hint),
                     color = SubjectSheetMuted,
                     style = MaterialTheme.typography.bodySmall
                 )
                 subject.cutScheme.cuts.sortedBy { it.order }.forEach { cut ->
                     SubjectSheetOption(
                         title = cut.name,
-                        subtitle = "${(cut.weight * 100).toInt()}% de la materia",
+                        subtitle = stringResource(R.string.tasks_cut_weight_of_subject, (cut.weight * 100).toInt()),
                         selected = cut.id == selected?.id,
                         onClick = {
                             onCutSelected(cut.id)
@@ -1383,7 +1391,7 @@ private fun SubjectSearchField(
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (value.isBlank()) {
                         Text(
-                            text = "Buscar materia...",
+                            text = stringResource(R.string.tasks_search_subject_hint),
                             color = SubjectSheetMuted.copy(alpha = 0.78f),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
@@ -1533,7 +1541,7 @@ private fun CreateSubjectSheetAction(onClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.width(14.dp))
         Text(
-            text = "Crear nueva materia",
+            text = stringResource(R.string.tasks_create_new_subject),
             modifier = Modifier.weight(1f),
             color = SubjectSheetText,
             fontSize = 15.sp,
@@ -1569,7 +1577,7 @@ private fun TaskDescriptionField(
             Box {
                 if (value.isBlank()) {
                     Text(
-                        text = "Añade contexto, instrucciones o enlaces (opcional)",
+                        text = stringResource(R.string.tasks_field_description_hint),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Normal
@@ -1613,7 +1621,7 @@ private fun TaskTypeSelector(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = "Tipo de tarea",
+                        text = stringResource(R.string.tasks_type_title),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Normal
@@ -1724,26 +1732,28 @@ private val SubjectSheetText: Color
 private val SubjectSheetMuted: Color
     @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 
+@Composable
 private fun TaskType.label(): String {
     return when (this) {
-        TaskType.WORKSHOP -> "Taller"
-        TaskType.EXAM -> "Parcial"
-        TaskType.ESSAY -> "Ensayo"
-        TaskType.PRESENTATION -> "Exposición"
-        TaskType.RESEARCH -> "Investigación"
-        TaskType.TEST -> "Examen"
-        TaskType.PRACTICE -> "Práctica"
-        TaskType.PROJECT -> "Proyecto"
-        TaskType.READING -> "Lectura"
-        TaskType.OTHER -> "Otro"
+        TaskType.WORKSHOP -> stringResource(R.string.tasks_type_workshop)
+        TaskType.EXAM -> stringResource(R.string.tasks_type_midterm)
+        TaskType.ESSAY -> stringResource(R.string.tasks_type_essay)
+        TaskType.PRESENTATION -> stringResource(R.string.tasks_type_presentation)
+        TaskType.RESEARCH -> stringResource(R.string.tasks_type_research)
+        TaskType.TEST -> stringResource(R.string.tasks_type_exam)
+        TaskType.PRACTICE -> stringResource(R.string.tasks_type_practice)
+        TaskType.PROJECT -> stringResource(R.string.tasks_type_project)
+        TaskType.READING -> stringResource(R.string.tasks_type_reading)
+        TaskType.OTHER -> stringResource(R.string.tasks_type_other)
     }
 }
 
+@Composable
 private fun TaskDifficulty.label(): String {
     return when (this) {
-        TaskDifficulty.EASY -> "Baja"
-        TaskDifficulty.MEDIUM -> "Media"
-        TaskDifficulty.HARD -> "Alta"
+        TaskDifficulty.EASY -> stringResource(R.string.tasks_priority_low)
+        TaskDifficulty.MEDIUM -> stringResource(R.string.tasks_priority_medium)
+        TaskDifficulty.HARD -> stringResource(R.string.tasks_priority_high)
     }
 }
 

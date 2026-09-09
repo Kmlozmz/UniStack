@@ -6,6 +6,9 @@
 
 package com.unistack.app.feature_schedule.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.horizontalScroll
@@ -81,17 +84,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 
 internal enum class AgendaCreateKind(
-    val title: String,
-    val subtitle: String,
+    val titleRes: Int,
+    val subtitleRes: Int,
     val icon: ImageVector,
     val academic: Boolean
 ) {
-    TASK("Tarea o entrega", "Taller, lectura, proyecto o práctica", Icons.AutoMirrored.Rounded.Assignment, true),
-    EVALUATION("Evaluación", "Quiz, parcial o examen", Icons.Rounded.Quiz, true),
-    PRESENTATION("Presentación", "Exposición o sustentación", Icons.Rounded.PresentToAll, true),
-    PERSONAL("Evento personal", "Cita, reunión o actividad", Icons.Rounded.Event, false),
-    REMINDER("Recordatorio", "Algo que no quieres olvidar", Icons.Rounded.Alarm, false),
-    CUSTOM("Tipo personalizado", "Crea una categoría flexible", Icons.Rounded.Tune, false)
+    TASK(R.string.agenda_type_task_title, R.string.agenda_type_task_desc, Icons.AutoMirrored.Rounded.Assignment, true),
+    EVALUATION(R.string.agenda_type_eval_title, R.string.agenda_type_eval_desc, Icons.Rounded.Quiz, true),
+    PRESENTATION(R.string.agenda_type_pres_title, R.string.agenda_type_pres_desc, Icons.Rounded.PresentToAll, true),
+    PERSONAL(R.string.agenda_type_personal_title, R.string.agenda_type_personal_desc, Icons.Rounded.Event, false),
+    REMINDER(R.string.agenda_type_reminder_title, R.string.agenda_type_reminder_desc, Icons.Rounded.Alarm, false),
+    CUSTOM(R.string.agenda_type_custom_title, R.string.agenda_type_custom_desc, Icons.Rounded.Tune, false);
+
+    val title: String
+        @Composable get() = stringResource(titleRes)
+    val subtitle: String
+        @Composable get() = stringResource(subtitleRes)
 }
 
 @Composable
@@ -114,11 +122,11 @@ internal fun AgendaCreateMenuSheet(
         ) {
             AgendaSheetHeader(
                 icon = Icons.Rounded.CalendarMonth,
-                title = "Agregar a la agenda",
-                subtitle = "Elige el tipo y se abre el formulario correcto."
+                title = stringResource(R.string.agenda_sheet_title),
+                subtitle = stringResource(R.string.agenda_sheet_subtitle)
             )
 
-            AgendaSectionLabel("ACADÉMICO")
+            AgendaSectionLabel(stringResource(R.string.agenda_section_academic))
             listOf(
                 AgendaCreateKind.TASK,
                 AgendaCreateKind.EVALUATION,
@@ -127,7 +135,7 @@ internal fun AgendaCreateMenuSheet(
                 AgendaKindRow(kind = kind, onClick = { onSelect(kind) })
             }
 
-            AgendaSectionLabel("PERSONAL")
+            AgendaSectionLabel(stringResource(R.string.agenda_section_personal))
             listOf(
                 AgendaCreateKind.PERSONAL,
                 AgendaCreateKind.REMINDER,
@@ -310,15 +318,15 @@ internal fun AgendaComposerSheet(
         ) {
             AgendaSheetHeader(
                 icon = kind.icon,
-                title = if (existingEvent == null) kind.title else "Editar evento",
-                subtitle = if (academic) "También aparecerá en Académico" else "Evento independiente de tus materias"
+                title = if (existingEvent == null) kind.title else stringResource(R.string.agenda_edit_event),
+                subtitle = if (academic) stringResource(R.string.agenda_academic_hint) else stringResource(R.string.agenda_personal_hint)
             )
 
             OutlinedTextField(
                 title,
                 { title = it.take(100) },
                 Modifier.fillMaxWidth(),
-                label = { Text("Título") },
+                label = { Text(stringResource(R.string.agenda_field_title)) },
                 singleLine = true,
                 shape = MaterialTheme.shapes.medium
             )
@@ -342,10 +350,10 @@ internal fun AgendaComposerSheet(
                             contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
-                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Día anterior", modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, stringResource(R.string.agenda_prev_day), modifier = Modifier.size(20.dp))
                     }
                     Text(
-                        date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", AgendaLocale)).replaceFirstChar(Char::uppercase),
+                        date.format(DateTimeFormatter.ofPattern(if (AgendaLocale.language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM", AgendaLocale)).replaceFirstChar(Char::uppercase),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -360,7 +368,7 @@ internal fun AgendaComposerSheet(
                             contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
-                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, "Día siguiente", modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, stringResource(R.string.agenda_next_day), modifier = Modifier.size(20.dp))
                     }
                 }
             }
@@ -370,7 +378,7 @@ internal fun AgendaComposerSheet(
                     startText,
                     { startText = it.take(5) },
                     Modifier.weight(1f),
-                    label = { Text(if (academic) "Hora límite" else "Inicio") },
+                    label = { Text(if (academic) stringResource(R.string.agenda_due_time) else stringResource(R.string.agenda_start_time)) },
                     placeholder = { Text("08:00") },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium
@@ -380,7 +388,7 @@ internal fun AgendaComposerSheet(
                         endText,
                         { endText = it.take(5) },
                         Modifier.weight(1f),
-                        label = { Text("Fin") },
+                        label = { Text(stringResource(R.string.agenda_end_time)) },
                         placeholder = { Text("09:00") },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium
@@ -389,7 +397,7 @@ internal fun AgendaComposerSheet(
             }
 
             if (academic) {
-                AgendaSectionLabel("TIPO ACADÉMICO")
+                AgendaSectionLabel(stringResource(R.string.agenda_section_academic_type))
                 AgendaChipRow {
                     taskTypesFor(kind).forEach { type ->
                         FilterChip(
@@ -400,12 +408,12 @@ internal fun AgendaComposerSheet(
                     }
                 }
 
-                AgendaSectionLabel("MATERIA (OPCIONAL)")
+                AgendaSectionLabel(stringResource(R.string.agenda_section_subject_optional))
                 AgendaChipRow {
                     FilterChip(
                         selectedSubjectId == null,
                         { releaseFocus(); selectedSubjectId = null },
-                        label = { Text("Sin materia", maxLines = 1, softWrap = false) }
+                        label = { Text(stringResource(R.string.agenda_no_subject), maxLines = 1, softWrap = false) }
                     )
                     subjects.forEach { subject ->
                         FilterChip(
@@ -429,13 +437,13 @@ internal fun AgendaComposerSheet(
                     ) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
-                                "Genera calificación",
+                                stringResource(R.string.agenda_generates_grade),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "Quedará vinculada al seguimiento de notas.",
+                                stringResource(R.string.agenda_generates_grade_desc),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -449,12 +457,12 @@ internal fun AgendaComposerSheet(
                     location,
                     { location = it.take(80) },
                     Modifier.fillMaxWidth(),
-                    label = { Text("Ubicación (opcional)") },
+                    label = { Text(stringResource(R.string.agenda_location_optional)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium
                 )
 
-                AgendaSectionLabel("REPETICIÓN")
+                AgendaSectionLabel(stringResource(R.string.agenda_section_repetition))
                 AgendaChipRow {
                     AgendaRecurrence.entries.forEach { option ->
                         FilterChip(
@@ -465,7 +473,7 @@ internal fun AgendaComposerSheet(
                     }
                 }
 
-                AgendaSectionLabel("RECORDATORIO")
+                AgendaSectionLabel(stringResource(R.string.agenda_section_reminder))
                 AgendaChipRow {
                     listOf(0, 5, 15, 30, 60, 1440).forEach { minutes ->
                         FilterChip(
@@ -481,7 +489,7 @@ internal fun AgendaComposerSheet(
                 notes,
                 { notes = it.take(500) },
                 Modifier.fillMaxWidth(),
-                label = { Text("Notas (opcional)") },
+                label = { Text(stringResource(R.string.agenda_notes_optional)) },
                 minLines = 2,
                 shape = MaterialTheme.shapes.medium
             )
@@ -489,6 +497,7 @@ internal fun AgendaComposerSheet(
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
 
+            val validationError = stringResource(R.string.agenda_validation_warning)
             // Guardar ocupa el ancho, como el botón principal de cualquier otra pantalla.
             // Estaba en una esquina, del tamaño de un botón secundario, siendo la única cosa
             // que había que hacer en toda la hoja.
@@ -503,7 +512,7 @@ internal fun AgendaComposerSheet(
                     } else {
                         onSaveEvent(existingEvent, title, notes, kind.toEventKind(), date, start, end, location, reminder, recurrence)
                     }
-                    if (saved) onDismiss() else error = "Revisa el título, las horas y la materia seleccionada."
+                    if (saved) onDismiss() else error = validationError
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -513,7 +522,7 @@ internal fun AgendaComposerSheet(
             ) {
                 Icon(Icons.Rounded.Save, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(9.dp))
-                Text("Guardar", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
             }
             if (existingEvent != null && onDeleteEvent != null) {
                 TextButton(
@@ -521,7 +530,7 @@ internal fun AgendaComposerSheet(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Eliminar evento",
+                        stringResource(R.string.agenda_delete_event),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold
@@ -532,7 +541,7 @@ internal fun AgendaComposerSheet(
     }
 }
 
-private val AgendaLocale: Locale = Locale.forLanguageTag("es")
+private val AgendaLocale: Locale get() = Locale.getDefault()
 
 private fun defaultTaskType(kind: AgendaCreateKind) = when (kind) {
     AgendaCreateKind.EVALUATION -> TaskType.EXAM
@@ -546,17 +555,18 @@ private fun taskTypesFor(kind: AgendaCreateKind) = when (kind) {
     else -> listOf(TaskType.WORKSHOP, TaskType.PROJECT, TaskType.READING, TaskType.PRACTICE, TaskType.ESSAY, TaskType.RESEARCH, TaskType.OTHER)
 }
 
+@Composable
 private fun TaskType.agendaLabel() = when (this) {
-    TaskType.WORKSHOP -> "Taller"
-    TaskType.EXAM -> "Parcial"
-    TaskType.TEST -> "Examen / quiz"
-    TaskType.PRESENTATION -> "Presentación"
-    TaskType.PROJECT -> "Proyecto"
-    TaskType.READING -> "Lectura"
-    TaskType.PRACTICE -> "Práctica"
-    TaskType.ESSAY -> "Ensayo"
-    TaskType.RESEARCH -> "Investigación"
-    TaskType.OTHER -> "Otro"
+    TaskType.WORKSHOP -> stringResource(R.string.agenda_academic_type_workshop)
+    TaskType.EXAM -> stringResource(R.string.agenda_academic_type_midterm)
+    TaskType.TEST -> stringResource(R.string.agenda_academic_type_quiz)
+    TaskType.PRESENTATION -> stringResource(R.string.agenda_academic_type_presentation)
+    TaskType.PROJECT -> stringResource(R.string.agenda_academic_type_project)
+    TaskType.READING -> stringResource(R.string.agenda_academic_type_reading)
+    TaskType.PRACTICE -> stringResource(R.string.agenda_academic_type_lab)
+    TaskType.ESSAY -> stringResource(R.string.agenda_academic_type_essay)
+    TaskType.RESEARCH -> stringResource(R.string.agenda_academic_type_research)
+    TaskType.OTHER -> stringResource(R.string.agenda_academic_type_other)
 }
 
 private fun AgendaCreateKind.toEventKind() = when (this) {
@@ -565,17 +575,19 @@ private fun AgendaCreateKind.toEventKind() = when (this) {
     else -> AgendaEventKind.CUSTOM
 }
 
+@Composable
 private fun AgendaRecurrence.agendaLabel() = when (this) {
-    AgendaRecurrence.NONE -> "No repetir"
-    AgendaRecurrence.DAILY -> "Diario"
-    AgendaRecurrence.WEEKLY -> "Semanal"
-    AgendaRecurrence.MONTHLY -> "Mensual"
+    AgendaRecurrence.NONE -> stringResource(R.string.agenda_repeat_none)
+    AgendaRecurrence.DAILY -> stringResource(R.string.agenda_repeat_daily)
+    AgendaRecurrence.WEEKLY -> stringResource(R.string.agenda_repeat_weekly)
+    AgendaRecurrence.MONTHLY -> stringResource(R.string.agenda_repeat_monthly)
 }
 
+@Composable
 private fun Int.reminderLabel() = when (this) {
-    0 -> "Sin aviso"
-    1440 -> "1 día antes"
-    else -> "$this min"
+    0 -> stringResource(R.string.agenda_reminder_none)
+    1440 -> stringResource(R.string.agenda_reminder_1_day)
+    else -> stringResource(R.string.agenda_reminder_min_before, this)
 }
 
 private fun parseAgendaMinute(value: String): Int? {

@@ -1,5 +1,8 @@
 package com.unistack.app.feature_grades.presentation
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.utils.DayLabels
@@ -57,14 +60,14 @@ internal fun SubjectWhenFields(
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SchedulePickerField(
                 modifier = Modifier.weight(1f),
-                label = "Hora inicio",
+                label = stringResource(R.string.schedule_start_hour_label),
                 value = formatMinute(draft.startMinute),
                 icon = Icons.Rounded.Schedule,
                 onClick = { startPickerVisible = true }
             )
             SchedulePickerField(
                 modifier = Modifier.weight(1f),
-                label = "Hora fin",
+                label = stringResource(R.string.schedule_end_hour_label),
                 value = formatMinute(draft.endMinute),
                 icon = Icons.Rounded.Schedule,
                 onClick = { endPickerVisible = true }
@@ -74,23 +77,23 @@ internal fun SubjectWhenFields(
             value = draft.room,
             onValueChange = { onDraftChange(draft.copy(room = it.take(50))) },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Aula") },
-            placeholder = { Text("Aula 301") },
+            label = { Text(stringResource(R.string.schedule_room)) },
+            placeholder = { Text(stringResource(R.string.schedule_room_placeholder)) },
             leadingIcon = { Icon(Icons.Rounded.Place, null) },
             singleLine = true,
             shape = MaterialTheme.shapes.medium
         )
         Box {
             SchedulePickerField(
-                label = "Repetición",
-                value = if (draft.repeatEveryWeeks == 1) "Cada semana" else "Cada ${draft.repeatEveryWeeks} semanas",
+                label = stringResource(R.string.schedule_recurrence),
+                value = if (draft.repeatEveryWeeks == 1) stringResource(R.string.schedule_recurrence_every_week) else stringResource(R.string.schedule_recurrence_every_weeks, draft.repeatEveryWeeks),
                 icon = Icons.Rounded.ExpandMore,
                 onClick = { recurrenceExpanded = true }
             )
             UniDropdownMenu(expanded = recurrenceExpanded, onDismissRequest = { recurrenceExpanded = false }) {
                 (1..4).forEach { weeks ->
                     DropdownMenuItem(
-                        text = { Text(if (weeks == 1) "Cada semana" else "Cada $weeks semanas") },
+                        text = { Text(if (weeks == 1) stringResource(R.string.schedule_recurrence_every_week) else stringResource(R.string.schedule_recurrence_every_weeks, weeks)) },
                         onClick = {
                             onDraftChange(draft.copy(repeatEveryWeeks = weeks))
                             recurrenceExpanded = false
@@ -101,8 +104,8 @@ internal fun SubjectWhenFields(
         }
         if (!draft.isValid) {
             Text(
-                if (draft.daysOfWeek.isEmpty()) "Selecciona al menos un día."
-                else "La hora final debe ser posterior a la inicial.",
+                if (draft.daysOfWeek.isEmpty()) stringResource(R.string.schedule_select_day_error)
+                else stringResource(R.string.schedule_end_after_start_error),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -113,7 +116,7 @@ internal fun SubjectWhenFields(
         UniTimePickerDialog(
             selectedTime = java.time.LocalTime.of(draft.startMinute / 60, draft.startMinute % 60),
             onDismiss = { startPickerVisible = false },
-            title = "Hora de inicio",
+            title = stringResource(R.string.schedule_start_time_title),
             onTimeSelected = { picked ->
             val chosen = picked.hour * 60 + picked.minute
             // Casi siempre que aparece una hora así es un error al girar la rueda: quien la
@@ -126,11 +129,14 @@ internal fun SubjectWhenFields(
     unusualStart?.let { chosen ->
         AlertDialog(
             onDismissRequest = { unusualStart = null },
-            title = { Text("¿Clase de madrugada?") },
+            title = { Text(stringResource(R.string.schedule_early_class_title)) },
             text = {
                 Text(
-                    "Pusiste las ${formatMinute(chosen)}. Si querías las " +
-                        "${formatMinute(chosen + 12 * 60)}, vuelve y cámbialo."
+                    stringResource(
+                        R.string.schedule_early_class_desc,
+                        formatMinute(chosen),
+                        formatMinute(chosen + 12 * 60)
+                    )
                 )
             },
             confirmButton = {
@@ -139,7 +145,7 @@ internal fun SubjectWhenFields(
                         onDraftChange(draft.copy(startMinute = chosen))
                         unusualStart = null
                     }
-                ) { Text("Sí, es a esa hora", fontWeight = FontWeight.Bold) }
+                ) { Text(stringResource(R.string.schedule_early_class_confirm), fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
                 TextButton(
@@ -147,7 +153,7 @@ internal fun SubjectWhenFields(
                         unusualStart = null
                         startPickerVisible = true
                     }
-                ) { Text("Volver") }
+                ) { Text(stringResource(R.string.schedule_early_class_back)) }
             },
             shape = MaterialTheme.shapes.extraLarge
         )
@@ -156,7 +162,7 @@ internal fun SubjectWhenFields(
         UniTimePickerDialog(
             selectedTime = java.time.LocalTime.of(draft.endMinute / 60, draft.endMinute % 60),
             onDismiss = { endPickerVisible = false },
-            title = "Hora de fin",
+            title = stringResource(R.string.schedule_end_time_title),
             onTimeSelected = { picked ->
                 onDraftChange(draft.copy(endMinute = picked.hour * 60 + picked.minute))
             }
@@ -178,15 +184,15 @@ internal fun SubjectReminderField(
 
     Box(modifier = modifier) {
         SchedulePickerField(
-            label = "Recordatorio de clase",
-            value = if (draft.reminderMinutes == 0) "Sin aviso" else "${draft.reminderMinutes} min antes",
+            label = stringResource(R.string.schedule_reminder_class),
+            value = if (draft.reminderMinutes == 0) stringResource(R.string.schedule_no_reminder_short) else stringResource(R.string.schedule_reminder_minutes_before, draft.reminderMinutes),
             icon = Icons.Rounded.Alarm,
             onClick = { expanded = true }
         )
         UniDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             listOf(0, 5, 10, 15, 30, 60).forEach { minutes ->
                 DropdownMenuItem(
-                    text = { Text(if (minutes == 0) "Sin recordatorio" else "$minutes minutos antes") },
+                    text = { Text(if (minutes == 0) stringResource(R.string.schedule_no_reminder_long) else stringResource(R.string.schedule_reminder_minutes_before_long, minutes)) },
                     onClick = {
                         onDraftChange(draft.copy(reminderMinutes = minutes))
                         expanded = false
@@ -206,7 +212,7 @@ private fun ScheduleDays(
     val keyboard = LocalSoftwareKeyboardController.current
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Días", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.schedule_days_title), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (1..7).forEach { day ->
                 val selected = day in draft.daysOfWeek
@@ -302,9 +308,10 @@ internal fun defaultSubjectScheduleDraft(): SubjectScheduleDraft = SubjectSchedu
  * Resumen de una línea del bloque de clase, para que plegarlo esconda los controles y no la
  * información.
  */
+@Composable
 internal fun SubjectScheduleDraft.whenSummary(): String {
-    if (!enabled) return "Sin clases"
-    if (daysOfWeek.isEmpty()) return "Sin días"
+    if (!enabled) return stringResource(R.string.schedule_summary_no_classes)
+    if (daysOfWeek.isEmpty()) return stringResource(R.string.schedule_summary_no_days)
     val days = daysOfWeek.sorted().joinToString(" ") { DayLabels.shortByIsoDay(it) }
     return "$days  ·  ${formatMinute(startMinute)}"
 }

@@ -59,6 +59,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.LargeTitleScaffold
@@ -109,8 +111,8 @@ fun MotionSettingsScreen(
     val porGrupo = MotionCatalog.grouped().filter { it.first != MotionCatalog.GROUP_BASE }
 
     LargeTitleScaffold(
-        title = "Movimiento",
-        subtitle = "Cada gesto con sus variantes, comparables de un vistazo",
+        title = stringResource(R.string.settings_motion_title),
+        subtitle = stringResource(R.string.settings_motion_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -120,14 +122,16 @@ fun MotionSettingsScreen(
     ) {
         item { InterruptorMaestro(appearance.motionPreference, activo, viewModel) }
 
-        item { RotuloDeGrupo("BASE", "${base.size} ajustes") }
+        val isEn = java.util.Locale.getDefault().language == "en"
+        val baseCountStr = if (isEn) "${base.size} settings" else "${base.size} ajustes"
+        item { RotuloDeGrupo("BASE", baseCountStr) }
         items(base.size, key = { base[it].id }) { indice ->
             val gesto = base[indice]
             TarjetaDeAjuste(
                 icono = iconoDe(gesto.id),
                 color = colorDe(gesto.id),
-                nombre = gesto.name,
-                detalle = gesto.detail
+                nombre = gesto.displayName,
+                detalle = gesto.displayDetail
             ) {
                 /*
                  * Escala en fila y no en rejilla: «Nada / Rapida / Normal / Lenta» se lee de
@@ -140,7 +144,7 @@ fun MotionSettingsScreen(
                  */
                 UniSegmentedControl(
                     selected = gesto.read(motion).id,
-                    options = gesto.options.map { UniSegmentedOption(value = it.id, label = it.label) },
+                    options = gesto.options.map { UniSegmentedOption(value = it.id, label = it.displayLabel) },
                     onSelected = { id ->
                         gesto.options.firstOrNull { it.id == id }?.let { opcion ->
                             viewModel.updateAppearance { p -> p.copy(motion = gesto.write(p.motion, opcion)) }
@@ -159,9 +163,11 @@ fun MotionSettingsScreen(
 
         porGrupo.forEach { (grupo, gestos) ->
             item(key = "rotulo-$grupo") {
+                val groupTitle = motionGroupDisplay(grupo)
+                val countStr = if (isEn) "${gestos.size} gestures · ${gestos.sumOf { it.options.size }} variants" else "${gestos.size} gestos · ${gestos.sumOf { it.options.size }} variantes"
                 RotuloDeGrupo(
-                    grupo,
-                    "${gestos.size} gestos · ${gestos.sumOf { it.options.size }} variantes"
+                    groupTitle,
+                    countStr
                 )
             }
             items(gestos.size, key = { gestos[it].id }) { indice ->
@@ -169,8 +175,8 @@ fun MotionSettingsScreen(
                 TarjetaDeAjuste(
                     icono = iconoDe(gesto.id),
                     color = colorDe(gesto.id),
-                    nombre = gesto.name,
-                    detalle = gesto.detail
+                    nombre = gesto.displayName,
+                    detalle = gesto.displayDetail
                 ) {
                     RejillaDeVariantes(
                         gesto = gesto,
@@ -418,8 +424,8 @@ private fun CajaDeVariante(
 @Composable
 private fun DemoDesplegable(
     gestoId: String,
-    texto: String = "Ver",
-    tituloDeVentana: String = "EN LA APP",
+    texto: String = "",
+    tituloDeVentana: String = "",
     contenido: @Composable () -> Unit
 ) {
     var abierto by rememberSaveable(gestoId) { mutableStateOf(false) }
@@ -438,7 +444,7 @@ private fun DemoDesplegable(
              * la pantalla** y no un ejemplo. La cabecera con el punto dice «esto esta pasando»,
              * que es justo lo que hace un demo que corre en bucle.
              */
-            VentanaDeMuestra(titulo = tituloDeVentana) { contenido() }
+            VentanaDeMuestra(titulo = if (tituloDeVentana.isEmpty()) stringResource(R.string.settings_motion_in_app) else tituloDeVentana) { contenido() }
         }
     }
 }
@@ -470,7 +476,7 @@ private fun BotonDeDemo(abierto: Boolean, texto: String, onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
-            if (abierto) "Ocultar" else texto,
+            if (abierto) stringResource(R.string.settings_motion_hide) else if (texto.isEmpty()) stringResource(R.string.settings_motion_see) else texto,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -515,12 +521,12 @@ private fun InterruptorMaestro(
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Cuánto movimiento", style = MaterialTheme.typography.titleSmallEmphasized)
+                    Text(stringResource(R.string.settings_motion_how_much), style = MaterialTheme.typography.titleSmallEmphasized)
                     Text(
                         text = if (activo) {
-                            "Manda sobre los ${MotionCatalog.gestures.size} gestos de abajo."
+                            stringResource(R.string.settings_motion_master_active, MotionCatalog.gestures.size)
                         } else {
-                            "Los gestos de abajo quedan guardados, pero en pausa."
+                            stringResource(R.string.settings_motion_master_paused)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -605,10 +611,27 @@ private fun duracionDe(gestoId: String): Int = when (gestoId) {
     else -> 2200
 }
 
-private fun MotionPreference.etiqueta() = when (this) {
-    MotionPreference.FULL -> "Completo"
-    MotionPreference.REDUCED -> "Reducido"
-    MotionPreference.NONE -> "Nada"
+private fun MotionPreference.etiqueta(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        MotionPreference.FULL -> if (isEn) "Full" else "Completo"
+        MotionPreference.REDUCED -> if (isEn) "Reduced" else "Reducido"
+        MotionPreference.NONE -> if (isEn) "None" else "Nada"
+    }
+}
+
+private fun motionGroupDisplay(group: String): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    if (!isEn) return group
+    return when (group) {
+        MotionCatalog.GROUP_BASE -> "BASE"
+        MotionCatalog.GROUP_TRANSITIONS -> "TRANSITIONS"
+        MotionCatalog.GROUP_ACADEMIC -> "ACADEMIC"
+        MotionCatalog.GROUP_TASKS -> "TASKS & NOTES"
+        MotionCatalog.GROUP_ALERTS -> "EXPENSES & ALERTS"
+        MotionCatalog.GROUP_GENERAL -> "GENERAL"
+        else -> group
+    }
 }
 
 

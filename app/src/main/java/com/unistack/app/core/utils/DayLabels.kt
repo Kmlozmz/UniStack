@@ -17,11 +17,21 @@ import java.time.DayOfWeek
  * `day.value - 1` sea correcto.
  */
 object DayLabels {
-    /** Una letra: `L M X J V S D`. Para rejillas y selectores de días. */
-    val short: List<String> = listOf("L", "M", "X", "J", "V", "S", "D")
+    /** Una letra. En inglés: M T W T F S S. En español: L M X J V S D. */
+    val short: List<String>
+        get() {
+            val isEn = java.util.Locale.getDefault().language == "en"
+            return if (isEn) listOf("M", "T", "W", "T", "F", "S", "S")
+            else listOf("L", "M", "X", "J", "V", "S", "D")
+        }
 
-    /** Tres letras: `LUN MAR MIÉ…`. Para cabeceras de calendario, donde hay sitio. */
-    val medium: List<String> = listOf("LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM")
+    /** Tres letras. En inglés: MON TUE WED... En español: LUN MAR MIÉ... */
+    val medium: List<String>
+        get() {
+            val isEn = java.util.Locale.getDefault().language == "en"
+            return if (isEn) listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+            else listOf("LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM")
+        }
 
     fun short(day: DayOfWeek): String = short[day.value - 1]
 

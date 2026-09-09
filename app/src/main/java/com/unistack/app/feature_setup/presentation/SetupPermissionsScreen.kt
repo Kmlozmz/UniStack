@@ -55,6 +55,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -141,29 +143,29 @@ fun SetupPermissionsScreen(
         actions = {
             when {
                 granted -> UniStackButton(
-                    text = "Continuar",
+                    text = stringResource(R.string.setup_btn_continue),
                     onClick = onContinueClick,
                     trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
                 )
                 mustUseSettings -> {
                     UniStackButton(
-                        text = "Abrir ajustes",
+                        text = stringResource(R.string.setup_perm_btn_open_settings),
                         onClick = { context.openAppSettings() }
                     )
                     UniStackButton(
-                        text = "Continuar sin notificaciones",
+                        text = stringResource(R.string.setup_perm_btn_continue_without),
                         onClick = onContinueClick,
                         variant = UniStackButtonVariant.Outlined
                     )
                 }
                 else -> {
                     UniStackButton(
-                        text = "Activar notificaciones",
+                        text = stringResource(R.string.setup_perm_btn_enable),
                         onClick = { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) },
                         leadingIcon = Icons.Rounded.NotificationsActive
                     )
                     UniStackButton(
-                        text = "Ahora no",
+                        text = stringResource(R.string.setup_perm_btn_not_now),
                         onClick = onContinueClick,
                         variant = UniStackButtonVariant.Outlined
                     )
@@ -185,18 +187,26 @@ fun SetupPermissionsScreen(
              * todavía no hay ni una clase creada, así que cualquier hora sería inventada.
              * Por eso la maqueta va marcada como ejemplo.
              */
+            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    append("¿Te aviso de\n")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("lo que se aproxima?")
+                    if (isEn) {
+                        append("Should I notify you\n")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append("of upcoming events?")
+                        }
+                    } else {
+                        append("¿Te aviso de\n")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append("lo que se aproxima?")
+                        }
                     }
                 },
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.headlineMediumEmphasized
             )
             Text(
-                text = "Cambia el ejemplo de abajo para ver cómo se vería cada uno.",
+                text = stringResource(R.string.setup_perm_desc),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -241,8 +251,8 @@ fun SetupPermissionsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 // «Un par al dia como mucho» dejo de ser verdad al quitar el tope por tipo:
                 // ahora avisa de todo, y quien decide cuanto es el usuario en Ajustes.
-                PermissionPerkRow("Clases, recordatorios, entregas, todo lo que necesite ser recordado")
-                PermissionPerkRow("Todo funciona offline. Seguirás recibiendo notificaciones incluso cuando no tengas conexión.")
+                PermissionPerkRow(stringResource(R.string.setup_perm_perk_classes))
+                PermissionPerkRow(stringResource(R.string.setup_perm_offline_info))
             }
 
             AnimatedVisibility(visible = mustUseSettings, enter = fadeIn(), exit = fadeOut()) {
@@ -266,7 +276,7 @@ fun SetupPermissionsScreen(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Android ya no volverá a preguntar. Puedes activarlas desde los ajustes del sistema.",
+                            text = stringResource(R.string.setup_perm_settings_hint),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                             lineHeight = 18.sp
@@ -282,15 +292,50 @@ fun SetupPermissionsScreen(
 
 /** Los tres avisos que la app sabe dar, con la pinta que tienen en la pantalla de bloqueo. */
 private enum class PermissionExampleKind(
-    val chip: String,
+    private val spanishChip: String,
     val clock: String,
-    val ago: String,
-    val title: String,
-    val body: String
+    private val spanishAgo: String,
+    private val spanishTitle: String,
+    private val spanishBody: String
 ) {
     CLASS("Clases", "9:41", "ahora", "Cálculo III empieza en 15 minutos", "Aula 302 · hasta las 11:40"),
     TASK("Entregas", "8:00", "8:00", "Hoy vence el ensayo de Ética", "Antes de las 18:00 · te quedan 10 h"),
-    GRADE("Notas", "19:20", "19:20", "Tu promedio de Redes subió a 4.1", "Con el quiz que acabas de registrar")
+    GRADE("Notas", "19:20", "19:20", "Tu promedio de Redes subió a 4.1", "Con el quiz que acabas de registrar");
+
+    val chip: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                CLASS -> "Classes"
+                TASK -> "Deadlines"
+                GRADE -> "Grades"
+            }
+        } else spanishChip
+
+    val ago: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                CLASS -> "now"
+                else -> spanishAgo
+            }
+        } else spanishAgo
+
+    val title: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                CLASS -> "Calculus III starts in 15 minutes"
+                TASK -> "Ethics essay due today"
+                GRADE -> "Your Networks GPA increased to 4.1"
+            }
+        } else spanishTitle
+
+    val body: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                CLASS -> "Room 302 · until 11:40"
+                TASK -> "Before 18:00 · 10 h remaining"
+                GRADE -> "From the quiz you just recorded"
+            }
+        } else spanishBody
 }
 
 @Composable
@@ -318,7 +363,7 @@ private fun PermissionLockPreview(kind: PermissionExampleKind) {
                             color = MaterialTheme.colorScheme.surfaceContainerHigh
                         ) {
                             Text(
-                                text = "EJEMPLO",
+                                text = stringResource(R.string.setup_perm_example_header),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp)
@@ -333,7 +378,7 @@ private fun PermissionLockPreview(kind: PermissionExampleKind) {
                         fontWeight = FontWeight.Light
                     )
                     Text(
-                        text = "jueves, 20 de agosto",
+                        text = if (java.util.Locale.getDefault().language == "en") "Thursday, August 20" else "jueves, 20 de agosto",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )

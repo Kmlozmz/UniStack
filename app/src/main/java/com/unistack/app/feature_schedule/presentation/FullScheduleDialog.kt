@@ -34,6 +34,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -56,7 +58,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val FullScheduleLocale = Locale.forLanguageTag("es")
+private val FullScheduleLocale: Locale get() = Locale.getDefault()
 private val FullScheduleHourHeight = 64.dp
 private val FullScheduleAxisWidth = 54.dp
 private val FullScheduleTopInset = 12.dp
@@ -181,13 +183,13 @@ private fun FullScheduleHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         UniBackButton(
-            contentDescription = "Cerrar horario completo",
+            contentDescription = stringResource(R.string.full_schedule_close),
             onClick = onDismiss
         )
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Horario completo",
+                stringResource(R.string.full_schedule_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
@@ -200,12 +202,12 @@ private fun FullScheduleHeader(
         }
         UniIconButton(
             icon = Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-            contentDescription = "Semana anterior",
+            contentDescription = stringResource(R.string.full_schedule_prev_week),
             onClick = onPreviousWeek
         )
         UniIconButton(
             icon = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-            contentDescription = "Semana siguiente",
+            contentDescription = stringResource(R.string.full_schedule_next_week),
             onClick = onNextWeek
         )
     }
@@ -373,7 +375,7 @@ private fun FullScheduleGrid(
             }
         ) {
             Text(
-                "No hay clases esta semana",
+                stringResource(R.string.full_schedule_no_classes),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(24.dp),
@@ -397,7 +399,7 @@ private fun FullScheduleSession(
         modifier = modifier,
         height = height,
         color = subject.scheduleBlockColor(MaterialTheme.colorScheme.primary),
-        name = subject?.name ?: "Clase",
+        name = subject?.name ?: stringResource(R.string.schedule_detail_class),
         room = session.place.room,
         startLabel = fullScheduleTime(session.startMinute, use24Hour),
         onClick = onClick
@@ -412,7 +414,7 @@ private fun fullScheduleTime(value: Int, use24Hour: Boolean): String {
     val minute = value % 60
     if (use24Hour) return "%02d:%02d".format(hour, minute)
     val displayHour = (hour % 12).takeIf { it != 0 } ?: 12
-    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) "a. m." else "p. m.")
+    return "%d:%02d %s".format(displayHour, minute, if (hour < 12) (if (Locale.getDefault().language == "en") "AM" else "a. m.") else (if (Locale.getDefault().language == "en") "PM" else "p. m."))
 }
 
 private fun fullScheduleWeekLabel(start: LocalDate, end: LocalDate): String {

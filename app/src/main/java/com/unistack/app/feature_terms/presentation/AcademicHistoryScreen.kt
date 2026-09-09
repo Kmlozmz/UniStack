@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,8 +55,8 @@ fun AcademicHistoryScreen(
     val spacing = LocalInterfaceSpacing.current
 
     LargeTitleScaffold(
-        title = "Histórico académico",
-        subtitle = "Tus periodos, uno a uno",
+        title = stringResource(R.string.terms_history_title),
+        subtitle = stringResource(R.string.terms_history_subtitle),
         onBackClick = onBackClick,
         modifier = modifier,
         horizontalPadding = spacing.screenHorizontal,
@@ -66,8 +68,7 @@ fun AcademicHistoryScreen(
             item {
                 TermCard {
                     TermEmptyNote(
-                        "Todavía no hay periodos. El primero se crea al configurar la app, y " +
-                            "aparece aquí en cuanto exista."
+                        stringResource(R.string.terms_empty_history)
                     )
                 }
             }
@@ -81,16 +82,18 @@ fun AcademicHistoryScreen(
             item {
                 TermCard {
                     Row(verticalAlignment = Alignment.Top) {
+                        val closedNote = if (state.closedCount == 0) {
+                            stringResource(R.string.terms_cum_average_placeholder)
+                        } else {
+                            val cCount = if (state.closedCount == 1) stringResource(R.string.terms_closed_count_single) else stringResource(R.string.terms_closed_count_multiple, state.closedCount)
+                            val sCount = if (state.subjectsInHistory == 1) stringResource(R.string.terms_subjects_count_single) else stringResource(R.string.terms_subjects_count_multiple, state.subjectsInHistory)
+                            "$cCount · $sCount"
+                        }
                         TermStat(
-                            label = "Promedio acumulado",
+                            label = stringResource(R.string.terms_stat_cum_average),
                             value = state.cumulativeAverage?.toString(),
                             modifier = Modifier.weight(1f),
-                            note = if (state.closedCount == 0) {
-                                "Aparece al cerrar tu primer periodo"
-                            } else {
-                                "${state.closedCount} ${if (state.closedCount == 1) "periodo cerrado" else "periodos cerrados"} · " +
-                                    "${state.subjectsInHistory} ${if (state.subjectsInHistory == 1) "materia" else "materias"}"
-                            }
+                            note = closedNote
                         )
                     }
                 }
@@ -100,13 +103,13 @@ fun AcademicHistoryScreen(
             val cerrados = state.summaries.filter { !it.term.isActive }
 
             if (activos.isNotEmpty()) {
-                item { TermLabel("EN CURSO", Modifier.padding(start = 4.dp, top = 6.dp)) }
+                item { TermLabel(stringResource(R.string.terms_active_section), Modifier.padding(start = 4.dp, top = 6.dp)) }
                 items(activos, key = { it.term.id }) { resumen ->
                     TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
                 }
                 item {
                     UniStackButton(
-                        text = "Cerrar el periodo",
+                        text = stringResource(R.string.terms_btn_close_term),
                         onClick = onCloseTermClick,
                         variant = UniStackButtonVariant.Outlined,
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
@@ -115,7 +118,7 @@ fun AcademicHistoryScreen(
             }
 
             if (cerrados.isNotEmpty()) {
-                item { TermLabel("CERRADOS", Modifier.padding(start = 4.dp, top = 10.dp)) }
+                item { TermLabel(stringResource(R.string.terms_closed_section), Modifier.padding(start = 4.dp, top = 10.dp)) }
                 items(cerrados, key = { it.term.id }) { resumen ->
                     TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
                 }
@@ -123,8 +126,7 @@ fun AcademicHistoryScreen(
 
             item {
                 Text(
-                    text = "Un periodo cerrado sigue siendo editable: las notas llegan tarde y los " +
-                        "profesores corrigen. Lo que no vuelve es a ser el periodo activo.",
+                    text = stringResource(R.string.terms_closed_note),
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                     color = MaterialTheme.colorScheme.outline,
                     fontSize = 11.5.sp,
@@ -149,16 +151,17 @@ private fun TermRow(summary: TermSummary, onClick: () -> Unit) {
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Black
                     )
+                    val inProgressLabel = stringResource(R.string.terms_row_in_progress)
+                    val sCountLabel = if (summary.subjectCount == 1) stringResource(R.string.terms_subjects_count_single) else stringResource(R.string.terms_subjects_count_multiple, summary.subjectCount)
                     Text(
                         text = buildString {
                             append(summary.term.start.diaMes())
                             summary.term.closedEpochDay?.let {
                                 append(" – ")
                                 append(java.time.LocalDate.ofEpochDay(it).diaMesAno())
-                            } ?: append(" · en curso")
+                            } ?: append(" · $inProgressLabel")
                             append(" · ")
-                            append(summary.subjectCount)
-                            append(if (summary.subjectCount == 1) " materia" else " materias")
+                            append(sCountLabel)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.5.sp
@@ -167,11 +170,11 @@ private fun TermRow(summary: TermSummary, onClick: () -> Unit) {
                 TermStateChip(active = summary.term.isActive)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                TermStat(label = "Promedio", value = summary.average?.toString())
-                TermStat(label = "Asistencia", value = summary.attendanceRate?.let { "$it%" })
+                TermStat(label = stringResource(R.string.terms_stat_average), value = summary.average?.toString())
+                TermStat(label = stringResource(R.string.terms_stat_attendance), value = summary.attendanceRate?.let { "$it%" })
                 if (summary.failedCount > 0) {
                     TermStat(
-                        label = if (summary.failedCount == 1) "Perdida" else "Perdidas",
+                        label = if (summary.failedCount == 1) stringResource(R.string.terms_stat_failed_single) else stringResource(R.string.terms_stat_failed_multiple),
                         value = summary.failedCount.toString(),
                         tint = colores.atRisk
                     )

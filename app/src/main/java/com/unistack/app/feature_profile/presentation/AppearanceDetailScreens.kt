@@ -33,6 +33,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.unistack.app.core.design.components.LargeTitleScaffold
@@ -140,14 +142,14 @@ private fun PantallaDeAjustes(
 fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
     PantallaDeAjustes(
-        titulo = "Forma y superficie",
-        subtitulo = "Tarjetas, botones, campos y distintivos",
+        titulo = stringResource(R.string.settings_surface_title),
+        subtitulo = stringResource(R.string.settings_surface_subtitle),
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
         VistaPreviaDeTarjeta()
 
-        Rotulo("SUPERFICIE", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_surface), arriba = true)
         UniSegmentedControl(
             selected = appearance.surfaceStyle,
             options = SurfaceStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -159,7 +161,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         // Solo con «Sombra»: no hay opción «nada» porque una sombra de cero es una superficie
         // plana, y plana ya es una de las cuatro de arriba.
         if (appearance.surfaceStyle == SurfaceStyle.ELEVATED) {
-            Rotulo("CUÁNTA SOMBRA")
+            Rotulo(stringResource(R.string.settings_surface_sec_shadow))
             UniSegmentedControl(
                 selected = appearance.shadowIntensity,
                 options = ShadowIntensity.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -168,7 +170,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             )
         }
         if (appearance.surfaceStyle == SurfaceStyle.OUTLINED) {
-            Rotulo("GROSOR DEL FILETE")
+            Rotulo(stringResource(R.string.settings_surface_sec_outline))
             UniSegmentedControl(
                 selected = appearance.outlineWeight,
                 options = OutlineWeight.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -177,25 +179,25 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
             )
         }
 
-        Rotulo("ESQUINAS", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_corners), arriba = true)
         UniSegmentedControl(
             selected = appearance.cornerStyle,
             options = CornerStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(cornerStyle = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Afecta a tarjetas, botones y hojas, en toda la app. Mira la tarjeta de arriba.")
+        Explicacion(stringResource(R.string.settings_surface_corners_desc))
 
-        Rotulo("DENSIDAD", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_density), arriba = true)
         UniSegmentedControl(
             selected = appearance.interfaceDensity,
             options = InterfaceDensity.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(interfaceDensity = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Cuánto separa la app una cosa de la siguiente, y cuánto aire hay dentro de una tarjeta.")
+        Explicacion(stringResource(R.string.settings_surface_density_desc))
 
-        Rotulo("FORMA DE LOS BOTONES", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_button_shape), arriba = true)
         UniSegmentedControl(
             selected = appearance.buttonShape,
             options = ButtonShapeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -204,7 +206,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         )
         VistaPreviaDeBotones()
 
-        Rotulo("FORMA DE LOS CAMPOS", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_field_shape), arriba = true)
         UniSegmentedControl(
             selected = appearance.textFieldStyle,
             options = TextFieldStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -213,7 +215,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         )
         VistaPreviaDeCampo()
 
-        Rotulo("FORMA DE LOS CHIPS", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_chip_shape), arriba = true)
         UniSegmentedControl(
             selected = appearance.chipStyle,
             options = ChipStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -222,7 +224,7 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         )
         VistaPreviaDeChips()
 
-        Rotulo("FORMA DE LOS DISTINTIVOS", arriba = true)
+        Rotulo(stringResource(R.string.settings_surface_sec_badge_shape), arriba = true)
         UniSegmentedControl(
             selected = appearance.badgeShape,
             options = BadgeShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -232,9 +234,9 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
         VistaPreviaDeDistintivos()
         Explicacion(
             if (appearance.badgeShape == BadgeShape.ALEATORIO) {
-                "Cada materia se queda con la suya, siempre la misma: dos del mismo color ya no se confunden."
+                stringResource(R.string.settings_surface_badge_desc_unique)
             } else {
-                "Todas las materias con la misma forma. Se distinguen solo por el color."
+                stringResource(R.string.settings_surface_badge_desc_same)
             }
         )
     }
@@ -246,14 +248,14 @@ fun SurfaceSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier
 fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
     PantallaDeAjustes(
-        titulo = "Tipografía",
-        subtitulo = "La letra de la app, su tamaño y su aire",
+        titulo = stringResource(R.string.settings_typo_title),
+        subtitulo = stringResource(R.string.settings_typo_subtitle),
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
         MuestraDeLetra()
 
-        Rotulo("FAMILIA", arriba = true)
+        Rotulo(stringResource(R.string.settings_typo_sec_family), arriba = true)
         // Seis familias en dos filas: en una sola de seis, «Redondeada» y «Estrecha» se
         // parten por la mitad y no se leen.
         UniSegmentedControl(
@@ -270,13 +272,13 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
         )
         Explicacion(appearance.typographyStyle.explicacion())
 
-        Rotulo("TAMAÑO", arriba = true)
+        Rotulo(stringResource(R.string.settings_typo_sec_size), arriba = true)
         DeslizadorDeTamano(
             porcentaje = appearance.textScalePercent,
             onSoltar = { valor -> viewModel.updateAppearance { it.copy(textScalePercent = valor) } }
         )
 
-        Rotulo("INTERLINEADO", arriba = true)
+        Rotulo(stringResource(R.string.settings_typo_sec_line_height), arriba = true)
         UniSegmentedControl(
             selected = appearance.lineHeightStyle,
             options = LineHeightStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -284,13 +286,12 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
             modifier = Modifier.fillMaxWidth()
         )
         Text(
-            text = "El aire entre renglones. Se nota en textos largos como este, " +
-                "y no tanto en una lista de materias donde cada fila lleva una línea.",
+            text = stringResource(R.string.settings_typo_line_height_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Rotulo("DECIMALES EN LAS NOTAS", arriba = true)
+        Rotulo(stringResource(R.string.settings_typo_sec_decimals), arriba = true)
         UniSegmentedControl(
             selected = appearance.decimalPlaces,
             options = listOf(
@@ -301,7 +302,7 @@ fun TypographySettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modif
             onSelected = { valor -> viewModel.updateAppearance { it.copy(decimalPlaces = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("Cuántos decimales enseña un promedio.")
+        Explicacion(stringResource(R.string.settings_typo_decimals_desc))
     }
 }
 
@@ -314,10 +315,10 @@ private fun MuestraDeLetra() {
         color = MaterialTheme.colorScheme.surfaceContainerLow
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Cálculo III", style = MaterialTheme.typography.headlineSmallEmphasized)
-            Text("Promedio 4,25 · 3 cortes · 128 h", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_typo_sample_title), style = MaterialTheme.typography.headlineSmallEmphasized)
+            Text(stringResource(R.string.settings_typo_sample_sub), style = MaterialTheme.typography.titleMedium)
             Text(
-                "Con 3,10 en el tercer corte cierras en 4,00. El segundo corte pesa el 35%.",
+                stringResource(R.string.settings_typo_sample_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -389,21 +390,21 @@ private fun DeslizadorDeTamano(porcentaje: Int, onSoltar: (Int) -> Unit) {
 fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ProfileViewModel = hiltViewModel()
     PantallaDeAjustes(
-        titulo = "Componentes",
-        subtitulo = "Tamaños, barra, progreso e interruptores",
+        titulo = stringResource(R.string.settings_components_title),
+        subtitulo = stringResource(R.string.settings_components_subtitle),
         onBackClick = onBackClick,
         modifier = modifier
     ) { appearance ->
-        Rotulo("TAMAÑO DE LOS BOTONES")
+        Rotulo(stringResource(R.string.settings_components_sec_button_size))
         UniSegmentedControl(
             selected = appearance.buttonSize,
             options = ButtonSizeStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
             onSelected = { valor -> viewModel.updateAppearance { it.copy(buttonSize = valor) } },
             modifier = Modifier.fillMaxWidth()
         )
-        Explicacion("La forma se elige en Forma y superficie.")
+        Explicacion(stringResource(R.string.settings_components_button_size_desc))
 
-        Rotulo("BARRA DE ABAJO", arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_bottom_bar), arriba = true)
         UniSegmentedControl(
             selected = appearance.bottomBarStyle,
             options = BottomBarStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -418,9 +419,9 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         )
         // La barra de abajo está a la vista mientras se elige: una muestra suya aquí sería la
         // misma cosa dos veces en la misma pantalla.
-        Explicacion("Míralos en la barra de abajo mientras eliges: cambia al momento.")
+        Explicacion(stringResource(R.string.settings_components_bottom_bar_desc))
 
-        Rotulo("BARRAS DE PROGRESO", arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_progress), arriba = true)
         UniSegmentedControl(
             selected = appearance.academicProgressShape,
             options = ProgressShape.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -428,12 +429,9 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
             modifier = Modifier.fillMaxWidth()
         )
         BarraDeProgresoReal(progreso = 0.68f)
-        Explicacion(
-            "Es la onda de Material 3 Expressive, y se ve moviéndose porque quieta apenas se " +
-                "distingue de una recta. Las de descarga se quedan onduladas siempre."
-        )
+        Explicacion(stringResource(R.string.settings_components_progress_desc))
 
-        Rotulo("INTERRUPTORES", arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_switches), arriba = true)
         UniSegmentedControl(
             selected = appearance.switchIconStyle,
             options = SwitchIconStyle.entries.map { UniSegmentedOption(value = it, label = it.label()) },
@@ -442,7 +440,7 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         )
         VistaPreviaDeInterruptores()
 
-        Rotulo("DETALLES", arriba = true)
+        Rotulo(stringResource(R.string.settings_components_sec_details), arriba = true)
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -450,14 +448,14 @@ fun ComponentSettingsScreen(onBackClick: () -> Unit, modifier: Modifier = Modifi
         ) {
             Column {
                 FilaDeInterruptor(
-                    titulo = "Separadores en las listas",
-                    detalle = "La línea fina entre una fila y la siguiente.",
+                    titulo = stringResource(R.string.settings_components_list_dividers),
+                    detalle = stringResource(R.string.settings_components_list_dividers_desc),
                     marcado = appearance.listDividers,
                     onCambio = { valor -> viewModel.updateAppearance { it.copy(listDividers = valor) } }
                 )
                 FilaDeInterruptor(
-                    titulo = "Colores por sección",
-                    detalle = "Verde, ámbar y rojo en las notas. Apagado, todo va con el acento.",
+                    titulo = stringResource(R.string.settings_components_section_colors),
+                    detalle = stringResource(R.string.settings_components_section_colors_desc),
                     marcado = appearance.sectionColorsEnabled,
                     onCambio = { valor -> viewModel.updateAppearance { it.copy(sectionColorsEnabled = valor) } }
                 )
@@ -488,64 +486,94 @@ private fun FilaDeInterruptor(
 
 // ------------------------------------------------------------------ rótulos
 
-internal fun ShadowIntensity.label() = when (this) {
-    ShadowIntensity.SUAVE -> "Suave"
-    ShadowIntensity.MEDIA -> "Media"
-    ShadowIntensity.FUERTE -> "Fuerte"
+internal fun ShadowIntensity.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ShadowIntensity.SUAVE -> if (isEn) "Soft" else "Suave"
+        ShadowIntensity.MEDIA -> if (isEn) "Medium" else "Media"
+        ShadowIntensity.FUERTE -> if (isEn) "Strong" else "Fuerte"
+    }
 }
 
-internal fun OutlineWeight.label() = when (this) {
-    OutlineWeight.FINO -> "Fino"
-    OutlineWeight.MEDIO -> "Medio"
-    OutlineWeight.GRUESO -> "Grueso"
+internal fun OutlineWeight.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        OutlineWeight.FINO -> if (isEn) "Thin" else "Fino"
+        OutlineWeight.MEDIO -> if (isEn) "Medium" else "Medio"
+        OutlineWeight.GRUESO -> if (isEn) "Thick" else "Grueso"
+    }
 }
 
-internal fun LineHeightStyle.label() = when (this) {
-    LineHeightStyle.COMPACTO -> "Compacto"
-    LineHeightStyle.NORMAL -> "Normal"
-    LineHeightStyle.AMPLIO -> "Amplio"
+internal fun LineHeightStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        LineHeightStyle.COMPACTO -> if (isEn) "Compact" else "Compacto"
+        LineHeightStyle.NORMAL -> if (isEn) "Normal" else "Normal"
+        LineHeightStyle.AMPLIO -> if (isEn) "Wide" else "Amplio"
+    }
 }
 
-internal fun ButtonShapeStyle.label() = when (this) {
-    ButtonShapeStyle.RECTO -> "Rectos"
-    ButtonShapeStyle.MEDIO -> "Medios"
-    ButtonShapeStyle.PASTILLA -> "Pastilla"
+internal fun ButtonShapeStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ButtonShapeStyle.RECTO -> if (isEn) "Sharp" else "Rectos"
+        ButtonShapeStyle.MEDIO -> if (isEn) "Medium" else "Medios"
+        ButtonShapeStyle.PASTILLA -> if (isEn) "Pill" else "Pastilla"
+    }
 }
 
-internal fun ButtonSizeStyle.label() = when (this) {
-    ButtonSizeStyle.PEQUENO -> "Pequeño"
-    ButtonSizeStyle.MEDIO -> "Medio"
-    ButtonSizeStyle.GRANDE -> "Grande"
+internal fun ButtonSizeStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ButtonSizeStyle.PEQUENO -> if (isEn) "Small" else "Pequeño"
+        ButtonSizeStyle.MEDIO -> if (isEn) "Medium" else "Medio"
+        ButtonSizeStyle.GRANDE -> if (isEn) "Large" else "Grande"
+    }
 }
 
-internal fun TextFieldStyle.label() = when (this) {
-    TextFieldStyle.RELLENO -> "Relleno"
-    TextFieldStyle.FILETE -> "Filete"
-    TextFieldStyle.SUBRAYADO -> "Subrayado"
+internal fun TextFieldStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        TextFieldStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
+        TextFieldStyle.FILETE -> if (isEn) "Outlined" else "Filete"
+        TextFieldStyle.SUBRAYADO -> if (isEn) "Underlined" else "Subrayado"
+    }
 }
 
-internal fun ChipStyle.label() = when (this) {
-    ChipStyle.FILETE -> "Filete"
-    ChipStyle.RELLENO -> "Relleno"
-    ChipStyle.TEXTO -> "Solo texto"
+internal fun ChipStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        ChipStyle.FILETE -> if (isEn) "Outlined" else "Filete"
+        ChipStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
+        ChipStyle.TEXTO -> if (isEn) "Text only" else "Solo texto"
+    }
 }
 
-internal fun IconStyle.label() = when (this) {
-    IconStyle.REDONDEADO -> "Redondeado"
-    IconStyle.LINEAL -> "Lineal"
-    IconStyle.RELLENO -> "Relleno"
+internal fun IconStyle.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        IconStyle.REDONDEADO -> if (isEn) "Rounded" else "Redondeado"
+        IconStyle.LINEAL -> if (isEn) "Outlined" else "Lineal"
+        IconStyle.RELLENO -> if (isEn) "Filled" else "Relleno"
+    }
 }
 
-internal fun BadgeShape.label() = when (this) {
-    BadgeShape.CIRCULO -> "Círculo"
-    BadgeShape.GALLETA -> "Galleta"
-    BadgeShape.TREBOL -> "Trébol"
-    BadgeShape.SOL -> "Sol"
-    BadgeShape.ROMBO -> "Rombo"
-    BadgeShape.ALEATORIO -> "Aleatorio"
+internal fun BadgeShape.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        BadgeShape.CIRCULO -> if (isEn) "Circle" else "Círculo"
+        BadgeShape.GALLETA -> if (isEn) "Cookie" else "Galleta"
+        BadgeShape.TREBOL -> if (isEn) "Clover" else "Trébol"
+        BadgeShape.SOL -> if (isEn) "Sun" else "Sol"
+        BadgeShape.ROMBO -> if (isEn) "Diamond" else "Rombo"
+        BadgeShape.ALEATORIO -> if (isEn) "Random" else "Aleatorio"
+    }
 }
 
-internal fun FirstDayOfWeek.label() = when (this) {
-    FirstDayOfWeek.LUNES -> "Lunes"
-    FirstDayOfWeek.DOMINGO -> "Domingo"
+internal fun FirstDayOfWeek.label(): String {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return when (this) {
+        FirstDayOfWeek.LUNES -> if (isEn) "Monday" else "Lunes"
+        FirstDayOfWeek.DOMINGO -> if (isEn) "Sunday" else "Domingo"
+    }
 }

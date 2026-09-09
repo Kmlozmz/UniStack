@@ -134,6 +134,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unistack.app.core.utils.ValidationResult
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.NavHost
@@ -512,7 +514,7 @@ fun SetupWelcomeScreen(onStartClick: () -> Unit, modifier: Modifier = Modifier) 
         welcome = false,
         actions = {
             UniStackButton(
-                text = "Comenzar configuración",
+                text = stringResource(R.string.setup_btn_start),
                 onClick = onStartClick,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
@@ -598,18 +600,26 @@ private fun WelcomeHeroCard() {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                text = "BIENVENIDO",
+                text = stringResource(R.string.setup_welcome_badge),
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 12.sp,
                 lineHeight = 14.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
+            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    append("Tu semestre,\n")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                        append("a tu medida")
+                    if (isEn) {
+                        append("Your semester,\n")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append("your way")
+                        }
+                    } else {
+                        append("Tu semestre,\n")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append("a tu medida")
+                        }
                     }
                 },
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -618,7 +628,7 @@ private fun WelcomeHeroCard() {
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                text = "Unas preguntas rápidas y UniStack estará listo para empezar a organizar tu vida académica.",
+                text = stringResource(R.string.setup_welcome_hero_desc),
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f),
                 fontSize = 13.sp,
                 lineHeight = 19.sp,
@@ -636,33 +646,63 @@ private data class WelcomeFeature(
 
 @Composable
 private fun WelcomeFeaturesGrid() {
+    val isEn = java.util.Locale.getDefault().language == "en"
     val features = remember {
-        listOf(
-            WelcomeFeature(
-                icon = Icons.Rounded.School,
-                label = "Organizar materias",
-                description = "Registra cada materia con su color, su docente y su horario. " +
-                    "Es la base sobre la que UniStack arma tus notas, tus tareas y tus recordatorios."
-            ),
-            WelcomeFeature(
-                icon = Icons.Rounded.CalendarMonth,
-                label = "Gestionar tareas",
-                description = "Crea tareas con fecha de entrega y prioridad. " +
-                    "Las que vencen pronto aparecen destacadas en tu panel de inicio."
-            ),
-            WelcomeFeature(
-                icon = Icons.Rounded.Percent,
-                label = "Seguir tus notas",
-                description = "Anota tus calificaciones por corte y UniStack calcula tu promedio " +
-                    "y cuánto necesitas en lo que falta para llegar a tu meta. ¡UniStack lo hace por ti!"
-            ),
-            WelcomeFeature(
-                icon = Icons.Rounded.GridView,
-                label = "Configurar módulos",
-                description = "Activa solo lo que vayas a usar: notas, tareas, gastos u horario. " +
-                    "Puedes cambiarlo cuando quieras desde Ajustes."
+        if (isEn) {
+            listOf(
+                WelcomeFeature(
+                    icon = Icons.Rounded.School,
+                    label = "Organize courses",
+                    description = "Log each course with its color, instructor, and schedule. " +
+                        "This powers your grades, tasks, and reminders."
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.CalendarMonth,
+                    label = "Manage tasks",
+                    description = "Create tasks with due dates and priorities. " +
+                        "Upcoming deadlines are highlighted on your home screen."
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.Percent,
+                    label = "Track grades",
+                    description = "Log your grades by term cut and UniStack calculates your GPA " +
+                        "and what you need to hit your goal. UniStack does it for you!"
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.GridView,
+                    label = "Configure modules",
+                    description = "Enable only what you need: grades, tasks, expenses, or schedule. " +
+                        "Change anytime in Settings."
+                )
             )
-        )
+        } else {
+            listOf(
+                WelcomeFeature(
+                    icon = Icons.Rounded.School,
+                    label = "Organizar materias",
+                    description = "Registra cada materia con su color, su docente y su horario. " +
+                        "Es la base sobre la que UniStack arma tus notas, tus tareas y tus recordatorios."
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.CalendarMonth,
+                    label = "Gestionar tareas",
+                    description = "Crea tareas con fecha de entrega y prioridad. " +
+                        "Las que vencen pronto aparecen destacadas en tu panel de inicio."
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.Percent,
+                    label = "Seguir tus notas",
+                    description = "Anota tus calificaciones por corte y UniStack calcula tu promedio " +
+                        "y cuánto necesitas en lo que falta para llegar a tu meta. ¡UniStack lo hace por ti!"
+                ),
+                WelcomeFeature(
+                    icon = Icons.Rounded.GridView,
+                    label = "Configurar módulos",
+                    description = "Activa solo lo que vayas a usar: notas, tareas, gastos u horario. " +
+                        "Puedes cambiarlo cuando quieras desde Ajustes."
+                )
+            )
+        }
     }
     // La selección persiste tras cerrar el diálogo; por eso son dos estados y no uno.
     var selectedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -670,7 +710,7 @@ private fun WelcomeFeaturesGrid() {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "Con tu configuración podrás",
+            text = stringResource(R.string.setup_welcome_footer),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             lineHeight = 14.sp,
@@ -849,7 +889,7 @@ fun SetupNameScreen(
         overlayKeyboard = true,
         actions = {
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 enabled = nameValidation.isValid,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -1038,11 +1078,19 @@ private fun SetupNameTitle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                append("¿Cómo ")
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("te llamas?")
+                if (isEn) {
+                    append("What is ")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("your name?")
+                    }
+                } else {
+                    append("¿Cómo ")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("te llamas?")
+                    }
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -1052,7 +1100,7 @@ private fun SetupNameTitle() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "UniStack usará tu nombre para saludarte\ny personalizar tu panel.",
+            text = stringResource(R.string.setup_name_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 15.sp,
             lineHeight = 22.sp,
@@ -1073,7 +1121,7 @@ private fun SetupNameInput(
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Text(
-            text = "Nombre",
+            text = stringResource(R.string.setup_name_label),
             color = MaterialTheme.colorScheme.primary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Normal
@@ -1090,7 +1138,7 @@ private fun SetupNameInput(
                 singleLine = true,
                 placeholder = {
                     Text(
-                        text = "Escribe tu nombre",
+                        text = stringResource(R.string.setup_name_hint),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
                         fontSize = 15.sp
                     )
@@ -1105,7 +1153,7 @@ private fun SetupNameInput(
                 },
                 supportingText = {
                     if (showError) {
-                        Text(nameValidation.errorMessage ?: "Ingresa un nombre válido")
+                        Text(nameValidation.errorMessage ?: stringResource(R.string.setup_name_error))
                     }
                 },
                 shape = MaterialTheme.shapes.medium,
@@ -1157,7 +1205,7 @@ private fun SetupNameInfoCard() {
                 )
             }
             Text(
-                text = "Podrás cambiarlo en cualquier momento\ndesde tu perfil.",
+                text = stringResource(R.string.setup_name_footer),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
@@ -1213,13 +1261,13 @@ fun SetupProfileScreen(
              */
             if (selectedProgram == null) return@SetupScaffold
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 enabled = canContinue,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
             UniStackButton(
-                text = "Prefiero hacerlo después",
+                text = stringResource(R.string.setup_btn_skip_later),
                 onClick = onSkipClick,
                 variant = UniStackButtonVariant.Outlined
             )
@@ -1246,7 +1294,7 @@ fun SetupProfileScreen(
              * identicas apiladas se leen como un error.
              */
             SetupDropdownField(
-                label = "Área de estudio",
+                label = stringResource(R.string.setup_career_area_label),
                 value = studyArea?.let(::labelFor).orEmpty(),
                 options = StudyArea.entries.map(::labelFor),
                 enabled = true,
@@ -1265,7 +1313,7 @@ fun SetupProfileScreen(
             // y un desplegable vacio invita a tocarlo para nada.
             Revelado(visible = studyArea != null) {
               SetupDropdownField(
-                label = "Programa o carrera",
+                label = stringResource(R.string.setup_career_program_label),
                 value = selectedProgram.orEmpty(),
                 options = studyArea?.let(::programsFor).orEmpty(),
                 enabled = studyArea != null,
@@ -1283,14 +1331,14 @@ fun SetupProfileScreen(
             // aparece con ella.
             Revelado(visible = studyArea != null) {
                 AcademicProgramHelpCard(
-                    selected = studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION,
+                    selected = studyArea == StudyArea.OTHER || isOtherOption(selectedProgram),
                     onClick = {
                         onStudyAreaSelected(StudyArea.OTHER)
-                        onProgramSelected(OTHER_OPTION)
+                        onProgramSelected(otherOptionLabel())
                     }
                 )
             }
-            if (studyArea == StudyArea.OTHER || selectedProgram == OTHER_OPTION) {
+            if (studyArea == StudyArea.OTHER || isOtherOption(selectedProgram)) {
                 SetupCustomProgramField(
                     value = customProgram,
                     validation = customProgramValidation,
@@ -1301,8 +1349,8 @@ fun SetupProfileScreen(
             Revelado(visible = selectedProgram != null) {
                 InstitutionField(
                     value = institutionName,
-                    label = "Universidad",
-                    placeholder = "Nombre de tu universidad",
+                    label = stringResource(R.string.setup_career_university_label),
+                    placeholder = stringResource(R.string.setup_career_university_hint),
                     onValueChange = onInstitutionNameChange
                 )
             }
@@ -1365,11 +1413,19 @@ private fun SetupEducationTitle() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
+        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                append("¿Qué estás\n")
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("estudiando?")
+                if (isEn) {
+                    append("What are you\n")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("studying?")
+                    }
+                } else {
+                    append("¿Qué estás\n")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("estudiando?")
+                    }
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -1379,7 +1435,7 @@ private fun SetupEducationTitle() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Con tu carrera preparo el catálogo\nde materias que vas a usar.",
+            text = stringResource(R.string.setup_career_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 19.sp,
@@ -1428,14 +1484,14 @@ private fun AcademicProgramHelpCard(
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
-                    text = "No encuentras tu carrera?",
+                    text = stringResource(R.string.setup_career_not_found),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 15.sp,
                     lineHeight = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Puedes agregarla manualmente.",
+                    text = stringResource(R.string.setup_career_add_manually),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 16.sp
@@ -1467,8 +1523,8 @@ internal fun SetupCustomProgramField(
     value: String,
     validation: ValidationResult?,
     onValueChange: (String) -> Unit,
-    label: String = "Nombre del programa",
-    placeholder: String = "Ej: Ingeniería Biomédica"
+    label: String = if (java.util.Locale.getDefault().language == "en") "Program name" else "Nombre del programa",
+    placeholder: String = if (java.util.Locale.getDefault().language == "en") "e.g. Biomedical Engineering" else "Ej: Ingeniería Biomédica"
 ) {
     val showError = value.isNotBlank() && validation?.isValid == false
     MaterialTheme(
@@ -1506,7 +1562,7 @@ internal fun SetupCustomProgramField(
             ),
             supportingText = {
                 if (showError) {
-                    Text(validation?.errorMessage ?: "Ingresa un programa válido")
+                    Text(validation?.errorMessage ?: stringResource(R.string.setup_career_custom_error))
                 }
             },
             isError = showError
@@ -1530,7 +1586,7 @@ internal fun studyAreaIcon(area: StudyArea): ImageVector = when (area) {
 }
 
 internal fun programIcon(option: String): ImageVector =
-    if (option == OTHER_OPTION) Icons.Rounded.AutoAwesome else Icons.Rounded.School
+    if (isOtherOption(option)) Icons.Rounded.AutoAwesome else Icons.Rounded.School
 
 @Composable
 fun SetupGradingScaleScreen(
@@ -1566,7 +1622,7 @@ fun SetupGradingScaleScreen(
         modifier = modifier,
         actions = {
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 enabled = isValid,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -1593,8 +1649,8 @@ fun SetupGradingScaleScreen(
              * ellas se ve antes de seguir.
              */
             SetupPlainTitle(
-                title = "¿Cómo son tus notas?",
-                subtitle = "Con esto calculamos tus promedios y tus metas."
+                title = stringResource(R.string.setup_scale_title),
+                subtitle = stringResource(R.string.setup_scale_desc)
             )
             ScaleTypeSection(
                 selectedChoice = selectedChoice,
@@ -1645,7 +1701,7 @@ fun SetupGradingScaleScreen(
             }
             Revelado(visible = scaleChosen && !eligiendoRango, retardoMs = 220) {
                 GradeStepperRow(
-                    label = "Apruebas con",
+                    label = stringResource(R.string.setup_scale_pass_label),
                     value = passingGrade,
                     max = scaleMax,
                     floorValue = 0.0,
@@ -1656,7 +1712,7 @@ fun SetupGradingScaleScreen(
             }
             Revelado(visible = scaleChosen && !eligiendoRango, retardoMs = 340) {
                 GradeStepperRow(
-                    label = "Tu meta",
+                    label = stringResource(R.string.setup_scale_goal_label),
                     value = targetAverage,
                     max = scaleMax,
                     floorValue = gradeValueOf(passingGrade) ?: 0.0,
@@ -1667,7 +1723,7 @@ fun SetupGradingScaleScreen(
             }
             Revelado(visible = scaleChosen && !eligiendoRango && !isValid) {
                 Text(
-                    text = "Revisa que las notas estén dentro de la escala y que el promedio objetivo sea al menos la nota mínima.",
+                    text = stringResource(R.string.setup_scale_error),
                     color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
@@ -1711,9 +1767,9 @@ private fun ScaleTypeSection(
     UniSegmentedControl(
         selected = selectedChoice,
         options = listOf(
-            SetupScaleChoice.FIVE to "0 a 5.0",
-            SetupScaleChoice.HUNDRED to "0 a 100",
-            SetupScaleChoice.CUSTOM to "Otra"
+            SetupScaleChoice.FIVE to stringResource(R.string.setup_scale_range_0_5),
+            SetupScaleChoice.HUNDRED to stringResource(R.string.setup_scale_range_0_100),
+            SetupScaleChoice.CUSTOM to stringResource(R.string.setup_scale_range_other)
         ).map { (choice, label) -> UniSegmentedOption<SetupScaleChoice?>(value = choice, label = label) },
         // Nulo es «todavia no ha elegido», y de ahi no se puede volver tocando una opcion.
         onSelected = { valor -> valor?.let(onChoiceSelected) },
@@ -1741,14 +1797,14 @@ private fun ConfirmedScaleRangeRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Rango confirmado: 0 a ${customGradeMax.toInt()}",
+                text = stringResource(R.string.setup_scale_confirmed_range, customGradeMax.toInt()),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 16.sp,
                 modifier = Modifier.weight(1f)
             )
             TextButton(onClick = onEditClick) {
-                Text("Cambiar", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.setup_scale_btn_change), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -1799,8 +1855,8 @@ fun SetupGradingCutsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             SetupPlainTitle(
-                title = "¿Cómo se divide tu nota final?",
-                subtitle = "Reparte el 100 % entre tus ${Corte.Plural.lowercase()}."
+                title = stringResource(R.string.setup_cuts_title),
+                subtitle = stringResource(R.string.setup_cuts_desc, Corte.Plural.lowercase())
             )
 
             /*
@@ -1868,7 +1924,7 @@ private fun GradingCutsBottomActions(
         )
         Spacer(modifier = Modifier.width(5.dp))
         Text(
-            text = if (enabled) "Tu distribución está completa." else "Completa el 100% para continuar.",
+            text = if (enabled) stringResource(R.string.setup_cuts_complete) else stringResource(R.string.setup_cuts_incomplete),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
             lineHeight = 12.sp
@@ -1900,13 +1956,13 @@ private fun CustomGradeRangeSelector(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Define el máximo",
+                        stringResource(R.string.setup_scale_custom_max_title),
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 17.sp
                     )
                     Text(
-                        "Tu escala irá de 0 hasta este valor.",
+                        stringResource(R.string.setup_scale_custom_max_desc),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
@@ -1927,7 +1983,7 @@ private fun CustomGradeRangeSelector(
                 }
             }
             Text(
-                "Rango actual: 0 a ${customGradeMax.toInt()}",
+                stringResource(R.string.setup_scale_custom_current, customGradeMax.toInt()),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal
@@ -1956,7 +2012,7 @@ private fun CustomGradeRangeSelector(
                     Text(mark, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, fontWeight = FontWeight.Normal)
                 }
             }
-            UniStackButton(text = "Confirmar rango", onClick = onConfirmClick)
+            UniStackButton(text = stringResource(R.string.setup_scale_btn_confirm_range), onClick = onConfirmClick)
         }
     }
 }
@@ -1977,7 +2033,7 @@ fun SetupModulesScreen(
         modifier = modifier,
         actions = {
             UniStackButton(
-                text = "Continuar",
+                text = stringResource(R.string.setup_btn_continue),
                 onClick = onContinueClick,
                 trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
             )
@@ -2000,7 +2056,7 @@ fun SetupModulesScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Text(
-                    text = "Sin notas no habrá promedios ni cortes, y el flujo se salta esos dos pasos.",
+                    text = stringResource(R.string.setup_modules_skip_warning),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
@@ -2097,20 +2153,20 @@ fun SetupDoneScreen(
             ) {
                 if (gradesEnabled) {
                     UniStackButton(
-                        text = "Crear mi primera materia",
+                        text = stringResource(R.string.setup_done_btn_first_subject),
                         onClick = { startExit(true) },
                         leadingIcon = Icons.Rounded.Add,
                         trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
                     )
                     UniStackButton(
-                        text = "Ir al inicio",
+                        text = stringResource(R.string.setup_done_btn_home),
                         onClick = { startExit(false) },
                         variant = UniStackButtonVariant.Outlined,
                         leadingIcon = Icons.Rounded.Home
                     )
                 } else {
                     UniStackButton(
-                        text = "Ir al inicio",
+                        text = stringResource(R.string.setup_done_btn_home),
                         onClick = { startExit(false) },
                         leadingIcon = Icons.Rounded.Home,
                         trailingIcon = Icons.AutoMirrored.Rounded.KeyboardArrowRight
@@ -2145,9 +2201,9 @@ fun SetupDoneScreen(
             Spacer(modifier = Modifier.height(14.dp))
             Text(
                 text = if (gradesEnabled) {
-                    "UniStack ya es tuyo. Empieza por una materia y el resto se acomoda solo."
+                    stringResource(R.string.setup_done_footer_with_subjects)
                 } else {
-                    "UniStack ya es tuyo. Entra y empieza a llenarlo."
+                    stringResource(R.string.setup_done_footer_generic)
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyLarge,
@@ -2226,7 +2282,7 @@ private fun SetupModulesTitle() {
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Text(
-            text = "¿Qué quieres organizar con UniStack?",
+            text = stringResource(R.string.setup_modules_title),
             color = MaterialTheme.colorScheme.onSurface,
             fontSize = 23.sp,
             lineHeight = 26.sp,
@@ -2234,7 +2290,7 @@ private fun SetupModulesTitle() {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Activa los módulos que necesitas.\nPuedes cambiar esta configuración en Ajustes.",
+            text = stringResource(R.string.setup_modules_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             lineHeight = 18.sp,
@@ -2265,6 +2321,8 @@ private fun SetupModuleSelectionCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val activeDesc = stringResource(R.string.setup_modules_status_active)
+    val inactiveDesc = stringResource(R.string.setup_modules_status_inactive)
     UniCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -2279,7 +2337,7 @@ private fun SetupModuleSelectionCard(
                 onValueChange = { onClick() }
             )
             .semantics {
-                stateDescription = if (selected) "Activo" else "Inactivo"
+                stateDescription = if (selected) activeDesc else inactiveDesc
             },
         // Un módulo apagado se atenúa entero en vez de cambiar solo de contorno: así la
         // lista se lee de un vistazo, sin comparar bordes fila por fila.
@@ -2347,14 +2405,22 @@ private fun SetupModulesInfoCard() {
             horizontalArrangement = Arrangement.spacedBy(11.dp)
         ) {
             SetupInfoDot(size = 38.dp)
+            val isEn = java.util.Locale.getDefault().language == "en"
             Text(
                 text = buildAnnotatedString {
-                    append("Siempre puedes activar o desactivar módulos\n")
-                    append("desde ")
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
-                        append("Ajustes")
+                    if (isEn) {
+                        append("You can always enable or disable modules\nfrom ")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
+                            append("Settings")
+                        }
+                        append(" later.")
+                    } else {
+                        append("Siempre puedes activar o desactivar módulos\ndesde ")
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)) {
+                            append("Ajustes")
+                        }
+                        append(" más adelante.")
                     }
-                    append(" más adelante.")
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
@@ -2433,11 +2499,19 @@ private fun SetupFinishHero(name: String) {
                 }
             }
         }
+        val isEn = java.util.Locale.getDefault().language == "en"
         Text(
             text = buildAnnotatedString {
-                append("Listo, ")
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                    append("$name.")
+                if (isEn) {
+                    append("All set, ")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("$name.")
+                    }
+                } else {
+                    append("Listo, ")
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                        append("$name.")
+                    }
                 }
             },
             color = MaterialTheme.colorScheme.onSurface,
@@ -2491,32 +2565,64 @@ private fun SetupInfoDot(size: androidx.compose.ui.unit.Dp) {
 private fun setupModuleOptions(): List<ModuleOption> = allModuleOptions()
     .filter { it.module in offerableModules() }
 
-private fun allModuleOptions(): List<ModuleOption> = listOf(
-    ModuleOption(
-        module = AppModule.GRADES,
-        label = "Notas y materias",
-        description = "Promedios, porcentajes y metas.",
-        icon = Icons.AutoMirrored.Rounded.MenuBook
-    ),
-    ModuleOption(
-        module = AppModule.TASKS,
-        label = "Tareas",
-        description = "Entregas, fechas y pendientes.",
-        icon = Icons.Rounded.CheckCircle
-    ),
-    ModuleOption(
-        module = AppModule.EXPENSES,
-        label = "Gastos",
-        description = "Registros rápidos y resumen semanal.",
-        icon = Icons.Rounded.AccountBalanceWallet
-    ),
-    ModuleOption(
-        module = AppModule.ACADEMIC_TEMPLATES,
-        label = "Trabajos",
-        description = "Checklist, ensayos y formato APA.",
-        icon = Icons.AutoMirrored.Rounded.Assignment
-    )
-)
+private fun allModuleOptions(): List<ModuleOption> {
+    val isEn = java.util.Locale.getDefault().language == "en"
+    return if (isEn) {
+        listOf(
+            ModuleOption(
+                module = AppModule.GRADES,
+                label = "Grades & courses",
+                description = "GPA, percentages, and targets.",
+                icon = Icons.AutoMirrored.Rounded.MenuBook
+            ),
+            ModuleOption(
+                module = AppModule.TASKS,
+                label = "Tasks",
+                description = "Deadlines, dates, and pending items.",
+                icon = Icons.Rounded.CheckCircle
+            ),
+            ModuleOption(
+                module = AppModule.EXPENSES,
+                label = "Expenses",
+                description = "Quick logs and weekly summary.",
+                icon = Icons.Rounded.AccountBalanceWallet
+            ),
+            ModuleOption(
+                module = AppModule.ACADEMIC_TEMPLATES,
+                label = "Academic Works",
+                description = "Checklist, essays, and APA format.",
+                icon = Icons.AutoMirrored.Rounded.Assignment
+            )
+        )
+    } else {
+        listOf(
+            ModuleOption(
+                module = AppModule.GRADES,
+                label = "Notas y materias",
+                description = "Promedios, porcentajes y metas.",
+                icon = Icons.AutoMirrored.Rounded.MenuBook
+            ),
+            ModuleOption(
+                module = AppModule.TASKS,
+                label = "Tareas",
+                description = "Entregas, fechas y pendientes.",
+                icon = Icons.Rounded.CheckCircle
+            ),
+            ModuleOption(
+                module = AppModule.EXPENSES,
+                label = "Gastos",
+                description = "Registros rápidos y resumen semanal.",
+                icon = Icons.Rounded.AccountBalanceWallet
+            ),
+            ModuleOption(
+                module = AppModule.ACADEMIC_TEMPLATES,
+                label = "Trabajos",
+                description = "Checklist, ensayos y formato APA.",
+                icon = Icons.AutoMirrored.Rounded.Assignment
+            )
+        )
+    }
+}
 
 @Composable
 internal fun SetupScaffold(
@@ -2707,7 +2813,7 @@ private fun SetupTopBar(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Volver",
+                        contentDescription = stringResource(R.string.setup_btn_back),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -2721,7 +2827,7 @@ private fun SetupTopBar(
                  * intentando quitar. Quien tiene que dar el movimiento es la barra.
                  */
                 Text(
-                    text = "Paso $step de $totalSteps",
+                    text = stringResource(R.string.setup_step_counter, step, totalSteps),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -2816,7 +2922,7 @@ private enum class SetupScaleChoice {
  * catalogo.
  */
 private fun resolvedProgram(selectedProgram: String?, customProgram: String): String =
-    if (selectedProgram == OTHER_OPTION) customProgram else selectedProgram.orEmpty()
+    if (isOtherOption(selectedProgram)) customProgram else selectedProgram.orEmpty()
 
 @Composable
 internal fun SetupDropdownField(
@@ -2838,7 +2944,7 @@ internal fun SetupDropdownField(
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "setup-dropdown-arrow")
     var anchorWidth by remember { mutableIntStateOf(0) }
     val shape = MaterialTheme.shapes.medium
-    val displayValue = value.ifBlank { "Seleccionar" }
+    val displayValue = value.ifBlank { stringResource(R.string.setup_btn_select) }
     val isPlaceholder = value.isBlank()
 
     Column(

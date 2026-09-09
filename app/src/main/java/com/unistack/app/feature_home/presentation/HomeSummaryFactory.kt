@@ -48,6 +48,7 @@ import java.time.temporal.ChronoUnit
 import com.unistack.app.feature_home.domain.HomePriorityTimeframe
 
 internal object HomeSummaryFactory {
+    private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
     fun create(
         content: HomeContent,
         profile: UserProfile?,
@@ -136,7 +137,7 @@ internal object HomeSummaryFactory {
         return HomeSummary(
             userName = profile?.preferredName?.takeIf { it.isNotBlank() }
                 ?: user.displayName?.takeIf { it.isNotBlank() }
-                ?: "Estudiante",
+                ?: if (isEnglish) "Student" else "Estudiante",
             educationLine = profile?.educationSummary().orEmpty(),
             avatarPhotoUrl = profile?.portraitUrl ?: user.photoUrl,
             dashboardMessage = dashboardMessage(
@@ -169,7 +170,7 @@ internal object HomeSummaryFactory {
             companionInsight = companionInsight(
                 userName = profile?.preferredName?.takeIf { it.isNotBlank() }
                     ?: user.displayName?.takeIf { it.isNotBlank() }
-                    ?: "Estudiante",
+                    ?: if (isEnglish) "Student" else "Estudiante",
                 priority = priority,
                 pendingTasks = pendingTasks.size,
                 overdueTasks = overdueTasks,
@@ -254,7 +255,7 @@ internal object HomeSummaryFactory {
                     id = work.id,
                     subjectId = work.subjectId,
                     title = work.title,
-                    dueText = work.dueDateMillis?.let(TaskDateUtils::dueText) ?: "sin fecha",
+                    dueText = work.dueDateMillis?.let(TaskDateUtils::dueText) ?: if (isEnglish) "no due date" else "sin fecha",
                     progress = work.checklistProgress
                 )
             }
@@ -282,8 +283,8 @@ internal object HomeSummaryFactory {
 
         if (subjects.isEmpty()) {
             return HomePrioritySummary(
-                title = "Prepara tu semestre",
-                shortDescription = "Agrega tus materias para activar prioridades reales.",
+                title = if (isEnglish) "Prepare your semester" else "Prepara tu semestre",
+                shortDescription = if (isEnglish) "Add your subjects to activate real priorities." else "Agrega tus materias para activar prioridades reales.",
                 action = HomePriorityAction.SUBJECTS
             )
         }
@@ -309,11 +310,11 @@ internal object HomeSummaryFactory {
             val next = waitingResults.maxByOrNull { it.completedAt ?: it.updatedAt }
             return HomePrioritySummary(
                 title = if (waitingResults.size == 1) {
-                    "${next?.title.orEmpty()} espera su nota"
+                    if (isEnglish) "${next?.title.orEmpty()} awaits grade" else "${next?.title.orEmpty()} espera su nota"
                 } else {
-                    "${waitingResults.size} resultados esperan registro"
+                    if (isEnglish) "${waitingResults.size} results awaiting entry" else "${waitingResults.size} resultados esperan registro"
                 },
-                shortDescription = "Registra la calificación o indica que la actividad no tuvo nota.",
+                shortDescription = if (isEnglish) "Record the grade or indicate activity was ungraded." else "Registra la calificación o indica que la actividad no tuvo nota.",
                 action = HomePriorityAction.TASKS,
                 subjectId = next?.subjectId
             )
@@ -336,8 +337,8 @@ internal object HomeSummaryFactory {
         }
         if (incompleteHistory != null) {
             return HomePrioritySummary(
-                title = "Completa el historial de ${incompleteHistory.name}",
-                shortDescription = "Faltan datos de cortes anteriores para calcular una proyección fiable.",
+                title = if (isEnglish) "Complete history for ${incompleteHistory.name}" else "Completa el historial de ${incompleteHistory.name}",
+                shortDescription = if (isEnglish) "Data from previous grading periods is needed for a reliable projection." else "Faltan datos de cortes anteriores para calcular una proyección fiable.",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = incompleteHistory.id
             )
@@ -353,11 +354,11 @@ internal object HomeSummaryFactory {
                 it.source == GradeSource.ACTIVITY && it.weightStatus == GradeWeightStatus.UNKNOWN
             }
             return HomePrioritySummary(
-                title = "Ajusta ${subjectWithUnknownWeights.name}",
+                title = if (isEnglish) "Adjust ${subjectWithUnknownWeights.name}" else "Ajusta ${subjectWithUnknownWeights.name}",
                 shortDescription = if (count == 1) {
-                    "Hay una nota sin porcentaje; la proyección todavía es provisional."
+                    if (isEnglish) "There is a grade with no weight; projection is provisional." else "Hay una nota sin porcentaje; la proyección todavía es provisional."
                 } else {
-                    "Hay $count notas sin porcentaje; la proyección todavía es provisional."
+                    if (isEnglish) "There are $count grades with no weight; projection is provisional." else "Hay $count notas sin porcentaje; la proyección todavía es provisional."
                 },
                 action = HomePriorityAction.SUBJECT,
                 subjectId = subjectWithUnknownWeights.id
@@ -385,13 +386,13 @@ internal object HomeSummaryFactory {
             .sortedWith(compareBy<Pair<LocalDate, ClassSession>> { it.first }.thenBy { it.second.startMinute })
             .firstOrNull() ?: return null
         val (date, session) = next
-        val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu proxima clase"
+        val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: if (isEnglish) "Your next class" else "Tu proxima clase"
         val dayText = when (date) {
-            today -> "hoy"
-            today.plusDays(1) -> "mañana"
-            else -> "el " + date.dayOfWeek.getDisplayName(
+            today -> if (isEnglish) "today" else "hoy"
+            today.plusDays(1) -> if (isEnglish) "tomorrow" else "mañana"
+            else -> (if (isEnglish) "on " else "el ") + date.dayOfWeek.getDisplayName(
                 java.time.format.TextStyle.FULL,
-                java.util.Locale.forLanguageTag("es")
+                if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")
             )
         }
         val timeframe = when (date) {
@@ -401,8 +402,8 @@ internal object HomeSummaryFactory {
         }
         val timeText = formatClassMinute(session.startMinute)
         return HomePrioritySummary(
-            title = "$subjectName a las $timeText",
-            shortDescription = "Tienes clase $dayText. Revisa aula, asistencia y recordatorio.",
+            title = if (isEnglish) "$subjectName at $timeText" else "$subjectName a las $timeText",
+            shortDescription = if (isEnglish) "You have class $dayText. Check classroom, attendance, and reminders." else "Tienes clase $dayText. Revisa aula, asistencia y recordatorio.",
             action = HomePriorityAction.SCHEDULE,
             subjectId = session.subjectId,
             timeframe = timeframe
@@ -414,7 +415,7 @@ internal object HomeSummaryFactory {
     )
     private fun HomePrioritySummary.toDailyFocusItem(): DailyFocusItem {
         return DailyFocusItem(
-            slotLabel = "Ahora",
+            slotLabel = if (isEnglish) "Now" else "Ahora",
             title = title,
             detail = shortDescription,
             minutesText = when (action) {
@@ -423,12 +424,12 @@ internal object HomeSummaryFactory {
                 else -> "5 min"
             },
             actionLabel = when (action) {
-                HomePriorityAction.SUBJECT -> "Abrir"
-                HomePriorityAction.SUBJECTS -> "Materias"
-                HomePriorityAction.TASKS -> "Revisar"
-                HomePriorityAction.EXPENSES -> "Gastos"
-                HomePriorityAction.TEMPLATES -> "Trabajos"
-                HomePriorityAction.SCHEDULE -> "Horario"
+                HomePriorityAction.SUBJECT -> if (isEnglish) "Open" else "Abrir"
+                HomePriorityAction.SUBJECTS -> if (isEnglish) "Subjects" else "Materias"
+                HomePriorityAction.TASKS -> if (isEnglish) "Review" else "Revisar"
+                HomePriorityAction.EXPENSES -> if (isEnglish) "Expenses" else "Gastos"
+                HomePriorityAction.TEMPLATES -> if (isEnglish) "Assignments" else "Trabajos"
+                HomePriorityAction.SCHEDULE -> if (isEnglish) "Schedule" else "Horario"
             },
             action = action,
             subjectId = subjectId
@@ -451,24 +452,24 @@ internal object HomeSummaryFactory {
             works.any { it.status != AcademicWorkStatus.SUBMITTED }
         return when {
             canUseExpenses && index == 1 -> HomePrioritySummary(
-                title = "Gastos bajo control",
-                shortDescription = "Buen momento para revisar si tu semana sigue en ritmo.",
+                title = if (isEnglish) "Expenses under control" else "Gastos bajo control",
+                shortDescription = if (isEnglish) "Good time to check if your week is on track." else "Buen momento para revisar si tu semana sigue en ritmo.",
                 action = HomePriorityAction.EXPENSES
             )
             hasOpenWorks && index == 2 -> HomePrioritySummary(
-                title = "Espacio para avanzar",
-                shortDescription = "Aprovecha un bloque corto para mover un trabajo.",
+                title = if (isEnglish) "Room to make progress" else "Espacio para avanzar",
+                shortDescription = if (isEnglish) "Use a short block to move an assignment forward." else "Aprovecha un bloque corto para mover un trabajo.",
                 action = HomePriorityAction.TEMPLATES
             )
             pendingTasks.isNotEmpty() && index == 3 -> HomePrioritySummary(
-                title = "Buen ritmo",
-                shortDescription = "Ordena una tarea pequeña y deja el día más liviano.",
+                title = if (isEnglish) "Good rhythm" else "Buen ritmo",
+                shortDescription = if (isEnglish) "Sort out a small task and lighten your day." else "Ordena una tarea pequeña y deja el día más liviano.",
                 action = HomePriorityAction.TASKS
             )
             academicFocus != null -> academicFocus.toPrioritySummary()
             else -> HomePrioritySummary(
-                title = "Día despejado",
-                shortDescription = "Aprovecha para repasar o preparar tus próximas notas.",
+                title = if (isEnglish) "Clear day" else "Día despejado",
+                shortDescription = if (isEnglish) "Take advantage to review or prep your next grades." else "Aprovecha para repasar o preparar tus próximas notas.",
                 action = if (subjects.isNotEmpty()) HomePriorityAction.SUBJECTS else HomePriorityAction.TASKS
             )
         }
@@ -501,17 +502,21 @@ internal object HomeSummaryFactory {
     }
 
     private fun List<DailyFocusItem>.isGenericCalmPlan(): Boolean {
-        return any { it.title == "Repaso breve" || it.title == "Ordenar pendientes" }
+        return any { it.title == "Repaso breve" || it.title == "Ordenar pendientes" || it.title == "Quick review" || it.title == "Sort out pending tasks" }
     }
 
     private fun AcademicFocusSummary.toPrioritySummary(): HomePrioritySummary {
         val averageText = average?.let { GradingScaleUtils.formatGrade(it, gradingScale) }
         return HomePrioritySummary(
-            title = if (averageText != null) "$subjectName va en $averageText" else "$subjectName espera su primera nota",
-            shortDescription = if (averageText != null) {
-                "${evaluatedPercentage.roundPercent()}% evaluado. Falta registrar ${remainingPercentage.roundPercent()}%."
+            title = if (averageText != null) {
+                if (isEnglish) "$subjectName is at $averageText" else "$subjectName va en $averageText"
             } else {
-                "Agrega una nota para activar proyección y seguimiento real."
+                if (isEnglish) "$subjectName awaits its first grade" else "$subjectName espera su primera nota"
+            },
+            shortDescription = if (averageText != null) {
+                if (isEnglish) "${evaluatedPercentage.roundPercent()}% evaluated. ${remainingPercentage.roundPercent()}% remaining to record." else "${evaluatedPercentage.roundPercent()}% evaluado. Falta registrar ${remainingPercentage.roundPercent()}%. "
+            } else {
+                if (isEnglish) "Add a grade to activate real projection and tracking." else "Agrega una nota para activar proyección y seguimiento real."
             },
             action = HomePriorityAction.SUBJECT,
             subjectId = subjectId
@@ -522,15 +527,19 @@ internal object HomeSummaryFactory {
         val hasGrade = average != null
         return listOf(
             DailyFocusItem(
-                slotLabel = "Ahora",
-                title = if (hasGrade) "Actualizar $subjectName" else "Agregar primera nota",
-                detail = if (hasGrade) {
-                    "Registra la próxima nota o revisa el ${remainingPercentage.roundPercent()}% restante."
+                slotLabel = if (isEnglish) "Now" else "Ahora",
+                title = if (hasGrade) {
+                    if (isEnglish) "Update $subjectName" else "Actualizar $subjectName"
                 } else {
-                    "Convierte esta materia en un tablero con promedio real."
+                    if (isEnglish) "Add first grade" else "Agregar primera nota"
+                },
+                detail = if (hasGrade) {
+                    if (isEnglish) "Record the next grade or check the remaining ${remainingPercentage.roundPercent()}%." else "Registra la próxima nota o revisa el ${remainingPercentage.roundPercent()}% restante."
+                } else {
+                    if (isEnglish) "Turn this subject into a dashboard with a real average." else "Convierte esta materia en un tablero con promedio real."
                 },
                 minutesText = if (hasGrade) "5 min" else "3 min",
-                actionLabel = "Abrir",
+                actionLabel = if (isEnglish) "Open" else "Abrir",
                 action = HomePriorityAction.SUBJECT,
                 subjectId = subjectId
             )
@@ -541,9 +550,9 @@ internal object HomeSummaryFactory {
 
     private fun heroActionPrefix(): String {
         return when (LocalTime.now().hour) {
-            in 5..11 -> "Arranca con"
-            in 18..23 -> "Deja listo"
-            else -> "Siguiente paso"
+            in 5..11 -> if (isEnglish) "Start with" else "Arranca con"
+            in 18..23 -> if (isEnglish) "Wrap up" else "Deja listo"
+            else -> if (isEnglish) "Next step" else "Siguiente paso"
         }
     }
 
@@ -577,8 +586,8 @@ internal object HomeSummaryFactory {
                         HomeUpcomingItem(
                             dayLabel = upcomingDayLabel(date, today),
                             timeText = formatClassMinute(session.startMinute),
-                            title = subjectNameById[session.subjectId] ?: "Clase",
-                            subtitle = session.place.room.takeIf(String::isNotBlank)?.let { "Aula $it" }.orEmpty(),
+                            title = subjectNameById[session.subjectId] ?: if (isEnglish) "Class" else "Clase",
+                            subtitle = session.place.room.takeIf(String::isNotBlank)?.let { if (isEnglish) "Room $it" else "Aula $it" }.orEmpty(),
                             kind = HomeTimelineKind.CLASS
                         )
                     )
@@ -595,7 +604,7 @@ internal object HomeSummaryFactory {
                     24 * 60,
                     HomeUpcomingItem(
                         dayLabel = upcomingDayLabel(date, today),
-                        timeText = "Entrega",
+                        timeText = if (isEnglish) "Due" else "Entrega",
                         title = task.title,
                         subtitle = task.type.label(),
                         kind = task.type.timelineKind()
@@ -615,7 +624,7 @@ internal object HomeSummaryFactory {
                         24 * 60,
                         HomeUpcomingItem(
                             dayLabel = upcomingDayLabel(date, today),
-                            timeText = "Entrega",
+                            timeText = if (isEnglish) "Due" else "Entrega",
                             title = work.title,
                             subtitle = work.subjectId?.let(subjectNameById::get).orEmpty(),
                             kind = HomeTimelineKind.WORK
@@ -631,10 +640,10 @@ internal object HomeSummaryFactory {
     }
 
     private fun upcomingDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
-        today.plusDays(1) -> "Mañana"
+        today.plusDays(1) -> if (isEnglish) "Tomorrow" else "Mañana"
         else -> date.dayOfWeek
-            .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("es"))
-            .replaceFirstChar { it.uppercase(java.util.Locale.forLanguageTag("es")) }
+            .getDisplayName(java.time.format.TextStyle.FULL, if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es"))
+            .replaceFirstChar { it.uppercase(if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")) }
     }
 
     private fun todayTimelineItems(
@@ -668,7 +677,7 @@ internal object HomeSummaryFactory {
                 HomeTimelineSummary(
                     timeText = work.timelineTimeText(),
                     title = work.title,
-                    subtitle = listOfNotNull(subject, "$progress% listo").joinToString(" · "),
+                    subtitle = listOfNotNull(subject, if (isEnglish) "$progress% done" else "$progress% listo").joinToString(" · "),
                     kind = HomeTimelineKind.WORK,
                     state = if (work.isDueTodayOrOverdue()) HomeTimelineState.CURRENT else HomeTimelineState.PENDING
                 )
@@ -678,7 +687,7 @@ internal object HomeSummaryFactory {
             ?.takeIf { it.severity != SubjectRiskSeverity.STABLE }
             ?.let {
                 HomeTimelineSummary(
-                    timeText = "Enfoque",
+                    timeText = if (isEnglish) "Focus" else "Enfoque",
                     title = it.subjectName,
                     subtitle = it.detail,
                     kind = HomeTimelineKind.FOCUS,
@@ -812,13 +821,13 @@ internal object HomeSummaryFactory {
     ): String {
         return when {
             severity == SubjectRiskSeverity.CRITICAL && average < passingGrade ->
-                "Promedio bajo la nota mínima: ${GradingScaleUtils.formatGrade(average, gradingScale)}."
+                if (isEnglish) "Average below passing grade: ${GradingScaleUtils.formatGrade(average, gradingScale)}." else "Promedio bajo la nota mínima: ${GradingScaleUtils.formatGrade(average, gradingScale)}."
             neededGrade != null && neededGrade in 0.0..maxGrade && remainingPercentage > 0.0 ->
-                "Necesitas ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} en lo restante."
+                if (isEnglish) "You need ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} on remaining." else "Necesitas ${GradingScaleUtils.formatGrade(neededGrade, gradingScale)} en lo restante."
             average >= targetAverage ->
-                "Va sobre la meta con ${GradingScaleUtils.formatGrade(average, gradingScale)}."
+                if (isEnglish) "Above target with ${GradingScaleUtils.formatGrade(average, gradingScale)}." else "Va sobre la meta con ${GradingScaleUtils.formatGrade(average, gradingScale)}."
             else ->
-                "Revisa los próximos porcentajes para recuperar la meta."
+                if (isEnglish) "Check upcoming percentages to recover your target." else "Revisa los próximos porcentajes para recuperar la meta."
         }
     }
 
@@ -830,21 +839,21 @@ internal object HomeSummaryFactory {
         nextAcademicWork: AcademicWorkSummary?,
         weeklyExpenseTotal: Int
     ): String {
-        if (!hasSubjects) return "Crea tus materias para ver un tablero real del semestre."
-        if (overdueTasks > 0) return "Hay $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"} que conviene cerrar primero."
-        if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) return "${riskSubject.subjectName} necesita atención académica hoy."
-        if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) return "${riskSubject.subjectName} está cerca de la meta, pero vale la pena vigilarla."
-        if (nextAcademicWork != null) return "Tu próximo trabajo es ${nextAcademicWork.title}."
-        if (nextTask != null) return "Tu próxima acción clara es ${nextTask.title}."
-        if (weeklyExpenseTotal > 0) return "Esta semana ya tienes gastos registrados; revisa si siguen dentro de tu plan."
-        return "Todo está bajo control. Mantén notas y tareas actualizadas."
+        if (!hasSubjects) return if (isEnglish) "Create your subjects to see a real semester dashboard." else "Crea tus materias para ver un tablero real del semestre."
+        if (overdueTasks > 0) return if (isEnglish) "There ${if (overdueTasks == 1) "is 1 overdue task" else "are $overdueTasks overdue tasks"} best closed first." else "Hay $overdueTasks tarea${if (overdueTasks == 1) "" else "s"} vencida${if (overdueTasks == 1) "" else "s"} que conviene cerrar primero."
+        if (riskSubject?.severity == SubjectRiskSeverity.CRITICAL) return if (isEnglish) "${riskSubject.subjectName} needs academic attention today." else "${riskSubject.subjectName} necesita atención académica hoy."
+        if (riskSubject?.severity == SubjectRiskSeverity.ATTENTION) return if (isEnglish) "${riskSubject.subjectName} is close to target, but worth monitoring." else "${riskSubject.subjectName} está cerca de la meta, pero vale la pena vigilarla."
+        if (nextAcademicWork != null) return if (isEnglish) "Your next assignment is ${nextAcademicWork.title}." else "Tu próximo trabajo es ${nextAcademicWork.title}."
+        if (nextTask != null) return if (isEnglish) "Your next clear action is ${nextTask.title}." else "Tu próxima acción clara es ${nextTask.title}."
+        if (weeklyExpenseTotal > 0) return if (isEnglish) "You already logged expenses this week; check if they fit your plan." else "Esta semana ya tienes gastos registrados; revisa si siguen dentro de tu plan."
+        return if (isEnglish) "Everything is under control. Keep grades and tasks updated." else "Todo está bajo control. Mantén notas y tareas actualizadas."
     }
 
     private fun productivitySummary(completedTasks: Int, pendingTasks: Int, overdueTasks: Int): String {
         return when {
-            completedTasks == 0 && pendingTasks == 0 -> "Sin tareas todavía."
-            overdueTasks > 0 -> "$completedTasks completadas · $overdueTasks vencidas"
-            else -> "$completedTasks completadas · $pendingTasks pendientes"
+            completedTasks == 0 && pendingTasks == 0 -> if (isEnglish) "No tasks yet." else "Sin tareas todavía."
+            overdueTasks > 0 -> if (isEnglish) "$completedTasks completed · $overdueTasks overdue" else "$completedTasks completadas · $overdueTasks vencidas"
+            else -> if (isEnglish) "$completedTasks completed · $pendingTasks pending" else "$completedTasks completadas · $pendingTasks pendientes"
         }
     }
 
@@ -857,13 +866,13 @@ internal object HomeSummaryFactory {
     ): String {
         val shortName = userName.substringBefore(' ').takeIf { it.isNotBlank() } ?: userName
         return when {
-            overdueTasks > 0 -> "Cierra una pendiente primero, $shortName. Después el día se siente más ligero."
+            overdueTasks > 0 -> if (isEnglish) "Close a pending task first, $shortName. Then the day feels lighter." else "Cierra una pendiente primero, $shortName. Después el día se siente más ligero."
             todayItems.any { it.state == HomeTimelineState.CURRENT } ->
-                "Hoy conviene enfocarte en ${todayItems.first { it.state == HomeTimelineState.CURRENT }.title} antes de abrir más frentes."
-            pendingTasks == 0 -> "Día tranquilo, $shortName. Perfecto para repasar o dejar listas tus próximas notas."
+                if (isEnglish) "Today it helps to focus on ${todayItems.first { it.state == HomeTimelineState.CURRENT }.title} before opening more fronts." else "Hoy conviene enfocarte en ${todayItems.first { it.state == HomeTimelineState.CURRENT }.title} antes de abrir más frentes."
+            pendingTasks == 0 -> if (isEnglish) "Calm day, $shortName. Perfect to review or get upcoming notes ready." else "Día tranquilo, $shortName. Perfecto para repasar o dejar listas tus próximas notas."
             priority.action == HomePriorityAction.TEMPLATES ->
-                "Un avance pequeño en ${priority.title.substringBefore(" es ")} hoy puede ahorrarte presión después."
-            else -> "Vas bien, $shortName. Prioriza una cosa importante y deja el resto en orden."
+                if (isEnglish) "A little progress on ${priority.title.substringBefore(" is ")} today can save pressure later." else "Un avance pequeño en ${priority.title.substringBefore(" es ")} hoy puede ahorrarte presión después."
+            else -> if (isEnglish) "Doing well, $shortName. Prioritize one important thing and keep the rest in order." else "Vas bien, $shortName. Prioriza una cosa importante y deja el resto en orden."
         }
     }
 
@@ -880,10 +889,10 @@ internal object HomeSummaryFactory {
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(dueDateMillis))
         val time = dueDateMillis.timelineTimeSuffix()
         return when {
-            days < 0 -> "Vencida$time"
-            days == 0L -> "Hoy$time"
-            days == 1L -> "Mañana$time"
-            else -> "En $days días$time"
+            days < 0 -> if (isEnglish) "Overdue$time" else "Vencida$time"
+            days == 0L -> if (isEnglish) "Today$time" else "Hoy$time"
+            days == 1L -> if (isEnglish) "Tomorrow$time" else "Mañana$time"
+            else -> if (isEnglish) "In $days days$time" else "En $days días$time"
         }
     }
 
@@ -899,14 +908,14 @@ internal object HomeSummaryFactory {
     }
 
     private fun AcademicWork.timelineTimeText(): String {
-        val due = dueDateMillis ?: return "Sin fecha"
+        val due = dueDateMillis ?: return if (isEnglish) "No due date" else "Sin fecha"
         val days = ChronoUnit.DAYS.between(TaskDateUtils.today(), TaskDateUtils.fromMillis(due))
         val time = due.timelineTimeSuffix()
         return when {
-            days < 0 -> "Vencido$time"
-            days == 0L -> "Hoy$time"
-            days == 1L -> "Mañana$time"
-            else -> "En $days días$time"
+            days < 0 -> if (isEnglish) "Overdue$time" else "Vencido$time"
+            days == 0L -> if (isEnglish) "Today$time" else "Hoy$time"
+            days == 1L -> if (isEnglish) "Tomorrow$time" else "Mañana$time"
+            else -> if (isEnglish) "In $days days$time" else "En $days días$time"
         }
     }
 
@@ -917,16 +926,16 @@ internal object HomeSummaryFactory {
 
     private fun TaskType.label(): String {
         return when (this) {
-            TaskType.WORKSHOP -> "Taller"
-            TaskType.EXAM -> "Examen"
-            TaskType.ESSAY -> "Ensayo"
-            TaskType.PRESENTATION -> "Presentación"
-            TaskType.RESEARCH -> "Investigación"
-            TaskType.TEST -> "Quiz"
-            TaskType.PRACTICE -> "Práctica"
-            TaskType.PROJECT -> "Proyecto"
-            TaskType.READING -> "Lectura"
-            TaskType.OTHER -> "Tarea"
+            TaskType.WORKSHOP -> if (isEnglish) "Workshop" else "Taller"
+            TaskType.EXAM -> if (isEnglish) "Exam" else "Examen"
+            TaskType.ESSAY -> if (isEnglish) "Essay" else "Ensayo"
+            TaskType.PRESENTATION -> if (isEnglish) "Presentation" else "Presentación"
+            TaskType.RESEARCH -> if (isEnglish) "Research" else "Investigación"
+            TaskType.TEST -> if (isEnglish) "Quiz" else "Quiz"
+            TaskType.PRACTICE -> if (isEnglish) "Practice" else "Práctica"
+            TaskType.PROJECT -> if (isEnglish) "Project" else "Proyecto"
+            TaskType.READING -> if (isEnglish) "Reading" else "Lectura"
+            TaskType.OTHER -> if (isEnglish) "Task" else "Tarea"
         }
     }
 

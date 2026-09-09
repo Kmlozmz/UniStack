@@ -74,6 +74,9 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+import java.util.Locale
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.material3.ToggleFloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
@@ -134,12 +137,15 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /** Los tres montones de notas que hay. */
-enum class NotesView(val title: String) {
-    NOTAS("Notas"),
+enum class NotesView(val titleRes: Int) {
+    NOTAS(R.string.notes_tab_notes),
     /** Lo que avisa, de lo más próximo a lo más lejano. */
-    RECORDATORIOS("Recordatorios"),
-    ARCHIVO("Archivo"),
-    PAPELERA("Papelera")
+    RECORDATORIOS(R.string.notes_tab_reminders),
+    ARCHIVO(R.string.notes_tab_archive),
+    PAPELERA(R.string.notes_tab_trash);
+
+    val title: String
+        @Composable get() = stringResource(titleRes)
 }
 
 /** Con qué arranca una nota nueva, según por dónde se pidió. */
@@ -330,7 +336,7 @@ fun NotesListScreen(
                         Box {
                             UniIconButton(
                                 icon = Icons.Rounded.MoreVert,
-                                contentDescription = "Más opciones",
+                                contentDescription = stringResource(R.string.notes_more_options),
                                 onClick = { menuOpen = true }
                             )
                             NotesOverflowMenu(
@@ -378,31 +384,28 @@ fun NotesListScreen(
         ) {
             when {
                 delMonton.isEmpty() && view == NotesView.ARCHIVO -> EmptyNotes(
-                    headline = "El archivo está vacío",
-                    body = "Aquí van las notas que ya no usas pero no quieres perder. " +
-                        "Se archivan desde la propia nota."
+                    headline = stringResource(R.string.notes_empty_archive_title),
+                    body = stringResource(R.string.notes_empty_archive_desc)
                 )
 
                 delMonton.isEmpty() && view == NotesView.PAPELERA -> EmptyNotes(
-                    headline = "La papelera está vacía",
-                    body = "Lo que borres se queda aquí " + viewModel.diasEnPapelera +
-                        " días antes de irse del todo."
+                    headline = stringResource(R.string.notes_empty_trash_title),
+                    body = stringResource(R.string.notes_empty_trash_desc, viewModel.diasEnPapelera)
                 )
 
                 delMonton.isEmpty() -> EmptyNotes(
-                    headline = "Todavía no hay nada apuntado",
-                    body = "Lo que se dijo en clase, la fecha del parcial, el salón. " +
-                        "Escríbelo aquí y luego dile de qué materia es."
+                    headline = stringResource(R.string.notes_empty_notes_title),
+                    body = stringResource(R.string.notes_empty_notes_desc)
                 )
 
                 visible.isEmpty() && query.isNotBlank() -> EmptyNotes(
-                    headline = "Nada con eso",
-                    body = "No hay ninguna nota que diga «" + query.trim() + "»."
+                    headline = stringResource(R.string.notes_empty_search_title),
+                    body = stringResource(R.string.notes_empty_search_desc, query.trim())
                 )
 
                 visible.isEmpty() -> EmptyNotes(
-                    headline = "Nada de esta materia",
-                    body = "No has apuntado nada en esta asignatura todavía."
+                    headline = stringResource(R.string.notes_empty_subject_title),
+                    body = stringResource(R.string.notes_empty_subject_desc)
                 )
 
                 layout == NotesLayout.MOSAICO -> NotesMosaic(
@@ -475,11 +478,10 @@ fun NotesListScreen(
          */
         AlertDialog(
             onDismissRequest = { confirmingTrash = null },
-            title = { Text("¿Mover esta nota a la papelera?") },
+            title = { Text(stringResource(R.string.notes_trash_dialog_title)) },
             text = {
                 Text(
-                    "Se queda en la papelera " + viewModel.diasEnPapelera +
-                        " días por si te arrepientes, y luego se borra sola."
+                    stringResource(R.string.notes_trash_dialog_desc, viewModel.diasEnPapelera)
                 )
             },
             confirmButton = {
@@ -489,8 +491,8 @@ fun NotesListScreen(
                     if (antes != null) {
                         alcance.launch {
                             val respuesta = snackbar.showSnackbar(
-                                message = "Movida a la papelera",
-                                actionLabel = "Deshacer",
+                                message = if (Locale.getDefault().language == "en") "Moved to trash" else "Movida a la papelera",
+                                actionLabel = if (Locale.getDefault().language == "en") "Undo" else "Deshacer",
                                 withDismissAction = true,
                                 duration = duracionParaDeshacer
                             )
@@ -502,14 +504,14 @@ fun NotesListScreen(
                     }
                 }) {
                     Text(
-                        "Mover a la papelera",
+                        stringResource(R.string.notes_move_to_trash),
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingTrash = null }) { Text("Cancelar") }
+                TextButton(onClick = { confirmingTrash = null }) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -522,16 +524,15 @@ fun NotesListScreen(
             title = {
                 Text(
                     if (cuantas == 1) {
-                        "¿Mover esta nota a la papelera?"
+                        stringResource(R.string.notes_trash_dialog_title)
                     } else {
-                        "¿Mover estas " + cuantas + " notas a la papelera?"
+                        stringResource(R.string.notes_trash_multiple_title, cuantas)
                     }
                 )
             },
             text = {
                 Text(
-                    "Se quedan en la papelera " + viewModel.diasEnPapelera +
-                        " días por si te arrepientes, y luego se borran solas."
+                    stringResource(R.string.notes_trash_multiple_desc, viewModel.diasEnPapelera)
                 )
             },
             confirmButton = {
@@ -541,13 +542,16 @@ fun NotesListScreen(
                     trashingSelection = false
                     seleccion = emptySet()
                     alcance.launch {
+                        val isEn = Locale.getDefault().language == "en"
+                        val multiMsg = if (antes.size == 1) {
+                            if (isEn) "Moved to trash" else "Movida a la papelera"
+                        } else {
+                            if (isEn) "${antes.size} notes moved to trash" else "${antes.size} notas movidas a la papelera"
+                        }
+                        val undoTxt = if (isEn) "Undo" else "Deshacer"
                         val respuesta = snackbar.showSnackbar(
-                            message = if (antes.size == 1) {
-                                "Movida a la papelera"
-                            } else {
-                                antes.size.toString() + " notas movidas a la papelera"
-                            },
-                            actionLabel = "Deshacer",
+                            message = multiMsg,
+                            actionLabel = undoTxt,
                             withDismissAction = true,
                             duration = duracionParaDeshacer
                         )
@@ -560,14 +564,14 @@ fun NotesListScreen(
                     }
                 }) {
                     Text(
-                        "Mover a la papelera",
+                        stringResource(R.string.notes_move_to_trash),
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { trashingSelection = false }) { Text("Cancelar") }
+                TextButton(onClick = { trashingSelection = false }) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -601,12 +605,11 @@ fun NotesListScreen(
         val nota = notes.firstOrNull { it.id == noteId }
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("¿Borrar del todo?") },
+            title = { Text(stringResource(R.string.notes_permanently_delete_title)) },
             text = {
+                val labelText = nota?.title?.trim()?.ifBlank { NoteText.label(NoteMarkdown.strip(nota.body)) }.orEmpty()
                 Text(
-                    "Se borra «" +
-                        nota?.title?.trim()?.ifBlank { NoteText.label(NoteMarkdown.strip(nota.body)) } +
-                        "» con lo que lleve dentro, y esta vez no se puede deshacer."
+                    stringResource(R.string.notes_permanently_delete_desc, labelText)
                 )
             },
             confirmButton = {
@@ -615,14 +618,14 @@ fun NotesListScreen(
                     deleting = null
                 }) {
                     Text(
-                        "Borrar",
+                        stringResource(R.string.notes_permanently_delete_confirm),
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text("Cancelar") }
+                TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -663,7 +666,7 @@ private fun NotesSearchBar(
     ) {
         UniBackButton(
             icon = if (searching) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
-            contentDescription = if (searching) "Cerrar la búsqueda" else "Atrás",
+            contentDescription = if (searching) stringResource(R.string.notes_search_close) else stringResource(R.string.notes_search_back),
             onClick = { if (searching) onSearchingChange(false) else onBackClick() }
         )
         Surface(
@@ -696,9 +699,9 @@ private fun NotesSearchBar(
                     if (query.isEmpty()) {
                         Text(
                             if (view == NotesView.NOTAS) {
-                                "Buscar en tus notas"
+                                stringResource(R.string.notes_search_hint)
                             } else {
-                                "Buscar en " + view.title.lowercase()
+                                stringResource(R.string.notes_search_in_hint, view.title.lowercase())
                             },
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyLarge,
@@ -733,16 +736,16 @@ private fun NotesSearchBar(
                         Icons.Rounded.GridView
                     },
                     contentDescription = if (layout == NotesLayout.MOSAICO) {
-                        "Ver como cuaderno"
+                        stringResource(R.string.notes_view_notebook)
                     } else {
-                        "Ver como mosaico"
+                        stringResource(R.string.notes_view_grid)
                     },
                     onClick = onToggleLayout
                 )
                 if (canFilter) {
                     UniIconButton(
                         icon = Icons.Rounded.FilterList,
-                        contentDescription = "Filtrar por materia",
+                        contentDescription = stringResource(R.string.notes_filter_by_subject),
                         onClick = onFilterClick
                     )
                 }
@@ -782,7 +785,7 @@ private fun NoteSelectionBar(
             .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RoundIconButton(Icons.Rounded.Close, "Quitar la selección", onClose)
+        RoundIconButton(Icons.Rounded.Close, stringResource(R.string.notes_clear_selection), onClose)
         Spacer(Modifier.width(10.dp))
         Text(
             count.toString(),
@@ -792,24 +795,24 @@ private fun NoteSelectionBar(
         )
         Spacer(Modifier.weight(1f))
         if (enPapelera) {
-            RoundIconButton(Icons.Rounded.Restore, "Restaurar", onRestore)
-            RoundIconButton(Icons.Rounded.DeleteForever, "Borrar del todo", onDelete)
+            RoundIconButton(Icons.Rounded.Restore, stringResource(R.string.notes_restore_action), onRestore)
+            RoundIconButton(Icons.Rounded.DeleteForever, stringResource(R.string.notes_perm_delete_action), onDelete)
         } else {
             RoundIconButton(
                 if (pinned) Icons.Outlined.PushPin else Icons.Rounded.PushPin,
-                if (pinned) "Quitar de fijadas" else "Fijar arriba",
+                if (pinned) stringResource(R.string.notes_unpin) else stringResource(R.string.notes_pin),
                 onPin
             )
             if (count == 1) {
-                RoundIconButton(Icons.Rounded.NotificationAdd, "Recordatorio", onReminder)
+                RoundIconButton(Icons.Rounded.NotificationAdd, stringResource(R.string.notes_reminder), onReminder)
             }
-            RoundIconButton(Icons.Rounded.Palette, "Color", onColor)
+            RoundIconButton(Icons.Rounded.Palette, stringResource(R.string.notes_color_action), onColor)
             RoundIconButton(
                 if (archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                if (archived) "Sacar del archivo" else "Archivar",
+                if (archived) stringResource(R.string.notes_unarchive) else stringResource(R.string.notes_archive),
                 onArchive
             )
-            RoundIconButton(Icons.Rounded.DeleteOutline, "Mover a la papelera", onDelete)
+            RoundIconButton(Icons.Rounded.DeleteOutline, stringResource(R.string.notes_move_to_trash), onDelete)
         }
     }
 }
@@ -859,7 +862,7 @@ internal fun NoteReminderPicker(
         UniTimePickerDialog(
             selectedTime = current?.let { Instant.ofEpochMilli(it).atZone(zona).toLocalTime() }
                 ?: LocalTime.of(8, 0),
-            title = "¿A qué hora?",
+            title = stringResource(R.string.notes_time_prompt),
             onTimeSelected = { hora ->
                 onPicked(
                     LocalDate.ofEpochDay(dia!!).atTime(hora).atZone(zona).toInstant().toEpochMilli()
@@ -876,7 +879,7 @@ internal fun NoteReminderPicker(
                         onPicked(null)
                         dia = null
                     }) {
-                        Text("Quitar", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.notes_attachment_remove), color = MaterialTheme.colorScheme.error)
                     }
                 }
             } else {
@@ -898,14 +901,14 @@ private fun FilterBanner(subject: Subject, count: Int, onClear: () -> Unit) {
     ) {
         NoteSubjectChip(subject, modifier = Modifier.weight(1f, fill = false))
         Text(
-            count.toString() + if (count == 1) " nota" else " notas",
+            count.toString() + if (Locale.getDefault().language == "en") (if (count == 1) " note" else " notes") else (if (count == 1) " nota" else " notas"),
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.labelSmall
         )
         Spacer(Modifier.weight(1f))
         UniIconButton(
             icon = Icons.Rounded.Close,
-            contentDescription = "Quitar el filtro",
+            contentDescription = stringResource(R.string.notes_remove_filter),
             onClick = onClear
         )
     }
@@ -924,11 +927,11 @@ private fun NewNoteFab(onPick: (NewNoteStart) -> Unit, modifier: Modifier = Modi
     BackHandler(enabled = expanded) { expanded = false }
 
     val entradas = listOf(
-        Triple("Texto", Icons.Rounded.TextFields, NewNoteStart.TEXTO),
-        Triple("Lista", Icons.Rounded.CheckBox, NewNoteStart.LISTA),
-        Triple("Foto", Icons.Rounded.Image, NewNoteStart.FOTO),
-        Triple("Audio", Icons.Rounded.Mic, NewNoteStart.AUDIO),
-        Triple("Archivo", Icons.Rounded.AttachFile, NewNoteStart.ARCHIVO)
+        Triple(stringResource(R.string.notes_new_text), Icons.Rounded.TextFields, NewNoteStart.TEXTO),
+        Triple(stringResource(R.string.notes_new_list), Icons.Rounded.CheckBox, NewNoteStart.LISTA),
+        Triple(stringResource(R.string.notes_new_photo), Icons.Rounded.Image, NewNoteStart.FOTO),
+        Triple(stringResource(R.string.notes_new_audio), Icons.Rounded.Mic, NewNoteStart.AUDIO),
+        Triple(stringResource(R.string.notes_new_file), Icons.Rounded.AttachFile, NewNoteStart.ARCHIVO)
     )
 
     FloatingActionButtonMenu(
@@ -947,7 +950,7 @@ private fun NewNoteFab(onPick: (NewNoteStart) -> Unit, modifier: Modifier = Modi
                 modifier = Modifier.semantics { traversalIndex = -1f }
             ) {
                 val icono: ImageVector = if (expanded) Icons.Rounded.Close else Icons.Rounded.Add
-                Icon(icono, contentDescription = if (expanded) "Cerrar" else "Nueva nota")
+                Icon(icono, contentDescription = if (expanded) stringResource(R.string.notes_search_close) else stringResource(R.string.notes_new_note))
             }
         }
     ) {
@@ -1017,7 +1020,7 @@ private fun NotesOverflowMenu(
         }
         if (view == NotesView.PAPELERA && trashCount > 0) {
             DropdownMenuItem(
-                text = { Text("Vaciar la papelera", color = MaterialTheme.colorScheme.error) },
+                text = { Text(stringResource(R.string.notes_empty_trash_action), color = MaterialTheme.colorScheme.error) },
                 onClick = {
                     onEmptyTrash()
                     onDismiss()
@@ -1039,14 +1042,14 @@ private fun NotesOverflowMenu(
                 modifier = Modifier.padding(vertical = 4.dp)
             )
             DropdownMenuItem(
-                text = { Text("Crear notas de ejemplo") },
+                text = { Text(stringResource(R.string.notes_create_sample_notes)) },
                 onClick = {
                     onSeed()
                     onDismiss()
                 }
             )
             DropdownMenuItem(
-                text = { Text("Quitar las de ejemplo") },
+                text = { Text(stringResource(R.string.notes_remove_sample_notes)) },
                 onClick = {
                     onRemoveSamples()
                     onDismiss()
@@ -1084,14 +1087,14 @@ private fun NotesMosaic(
     ) {
         if (pinned.isNotEmpty()) {
             item(key = "h-fijadas", span = StaggeredGridItemSpan.FullLine) {
-                NoteDayHeader("Fijadas", pinned.size)
+                NoteDayHeader(stringResource(R.string.notes_section_pinned), pinned.size)
             }
             items(pinned, key = { "pin-" + it.id }) { note ->
                 MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck)
             }
             if (others.isNotEmpty()) {
                 item(key = "h-otras", span = StaggeredGridItemSpan.FullLine) {
-                    NoteDayHeader("Otras", others.size)
+                    NoteDayHeader(stringResource(R.string.notes_section_others), others.size)
                 }
             }
         }
@@ -1147,7 +1150,7 @@ private fun NotesNotebook(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (pinned.isNotEmpty()) {
-            item(key = "fijadas") { NoteDayHeader("Fijadas", pinned.size) }
+            item(key = "fijadas") { NoteDayHeader(stringResource(R.string.notes_section_pinned), pinned.size) }
             items(pinned, key = { "pin-" + it.id }) { note ->
                 NoteCard(
                     note = note,
@@ -1162,7 +1165,7 @@ private fun NotesNotebook(
                 )
             }
             if (others.isNotEmpty()) {
-                item(key = "otras") { NoteDayHeader("Otras", others.size) }
+                item(key = "otras") { NoteDayHeader(stringResource(R.string.notes_section_others), others.size) }
             }
         }
         items(others, key = { it.id }) { note ->
@@ -1220,33 +1223,33 @@ private fun NoteFilterSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                "Ordenar y filtrar",
+                stringResource(R.string.notes_sheet_sort_filter_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                "El orden de la lista y con qué materia te quedas.",
+                stringResource(R.string.notes_sheet_sort_filter_desc),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
-            FilterSectionLabel("ORDENAR POR")
+            FilterSectionLabel(stringResource(R.string.notes_section_sort_by))
             UniChoiceRow(
                 selected = sort,
                 options = listOf(
-                    UniSegmentedOption(NotesSort.MODIFICADA, "Modificación"),
-                    UniSegmentedOption(NotesSort.CREADA, "Creación")
+                    UniSegmentedOption(NotesSort.MODIFICADA, stringResource(R.string.notes_sort_modified)),
+                    UniSegmentedOption(NotesSort.CREADA, stringResource(R.string.notes_sort_created))
                 ),
                 onSelected = onSort
             )
-            FilterSectionLabel("MATERIA")
+            FilterSectionLabel(stringResource(R.string.notes_section_subject))
             LazyColumn(
                 modifier = Modifier.heightIn(max = 420.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item(key = "todas") {
                     SubjectFilterRow(
-                        name = "Todas las notas",
+                        name = stringResource(R.string.notes_all_notes),
                         accent = MaterialTheme.colorScheme.primary,
                         count = total,
                         selected = selectedSubjectId == null,
@@ -1367,32 +1370,32 @@ private fun NoteActionsSheet(
             if (enPapelera) {
                 ActionRow(
                     icon = Icons.Rounded.Restore,
-                    label = "Restaurar",
+                    label = stringResource(R.string.notes_restore_action),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onRestore
                 )
                 ActionRow(
                     icon = Icons.Rounded.DeleteForever,
-                    label = "Borrar del todo",
+                    label = stringResource(R.string.notes_perm_delete_action),
                     tint = MaterialTheme.colorScheme.error,
                     onClick = onDelete
                 )
             } else {
                 ActionRow(
                     icon = Icons.Rounded.PushPin,
-                    label = if (pinned) "Quitar de fijadas" else "Fijar arriba",
+                    label = if (pinned) stringResource(R.string.notes_unpin) else stringResource(R.string.notes_pin),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onPin
                 )
                 ActionRow(
                     icon = if (archived) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                    label = if (archived) "Sacar del archivo" else "Archivar",
+                    label = if (archived) stringResource(R.string.notes_unarchive) else stringResource(R.string.notes_archive),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onArchive
                 )
                 ActionRow(
                     icon = Icons.Rounded.DeleteOutline,
-                    label = "Mover a la papelera",
+                    label = stringResource(R.string.notes_move_to_trash),
                     tint = MaterialTheme.colorScheme.error,
                     onClick = onDelete
                 )

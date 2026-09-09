@@ -85,6 +85,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -130,8 +132,11 @@ import com.unistack.app.core.design.components.EvaluationBar
 import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.UniStackButtonDefaults
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
+import com.unistack.app.core.design.components.numeroQueCuenta
+import androidx.annotation.StringRes
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 private val ExpenseBackground: Color
     @Composable get() = MaterialTheme.colorScheme.background
 private val ExpenseCard: Color
@@ -179,6 +184,7 @@ fun ExpensesScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpensesViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val expenses by viewModel.expenses.collectAsStateWithLifecycle()
     val profile by viewModel.userProfile.collectAsStateWithLifecycle()
     var expenseIdPendingDelete by remember { mutableStateOf<String?>(null) }
@@ -291,9 +297,9 @@ fun ExpensesScreen(
                     if (category == selectedCategory && category in enabledCategories) {
                         selectedCategory = null
                     }
-                    categoryFeedback = "Categorías actualizadas."
+                    categoryFeedback = context.getString(R.string.expenses_categories_updated)
                 } else {
-                    categoryFeedback = "Debe quedar al menos una categoría activa."
+                    categoryFeedback = context.getString(R.string.expenses_categories_min_one)
                 }
             },
             onDismiss = {
@@ -319,8 +325,8 @@ fun ExpensesScreen(
 
     expenseIdPendingDelete?.let { expenseId ->
         UniConfirmDeleteDialog(
-            title = "¿Eliminar gasto?",
-            body = "Esta acción no se puede deshacer.",
+            title = stringResource(R.string.expenses_delete_dialog_title),
+            body = stringResource(R.string.expenses_delete_dialog_body),
             onConfirm = {
                 viewModel.deleteExpense(expenseId)
                 expenseIdPendingDelete = null
@@ -399,7 +405,7 @@ private fun ExpensesContent(
             } else {
                 item {
                     Text(
-                        text = "Últimos gastos",
+                        text = stringResource(R.string.expenses_recent),
                         color = ExpenseText,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
@@ -446,8 +452,8 @@ private fun ExpensesContent(
 @Composable
 private fun ExpensesHeader() {
     SectionHeader(
-        title = "Gastos",
-        subtitle = "Registra gastos personales y académicos.",
+        title = stringResource(R.string.expenses_header_title),
+        subtitle = stringResource(R.string.expenses_header_subtitle),
         color = ExpenseText,
         supportColor = ExpenseMuted
     )
@@ -525,7 +531,7 @@ private fun ExpensesHeroCard(
                         modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp)
                     ) {
                         Text(
-                            text = "Ver más",
+                            text = stringResource(R.string.expenses_see_more),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1
@@ -539,8 +545,9 @@ private fun ExpensesHeroCard(
                 }
             }
             Spacer(modifier = Modifier.height(9.dp))
+            val animatedAmount = numeroQueCuenta(amount.toFloat(), "gastos_hero_amount").toInt()
             Text(
-                text = formatCurrency(amount),
+                text = formatCurrency(animatedAmount),
                 color = ExpenseCoral,
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.ExtraBold,
@@ -549,7 +556,7 @@ private fun ExpensesHeroCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "gastados",
+                text = stringResource(R.string.expenses_spent),
                 color = ExpenseMuted,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
@@ -613,11 +620,12 @@ private fun ExpenseTrendLine(
     trendText: String,
     modifier: Modifier = Modifier
 ) {
+    val animatedCount = numeroQueCuenta(recordCount.toFloat(), "gastos_hero_count").toInt()
     val percent = trendText.substringBefore(" vs")
     val suffix = trendText.removePrefix(percent)
     Text(
         text = buildAnnotatedString {
-            append(recordCountLabel(recordCount))
+            append(recordCountLabel(animatedCount))
             // Sin tendencia que mostrar tampoco se pinta el separador, o quedaría un
             // «0 registros  •» colgando sin nada detrás.
             if (trendText.isNotBlank()) {
@@ -757,7 +765,7 @@ private fun WeeklyMiniChart(
                 text = normalizedValues.getOrElse(elegido.coerceAtLeast(0)) { 0 }
                     .takeIf { it > 0 }
                     ?.let { formatCurrency(it) }
-                    ?: "sin gastos",
+                    ?: stringResource(R.string.expenses_no_expenses),
                 color = ExpenseCoral,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
@@ -822,7 +830,7 @@ private fun CategoryRingChart(
                 maxLines = 1
             )
             Text(
-                text = "GASTADO",
+                text = stringResource(R.string.expenses_spent).uppercase(),
                 color = ExpenseMuted,
                 style = SectionLabelStyle,
                 maxLines = 1
@@ -913,8 +921,8 @@ private fun ChartStylePicker(
     UniChoiceRow(
         selected = selected,
         options = listOf(
-            UniSegmentedOption(value = ExpenseChartStyle.BARS, label = "Por día"),
-            UniSegmentedOption(value = ExpenseChartStyle.RING, label = "Por categoría")
+            UniSegmentedOption(value = ExpenseChartStyle.BARS, label = stringResource(R.string.expenses_by_day)),
+            UniSegmentedOption(value = ExpenseChartStyle.RING, label = stringResource(R.string.expenses_by_category))
         ),
         onSelected = onSelected
     )
@@ -949,7 +957,7 @@ private fun BudgetRow(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = if (hasBudget) "Presupuesto: ${formatCurrency(budget)}" else "Sin presupuesto",
+                    text = if (hasBudget) stringResource(R.string.expenses_budget_amount, formatCurrency(budget)) else stringResource(R.string.expenses_no_budget),
                     color = ExpenseText,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
@@ -957,7 +965,7 @@ private fun BudgetRow(
                     overflow = TextOverflow.Clip
                 )
                 Text(
-                    text = if (hasBudget) "${(progress * 100).roundToInt()}% usado" else "Configurar presupuesto",
+                    text = if (hasBudget) stringResource(R.string.expenses_budget_used, (progress * 100).roundToInt()) else stringResource(R.string.expenses_configure_budget),
                     color = ExpensePurple,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
@@ -1052,7 +1060,7 @@ private fun CategoryFilterMenu(
             shape = CircleShape,
             label = {
                 Text(
-                    text = selectedCategory?.label() ?: "Categoría",
+                    text = selectedCategory?.label() ?: stringResource(R.string.expenses_category),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1
@@ -1082,7 +1090,7 @@ private fun CategoryFilterMenu(
             onDismissRequest = { open = false }
         ) {
             DropdownMenuItem(
-                text = { Text("Todas las categorías") },
+                text = { Text(stringResource(R.string.expenses_all_categories)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Rounded.Check,
@@ -1122,7 +1130,7 @@ private fun CategoryFilterMenu(
             }
             UniDivider(Modifier.padding(vertical = 4.dp))
             DropdownMenuItem(
-                text = { Text("Administrar categorías") },
+                text = { Text(stringResource(R.string.expenses_manage_categories)) },
                 leadingIcon = {
                     Icon(Icons.Rounded.Tune, contentDescription = null, tint = ExpenseMuted)
                 },
@@ -1200,14 +1208,13 @@ private fun ExpenseCategorySheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Administrar categorías",
+                    text = stringResource(R.string.expenses_manage_categories),
                     color = ExpenseText,
                     style = MaterialTheme.typography.headlineSmallEmphasized,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Apaga las que no uses y dejarán de salir al registrar un gasto. " +
-                        "Los gastos que ya tengas guardados no se tocan.",
+                    text = stringResource(R.string.expenses_manage_categories_desc),
                     color = ExpenseMuted,
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -1379,7 +1386,7 @@ private fun ExpensesEmptyState(
             }
             Spacer(modifier = Modifier.height(22.dp))
             Text(
-                text = "Aún no hay gastos ${period.emptySuffix}",
+                text = stringResource(R.string.expenses_empty_title, period.emptySuffix),
                 color = ExpenseText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
@@ -1388,7 +1395,7 @@ private fun ExpensesEmptyState(
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
-                text = "Registra tu primer gasto para ver\ntu resumen y categorías.",
+                text = stringResource(R.string.expenses_empty_subtitle),
                 color = ExpenseMuted,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
@@ -1437,7 +1444,7 @@ private fun RegisterExpenseButton(
                 )
             }
             Text(
-                text = "Registrar gasto",
+                text = stringResource(R.string.expenses_add_expense),
                 color = contentColorOn(ExpenseCoral),
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
@@ -1486,14 +1493,14 @@ private fun ExpenseBudgetSheet(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Configurar presupuesto",
+                    text = stringResource(R.string.expenses_configure_budget),
                     color = ExpenseText,
                     fontSize = 22.sp,
                     lineHeight = 26.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Define límites para que el resumen de Gastos tenga contexto real.",
+                    text = stringResource(R.string.expenses_budget_sheet_desc),
                     color = ExpenseMuted,
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
@@ -1502,20 +1509,20 @@ private fun ExpenseBudgetSheet(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BudgetInputField(
-                    label = "Semanal",
+                    label = stringResource(R.string.expenses_budget_weekly),
                     value = weeklyInput,
                     onValueChange = { weeklyInput = it.filter(Char::isDigit).take(9) },
                     modifier = Modifier.weight(1f)
                 )
                 BudgetInputField(
-                    label = "Mensual",
+                    label = stringResource(R.string.expenses_budget_monthly),
                     value = monthlyInput,
                     onValueChange = { monthlyInput = it.filter(Char::isDigit).take(9) },
                     modifier = Modifier.weight(1f)
                 )
             }
             Text(
-                text = "Puedes dejar un campo vacío para no usar presupuesto en ese periodo.",
+                text = stringResource(R.string.expenses_budget_empty_hint),
                 color = ExpenseMuted,
                 fontSize = 12.sp,
                 lineHeight = 17.sp
@@ -1539,7 +1546,7 @@ private fun ExpenseBudgetSheet(
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                Text("Guardar presupuesto", fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.expenses_budget_save), fontWeight = FontWeight.SemiBold)
             }
             Spacer(modifier = Modifier.height(4.dp))
         }
@@ -1628,15 +1635,20 @@ private fun ExpenseDayGroup(
     onDeleteClick: (String) -> Unit
 ) {
     val today = ExpenseDateUtils.today()
+    val currentLocale = java.util.Locale.getDefault()
     val label = when (day) {
-        today -> "Hoy"
-        today.minusDays(1) -> "Ayer"
-        else -> day.format(
-            java.time.format.DateTimeFormatter.ofPattern(
-                if (day.year == today.year) "EEEE, d 'de' MMMM" else "d 'de' MMMM 'de' yyyy",
-                ExpenseChipLocale
-            )
-        ).replaceFirstChar { it.uppercase(ExpenseChipLocale) }
+        today -> stringResource(R.string.date_today)
+        today.minusDays(1) -> stringResource(R.string.date_yesterday)
+        else -> {
+            val pattern = if (day.year == today.year) {
+                if (currentLocale.language == "en") "EEEE, MMMM d" else "EEEE, d 'de' MMMM"
+            } else {
+                if (currentLocale.language == "en") "MMMM d, yyyy" else "d 'de' MMMM 'de' yyyy"
+            }
+            day.format(
+                java.time.format.DateTimeFormatter.ofPattern(pattern, currentLocale)
+            ).replaceFirstChar { it.uppercase(currentLocale) }
+        }
     }
 
     Surface(
@@ -1824,15 +1836,15 @@ private fun ExpenseActionsSheet(
             ExpenseActionRow(
                 icon = Icons.Rounded.Edit,
                 tone = MaterialTheme.colorScheme.primary,
-                title = "Editar gasto",
-                subtitle = "Categoría, monto y fecha",
+                title = stringResource(R.string.expenses_edit_expense),
+                subtitle = stringResource(R.string.expenses_edit_expense_desc),
                 onClick = onEditClick
             )
             ExpenseActionRow(
                 icon = Icons.Rounded.Delete,
                 tone = MaterialTheme.colorScheme.error,
-                title = "Eliminar gasto",
-                subtitle = "Se borra del historial y de los totales",
+                title = stringResource(R.string.expenses_delete_expense),
+                subtitle = stringResource(R.string.expenses_delete_expense_desc),
                 titleColor = MaterialTheme.colorScheme.error,
                 onClick = onDeleteClick
             )
@@ -1906,7 +1918,7 @@ private fun AccentCircleIcon(
     }
 }
 
-/** Cadena vacía si no hay periodo anterior: sin nada con qué comparar no hay tendencia. */
+@Composable
 private fun trendText(total: Int, previousTotal: Int): String {
     // Antes devolvía «+0% vs anterior», que suena a que gastaste lo mismo que el periodo
     // pasado cuando en realidad no hay periodo pasado. Un 0% inventado es peor que
@@ -1914,7 +1926,7 @@ private fun trendText(total: Int, previousTotal: Int): String {
     if (previousTotal <= 0) return ""
     val percent = (((total - previousTotal) / previousTotal.toFloat()) * 100).roundToInt()
     val sign = if (percent >= 0) "+" else ""
-    return "$sign$percent% vs anterior"
+    return "$sign$percent% ${stringResource(R.string.expenses_vs_previous)}"
 }
 
 private fun previousTotalForPeriod(
@@ -1963,16 +1975,17 @@ private fun previousTotalForPeriod(
  * de arriba, a dos centimetros.
  */
 private fun compactAmount(monto: Int, currency: CurrencyPreference = CurrencyPreference.COP): String = when {
-    monto >= 1_000_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000_000.0) + "M"
-    monto >= 10_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
-    monto >= 1_000 -> "${currency.symbol}" + String.format(java.util.Locale.forLanguageTag("es"), "%.1f", monto / 1_000.0) + "k"
+    monto >= 1_000_000 -> "${currency.symbol}" + String.format(java.util.Locale.getDefault(), "%.1f", monto / 1_000_000.0) + "M"
+    monto >= 10_000 -> "${currency.symbol}" + String.format(java.util.Locale.getDefault(), "%.1f", monto / 1_000.0) + "k"
+    monto >= 1_000 -> "${currency.symbol}" + String.format(java.util.Locale.getDefault(), "%.1f", monto / 1_000.0) + "k"
     else -> CurrencyFormatter.format(monto, currency)
 }
 
 private fun compactCop(monto: Int): String = compactAmount(monto, CurrencyPreference.COP)
 
+@Composable
 private fun recordCountLabel(count: Int): String =
-    if (count == 1) "1 registro" else "$count registros"
+    if (count == 1) stringResource(R.string.expenses_record_single) else stringResource(R.string.expenses_record_multiple, count)
 
 /**
  * El tramo que suman la cifra, el grafico y la lista.
@@ -1980,13 +1993,26 @@ private fun recordCountLabel(count: Int): String =
  * «Hoy» es el que sale al abrir, y no «Todo»: lo primero que se viene a mirar es cuanto
  * llevas gastado hoy, no el acumulado historico, que solo crece y nunca dice nada nuevo.
  */
-private val ExpenseChipLocale: java.util.Locale = java.util.Locale.forLanguageTag("es")
+private val ExpenseChipLocale: java.util.Locale get() = java.util.Locale.getDefault()
 
-private enum class ExpensePeriodFilter(val label: String, val heroLabel: String, val emptySuffix: String) {
-    TODAY("Hoy", "Hoy", "hoy"),
-    WEEK("Semana", "Esta semana", "esta semana"),
-    MONTH("Mes", "Este mes", "este mes"),
-    ALL("Todo", "Todo", "todavía");
+private enum class ExpensePeriodFilter(
+    @StringRes val labelRes: Int,
+    @StringRes val heroLabelRes: Int,
+    @StringRes val emptySuffixRes: Int
+) {
+    TODAY(R.string.expenses_period_today, R.string.expenses_hero_today, R.string.expenses_empty_suffix_today),
+    WEEK(R.string.expenses_period_week, R.string.expenses_hero_week, R.string.expenses_empty_suffix_week),
+    MONTH(R.string.expenses_period_month, R.string.expenses_hero_month, R.string.expenses_empty_suffix_month),
+    ALL(R.string.expenses_period_all, R.string.expenses_hero_all, R.string.expenses_empty_suffix_all);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
+
+    val heroLabel: String
+        @Composable get() = stringResource(heroLabelRes)
+
+    val emptySuffix: String
+        @Composable get() = stringResource(emptySuffixRes)
 
     fun matches(expense: Expense): Boolean {
         val today = ExpenseDateUtils.today()
@@ -2113,7 +2139,7 @@ private fun ExpensesContent(
         } else {
             item {
                 Text(
-                    text = "Últimos gastos",
+                    text = stringResource(R.string.expenses_recent),
                     color = ExpenseText,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold

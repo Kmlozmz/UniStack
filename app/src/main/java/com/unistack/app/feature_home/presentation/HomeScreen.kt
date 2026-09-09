@@ -199,7 +199,7 @@ fun HomeScreen(
             ) {
                 item("cabecera") {
                     HomeHeader(
-                        name = summary.userName.ifBlank { "Hola" },
+                        name = summary.userName.ifBlank { stringResource(R.string.home_header_greeting_default) },
                         photoUrl = summary.avatarPhotoUrl,
                         hasUnread = hasUnread,
                         onNotificationsClick = onNotificationsClick,
@@ -249,7 +249,7 @@ fun HomeScreen(
                     item("hoy-cabecera") {
                         HomeSectionHeader(
                             title = todayLabel(),
-                            actionLabel = "Horario",
+                            actionLabel = stringResource(R.string.home_action_schedule_short),
                             onActionClick = onCalendarClick
                         )
                     }
@@ -538,7 +538,7 @@ private fun HomePriorityCard(
                     }
                     if (subjectId != null) {
                         TextButton(onClick = { onSubjectClick(subjectId) }) {
-                            Text("Ver materia", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text(stringResource(R.string.home_view_subject), color = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                     }
                 }
@@ -604,30 +604,30 @@ private fun HomeTodayCard(
             val risk = summary.riskSubject?.takeIf { it.severity != SubjectRiskSeverity.STABLE }
             val fallback = when {
                 summary.overdueTasks > 0 -> HomeTodayFallback(
-                    title = if (summary.overdueTasks == 1) "Tienes una tarea vencida" else "Tienes ${summary.overdueTasks} tareas vencidas",
-                    detail = "No estaban en el horario de hoy, pero siguen sin cerrarse.",
-                    actionLabel = "Ver tareas",
+                    title = if (summary.overdueTasks == 1) stringResource(R.string.home_today_overdue_single) else stringResource(R.string.home_today_overdue_multiple, summary.overdueTasks),
+                    detail = stringResource(R.string.home_today_overdue_detail),
+                    actionLabel = stringResource(R.string.home_today_view_tasks),
                     tint = MaterialTheme.colorScheme.error,
                     onClick = onTasksClick
                 )
                 risk != null -> HomeTodayFallback(
                     title = risk.subjectName,
                     detail = risk.detail,
-                    actionLabel = "Ver materia",
+                    actionLabel = stringResource(R.string.home_view_subject),
                     tint = if (risk.severity == SubjectRiskSeverity.CRITICAL) MaterialTheme.colorScheme.error else sections.atRisk,
                     onClick = { onSubjectClick(risk.subjectId) }
                 )
                 summary.nextTask != null -> HomeTodayFallback(
                     title = summary.nextTask.title,
-                    detail = "Vence " + summary.nextTask.dueText + ". No es de hoy, pero es lo próximo.",
-                    actionLabel = "Ver tareas",
+                    detail = stringResource(R.string.home_today_due_format, summary.nextTask.dueText),
+                    actionLabel = stringResource(R.string.home_today_view_tasks),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onTasksClick
                 )
                 summary.nextAcademicWork != null -> HomeTodayFallback(
                     title = summary.nextAcademicWork.title,
-                    detail = "Vence " + summary.nextAcademicWork.dueText + ". No es de hoy, pero es lo próximo.",
-                    actionLabel = "Ver trabajos",
+                    detail = stringResource(R.string.home_today_due_format, summary.nextAcademicWork.dueText),
+                    actionLabel = stringResource(R.string.home_today_view_works),
                     tint = MaterialTheme.colorScheme.onSurface,
                     onClick = onWorksClick
                 )
@@ -655,23 +655,23 @@ private fun HomeTodayCard(
                 } else {
                     Text(
                         text = if (summary.upcomingItems.isEmpty()) {
-                            "Hoy no tienes nada puesto, y vas al día con todo"
+                            stringResource(R.string.home_today_calm_title)
                         } else {
-                            "Hoy no tienes nada puesto"
+                            stringResource(R.string.home_today_empty_title)
                         },
                         style = MaterialTheme.typography.titleSmallEmphasized
                     )
                     Text(
                         text = if (summary.upcomingItems.isEmpty()) {
-                            "Ni clases ni entregas hoy, ni tareas vencidas, ni materias en riesgo."
+                            stringResource(R.string.home_today_calm_detail)
                         } else {
-                            "Nada vencido detrás. Esto es lo que viene:"
+                            stringResource(R.string.home_today_empty_detail)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (summary.upcomingItems.isEmpty()) {
-                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Abrir Horario") }
+                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.home_today_open_schedule)) }
                     } else {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
@@ -679,7 +679,7 @@ private fun HomeTodayCard(
                         ) {
                             summary.upcomingItems.forEach { item -> HomeUpcomingRow(item) }
                         }
-                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text("Ver el horario completo") }
+                        TextButton(onClick = onEmptyClick, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.home_today_see_full_schedule)) }
                     }
                 }
             }
@@ -787,7 +787,7 @@ private fun HomeTodayRow(item: HomeTimelineSummary) {
                 contentColor = sections.onScheduleContainer
             ) {
                 Text(
-                    text = "AHORA",
+                    text = stringResource(R.string.home_badge_now),
                     style = SectionLabelStyle,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
@@ -828,14 +828,14 @@ private fun HomeSnapshotRow(
     ) {
         if (AppModule.GRADES in modules) {
             HomeTile(
-                label = "PROMEDIO",
+                label = stringResource(R.string.home_tile_average),
                 // «Numeros que cuentan»: el promedio sube desde cero al abrir Inicio. Se
                 // cuenta sobre el numero y se formatea despues, porque contar sobre el texto
                 // ya formateado daria cifras imposibles a mitad de camino.
                 value = summary.generalAverage
                     ?.let { GradingScaleUtils.formatGrade(numeroQueCuenta(it.toFloat(), "promedio").toDouble(), scale) }
                     ?: "—",
-                footerText = "de " + GradingScaleUtils.formatGrade(GradingScaleUtils.maxGradeFor(scale), scale),
+                footerText = stringResource(R.string.home_tile_average_out_of, GradingScaleUtils.formatGrade(GradingScaleUtils.maxGradeFor(scale), scale)),
                 onClick = onAverageClick,
                 modifier = Modifier.weight(1f)
             )
@@ -844,16 +844,16 @@ private fun HomeSnapshotRow(
             val overdue = summary.overdueTasks
             val pending = summary.pendingTasks
             HomeTile(
-                label = "PENDIENTES",
+                label = stringResource(R.string.home_tile_pending),
                 value = numeroQueCuenta(pending.toFloat(), "pendientes").toInt().toString(),
                 onClick = onPendingClick,
                 modifier = Modifier.weight(1f),
                 footer = {
                     HomeStatusPill(
                         text = when {
-                            overdue > 0 -> if (overdue == 1) "1 vencida" else "$overdue vencidas"
-                            pending > 0 -> "Sin vencer"
-                            else -> "Al día"
+                            overdue > 0 -> if (overdue == 1) stringResource(R.string.home_status_overdue_single) else stringResource(R.string.home_status_overdue_multiple, overdue)
+                            pending > 0 -> stringResource(R.string.home_status_upcoming)
+                            else -> stringResource(R.string.home_status_all_caught_up)
                         },
                         ink = when {
                             overdue > 0 -> MaterialTheme.colorScheme.onErrorContainer
@@ -873,7 +873,7 @@ private fun HomeSnapshotRow(
             val anterior = summary.previousWeekExpenseTotal
             val actual = summary.weeklyExpenseTotal
             HomeTile(
-                label = "ESTA SEMANA",
+                label = stringResource(R.string.home_tile_this_week),
                 value = formatCurrency(numeroQueCuenta(actual.toFloat(), "semana").toInt()),
                 valueColor = sections.expenses,
                 // El pie compara con la semana pasada, que es lo unico que hace que la cifra
@@ -883,13 +883,13 @@ private fun HomeSnapshotRow(
                     anterior > 0 -> {
                         val cambio = ((actual - anterior) * 100.0 / anterior).roundToInt()
                         when {
-                            cambio > 0 -> "+$cambio% vs. la anterior"
-                            cambio < 0 -> "$cambio% vs. la anterior"
-                            else -> "igual que la anterior"
+                            cambio > 0 -> stringResource(R.string.home_expense_vs_previous_plus, cambio)
+                            cambio < 0 -> stringResource(R.string.home_expense_vs_previous, cambio)
+                            else -> stringResource(R.string.home_expense_same_as_previous)
                         }
                     }
-                    actual > 0 -> "tu primera semana"
-                    else -> "aún sin gastos"
+                    actual > 0 -> stringResource(R.string.home_expense_first_week)
+                    else -> stringResource(R.string.home_expense_no_expenses_yet)
                 },
                 onClick = onExpensesClick,
                 modifier = Modifier.weight(1f)

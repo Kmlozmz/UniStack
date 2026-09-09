@@ -28,6 +28,9 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+import java.util.Locale
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -149,7 +152,7 @@ fun NoteChecklistEditor(
                 modifier = Modifier.size(22.dp)
             )
             Spacer(Modifier.width(16.dp))
-            Text("Elemento", color = suave, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.notes_checklist_item), color = suave, style = MaterialTheme.typography.bodyLarge)
         }
 
         if (marcadas.isNotEmpty()) {
@@ -168,9 +171,14 @@ fun NoteChecklistEditor(
                     modifier = Modifier.size(23.dp)
                 )
                 Spacer(Modifier.width(25.dp))
+                val isEn = Locale.getDefault().language == "en"
+                val marcadasLabel = if (isEn) {
+                    "${marcadas.size} " + (if (marcadas.size == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural))
+                } else {
+                    "${marcadas.size} " + (if (marcadas.size == 1) stringResource(R.string.notes_checklist_marked_singular) else stringResource(R.string.notes_checklist_marked_plural))
+                }
                 Text(
-                    marcadas.size.toString() +
-                        if (marcadas.size == 1) " marcada" else " marcadas",
+                    marcadasLabel,
                     color = suave,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -226,7 +234,7 @@ private fun ChecklistRow(
         if (conAsa) {
             Icon(
                 Icons.Rounded.DragIndicator,
-                contentDescription = "Mover de sitio",
+                contentDescription = stringResource(R.string.notes_checklist_move),
                 tint = suave.copy(alpha = 0.55f),
                 modifier = Modifier
                     .size(24.dp)
@@ -262,7 +270,7 @@ private fun ChecklistRow(
 
         Icon(
             Icons.Rounded.Close,
-            contentDescription = "Quitar",
+            contentDescription = stringResource(R.string.notes_checklist_remove),
             tint = suave.copy(alpha = 0.6f),
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))

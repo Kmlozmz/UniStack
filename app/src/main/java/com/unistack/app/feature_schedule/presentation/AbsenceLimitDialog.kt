@@ -17,6 +17,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,12 +53,11 @@ internal fun AbsenceLimitDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("¿Cuántas faltas te admiten?") },
+        title = { Text(stringResource(R.string.schedule_absence_limit_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(
-                    text = "El número a partir del cual pierdes una materia. Lo dice el " +
-                        "reglamento de tu universidad, y vale para todas tus materias.",
+                    text = stringResource(R.string.schedule_absence_limit_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     lineHeight = 18.sp
@@ -68,7 +69,7 @@ internal fun AbsenceLimitDialog(
                 ) {
                     Paso(
                         icono = Icons.Rounded.Remove,
-                        descripcion = "Una menos",
+                        descripcion = stringResource(R.string.schedule_absence_limit_decrease),
                         activo = valor > 1
                     ) {
                         haptics.performSafely(HapticFeedbackType.SegmentTick)
@@ -82,7 +83,7 @@ internal fun AbsenceLimitDialog(
                     )
                     Paso(
                         icono = Icons.Rounded.Add,
-                        descripcion = "Una más",
+                        descripcion = stringResource(R.string.schedule_absence_limit_increase),
                         activo = valor < 40
                     ) {
                         haptics.performSafely(HapticFeedbackType.SegmentTick)
@@ -93,18 +94,18 @@ internal fun AbsenceLimitDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(valor) }) {
-                Text("Guardar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_save), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             // Quitarlo devuelve la cabecera al porcentaje, que es lo que había antes del tope.
             if (actual != null) {
                 TextButton(onClick = { onConfirm(null) }) {
-                    Text("Quitar el tope", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.schedule_absence_limit_remove), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

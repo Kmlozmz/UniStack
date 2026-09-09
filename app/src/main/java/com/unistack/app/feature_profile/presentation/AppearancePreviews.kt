@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
@@ -210,12 +212,12 @@ fun VistaPreviaDeBotones(modifier: Modifier = Modifier) {
     VentanaDeMuestra(titulo = "AL PIE DE UN FORMULARIO", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
             UniStackButton(
-                text = "Guardar",
+                text = stringResource(R.string.common_save),
                 onClick = {},
                 modifier = Modifier.weight(1f)
             )
             UniStackButton(
-                text = "Cancelar",
+                text = stringResource(R.string.common_cancel),
                 onClick = {},
                 modifier = Modifier.weight(1f),
                 variant = UniStackButtonVariant.Tonal
@@ -236,7 +238,10 @@ fun VistaPreviaDeChips(modifier: Modifier = Modifier) {
     val estilo = LocalAppearancePreferences.current.chipStyle
     VentanaDeMuestra(titulo = "TAREAS", modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Vencidas" to true, "Hoy" to false, "Sin materia" to false).forEach { (texto, activo) ->
+            run {
+            val isEn = java.util.Locale.getDefault().language == "en"
+            listOf((if (isEn) "Overdue" else "Vencidas") to true, (if (isEn) "Today" else "Hoy") to false, (if (isEn) "No course" else "Sin materia") to false)
+        }.forEach { (texto, activo) ->
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(percent = 50))
@@ -304,8 +309,10 @@ fun VistaPreviaDeCampo(modifier: Modifier = Modifier) {
                 )
                 .padding(horizontal = 14.dp, vertical = 9.dp)
         ) {
-            Text("Nombre de la materia", style = MaterialTheme.typography.labelSmall, color = esquema.primary)
-            Text("Cálculo III", style = MaterialTheme.typography.bodyLarge, color = esquema.onSurface)
+            val isEnMat = java.util.Locale.getDefault().language == "en"
+            Text(if (isEnMat) "Subject name" else "Nombre de la materia", style = MaterialTheme.typography.labelSmall, color = esquema.primary)
+            val isEnCal = java.util.Locale.getDefault().language == "en"
+            Text(if (isEnCal) "Calculus III" else "Cálculo III", style = MaterialTheme.typography.bodyLarge, color = esquema.onSurface)
         }
         if (estilo == TextFieldStyle.SUBRAYADO) {
             Box(
@@ -390,9 +397,10 @@ fun VistaPreviaDeInterruptores(modifier: Modifier = Modifier) {
             modifier = Modifier.fillMaxWidth()
         ) {
             Column {
+                val isEnSwitch = java.util.Locale.getDefault().language == "en"
                 listOf(
-                    Triple("Recordar mis clases", "15 minutos antes", true),
-                    Triple("Avisar de entregas", "El día anterior", false)
+                    Triple(if (isEnSwitch) "Class reminders" else "Recordar mis clases", if (isEnSwitch) "15 minutes before" else "15 minutos antes", true),
+                    Triple(if (isEnSwitch) "Assignment alerts" else "Avisar de entregas", if (isEnSwitch) "The day before" else "El día anterior", false)
                 ).forEach { (titulo, detalle, marcado) ->
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 11.dp),

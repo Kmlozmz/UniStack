@@ -1,5 +1,7 @@
 package com.unistack.app.core.design.components
 
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -109,8 +111,8 @@ fun UniEmptyStateCard(
 fun UniConfirmDeleteDialog(
     title: String,
     body: String,
-    confirmText: String = "Eliminar",
-    dismissText: String = "Cancelar",
+    confirmText: String = stringResource(R.string.common_delete),
+    dismissText: String = stringResource(R.string.common_cancel),
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {

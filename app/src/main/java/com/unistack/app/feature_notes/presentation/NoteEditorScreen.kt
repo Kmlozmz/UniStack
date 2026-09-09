@@ -69,6 +69,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -312,8 +314,8 @@ fun NoteEditorScreen(
     ) { uri ->
         val id = currentId
         if (uri != null && id != null && !viewModel.attach(id, uri)) {
-            attachError = "No se pudo guardar la foto. Puede que pase de " +
-                Attachments.formatSize(Attachments.MAX_BYTES) + "."
+            val maxLimit = Attachments.formatSize(Attachments.MAX_BYTES)
+            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save photo. It may exceed $maxLimit." else "No se pudo guardar la foto. Puede que pase de $maxLimit."
         }
     }
 
@@ -322,8 +324,8 @@ fun NoteEditorScreen(
     ) { uri ->
         val id = currentId
         if (uri != null && id != null && !viewModel.attach(id, uri)) {
-            attachError = "No se pudo guardar el archivo. Puede que pase de " +
-                Attachments.formatSize(Attachments.MAX_BYTES) + "."
+            val maxLimit = Attachments.formatSize(Attachments.MAX_BYTES)
+            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save file. It may exceed $maxLimit." else "No se pudo guardar el archivo. Puede que pase de $maxLimit."
         }
     }
 
@@ -338,8 +340,9 @@ fun NoteEditorScreen(
             viewModel.discardStoredFile(guardado)
             return@rememberLauncherForActivityResult
         }
-        if (!viewModel.attachStoredFile(id, guardado, "Foto", "image/jpeg", AttachmentKind.IMAGE)) {
-            attachError = "No se pudo guardar la foto."
+        val photoName = if (java.util.Locale.getDefault().language == "en") "Photo" else "Foto"
+        if (!viewModel.attachStoredFile(id, guardado, photoName, "image/jpeg", AttachmentKind.IMAGE)) {
+            attachError = if (java.util.Locale.getDefault().language == "en") "Could not save photo." else "No se pudo guardar la foto."
         }
     }
 
@@ -356,7 +359,7 @@ fun NoteEditorScreen(
         }.getOrNull()
         if (uri == null) {
             viewModel.discardStoredFile(nombre)
-            attachError = "No se pudo preparar la cámara."
+            attachError = if (java.util.Locale.getDefault().language == "en") "Could not initialize camera." else "No se pudo preparar la cámara."
         } else {
             pendingPhoto = nombre
             hacerFoto.launch(uri)
@@ -390,7 +393,7 @@ fun NoteEditorScreen(
                 title.text.trim().takeIf { it.isNotBlank() }
                     ?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
             }
-            runCatching { context.startActivity(Intent.createChooser(intent, "Compartir la nota")) }
+            runCatching { context.startActivity(Intent.createChooser(intent, if (java.util.Locale.getDefault().language == "en") "Share note" else "Compartir la nota")) }
         }
     }
 
@@ -402,7 +405,7 @@ fun NoteEditorScreen(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             runCatching { context.startActivity(intent) }
-                .onFailure { attachError = "No hay ninguna app en el teléfono que abra esto." }
+                .onFailure { attachError = if (java.util.Locale.getDefault().language == "en") "No app available on phone to open this." else "No hay ninguna app en el teléfono que abra esto." }
         }
     }
 
@@ -524,7 +527,7 @@ fun NoteEditorScreen(
                             val fijada = existing?.pinned == true
                             RoundIconButton(
                                 if (fijada) Icons.Rounded.PushPin else Icons.Outlined.PushPin,
-                                if (fijada) "Quitar de fijadas" else "Fijar arriba",
+                                if (fijada) stringResource(R.string.notes_unpin) else stringResource(R.string.notes_pin),
                                 { currentId?.let { viewModel.setPinned(it, !fijada) } },
                                 enFondo
                             )
@@ -535,7 +538,7 @@ fun NoteEditorScreen(
                             } else {
                                 Icons.Rounded.Notifications
                             },
-                            "Recordatorio",
+                            stringResource(R.string.notes_reminder),
                             { pickingDate = true },
                             enFondo
                         )
@@ -543,7 +546,7 @@ fun NoteEditorScreen(
                             val archivada = existing?.archived == true
                             RoundIconButton(
                                 if (archivada) Icons.Rounded.Unarchive else Icons.Rounded.Archive,
-                                if (archivada) "Sacar del archivo" else "Archivar",
+                                if (archivada) stringResource(R.string.notes_unarchive) else stringResource(R.string.notes_archive),
                                 {
                                     currentId?.let { viewModel.archive(it, !archivada) }
                                     if (!archivada) leave()
@@ -578,25 +581,25 @@ fun NoteEditorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        FooterButton(Icons.Rounded.Add, "Añadir a la nota", enFondo) {
+                        FooterButton(Icons.Rounded.Add, stringResource(R.string.notes_add_to_note), enFondo) {
                             inserting = true
                         }
-                        FooterButton(Icons.Rounded.Palette, "Color de la nota", enFondo) {
+                        FooterButton(Icons.Rounded.Palette, stringResource(R.string.notes_color_action), enFondo) {
                             picking = true
                         }
-                        FooterButton(Icons.Rounded.TextFormat, "Formato del texto", enFondo) {
+                        FooterButton(Icons.Rounded.TextFormat, stringResource(R.string.notes_format_action), enFondo) {
                             formatting = true
                         }
                         Spacer(Modifier.weight(1f))
                         if (body.length > NoteText.MAX_LENGTH - 500) {
                             Text(
-                                "${body.length} de ${NoteText.MAX_LENGTH}",
+                                stringResource(R.string.notes_char_counter, body.length, NoteText.MAX_LENGTH),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
                         Box {
-                            FooterButton(Icons.Rounded.MoreVert, "Más opciones", enFondo) {
+                            FooterButton(Icons.Rounded.MoreVert, stringResource(R.string.notes_more_options), enFondo) {
                                 menuOpen = true
                             }
                             UniDropdownMenu(
@@ -611,7 +614,7 @@ fun NoteEditorScreen(
                                  * que dice «entregar el taller el viernes» quiere ser una tarea.
                                  */
                                 DropdownMenuItem(
-                                    text = { Text("Crear una tarea con esto") },
+                                    text = { Text(stringResource(R.string.notes_create_task)) },
                                     onClick = {
                                         menuOpen = false
                                         val hecha = viewModel.taskFromNote(
@@ -620,14 +623,10 @@ fun NoteEditorScreen(
                                             subjectId,
                                             reminderAt
                                         )
+                                        val taskCreatedMsg = if (java.util.Locale.getDefault().language == "en") "Task created in Academic" else "Tarea creada en Académico"
+                                        val taskEmptyMsg = if (java.util.Locale.getDefault().language == "en") "Write something before creating the task" else "Escribe algo antes de crear la tarea"
                                         alcance.launch {
-                                            avisos.showSnackbar(
-                                                if (hecha) {
-                                                    "Tarea creada en Académico"
-                                                } else {
-                                                    "Escribe algo antes de crear la tarea"
-                                                }
-                                            )
+                                            avisos.showSnackbar(if (hecha) taskCreatedMsg else taskEmptyMsg)
                                         }
                                     }
                                 )
@@ -641,17 +640,17 @@ fun NoteEditorScreen(
                                  * asteriscos— pero eso es cosa del boton, no suya.
                                  */
                                 DropdownMenuItem(
-                                    text = { Text("Copiar") },
+                                    text = { Text(stringResource(R.string.notes_copy_action)) },
                                     onClick = {
                                         menuOpen = false
                                         portapapeles.setText(AnnotatedString(NoteMarkdown.strip(body)))
                                         alcance.launch {
-                                            avisos.showSnackbar("Copiado")
+                                            avisos.showSnackbar(if (java.util.Locale.getDefault().language == "en") "Copied" else "Copiado")
                                         }
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Compartir") },
+                                    text = { Text(stringResource(R.string.notes_share_action)) },
                                     onClick = {
                                         menuOpen = false
                                         compartir()
@@ -661,7 +660,7 @@ fun NoteEditorScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Mover a la papelera",
+                                                stringResource(R.string.notes_move_to_trash),
                                                 color = MaterialTheme.colorScheme.error
                                             )
                                         },
@@ -705,7 +704,7 @@ fun NoteEditorScreen(
             Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 22.dp)) {
                 if (title.text.isEmpty()) {
                     Text(
-                        "Título",
+                        stringResource(R.string.notes_field_title),
                         color = suave,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
@@ -835,7 +834,7 @@ fun NoteEditorScreen(
             ) {
                 if (body.isEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Text("Nota", color = suave, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.notes_field_note), color = suave, style = MaterialTheme.typography.bodyLarge)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(7.dp)
@@ -854,7 +853,7 @@ fun NoteEditorScreen(
                                 )
                             }
                             Text(
-                                "para vincularla a una materia",
+                                stringResource(R.string.notes_link_subject_hint),
                                 color = suave,
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -982,14 +981,14 @@ fun NoteEditorScreen(
                 val puesta = id != null && viewModel.attachStoredFile(
                     noteId = id,
                     storedName = nombre,
-                    displayName = "Grabación",
+                    displayName = if (java.util.Locale.getDefault().language == "en") "Recording" else "Grabación",
                     mimeType = "audio/mp4",
                     kind = AttachmentKind.AUDIO,
                     durationMillis = duracion
                 )
                 if (!puesta) {
                     viewModel.discardStoredFile(nombre)
-                    attachError = "No se pudo guardar la grabación."
+                    attachError = if (java.util.Locale.getDefault().language == "en") "Could not save recording." else "No se pudo guardar la grabación."
                 }
             },
             onDismiss = { recording = false }
@@ -999,10 +998,10 @@ fun NoteEditorScreen(
     attachError?.let { mensaje ->
         AlertDialog(
             onDismissRequest = { attachError = null },
-            title = { Text("No se pudo adjuntar") },
+            title = { Text(stringResource(R.string.notes_error_attach_failed)) },
             text = { Text(mensaje) },
             confirmButton = {
-                TextButton(onClick = { attachError = null }) { Text("Entendido") }
+                TextButton(onClick = { attachError = null }) { Text(stringResource(R.string.common_understood)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -1030,11 +1029,10 @@ fun NoteEditorScreen(
          */
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
-            title = { Text("¿Mover esta nota a la papelera?") },
+            title = { Text(stringResource(R.string.notes_trash_dialog_title)) },
             text = {
                 Text(
-                    "Se queda en la papelera " + viewModel.diasEnPapelera +
-                        " días por si te arrepientes, y luego se borra sola."
+                    stringResource(R.string.notes_trash_dialog_desc, viewModel.diasEnPapelera)
                 )
             },
             confirmButton = {
@@ -1044,14 +1042,14 @@ fun NoteEditorScreen(
                     onBackClick()
                 }) {
                     Text(
-                        "Mover a la papelera",
+                        stringResource(R.string.notes_move_to_trash),
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingDelete = false }) { Text("Cancelar") }
+                TextButton(onClick = { confirmingDelete = false }) { Text(stringResource(R.string.action_cancel)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
@@ -1100,7 +1098,7 @@ private fun ReminderChip(
             )
             Icon(
                 Icons.Rounded.Close,
-                contentDescription = "Quitar el recordatorio",
+                contentDescription = stringResource(R.string.notes_remove_reminder),
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable(onClick = onClear)
@@ -1244,7 +1242,7 @@ private fun NoteSubjectSheet(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                "¿De qué materia es?",
+                stringResource(R.string.notes_which_subject_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold
@@ -1255,7 +1253,7 @@ private fun NoteSubjectSheet(
             ) {
                 item(key = "sin-materia") {
                     SubjectRow(
-                        name = "Sin materia",
+                        name = stringResource(R.string.notes_no_subject),
                         accent = MaterialTheme.colorScheme.outline,
                         selected = selectedSubjectId == null,
                         onClick = { onSelected(null) }

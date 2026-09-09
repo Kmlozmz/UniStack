@@ -208,7 +208,7 @@ class TasksViewModel @Inject constructor(
         tasksRepository.addTask(
             source.copy(
                 id = "task-${UUID.randomUUID()}",
-                title = "${source.title} (copia)",
+                title = if (java.util.Locale.getDefault().language == "en") "${source.title} (copy)" else "${source.title} (copia)",
                 completed = false,
                 completedAt = null,
                 gradingStatus = if (source.gradingStatus == TaskGradingStatus.NOT_GRADED) {

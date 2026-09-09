@@ -34,15 +34,28 @@ import com.unistack.app.core.design.components.UniSegmentedControl
 import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
 import com.unistack.app.core.utils.GradingScaleUtils
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 
 /** Las tres preguntas que sabe responder la calculadora. */
-enum class CalculatorTab(val label: String) {
+enum class CalculatorTab(private val spanishLabel: String) {
     SUBJECT("Materia"),
     SEMESTER("Semestre"),
-    NEEDED("Me falta")
+    NEEDED("Me falta");
+
+    val label: String
+        get() = if (java.util.Locale.getDefault().language == "en") {
+            when (this) {
+                SUBJECT -> "Course"
+                SEMESTER -> "Semester"
+                NEEDED -> "Target"
+            }
+        } else {
+            spanishLabel
+        }
 }
 
 /**
@@ -156,7 +169,7 @@ private fun CalculatorHeader(onBackClick: () -> Unit, onHelpClick: () -> Unit) {
     ) {
         UniBackButton(onClick = onBackClick)
         Text(
-            text = "Calculadora",
+            text = stringResource(R.string.calculator_title),
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 4.dp),
@@ -168,7 +181,7 @@ private fun CalculatorHeader(onBackClick: () -> Unit, onHelpClick: () -> Unit) {
         // que abre cuenta para qué sirve la pestaña en la que estás, con un ejemplo.
         UniIconButton(
             icon = Icons.AutoMirrored.Rounded.HelpOutline,
-            contentDescription = "Cómo funciona esta pestaña",
+            contentDescription = stringResource(R.string.calculator_how_it_works),
             onClick = onHelpClick
         )
     }

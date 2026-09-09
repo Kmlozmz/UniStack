@@ -36,6 +36,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
@@ -83,9 +85,9 @@ internal fun CatchUpSheet(
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     text = if (pending.isEmpty()) {
-                        "Todo al día"
+                        stringResource(R.string.schedule_all_caught_up)
                     } else {
-                        "${pending.size} ${if (pending.size == 1) "clase" else "clases"} sin marcar"
+                        stringResource(R.string.catch_up_unmarked_count, pending.size)
                     },
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleLarge,
@@ -93,9 +95,9 @@ internal fun CatchUpSheet(
                 )
                 Text(
                     text = if (pending.isEmpty()) {
-                        "No te queda ninguna pendiente."
+                        stringResource(R.string.catch_up_empty_title)
                     } else {
-                        "Van desapareciendo según respondes."
+                        stringResource(R.string.catch_up_empty_desc)
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -110,7 +112,7 @@ internal fun CatchUpSheet(
                     val materia = subjects.firstOrNull { it.id == entrada.session.subjectId }
                     FilaPendiente(
                         entrada = entrada,
-                        nombre = materia?.name ?: "Clase",
+                        nombre = materia?.name ?: stringResource(R.string.schedule_detail_class),
                         onMark = { estado ->
                             haptics.performSafely(HapticFeedbackType.SegmentTick)
                             onMark(entrada, estado)
@@ -153,14 +155,14 @@ private fun FilaPendiente(
         Spacer(Modifier.width(10.dp))
         BotonRedondo(
             icono = Icons.Rounded.Check,
-            descripcion = "Asistí",
+            descripcion = stringResource(R.string.schedule_status_attended),
             tono = ScheduleAccent,
             onClick = { onMark(ClassAttendanceStatus.ATTENDED) }
         )
         Spacer(Modifier.width(7.dp))
         BotonRedondo(
             icono = Icons.Rounded.Close,
-            descripcion = "Falta",
+            descripcion = stringResource(R.string.schedule_status_absent),
             tono = MaterialTheme.colorScheme.error,
             onClick = { onMark(ClassAttendanceStatus.ABSENT) }
         )

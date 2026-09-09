@@ -47,6 +47,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.feature_sync.domain.LocalBackupPreview
 import java.time.Instant
@@ -166,9 +168,9 @@ internal fun BackupSection(
             contentColor = LocalSectionColors.current.onScheduleContainer
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
-                Text("ÚLTIMA COPIA", style = SectionLabelStyle)
+                Text(stringResource(R.string.settings_backup_sec_last), style = SectionLabelStyle)
                 Text(
-                    text = lastBackup?.let { formatBackupDate(it) } ?: "Todavía ninguna",
+                    text = lastBackup?.let { formatBackupDate(it) } ?: stringResource(R.string.settings_backup_none_yet),
                     modifier = Modifier.padding(top = 6.dp),
                     style = MaterialTheme.typography.titleLargeEmphasized,
                     fontWeight = FontWeight.Bold
@@ -189,7 +191,7 @@ internal fun BackupSection(
                         contentColor = LocalSectionColors.current.scheduleContainer
                     ) {
                         Text(
-                            "Guardar copia",
+                            stringResource(R.string.settings_backup_btn_save),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold
@@ -213,7 +215,7 @@ internal fun BackupSection(
                         color = Color.Transparent
                     ) {
                         Text(
-                            "Compartir",
+                            stringResource(R.string.settings_backup_btn_share),
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             style = MaterialTheme.typography.labelLarge
                         )
@@ -223,25 +225,25 @@ internal fun BackupSection(
         
         }
 
-        SettingsGroup(label = "RESPALDOS", rowCount = 3) {
+        SettingsGroup(label = stringResource(R.string.settings_backup_sec_backups), rowCount = 3) {
             SettingsRow(
                 icon = Icons.Rounded.Backup,
-                title = "Restaurar desde un archivo",
-                subtitle = "Deja la app como estaba en esa copia",
+                title = stringResource(R.string.settings_backup_restore_title),
+                subtitle = stringResource(R.string.settings_backup_restore_subtitle),
                 iconColor = LocalSectionColors.current.schedule,
                 onClick = { openBackup.launch(arrayOf("application/json", "text/plain", "*/*")) }
             )
             SettingsRow(
                 icon = Icons.AutoMirrored.Rounded.ListAlt,
-                title = "Tareas en CSV",
-                subtitle = "Para abrirlas en una hoja de cálculo",
+                title = stringResource(R.string.settings_backup_csv_tasks_title),
+                subtitle = stringResource(R.string.settings_backup_csv_tasks_subtitle),
                 iconColor = MaterialTheme.colorScheme.tertiary,
                 onClick = { saveTasksCsv.launch(BackupFiles.suggestedName("unistack-tareas", "csv")) }
             )
             SettingsRow(
                 icon = Icons.Rounded.AccountBalanceWallet,
-                title = "Gastos en CSV",
-                subtitle = "Lo mismo, con tus registros de gasto",
+                title = stringResource(R.string.settings_backup_csv_expenses_title),
+                subtitle = stringResource(R.string.settings_backup_csv_expenses_subtitle),
                 iconColor = LocalSectionColors.current.expenses,
                 onClick = { saveExpensesCsv.launch(BackupFiles.suggestedName("unistack-gastos", "csv")) }
             )
@@ -264,8 +266,7 @@ internal fun BackupSection(
             )
             Spacer(Modifier.width(11.dp))
             Text(
-                "Por ahora la copia la guardas tú, en un archivo. Pronto vas a poder vincular " +
-                    "tu cuenta de Google y que se haga sola, sin que tengas que acordarte.",
+                stringResource(R.string.settings_backup_cloud_desc),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -282,7 +283,7 @@ internal fun BackupSection(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    BackupBlockTitle(Icons.Rounded.CloudUpload, "Copia en la nube")
+                    BackupBlockTitle(Icons.Rounded.CloudUpload, stringResource(R.string.settings_backup_cloud_title))
                     if (!cloudAvailable) {
                         Spacer(Modifier.width(8.dp))
                         Box(
@@ -291,19 +292,15 @@ internal fun BackupSection(
                                 .background(LocalSectionColors.current.atRisk.copy(alpha = 0.22f))
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
-                            Text("Pronto", color = LocalSectionColors.current.atRisk, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(stringResource(R.string.settings_account_soon), color = LocalSectionColors.current.atRisk, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
                         }
                     }
                 }
                 Text(
                     when {
-                        // Sin proyecto configurado los botones fallaban al pulsarlos con un
-                        // error de configuración, que es un problema de quien compila y no algo
-                        // que quien usa la app pueda resolver.
-                        !cloudAvailable -> "Todavía no está activa. Cuando lo esté, tu cuenta de " +
-                            "Google guardará la copia sola y podrás recuperarla en otro teléfono."
-                        cloudLinked -> cloudStatus ?: "Tu cuenta está lista para respaldar y recuperar."
-                        else -> "Conecta una cuenta de Google desde tu perfil para usar la nube."
+                        !cloudAvailable -> stringResource(R.string.settings_backup_cloud_inactive)
+                        cloudLinked -> cloudStatus ?: stringResource(R.string.settings_backup_cloud_ready)
+                        else -> stringResource(R.string.settings_backup_cloud_connect_google)
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
@@ -311,7 +308,7 @@ internal fun BackupSection(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     BackupButton(
-                        label = if (cloudBusy) "Procesando..." else "Respaldar",
+                        label = if (cloudBusy) stringResource(R.string.settings_backup_processing) else stringResource(R.string.settings_backup_btn_backup),
                         icon = Icons.Rounded.CloudUpload,
                         modifier = Modifier.weight(1f),
                         primary = true,
@@ -319,7 +316,7 @@ internal fun BackupSection(
                         onClick = viewModel::backupToCloud
                     )
                     BackupButton(
-                        label = "Recuperar",
+                        label = stringResource(R.string.settings_backup_btn_restore),
                         icon = Icons.Rounded.Download,
                         modifier = Modifier.weight(1f),
                         enabled = cloudAvailable && cloudLinked && !cloudBusy,
@@ -331,16 +328,15 @@ internal fun BackupSection(
 
         UniCard(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackupBlockTitle(Icons.Rounded.Description, "Exportar para leer fuera")
+                BackupBlockTitle(Icons.Rounded.Description, stringResource(R.string.settings_backup_sec_export))
                 Text(
-                    "Formatos para abrir en otro sitio. No sirven para restaurar: para eso está " +
-                        "la copia de seguridad.",
+                    stringResource(R.string.settings_backup_export_desc),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     lineHeight = 17.sp
                 )
                 BackupButton(
-                    label = "Reporte de notas en PDF",
+                    label = stringResource(R.string.settings_backup_pdf_report),
                     icon = Icons.Rounded.Description,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
@@ -375,7 +371,7 @@ internal fun BackupSection(
         val incoming = pending.incoming
         AlertDialog(
             onDismissRequest = { pendingRestore = null },
-            title = { Text(if (incoming == null) "Ese archivo no sirve" else "¿Restaurar esta copia?") },
+            title = { Text(if (incoming == null) stringResource(R.string.settings_backup_dialog_invalid) else stringResource(R.string.settings_backup_dialog_confirm)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
@@ -403,23 +399,22 @@ internal fun BackupSection(
                          * Ahora cada fila enseña lo que hay ahora y lo que quedaría.
                          */
                         Text(
-                            "Esto es lo que cambiaría:",
+                            stringResource(R.string.settings_backup_changes_preview),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             RestoreComparisonHeader()
-                            RestoreComparisonRow("Materias", pending.current?.subjects, incoming.subjects)
-                            RestoreComparisonRow("Notas", pending.current?.grades, incoming.grades)
-                            RestoreComparisonRow("Tareas", pending.current?.tasks, incoming.tasks)
-                            RestoreComparisonRow("Gastos", pending.current?.expenses, incoming.expenses)
-                            RestoreComparisonRow("Trabajos", pending.current?.academicWorks, incoming.academicWorks)
-                            RestoreComparisonRow("Eventos", pending.current?.agendaEvents, incoming.agendaEvents)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_subjects), pending.current?.subjects, incoming.subjects)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_grades), pending.current?.grades, incoming.grades)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_tasks), pending.current?.tasks, incoming.tasks)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_expenses), pending.current?.expenses, incoming.expenses)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_works), pending.current?.academicWorks, incoming.academicWorks)
+                            RestoreComparisonRow(stringResource(R.string.settings_backup_events), pending.current?.agendaEvents, incoming.agendaEvents)
                         }
                         Text(
-                            "Se reemplaza todo, no se mezcla, y no se puede deshacer. Si dudas, " +
-                                "guarda antes una copia de lo que tienes ahora.",
+                            stringResource(R.string.settings_backup_warning),
                             color = MaterialTheme.colorScheme.error,
                             fontSize = 12.sp,
                             lineHeight = 16.sp
@@ -436,13 +431,13 @@ internal fun BackupSection(
                             onFeedback(if (restored) "Copia restaurada." else "No se pudo restaurar el archivo.")
                         }
                     ) {
-                        Text("Restaurar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_backup_btn_restore), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingRestore = null }) {
-                    Text(if (incoming == null) "Entendido" else "Cancelar")
+                    Text(if (incoming == null) stringResource(R.string.settings_backup_btn_understood) else stringResource(R.string.common_cancel))
                 }
             },
             containerColor = MaterialTheme.colorScheme.background
@@ -455,7 +450,7 @@ private fun RestoreComparisonHeader() {
     Row {
         Spacer(Modifier.weight(1f))
         Text(
-            "Ahora",
+            stringResource(R.string.settings_backup_now),
             modifier = Modifier.width(58.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,
@@ -463,7 +458,7 @@ private fun RestoreComparisonHeader() {
             textAlign = TextAlign.End
         )
         Text(
-            "Quedaría",
+            stringResource(R.string.settings_backup_would_be),
             modifier = Modifier.width(72.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 10.sp,

@@ -36,6 +36,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -111,9 +113,9 @@ internal fun HomeNavigationPanel(
     val tools = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.Description,
-            title = "Trabajos",
+            title = stringResource(R.string.home_nav_assignments),
             accent = LocalSectionColors.current.expenses,
-            badge = if (unfinished) null else "Pronto",
+            badge = if (unfinished) null else stringResource(R.string.home_nav_soon),
             onClick = onWorksClick.takeIf { unfinished }
         ),
         DrawerPanelAction(
@@ -121,27 +123,27 @@ internal fun HomeNavigationPanel(
             // «GPA» es el promedio del sistema estadounidense, sobre cuatro puntos. Esta
             // calculadora trabaja con la escala que tengas puesta —cien, veinte, diez—, así
             // que el nombre prometía otra cosa, y encima en un idioma que no es el de la app.
-            title = "Calculadora de notas",
+            title = stringResource(R.string.home_nav_gpa_calculator),
             accent = MaterialTheme.colorScheme.primary,
             onClick = onGpaClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.EditNote,
-            title = "Notas rápidas",
+            title = stringResource(R.string.home_nav_quick_notes),
             accent = LocalSectionColors.current.atRisk,
             onClick = onQuickNotesClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.MenuBook,
-            title = "Recursos",
+            title = stringResource(R.string.home_nav_resources),
             accent = LocalSectionColors.current.onTrack,
             onClick = onResourcesClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.AutoAwesome,
-            title = "UniStack AI",
+            title = stringResource(R.string.home_nav_ai),
             accent = MaterialTheme.colorScheme.tertiary,
-            badge = if (unfinished) null else "Pronto",
+            badge = if (unfinished) null else stringResource(R.string.home_nav_soon),
             onClick = onAiClick.takeIf { unfinished }
         )
     )
@@ -162,30 +164,33 @@ internal fun HomeNavigationPanel(
     val about = listOf(
         DrawerPanelAction(
             icon = Icons.Rounded.RocketLaunch,
-            title = "Novedades",
+            title = stringResource(R.string.home_nav_whats_new),
             accent = LocalSectionColors.current.schedule,
             onClick = onWhatsNewClick
         ),
         DrawerPanelAction(
             icon = Icons.AutoMirrored.Rounded.Help,
-            title = "Ayuda y soporte",
+            title = stringResource(R.string.home_nav_help_support),
             accent = LocalSectionColors.current.expenses,
             onClick = onHelpClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Info,
-            title = "Acerca de",
+            title = stringResource(R.string.home_nav_about),
             accent = MaterialTheme.colorScheme.onSurfaceVariant,
             onClick = onAboutClick
         ),
         DrawerPanelAction(
             icon = Icons.Rounded.Science,
-            title = "Labs",
+            title = stringResource(R.string.home_nav_labs),
             accent = LocalSectionColors.current.atRisk,
-            badge = if (unfinished) null else "Pronto",
+            badge = if (unfinished) null else stringResource(R.string.home_nav_soon),
             onClick = onLabsClick.takeIf { unfinished }
         )
     )
+
+    val sectionTools = stringResource(R.string.home_nav_section_tools)
+    val sectionAccountApp = stringResource(R.string.home_nav_section_account_app)
 
     /*
      * Sin `ModalDrawerSheet`: la superficie es nuestra y llega a los dos bordes.
@@ -236,8 +241,8 @@ internal fun HomeNavigationPanel(
                 )
             }
             item { DrawerPanelDivider() }
-            drawerSection("Herramientas", tools)
-            drawerSection("Tu cuenta y la app", about)
+            drawerSection(sectionTools, tools)
+            drawerSection(sectionAccountApp, about)
         }
         /*
          * La versión, al pie del cajón y no detrás de la última fila.

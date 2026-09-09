@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -165,7 +167,7 @@ private fun PhotoCarousel(
                 modifier = Modifier.align(Alignment.BottomStart).padding(7.dp)
             ) {
                 Text(
-                    "Abrir",
+                    stringResource(R.string.notes_attachment_open),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -235,7 +237,7 @@ private fun ImageAttachment(
             modifier = Modifier.align(Alignment.BottomStart).padding(7.dp)
         ) {
             Text(
-                "Abrir",
+                stringResource(R.string.notes_attachment_open),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -336,7 +338,7 @@ private fun AudioAttachment(
             ) {
                 Icon(
                     if (reproduciendo) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (reproduciendo) "Pausar" else "Escuchar",
+                    contentDescription = if (reproduciendo) stringResource(R.string.notes_attachment_pause) else stringResource(R.string.notes_attachment_listen),
                     modifier = Modifier.padding(7.dp).size(20.dp)
                 )
             }
@@ -398,7 +400,7 @@ private fun MissingAttachmentRow(attachment: NoteAttachment, onRemove: () -> Uni
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "No está en este teléfono",
+                    stringResource(R.string.notes_attachment_missing_phone),
                     color = MaterialTheme.colorScheme.outline,
                     style = MaterialTheme.typography.labelSmall
                 )
@@ -420,7 +422,7 @@ private fun RemoveBadge(onRemove: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Icon(
             Icons.Rounded.Close,
-            contentDescription = "Quitar",
+            contentDescription = stringResource(R.string.notes_attachment_remove),
             modifier = Modifier.padding(5.dp).size(15.dp)
         )
     }

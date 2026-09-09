@@ -2,6 +2,10 @@
 
 package com.unistack.app.feature_grades.presentation
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -276,7 +280,7 @@ fun SubjectDetailScreen(
                     // «Materia activa» era una etiqueta fija que no distinguía nada: no
                     // existen materias inactivas. La meta sí dice algo y no se repite en
                     // ningún otro sitio de la cabecera.
-                    subtitle = "Meta ${GradingScaleUtils.formatGrade(subject.targetAverage, scale)}",
+                    subtitle = stringResource(R.string.subject_target_label, GradingScaleUtils.formatGrade(subject.targetAverage, scale)),
                     onBackClick = onBackClick,
                     showMenu = showSubjectMenu,
                     onMenuClick = { showSubjectMenu = true },
@@ -339,7 +343,7 @@ fun SubjectDetailScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "Cortes del semestre",
+                        stringResource(R.string.subject_semester_cuts),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold
@@ -348,7 +352,7 @@ fun SubjectDetailScreen(
                     // tarjeta del corte lo repite otra vez. Eran tres formas de decir lo mismo
                     // seguidas.
                     Text(
-                        "${cutScheme.cuts.size} cortes",
+                        stringResource(R.string.subject_cuts_count, cutScheme.cuts.size),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
@@ -408,7 +412,7 @@ fun SubjectDetailScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Cerrar ${cutDisplayName(summary.cut)}", fontWeight = FontWeight.ExtraBold)
+                                Text(stringResource(R.string.subject_close_cut, cutDisplayName(summary.cut)), fontWeight = FontWeight.ExtraBold)
                             }
                         }
                     }
@@ -417,7 +421,7 @@ fun SubjectDetailScreen(
             if (completedCutSummaries.isNotEmpty()) {
                 item {
                     Text(
-                        "Completados",
+                        stringResource(R.string.subject_completed_cuts),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
@@ -449,7 +453,7 @@ fun SubjectDetailScreen(
                                 modifier = Modifier.align(Alignment.End)
                             ) {
                                 Text(
-                                    "Reabrir",
+                                    stringResource(R.string.subject_reopen_cut),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold
@@ -515,9 +519,9 @@ fun SubjectDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         when {
-                            addTarget != null -> "Agregar nota a ${cutDisplayName(addTarget)}"
-                            openCutSummaries.isEmpty() -> "Todos los cortes están completos"
-                            else -> "Elige un corte para agregar notas"
+                            addTarget != null -> stringResource(R.string.subject_add_grade_to, cutDisplayName(addTarget))
+                            openCutSummaries.isEmpty() -> stringResource(R.string.subject_all_cuts_completed)
+                            else -> stringResource(R.string.subject_choose_cut_for_grades)
                         },
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -531,8 +535,8 @@ fun SubjectDetailScreen(
     if (showDeleteSubjectDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteSubjectDialog = false },
-            title = { Text("¿Eliminar materia?", color = MaterialTheme.colorScheme.onSurface) },
-            text = { Text("También se eliminarán sus cortes y notas.", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            title = { Text(stringResource(R.string.subject_delete_title), color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text(stringResource(R.string.subject_delete_message), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -540,12 +544,12 @@ fun SubjectDetailScreen(
                         if (viewModel.deleteSubject(subject.id)) onSubjectDeleted()
                     }
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteSubjectDialog = false }) {
-                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -639,7 +643,7 @@ fun SubjectCutDetailScreen(
             item {
                 CutHeader(
                     title = cutDisplayName(cut),
-                    subtitle = "${subject.name}  ·  ${formatPercent(cut.weight * 100)}% de la materia",
+                    subtitle = stringResource(R.string.subject_cut_weight_of_subject, subject.name, formatPercent(cut.weight * 100)),
                     onBackClick = onBackClick
                 )
             }
@@ -657,7 +661,7 @@ fun SubjectCutDetailScreen(
             } else {
                 item {
                     Text(
-                        "Notas del corte",
+                        stringResource(R.string.subject_cut_grades),
                         color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.ExtraBold
@@ -729,7 +733,7 @@ fun SubjectCutDetailScreen(
                 Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    "Agregar nota a ${cutDisplayName(cut)}",
+                    stringResource(R.string.subject_add_grade_to, cutDisplayName(cut)),
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onPrimary
@@ -742,8 +746,8 @@ fun SubjectCutDetailScreen(
     gradeIdPendingDelete?.let { gradeId ->
         AlertDialog(
             onDismissRequest = { gradeIdPendingDelete = null },
-            title = { Text("¿Eliminar nota?", color = MaterialTheme.colorScheme.onSurface) },
-            text = { Text("Esta acción no se puede deshacer.", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            title = { Text(stringResource(R.string.subject_delete_grade_title), color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text(stringResource(R.string.subject_delete_grade_message), color = MaterialTheme.colorScheme.onSurfaceVariant) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -751,12 +755,12 @@ fun SubjectCutDetailScreen(
                         gradeIdPendingDelete = null
                     }
                 ) {
-                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { gradeIdPendingDelete = null }) {
-                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
@@ -795,7 +799,7 @@ private fun MissingSubjectState(onBackClick: () -> Unit, modifier: Modifier = Mo
             .padding(20.dp)
     ) {
         UniBackButton(onClick = onBackClick)
-        Text("Materia no encontrada", color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.subject_not_found), color = MaterialTheme.colorScheme.onSurface, fontSize = 18.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -868,7 +872,7 @@ private fun SubjectHeader(
             ) {
                 Icon(
                     Icons.Rounded.MoreVert,
-                    contentDescription = "Opciones de materia",
+                    contentDescription = stringResource(R.string.subject_options),
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -878,18 +882,18 @@ private fun SubjectHeader(
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar materia", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.subject_edit), color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = onEditClick
                 )
                 DropdownMenuItem(
-                    text = { Text("Nueva nota", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.subject_new_grade), color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = { Icon(Icons.Rounded.EditNote, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = onNewNoteClick
                 )
                 onCompleteHistoryClick?.let { action ->
                     DropdownMenuItem(
-                        text = { Text("Completar historial", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.subject_complete_history), color = MaterialTheme.colorScheme.onSurface) },
                         leadingIcon = {
                             Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = LocalSectionColors.current.atRisk)
                         },
@@ -900,7 +904,7 @@ private fun SubjectHeader(
                 // las opciones que solo abren otra pantalla.
                 UniDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
-                    text = { Text("Eliminar materia", color = MaterialTheme.colorScheme.error) },
+                    text = { Text(stringResource(R.string.subject_delete), color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     onClick = onDeleteClick
                 )
@@ -923,7 +927,7 @@ private fun CutHeader(title: String, subtitle: String, onBackClick: () -> Unit) 
         ) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Volver",
+                contentDescription = stringResource(R.string.action_back),
                 tint = MaterialTheme.colorScheme.onSurface
             )
         }
@@ -1011,7 +1015,7 @@ private fun CutChooser(
 ) {
     if (cuts.isEmpty()) {
         Text(
-            "Todos los cortes están completos.",
+            stringResource(R.string.subject_all_cuts_completed_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp
         )
@@ -1019,14 +1023,14 @@ private fun CutChooser(
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            if (chosenCutId == null) "¿En qué corte vas?" else "Las notas nuevas entran en",
+            if (chosenCutId == null) stringResource(R.string.subject_which_cut_prompt) else stringResource(R.string.subject_new_grades_enter_in),
             color = if (chosenCutId == null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = if (chosenCutId == null) 15.sp else 13.sp,
             fontWeight = if (chosenCutId == null) FontWeight.ExtraBold else FontWeight.SemiBold
         )
         if (chosenCutId == null) {
             Text(
-                "Elígelo para saber dónde entran tus notas y qué cortes ya pasaron.",
+                stringResource(R.string.subject_choose_cut_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp,
                 lineHeight = 17.sp
@@ -1084,14 +1088,14 @@ private fun SubjectOverviewCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        (if (calculation.isFinished) "Nota final" else "Promedio de lo evaluado")
+                        (if (calculation.isFinished) stringResource(R.string.subject_final_grade) else stringResource(R.string.subject_evaluated_average))
                             .uppercase(Locale.forLanguageTag("es")),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = SectionLabelStyle
                     )
                     if (average == null) {
                         Text(
-                            "Sin evaluar",
+                            stringResource(R.string.subject_unevaluated),
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             style = MaterialTheme.typography.headlineSmallEmphasized
                         )
@@ -1154,7 +1158,7 @@ private fun SubjectOverviewCard(
             when {
                 floor == null || ceiling == null -> {
                     Text(
-                        "Registra tu primera nota para saber entre qué notas puedes acabar.",
+                        stringResource(R.string.subject_first_grade_prompt),
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
@@ -1162,7 +1166,7 @@ private fun SubjectOverviewCard(
                 }
                 calculation.isFinished -> {
                     Text(
-                        "Ya no queda nada por evaluar: esta es la nota definitiva.",
+                        stringResource(R.string.subject_nothing_left_to_evaluate),
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
@@ -1171,7 +1175,7 @@ private fun SubjectOverviewCard(
                 else -> {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            "Dónde puedes acabar",
+                            stringResource(R.string.subject_where_you_can_end),
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
@@ -1186,9 +1190,9 @@ private fun SubjectOverviewCard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            RangeLegend("Mínimo", GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
-                            RangeLegend("Meta", GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onPrimaryContainer)
-                            RangeLegend("Máximo", GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
+                            RangeLegend(stringResource(R.string.subject_stat_minimum), GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
+                            RangeLegend(stringResource(R.string.subject_stat_target), GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onPrimaryContainer)
+                            RangeLegend(stringResource(R.string.subject_stat_maximum), GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
                         }
                     }
                 }
@@ -1271,7 +1275,7 @@ private fun EvaluationValue(evaluated: Double) {
             fontWeight = FontWeight.ExtraBold
         )
         Text(
-            "evaluado",
+            stringResource(R.string.subject_evaluated_label),
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium
@@ -1336,21 +1340,21 @@ private fun SubjectMetricsBandContent(
             icon = Icons.Rounded.CheckCircle,
             iconColor = passingTone,
             value = passingGrade,
-            label = "Aprobación"
+            label = stringResource(R.string.subject_approval)
         )
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Flag,
             iconColor = targetTone,
             value = targetGrade,
-            label = "Objetivo"
+            label = stringResource(R.string.subject_target)
         )
         MetricCard(
             modifier = Modifier.weight(1f),
             icon = Icons.Rounded.Percent,
             iconColor = MaterialTheme.colorScheme.tertiary,
             value = remainingPercentage,
-            label = "Por evaluar"
+            label = stringResource(R.string.subject_to_evaluate)
         )
     }
 }
@@ -1374,28 +1378,49 @@ private fun SubjectInsightCard(
         TargetOutlook.UNREACHABLE -> MaterialTheme.colorScheme.error
     }
 
-    val annotatedText = remember(calculation, targetGrade, maxGrade, scale, tone) {
-        val target = GradingScaleUtils.formatGrade(targetGrade, scale)
+    val target = GradingScaleUtils.formatGrade(targetGrade, scale)
+    val maxGradeFormatted = GradingScaleUtils.formatGrade(maxGrade, scale)
+    val remainingPct = formatPercent(calculation.remainingSemesterFraction * 100)
+    val insightsPrompt = stringResource(R.string.subject_insights_prompt)
+    val closedWithPrefix = stringResource(R.string.subject_closed_with_prefix)
+    val goalMetSuffix = stringResource(R.string.subject_goal_met_suffix, target)
+    val goalSecuredPrefix = stringResource(R.string.subject_goal_secured_prefix)
+    val goalSecuredMid = stringResource(R.string.subject_goal_secured_mid)
+    val onTrackPrefix = stringResource(R.string.subject_on_track_prefix, target)
+    val inRemainingPct = stringResource(R.string.subject_in_remaining_pct, remainingPct)
+    val toStayThere = stringResource(R.string.subject_to_stay_there)
+    val atRiskPrefix = stringResource(R.string.subject_at_risk_prefix)
+    val toReachGoal = stringResource(R.string.subject_to_reach_goal, target)
+    val closedBelowGoal = stringResource(R.string.subject_closed_below_goal, target)
+    val unreachablePrefix = stringResource(R.string.subject_unreachable_prefix, target)
+    val unreachableMid = stringResource(R.string.subject_unreachable_mid, maxGradeFormatted)
+
+    val annotatedText = remember(
+        calculation, targetGrade, maxGrade, scale, tone,
+        insightsPrompt, closedWithPrefix, goalMetSuffix, goalSecuredPrefix,
+        goalSecuredMid, onTrackPrefix, inRemainingPct, toStayThere,
+        atRiskPrefix, toReachGoal, closedBelowGoal, unreachablePrefix, unreachableMid
+    ) {
         val bold = SpanStyle(color = tone, fontWeight = FontWeight.Bold)
         buildAnnotatedString {
             when (calculation.outlook) {
                 TargetOutlook.NO_DATA ->
-                    append("Registra notas en los cortes para saber qué te hace falta para tu meta.")
+                    append(insightsPrompt)
 
                 TargetOutlook.SECURED -> {
                     // Con la materia cerrada, el mensaje habla en pasado. Antes «lo que falta
                     // para la meta» era null tanto sin notas como con todo evaluado, así que
                     // una materia terminada pedía registrar notas.
                     if (calculation.isFinished) {
-                        append("Materia cerrada con ")
+                        append(closedWithPrefix)
                         withStyle(bold) {
                             append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
                         }
-                        append(": cumpliste tu meta de $target.")
+                        append(goalMetSuffix)
                     } else {
-                        append("Tu meta de ")
+                        append(goalSecuredPrefix)
                         withStyle(bold) { append(target) }
-                        append(" ya está asegurada: aunque saques 0 en todo lo que falta, terminas con ")
+                        append(goalSecuredMid)
                         withStyle(bold) {
                             append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
                         }
@@ -1404,36 +1429,35 @@ private fun SubjectInsightCard(
                 }
 
                 TargetOutlook.ON_TRACK -> {
-                    append("Vas por encima de tu meta de $target. Te basta con ")
+                    append(onTrackPrefix)
                     withStyle(bold) {
                         append(GradingScaleUtils.formatGrade(calculation.neededForTarget, scale))
                     }
-                    append(" en el ")
-                    append("${formatPercent(calculation.remainingSemesterFraction * 100)}% que falta por evaluar")
-                    append(" para no bajar de ahí.")
+                    append(inRemainingPct)
+                    append(toStayThere)
                 }
 
                 TargetOutlook.AT_RISK -> {
-                    append("Necesitas ")
+                    append(atRiskPrefix)
                     withStyle(bold) {
                         append(GradingScaleUtils.formatGrade(calculation.neededForTarget, scale))
                     }
                     // «en los cortes restantes» era inexacto: lo que falta suele ser parte de
                     // un corte ya empezado, no cortes enteros.
-                    append(" en el ${formatPercent(calculation.remainingSemesterFraction * 100)}% que falta por evaluar")
-                    append(" para llegar a tu meta de $target.")
+                    append(inRemainingPct)
+                    append(toReachGoal)
                 }
 
                 TargetOutlook.UNREACHABLE -> {
                     if (calculation.isFinished) {
-                        append("Materia cerrada con ")
+                        append(closedWithPrefix)
                         withStyle(bold) {
                             append(GradingScaleUtils.formatGrade(calculation.guaranteedMinimum, scale))
                         }
-                        append(", por debajo de tu meta de $target.")
+                        append(closedBelowGoal)
                     } else {
-                        append("Tu meta de $target ya no es alcanzable: aun sacando ")
-                        append("${GradingScaleUtils.formatGrade(maxGrade, scale)} en todo lo que falta, terminarías con ")
+                        append(unreachablePrefix)
+                        append(unreachableMid)
                         withStyle(bold) {
                             append(GradingScaleUtils.formatGrade(calculation.bestPossible, scale))
                         }
@@ -1546,15 +1570,15 @@ private fun CutCard(
                             // que importa ahora mismo— no se podía saber si estaba pendiente,
                             // en curso o completado.
                             if (needsHistory) {
-                                CustomStatusBadge("Completar historial", LocalSectionColors.current.atRisk)
+                                CustomStatusBadge(stringResource(R.string.subject_complete_history), LocalSectionColors.current.atRisk)
                             } else {
                                 StatusBadge(status = summary.status)
                             }
                         }
                         Text(
                             buildString {
-                                append("${formatPercent(summary.cut.weight * 100)}% de la materia")
-                                if (isActive) append("  ·  Corte actual")
+                                append(stringResource(R.string.subject_weight_of_subject_simple, formatPercent(summary.cut.weight * 100)))
+                                if (isActive) append(stringResource(R.string.subject_current_cut_badge))
                             },
                             color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp,
@@ -1564,7 +1588,7 @@ private fun CutCard(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (summary.average == null) {
                             Text(
-                                "Sin evaluar",
+                                stringResource(R.string.subject_unevaluated),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 18.sp,
                                 lineHeight = 28.sp,
@@ -1591,7 +1615,7 @@ private fun CutCard(
                             }
                         }
                         Text(
-                            "${formatPercent(summary.evaluated)}% evaluado",
+                            stringResource(R.string.subject_percent_evaluated, formatPercent(summary.evaluated)),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
@@ -1671,7 +1695,7 @@ private fun CutSummaryCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        "NOTA DEL CORTE",
+                        stringResource(R.string.subject_cut_grade_header),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = SectionLabelStyle
                     )
@@ -1680,7 +1704,7 @@ private fun CutSummaryCard(
                         // estado: una mancha ámbar del tamaño de una nota, que se leía como un
                         // valor y no como una ausencia.
                         Text(
-                            "Sin evaluar",
+                            stringResource(R.string.subject_unevaluated),
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             style = MaterialTheme.typography.headlineSmallEmphasized
                         )
@@ -1714,11 +1738,11 @@ private fun CutSummaryCard(
                 val remaining = (100.0 - summary.evaluated).coerceAtLeast(0.0)
                 Text(
                     buildString {
-                        append("${formatPercent(summary.evaluated)}% evaluado")
+                        append(stringResource(R.string.subject_percent_evaluated, formatPercent(summary.evaluated)))
                         append("  ·  ")
                         append(gradeCountLabel(summary.grades.size))
                         if (remaining > 0.05) {
-                            append("  ·  queda ${formatPercent(remaining)}% por repartir")
+                            append(stringResource(R.string.subject_remaining_to_distribute, formatPercent(remaining)))
                         }
                     },
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.80f),
@@ -1787,7 +1811,7 @@ private fun GradeRowItem(
         Box {
             UniIconButton(
                 icon = Icons.Rounded.MoreVert,
-                contentDescription = "Opciones de nota",
+                contentDescription = stringResource(R.string.subject_grade_options),
                 onClick = { showMenu = true }
             )
             UniDropdownMenu(
@@ -1796,13 +1820,13 @@ private fun GradeRowItem(
                 modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Editar", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.action_edit), color = MaterialTheme.colorScheme.onSurface) },
                     leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                     onClick = { showMenu = false; onEditClick() }
                 )
                 UniDivider(Modifier.padding(vertical = 4.dp))
                 DropdownMenuItem(
-                    text = { Text("Eliminar", color = MaterialTheme.colorScheme.error) },
+                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
                     leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
                     onClick = { showMenu = false; onDeleteClick() }
                 )
@@ -1812,11 +1836,12 @@ private fun GradeRowItem(
 }
 
 
+@Composable
 private fun GradeItem.contextLabel(): String {
     return when {
-        source == GradeSource.PERIOD_FINAL -> "Nota oficial del corte"
-        weightStatus == GradeWeightStatus.UNKNOWN -> "Peso pendiente por definir"
-        else -> "${formatPercent(percentage * 100)}% del corte"
+        source == GradeSource.PERIOD_FINAL -> stringResource(R.string.subject_official_cut_grade)
+        weightStatus == GradeWeightStatus.UNKNOWN -> stringResource(R.string.subject_weight_pending)
+        else -> stringResource(R.string.subject_weight_of_cut, formatPercent(percentage * 100))
     }
 }
 
@@ -1845,9 +1870,9 @@ private fun EmptyCutNotesInline() {
                 modifier = Modifier.size(24.dp)
             )
         }
-        Text("Aún no hay notas", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        Text(stringResource(R.string.subject_no_grades_yet_title), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         Text(
-            "Agrega una actividad para calcular este corte.",
+            stringResource(R.string.subject_no_grades_yet_desc),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
@@ -1859,14 +1884,15 @@ private fun EmptyCutNotesInline() {
 
 @Composable
 private fun StatusBadge(status: CutStatus) {
+    val statusColor = status.color
     Box(
         modifier = Modifier
-            .background(status.color, MaterialTheme.shapes.extraSmall)
+            .background(statusColor, MaterialTheme.shapes.extraSmall)
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         Text(
             status.label.uppercase(Locale.forLanguageTag("es")),
-            color = contentColorOn(status.color),
+            color = contentColorOn(statusColor),
             style = SectionLabelStyle.copy(fontSize = 9.sp, lineHeight = 12.sp, letterSpacing = 0.5.sp)
         )
     }
@@ -1896,10 +1922,13 @@ private data class CutSummary(
     val status: CutStatus
 )
 
-private enum class CutStatus(val label: String) {
-    COMPLETED("Completado"),
-    IN_PROGRESS("En curso"),
-    PENDING("Pendiente")
+private enum class CutStatus(@StringRes val labelRes: Int) {
+    COMPLETED(R.string.subject_status_completed),
+    IN_PROGRESS(R.string.subject_status_ongoing),
+    PENDING(R.string.subject_status_pending);
+
+    val label: String
+        @Composable get() = stringResource(labelRes)
 }
 
 private val CutStatus.color: Color
@@ -1934,9 +1963,13 @@ private fun GradingCut.toSummary(grades: List<GradeItem>): CutSummary {
     )
 }
 
-private fun cutDisplayName(cut: GradingCut): String = "Corte ${cut.order}"
+@Composable
+private fun cutDisplayName(cut: GradingCut): String =
+    cut.name.takeIf { it.isNotBlank() } ?: stringResource(R.string.subject_cut_order, cut.order)
 
-private fun gradeCountLabel(count: Int): String = "$count ${if (count == 1) "nota" else "notas"}"
+@Composable
+private fun gradeCountLabel(count: Int): String =
+    if (count == 1) stringResource(R.string.subject_grade_count_single) else stringResource(R.string.subject_grade_count_multiple, count)
 
 private fun formatPercent(value: Double): String = String.format(Locale.US, "%.0f", value)
 

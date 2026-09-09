@@ -24,12 +24,15 @@ import androidx.compose.runtime.getValue
  * superior que en el gesto del sistema, que es lo que hace que las dos puertas se comporten
  * igual. Sin cambios pendientes no pregunta nada y sale directo.
  */
+import androidx.compose.ui.res.stringResource
+import com.unistack.app.R
+
 @Composable
 fun rememberLeaveGuard(
     hasUnsavedChanges: Boolean,
     onLeave: () -> Unit,
-    title: String = "¿Salir sin guardar?",
-    message: String = "Lo que escribiste se va a perder."
+    title: String = stringResource(R.string.dialog_leave_title),
+    message: String = stringResource(R.string.dialog_leave_message)
 ): () -> Unit {
     var asking by remember { mutableStateOf(false) }
     val currentHasChanges by rememberUpdatedState(hasUnsavedChanges)
@@ -65,11 +68,11 @@ fun rememberLeaveGuard(
                         currentOnLeave()
                     }
                 ) {
-                    Text("Salir", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.dialog_leave_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { asking = false }) { Text("Seguir aquí") }
+                TextButton(onClick = { asking = false }) { Text(stringResource(R.string.dialog_leave_dismiss)) }
             },
             containerColor = MaterialTheme.colorScheme.background
         )
