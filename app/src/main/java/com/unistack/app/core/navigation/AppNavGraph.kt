@@ -75,6 +75,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.unistack.app.core.di.rememberUniStackEntryPoint
 import com.unistack.app.core.utils.BuildStage
+import com.unistack.app.feature_support.presentation.BancoDePruebas
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.motionActual
@@ -1075,6 +1076,21 @@ fun MainNavGraph(
                 )
             }
         }
+
+        /*
+         * **El banco de pruebas, encima de todo.**
+         *
+         * Va aqui y no dentro de una pantalla porque el problema que resuelve es justo tener
+         * que navegar: deja la app en el estado que hace falta mirar sin salir de donde estas.
+         * Solo aparece en dev, alpha y beta —lo decide el propio componente—, asi que en una
+         * version publicada esta linea no pinta nada.
+         */
+        BancoDePruebas(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 14.dp, bottom = 14.dp),
+            onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) }
+        )
         }
     }
 }

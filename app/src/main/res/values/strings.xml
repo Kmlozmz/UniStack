@@ -2017,4 +2017,8 @@ a tu medida</string>
     <string name="setup_term_month_december">diciembre</string>
     <string name="setup_term_choose">Elegir</string>
     <string name="expenses_over_budget_banner">Te pasaste del presupuesto de este mes.</string>
+    <string name="catch_up_unmarked_chip">Sin marcar</string>
+    <string name="expenses_budget_over">Te pasaste</string>
+    <string name="schedule_overlap_one">Dos clases se pisan este día</string>
+    <string name="schedule_overlap_many">Hay %1$d cruces de horario este día</string>
 </resources>

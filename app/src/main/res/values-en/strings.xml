@@ -2018,4 +2018,8 @@ your course catalog.</string>
     <string name="setup_term_month_december">December</string>
     <string name="setup_term_choose">Choose</string>
     <string name="expenses_over_budget_banner">You have gone over the budget for this month.</string>
+    <string name="catch_up_unmarked_chip">Unmarked</string>
+    <string name="expenses_budget_over">Over budget</string>
+    <string name="schedule_overlap_one">Two classes overlap on this day</string>
+    <string name="schedule_overlap_many">There are %1$d schedule clashes on this day</string>
 </resources>

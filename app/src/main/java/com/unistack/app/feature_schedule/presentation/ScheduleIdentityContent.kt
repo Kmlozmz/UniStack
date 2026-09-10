@@ -53,6 +53,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material.icons.rounded.EventAvailable
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -66,6 +67,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import com.unistack.app.core.design.components.PildoraEnCurso
+import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.claseEnCurso
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1065,6 +1067,31 @@ private fun WeekDayClassList(
         }
         val verde = LocalSectionColors.current.onTrack
 
+        /*
+         * **Dos clases a la misma hora es un dato malo, no una opinion.**
+         *
+         * La app las dejaba entrar sin decir nada y despues las pintaba una encima de otra
+         * en la cuadricula, que es donde se descubria —si es que se descubria—. Un horario
+         * con un cruce hace mal las cuentas de las horas de la semana y programa dos avisos
+         * para el mismo minuto.
+         *
+         * No se impide guardarlo: a veces el cruce es real —una clase que se solapa diez
+         * minutos con otra— y quien lo sabe no necesita que la app le discuta. Se avisa y
+         * se deja arreglar.
+         */
+        val cruces = remember(daySessions) { crucesDelDia(daySessions) }
+        if (cruces.isNotEmpty()) {
+            AvisoDeCruce(
+                cuantos = cruces.size,
+                detalle = cruces.first().let { (a, b) ->
+                    val na = subjects.firstOrNull { it.id == a.subjectId }?.name.orEmpty()
+                    val nb = subjects.firstOrNull { it.id == b.subjectId }?.name.orEmpty()
+                    listOf(na, nb).filter { it.isNotBlank() }.joinToString(" · ")
+                },
+                onClick = { onSessionClick(selectedDate, cruces.first().first) }
+            )
+        }
+
         daySessions.forEach { session ->
             val subject = subjects.firstOrNull { it.id == session.subjectId }
             val detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
@@ -1087,8 +1114,17 @@ private fun WeekDayClassList(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    // La píldora solo cuando la clase está pasando: es un estado, no un adorno.
-                    if (enCurso) PildoraEnCurso()
+                    /*
+                     * La píldora **encima** del nombre y no delante de él.
+                     *
+                     * Compartiendo renglon con el nombre, entrar y salir de clase le
+                     * cambiaba el ancho disponible: el nombre se recolocaba solo, a mitad
+                     * de hora, sin que nadie hubiera tocado nada.
+                     */
+                    if (enCurso) {
+                        PildoraEnCurso()
+                        Spacer(Modifier.height(2.dp))
+                    }
                     Text(
                         text = subject?.name ?: "Clase",
                         color = MaterialTheme.colorScheme.onSurface,
@@ -1789,6 +1825,77 @@ private fun findUpcomingClass(
 /**
  * «Tienes N clases sin marcar», con el atajo para resolverlas juntas.
  */
+/**
+ * Los pares de clases que se pisan en un mismo dia.
+ *
+ * Dos tramos se cruzan si uno empieza antes de que el otro acabe: basta con ordenarlos por hora
+ * de inicio y mirar cada uno con el siguiente que le quede solapado. Se devuelven los pares y no
+ * un `true`, porque el aviso dice **cuales** son.
+ */
+private fun crucesDelDia(sesiones: List<ClassSession>): List<Pair<ClassSession, ClassSession>> {
+    val ordenadas = sesiones.sortedBy { it.startMinute }
+    val pares = mutableListOf<Pair<ClassSession, ClassSession>>()
+    for (i in ordenadas.indices) {
+        for (j in i + 1 until ordenadas.size) {
+            // Ordenadas por inicio: en cuanto una empieza despues del final de la de fuera,
+            // las siguientes tambien, y no hace falta seguir mirando.
+            if (ordenadas[j].startMinute >= ordenadas[i].endMinute) break
+            pares += ordenadas[i] to ordenadas[j]
+        }
+    }
+    return pares
+}
+
+/** El aviso de que hay clases pisandose, con el mismo aire que el de «sin marcar». */
+@Composable
+private fun AvisoDeCruce(cuantos: Int, detalle: String, onClick: () -> Unit) {
+    val rojo = MaterialTheme.colorScheme.error
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(rojo.copy(alpha = 0.12f))
+            .cleanClickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.WarningAmber,
+            contentDescription = null,
+            tint = rojo,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = if (cuantos == 1) {
+                    stringResource(R.string.schedule_overlap_one)
+                } else {
+                    stringResource(R.string.schedule_overlap_many, cuantos)
+                },
+                color = rojo,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+            if (detalle.isNotBlank()) {
+                Text(
+                    text = detalle,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
+    }
+}
+
 @Composable
 private fun CatchUpBanner(count: Int, onClick: () -> Unit) {
     /*

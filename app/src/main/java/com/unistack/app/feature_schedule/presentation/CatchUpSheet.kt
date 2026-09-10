@@ -27,6 +27,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -43,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import com.unistack.app.core.design.components.reacomodoDeLista
+import kotlinx.coroutines.launch
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.core.design.components.marcaDeAsistencia
 import com.unistack.app.feature_grades.domain.Subject
@@ -110,19 +115,49 @@ internal fun CatchUpSheet(
                 )
             }
 
+            /*
+             * **La fila se queda el tiempo que dura el gesto.**
+             *
+             * Aqui se pintaba `pending` directamente, y responder saca la clase de esa
+             * lista **en el mismo fotograma**: la fila desaparecia antes de que el gesto
+             * tuviera un pixel donde dibujarse. Estaba puesto y no se veia nunca, que es
+             * lo mismo que no estar.
+             *
+             * `mostradas` es lo que hay pintado ahora: entra lo que llega de `pending` y
+             * lo respondido se queda 520 ms mas —el gesto dura 250— antes de irse con la
+             * salida de la lista.
+             */
+            val mostradas = remember { mutableStateListOf<AttendanceHistoryEntry>() }
+            val respondidas = remember { mutableStateMapOf<String, ClassAttendanceStatus>() }
+            LaunchedEffect(pending) {
+                pending.forEachIndexed { i, e ->
+                    if (mostradas.none { claveDe(it) == claveDe(e) }) {
+                        mostradas.add(i.coerceAtMost(mostradas.size), e)
+                    }
+                }
+            }
+            val alcance = rememberCoroutineScope()
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(7.dp),
                 contentPadding = PaddingValues(bottom = 6.dp)
             ) {
-                items(pending, key = { "${it.session.id}:${it.date.toEpochDay()}" }) { entrada ->
+                items(mostradas.toList(), key = { claveDe(it) }) { entrada ->
                     val materia = subjects.firstOrNull { it.id == entrada.session.subjectId }
                     FilaPendiente(
                         modifier = reacomodoDeLista(),
                         entrada = entrada,
                         nombre = materia?.name ?: stringResource(R.string.schedule_detail_class),
+                        respuesta = respondidas[claveDe(entrada)],
                         onMark = { estado ->
                             haptics.performSafely(HapticFeedbackType.SegmentTick)
+                            respondidas[claveDe(entrada)] = estado
                             onMark(entrada, estado)
+                            alcance.launch {
+                                kotlinx.coroutines.delay(520)
+                                mostradas.removeAll { claveDe(it) == claveDe(entrada) }
+                                respondidas.remove(claveDe(entrada))
+                            }
                         }
                     )
                 }
@@ -131,90 +166,162 @@ internal fun CatchUpSheet(
     }
 }
 
+/** La clave de una clase de un dia: es lo que la distingue en la lista. */
+private fun claveDe(e: AttendanceHistoryEntry): String = "${e.session.id}:${e.date.toEpochDay()}"
+
+/**
+ * Una clase sin marcar, con la forma que la vista previa de Movimiento siempre dibujo.
+ *
+ * **Eran dos botones redondos a la derecha y nada mas.** El preview de «Marcar asistencia»
+ * lleva anos ensenando otra cosa: una fila con su rueda, su visto y una chapa que pasa de «Sin
+ * marcar» a «Asisti». Eso es lo que hay aqui ahora, asi que lo que se elige en Ajustes es lo
+ * que se ve al marcar.
+ *
+ * El gesto va en la rueda, que es la pieza que cambia de estado. Los dos botones de abajo son
+ * la respuesta; la rueda es lo que pasa cuando respondes.
+ */
 @Composable
 private fun FilaPendiente(
     entrada: AttendanceHistoryEntry,
     nombre: String,
+    respuesta: ClassAttendanceStatus?,
     onMark: (ClassAttendanceStatus) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    val verde = ScheduleAccent
+    val rojo = MaterialTheme.colorScheme.error
+    val asistio = respuesta == ClassAttendanceStatus.ATTENDED
+    val tono = if (asistio) verde else rojo
+
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 11.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = nombre,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
+                )
+                Text(
+                    text = entrada.date.format(DiaCorto),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
+                // La chapa dice el estado en palabras: la rueda sola no distingue «sin marcar»
+                // de «marcada hace un momento».
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(
+                            if (respuesta == null) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            } else {
+                                tono.copy(alpha = 0.22f)
+                            }
+                        )
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = when (respuesta) {
+                            ClassAttendanceStatus.ATTENDED -> stringResource(R.string.schedule_status_attended)
+                            ClassAttendanceStatus.ABSENT -> stringResource(R.string.schedule_status_absent)
+                            else -> stringResource(R.string.catch_up_unmarked_chip)
+                        },
+                        color = if (respuesta == null) MaterialTheme.colorScheme.onSurfaceVariant else tono,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            // La rueda: gris mientras no hay respuesta, y con el gesto encima al marcarla.
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (respuesta == null) {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+                        } else {
+                            tono
+                        }
+                    )
+                    .marcaDeAsistencia(marcada = respuesta != null, color = tono),
+                contentAlignment = Alignment.Center
+            ) {
+                if (respuesta != null) {
+                    Icon(
+                        imageVector = if (asistio) Icons.Rounded.Check else Icons.Rounded.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            BotonDeRespuesta(
+                icono = Icons.Rounded.Check,
+                texto = stringResource(R.string.schedule_status_attended),
+                tono = verde,
+                elegido = respuesta == ClassAttendanceStatus.ATTENDED,
+                modifier = Modifier.weight(1f),
+                onClick = { onMark(ClassAttendanceStatus.ATTENDED) }
+            )
+            BotonDeRespuesta(
+                icono = Icons.Rounded.Close,
+                texto = stringResource(R.string.schedule_status_absent),
+                tono = rojo,
+                elegido = respuesta == ClassAttendanceStatus.ABSENT,
+                modifier = Modifier.weight(1f),
+                onClick = { onMark(ClassAttendanceStatus.ABSENT) }
+            )
+        }
+    }
+}
+
+/** Una de las dos respuestas. Se apaga cuando la otra queda elegida. */
+@Composable
+private fun BotonDeRespuesta(
+    icono: androidx.compose.ui.graphics.vector.ImageVector,
+    texto: String,
+    tono: Color,
+    elegido: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(if (elegido) tono else tono.copy(alpha = 0.14f))
+            .clickable(onClick = onClick)
+            .padding(vertical = 9.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(
-                text = nombre,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1
-            )
-            Text(
-                text = entrada.date.format(DiaCorto),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp
-            )
-        }
-        /*
-         * **El gesto de «Marcar asistencia» vive aqui, y en las dos respuestas.**
-         *
-         * Estaba en el panel de la clase y no aqui, que es la pantalla que existe para
-         * marcar: quien venia con atraso —el caso para el que se hizo esto— no veia nada.
-         *
-         * Y solo animaba «Asisti». El argumento era que una falta no se celebra, pero
-         * marcarla tambien es cerrar el asunto: dejarla muda hacia que la mitad del flujo
-         * se sintiera a medio hacer. Cambia el color, no el movimiento.
-         */
-        var respuesta by remember(entrada.session.id, entrada.date) {
-            mutableStateOf<ClassAttendanceStatus?>(null)
-        }
-        Spacer(Modifier.width(10.dp))
-        BotonRedondo(
-            icono = Icons.Rounded.Check,
-            descripcion = stringResource(R.string.schedule_status_attended),
-            tono = ScheduleAccent,
-            marcado = respuesta == ClassAttendanceStatus.ATTENDED,
-            onClick = {
-                respuesta = ClassAttendanceStatus.ATTENDED
-                onMark(ClassAttendanceStatus.ATTENDED)
-            }
+        Icon(
+            imageVector = icono,
+            contentDescription = null,
+            tint = if (elegido) MaterialTheme.colorScheme.surface else tono,
+            modifier = Modifier.size(16.dp)
         )
-        Spacer(Modifier.width(7.dp))
-        BotonRedondo(
-            icono = Icons.Rounded.Close,
-            descripcion = stringResource(R.string.schedule_status_absent),
-            tono = MaterialTheme.colorScheme.error,
-            marcado = respuesta == ClassAttendanceStatus.ABSENT,
-            onClick = {
-                respuesta = ClassAttendanceStatus.ABSENT
-                onMark(ClassAttendanceStatus.ABSENT)
-            }
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = texto,
+            color = if (elegido) MaterialTheme.colorScheme.surface else tono,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
         )
     }
 }
 
-@Composable
-private fun BotonRedondo(
-    icono: androidx.compose.ui.graphics.vector.ImageVector,
-    descripcion: String,
-    tono: Color,
-    marcado: Boolean,
-    onClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .size(38.dp)
-            .clip(CircleShape)
-            .background(tono.copy(alpha = 0.18f))
-            .marcaDeAsistencia(marcada = marcado, color = tono)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icono, contentDescription = descripcion, tint = tono, modifier = Modifier.size(19.dp))
-    }
-}

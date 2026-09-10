@@ -941,8 +941,18 @@ private fun BudgetRow(
     modifier: Modifier = Modifier
 ) {
     val hasBudget = budget > 0
+    /*
+     * **Pasado, la fila entera va en rojo.**
+     *
+     * Se quedaba con el morado de Gastos y la barra verde mientras el contorno gritaba en
+     * rojo: la misma fila decia «vas bien» y «te pasaste» a la vez. Y el importe se
+     * recortaba en seco contra la barra, asi que solo se leia «Presupuesto:» y nada mas.
+     */
+    val pasado = hasBudget && progress >= 1f
+    val tono = if (pasado) LocalSectionColors.current.expenses else ExpensePurple
     BoxWithConstraints(modifier = modifier) {
-        val progressWidth = if (maxWidth < 300.dp) 58.dp else 96.dp
+        // Mas estrecha: el importe es lo que hay que leer, y la barra ya lo repite.
+        val progressWidth = if (maxWidth < 300.dp) 44.dp else 72.dp
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -952,8 +962,8 @@ private fun BudgetRow(
         ) {
             AccentCircleIcon(
                 icon = Icons.Rounded.TrackChanges,
-                iconColor = ExpensePurple,
-                backgroundColor = ExpensePurple.copy(alpha = 0.18f),
+                iconColor = tono,
+                backgroundColor = tono.copy(alpha = 0.18f),
                 size = 40.dp,
                 iconSize = 21.dp
             )
@@ -967,11 +977,17 @@ private fun BudgetRow(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    overflow = TextOverflow.Clip
+                    // Con puntos suspensivos y no cortado en seco: un importe partido a la
+                    // mitad se lee como un fallo de la app.
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = if (hasBudget) stringResource(R.string.expenses_budget_used, (progress * 100).roundToInt()) else stringResource(R.string.expenses_configure_budget),
-                    color = ExpensePurple,
+                    text = when {
+                        !hasBudget -> stringResource(R.string.expenses_configure_budget)
+                        pasado -> stringResource(R.string.expenses_budget_over)
+                        else -> stringResource(R.string.expenses_budget_used, (progress * 100).roundToInt())
+                    },
+                    color = tono,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -981,6 +997,7 @@ private fun BudgetRow(
             if (hasBudget) {
                 BudgetProgress(
                     progress = progress,
+                    color = tono,
                     modifier = Modifier.width(progressWidth)
                 )
             }
@@ -997,12 +1014,13 @@ private fun BudgetRow(
 @Composable
 private fun BudgetProgress(
     progress: Float,
+    color: Color,
     modifier: Modifier = Modifier
 ) {
     EvaluationBar(
         fraction = progress.toDouble(),
         modifier = modifier,
-        color = ExpensePurple,
+        color = color,
         trackColor = ExpenseTrack
     )
 }
