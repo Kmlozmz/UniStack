@@ -55,6 +55,7 @@ import androidx.compose.material3.toPath
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.SectionLabelStyle
 import com.unistack.app.core.utils.GradingScaleUtils
+import com.unistack.app.core.utils.GradeAlertLevel
 import com.unistack.app.core.utils.SubjectGradeCalculation
 import com.unistack.app.core.utils.TargetOutlook
 import com.unistack.app.feature_grades.domain.Subject
@@ -101,22 +102,40 @@ fun SubjectRow(
 ) {
     val sections = LocalSectionColors.current
     val accent = subjectAccent(subject)
-    val atRisk = calculation.outlook == TargetOutlook.AT_RISK ||
-        calculation.outlook == TargetOutlook.UNREACHABLE
+    /*
+     * **Ir corto no es perder la materia, y no se pinta igual.**
+     *
+     * Antes bastaba con no llegar a la meta para llevarse el ámbar y el rótulo «EN RIESGO»:
+     * con la meta en 4.0 y el aprobado en 3.0, un 3.9 se anunciaba como una materia que se
+     * está perdiendo. Alarmar por algo que no es una alarma gasta el aviso, y el día que la
+     * materia sí se pierde la fila se ve exactamente igual que las demás.
+     *
+     * Ahora son dos avisos distintos: ámbar para «vas por debajo de tu meta» y rojo —el de
+     * error, el mismo que en el resto de la app— solo cuando el aprobado está en juego.
+     */
+    val alerta = calculation.alertLevel
+    val critico = alerta == GradeAlertLevel.CRITICAL
+    val atRisk = alerta != GradeAlertLevel.NONE
 
-    // Marcada manda sobre «en riesgo»: mientras seleccionas, lo que importa es cuáles llevas
-    // marcadas, no cuál va mal. El aviso de riesgo vuelve al salir de la selección.
+    // Marcada manda sobre el aviso: mientras seleccionas, lo que importa es cuáles llevas
+    // marcadas, no cuál va mal. El aviso vuelve al salir de la selección.
     val container = when {
         selected -> MaterialTheme.colorScheme.secondaryContainer
+        critico -> MaterialTheme.colorScheme.errorContainer
         atRisk -> sections.atRiskContainer
         else -> MaterialTheme.colorScheme.surfaceContainerLow
     }
     val onContainer = when {
         selected -> MaterialTheme.colorScheme.onSecondaryContainer
+        critico -> MaterialTheme.colorScheme.onErrorContainer
         atRisk -> sections.onAtRiskContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
-    val support = if (atRisk) sections.onAtRiskContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val support = when {
+        critico -> MaterialTheme.colorScheme.onErrorContainer
+        atRisk -> sections.onAtRiskContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     /*
      * **Salir del rojo se ve pasar, con la variante elegida en Movimiento.**
@@ -130,7 +149,11 @@ fun SubjectRow(
      */
     val colorDelPronostico = colorDeRecuperacion(
         recuperada = !atRisk,
-        riesgo = sections.onAtRiskContainer,
+        // De dónde se vuelve: del rojo si el aprobado estaba en juego, del ámbar si solo
+        // faltaba la meta. El destino y el paso intermedio no cambian.
+        // `onErrorContainer` y no `error`: el rótulo va **encima** del contenedor rojo, y el
+        // rojo puro sobre él no se lee.
+        riesgo = if (critico) MaterialTheme.colorScheme.onErrorContainer else sections.onAtRiskContainer,
         aviso = sections.atRisk,
         alDia = sections.onTrack
     )
@@ -246,7 +269,7 @@ fun SubjectRow(
                 )
                 val showShapes = LocalAccessibilityPreferences.current.shapesBesidesColor
                 Text(
-                    text = outlookLabel(calculation.outlook, showShapes),
+                    text = outlookLabel(calculation.outlook, alerta, showShapes),
                     style = SectionLabelStyle,
                     color = colorDelPronostico
                 )
@@ -398,22 +421,36 @@ private fun progressState(
     }
 }
 
+/**
+ * El estado en una palabra.
+ *
+ * La palabra sale del pronóstico **y** de la gravedad: «EN RIESGO» y «PERDIDA» hablan del
+ * aprobado, así que se reservan para cuando el aprobado está en juego de verdad. Cuando lo
+ * único que falta es la meta que se puso el usuario, lo dice sin dramatismo —«BAJO META»,
+ * «FUERA DE ALCANCE»— porque eso es exactamente lo que pasa.
+ */
 @Composable
-private fun outlookLabel(outlook: TargetOutlook, showShapes: Boolean = false): String {
+private fun outlookLabel(
+    outlook: TargetOutlook,
+    alerta: GradeAlertLevel,
+    showShapes: Boolean = false
+): String {
     val prefix = if (showShapes) {
-        when (outlook) {
-            TargetOutlook.NO_DATA -> ""
-            TargetOutlook.SECURED, TargetOutlook.ON_TRACK -> "● "
-            TargetOutlook.AT_RISK -> "▲ "
-            TargetOutlook.UNREACHABLE -> "■ "
+        when (alerta) {
+            GradeAlertLevel.NONE -> if (outlook == TargetOutlook.NO_DATA) "" else "● "
+            GradeAlertLevel.BEHIND -> "▲ "
+            GradeAlertLevel.CRITICAL -> "■ "
         }
     } else ""
+    val critico = alerta == GradeAlertLevel.CRITICAL
     val label = when (outlook) {
         TargetOutlook.NO_DATA -> stringResource(R.string.outlook_no_data)
         TargetOutlook.SECURED -> stringResource(R.string.outlook_secured)
         TargetOutlook.ON_TRACK -> stringResource(R.string.outlook_on_track)
-        TargetOutlook.AT_RISK -> stringResource(R.string.outlook_at_risk)
-        TargetOutlook.UNREACHABLE -> stringResource(R.string.outlook_unreachable)
+        TargetOutlook.AT_RISK ->
+            if (critico) stringResource(R.string.outlook_at_risk) else stringResource(R.string.outlook_behind)
+        TargetOutlook.UNREACHABLE ->
+            if (critico) stringResource(R.string.outlook_failing) else stringResource(R.string.outlook_unreachable)
     }
     return "$prefix$label"
 }

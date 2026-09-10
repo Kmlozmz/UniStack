@@ -322,4 +322,108 @@ class GradeCalculatorTest {
         assertTrue(!calculation.isOverAllocated)
         assertEquals(0.75, calculation.allocatedFraction, 0.0001)
     }
+
+    @Test
+    fun `going short of the goal is not the same alarm as failing the subject`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+        )
+        // 78 de 100 con la meta en 80 y el aprobado en 60: va corto, no va perdiendo.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 78.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 80.0,
+            maxGrade = 100.0,
+            passingGrade = 60.0
+        )
+
+        assertEquals(TargetOutlook.AT_RISK, result.outlook)
+        assertEquals(GradeAlertLevel.BEHIND, result.alertLevel)
+    }
+
+    @Test
+    fun `being below the passing grade is critical, not just behind`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 80.0,
+            maxGrade = 100.0,
+            passingGrade = 60.0
+        )
+
+        assertEquals(GradeAlertLevel.CRITICAL, result.alertLevel)
+    }
+
+    @Test
+    fun `a subject that can no longer be passed is critical`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.80, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.20, order = 2)
+        )
+        // El techo ya no llega al aprobado, aunque quede un 20% del semestre por delante.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 50.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 80.0,
+            maxGrade = 100.0,
+            passingGrade = 70.0
+        )
+
+        // 40 + 0.20*100 = 60, por debajo del 70 con el que se aprueba.
+        assertEquals(60.0, result.bestPossible!!, 0.0001)
+        assertEquals(GradeAlertLevel.CRITICAL, result.alertLevel)
+    }
+
+    @Test
+    fun `without a passing grade the alert stays as strict as the goal`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 78.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(grades, cuts, targetAverage = 80.0, maxGrade = 100.0)
+
+        assertEquals(GradeAlertLevel.CRITICAL, result.alertLevel)
+    }
+
+    @Test
+    fun `a subject on track carries no alert at all`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+        )
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 90.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 80.0,
+            maxGrade = 100.0,
+            passingGrade = 60.0
+        )
+
+        assertEquals(GradeAlertLevel.NONE, result.alertLevel)
+    }
 }

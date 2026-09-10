@@ -98,7 +98,8 @@ fun SubjectStatsScreen(
         grades = subject.grades,
         cuts = cutScheme.cuts,
         targetAverage = subject.targetAverage,
-        maxGrade = maxGrade
+        maxGrade = maxGrade,
+        passingGrade = profile?.passingGrade
     )
     val cortes = cutScheme.cuts.sortedBy { it.order }
 

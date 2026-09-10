@@ -391,7 +391,8 @@ class GradesViewModel @Inject constructor(
             grades = subject.grades,
             cuts = subject.cutScheme.cuts,
             targetAverage = subject.targetAverage,
-            maxGrade = getMaxGrade()
+            maxGrade = getMaxGrade(),
+            passingGrade = userProfile.value?.passingGrade
         )
     }
 

@@ -65,7 +65,7 @@ import com.unistack.app.core.design.theme.CategoricalSubjectAccents
 import com.unistack.app.core.design.theme.anchoredButtonRoom
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.GradingScaleUtils
-import com.unistack.app.core.utils.TargetOutlook
+import com.unistack.app.core.utils.GradeAlertLevel
 import com.unistack.app.feature_user.domain.GradingScale
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_grades.domain.SubjectVisualType
@@ -157,8 +157,9 @@ fun GradesScreen(
             val calculation = calculations.getValue(subject)
             when (filter) {
                 SubjectFilter.ACTIVE -> !calculation.isFinished
-                SubjectFilter.AT_RISK -> calculation.outlook == TargetOutlook.AT_RISK ||
-                    calculation.outlook == TargetOutlook.UNREACHABLE
+                // El mismo conjunto de siempre, dicho por el aviso y no por el pronostico:
+                // asi el filtro y el rotulo de la fila no pueden acabar diciendo cosas distintas.
+                SubjectFilter.AT_RISK -> calculation.alertLevel != GradeAlertLevel.NONE
                 SubjectFilter.CLOSED -> calculation.isFinished
             }
         }.sortedBy { subject ->

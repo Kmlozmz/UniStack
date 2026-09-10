@@ -69,6 +69,25 @@ enum class TargetOutlook {
     UNREACHABLE
 }
 
+/**
+ * Cuánto de grave es ir por debajo de la meta, mirando la **nota de aprobación** y no solo la meta.
+ *
+ * [TargetOutlook] compara siempre contra la meta, que casi nadie pone en el aprobado raspado:
+ * con la meta en 4.0 y el aprobado en 3.0, un 3.9 salía como «en riesgo» igual que un 1.2. Las
+ * dos cosas no se parecen —una es ir algo corto, la otra es perder la materia— y decirlas con
+ * la misma palabra y el mismo rojo hace que el aviso deje de significar nada.
+ */
+enum class GradeAlertLevel {
+    /** Va bien: por encima de la meta, o todavía sin datos. */
+    NONE,
+
+    /** Por debajo de la meta, pero aprobando y con el aprobado a salvo. Es un aviso, no una alarma. */
+    BEHIND,
+
+    /** El aprobado está en juego: o ya se va por debajo de él, o ya no se alcanza. */
+    CRITICAL
+}
+
 data class SubjectGradeCalculation(
     /** Promedio de lo evaluado hasta ahora. No es una previsión del final. */
     val currentAverage: Double?,
@@ -86,7 +105,14 @@ data class SubjectGradeCalculation(
     val bestPossible: Double?,
     /** No queda nada por evaluar: el suelo y el techo son la misma nota, la definitiva. */
     val isFinished: Boolean,
-    val outlook: TargetOutlook
+    val outlook: TargetOutlook,
+    /**
+     * Qué tan grave es el estado, midiendo contra el aprobado.
+     *
+     * Sale de [TargetOutlook] y de la nota de aprobación: es lo que separa «voy corto para la
+     * meta» de «voy a perder la materia», que es lo que decide el color y la palabra en pantalla.
+     */
+    val alertLevel: GradeAlertLevel = GradeAlertLevel.NONE
 )
 
 object GradeCalculator {
@@ -196,7 +222,13 @@ object GradeCalculator {
         grades: List<GradeItem>,
         cuts: List<GradingCut>,
         targetAverage: Double,
-        maxGrade: Double
+        maxGrade: Double,
+        /**
+         * La nota con la que se aprueba. Sin ella no se puede distinguir ir corto de perder la
+         * materia, así que se cae a la meta y el aviso queda como estaba: todo lo que no llega
+         * a la meta es grave.
+         */
+        passingGrade: Double? = null
     ): SubjectGradeCalculation {
         val evaluated = evaluatedSemesterFraction(grades, cuts)
         val remaining = (1.0 - evaluated).coerceAtLeast(0.0)
@@ -218,6 +250,22 @@ object GradeCalculator {
             current != null && current >= targetAverage - 0.0001 -> TargetOutlook.ON_TRACK
             else -> TargetOutlook.AT_RISK
         }
+        /*
+         * El aviso se gradúa aquí, con el aprobado delante.
+         *
+         * Rojo cuando el aprobado está en juego —ya no se alcanza, o ahora mismo se va por
+         * debajo de él— y ámbar cuando lo único que falta es la meta. Es la diferencia entre
+         * «apura» y «esto se pierde», y es la que faltaba en la lista de materias.
+         */
+        val passing = passingGrade ?: targetAverage
+        val alertLevel = when {
+            outlook == TargetOutlook.NO_DATA ||
+                outlook == TargetOutlook.SECURED ||
+                outlook == TargetOutlook.ON_TRACK -> GradeAlertLevel.NONE
+            ceiling != null && ceiling < passing - 0.0001 -> GradeAlertLevel.CRITICAL
+            current != null && current < passing - 0.0001 -> GradeAlertLevel.CRITICAL
+            else -> GradeAlertLevel.BEHIND
+        }
         return SubjectGradeCalculation(
             currentAverage = current,
             confirmedWeightedPoints = weightedPoints,
@@ -230,7 +278,8 @@ object GradeCalculator {
             guaranteedMinimum = floor,
             bestPossible = ceiling,
             isFinished = remaining <= 0.0001,
-            outlook = outlook
+            outlook = outlook,
+            alertLevel = alertLevel
         )
     }
 

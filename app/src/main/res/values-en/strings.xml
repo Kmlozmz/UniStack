@@ -489,6 +489,8 @@
     <string name="outlook_secured">SECURED</string>
     <string name="outlook_on_track">ON TRACK</string>
     <string name="outlook_at_risk">AT RISK</string>
+    <string name="outlook_behind">BELOW GOAL</string>
+    <string name="outlook_failing">FAILING</string>
     <string name="outlook_unreachable">UNREACHABLE</string>
     <string name="subject_target_label">Goal %1$s</string>
     <string name="subject_semester_cuts">Semester cuts</string>
@@ -672,6 +674,7 @@
     <string name="grade_weight_remaining">%1$s%% remaining to distribute in %2$s.</string>
     <string name="grade_validation_error">Make sure grade is between 0 and %1$s and total weight does not exceed 100%% in %2$s.</string>
     <string name="grade_save_changes">Save changes</string>
+    <string name="grade_next_step">Next · name and type</string>
     <string name="grade_save_grade">Save grade</string>
     <string name="grade_complete_history_title">Complete your history when you can</string>
     <string name="grade_complete_history_desc">The grade is saved. Adding prior cuts will make your goals and projections more accurate.</string>

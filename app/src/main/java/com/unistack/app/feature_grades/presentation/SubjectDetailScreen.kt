@@ -272,12 +272,13 @@ fun SubjectDetailScreen(
     // corte apenas empezado con su peso completo— y lo necesario para la meta volvía a pasar
     // por el porcentaje ya redondeado. La tarjeta llegaba a enseñar dos cifras distintas
     // para lo mismo, una encima de la otra.
-    val calculation = remember(subject.grades, cutScheme, subject.targetAverage, maxGrade) {
+    val calculation = remember(subject.grades, cutScheme, subject.targetAverage, maxGrade, profile?.passingGrade) {
         GradeCalculator.calculateSubject(
             grades = subject.grades,
             cuts = cutScheme.cuts,
             targetAverage = subject.targetAverage,
-            maxGrade = maxGrade
+            maxGrade = maxGrade,
+            passingGrade = profile?.passingGrade
         )
     }
     val evaluatedSubjectPercentage = calculation.evaluatedSemesterFraction * 100.0
@@ -625,6 +626,26 @@ fun SubjectCutDetailScreen(
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
+    /*
+     * **El sello tambien se estampa aqui.**
+     *
+     * «Cerrar corte» esta en las dos pantallas, pero el gesto solo lo disparaba la materia:
+     * cerrando desde el detalle del corte —que es donde esta el boton que se ve al acabar de
+     * repartir el 100 %— la tarjeta se limitaba a cambiar de estado y no pasaba nada. El
+     * momento existia y quien lo provocaba no lo veia.
+     *
+     * Se dispara comparando con lo cerrado en la composicion anterior, igual que en la materia:
+     * entrando a un corte que ya estaba cerrado no hay nada que celebrar, porque no acaba de
+     * ocurrir.
+     */
+    val estaCerrado = cut.id in subject.closedCutIds
+    var cierreVisto by remember { mutableStateOf<Boolean?>(null) }
+    var sello by remember { mutableStateOf(false) }
+    LaunchedEffect(estaCerrado) {
+        if (cierreVisto == false && estaCerrado) sello = true
+        cierreVisto = estaCerrado
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -684,7 +705,11 @@ fun SubjectCutDetailScreen(
                     maxGrade = maxGrade,
                     scale = scale,
                     passingGrade = profile?.passingGrade ?: (maxGrade * 0.6),
-                    cerrado = cut.id in subject.closedCutIds,
+                    cerrado = estaCerrado,
+                    modifier = Modifier.selloDeCorte(
+                        disparado = sello,
+                        onTerminado = { sello = false }
+                    ),
                     onAgregar = { hojaDeNota = true },
                     onCerrar = { viewModel.setCutClosed(subject.id, cut.id, true) },
                     onReabrir = { viewModel.setCutClosed(subject.id, cut.id, false) },

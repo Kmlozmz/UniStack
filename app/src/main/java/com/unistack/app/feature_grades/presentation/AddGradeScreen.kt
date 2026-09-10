@@ -1001,9 +1001,28 @@ fun AddGradeScreen(
                     .bottomActionInsets()
                     .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
+            /*
+             * **En el primer paso el boton lleva al segundo, no a guardar.**
+             *
+             * El nombre de la actividad es obligatorio y vive en la segunda pestana, asi que
+             * desde la primera «Guardar nota» estaba siempre apagado: rellenabas la nota y el
+             * peso, ibas al boton grande —que es a donde va el pulgar— y no pasaba nada, sin
+             * decir por que. La pestana de arriba era el unico camino, y arriba no es donde se
+             * busca «lo siguiente».
+             *
+             * Editando no hay pasos y el boton guarda, como siempre.
+             */
+            val enPasoUno = !isEditing && paso == 1
+            val pasoUnoValido = subject != null && isGradeValid && isPercentageValid
+            val botonActivo = if (enPasoUno) pasoUnoValido else isValid
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
+                    if (enPasoUno) {
+                        paso = 2
+                        error = null
+                        return@Button
+                    }
                     val editingGradeId = gradeId
                     var shouldShowHistory = false
                     val saved = if (editingGradeId != null) {
@@ -1052,7 +1071,7 @@ fun AddGradeScreen(
                         error = validationErrorMsg
                     }
                 },
-                enabled = isValid,
+                enabled = botonActivo,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1065,10 +1084,14 @@ fun AddGradeScreen(
                     .height(56.dp)
             ) {
                 Text(
-                    text = if (isEditing) stringResource(R.string.grade_save_changes) else stringResource(R.string.grade_save_grade),
+                    text = when {
+                        enPasoUno -> stringResource(R.string.grade_next_step)
+                        isEditing -> stringResource(R.string.grade_save_changes)
+                        else -> stringResource(R.string.grade_save_grade)
+                    },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (botonActivo) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

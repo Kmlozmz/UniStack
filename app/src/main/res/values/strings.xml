@@ -489,6 +489,8 @@
     <string name="outlook_secured">ASEGURADA</string>
     <string name="outlook_on_track">AL DÍA</string>
     <string name="outlook_at_risk">EN RIESGO</string>
+    <string name="outlook_behind">BAJO META</string>
+    <string name="outlook_failing">PERDIDA</string>
     <string name="outlook_unreachable">FUERA DE ALCANCE</string>
     <string name="subject_target_label">Meta %1$s</string>
     <string name="subject_semester_cuts">Cortes del semestre</string>
@@ -672,6 +674,7 @@
     <string name="grade_weight_remaining">Queda %1$s%% por repartir en %2$s.</string>
     <string name="grade_validation_error">Revisa que la nota esté entre 0 y %1$s y que el peso acumulado no supere 100%% en %2$s.</string>
     <string name="grade_save_changes">Guardar cambios</string>
+    <string name="grade_next_step">Siguiente · nombre y tipo</string>
     <string name="grade_save_grade">Guardar nota</string>
     <string name="grade_complete_history_title">Completa tu historial cuando puedas</string>
     <string name="grade_complete_history_desc">La nota ya quedó guardada. Agregar los cortes anteriores hará más precisas tus metas y proyecciones.</string>

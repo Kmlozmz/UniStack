@@ -750,7 +750,8 @@ internal object HomeSummaryFactory {
                 grades = subject.grades,
                 cuts = subject.cutScheme.cuts,
                 targetAverage = subject.targetAverage,
-                maxGrade = maxGrade
+                maxGrade = maxGrade,
+                passingGrade = passingGrade
             )
             val average = calculation.currentAverage ?: return@mapNotNull null
             val remainingPercentage = calculation.remainingSemesterFraction
