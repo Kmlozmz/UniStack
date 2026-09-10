@@ -49,7 +49,7 @@ import com.unistack.app.R
 import com.unistack.app.core.design.components.reacomodoDeLista
 import kotlinx.coroutines.launch
 import com.unistack.app.core.utils.performSafely
-import com.unistack.app.core.design.components.marcaDeAsistencia
+import com.unistack.app.core.design.components.RuedaDeAsistencia
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -242,30 +242,12 @@ private fun FilaPendiente(
                 }
             }
             Spacer(Modifier.width(12.dp))
-            // La rueda: gris mientras no hay respuesta, y con el gesto encima al marcarla.
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (respuesta == null) {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
-                        } else {
-                            tono
-                        }
-                    )
-                    .marcaDeAsistencia(marcada = respuesta != null, color = tono),
-                contentAlignment = Alignment.Center
-            ) {
-                if (respuesta != null) {
-                    Icon(
-                        imageVector = if (asistio) Icons.Rounded.Check else Icons.Rounded.Close,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            // La rueda nace gris y el gesto la llena: verde sobre verde no se veia.
+            RuedaDeAsistencia(
+                marcada = respuesta != null,
+                color = tono,
+                icono = if (asistio) Icons.Rounded.Check else Icons.Rounded.Close
+            )
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

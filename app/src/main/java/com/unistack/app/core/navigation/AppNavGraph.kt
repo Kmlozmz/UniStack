@@ -1085,18 +1085,21 @@ fun MainNavGraph(
          * Solo aparece en dev, alpha y beta —lo decide el propio componente—, asi que en una
          * version publicada esta linea no pinta nada.
          */
-        BancoDePruebas(
+        /*
+         * La ventana se ancla abajo y ocupa el ancho; el boton, mientras esta cerrada, se
+         * queda en la esquina. Los dos por encima de la barra de navegacion: este `Box`
+         * ocupa la pantalla entera y pegados al borde quedaban debajo de ella.
+         */
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                // Por encima de la barra de abajo: este `Box` ocupa la pantalla entera,
-                // asi que pegado al borde el boton quedaba **debajo** de la barra y no se
-                // veia nunca.
-                .padding(
-                    start = 14.dp,
-                    bottom = contentPadding.calculateBottomPadding() + 14.dp
-                ),
-            onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) }
-        )
+                .padding(bottom = contentPadding.calculateBottomPadding() + 14.dp)
+        ) {
+            BancoDePruebas(
+                modifier = Modifier.padding(start = 14.dp),
+                onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) }
+            )
+        }
         }
     }
 }

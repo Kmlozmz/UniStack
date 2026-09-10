@@ -57,7 +57,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.barridoDeRecuperacion
-import com.unistack.app.core.design.components.SelloSuperpuesto
+import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniBackButton
@@ -455,7 +455,12 @@ fun SubjectDetailScreen(
                                 isActive = false,
                                 needsHistory = false,
                                 onClick = { onCutClick(subject.id, summary.cut.id) },
-                                dimmed = true
+                                dimmed = true,
+                                modifier = Modifier.selloDeCorte(
+                                    disparado = summary.cut.id == selloEn,
+                                    onTerminado = { selloEn = null },
+                                    cerrado = true
+                                )
                             )
                             // Reabrir tiene que existir y costar lo mismo que cerrar: si al
                             // cerrarlo ves que una nota estaba mal, el camino de vuelta no
@@ -477,9 +482,6 @@ fun SubjectDetailScreen(
             }
         }
 
-        // Cerrar un corte desde aqui sella igual que hacerlo desde dentro: es el mismo
-        // momento, y la pantalla desde la que se provoca no deberia cambiarlo.
-        SelloSuperpuesto(disparado = selloEn != null, onTerminado = { selloEn = null })
     }
 
     cortePorReabrir?.let { cutId ->
@@ -761,6 +763,11 @@ fun SubjectCutDetailScreen(
                     scale = scale,
                     passingGrade = profile?.passingGrade ?: (maxGrade * 0.6),
                     cerrado = estaCerrado,
+                    modifier = Modifier.selloDeCorte(
+                        disparado = sello,
+                        onTerminado = { sello = false },
+                        cerrado = estaCerrado
+                    ),
                     onAgregar = { hojaDeNota = true },
                     onCerrar = { confirmarCierre = true },
                     onReabrir = { confirmarReapertura = true },
@@ -770,14 +777,6 @@ fun SubjectCutDetailScreen(
             }
         }
 
-        /*
-         * **El sello se pinta sobre todo, no dentro de la tarjeta.**
-         *
-         * Cerrar un corte fija sus notas: es de las pocas cosas de la app que no se
-         * deshacen solas, y merece que la pantalla se pare a decirlo. Atenuando solo la
-         * tarjeta, el resto seguia encendido y el momento no llegaba a ninguna parte.
-         */
-        SelloSuperpuesto(disparado = sello, onTerminado = { sello = false })
     }
 
     if (confirmarCierre) {

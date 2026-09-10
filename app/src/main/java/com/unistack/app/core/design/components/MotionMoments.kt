@@ -60,7 +60,9 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -123,18 +125,42 @@ import kotlin.random.Random
  * día con la última pendiente.
  */
 @Composable
-fun Modifier.selloDeCorte(cerrado: Boolean): Modifier {
+fun Modifier.selloDeCorte(
+    disparado: Boolean,
+    onTerminado: () -> Unit,
+    /** Si el corte **esta** cerrado, no si acaba de cerrarse: eso decide la marca de agua. */
+    cerrado: Boolean = false
+): Modifier {
     val estilo = motionActual().cutSeal
-    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento() || !cerrado) return this
+    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
+        LaunchedEffect(disparado) { if (disparado) onTerminado() }
+        return this
+    }
 
     /*
-     * **Aqui solo queda la marca de agua.**
+     * **Sobre la tarjeta, no sobre la pantalla.**
      *
-     * El momento de cerrar se lo lleva [SelloSuperpuesto], que se pinta sobre la pantalla
-     * entera. Esto es lo que se queda despues: el corte cerrado sigue sellado mientras lo
-     * este, como el «PAGADO» de una factura.
+     * Estuvo un rato como capa a pantalla completa con el fondo atenuado, y ahi el sello
+     * salia y se iba sin dejar nada: un destello sobre un velo negro. Dentro de la tarjeta
+     * aterriza sobre lo que sella y se queda de marca de agua mientras el corte siga
+     * cerrado, que es lo que hace que el corte **se vea** cerrado al volver a entrar.
+     *
+     * De aquella vuelta se quedan los 2200 ms y la haptica: lo unico que sobraba era el
+     * velo.
      */
-    val avance = 0f
+    val haptica = LocalHapticFeedback.current
+    LaunchedEffect(disparado) {
+        if (disparado) haptica.performSafely(HapticFeedbackType.Confirm)
+    }
+
+    val avance by animateFloatAsState(
+        targetValue = if (disparado) 1f else 0f,
+        // La vuelta es un salto: animarla al reves repetiria la entrada hacia atras.
+        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 2200) else snap(),
+        label = "sello",
+        finishedListener = { if (it >= 1f) onTerminado() }
+    )
+    if (avance <= 0f && !cerrado) return this
 
     val medidor = rememberTextMeasurer()
     val leyenda = stringResource(R.string.subject_cut_seal)
@@ -556,91 +582,95 @@ fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
 }
 
 /**
- * El sello de cerrar un corte, sobre la pantalla entera.
+ * La rueda del visto al marcar asistencia, con la variante elegida.
  *
- * **Estaba dentro de la tarjeta y se le quedaba pequeno.** Cerrar un corte es de las pocas
- * cosas irreversibles de la app —las notas quedan fijadas— y merece que la pantalla se pare a
- * decirlo. Atenuar solo la tarjeta dejaba el resto de la pantalla como si no hubiera pasado
- * nada; atenuando todo, el sello es lo unico que queda encendido.
+ * **El gesto estaba puesto y no se veia, y el motivo era el color.** `marcaDeAsistencia` pinta
+ * con el color del estado, y la rueda ya tenia ese mismo color de fondo en cuanto quedaba
+ * marcada: verde sobre verde no es nada. Encima, «trazo» solo dibuja un contorno y «rebote»
+ * solo escala, asi que ninguno de los cuatro llegaba a cambiar un pixel visible.
  *
- * Dura 2200 ms y no 1200: era «todo muy rapido», y en un momento que ocurre tres veces por
- * semestre no hay prisa ninguna.
- *
- * Va con haptica: el cierre se confirma con el pulgar en la pantalla, asi que la mano esta ahi
- * para notarlo.
+ * Aqui la rueda **nace neutra** y es el gesto el que la llena de color, que es exactamente lo
+ * que la vista previa de Movimiento lleva dibujando desde siempre. La preferencia y lo que
+ * pasa al marcar son por fin la misma imagen.
  */
 @Composable
-fun SelloSuperpuesto(disparado: Boolean, onTerminado: () -> Unit) {
-    val estilo = motionActual().cutSeal
-    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
-        LaunchedEffect(disparado) { if (disparado) onTerminado() }
-        return
-    }
-
-    val haptica = LocalHapticFeedback.current
-    LaunchedEffect(disparado) {
-        if (disparado) haptica.performSafely(HapticFeedbackType.Confirm)
-    }
+fun RuedaDeAsistencia(
+    marcada: Boolean,
+    color: Color,
+    icono: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    val estilo = motionActual().attendance
+    val neutro = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f)
+    val encima = MaterialTheme.colorScheme.surface
 
     val avance by animateFloatAsState(
-        targetValue = if (disparado) 1f else 0f,
-        // La vuelta es un salto: animarla al reves repetiria la entrada hacia atras.
-        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 2200) else snap(),
-        label = "selloSuperpuesto",
-        finishedListener = { if (it >= 1f) onTerminado() }
+        targetValue = if (marcada) 1f else 0f,
+        animationSpec = if (estilo == AttendanceMotion.REBOTE) {
+            muelleDeMovimiento()
+        } else {
+            tweenDeMovimiento(baseMs = 250)
+        },
+        label = "rueda"
     )
-    if (avance <= 0f) return
-
-    val medidor = rememberTextMeasurer()
-    val leyenda = stringResource(R.string.subject_cut_seal)
-    val verde = Color(0xFF11C045)
-
-    // El velo entra, se queda y se va: el sello aterriza dentro de esa ventana.
-    val velo = when {
-        avance < 0.12f -> avance / 0.12f
-        avance > 0.82f -> 1f - (avance - 0.82f) / 0.18f
-        else -> 1f
-    }
-    val posado = (avance / 0.30f).coerceAtMost(1f)
-    val vida = if (avance < 0.80f) 1f else 1f - (avance - 0.80f) / 0.20f
+    val sinMovimiento = !hayMovimiento() || estilo == AttendanceMotion.NINGUNA
+    // Sin gesto, el color aparece de golpe: eso es lo que significa «Nada».
+    val p = if (sinMovimiento) (if (marcada) 1f else 0f) else avance
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(neutro)
             .drawWithContent {
-                drawContent()
-                drawRect(color = Color.Black.copy(alpha = 0.62f * velo))
+                val r = size.minDimension / 2f
                 val centro = Offset(size.width / 2f, size.height / 2f)
-                val ancho = minOf(size.width * 0.72f, size.height * 0.9f)
-                val alto = ancho * 0.30f
-                val escala = 1.6f - 0.6f * posado
-                val a = ancho * escala
-                val h = alto * escala
-                rotate(degrees = -14f, pivot = centro) {
-                    drawRoundRect(
-                        color = verde.copy(alpha = vida),
-                        topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
-                        size = Size(a, h),
-                        cornerRadius = CornerRadius(h * 0.26f, h * 0.26f),
-                        style = Stroke(h * 0.09f)
-                    )
-                    val tipo = TextStyle(
-                        color = verde.copy(alpha = vida),
-                        fontSize = (h * 0.40f).toSp(),
-                        fontWeight = FontWeight.ExtraBold,
-                        letterSpacing = (h * 0.07f).toSp()
-                    )
-                    val medida = medidor.measure(leyenda, tipo)
-                    drawText(
-                        textLayoutResult = medida,
-                        topLeft = Offset(
-                            centro.x - medida.size.width / 2f,
-                            centro.y - medida.size.height / 2f
+                when {
+                    p <= 0f -> Unit
+                    sinMovimiento || estilo == AttendanceMotion.TRAZO ->
+                        // Trazo deja la rueda tenue y dibuja el signo; el resto la llena.
+                        drawCircle(
+                            color = if (estilo == AttendanceMotion.TRAZO) color.copy(alpha = 0.22f) else color,
+                            radius = r,
+                            center = centro
                         )
-                    )
+                    // El relleno sube por dentro, como un vaso que se llena.
+                    estilo == AttendanceMotion.RELLENO -> clipRect(
+                        top = size.height - size.height * p
+                    ) { drawCircle(color = color, radius = r, center = centro) }
+                    // El rebote entra entera, con muelle.
+                    estilo == AttendanceMotion.REBOTE -> scale(p.coerceAtLeast(0.01f), pivot = centro) {
+                        drawCircle(color = color, radius = r, center = centro)
+                    }
+                    // El barrido la cruza de izquierda a derecha.
+                    estilo == AttendanceMotion.BARRIDO -> clipRect(right = size.width * p) {
+                        drawCircle(color = color, radius = r, center = centro)
+                    }
+                    else -> drawCircle(color = color, radius = r, center = centro)
                 }
-            }
-    )
+                // El contenido —el icono— por encima de todo lo pintado.
+                val visible = when (estilo) {
+                    AttendanceMotion.TRAZO -> p
+                    AttendanceMotion.BARRIDO -> if (p > 0.75f) 1f else 0f
+                    else -> if (p > 0.5f) 1f else 0f
+                }
+                if (visible > 0f) {
+                    scale(if (estilo == AttendanceMotion.REBOTE) p.coerceAtLeast(0.01f) else 1f, pivot = centro) {
+                        this@drawWithContent.drawContent()
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        if (p > 0f) {
+            Icon(
+                imageVector = icono,
+                contentDescription = null,
+                tint = if (estilo == AttendanceMotion.TRAZO) color else encima,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+    }
 }
 
 /**

@@ -877,7 +877,9 @@ class LocalReminderScheduler(private val context: Context) {
                     body = if (restantes <= 0) {
                         "Llevas $faltas de $tope. Habla con tu profesor si crees que hay un error."
                     } else {
-                        "Llevas $faltas de $tope. La siguiente ya no cabe."
+                        // «La siguiente ya no cabe» sonaba a error de formulario. Lo que
+                        // hay que decir es la consecuencia: una mas y pierdes la materia.
+                        "Llevas $faltas de $tope. Una mas y rompes tu tope de faltas."
                     },
                     targetRoute = AppRoutes.Calendar,
                     subText = "Asistencia",

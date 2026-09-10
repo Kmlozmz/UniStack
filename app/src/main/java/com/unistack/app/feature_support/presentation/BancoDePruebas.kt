@@ -4,29 +4,36 @@ package com.unistack.app.feature_support.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DragIndicator
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,189 +41,390 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.BuildConfig
 import com.unistack.app.core.utils.BuildStage
 import com.unistack.app.core.utils.performSafely
+import com.unistack.app.feature_user.domain.MotionCatalog
+import kotlin.math.roundToInt
 
 /**
- * El banco de pruebas: un botón que deja la app en el estado que hace falta mirar.
+ * El panel de taller: una ventana flotante con lo que hace falta para probar la app.
  *
- * **Probar una animación costaba más que escribirla.** Para ver el aviso de pasarse del
- * presupuesto había que ir a Gastos, abrir el presupuesto, poner una cifra, volver y registrar
- * gastos hasta cruzarla; para ver el barrido de recuperación, bajar una materia del aprobado y
- * subirla; para ver el aviso de cruce, inventarse dos clases a la misma hora. Y todo eso otra
- * vez cada vez que se toca una duración.
+ * **Probar una animación costaba más que escribirla.** Ver el aviso de pasarse del presupuesto
+ * pedía ir a Gastos, abrir el presupuesto, poner una cifra, volver y registrar gastos hasta
+ * cruzarla; cambiarle la variante pedía cuatro pantallas de ida y cuatro de vuelta. Y todo eso
+ * otra vez por cada duración que se toca.
  *
- * Va **sobre todas las pantallas** y no dentro de una: el problema era justo tener que
- * navegar. Y solo en dev, alpha y beta — en una versión publicada, un botón que fabrica clases
- * y gastos falsos no tiene nada que hacer.
+ * Es **una ventana y no una hoja** a propósito: una hoja tapa la pantalla que se está mirando,
+ * que es justo lo que aquí no puede pasar — se cambia una variante y se ve el efecto detrás,
+ * sin cerrar nada. Se arrastra por su cabecera para apartarla de lo que estorbe.
  *
- * Todo lo que crea lleva el prefijo `prueba-`, y «Recogerlo todo» se lo lleva sin tocar nada
- * de verdad.
+ * Solo en dev y alpha. La beta se reparte, y ahí una ventana que fabrica clases y gastos falsos
+ * no tiene nada que hacer.
  */
 @Composable
 fun BancoDePruebas(
     modifier: Modifier = Modifier,
     onAbrirMovimiento: () -> Unit
 ) {
-    /*
-     * **Dev y alpha, no beta.**
-     *
-     * `allowsUnfinished` incluye la beta, que es la que se reparte cuando se reparte: un
-     * boton que fabrica clases y gastos falsos no puede estar ahi. Esto es una herramienta
-     * de taller, no una funcion de la app.
-     */
     val etapa = BuildStage.of(BuildConfig.VERSION_NAME)
     if (etapa != BuildStage.DEV && etapa != BuildStage.ALPHA) return
 
     var abierto by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
 
-    Box(
-        modifier = modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.tertiaryContainer)
-            .clickable {
-                haptics.performSafely(HapticFeedbackType.SegmentTick)
-                abierto = true
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Science,
-            contentDescription = "Banco de pruebas",
-            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(21.dp)
-        )
-    }
-
-    if (abierto) {
-        val vm: BancoDePruebasViewModel = hiltViewModel()
-        val estado = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { abierto = false },
-            sheetState = estado,
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            shape = MaterialTheme.shapes.extraLarge
+    if (!abierto) {
+        Box(
+            modifier = modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.tertiaryContainer)
+                .clickable {
+                    haptics.performSafely(HapticFeedbackType.SegmentTick)
+                    abierto = true
+                },
+            contentAlignment = Alignment.Center
         ) {
-            LazyColumn(
+            Icon(
+                imageVector = Icons.Rounded.Science,
+                contentDescription = "Panel de pruebas",
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(21.dp)
+            )
+        }
+    } else {
+        VentanaDePruebas(onCerrar = { abierto = false }, onAbrirMovimiento = onAbrirMovimiento)
+    }
+}
+
+/** Las tres caras del panel. Son pocas a propósito: más pestañas es volver a navegar. */
+private enum class Cara(val rotulo: String) {
+    SIMULAR("Simular"),
+    MOVIMIENTO("Movimiento"),
+    ESTADO("Estado")
+}
+
+@Composable
+private fun VentanaDePruebas(onCerrar: () -> Unit, onAbrirMovimiento: () -> Unit) {
+    val vm: BancoDePruebasViewModel = hiltViewModel()
+    val haptics = LocalHapticFeedback.current
+    var cara by remember { mutableStateOf(Cara.SIMULAR) }
+    // Arrastrable: la ventana se aparta de lo que estorbe sin cerrarse.
+    var x by remember { mutableFloatStateOf(0f) }
+    var y by remember { mutableFloatStateOf(0f) }
+
+    Surface(
+        modifier = Modifier
+            .offset { IntOffset(x.roundToInt(), y.roundToInt()) }
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .heightIn(max = 540.dp),
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 6.dp,
+        shadowElevation = 18.dp
+    ) {
+        Column {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 20.dp),
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
+                    .pointerInput(Unit) {
+                        detectDragGestures { _, arrastre ->
+                            x += arrastre.x
+                            y += arrastre.y
+                        }
+                    }
+                    .padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Icon(
+                    imageVector = Icons.Rounded.DragIndicator,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Panel de pruebas",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .clickable { onCerrar() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = "Cerrar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Cara.entries.forEach { c ->
+                    val elegida = c == cara
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(if (c == Cara.SIMULAR) 999.dp else 10.dp))
+                            .background(
+                                if (elegida) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                            )
+                            .clickable {
+                                haptics.performSafely(HapticFeedbackType.SegmentTick)
+                                cara = c
+                            }
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            "Banco de pruebas",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Text(
-                            "Cada botón deja la app lista para mirar una cosa. " +
-                                "Todo lo que crea se recoge abajo.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
+                            c.rotulo,
+                            color = if (elegida) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
+            }
 
-                seccion("Horario")
-                palanca("Clase en curso ahora", "Una clase que cubre este minuto") { vm.claseEnCursoAhora() }
-                palanca("Cruzar dos horarios", "Dos clases pisándose hoy") { vm.cruceDeHorarios() }
-                palanca("Dejar 3 sin marcar", "Llena «Ponerse al día»") { vm.clasesSinMarcar() }
-
-                seccion("Gastos")
-                palanca("Pasarse del presupuesto", "Lo pone justo por debajo de lo gastado") { vm.presupuestoPasado() }
-                palanca("Presupuesto holgado", "La misma fila sin alarma") { vm.presupuestoHolgado() }
-                palanca("Registrar un gasto", "Para cruzarlo en vivo y ver el momento") { vm.gastoDePrueba() }
-                palanca("Quitar el presupuesto", "Vuelve a «Sin presupuesto»") { vm.sinPresupuesto() }
-
-                seccion("Académico")
-                palanca("Materia en rojo", "Por debajo del aprobado") { vm.materiaEnRojo() }
-                palanca("Recuperarla", "La sube y dispara el barrido") { vm.materiaRecuperada() }
-                palanca("Corte listo para cerrar", "Repartido al 100 %") { vm.corteListoParaCerrar() }
-
-                seccion("Ir a")
-                palanca("Ajustes de Movimiento", "Cambiar variantes sin buscarlas") {
-                    abierto = false
-                    onAbrirMovimiento()
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                when (cara) {
+                    Cara.SIMULAR -> caraSimular(vm, onAbrirMovimiento)
+                    Cara.MOVIMIENTO -> caraMovimiento(vm)
+                    Cara.ESTADO -> caraEstado(vm)
                 }
-
-                seccion("Al terminar")
-                palanca(
-                    "Recogerlo todo",
-                    "Se lleva lo del prefijo «prueba-» y nada más",
-                    peligro = true
-                ) { vm.recogerlo() }
             }
         }
     }
 }
 
-/** El rótulo de un grupo de palancas. */
+// ==================================================================== simular
+
+private fun LazyListScope.caraSimular(
+    vm: BancoDePruebasViewModel,
+    onAbrirMovimiento: () -> Unit
+) {
+    seccion("Horario")
+    palanca("Clase en curso ahora", "Una clase que cubre este minuto") { vm.claseEnCursoAhora() }
+    palanca("Cruzar dos horarios", "Dos clases pisándose hoy") { vm.cruceDeHorarios() }
+    palanca("Dejar 3 sin marcar", "Llena «Ponerse al día»") { vm.clasesSinMarcar() }
+    palanca("Deshacer lo de Horario", "Solo las clases fabricadas", suave = true) { vm.recogerHorario() }
+
+    seccion("Gastos")
+    palanca("Pasarse del presupuesto", "Lo pone justo por debajo de lo gastado") { vm.presupuestoPasado() }
+    palanca("Presupuesto holgado", "La misma fila sin alarma") { vm.presupuestoHolgado() }
+    palanca("Registrar un gasto", "Para cruzarlo en vivo y ver el momento") { vm.gastoDePrueba() }
+    palanca("Deshacer lo de Gastos", "Gastos falsos y presupuesto", suave = true) { vm.recogerGastos() }
+
+    seccion("Académico")
+    palanca("Materia en rojo", "Por debajo del aprobado") { vm.materiaEnRojo() }
+    palanca("Recuperarla", "La sube y dispara el barrido") { vm.materiaRecuperada() }
+    palanca("Corte listo para cerrar", "Repartido al 100 %") { vm.corteListoParaCerrar() }
+    palanca("Deshacer lo académico", "Solo las notas fabricadas", suave = true) { vm.recogerAcademico() }
+
+    seccion("Ir a")
+    palanca("Ajustes de Movimiento", "La pantalla entera, si hace falta") { onAbrirMovimiento() }
+}
+
+// ==================================================================== movimiento
+
+/**
+ * Los catorce gestos con sus variantes, cambiables sin salir de aquí.
+ *
+ * Se recorre [MotionCatalog] en vez de escribirlos a mano: un gesto que se añada mañana
+ * aparece solo, y uno que se retire desaparece. Es la misma lista que pinta Ajustes.
+ */
+private fun LazyListScope.caraMovimiento(vm: BancoDePruebasViewModel) {
+    item { Nota("Cambia una variante y míralo detrás: la ventana no tapa la pantalla.") }
+    MotionCatalog.grouped().forEach { (grupo, gestos) ->
+        seccion(grupo)
+        gestos.forEach { gesto ->
+            item {
+                val perfil by vm.perfil.collectAsState()
+                val puesta = perfil?.appearancePreferences?.motion?.let { gesto.read(it) }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        gesto.displayName,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Envueltas de dos en dos a mano: `FlowRow` pediría otra opt-in y aquí
+                    // ningún gesto pasa de siete variantes.
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        gesto.options.chunked(2).forEach { pareja ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                pareja.forEach { opcion ->
+                                    val activa = opcion.id == puesta?.id
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (activa) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.surfaceContainerHighest
+                                            )
+                                            .clickable { vm.ponVariante(gesto, opcion) }
+                                            .padding(horizontal = 12.dp, vertical = 7.dp)
+                                    ) {
+                                        Text(
+                                            opcion.label,
+                                            color = if (activa) MaterialTheme.colorScheme.onPrimary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    seccion("Deshacer")
+    palanca("Movimiento de fábrica", "Las catorce variantes a su valor original", suave = true) {
+        vm.movimientoDeFabrica()
+    }
+}
+
+// ==================================================================== estado
+
+private fun LazyListScope.caraEstado(vm: BancoDePruebasViewModel) {
+    item {
+        val (horario, academico, gastos) = vm.cuantasDePrueba()
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Nota(
+                "Lo que hay fabricado ahora mismo. Todo lleva el prefijo «prueba-», " +
+                    "así que se retira sin tocar nada tuyo."
+            )
+            Cuenta("Horario", horario, "clases")
+            Cuenta("Académico", academico, "notas")
+            Cuenta("Gastos", gastos, "gastos")
+        }
+    }
+    seccion("Deshacer")
+    palanca("Recogerlo todo", "Se lleva lo fabricado y el presupuesto de prueba", peligro = true) {
+        vm.recogerlo()
+    }
+}
+
+@Composable
+private fun Cuenta(sitio: String, cuantos: Int, que: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .padding(horizontal = 13.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            sitio,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            if (cuantos == 0) "limpio" else "$cuantos $que",
+            color = if (cuantos == 0) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.primary,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun Nota(texto: String) {
+    Text(
+        texto,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+        modifier = Modifier.padding(bottom = 4.dp)
+    )
+}
+
+// ==================================================================== piezas
+
 private fun LazyListScope.seccion(texto: String) {
     item {
         Text(
             text = texto.uppercase(),
             color = MaterialTheme.colorScheme.primary,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.12.sp,
-            modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
+            letterSpacing = 0.14.sp,
+            modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
         )
     }
 }
 
 /**
- * Una palanca: lo que hace arriba y por qué sirve abajo.
+ * Una palanca: lo que hace arriba y para qué sirve abajo.
  *
- * El subtítulo no es adorno — sin él hay que pulsar para saber qué hace cada uno, que es
- * exactamente el rato que este panel viene a ahorrar.
+ * El subtítulo no es adorno — sin él hay que pulsar para saber qué hace cada una, que es
+ * justo el rato que este panel viene a ahorrar.
  */
 private fun LazyListScope.palanca(
     titulo: String,
     detalle: String,
     peligro: Boolean = false,
+    suave: Boolean = false,
     onClick: () -> Unit
 ) {
     item {
         val haptics = LocalHapticFeedback.current
-        val tono = if (peligro) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-        Row(
+        val tono = when {
+            peligro -> MaterialTheme.colorScheme.error
+            suave -> MaterialTheme.colorScheme.onSurfaceVariant
+            else -> MaterialTheme.colorScheme.onSurface
+        }
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .clickable {
                     haptics.performSafely(HapticFeedbackType.Confirm)
                     onClick()
                 }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 13.dp, vertical = 11.dp)
         ) {
-            Column(Modifier.fillMaxWidth()) {
-                Text(
-                    titulo,
-                    color = tono,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    detalle,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            Text(titulo, color = tono, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(detalle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp)
         }
     }
 }

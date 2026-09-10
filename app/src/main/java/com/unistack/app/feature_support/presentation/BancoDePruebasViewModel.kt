@@ -9,6 +9,9 @@ import com.unistack.app.feature_grades.domain.GradeItem
 import com.unistack.app.feature_grades.domain.GradesRepository
 import com.unistack.app.feature_schedule.domain.ClassSession
 import com.unistack.app.feature_schedule.domain.ScheduleRepository
+import com.unistack.app.feature_user.domain.MotionChoice
+import com.unistack.app.feature_user.domain.MotionGesture
+import com.unistack.app.feature_user.domain.MotionPreferences
 import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -240,18 +243,85 @@ class BancoDePruebasViewModel @Inject constructor(
      * Es lo que hace que esto pueda vivir dentro de la app: el prefijo `prueba-` separa lo de
      * mentira de lo de verdad sin depender de acordarse de qué se pulsó.
      */
-    fun recogerlo() {
+    // ------------------------------------------------------------------ preferencias
+
+    /** El perfil vivo: el panel lee de aqui para pintar que variante esta puesta. */
+    val perfil = userRepository.userProfile
+
+    /**
+     * Cambia una variante de Movimiento sin salir de donde estas.
+     *
+     * Es lo mismo que hace la pantalla de Ajustes, y esta aqui para no tener que ir hasta
+     * ella y volver por cada prueba: entre mirar un gesto y cambiarle la variante habia
+     * cuatro pantallas de ida y cuatro de vuelta.
+     */
+    fun ponVariante(gesto: MotionGesture, opcion: MotionChoice) {
+        val p = userRepository.userProfile.value ?: return
+        val apariencia = p.appearancePreferences
+        userRepository.saveUserProfile(
+            p.copy(
+                appearancePreferences = apariencia.copy(
+                    motion = gesto.write(apariencia.motion, opcion)
+                ),
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    /** Todo el movimiento a sus valores de fabrica, sin tocar el resto del perfil. */
+    fun movimientoDeFabrica() {
+        val p = userRepository.userProfile.value ?: return
+        userRepository.saveUserProfile(
+            p.copy(
+                appearancePreferences = p.appearancePreferences.copy(
+                    motion = MotionPreferences.defaults()
+                ),
+                updatedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    // ------------------------------------------------------------------ deshacer
+
+    /**
+     * Cuantas cosas de mentira hay ahora mismo, por sitio.
+     *
+     * El panel lo enseña para que no haya que fiarse de la memoria: si dice «Horario 2», es
+     * que quedan dos clases fabricadas ahi.
+     */
+    fun cuantasDePrueba(): Triple<Int, Int, Int> = Triple(
+        scheduleRepository.sessions.value.count { it.id.startsWith(MARCA) },
+        gradesRepository.subjects.value.sumOf { m -> m.grades.count { it.id.startsWith(MARCA) } },
+        expensesRepository.expenses.value.count { it.id.startsWith(MARCA) }
+    )
+
+    /** Deshace solo lo de Horario. */
+    fun recogerHorario() {
         scheduleRepository.sessions.value
             .filter { it.id.startsWith(MARCA) }
             .forEach { scheduleRepository.deleteSession(it.id) }
+    }
+
+    /** Deshace solo lo academico. */
+    fun recogerAcademico() {
         gradesRepository.subjects.value.forEach { materia ->
             materia.grades.filter { it.id.startsWith(MARCA) }.forEach {
                 gradesRepository.deleteGrade(materia.id, it.id)
             }
         }
+    }
+
+    /** Deshace solo lo de Gastos, presupuesto incluido. */
+    fun recogerGastos() {
         expensesRepository.expenses.value
             .filter { it.id.startsWith(MARCA) }
             .forEach { expensesRepository.deleteExpense(it.id) }
         sinPresupuesto()
+    }
+
+    fun recogerlo() {
+        recogerHorario()
+        recogerAcademico()
+        recogerGastos()
     }
 }
