@@ -64,7 +64,15 @@ fun BancoDePruebas(
     modifier: Modifier = Modifier,
     onAbrirMovimiento: () -> Unit
 ) {
-    if (!BuildStage.of(BuildConfig.VERSION_NAME).allowsUnfinished) return
+    /*
+     * **Dev y alpha, no beta.**
+     *
+     * `allowsUnfinished` incluye la beta, que es la que se reparte cuando se reparte: un
+     * boton que fabrica clases y gastos falsos no puede estar ahi. Esto es una herramienta
+     * de taller, no una funcion de la app.
+     */
+    val etapa = BuildStage.of(BuildConfig.VERSION_NAME)
+    if (etapa != BuildStage.DEV && etapa != BuildStage.ALPHA) return
 
     var abierto by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current

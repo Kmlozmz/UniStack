@@ -372,7 +372,9 @@ fun SubjectFormScreen(
                     onDraftChange = {
                         scheduleDraft = it
                         error = null
-                    }
+                    },
+                    // Las de las demas materias: la propia no se cruza consigo misma.
+                    otrasClases = classSessions.filter { it.subjectId != subjectId }
                 )
             }
 

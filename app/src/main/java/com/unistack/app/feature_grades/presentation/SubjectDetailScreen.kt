@@ -58,7 +58,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.barridoDeRecuperacion
 import com.unistack.app.core.design.components.SelloSuperpuesto
-import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniBackButton
@@ -456,8 +455,7 @@ fun SubjectDetailScreen(
                                 isActive = false,
                                 needsHistory = false,
                                 onClick = { onCutClick(subject.id, summary.cut.id) },
-                                dimmed = true,
-                                modifier = Modifier.selloDeCorte(cerrado = true)
+                                dimmed = true
                             )
                             // Reabrir tiene que existir y costar lo mismo que cerrar: si al
                             // cerrarlo ves que una nota estaba mal, el camino de vuelta no
@@ -763,7 +761,6 @@ fun SubjectCutDetailScreen(
                     scale = scale,
                     passingGrade = profile?.passingGrade ?: (maxGrade * 0.6),
                     cerrado = estaCerrado,
-                    modifier = Modifier.selloDeCorte(cerrado = estaCerrado),
                     onAgregar = { hojaDeNota = true },
                     onCerrar = { confirmarCierre = true },
                     onReabrir = { confirmarReapertura = true },

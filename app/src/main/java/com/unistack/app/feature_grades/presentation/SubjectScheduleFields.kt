@@ -31,6 +31,13 @@ import com.unistack.app.feature_schedule.domain.SubjectScheduleDraft
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
@@ -43,11 +50,64 @@ import androidx.compose.runtime.getValue
  * icono y su encabezado, y por eso el formulario acababa siendo una pila de tarjetas grises
  * todas del mismo peso.
  */
+/**
+ * Cuantas clases ya guardadas se pisan con la que se esta escribiendo.
+ *
+ * Dos tramos se cruzan si comparten dia **y** uno empieza antes de que el otro acabe. Se
+ * cuentan y no se listan porque el aviso va debajo de los dias: lo que hace falta saber es que
+ * hay choque, y el horario de al lado ensena con cual.
+ */
+private fun crucesCon(draft: SubjectScheduleDraft, otras: List<ClassSession>): Int =
+    otras.count { otra ->
+        otra.daysOfWeek.any { it in draft.daysOfWeek } &&
+            draft.startMinute < otra.endMinute &&
+            otra.startMinute < draft.endMinute
+    }
+
+/** El aviso de choque, del color de error y con el mismo aire que el resto de avisos. */
+@Composable
+private fun AvisoDeCruce(cuantas: Int) {
+    val rojo = MaterialTheme.colorScheme.error
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(rojo.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.WarningAmber,
+            contentDescription = null,
+            tint = rojo,
+            modifier = Modifier.size(17.dp)
+        )
+        Spacer(Modifier.width(9.dp))
+        Text(
+            text = if (cuantas == 1) {
+                stringResource(R.string.schedule_overlap_one)
+            } else {
+                stringResource(R.string.schedule_overlap_many, cuantas)
+            },
+            color = rojo,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
 @Composable
 internal fun SubjectWhenFields(
     draft: SubjectScheduleDraft,
     onDraftChange: (SubjectScheduleDraft) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * Las clases que ya existen, para avisar si esta se pisa con alguna.
+     *
+     * Se pasan desde fuera y no se leen aqui: este fichero son campos, no una pantalla
+     * con acceso a datos, y meterle un repositorio lo convertiria en otra cosa.
+     */
+    otrasClases: List<ClassSession> = emptyList()
 ) {
     var startPickerVisible by remember { mutableStateOf(false) }
     var endPickerVisible by remember { mutableStateOf(false) }
@@ -55,8 +115,20 @@ internal fun SubjectWhenFields(
     // Una hora elegida de madrugada espera confirmación antes de aplicarse.
     var unusualStart by remember { mutableStateOf<Int?>(null) }
 
+    /*
+     * **El cruce se avisa aqui, mientras se elige la hora.**
+     *
+     * Estuvo en la lista del dia en Horario, y ahi llegaba tarde: el horario ya estaba
+     * guardado y el aviso se quedaba puesto todos los dias como un reproche. Donde sirve
+     * es aqui, con los dias y las horas delante y el dedo encima de ellas.
+     *
+     * Avisa y deja guardar: a veces el solape es real y quien lo escribe lo sabe.
+     */
+    val cruces = remember(draft, otrasClases) { crucesCon(draft, otrasClases) }
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ScheduleDays(draft, onDraftChange)
+        if (cruces > 0) AvisoDeCruce(cruces)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             SchedulePickerField(
                 modifier = Modifier.weight(1f),

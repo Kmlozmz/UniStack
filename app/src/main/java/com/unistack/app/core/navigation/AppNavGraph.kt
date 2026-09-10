@@ -1088,7 +1088,13 @@ fun MainNavGraph(
         BancoDePruebas(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 14.dp, bottom = 14.dp),
+                // Por encima de la barra de abajo: este `Box` ocupa la pantalla entera,
+                // asi que pegado al borde el boton quedaba **debajo** de la barra y no se
+                // veia nunca.
+                .padding(
+                    start = 14.dp,
+                    bottom = contentPadding.calculateBottomPadding() + 14.dp
+                ),
             onAbrirMovimiento = { navController.go(AppRoutes.MotionSettings) }
         )
         }

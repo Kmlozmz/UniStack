@@ -1067,31 +1067,6 @@ private fun WeekDayClassList(
         }
         val verde = LocalSectionColors.current.onTrack
 
-        /*
-         * **Dos clases a la misma hora es un dato malo, no una opinion.**
-         *
-         * La app las dejaba entrar sin decir nada y despues las pintaba una encima de otra
-         * en la cuadricula, que es donde se descubria —si es que se descubria—. Un horario
-         * con un cruce hace mal las cuentas de las horas de la semana y programa dos avisos
-         * para el mismo minuto.
-         *
-         * No se impide guardarlo: a veces el cruce es real —una clase que se solapa diez
-         * minutos con otra— y quien lo sabe no necesita que la app le discuta. Se avisa y
-         * se deja arreglar.
-         */
-        val cruces = remember(daySessions) { crucesDelDia(daySessions) }
-        if (cruces.isNotEmpty()) {
-            AvisoDeCruce(
-                cuantos = cruces.size,
-                detalle = cruces.first().let { (a, b) ->
-                    val na = subjects.firstOrNull { it.id == a.subjectId }?.name.orEmpty()
-                    val nb = subjects.firstOrNull { it.id == b.subjectId }?.name.orEmpty()
-                    listOf(na, nb).filter { it.isNotBlank() }.joinToString(" · ")
-                },
-                onClick = { onSessionClick(selectedDate, cruces.first().first) }
-            )
-        }
-
         daySessions.forEach { session ->
             val subject = subjects.firstOrNull { it.id == session.subjectId }
             val detail = formatIdentityMinute(session.startMinute, use24Hour) + " - " +
@@ -1114,17 +1089,6 @@ private fun WeekDayClassList(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    /*
-                     * La píldora **encima** del nombre y no delante de él.
-                     *
-                     * Compartiendo renglon con el nombre, entrar y salir de clase le
-                     * cambiaba el ancho disponible: el nombre se recolocaba solo, a mitad
-                     * de hora, sin que nadie hubiera tocado nada.
-                     */
-                    if (enCurso) {
-                        PildoraEnCurso()
-                        Spacer(Modifier.height(2.dp))
-                    }
                     Text(
                         text = subject?.name ?: "Clase",
                         color = MaterialTheme.colorScheme.onSurface,
@@ -1140,6 +1104,18 @@ private fun WeekDayClassList(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+                /*
+                 * **La píldora a la derecha, fuera de la columna del nombre.**
+                 *
+                 * Estuvo delante del nombre y despues encima, y las dos veces le cambiaba
+                 * el ancho al entrar y salir de clase: el titulo se recolocaba solo, a
+                 * mitad de hora, sin que nadie hubiera tocado nada. En su propia celda a
+                 * la derecha, el nombre mide siempre lo mismo.
+                 */
+                if (enCurso) {
+                    Spacer(Modifier.width(10.dp))
+                    PildoraEnCurso()
                 }
                 /*
                  * Como quedo la clase, en la propia fila.

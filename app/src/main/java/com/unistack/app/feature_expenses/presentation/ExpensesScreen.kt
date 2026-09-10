@@ -375,6 +375,19 @@ private fun ExpensesContent(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item { ExpensesHeader() }
+            /*
+             * «Aviso arriba» va **arriba de la pantalla**, no dentro de la tarjeta.
+             *
+             * Metido en la tarjeta quedaba pegado a la fila del presupuesto, que ya lleva
+             * su contorno rojo: dos avisos rojos apilados diciendo lo mismo, uno encima
+             * del otro. Aqui es lo primero que se ve al abrir Gastos, que es lo que su
+             * nombre promete.
+             */
+            item {
+                AvisoDePresupuestoArriba(
+                    pasado = budget > 0 && budgetSpent >= budget
+                )
+            }
             item {
                 ExpensesHeroCard(
                     selectedPeriod = selectedPeriod,
@@ -604,9 +617,6 @@ private fun ExpensesHeroCard(
              * porque un aviso de dinero que se apaga solo deja de avisar justo cuando mas
              * falta hace.
              */
-            // «Aviso arriba» no cabe en un modificador: es una franja propia, no un efecto
-            // sobre la fila. Se pinta encima y solo si esa es la variante elegida.
-            AvisoDePresupuestoArriba(pasado = budget > 0 && budgetProgress >= 1f)
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
