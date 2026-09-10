@@ -93,19 +93,17 @@ class MotionCatalogTest {
     /**
      * El recuento, fijado a proposito.
      *
-     * Es lo que dice el subtitulo de la pantalla —«25 gestos · 130 variantes»— y lo que se
-     * enseno para aprobar el diseno. Si alguien quita un gesto sin querer, aqui salta; si lo
-     * anade queriendo, cambia el numero y ya.
+     * Es lo que dice el subtitulo de la pantalla de Movimiento. Si alguien quita un gesto sin
+     * querer, aqui salta; si lo anade queriendo, cambia el numero y ya.
      *
-     * Las ciento treinta salen de las ciento once del diseno mas las quince de los cuatro
-     * ajustes base —velocidad, rebote, al pulsar y carga— y las cuatro de la vibracion, que
-     * alli iban aparte y aqui son gestos como los demas.
+     * Bajo de 102 a 101 al retirarse «Doble linea» del tachado, que se quito a proposito por
+     * no distinguirse de la linea normal.
      */
     @Test
-    fun `el catalogo cubre los dieciocho gestos y las ciento dos variantes`() {
+    fun `el catalogo cubre los dieciocho gestos y las ciento una variantes`() {
         assertEquals(18, MotionCatalog.gestures.size)
         assertEquals(0, MotionCatalog.toggles.size)
-        assertEquals(102, MotionCatalog.variantCount)
+        assertEquals(101, MotionCatalog.variantCount)
     }
 
     @Test

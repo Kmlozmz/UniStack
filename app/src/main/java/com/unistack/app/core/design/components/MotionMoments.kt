@@ -637,9 +637,6 @@ fun Modifier.botonQueSeRecoge(recogido: Boolean): Modifier {
             scaleX = 1f - 0.28f * avance
             scaleY = 1f - 0.28f * avance
         }
-        // Baja lo suyo y algo mas: tiene que salirse de la pantalla, no quedarse a medias.
-        FabScrollMotion.BAJA -> this.graphicsLayer { translationY = 190f * avance }
-        FabScrollMotion.DESVANECE -> this.graphicsLayer { alpha = 1f - avance }
         FabScrollMotion.FIJO -> this
     }
 }
@@ -790,45 +787,69 @@ fun Modifier.promedioQueSube(promedio: Double?): Modifier {
 
     var anterior by remember { mutableStateOf(promedio) }
     var subio by remember { mutableStateOf(false) }
+    /*
+     * **Bajar tambien es una noticia.**
+     *
+     * Solo se animaba la subida, asi que una nota mala dejaba la cifra cambiando en silencio:
+     * justo el caso en el que mas falta hace enterarse. Ahora el gesto tiene sentido en los dos
+     * sentidos —arriba y verde, abajo y rojo— y el unico caso sin animacion es el que de
+     * verdad no es noticia, que es que no haya cambiado.
+     */
+    var bajo by remember { mutableStateOf(false) }
     LaunchedEffect(promedio) {
         // Solo si hay un valor previo distinto: al abrir la pantalla no hay «antes» con el que
-        // comparar, y animar ahi seria inventarse una mejora.
+        // comparar, y animar ahi seria inventarse un cambio.
         if (promedio > anterior) {
             subio = true
             kotlinx.coroutines.delay(900)
             subio = false
+        } else if (promedio < anterior) {
+            bajo = true
+            kotlinx.coroutines.delay(900)
+            bajo = false
         }
         anterior = promedio
     }
 
     val avance by animateFloatAsState(
-        targetValue = if (subio) 1f else 0f,
+        targetValue = if (subio || bajo) 1f else 0f,
         animationSpec = tweenDeMovimiento(baseMs = 420),
-        label = "sube"
+        label = "cambia"
     )
     val pico = abs(sin(avance * PI.toFloat()))
     if (pico <= 0.01f) return this
 
+    /** Hacia donde va: +1 sube, -1 baja. */
+    val sentido = if (bajo) -1f else 1f
+    val tinte = if (bajo) Color(0xFFE0342A) else Color(0xFF11C045)
+
     return when (estilo) {
-        GradeUpMotion.SALTO -> this.graphicsLayer { translationY = -14f * pico }
+        GradeUpMotion.SALTO -> this.graphicsLayer { translationY = -14f * pico * sentido }
         GradeUpMotion.FLECHA -> this.drawWithContent {
             drawContent()
-            // Una flecha que sube y se apaga, a la derecha de la cifra.
-            val x = size.width + 10f
-            val y = size.height / 2f - 16f * pico
+            /*
+             * La flecha va **dentro** de la caja, pegada al borde derecho.
+             *
+             * Estaba en `size.width + 10f`, o sea fuera del propio texto: la recortaba la
+             * tarjeta que lo contiene y no se veia nunca. Aqui cabe siempre, porque la cifra
+             * de un promedio nunca llena su linea hasta el borde.
+             */
+            val x = size.width - 8f
+            val medio = size.height / 2f
+            val y = medio - 16f * pico * sentido
             drawPath(
                 androidx.compose.ui.graphics.Path().apply {
-                    moveTo(x, y - 7f)
-                    lineTo(x - 6f, y + 4f)
-                    lineTo(x + 6f, y + 4f)
+                    moveTo(x, y - 7f * sentido)
+                    lineTo(x - 6f, y + 4f * sentido)
+                    lineTo(x + 6f, y + 4f * sentido)
                     close()
                 },
-                Color(0xFF11C045).copy(alpha = pico)
+                tinte.copy(alpha = pico)
             )
         }
         GradeUpMotion.BRILLO -> this.drawBehind {
             drawCircle(
-                color = Color(0xFF11C045).copy(alpha = 0.30f * pico),
+                color = tinte.copy(alpha = 0.30f * pico),
                 radius = size.maxDimension * (0.5f + 0.4f * pico)
             )
         }

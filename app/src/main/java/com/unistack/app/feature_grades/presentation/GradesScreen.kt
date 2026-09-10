@@ -3,6 +3,7 @@
 package com.unistack.app.feature_grades.presentation
 
 import androidx.compose.ui.platform.LocalHapticFeedback
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.entradaDeLista
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.runtime.LaunchedEffect
@@ -218,7 +219,7 @@ fun GradesScreen(
             } else {
                 itemsIndexed(visible, key = { _, it -> it.id }) { indice, subject ->
                     SubjectRow(
-                        modifier = Modifier
+                        modifier = reacomodoDeLista()
                             .entradaDeLista(indice)
                             .uniReorderableItem(reorder, subject.id),
                         // El asa solo con la selección abierta.

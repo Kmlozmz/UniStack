@@ -2,6 +2,7 @@
 
 package com.unistack.app.feature_expenses.presentation
 
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.avisoDePresupuesto
 import com.unistack.app.core.design.components.UniDivider
@@ -1701,11 +1702,13 @@ private fun ExpenseDayGroup(
 private fun ExpenseRow(
     expense: Expense,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     FilaDeslizable(
         onBorrar = onDeleteClick,
-        containerColor = ExpenseCard
+        containerColor = ExpenseCard,
+        modifier = modifier
     ) {
         FilaDeGasto(expense = expense, onEditClick = onEditClick, onDeleteClick = onDeleteClick)
     }
@@ -2147,6 +2150,7 @@ private fun ExpensesContent(
             }
             items(expenses, key = { it.id }) { expense ->
                 ExpenseRow(
+                    modifier = reacomodoDeLista(),
                     expense = expense,
                     onEditClick = { onEditExpenseClick(expense.id) },
                     onDeleteClick = { onDeleteExpenseClick(expense.id) }

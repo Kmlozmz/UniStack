@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
@@ -111,6 +112,7 @@ internal fun CatchUpSheet(
                 items(pending, key = { "${it.session.id}:${it.date.toEpochDay()}" }) { entrada ->
                     val materia = subjects.firstOrNull { it.id == entrada.session.subjectId }
                     FilaPendiente(
+                        modifier = reacomodoDeLista(),
                         entrada = entrada,
                         nombre = materia?.name ?: stringResource(R.string.schedule_detail_class),
                         onMark = { estado ->
@@ -128,10 +130,11 @@ internal fun CatchUpSheet(
 private fun FilaPendiente(
     entrada: AttendanceHistoryEntry,
     nombre: String,
-    onMark: (ClassAttendanceStatus) -> Unit
+    onMark: (ClassAttendanceStatus) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)

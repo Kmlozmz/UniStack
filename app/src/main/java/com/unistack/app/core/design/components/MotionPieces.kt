@@ -2,7 +2,7 @@
 
 package com.unistack.app.core.design.components
 
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridItemScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -30,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -37,6 +40,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.duracion
 import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
@@ -116,44 +120,135 @@ fun Modifier.entradaDeLista(indice: Int): Modifier {
 }
 
 /**
+ * Cómo se recoloca una fila cuando otra se va.
+ *
+ * **Es la otra mitad de [entradaDeLista], que hasta ahora no existía.** Toda lista de la app
+ * tenía una entrada cuidada y después nada: borrabas una tarea y las cinco de abajo saltaban
+ * a su nuevo sitio en el mismo fotograma, la fila borrada desaparecía sin irse, y quien
+ * marcaba una casilla veía media pantalla cambiar de golpe. Justo el corte que se notó en
+ * Académico, pero repetido en Tareas, Gastos, Notas, Materias y Plantillas.
+ *
+ * Se pone en la fila, dentro del `items` de la lista, y hace falta que la lista tenga `key`:
+ * sin clave no hay forma de saber que la fila tercera de ahora es la cuarta de antes.
+ *
+ * La entrada la sigue poniendo [entradaDeLista], así que aquí no se pide ninguna —dos
+ * animaciones de aparición a la vez se pelean—; lo que se añade es la salida y el
+ * desplazamiento de las vecinas.
+ */
+@Composable
+fun LazyItemScope.reacomodoDeLista(): Modifier {
+    if (!hayMovimiento()) return Modifier
+    return Modifier.animateItem(
+        fadeInSpec = null,
+        placementSpec = tweenDeMovimiento(340),
+        fadeOutSpec = tweenDeMovimiento(180)
+    )
+}
+
+/** La misma pieza para el mosaico de Notas, que es una rejilla y no una lista. */
+@Composable
+fun LazyStaggeredGridItemScope.reacomodoDeLista(): Modifier {
+    if (!hayMovimiento()) return Modifier
+    return Modifier.animateItem(
+        fadeInSpec = null,
+        placementSpec = tweenDeMovimiento(340),
+        fadeOutSpec = tweenDeMovimiento(180)
+    )
+}
+
+/**
  * El latido de lo que lleva días vencido.
  *
- * Cinco variantes que van de no moverse a marcar dos golpes secos con pausa larga; el pulso
- * continuo cansa en una lista con seis tareas atrasadas, y el tic no.
+ * Cuatro variantes, mas la de no moverse, que se distinguen por **qué** se mueve y no por a
+ * qué ritmo: la fila entera, su opacidad, un cerco que sale de ella o solo la franja roja del
+ * borde.
+ *
+ * Cada una lleva además su propio compás, el del prototipo, y no uno compartido. Un cerco que
+ * crece se lee de un vistazo y puede ir más rápido; una opacidad que baja necesita más tiempo
+ * o parece un parpadeo. Con los cuatro a la misma velocidad, dos de ellos quedaban mal.
  */
 @Composable
 fun Modifier.latidoDeVencido(activo: Boolean): Modifier {
     val estilo = motionActual().overdueBeat
     if (!activo || estilo == OverdueBeat.NINGUNA || !hayMovimiento()) return this
 
+    val periodo = when (estilo) {
+        OverdueBeat.PULSO -> 1900
+        OverdueBeat.RESPIRA -> 2400
+        OverdueBeat.HALO -> 1800
+        OverdueBeat.FRANJA -> 1700
+        OverdueBeat.NINGUNA -> 2000
+    }
+    /*
+     * **Un solo valor de ida y vuelta, no una rampa con senos encima.**
+     *
+     * Antes el ciclo subía de 0 a 1 en línea recta y cada variante le aplicaba su propio seno
+     * para volver: cuatro fórmulas distintas para el mismo vaivén, y ninguna con la curva
+     * suave de los extremos. Con `Reverse` el valor va y vuelve solo, con la misma curva que
+     * el resto de la app, y lo que queda en cada variante es únicamente qué pinta.
+     */
     val transicion = rememberInfiniteTransition(label = "vencido")
-    val ciclo by transicion.animateFloat(
+    val onda by transicion.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(duracion(2200), easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(
+            tween(duracion(periodo), easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
         label = "vencido"
     )
+    // El rojo de la app, que cambia con el tema. Antes era el rojo puro del sistema: el mismo
+    // #FF0000 en claro y en oscuro, y en oscuro chillaba al lado de todo lo demás.
+    val rojo = LocalSectionColors.current.expenses
 
     return when (estilo) {
-        OverdueBeat.PULSO -> this.scale(1f + 0.03f * abs(sin(ciclo * Math.PI.toFloat())))
-        OverdueBeat.RESPIRA -> this.alpha(0.68f + 0.32f * (0.5f + 0.5f * sin(ciclo * 2f * Math.PI.toFloat())))
-        OverdueBeat.BORDE -> this.drawWithContent {
+        OverdueBeat.PULSO -> this.scale(1f + 0.028f * onda)
+        OverdueBeat.RESPIRA -> this.alpha(1f - 0.38f * onda)
+        /*
+         * **Un cerco que sale de la fila, no un contorno pegado a ella.**
+         *
+         * Tenía dos aros: uno fuera y otro de 2 píxeles justo en el borde, que es exactamente
+         * el contorno que esta variante no quiere ser. Y medía en píxeles crudos, así que en un
+         * móvil de 3x el halo entero ocupaba dos décimas de milímetro y no se veía.
+         *
+         * Ahora es un solo anillo que crece de 0 a 3 dp hacia fuera mientras aparece: lo mismo
+         * que hacía la sombra del prototipo, medido en dp y con el rojo del tema.
+         */
+        OverdueBeat.HALO -> this.drawWithContent {
             drawContent()
-            drawRoundRect(
-                color = Color.Red.copy(alpha = 0.35f + 0.45f * abs(sin(ciclo * Math.PI.toFloat()))),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.minDimension * 0.14f),
-                style = Stroke(width = 3f)
-            )
-        }
-        // Dos golpes al principio del ciclo y silencio el resto: lo que hace un reloj, no un
-        // corazón.
-        OverdueBeat.TIC -> {
-            val golpe = when {
-                ciclo < 0.06f -> 1f - ciclo / 0.06f
-                ciclo in 0.12f..0.18f -> 1f - (ciclo - 0.12f) / 0.06f
-                else -> 0f
+            val grosor = 3.dp.toPx() * onda
+            if (grosor > 0.4f) {
+                val radio = minOf(12.dp.toPx(), size.minDimension * 0.2f)
+                drawRoundRect(
+                    color = rojo.copy(alpha = 0.35f * onda),
+                    topLeft = Offset(-grosor / 2f, -grosor / 2f),
+                    size = Size(size.width + grosor, size.height + grosor),
+                    cornerRadius = CornerRadius(radio + grosor / 2f),
+                    style = Stroke(width = grosor)
+                )
             }
-            this.scale(1f + 0.045f * golpe)
+        }
+        /*
+         * **La fila se queda quieta y late lo único que ya decía «esto está vencido».**
+         *
+         * La franja se dibuja entera y se apaga a la mitad, en vez de encogerse hasta poco más
+         * de la mitad de la fila: encogiendo tanto dejaba de parecer un borde y pasaba a
+         * parecer una barra de progreso a medias.
+         *
+         * Se recorta por arriba y por abajo lo que miden las esquinas redondeadas de la
+         * tarjeta, porque justo ahí el borde izquierdo ya no es recto y la franja se salía.
+         */
+        OverdueBeat.FRANJA -> this.drawWithContent {
+            drawContent()
+            val radio = minOf(12.dp.toPx(), size.minDimension * 0.2f)
+            val ancho = 3.dp.toPx()
+            val alto = (size.height - radio * 2f).coerceAtLeast(0f) * (1f - 0.18f * onda)
+            drawRoundRect(
+                color = rojo.copy(alpha = 1f - 0.65f * onda),
+                topLeft = Offset(0f, (size.height - alto) / 2f),
+                size = Size(ancho, alto),
+                cornerRadius = CornerRadius(ancho / 2f)
+            )
         }
         OverdueBeat.NINGUNA -> this
     }
@@ -201,10 +296,6 @@ fun Modifier.tachadoDe(completado: Boolean, color: Color): Modifier {
                 if (avance > 0.5f) {
                     drawLine(color, puntos[1], puntos[1] + (puntos[2] - puntos[1]) * ((avance - 0.5f) * 2f), 3f, StrokeCap.Round)
                 }
-            }
-            StrikeMotion.DOBLE -> {
-                drawLine(color, Offset(0f, medio - 3f), Offset(fin, medio - 3f), 2f)
-                drawLine(color, Offset(0f, medio + 3f), Offset(fin, medio + 3f), 2f)
             }
             // La tinta cala: por donde ya pasó, la fila queda velada.
             StrikeMotion.TINTA -> {

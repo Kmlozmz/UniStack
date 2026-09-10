@@ -27,14 +27,17 @@ fun HapticFeedback.performSafely(type: HapticFeedbackType) {
      * No puede ser un `CompositionLocal` porque casi todas las llamadas salen de un `onClick`,
      * que ya no esta en composicion. Es el mismo patron que `AppearanceRuntime.cornerStyle`.
      */
+    /*
+     * Quedan dos fuerzas y no cuatro: **vibra** o **no vibra**.
+     *
+     * «Suave» y «Fuerte» salieron de Movimiento cuando se fijaron los defaults, asi que ya no
+     * habia forma de llegar hasta ellas: eran dos ramas que no se ejecutaban nunca. `NINGUNA`
+     * si sigue viva —la pone `Theme` cuando el movimiento esta apagado del todo— y por eso es
+     * la unica que se conserva ademas de la normal.
+     */
     val ajustada = when (HapticRuntime.strength) {
         HapticStrength.NINGUNA -> return
-        // El aviso mas leve que da Android, para quien quiere notarlo sin que le sobresalte.
-        HapticStrength.SUAVE -> HapticFeedbackType.SegmentTick
         HapticStrength.MEDIA -> type
-        HapticStrength.FUERTE -> {
-            if (type == HapticFeedbackType.SegmentTick) HapticFeedbackType.Confirm else HapticFeedbackType.LongPress
-        }
     }
     try {
         performHapticFeedback(ajustada)

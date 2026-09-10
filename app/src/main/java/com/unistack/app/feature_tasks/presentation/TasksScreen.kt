@@ -90,6 +90,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.unistack.app.core.design.components.cleanClickable
 import com.unistack.app.core.design.components.duracionDeDeshacer
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.latidoDeVencido
 import com.unistack.app.core.design.components.tachadoDe
 import com.unistack.app.core.design.theme.motionActual
@@ -346,7 +347,8 @@ fun TasksScreen(
                         item { SectionTitle(stringResource(R.string.tasks_tab_overdue), overdueTasks.size) }
                         itemsIndexed(overdueTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
-                                modifier = Modifier.entradaDeLista(indice)
+                                modifier = reacomodoDeLista()
+                                    .entradaDeLista(indice)
                                     .latidoDeVencido(activo = true),
                                 task = task,
                                 subjects = subjects,
@@ -375,7 +377,8 @@ fun TasksScreen(
                         item { SectionTitle(stringResource(R.string.tasks_today), todayTasks.size) }
                         itemsIndexed(todayTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
-                                modifier = Modifier.entradaDeLista(indice)
+                                modifier = reacomodoDeLista()
+                                    .entradaDeLista(indice)
                                     .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
@@ -404,7 +407,8 @@ fun TasksScreen(
                         item { SectionTitle(stringResource(R.string.tasks_upcoming), upcomingTasks.size) }
                         itemsIndexed(upcomingTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
-                                modifier = Modifier.entradaDeLista(indice)
+                                modifier = reacomodoDeLista()
+                                    .entradaDeLista(indice)
                                     .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
@@ -433,7 +437,8 @@ fun TasksScreen(
                         item { SectionTitle(stringResource(R.string.tasks_later), laterTasks.size) }
                         itemsIndexed(laterTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
-                                modifier = Modifier.entradaDeLista(indice)
+                                modifier = reacomodoDeLista()
+                                    .entradaDeLista(indice)
                                     .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,
@@ -462,7 +467,8 @@ fun TasksScreen(
                         item { SectionTitle(stringResource(R.string.tasks_tab_completed), completedTasks.size) }
                         itemsIndexed(completedTasks, key = { _, it -> it.id }) { indice, task ->
                             TaskCard(
-                                modifier = Modifier.entradaDeLista(indice)
+                                modifier = reacomodoDeLista()
+                                    .entradaDeLista(indice)
                                     .latidoDeVencido(activo = false),
                                 task = task,
                                 subjects = subjects,

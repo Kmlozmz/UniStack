@@ -30,6 +30,7 @@ import com.unistack.app.core.design.components.LargeTitleScaffold
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniStackButtonVariant
 import com.unistack.app.core.design.theme.LocalInterfaceSpacing
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.scrollBottomRoom
 
@@ -105,7 +106,11 @@ fun AcademicHistoryScreen(
             if (activos.isNotEmpty()) {
                 item { TermLabel(stringResource(R.string.terms_active_section), Modifier.padding(start = 4.dp, top = 6.dp)) }
                 items(activos, key = { it.term.id }) { resumen ->
-                    TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
+                    TermRow(
+                        summary = resumen,
+                        onClick = { onTermClick(resumen.term.id) },
+                        modifier = reacomodoDeLista()
+                    )
                 }
                 item {
                     UniStackButton(
@@ -120,7 +125,11 @@ fun AcademicHistoryScreen(
             if (cerrados.isNotEmpty()) {
                 item { TermLabel(stringResource(R.string.terms_closed_section), Modifier.padding(start = 4.dp, top = 10.dp)) }
                 items(cerrados, key = { it.term.id }) { resumen ->
-                    TermRow(summary = resumen, onClick = { onTermClick(resumen.term.id) })
+                    TermRow(
+                        summary = resumen,
+                        onClick = { onTermClick(resumen.term.id) },
+                        modifier = reacomodoDeLista()
+                    )
                 }
             }
 
@@ -139,9 +148,13 @@ fun AcademicHistoryScreen(
 
 /** Una fila del histórico: el periodo, sus fechas y las dos cifras que se miran. */
 @Composable
-private fun TermRow(summary: TermSummary, onClick: () -> Unit) {
+private fun TermRow(
+    summary: TermSummary,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     val colores = LocalSectionColors.current
-    TermCard(onClick = onClick) {
+    TermCard(onClick = onClick, modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

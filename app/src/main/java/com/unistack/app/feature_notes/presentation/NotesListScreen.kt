@@ -114,6 +114,7 @@ import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.design.components.UniTimePickerDialog
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniIconButton
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.components.UniChoiceRow
 import com.unistack.app.core.design.components.UniSegmentedOption
@@ -1090,7 +1091,7 @@ private fun NotesMosaic(
                 NoteDayHeader(stringResource(R.string.notes_section_pinned), pinned.size)
             }
             items(pinned, key = { "pin-" + it.id }) { note ->
-                MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck)
+                MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck, reacomodoDeLista())
             }
             if (others.isNotEmpty()) {
                 item(key = "h-otras", span = StaggeredGridItemSpan.FullLine) {
@@ -1099,7 +1100,7 @@ private fun NotesMosaic(
             }
         }
         items(others, key = { it.id }) { note ->
-            MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck)
+            MosaicCard(note, subjectFor, attachmentsFor, pathFor, use24Hour, note.id in selected, onNoteClick, onNoteLongClick, onToggleCheck, reacomodoDeLista())
         }
     }
 }
@@ -1114,9 +1115,11 @@ private fun MosaicCard(
     selected: Boolean,
     onNoteClick: (String) -> Unit,
     onNoteLongClick: (String) -> Unit,
-    onToggleCheck: (String, Int) -> Unit
+    onToggleCheck: (String, Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     NoteCard(
+        modifier = modifier,
         note = note,
         subject = subjectFor(note.subjectId),
         timeLabel = NoteGrouping.timeLabel(note, use24Hour),
@@ -1153,6 +1156,7 @@ private fun NotesNotebook(
             item(key = "fijadas") { NoteDayHeader(stringResource(R.string.notes_section_pinned), pinned.size) }
             items(pinned, key = { "pin-" + it.id }) { note ->
                 NoteCard(
+                    modifier = reacomodoDeLista(),
                     note = note,
                     subject = subjectFor(note.subjectId),
                     timeLabel = NoteGrouping.timeLabel(note, use24Hour),
@@ -1170,6 +1174,7 @@ private fun NotesNotebook(
         }
         items(others, key = { it.id }) { note ->
             NoteCard(
+                modifier = reacomodoDeLista(),
                 note = note,
                 subject = subjectFor(note.subjectId),
                 timeLabel = NoteGrouping.timeLabel(note, use24Hour),

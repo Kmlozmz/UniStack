@@ -65,6 +65,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.UniEmptyStateCard
 import com.unistack.app.core.design.components.UniFilterChipRow
 import com.unistack.app.core.design.components.UniFilterOption
+import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.utils.bounceClick
@@ -163,6 +164,7 @@ fun AcademicTemplatesScreen(
             } else {
                 items(visible, key = { it.id }) { work ->
                     WorkCard(
+                        modifier = reacomodoDeLista(),
                         work = work,
                         subjectName = work.subjectId?.let { id -> subjects.firstOrNull { it.id == id }?.name },
                         onSelect = { onWorkClick(work.id) },
@@ -367,10 +369,11 @@ private fun WorkCard(
     work: AcademicWork,
     subjectName: String?,
     onSelect: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     UniCard(
-        modifier = Modifier.fillMaxWidth().bounceClick(onSelect),
+        modifier = modifier.fillMaxWidth().bounceClick(onSelect),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = MaterialTheme.shapes.extraLarge,
         contentPadding = PaddingValues(15.dp)

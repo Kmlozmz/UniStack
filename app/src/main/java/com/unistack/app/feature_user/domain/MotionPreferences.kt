@@ -32,16 +32,16 @@ data class MotionPreferences(
 
     // ------------------------------------------------------------------ académico
     val attendance: AttendanceMotion = AttendanceMotion.TRAZO,
-    val newGrade: NewGradeMotion = NewGradeMotion.CAE,
+    val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
     val gradeUp: GradeUpMotion = GradeUpMotion.SALTO,
     val recovery: RecoveryMotion = RecoveryMotion.VIAJE,
-    val cutSeal: CutSealMotion = CutSealMotion.ESTAMPA,
+    val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
 
     // ------------------------------------------------------------------ tareas y notas
     val celebration: CelebrationMotion = CelebrationMotion.CONFETI,
     val strikeThrough: StrikeMotion = StrikeMotion.LINEA,
-    val overdueBeat: OverdueBeat = OverdueBeat.PULSO,
+    val overdueBeat: OverdueBeat = OverdueBeat.RESPIRA,
     val undo: UndoMotion = UndoMotion.REBOTA,
     val autosave: AutosaveMotion = AutosaveMotion.PILDORA,
     val pinNote: PinMotion = PinMotion.SALTA,
@@ -134,15 +134,12 @@ enum class MotionSpeed(override val id: String, override val label: String, val 
 enum class SpringBounce(override val id: String, override val label: String, val damping: Float) : MotionChoice {
     /** Sin rebote visible: llega y se para. */
     SUAVE("suave", "Suave", 1f),
-    MEDIO("medio", "Medio", 0.75f),
     VIVO("vivo", "Vivo", 0.45f)
 }
 
 enum class PressEffect(override val id: String, override val label: String) : MotionChoice {
     NINGUNA("ninguna", "Nada"),
-    ONDA("onda", "Onda"),
-    HUNDIR("hundir", "Hundir"),
-    REBOTE("rebote", "Rebote")
+    ONDA("onda", "Onda")
 }
 
 enum class LoadingStyle(override val id: String, override val label: String) : MotionChoice {
@@ -206,10 +203,7 @@ enum class RefreshStyle(override val id: String, override val label: String) : M
     ONDA_CIRCULAR("ondacirc", "Onda circular"),
 
     /** El `LoadingIndicator` de M3E, que va cambiando de forma. */
-    FORMAS("formas", "Formas"),
-    ELASTICO("elastico", "Elástico"),
-    BARRA("barra", "Barra"),
-    GOTA("gota", "Gota")
+    FORMAS("formas", "Formas")
 }
 
 // ---------------------------------------------------------------------- académico
@@ -289,7 +283,6 @@ enum class StrikeMotion(override val id: String, override val label: String) : M
     LINEA("linea", "Línea"),
     MARCADOR("marcador", "Marcador"),
     VISTO("visto", "Visto encima"),
-    DOBLE("doble", "Doble línea"),
     TINTA("tinta", "Tinta que cala")
 }
 
@@ -297,10 +290,11 @@ enum class OverdueBeat(override val id: String, override val label: String) : Mo
     NINGUNA("ninguna", "Nada"),
     PULSO("pulso", "Pulso"),
     RESPIRA("respira", "Respira"),
-    BORDE("borde", "Borde"),
+    /** Un cerco que late alrededor de la fila, sin moverla. */
+    HALO("halo", "Halo"),
 
-    /** Un golpe corto y seco cada pocos segundos, no un latido continuo. */
-    TIC("tic", "Tic")
+    /** Solo late la franja roja del borde: la fila entera se queda quieta. */
+    FRANJA("franja", "Solo la franja")
 }
 
 enum class UndoMotion(override val id: String, override val label: String) : MotionChoice {
@@ -391,16 +385,12 @@ enum class FabScrollMotion(override val id: String, override val label: String) 
     FIJO("fijo", "Fijo"),
 
     /** Pierde el texto y se queda redondo. */
-    ENCOGE("encoge", "Se encoge"),
-    BAJA("baja", "Se esconde"),
-    DESVANECE("desvanece", "Se desvanece")
+    ENCOGE("encoge", "Se encoge")
 }
 
 enum class HapticStrength(override val id: String, override val label: String) : MotionChoice {
     NINGUNA("ninguna", "Nada"),
-    SUAVE("suave", "Suave"),
-    MEDIA("media", "Media"),
-    FUERTE("fuerte", "Fuerte")
+    MEDIA("media", "Media")
 }
 
 /**
