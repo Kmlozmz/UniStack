@@ -96,6 +96,7 @@ object AppRoutes {
     const val EditSubjectFromSchedule = "edit_subject_from_schedule"
     const val SubjectDetail = "subject_detail"
     const val SubjectCutDetail = "subject_period_detail"
+    const val SubjectStats = "subject_stats"
     const val PriorHistory = "prior_history"
     const val AddGrade = "add_grade"
     const val AddGradeFromHistory = "add_grade_from_history"
@@ -128,6 +129,7 @@ object AppRoutes {
         "$NewNote?$NewNoteStartArg=$start".let { if (subjectId == null) it else "$it&$NewNoteSubjectArg=$subjectId" }
     fun closedTerm(termId: String) = "$ClosedTerm/$termId"
     fun subjectCutDetail(subjectId: String, cutId: String) = "$SubjectCutDetail/$subjectId/$cutId"
+    fun subjectStats(subjectId: String) = "$SubjectStats/$subjectId"
     fun priorHistory(subjectId: String) = "$PriorHistory/$subjectId"
     fun addGrade(subjectId: String, cutId: String? = null) =
         if (cutId == null) "$AddGrade/$subjectId" else "$AddGrade/$subjectId/$cutId"

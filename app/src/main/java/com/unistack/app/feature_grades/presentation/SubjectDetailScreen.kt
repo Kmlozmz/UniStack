@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -18,9 +20,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -40,6 +46,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.PriorityHigh
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EditNote
@@ -50,7 +57,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.selloDeCorte
-import com.unistack.app.core.design.components.promedioQueSube
+import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.design.components.notaRecienRegistrada
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniDivider
@@ -76,8 +83,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,7 +107,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.EvaluationBar
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.rounded.ArrowUpward
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.rotate
+import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniCard
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
@@ -148,6 +174,8 @@ fun SubjectDetailScreen(
     onEditSubjectClick: (String) -> Unit,
     onEditGradeClick: (String, String) -> Unit,
     onCompleteHistoryClick: (String) -> Unit,
+    /** Abre las estadisticas de la materia. La tarjeta de arriba entera lleva ahi. */
+    onStatsClick: (String) -> Unit,
     onNewNoteClick: (String) -> Unit,
     onSubjectDeleted: () -> Unit,
     modifier: Modifier = Modifier,
@@ -268,9 +296,15 @@ fun SubjectDetailScreen(
                 start = 22.dp,
                 top = 8.dp,
                 end = 22.dp,
-                // 96dp para el botón pegado, más lo que tape la barra flotante encima
-                // de él. Sin lo segundo, la última tarjeta de cortes quedaba debajo.
-                bottom = 96.dp
+                /*
+                 * Ya no hay boton pegado abajo: la nota se agrega **desde dentro del corte**,
+                 * que es donde se ve lo que pasa al guardarla. El de abajo abria la hoja sin
+                 * que el corte estuviera desplegado, asi que al cerrarse no habia nada
+                 * mirando: ni la fila entrando ni la cifra contando.
+                 *
+                 * Queda el hueco de la barra flotante, que sigue tapando el final de la lista.
+                 */
+                bottom = scrollBottomRoom
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -312,6 +346,7 @@ fun SubjectDetailScreen(
             }
             item {
                 SubjectOverviewCard(
+                    onClick = { onStatsClick(subject.id) },
                     calculation = calculation,
                     targetGrade = subject.targetAverage,
                     evaluated = evaluatedSubjectPercentage,
@@ -328,18 +363,7 @@ fun SubjectDetailScreen(
                     scale = scale
                 )
             }
-            // Sin notas, la tarjeta de resumen ya dice que hay que registrar la primera. Esta
-            // repetía el mismo encargo con otras palabras dos tarjetas más abajo.
-            if (calculation.outlook != TargetOutlook.NO_DATA) {
-                item {
-                    SubjectInsightCard(
-                        calculation = calculation,
-                        targetGrade = subject.targetAverage,
-                        maxGrade = maxGrade,
-                        scale = scale
-                    )
-                }
-            }
+
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
@@ -381,6 +405,11 @@ fun SubjectDetailScreen(
                             scale = scale,
                             isActive = summary.cut.id == subject.chosenCutId,
                             needsHistory = needsHistory,
+                            // Ni es el que cursas, ni tiene nada dentro, ni te reclama nada:
+                            // no hay ningun dato suyo que merezca una tarjeta entera.
+                            compacto = summary.cut.id != subject.chosenCutId &&
+                                summary.grades.isEmpty() &&
+                                !needsHistory,
                             onClick = {
                                 if (needsHistory) {
                                     onCompleteHistoryClick(subject.id)
@@ -396,25 +425,6 @@ fun SubjectDetailScreen(
                          * que hay margen para corregir una nota antes de fijar el corte. Y el
                          * sello, que se estampa justo después, significa algo: lo pusiste tú.
                          */
-                        if (summary.status == CutStatus.COMPLETED) {
-                            OutlinedButton(
-                                onClick = { viewModel.setCutClosed(subject.id, summary.cut.id, true) },
-                                shapes = UniStackButtonDefaults.shapes,
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = LocalSectionColors.current.onTrack
-                                ),
-                                border = BorderStroke(1.5.dp, LocalSectionColors.current.onTrack)
-                            ) {
-                                Icon(
-                                    Icons.Rounded.CheckCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.subject_close_cut, cutDisplayName(summary.cut)), fontWeight = FontWeight.ExtraBold)
-                            }
-                        }
                     }
                 }
             }
@@ -465,71 +475,6 @@ fun SubjectDetailScreen(
             }
         }
 
-        // Sticky bottom button
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                            MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
-                // El degradado ya se dibuja hasta el borde porque va antes que el margen;
-                // lo que faltaba era apartarse del teclado.
-                .bottomActionInsets()
-                .padding(horizontal = 22.dp, vertical = 14.dp)
-        ) {
-            // Sin corte elegido el botón no lleva a ninguna parte: no hay a qué corte añadir
-            // la nota. Queda apagado y dice qué falta, en vez de mandar la nota al primero.
-            // Además de «sin elegir», el botón se apaga cuando el corte elegido ya está
-            // cerrado y no queda ninguno abierto: no hay dónde meter la nota.
-            val addTarget = chosenCut?.takeIf { cut ->
-                openCutSummaries.any { it.cut.id == cut.id }
-            }
-            Button(
-                shapes = UniStackButtonDefaults.shapes,
-                onClick = { addTarget?.let { hojaDeNota = it.id } },
-                enabled = addTarget != null,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val buttonContent = if (addTarget == null) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onPrimary
-                    }
-                    Icon(Icons.Rounded.Add, contentDescription = null, tint = buttonContent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        when {
-                            addTarget != null -> stringResource(R.string.subject_add_grade_to, cutDisplayName(addTarget))
-                            openCutSummaries.isEmpty() -> stringResource(R.string.subject_all_cuts_completed)
-                            else -> stringResource(R.string.subject_choose_cut_for_grades)
-                        },
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = buttonContent
-                    )
-                }
-            }
-        }
     }
 
     if (showDeleteSubjectDialog) {
@@ -584,9 +529,27 @@ fun SubjectDetailScreen(
                 },
                 viewModel = viewModel,
                 enHoja = true,
+                /*
+                 * **La hoja se aparta del teclado en vez de quedarse debajo.**
+                 *
+                 * Con targetSdk 36 la ventana ya no se redimensiona sola, asi que la hoja
+                 * seguia midiendo el 92 % de la pantalla con el teclado encima: la barra de
+                 * guardar quedaba tapada y entre ella y el teclado se abrian los huecos.
+                 * `imePadding` es lo que ya hacen el editor de notas, la calculadora y la hoja
+                 * de sugerencias; este formulario era el unico que no.
+                 */
+                /*
+                 * **La hoja mide lo que mide su contenido.**
+                 *
+                 * Con el 92 % fijo, el primer paso —que son dos campos— dejaba media pantalla
+                 * en blanco y el boton de guardar al fondo del todo, lejisimos del pulgar y
+                 * despues de un vacio que no decia nada. Ajustandose, el boton queda justo
+                 * debajo de lo ultimo que has rellenado; y el tope del 92 % sigue ahi para
+                 * cuando el formulario si es largo.
+                 */
                 modifier = Modifier
-                    .fillMaxHeight(0.92f)
-                    .navigationBarsPadding()
+                    .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.92f)
+                    .imePadding()
             )
         }
     }}
@@ -620,6 +583,45 @@ fun SubjectCutDetailScreen(
 
     val grades = subject.grades.filter { it.cutId == cut.id }
     val summary = cut.toSummary(grades)
+
+    /*
+     * **Nada se anima mientras la hoja tapa la pantalla.**
+     *
+     * La nota se guarda en cuanto pulsas, y la hoja tarda todavia un cuarto de segundo en
+     * bajar: la fila entraba y el promedio contaba **detras de la hoja**, y para cuando se
+     * apartaba ya estaba todo quieto. De ahi la sensacion de que guardar no hacia nada.
+     *
+     * Esto retiene el valor anterior hasta que la hoja se ha ido, y entonces lo suelta: la
+     * cuenta, la flecha y la entrada de la fila arrancan con la pantalla ya despejada.
+     */
+    var listoParaAnimar by remember { mutableStateOf(true) }
+    LaunchedEffect(hojaDeNota) {
+        if (hojaDeNota) {
+            listoParaAnimar = false
+        } else {
+            kotlinx.coroutines.delay(280)
+            listoParaAnimar = true
+        }
+    }
+    var resumenMostrado by remember { mutableStateOf(summary) }
+    /*
+     * **La lista tambien espera, y no solo el aviso de «cual es nueva».**
+     *
+     * Retener solo la marca no bastaba: la fila ya estaba puesta y a la vista desde que se
+     * guardaba, y cuando la compuerta se abria el gesto arrancaba **desde cero** sobre una fila
+     * que ya se veia. De ahi el parpadeo: aparecia, se apagaba y volvia a entrar.
+     *
+     * Reteniendo la lista entera, la fila no existe hasta que se la puede animar. Aparece una
+     * sola vez, ya entrando, que es lo que se venia a ver.
+     */
+    var notasMostradas by remember { mutableStateOf(grades) }
+    LaunchedEffect(summary, grades, listoParaAnimar) {
+        if (listoParaAnimar) {
+            resumenMostrado = summary
+            notasMostradas = grades
+        }
+    }
+
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
@@ -648,100 +650,51 @@ fun SubjectCutDetailScreen(
                 )
             }
             item {
-                CutSummaryCard(summary = summary, maxGrade = maxGrade, scale = scale)
+                /*
+                 * **El resumen del corte, arriba del todo.**
+                 *
+                 * Es la misma tarjeta rellena que abre la materia, con lo suyo: la nota del
+                 * corte en grande, la barra de lo evaluado y el estado en una linea. Sin ella
+                 * la pantalla empezaba directamente por la lista, y la cifra que resume el
+                 * corte solo aparecia pequena, dentro de la cabecera de la tarjeta de abajo.
+                 */
+                HeroDelCorte(
+                    summary = resumenMostrado,
+                    maxGrade = maxGrade,
+                    scale = scale,
+                    passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
+                )
             }
-            if (grades.isEmpty()) {
-                item {
-                    // Una sola tarjeta de estado vacío. Antes había tres bloques seguidos
-                    // diciendo casi lo mismo: «Aún no hay notas», el botón, y una tarjeta de
-                    // «Información» con una frase fija que nunca cambiaba y ocupaba tanto como
-                    // el contenido. La frase explica algo útil solo aquí, así que vive aquí.
-                    EmptyCutNotesInline()
-                }
-            } else {
-                item {
-                    Text(
-                        stringResource(R.string.subject_cut_grades),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(LargeCardShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, LargeCardShape)
-                    ) {
-                        /*
-                         * Cual es la nota recien registrada.
-                         *
-                         * Se recuerda la ultima vista al entrar y se compara: la que no estaba
-                         * es la nueva. Sin esa comparacion, todas entrarian animadas cada vez
-                         * que se abre la materia y la entrada dejaria de significar «acaba de
-                         * pasar algo».
-                         */
-                        val vistasAntes = remember { mutableStateOf(grades.map { it.id }.toSet()) }
-                        val recienLlegada = grades.map { it.id }.firstOrNull { it !in vistasAntes.value }
-                        LaunchedEffect(grades.size) {
-                            kotlinx.coroutines.delay(1200)
-                            vistasAntes.value = grades.map { it.id }.toSet()
-                        }
-
-                        grades.forEachIndexed { index, grade ->
-                            GradeRowItem(
-                                grade = grade,
-                                scale = scale,
-                                onEditClick = { onEditGradeClick(subject.id, grade.id) },
-                                onDeleteClick = { gradeIdPendingDelete = grade.id },
-                                modifier = Modifier.notaRecienRegistrada(grade.id == recienLlegada)
-                            )
-                            if (index < grades.lastIndex) {
-                                UniDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Anclado, igual que en el detalle de materia. Antes iba dentro del contenido, entre
-        // el estado vacío y una tarjeta informativa, y había que desplazarse para encontrarlo.
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .onSizeChanged { saveBarHeight = with(density) { it.height.toDp() } },
-            color = MaterialTheme.colorScheme.background,
-            shadowElevation = 8.dp
-        ) {
-            Button(
-                shapes = UniStackButtonDefaults.shapes,
-                onClick = { hojaDeNota = true },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                modifier = Modifier
-                    .bottomActionInsets()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    stringResource(R.string.subject_add_grade_to, cutDisplayName(cut)),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
+            item {
+                /*
+                 * **Una sola tarjeta, la del prototipo.**
+                 *
+                 * Antes esta pantalla eran tres bloques apilados —el resumen tenido de arriba,
+                 * el titulo «Notas del corte», y la caja de filas separadas por lineas— mas un
+                 * boton pegado abajo. Cuatro sitios para contar una sola cosa.
+                 *
+                 * Ahora es un corte: su cabecera, sus notas y lo que puedes hacer con el, todo
+                 * dentro del mismo recuadro y con la franja de color corriendo por el lado. Y
+                 * como cada nota es su propia fila con fondo, la que llega **se abre hueco**
+                 * entre las demas en vez de obligar a repintar la caja entera.
+                 */
+                TarjetaDelCorte(
+                    summary = resumenMostrado,
+                    notas = notasMostradas,
+                    maxGrade = maxGrade,
+                    scale = scale,
+                    passingGrade = profile?.passingGrade ?: (maxGrade * 0.6),
+                    cerrado = cut.id in subject.closedCutIds,
+                    onAgregar = { hojaDeNota = true },
+                    onCerrar = { viewModel.setCutClosed(subject.id, cut.id, true) },
+                    onReabrir = { viewModel.setCutClosed(subject.id, cut.id, false) },
+                    onEditar = { onEditGradeClick(subject.id, it) },
+                    onBorrar = { gradeIdPendingDelete = it }
                 )
             }
         }
-    }
 
+    }
 
     gradeIdPendingDelete?.let { gradeId ->
         AlertDialog(
@@ -781,9 +734,27 @@ fun SubjectCutDetailScreen(
                 onBackClick = { hojaDeNota = false },
                 viewModel = viewModel,
                 enHoja = true,
+                /*
+                 * **La hoja se aparta del teclado en vez de quedarse debajo.**
+                 *
+                 * Con targetSdk 36 la ventana ya no se redimensiona sola, asi que la hoja
+                 * seguia midiendo el 92 % de la pantalla con el teclado encima: la barra de
+                 * guardar quedaba tapada y entre ella y el teclado se abrian los huecos.
+                 * `imePadding` es lo que ya hacen el editor de notas, la calculadora y la hoja
+                 * de sugerencias; este formulario era el unico que no.
+                 */
+                /*
+                 * **La hoja mide lo que mide su contenido.**
+                 *
+                 * Con el 92 % fijo, el primer paso —que son dos campos— dejaba media pantalla
+                 * en blanco y el boton de guardar al fondo del todo, lejisimos del pulgar y
+                 * despues de un vacio que no decia nada. Ajustandose, el boton queda justo
+                 * debajo de lo ultimo que has rellenado; y el tope del 92 % sigue ahi para
+                 * cuando el formulario si es largo.
+                 */
                 modifier = Modifier
-                    .fillMaxHeight(0.92f)
-                    .navigationBarsPadding()
+                    .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.92f)
+                    .imePadding()
             )
         }
     }
@@ -914,7 +885,7 @@ private fun SubjectHeader(
 }
 
 @Composable
-private fun CutHeader(title: String, subtitle: String, onBackClick: () -> Unit) {
+internal fun CutHeader(title: String, subtitle: String, onBackClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1060,6 +1031,7 @@ private fun CutChooser(
  */
 @Composable
 private fun SubjectOverviewCard(
+    onClick: () -> Unit,
     calculation: SubjectGradeCalculation,
     targetGrade: Double,
     evaluated: Double,
@@ -1071,13 +1043,13 @@ private fun SubjectOverviewCard(
     // Es lo primero que se mira al abrir una materia y era del mismo tono que todo lo
     // demás; ahora pesa lo que le toca, igual que el hero de Inicio y la próxima clase.
     UniCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().bounceClick(onClick),
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = LargeCardShape,
         tonalElevation = 0.dp,
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1087,140 +1059,200 @@ private fun SubjectOverviewCard(
                     modifier = Modifier.weight(1f).padding(end = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        (if (calculation.isFinished) stringResource(R.string.subject_final_grade) else stringResource(R.string.subject_evaluated_average))
-                            .uppercase(Locale.forLanguageTag("es")),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = SectionLabelStyle
-                    )
-                    if (average == null) {
+                    /*
+                     * **El titular es la respuesta, no el promedio.**
+                     *
+                     * «Promedio de lo evaluado» ocupaba el tamano mas grande de la pantalla y
+                     * describia el 21 % de la materia: el dato menos util puesto en el sitio
+                     * mas visible. Y alrededor habia cinco cifras en la misma escala —lleva,
+                     * meta, necesita, minimo, maximo— todas en negrita y sin jerarquia, asi que
+                     * habia que resolver la tarjeta para entenderla.
+                     *
+                     * Ahora arriba va **lo que hay que hacer**, que es distinto en cada
+                     * situacion: lo que necesitas de aqui en adelante si la meta sigue en
+                     * juego, el suelo si ya no la puedes perder, y el techo si ya no llegas. El
+                     * promedio baja a su pildora, con los otros dos.
+                     */
+                    val esFinal = calculation.isFinished
+                    val yaAsegurada = calculation.outlook == TargetOutlook.SECURED && !esFinal
+                    val yaNoLlega = calculation.outlook == TargetOutlook.UNREACHABLE
+                    val titular = when {
+                        average == null -> null
+                        esFinal -> average
+                        yaAsegurada -> calculation.guaranteedMinimum
+                        yaNoLlega -> calculation.bestPossible
+                        else -> calculation.neededForTarget
+                    }
+                    val etiqueta = when {
+                        average == null -> stringResource(R.string.subject_evaluated_average)
+                        esFinal -> stringResource(R.string.subject_final_grade)
+                        yaAsegurada -> stringResource(R.string.subject_hero_secured_label)
+                        yaNoLlega -> stringResource(R.string.subject_hero_ceiling_label)
+                        else -> stringResource(R.string.subject_hero_needed_label)
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            etiqueta.uppercase(Locale.forLanguageTag("es")),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            style = SectionLabelStyle,
+                            modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        )
+                        /*
+                         * La tarjeta entera lleva a las estadisticas; esto lo dice.
+                         *
+                         * Con su pastilla y no como texto suelto: flotando en la esquina no se
+                         * leia como algo que se pueda tocar, sino como una etiqueta mas de las
+                         * muchas que ya hay en la tarjeta.
+                         */
+                        Row(
+                            modifier = Modifier
+                                // Pegada al borde de la tarjeta: los 20 dp de margen interior
+                                // la dejaban flotando lejos de la esquina.
+                                .offset(x = 8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))
+                                .padding(start = 12.dp, end = 7.dp, top = 6.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                stringResource(R.string.subject_see_detail),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+                    if (titular == null) {
                         Text(
                             stringResource(R.string.subject_unevaluated),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.headlineSmallEmphasized
                         )
                     } else {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
-                                GradingScaleUtils.formatGrade(average, scale),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                style = MaterialTheme.typography.displaySmallEmphasized,
-                                // «Nota que sube»: solo cuando mejora. Bajar no es un logro, y
-                                // marcarlo con un salto seria celebrarlo.
-                                modifier = Modifier.promedioQueSube(average)
+                                GradingScaleUtils.formatGrade(titular, scale),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.displaySmallEmphasized
                             )
                             Text(
                                 " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
                                 style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
                             )
+                            // El cambio se marca sobre el promedio, que es lo que se mueve al
+                            // registrar una nota, y por eso viaja con su pildora... salvo aqui,
+                            // donde el titular es el promedio porque la materia ya acabo.
+                            if (esFinal) FlechaDeCambio(average, scale)
                         }
                     }
                 }
-                val indicatorStyle = LocalAppearancePreferences.current.academicIndicatorStyle
-                when (indicatorStyle) {
-                    AcademicIndicatorStyle.RINGS -> {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
-                            // El aro de fondo sale de `trackColor`, no de una segunda copia
-                            // del indicador con el progreso al 100 %. Apilar dos era lo que
-                            // había, y costaba el doble de nodos para dibujar una pista que
-                            // el componente ya sabe pintar solo.
-                            EvaluationRing(
-                                fraction = evaluated / 100.0,
-                                modifier = Modifier.fillMaxSize(),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                trackColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    .copy(alpha = 0.18f)
-                            )
-                            EvaluationValue(evaluated)
-                        }
-                    }
-                    AcademicIndicatorStyle.BARS -> {
-                        Column(
-                            modifier = Modifier.width(88.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            EvaluationValue(evaluated)
-                            EvaluationBar(
-                                fraction = evaluated / 100.0,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                    AcademicIndicatorStyle.NUMBERS -> EvaluationValue(evaluated)
-                }
+                /*
+                 * **Sin el aro de «% evaluado» al lado del titular.**
+                 *
+                 * Era un segundo numero grande compitiendo con el titular, y encima medido en
+                 * otra unidad: uno es una nota sobre 5 y el otro un porcentaje. Lo evaluado
+                 * sigue estando —en su pildora, con los otros dos datos de contexto— donde no
+                 * le disputa el sitio a la respuesta.
+                 */
             }
 
+            // La frase que explica el titular, pegada a el.
+            if (calculation.outlook != TargetOutlook.NO_DATA) {
+                SubjectInsightCard(
+                    calculation = calculation,
+                    targetGrade = targetGrade,
+                    maxGrade = maxGrade,
+                    scale = scale,
+                    comoTarjeta = false
+                )
+            }
+
+            /*
+             * **La banda vuelve, con las marcas dichas.**
+             *
+             * La quite entera cuando el problema eran sus dos marcas —la raya de la meta y el
+             * punto de donde vas— que no llevaban rotulo, y su cifra suelta cayendo justo bajo
+             * un titular que significa otra cosa. Sin banda el hero se quedaba en dos frases y
+             * nada que mirar, asi que el arreglo era rotularla, no retirarla.
+             *
+             * Ahora cada marca dice lo que es, debajo y en su sitio: «meta» bajo la raya y
+             * «llevas» bajo el punto. Si las dos caen cerca, la de la meta se calla —dos
+             * rotulos encimados no se leen ninguno— y queda la que estas mirando.
+             */
             val floor = calculation.guaranteedMinimum
             val ceiling = calculation.bestPossible
-            when {
-                floor == null || ceiling == null -> {
-                    Text(
-                        stringResource(R.string.subject_first_grade_prompt),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
-                    )
-                }
-                calculation.isFinished -> {
-                    Text(
-                        stringResource(R.string.subject_nothing_left_to_evaluate),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
-                    )
-                }
-                else -> {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            stringResource(R.string.subject_where_you_can_end),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        OutcomeRangeBar(
-                            floor = floor,
-                            ceiling = ceiling,
-                            target = targetGrade,
-                            maxGrade = maxGrade
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            RangeLegend(stringResource(R.string.subject_stat_minimum), GradingScaleUtils.formatGrade(floor, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
-                            RangeLegend(stringResource(R.string.subject_stat_target), GradingScaleUtils.formatGrade(targetGrade, scale), MaterialTheme.colorScheme.onPrimaryContainer)
-                            RangeLegend(stringResource(R.string.subject_stat_maximum), GradingScaleUtils.formatGrade(ceiling, scale), MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f))
-                        }
-                    }
-                }
+            if (floor != null && ceiling != null && !calculation.isFinished) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)
+                )
+                OutcomeRangeBar(
+                    target = targetGrade,
+                    maxGrade = maxGrade,
+                    actual = average,
+                    scale = scale
+                )
             }
         }
     }
 }
 
 /**
- * La franja de notas finales todavía posibles, sobre la escala completa, con la meta marcada.
+ * El rotulo de una marca de la banda, **centrado sobre su punto exacto**.
  *
- * El extremo izquierdo es sacar 0 en todo lo que falta y el derecho sacarlo todo, así que la
- * franja solo se estrecha según se van registrando notas. Si la marca de la meta queda fuera
- * de la franja, la meta ya no se puede alcanzar y se ve sin leer ningún texto.
+ * Con `BiasAlignment` no quedaba centrado sino repartido: ese alineador no pone el centro del
+ * hijo en la fraccion pedida, sino que lo interpola dentro del hueco que sobra —a sesgo 1 el
+ * borde derecho toca el borde derecho—, asi que cuanto mas ancho el rotulo, mas lejos caia de
+ * su marca. Con «llevas 4.70» al 94 % se veia claramente descolgado del punto.
+ *
+ * Aqui se mide el rotulo y se le resta su media anchura, que es lo que de verdad lo centra, y
+ * se recorta a los bordes para que no se salga. Un `offset` en pixeles no supone nada: usa lo
+ * que el texto mide de verdad.
  */
 @Composable
+private fun BoxScope.MarcaDeLaBanda(texto: String, fuerte: Boolean, fraccion: Float, anchoTotal: Int) {
+    var ancho by remember { mutableStateOf(0) }
+    Text(
+        texto,
+        color = if (fuerte) {
+            MaterialTheme.colorScheme.onSurface
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f)
+        },
+        fontSize = if (fuerte) 11.5.sp else 10.5.sp,
+        fontWeight = if (fuerte) FontWeight.ExtraBold else FontWeight.SemiBold,
+        maxLines = 1,
+        modifier = Modifier
+            .onSizeChanged { ancho = it.width }
+            .offset {
+                val centro = (anchoTotal * fraccion).toInt() - ancho / 2
+                IntOffset(centro.coerceIn(0, (anchoTotal - ancho).coerceAtLeast(0)), 0)
+            }
+    )
+}
+
+@Composable
 private fun OutcomeRangeBar(
-    floor: Double,
-    ceiling: Double,
     target: Double,
-    maxGrade: Double
+    maxGrade: Double,
+    /** Donde estas ahora mismo, para el punto. Nulo si todavia no hay nada evaluado. */
+    actual: Double?,
+    scale: GradingScale
 ) {
     if (maxGrade <= 0.0) return
-    val start = (floor / maxGrade).coerceIn(0.0, 1.0).toFloat()
-    val end = (ceiling / maxGrade).coerceIn(0.0, 1.0).toFloat()
     val targetAt = (target / maxGrade).coerceIn(0.0, 1.0).toFloat()
-    val targetIsInside = target in floor..ceiling
-    val bandColor = if (targetIsInside) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val actualAt = actual?.let { (it / maxGrade).coerceIn(0.0, 1.0).toFloat() }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -1228,22 +1260,38 @@ private fun OutcomeRangeBar(
             .height(14.dp)
     ) {
         val fullWidth = maxWidth
+        /*
+         * **La barra va llena de punta a punta.**
+         *
+         * Se pintaba solo el tramo alcanzable sobre una canaleta gris, y ese gris parecia un
+         * hueco por rellenar en vez de «hasta aqui no llegas»: una barra horizontal con un
+         * trozo de color se lee como progreso. Pintada entera es lo que es, la escala de 0 al
+         * maximo, y encima van las dos marcas que hay que leer.
+         *
+         * El degradado va sobre la escala completa y no sobre el tramo: estirado al tramo, el
+         * mismo verde caia en el 4,8 de una materia y en el 3,2 de otra.
+         */
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = fullWidth * start)
-                .width((fullWidth * (end - start)).coerceAtLeast(3.dp))
-                .height(10.dp)
-                .clip(CircleShape)
-                .background(bandColor)
+                .background(
+                    /*
+                     * Rojo, ambar y verde: los tres colores con los que la app ya dice como va
+                     * una nota. Estaba con `atRisk` (ambar) en el extremo bajo y `tertiary`
+                     * —el azul del tema, que no significa nada aqui— en el medio, asi que la
+                     * barra iba de oliva a azul a verde y no se parecia a nada de la escala.
+                     */
+                    Brush.horizontalGradient(
+                        listOf(
+                            LocalSectionColors.current.expenses,
+                            LocalSectionColors.current.atRisk,
+                            LocalSectionColors.current.onTrack
+                        )
+                    )
+                )
         )
         Box(
             modifier = Modifier
@@ -1252,15 +1300,84 @@ private fun OutcomeRangeBar(
                 .width(3.dp)
                 .fillMaxHeight()
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.onPrimaryContainer)
+                .background(MaterialTheme.colorScheme.onSurface)
         )
+        // Donde estas: lo unico que la barra no puede decir sola.
+        if (actualAt != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = (fullWidth * actualAt - 8.dp).coerceAtLeast(0.dp))
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface)
+                    .padding(3.5.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+            )
+        }
+    }
+
+    /*
+     * **«Estas en» cuelga del punto**, no repartido en la fila.
+     *
+     * Centrado entre los extremos decia otra cosa —el punto medio del rango—, que no es lo que
+     * significa. Colgando del propio punto, el numero y la marca son lo mismo.
+     */
+    /*
+     * **Cada marca dice lo que es, debajo y en su sitio.**
+     *
+     * La raya y el punto no significaban nada por si solos: hacia falta adivinar que uno era la
+     * meta y el otro donde vas. Un grafico con marcas sin etiquetar no es un grafico.
+     *
+     * Van colocados por proporcion con `BiasAlignment` —el -1 es el borde izquierdo, el 0 el
+     * centro— y no con margenes calculados a mano, que fue lo que partio en dos el rotulo la
+     * vez anterior: suponia un ancho de 68 dp y «Estas en 4.70» mide bastante mas.
+     */
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        val anchoTotal = constraints.maxWidth
+        // Si las dos marcas caen cerca, se calla la de la meta: dos rotulos encimados no se
+        // leen ninguno, y el que interesa es el de donde vas.
+        val juntas = actualAt != null && kotlin.math.abs(actualAt - targetAt) < 0.16f
+        if (!juntas) {
+            MarcaDeLaBanda(
+                texto = stringResource(R.string.subject_mark_goal, GradingScaleUtils.formatGrade(target, scale)),
+                fuerte = false,
+                fraccion = targetAt,
+                anchoTotal = anchoTotal
+            )
+        }
+        if (actualAt != null && actual != null) {
+            MarcaDeLaBanda(
+                texto = stringResource(R.string.subject_mark_you, GradingScaleUtils.formatGrade(actual, scale)),
+                fuerte = true,
+                fraccion = actualAt,
+                anchoTotal = anchoTotal
+            )
+        }
+    }
+
+    // La regla contra la que se leen todas las cifras: los puntos enteros de la escala.
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().height(14.dp)) {
+        val ancho = maxWidth
+        val topes = maxGrade.toInt()
+        for (v in 0..topes) {
+            val donde = (v / maxGrade).toFloat()
+            Text(
+                GradingScaleUtils.formatGrade(v.toDouble(), scale),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = (ancho * donde - 11.dp).coerceIn(0.dp, ancho - 22.dp))
+            )
+        }
     }
 }
 
 @Composable
 private fun RangeLegend(label: String, value: String, valueColor: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f), fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Text(value, color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold)
     }
 }
@@ -1270,13 +1387,13 @@ private fun EvaluationValue(evaluated: Double) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "${formatPercent(evaluated)}%",
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 20.sp,
             fontWeight = FontWeight.ExtraBold
         )
         Text(
             stringResource(R.string.subject_evaluated_label),
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.76f),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.76f),
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium
         )
@@ -1314,11 +1431,24 @@ private fun SubjectMetricsBand(
             else -> toneAtRisk
         }
     }
+    /*
+     * **La del medio dice lo que llevas, no la meta.**
+     *
+     * La meta ya esta escrita dos veces en la pantalla —bajo el nombre de la materia y dentro
+     * de la frase—, asi que su pildora era la tercera. Y lo que faltaba era justo lo contrario:
+     * el promedio que llevas ahora mismo no aparecia en ningun sitio con su nombre, porque el
+     * titular de arriba es **lo que necesitas**, que es otra cosa. De ahi que un 4,70 suelto
+     * bajo un 3,90 grande no se entendiera.
+     */
     SubjectMetricsBandContent(
         passingGrade = GradingScaleUtils.formatGrade(passingGrade, scale),
         passingTone = reachTone(passingGrade),
-        targetGrade = GradingScaleUtils.formatGrade(targetGrade, scale),
-        targetTone = reachTone(targetGrade),
+        targetGrade = calculation.currentAverage
+            ?.let { GradingScaleUtils.formatGrade(it, scale) }
+            ?: stringResource(R.string.subject_no_data_short),
+        targetTone = calculation.currentAverage?.let {
+            if (it >= passingGrade) toneSecured else LocalSectionColors.current.expenses
+        } ?: toneUnknown,
         remainingPercentage = "${formatPercent(remainingPercentage)}%"
     )
 }
@@ -1347,7 +1477,7 @@ private fun SubjectMetricsBandContent(
             icon = Icons.Rounded.Flag,
             iconColor = targetTone,
             value = targetGrade,
-            label = stringResource(R.string.subject_target)
+            label = stringResource(R.string.subject_you_carry)
         )
         MetricCard(
             modifier = Modifier.weight(1f),
@@ -1365,6 +1495,14 @@ private fun SubjectInsightCard(
     targetGrade: Double,
     maxGrade: Double,
     scale: GradingScale,
+    /**
+     * Dentro del hero no lleva tarjeta propia.
+     *
+     * Como bloque suelto debajo era una tercera caja diciendo lo mismo que el titular: en el
+     * prototipo la frase va **pegada al numero que explica**, y ahi es donde se lee sin tener
+     * que relacionar dos cosas separadas por un hueco.
+     */
+    comoTarjeta: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     // El color sale del mismo sitio que el mensaje. Antes la tarjeta era verde siempre,
@@ -1468,12 +1606,7 @@ private fun SubjectInsightCard(
         }
     }
 
-    UniCard(
-        modifier = modifier.fillMaxWidth(),
-        color = tone.copy(alpha = 0.08f),
-        shape = LargeCardShape,
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-    ) {
+    val fila: @Composable () -> Unit = {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1487,17 +1620,569 @@ private fun SubjectInsightCard(
                     else -> Icons.AutoMirrored.Rounded.TrendingUp
                 },
                 contentDescription = null,
-                tint = tone,
-                modifier = Modifier.size(24.dp)
+                tint = if (comoTarjeta) tone else MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
             )
             Text(
                 text = annotatedText,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (comoTarjeta) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                },
                 fontSize = 13.sp,
                 lineHeight = 18.sp,
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+
+    if (comoTarjeta) {
+        UniCard(
+            modifier = modifier.fillMaxWidth(),
+            color = tone.copy(alpha = 0.08f),
+            shape = LargeCardShape,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        ) { fila() }
+    } else {
+        Box(modifier = modifier.fillMaxWidth()) { fila() }
+    }
+}
+
+/**
+ * Las notas del corte, dentro de su tarjeta.
+ *
+ * Cada nota es su propia fila con fondo, como en el prototipo, y no filas separadas por lineas
+ * dentro de una caja: asi la que llega **se abre hueco** entre las demas en vez de repintarse
+ * la caja entera.
+ *
+ * Ese hueco es lo que hacia falta. Al insertarse una fila arriba, las de debajo saltaban de
+ * golpe a su sitio nuevo y no habia nada que uniera el antes con el despues: se veia una lista
+ * distinta, no una lista que ha cambiado. Aqui la fila nueva nace con altura cero y crece,
+ * asi que las de abajo bajan **con ella** y el movimiento cuenta lo que ha pasado.
+ */
+/**
+ * Un corte entero en una tarjeta: lo que lleva, lo que tiene dentro y lo que puedes hacer.
+ *
+ * Es la forma del prototipo. La franja de color corre por el lado de todo el conjunto —de la
+ * cabecera y de las notas— porque es **un** corte, no una cabecera con una lista pegada
+ * debajo; y cada nota es su propia fila con fondo, que es lo que deja que la nueva se abra
+ * hueco entre las demas en vez de repintarse la caja.
+ */
+/**
+ * El resumen del corte: la nota que lleva, cuanto se ha evaluado y en que estado esta.
+ *
+ * La misma forma que el hero de la materia —tarjeta rellena, cifra grande, una linea de
+ * estado— para que las dos pantallas se lean igual. La cifra cuenta y lleva su flecha, porque
+ * es el numero que cambia al registrar una nota y es donde hay que ver que ha cambiado.
+ */
+/*
+ * **El texto del hero es blanco, no verde.**
+ *
+ * Iba en `onPrimaryContainer`, el verde que Material asigna al fondo verde de la tarjeta.
+ * Se leia, pero dejaba la tarjeta entera en un solo tono y la cifra —lo unico que se viene
+ * a mirar— no destacaba de su propio rotulo.
+ *
+ * `onSurface` es el mismo blanco del resto de la pantalla y sirve en los dos temas: casi
+ * negro sobre el verde claro del tema claro, casi blanco sobre el verde oscuro.
+ *
+ * Lo que conserva su color es [FlechaDeCambio]: ahi el verde y el rojo **significan** subir
+ * o bajar, no son decoracion del contenedor.
+ */
+@Composable
+private fun HeroDelCorte(
+    summary: CutSummary,
+    maxGrade: Double,
+    scale: GradingScale,
+    passingGrade: Double,
+    modifier: Modifier = Modifier
+) {
+    UniCard(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = LargeCardShape,
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    stringResource(R.string.subject_cut_grade_header),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = SectionLabelStyle
+                )
+                StatusBadge(status = summary.status)
+            }
+            if (summary.average == null) {
+                Text(
+                    stringResource(R.string.subject_unevaluated),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.headlineSmallEmphasized
+                )
+            } else {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        GradingScaleUtils.formatGrade(
+                            numeroQueCuenta(summary.average.toFloat(), "heroDelCorte").toDouble(),
+                            scale
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.displaySmallEmphasized
+                    )
+                    Text(
+                        " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 6.dp, start = 4.dp)
+                    )
+                    FlechaDeCambio(summary.average, scale)
+                }
+            }
+            /*
+             * **Una sola pieza, no una por nota.**
+             *
+             * Estuvo partida en un trozo por nota, para que el 30 % se leyera como «un
+             * taller de 20 y un quiz de 10». La informacion era buena y la lectura no: sin
+             * rotulos, los cortes en la barra no explican de que son, y quien no la hizo
+             * ve una barra rota. Y ponerles rotulo era repetir las filas de debajo, que ya
+             * dicen exactamente eso con sus nombres y sus porcentajes.
+             *
+             * La barra se queda con el acento: es lo unico del hero que no es texto, y
+             * pintarla del mismo blanco la habria dejado sin decir a que corte pertenece.
+             */
+            EvaluationBar(
+                fraction = (summary.evaluated / 100.0).coerceIn(0.0, 1.0),
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
+            )
+            Text(
+                stringResource(R.string.subject_percent_evaluated, formatPercent(summary.evaluated)) +
+                    stringResource(R.string.subject_remaining_to_distribute, formatPercent(100.0 - summary.evaluated)),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.80f),
+                fontSize = 12.5.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun TarjetaDelCorte(
+    summary: CutSummary,
+    notas: List<GradeItem>,
+    maxGrade: Double,
+    scale: GradingScale,
+    passingGrade: Double,
+    cerrado: Boolean,
+    onAgregar: () -> Unit,
+    onCerrar: () -> Unit,
+    onReabrir: () -> Unit,
+    onEditar: (String) -> Unit,
+    onBorrar: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val accent = if (cerrado) LocalSectionColors.current.onTrack else summary.status.color
+    /*
+     * Cual es la nota recien registrada.
+     *
+     * Se recuerda lo que habia y se compara: la que no estaba es la nueva. Sin esa
+     * comparacion, todas entrarian animadas cada vez que se abre el corte y la entrada dejaria
+     * de significar «acaba de pasar algo».
+     */
+    val vistasAntes = remember { mutableStateOf(notas.map { it.id }.toSet()) }
+    val recienLlegada = notas.map { it.id }.firstOrNull { it !in vistasAntes.value }
+    LaunchedEffect(notas.size) {
+        kotlinx.coroutines.delay(1400)
+        vistasAntes.value = notas.map { it.id }.toSet()
+    }
+
+    UniCard(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = LargeCardShape,
+        tonalElevation = 0.dp,
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+                /*
+                 * ---------------------------------------------------------- cabecera
+                 *
+                 * La franja va **solo al lado del corte**, no por todo el recuadro. Corriendo
+                 * de arriba abajo parecia el borde de la tarjeta —un adorno— en vez de la marca
+                 * de estado del corte, que es lo que es; y ademas competia con las filas de las
+                 * notas, que ya tienen su propio fondo.
+                 */
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(4.dp)
+                            .fillMaxHeight()
+                            .clip(CircleShape)
+                            .background(accent)
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f).padding(start = 12.dp, end = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                cutDisplayName(summary.cut),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            StatusBadge(status = summary.status)
+                        }
+                        Text(
+                            stringResource(R.string.subject_weight_of_subject_simple, formatPercent(summary.cut.weight * 100)) +
+                                stringResource(R.string.subject_remaining_to_distribute, formatPercent(100.0 - summary.evaluated)),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.5.sp
+                        )
+                    }
+                    /*
+                     * La cifra del corte **no se repite aqui**: ya la dice el resumen de
+                     * arriba, en grande y con su flecha. Dos veces el mismo numero en la misma
+                     * pantalla es lo que hacia que esto pareciera tres bloques y no uno.
+                     */
+                }
+
+                // ---------------------------------------------------------- las notas y la accion
+                NotasDelCorte(
+                    notas = notas,
+                    scale = scale,
+                    passingGrade = passingGrade,
+                    recienLlegada = recienLlegada,
+                    completo = summary.status == CutStatus.COMPLETED,
+                    cerrado = cerrado,
+                    onAgregar = onAgregar,
+                    onCerrar = onCerrar,
+                    onReabrir = onReabrir,
+                    onEditar = onEditar,
+                    onBorrar = onBorrar
+                )
+        }
+    }
+}
+
+@Composable
+private fun NotasDelCorte(
+    notas: List<GradeItem>,
+    scale: GradingScale,
+    passingGrade: Double,
+    recienLlegada: String?,
+    completo: Boolean,
+    /** Ya lo diste por cerrado: no se agregan notas, se reabre. */
+    cerrado: Boolean = false,
+    onAgregar: () -> Unit,
+    onCerrar: () -> Unit,
+    onReabrir: () -> Unit = {},
+    onEditar: (String) -> Unit,
+    onBorrar: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        /*
+         * **Lo que se ve no es exactamente lo que llega.**
+         *
+         * Una nota borrada desaparecia en el mismo fotograma en que se borraba y las
+         * de abajo saltaban a su sitio nuevo. Se habia cuidado la llegada y se habia
+         * dejado la marcha sin nada, que es justo lo que se notaba al deslizar una
+         * fila: el dedo la sacaba con suavidad y el hueco se cerraba de golpe.
+         *
+         * Asi que la fila borrada se queda aqui mientras dura su salida y se retira
+         * sola al acabarla. `notas` manda —quien esta y quien no—, y esta lista es lo
+         * que hay pintado ahora mismo, que durante medio segundo es una fila mas.
+         *
+         * Por eso el «aqui no hay nada» mira esta lista y no `notas`: si mirara `notas`,
+         * borrar la ultima nota cambiaria la fila por el vacio en el mismo fotograma, que
+         * es justo el corte que se venia a quitar.
+         */
+        val visibles = remember { mutableStateListOf<GradeItem>().apply { addAll(notas) } }
+        LaunchedEffect(notas) {
+            notas.forEachIndexed { i, nota ->
+                val donde = visibles.indexOfFirst { it.id == nota.id }
+                when {
+                    donde < 0 -> visibles.add(i.coerceAtMost(visibles.size), nota)
+                    visibles[donde] != nota -> visibles[donde] = nota
+                }
+            }
+        }
+        if (visibles.isEmpty()) {
+            EmptyCutNotesInline()
+        } else {
+            visibles.toList().forEach { grade ->
+                val esNueva = grade.id == recienLlegada
+                val sigue = notas.any { it.id == grade.id }
+                /*
+                 * **El estado de la transicion, no un `LaunchedEffect`.**
+                 *
+                 * Con `mutableStateOf(false)` mas un efecto que lo pone a `true`, el cambio
+                 * llega **despues** de que la composicion se haya aplicado, y si algo mas la
+                 * recompone en ese hueco la fila ya nace visible y no queda nada que animar:
+                 * ahi es donde se perdia la entrada.
+                 *
+                 * `MutableTransitionState` lleva el «venia de false, va a true» dentro del
+                 * propio estado, asi que la animacion arranca en la primera composicion pase lo
+                 * que pase alrededor. Es la forma de animar una aparicion que no depende de que
+                 * los tiempos cuadren.
+                 */
+                val estado = remember(grade.id) {
+                    androidx.compose.animation.core.MutableTransitionState(!esNueva)
+                }
+                estado.targetState = sigue
+                // Terminada la salida, la fila se quita a si misma de lo pintado.
+                if (!sigue && estado.isIdle && !estado.currentState) {
+                    SideEffect { visibles.removeAll { it.id == grade.id } }
+                }
+                /*
+                 * **Un solo gesto, no dos encadenados.**
+                 *
+                 * El hueco se abria por un lado (320 ms) y la fila se deslizaba por otro, con
+                 * su propio modificador y su propia duracion. Terminaba antes lo primero, asi
+                 * que la nota **aparecia ya entera en su sitio** y despues se corria hacia la
+                 * izquierda: no parecia que entrara, parecia que se acomodaba.
+                 *
+                 * Ahora el desplazamiento va dentro de la misma transicion que abre el hueco,
+                 * asi que empiezan y acaban juntos: la fila llega **con** el hueco.
+                 */
+                AnimatedVisibility(
+                    visibleState = estado,
+                    enter = entradaDeNota(),
+                    exit = salidaDeNota()
+                ) {
+                    /*
+                     * **Deslizar para borrar, como en el resto de listas.**
+                     *
+                     * En Tareas y en Gastos una fila se va con el dedo; aqui habia que abrir un
+                     * menu de tres puntos y elegir. Era la unica lista de la app que pedia dos
+                     * toques para lo mismo, y quien ya conoce el gesto lo intenta igualmente y
+                     * no pasa nada.
+                     *
+                     * El menu se queda: deslizar es el atajo de quien lo conoce, no el unico
+                     * camino, y editar sigue sin tener gesto propio.
+                     */
+                    FilaDeslizable(
+                        onBorrar = { onBorrar(grade.id) },
+                        shape = MaterialTheme.shapes.medium,
+                        /*
+                         * El fondo de la tarjeta, debajo de la fila.
+                         *
+                         * La fila se pinta con un gris al 55 % —a proposito, para que se
+                         * note que esta dentro del corte y no suelta— y sin nada opaco
+                         * detras ese 55 % dejaba ver el rojo de borrar **a traves** de la
+                         * nota mientras la arrastrabas.
+                         */
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ) {
+                        NotaDelCorte(
+                            grade = grade,
+                            scale = scale,
+                            passingGrade = passingGrade,
+                            onEditar = { onEditar(grade.id) },
+                            onBorrar = { onBorrar(grade.id) }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (cerrado) {
+            Text(
+                stringResource(R.string.subject_cut_closed_hint),
+                color = LocalSectionColors.current.onTrack,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+            TextButton(onClick = onReabrir, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.subject_reopen_cut), fontWeight = FontWeight.Bold)
+            }
+        } else if (completo) {
+            /*
+             * **El corte lleno no se cierra solo: lo ofrece.**
+             *
+             * Aparece al repartir el 100 % y se queda ahi hasta que lo pulses, asi que hay
+             * margen para corregir una nota antes de fijar el corte. Y el sello, que se estampa
+             * justo despues, significa algo: lo pusiste tu.
+             */
+            Text(
+                stringResource(R.string.subject_cut_full_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                modifier = Modifier.padding(top = 3.dp)
+            )
+            OutlinedButton(
+                onClick = onCerrar,
+                shapes = UniStackButtonDefaults.shapes,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = LocalSectionColors.current.onTrack
+                ),
+                border = BorderStroke(1.5.dp, LocalSectionColors.current.onTrack)
+            ) {
+                Icon(Icons.Rounded.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.subject_close_cut_short), fontWeight = FontWeight.ExtraBold)
+            }
+        } else {
+            UniStackButton(
+                text = stringResource(R.string.subject_add_grade_short),
+                onClick = onAgregar,
+                leadingIcon = Icons.Rounded.Add,
+                modifier = Modifier.fillMaxWidth().padding(top = 3.dp)
+            )
+        }
+    }
+}
+
+/** Una nota, con su peso y su valor. La forma es la del prototipo: una fila con fondo propio. */
+/**
+ * Como entra una nota recien registrada, en **una sola** transicion.
+ *
+ * La variante sale de Movimiento, con los mismos nombres que ahi: la elegida por defecto es
+ * «Desde el lado». Lo importante es que el desplazamiento y la apertura del hueco viajen en la
+ * misma `EnterTransition`, para que empiecen y terminen juntos; encadenar dos animaciones
+ * distintas era lo que hacia que la fila apareciera ya puesta y **luego** se corriera.
+ */
+@Composable
+private fun entradaDeNota(): androidx.compose.animation.EnterTransition {
+    val estilo = com.unistack.app.core.design.theme.motionActual().newGrade
+    if (!com.unistack.app.core.design.theme.hayMovimiento()) {
+        return androidx.compose.animation.EnterTransition.None
+    }
+    val hueco = expandVertically(
+        animationSpec = tween(durationMillis = 420),
+        expandFrom = Alignment.Top
+    )
+    val aparece = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = 60))
+    return when (estilo) {
+        com.unistack.app.feature_user.domain.NewGradeMotion.NINGUNA ->
+            androidx.compose.animation.EnterTransition.None
+        com.unistack.app.feature_user.domain.NewGradeMotion.LATERAL ->
+            hueco + aparece + slideInHorizontally(
+                animationSpec = tween(durationMillis = 420)
+            ) { ancho -> ancho / 2 }
+        com.unistack.app.feature_user.domain.NewGradeMotion.CAE ->
+            hueco + aparece + slideInVertically(
+                animationSpec = tween(durationMillis = 420)
+            ) { alto -> -alto }
+        com.unistack.app.feature_user.domain.NewGradeMotion.ABRE -> hueco + aparece
+        // Destello y «promedio cuenta» no mueven la fila: el hueco se abre y ya.
+        else -> hueco + aparece
+    }
+}
+
+/**
+ * Como se va una nota.
+ *
+ * No tiene variantes en Movimiento y no le hacen falta: la entrada es la que se elige y la
+ * salida solo tiene que acompanarla. Dura mas que la entrada a proposito —irse tiene que
+ * notarse menos que llegar— y cierra el hueco por arriba, en el mismo sentido en que la
+ * entrada lo abre, para que la fila de abajo suba y no baje.
+ */
+@Composable
+private fun salidaDeNota(): androidx.compose.animation.ExitTransition {
+    if (!com.unistack.app.core.design.theme.hayMovimiento()) {
+        return androidx.compose.animation.ExitTransition.None
+    }
+    return shrinkVertically(
+        animationSpec = tween(durationMillis = 520),
+        shrinkTowards = Alignment.Top
+    ) + fadeOut(animationSpec = tween(durationMillis = 300))
+}
+
+@Composable
+private fun NotaDelCorte(
+    grade: GradeItem,
+    scale: GradingScale,
+    passingGrade: Double,
+    onEditar: () -> Unit,
+    onBorrar: () -> Unit
+) {
+    var menu by remember { mutableStateOf(false) }
+    Box(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f))
+            .padding(horizontal = 13.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            grade.name,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            grade.contextLabel(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(end = 10.dp)
+        )
+        Text(
+            GradingScaleUtils.formatGrade(grade.value, scale),
+            // Suspendida es roja, no ambar: el ambar es «ojo», no «esta por debajo».
+            color = if (grade.value >= passingGrade) {
+                LocalSectionColors.current.onTrack
+            } else {
+                LocalSectionColors.current.expenses
+            },
+            fontSize = 17.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Box {
+            UniIconButton(
+                icon = Icons.Rounded.MoreVert,
+                contentDescription = stringResource(R.string.subject_grade_options),
+                onClick = { menu = true }
+            )
+            UniDropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                // Con su icono, como en el resto de menus de la app: se perdieron al
+                // reescribir la fila y el menu quedaba con dos textos sueltos.
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_edit)) },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
+                    onClick = { menu = false; onEditar() }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.action_delete)) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Rounded.DeleteOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    onClick = { menu = false; onBorrar() }
+                )
+            }
+        }
+    }
     }
 }
 
@@ -1510,6 +2195,15 @@ private fun CutCard(
     needsHistory: Boolean,
     onClick: () -> Unit,
     dimmed: Boolean = false,
+    /**
+     * Un corte que todavia no ha empezado, en una linea.
+     *
+     * Con tres cortes en pantalla, dos de ellos «Sin evaluar · 0 %» y con su barra vacia, la
+     * lista repetia tres veces la misma forma y el que estabas cursando no destacaba en nada.
+     * Colapsado se sigue viendo que existe, cuanto pesa y que no ha empezado —que es todo lo
+     * que hay que saber de el— y deja de ocupar el sitio del que si esta en juego.
+     */
+    compacto: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val progress = (summary.evaluated / 100.0).coerceIn(0.0, 1.0)
@@ -1541,10 +2235,11 @@ private fun CutCard(
                     .fillMaxHeight()
                     .background(accent)
             )
+            Column(modifier = Modifier.weight(1f)) {
             // Main content
             Row(
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -1585,7 +2280,7 @@ private fun CutCard(
                             fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal
                         )
                     }
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!compacto) Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (summary.average == null) {
                             Text(
                                 stringResource(R.string.subject_unevaluated),
@@ -1629,7 +2324,7 @@ private fun CutCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column(
+                    if (!compacto) Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -1661,6 +2356,7 @@ private fun CutCard(
                     )
                 }
             }
+            }
         }
     }
 }
@@ -1674,168 +2370,116 @@ private fun CutCard(
  * estado, así que un corte pendiente teñía de ámbar todo lo que había debajo y parecía un aviso.
  * El color del estado se queda donde significa algo: la insignia y la cifra.
  */
+/**
+ * Cuanto ha cambiado la nota, al lado de la nota.
+ *
+ * Antes esto se pintaba **dentro** del propio `Text` de la cifra, con `drawWithContent`: o caia
+ * fuera de la caja del texto y lo recortaba la tarjeta, o caia encima del ultimo digito. Un
+ * simbolo que acompana a un numero no es decoracion del numero: es otro elemento, y como tal se
+ * coloca solo, en su hueco, sin pelearse con nada.
+ *
+ * Sube en verde y baja en rojo, y no sale cuando no ha cambiado —que es la unica noticia que no
+ * es noticia—. Se retira sola a los pocos segundos: dice «acaba de pasar esto», no es un dato
+ * permanente de la pantalla.
+ */
 @Composable
-private fun CutSummaryCard(
-    summary: CutSummary,
-    maxGrade: Double,
-    scale: GradingScale
+private fun FlechaDeCambio(
+    promedio: Double?,
+    scale: GradingScale,
+    modifier: Modifier = Modifier
 ) {
-    UniCard(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = LargeCardShape,
-        tonalElevation = 0.dp,
-        contentPadding = PaddingValues(20.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        stringResource(R.string.subject_cut_grade_header),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = SectionLabelStyle
-                    )
-                    if (summary.average == null) {
-                        // Sin notas se escribía la raya de «sin dato» a 42sp y en el color del
-                        // estado: una mancha ámbar del tamaño de una nota, que se leía como un
-                        // valor y no como una ausencia.
-                        Text(
-                            stringResource(R.string.subject_unevaluated),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            style = MaterialTheme.typography.headlineSmallEmphasized
-                        )
-                    } else {
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                GradingScaleUtils.formatGrade(summary.average, scale),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                style = MaterialTheme.typography.displaySmallEmphasized
-                            )
-                            Text(
-                                " / ${GradingScaleUtils.formatGrade(maxGrade, scale)}",
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f),
-                                style = MaterialTheme.typography.titleSmall,
-                                modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
-                            )
-                        }
-                    }
-                }
-                StatusBadge(status = summary.status)
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                EvaluationBar(
-                    fraction = (summary.evaluated / 100.0).coerceIn(0.0, 1.0),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                // Antes decía «3 de 3 notas registradas», comparando un número consigo mismo.
-                // Lo que falta por saber cuando el corte no está cerrado es cuánto peso queda
-                // libre, que es justo lo que hay que repartir en la siguiente nota.
-                val remaining = (100.0 - summary.evaluated).coerceAtLeast(0.0)
-                Text(
-                    buildString {
-                        append(stringResource(R.string.subject_percent_evaluated, formatPercent(summary.evaluated)))
-                        append("  ·  ")
-                        append(gradeCountLabel(summary.grades.size))
-                        if (remaining > 0.05) {
-                            append(stringResource(R.string.subject_remaining_to_distribute, formatPercent(remaining)))
-                        }
-                    },
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.80f),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+    if (promedio == null) return
+    var anterior by remember { mutableStateOf(promedio) }
+    var delta by remember { mutableStateOf(0.0) }
+    LaunchedEffect(promedio) {
+        val cambio = promedio - anterior
+        anterior = promedio
+        // El umbral evita que un redondeo de milesimas dispare el gesto.
+        if (kotlin.math.abs(cambio) >= 0.005) {
+            delta = cambio
+            kotlinx.coroutines.delay(2600)
+            delta = 0.0
         }
+    }
+
+    val visible = delta != 0.0
+    /*
+     * **Lo que se pinta es el ultimo cambio de verdad, no el cero que lo apaga.**
+     *
+     * Al terminar se pone `delta = 0.0` para que la flecha se vaya, pero mientras dura la
+     * salida el contenido se sigue dibujando: con el cero, `subio` pasaba a falso y la flecha
+     * se despedia en rojo diciendo «−0,00». Un cambio de nada, marcado como una caida.
+     *
+     * Guardando aparte el ultimo valor distinto de cero, la flecha se va **como entro**: con su
+     * signo, su color y su cifra.
+     */
+    var ultimo by remember { mutableStateOf(0.0) }
+    if (delta != 0.0) ultimo = delta
+    val subio = ultimo > 0
+    /*
+     * **Entra y sale animada; antes solo entraba.**
+     *
+     * Al terminar, el composable se retiraba de golpe: desaparecia entero en un fotograma y la
+     * cifra de al lado **saltaba** a ocupar su hueco. Justo lo contrario de lo que la animacion
+     * venia a contar, y lo que hacia que todo el gesto se sintiera cortado al final.
+     *
+     * Ahora la salida dura mas que la entrada —irse tiene que notarse menos que llegar— y el
+     * hueco se cierra con ella, asi que el numero se desliza a su sitio en vez de dar el salto.
+     */
+    /*
+     * Bajar se dice en **rojo**, no en ambar: `atRisk` es el ambar de «ojo con esto», y en una
+     * caida se leia apagado. El rojo de la app es el de Gastos, el unico rojo de verdad de la
+     * paleta —el `error` de Material tira a piel en oscuro y no dice peligro—.
+     */
+    val tinte = if (subio) LocalSectionColors.current.onTrack else LocalSectionColors.current.expenses
+
+    /*
+     * **Lo que hay que animar es el ANCHO, no la opacidad.**
+     *
+     * Ya se desvanecia al salir, pero la flecha y su cifra seguian ocupando su sitio entero
+     * hasta el ultimo fotograma: cuando por fin desaparecian, el numero de al lado saltaba de
+     * golpe los sesenta y pico pixeles que dejaban libres. De ahi el tiron del final, que es
+     * justo lo que la salida venia a evitar.
+     *
+     * `expandHorizontally` / `shrinkHorizontally` animan **la medida**: el hueco se abre y se
+     * cierra poco a poco y el numero se desliza acompanandolo. Y la salida dura mas que la
+     * entrada, porque irse tiene que notarse menos que llegar.
+     */
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = expandHorizontally(
+            animationSpec = tween(durationMillis = 380),
+            expandFrom = Alignment.Start
+        ) + fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = 80)) +
+            slideInVertically(animationSpec = tween(durationMillis = 380)) { if (subio) it else -it },
+        exit = shrinkHorizontally(
+            animationSpec = tween(durationMillis = 560),
+            shrinkTowards = Alignment.Start
+        ) + fadeOut(animationSpec = tween(durationMillis = 380))
+    ) {
+    Row(
+        modifier = Modifier.padding(start = 10.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            if (subio) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
+            contentDescription = null,
+            tint = tinte,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            (if (subio) "+" else "\u2212") +
+                GradingScaleUtils.formatGrade(kotlin.math.abs(ultimo), scale),
+            color = tinte,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
     }
 }
 
 // Inline non-card version for use inside a grouped card
-@Composable
-private fun GradeRowItem(
-    grade: GradeItem,
-    scale: GradingScale,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var showMenu by remember { mutableStateOf(false) }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(grade.type.colorLocal().copy(alpha = 0.15f), MaterialTheme.shapes.small),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                grade.type.icon(),
-                contentDescription = null,
-                tint = grade.type.colorLocal(),
-                modifier = Modifier.size(22.dp)
-            )
-        }
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                grade.name,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                grade.contextLabel(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp
-            )
-        }
-        Text(
-            GradingScaleUtils.formatGrade(grade.value, scale),
-            color = LocalSectionColors.current.onTrack,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.ExtraBold
-        )
-        Box {
-            UniIconButton(
-                icon = Icons.Rounded.MoreVert,
-                contentDescription = stringResource(R.string.subject_grade_options),
-                onClick = { showMenu = true }
-            )
-            UniDropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false },
-                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.action_edit), color = MaterialTheme.colorScheme.onSurface) },
-                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    onClick = { showMenu = false; onEditClick() }
-                )
-                UniDivider(Modifier.padding(vertical = 4.dp))
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error) },
-                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-                    onClick = { showMenu = false; onDeleteClick() }
-                )
-            }
-        }
-    }
-}
-
-
 @Composable
 private fun GradeItem.contextLabel(): String {
     return when {
@@ -1986,9 +2630,25 @@ private fun GradeType.icon(): ImageVector {
     }
 }
 
+/** El nombre del tipo, el mismo que ofrece el formulario al elegirlo. */
 @Composable
 @ReadOnlyComposable
-private fun GradeType.colorLocal(): Color {
+internal fun GradeType.labelLocal(): String = stringResource(
+    when (this) {
+        GradeType.WORKSHOP -> R.string.grade_type_workshop
+        GradeType.PRESENTATION -> R.string.grade_type_presentation
+        GradeType.QUIZ -> R.string.grade_type_quiz
+        GradeType.EXAM -> R.string.grade_type_midterm
+        GradeType.PROJECT -> R.string.grade_type_project
+        GradeType.RESEARCH -> R.string.grade_type_research
+        GradeType.PRACTICE -> R.string.grade_type_practice
+        GradeType.OTHER -> R.string.grade_type_other
+    }
+)
+
+@Composable
+@ReadOnlyComposable
+internal fun GradeType.colorLocal(): Color {
     return when (this) {
         GradeType.WORKSHOP,
         GradeType.PRACTICE -> LocalSectionColors.current.onTrack

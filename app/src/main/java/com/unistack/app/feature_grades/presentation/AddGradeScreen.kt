@@ -1,4 +1,7 @@
-@file:OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@file:OptIn(
+    ExperimentalMaterial3ExpressiveApi::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
 
 package com.unistack.app.feature_grades.presentation
 
@@ -24,9 +27,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ExpandLess
+import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material3.ButtonDefaults
@@ -37,20 +42,38 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.unistack.app.core.utils.performSafely
+import androidx.compose.foundation.BorderStroke
 import com.unistack.app.core.design.components.avisoDeError
 import com.unistack.app.core.design.components.UniBackButton
 import com.unistack.app.core.design.components.UniSwitch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import java.time.LocalDate
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.unistack.app.core.design.components.UniCard
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import com.unistack.app.core.design.components.EvaluationBar
+import com.unistack.app.core.design.components.UniDivider
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -62,6 +85,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
+import com.unistack.app.core.design.components.UniSegmentedControl
+import com.unistack.app.core.design.components.UniSegmentedOption
 import com.unistack.app.core.design.components.dismissKeyboardOnTapOutside
 import com.unistack.app.core.design.components.rememberLeaveGuard
 import com.unistack.app.core.utils.TextValidators
@@ -87,8 +112,19 @@ private val FormCardShape: Shape
     @Composable
     @ReadOnlyComposable
     get() = MaterialTheme.shapes.medium
+/*
+ * **El campo tiene que verse contra lo que hay detras.**
+ *
+ * En la hoja, el fondo es `surfaceContainerLow`; el campo usaba `surfaceContainerHigh` en
+ * oscuro, que a un paso de distancia son el mismo gris, y el borde iba en `outlineVariant`, que
+ * en oscuro es practicamente invisible. Resultado: un campo vacio no parecia un campo, parecia
+ * un hueco con una etiqueta encima.
+ *
+ * Dos escalones de separacion y un borde que existe. En claro el problema no se daba, asi que
+ * ahi se queda como estaba.
+ */
 private val FormFieldColor: Color
-    @Composable get() = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.surfaceContainerLow
+    @Composable get() = if (LocalIsDarkTheme.current) MaterialTheme.colorScheme.surfaceContainerHighest else MaterialTheme.colorScheme.surfaceContainerLow
 
 private val DisabledButtonColor: Color
     @Composable get() = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -99,13 +135,142 @@ private val DisabledButtonColor: Color
  * Estaban copiados tres veces con catorce líneas cada uno, así que cualquier ajuste había que
  * hacerlo tres veces y el del peso ya se había quedado sin el color de etiqueta.
  */
+/**
+ * Una cifra que se compone tocando, no escribiendo.
+ *
+ * Parece un campo y se comporta como tal —tiene su etiqueta, se ilumina cuando esta activa y se
+ * pone en rojo si el valor no vale— pero no pide el teclado del sistema: lo que la rellena es el
+ * teclado de la propia hoja, justo debajo.
+ */
+@Composable
+private fun CifraDeLaHoja(
+    valor: String,
+    sufijo: String,
+    etiqueta: String,
+    activo: Boolean,
+    error: Boolean,
+    onClick: () -> Unit
+) {
+    val borde = when {
+        error -> MaterialTheme.colorScheme.error
+        activo -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
+    }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = FormCardShape,
+        color = FormFieldColor,
+        border = BorderStroke(if (activo) 2.dp else 1.dp, borde)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp)) {
+            Text(
+                etiqueta,
+                color = if (activo) borde else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    valor.ifBlank { "0" },
+                    color = if (valor.isBlank()) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    sufijo,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 3.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * El teclado de la hoja: diez digitos, una coma y un borrado.
+ *
+ * Nada mas, porque nada mas se puede escribir aqui. El del sistema traia tabulador, idioma y
+ * sugerencias —tres teclas que en un numero de dos cifras no hacen nada— y encima tapaba media
+ * pantalla, que era el problema de verdad: el boton de guardar quedaba debajo y habia que
+ * desplazarse a ciegas para llegar a el.
+ */
+@Composable
+private fun TecladoDeLaHoja(
+    onDigito: (String) -> Unit,
+    onComa: () -> Unit,
+    comaActiva: Boolean,
+    onBorrar: () -> Unit
+) {
+    val haptics = LocalHapticFeedback.current
+    val filas = listOf(
+        listOf("1", "2", "3"),
+        listOf("4", "5", "6"),
+        listOf("7", "8", "9"),
+        listOf(",", "0", "\u232B")
+    )
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        filas.forEach { fila ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                fila.forEach { tecla ->
+                    val apagada = tecla == "," && !comaActiva
+                    Surface(
+                        onClick = {
+                            haptics.performSafely(HapticFeedbackType.SegmentTick)
+                            when (tecla) {
+                                "," -> onComa()
+                                "\u232B" -> onBorrar()
+                                else -> onDigito(tecla)
+                            }
+                        },
+                        enabled = !apagada,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 13.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                tecla,
+                                color = if (apagada) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun formFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = FormFieldColor,
     unfocusedContainerColor = FormFieldColor,
     disabledContainerColor = FormFieldColor,
     focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
     errorBorderColor = MaterialTheme.colorScheme.error,
     focusedTextColor = MaterialTheme.colorScheme.onSurface,
     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -193,6 +358,39 @@ fun AddGradeScreen(
     } else {
         null
     }
+    /*
+     * **El teclado ya esta puesto cuando la hoja termina de subir.**
+     *
+     * Registrar una nota es escribir una cifra: si al abrir hay que tocar el campo antes de
+     * poder escribirla, el gesto son dos toques en vez de uno. Solo dentro de la hoja —a
+     * pantalla completa la hoja no sube, y robar el foco nada mas entrar tapa el formulario
+     * con el teclado sin que nadie lo haya pedido— y solo al crear: editando se viene a
+     * cambiar cualquiera de los campos, no forzosamente la nota.
+     */
+    /*
+     * **Que cifra esta recibiendo lo que se teclea.**
+     *
+     * Con un teclado propio hace falta decir a donde van las teclas, cosa que con el del
+     * sistema resolvia el foco. Empieza en la nota, que es lo primero que se escribe, y se
+     * cambia tocando la otra cifra.
+     */
+    var campoActivo by rememberSaveable { mutableStateOf(0) }
+
+    /*
+     * **Dos pasos, y el segundo se puede saltar.**
+     *
+     * Once controles a la vez para lo que son dos datos: eso es lo que hacia la hoja
+     * inmanejable, no el orden ni el color. Lo obligatorio —la nota y su peso— cabe entero en
+     * una pantalla con el teclado abierto; el nombre y el tipo se responden de memoria y son
+     * otro momento, asi que van detras.
+     *
+     * Y los dos interruptores que cambian las reglas de lo de arriba —«no conozco el peso» y
+     * «es la nota final del corte»— viven plegados: casi nadie los toca, y cuando se tocan
+     * redefinen lo que hay encima, que es justo lo que no puede quedar debajo por accidente.
+     */
+    var paso by rememberSaveable { mutableStateOf(1) }
+    var avanzado by rememberSaveable { mutableStateOf(false) }
+
     var changingCut by rememberSaveable { mutableStateOf(false) }
     val selectedPeriod = cutScheme.cuts.firstOrNull { it.id == selectedCutId }
         ?: lockedCut
@@ -216,16 +414,18 @@ fun AddGradeScreen(
         }
     )
 
-    val gradeValue = value.toDoubleOrNull()
-    val percentageValue = percentage.toDoubleOrNull()
-    val currentPercentage = subject?.grades
-        ?.filterNot { it.id == gradeId }
-        ?.filter {
+    val gradeValue = value.comoNumero()
+    val percentageValue = percentage.comoNumero()
+    // Las notas que ya ocupan sitio en este corte. Antes solo se sumaban; ahora la lista
+    // tambien se usa para pintar una pieza por cada una en la barra de abajo.
+    val notasDelCorte = subject?.grades.orEmpty()
+        .filterNot { it.id == gradeId }
+        .filter {
             it.cutId == selectedPeriod.id &&
                 it.source == GradeSource.ACTIVITY &&
                 it.weightStatus == GradeWeightStatus.KNOWN
         }
-        ?.sumOf { it.percentage } ?: 0.0
+    val currentPercentage = notasDelCorte.sumOf { it.percentage }
     val totalPercentage = currentPercentage +
         if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
             (percentageValue ?: 0.0) / 100.0
@@ -273,9 +473,53 @@ fun AddGradeScreen(
     // El nombre que se pone solo cuando registras la nota final del corte. Se compara
     // con lo escrito para saber si sigue siendo automático o si el usuario lo cambió.
     val cutFinalName = stringResource(R.string.grade_final_result, cutDisplayName(selectedPeriod))
+    /*
+     * **Desplazar el contenido no cierra la hoja.**
+     *
+     * Una hoja de Material se va cuando el dedo baja y lo que hay dentro ya no tiene mas
+     * recorrido: el desplazamiento sobrante se lo queda ella y lo usa para bajarse. En una
+     * lista es lo que se espera; en un formulario a medio rellenar es perder lo escrito por
+     * un gesto que solo pretendia subir un poco, y aqui pasaba con casi cualquier arrastre
+     * porque el contenido apenas tiene recorrido que gastar.
+     *
+     * Esta conexion se queda con lo que sobra antes de que llegue a la hoja. Cerrarla sigue
+     * siendo cosa del asa de arriba, del gesto de volver y del boton: tres formas, todas
+     * deliberadas, ninguna a medio teclear una nota.
+     */
+    val soloElContenido = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset = available
+
+            override suspend fun onPostFling(
+                consumed: Velocity,
+                available: Velocity
+            ): Velocity = available
+        }
+    }
     var saveBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
 
+    /*
+     * **Dentro de la hoja no hay estiron al llegar al tope.**
+     *
+     * Lanzando el contenido con fuerza, el desplazamiento llega al final enseguida y ahi
+     * se para a la vista, pero la animacion de inercia sigue viva decayendo y Compose no
+     * le entrega la velocidad sobrante al borde hasta que esa animacion termina: de ahi
+     * el paron seco y, un momento despues, el estiron.
+     *
+     * En una pantalla normal el estirado cae a tiempo y es la senal de «se acabo» que
+     * Android usa en todas partes, asi que ahi se queda. En la hoja no, porque la hoja
+     * tiene su propio arrastre: el gesto se reparte entre desplazar el contenido y mover
+     * la hoja entera, y el efecto de borde llega siempre a destiempo. Es el mismo motivo
+     * —y la misma solucion— que en la fila de fichas del compositor de agenda.
+     */
+    CompositionLocalProvider(
+        LocalOverscrollFactory provides if (enHoja) null else LocalOverscrollFactory.current
+    ) {
     Box(
         modifier = modifier
             .then(if (enHoja) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
@@ -287,10 +531,23 @@ fun AddGradeScreen(
         Column(
             modifier = Modifier
                 .then(if (enHoja) Modifier.fillMaxWidth() else Modifier.fillMaxSize())
+                .then(if (enHoja) Modifier.nestedScroll(soloElContenido) else Modifier)
                 .verticalScroll(rememberScrollState())
                 .then(if (enHoja) Modifier else Modifier.statusBarsPadding())
                 .padding(horizontal = 20.dp)
-                .padding(top = 10.dp, bottom = saveBarHeight + scrollBottomRoom),
+                /*
+                 * En la hoja no hay barra de navegacion debajo que esquivar.
+                 *
+                 * `scrollBottomRoom` son los 28 dp que toda pantalla deja para que su
+                 * ultimo elemento suba por encima de la barra inferior de la app. Dentro
+                 * de una hoja esa barra no existe, asi que eran 28 dp de nada que hacian
+                 * el contenido mas alto que la hoja: aparecia un desplazamiento minusculo
+                 * que solo servia para dar el tiron al llegar al final.
+                 */
+                .padding(
+                    top = 10.dp,
+                    bottom = saveBarHeight + if (enHoja) 8.dp else scrollBottomRoom
+                ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -316,49 +573,288 @@ fun AddGradeScreen(
                 )
             }
 
-            FormBlock(
-                title = stringResource(R.string.grade_what_recording),
-                icon = Icons.AutoMirrored.Rounded.Assignment,
+            /*
+             * **Las dos partes, arriba y como pestanas.**
+             *
+             * El acceso al segundo paso estuvo en el pie —debajo de guardar, estorbando al
+             * pulgar cada vez que ibas a la accion principal— y despues al final del contenido,
+             * donde se perdia. Arriba dice **de que va cada parte**, se ve que hay dos desde el
+             * primer momento, y se salta entre ellas sin buscar nada.
+             *
+             * Editando no hay pestanas: se viene a cambiar un campo concreto, no a recorrer un
+             * alta, y partir en dos algo que ya existe solo esconde la mitad.
+             */
+            if (!isEditing) {
+                /*
+                 * **El control segmentado de la app, no dos botones hechos aqui.**
+                 *
+                 * Estaban escritos a mano: dos superficies rellenas, una con rotulo de dos
+                 * lineas y otra de una, con su propio alto y su propio tipo de letra. Al
+                 * lado de los diecinueve sitios donde la app ya elige entre dos vistas
+                 * —Materias o Tareas, Horario o Calendario— se veian de otra app.
+                 *
+                 * `UniSegmentedControl` los deja conectados, del alto de siempre y con el
+                 * toque haptico al cambiar. Lo de «opcional» se va al titulo del bloque,
+                 * que es donde se lee sin partir el rotulo de la pestana en dos.
+                 */
+                UniSegmentedControl(
+                    selected = paso,
+                    options = listOf(
+                        UniSegmentedOption(1, stringResource(R.string.grade_tab_grade)),
+                        UniSegmentedOption(2, stringResource(R.string.grade_tab_details))
+                    ),
+                    onSelected = { paso = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            /*
+             * **«Solo la nota final» es la respuesta a un caso, no una opcion permanente.**
+             *
+             * Se usa cuando te pones al dia: instalas la app a mitad de semestre, el corte 1 ya
+             * cerro, y meter sus notas una a una es inviable porque no las llevabas apuntadas.
+             * Ese es **el unico** momento en que hace falta.
+             *
+             * Como interruptor fijo estaba mal por los dos lados: se ofrecia siempre —en cada
+             * nota del corte que cursas, donde no significa nada— y a la vez estaba escondido
+             * en un pliegue el dia que si hacia falta. Y activarlo hacia desaparecer el otro
+             * interruptor, con lo que parecia que no habia vuelta atras.
+             *
+             * Aqui se pregunta una vez, arriba, y solo cuando el corte de destino ya quedo
+             * atras y esta vacio. Las dos respuestas son botones, asi que siempre se puede
+             * cambiar de idea.
+             */
+            val ordenDelActual = cutScheme.cuts
+                .firstOrNull { it.id == subject?.chosenCutId }?.order ?: Int.MAX_VALUE
+            val corteAtrasadoYVacio = !isEditing &&
+                selectedPeriod.order < ordenDelActual &&
+                subject?.grades.orEmpty().none { it.cutId == selectedPeriod.id }
+
+            if (corteAtrasadoYVacio && paso == 1) {
+                UniCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    shape = MaterialTheme.shapes.large,
+                    contentPadding = PaddingValues(14.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                        Text(
+                            stringResource(R.string.grade_cut_closed_question),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            ActivityChip(
+                                label = stringResource(R.string.grade_mode_one_by_one),
+                                isSelected = selectedSource == GradeSource.ACTIVITY,
+                                onClick = {
+                                    selectedSource = GradeSource.ACTIVITY
+                                    if (name == cutFinalName) name = ""
+                                    percentage = ""
+                                    error = null
+                                }
+                            )
+                            ActivityChip(
+                                label = stringResource(R.string.grade_mode_final_only),
+                                isSelected = selectedSource == GradeSource.PERIOD_FINAL,
+                                onClick = {
+                                    selectedSource = GradeSource.PERIOD_FINAL
+                                    weightUnknown = false
+                                    percentage = "100"
+                                    if (name.isBlank()) name = cutFinalName
+                                    error = null
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (paso == 1 || isEditing) FormBlock(
+                title = stringResource(R.string.grade_value_section),
+                icon = Icons.Rounded.BarChart,
                 accent = MaterialTheme.colorScheme.primary
             ) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ActivityChip(
-                        label = stringResource(R.string.grade_an_activity),
-                        isSelected = selectedSource == GradeSource.ACTIVITY,
-                        onClick = {
-                            selectedSource = GradeSource.ACTIVITY
-                            // Al volver aquí se retira el nombre que puso la otra opción. Se
-                            // quedaba puesto, así que la actividad nacía llamándose
-                            // «Resultado final Corte 1» sin que nadie lo hubiera escrito.
-                            if (name == cutFinalName) name = ""
-                            error = null
-                        }
+                /*
+                 * **La cifra se escribe con el teclado de la propia hoja.**
+                 *
+                 * El del sistema tapaba media pantalla, empujaba el formulario y obligaba a
+                 * desplazarse a ciegas para llegar al boton; ademas trae una tecla de tabulador,
+                 * otra de idioma y una barra de sugerencias que aqui no significan nada, porque
+                 * lo unico que se puede escribir son diez digitos y una coma.
+                 *
+                 * Un teclado propio ocupa lo que ocupa, no se va ni vuelve, y sus teclas son
+                 * exactamente las que hacen falta. La cifra deja de ser un campo de texto y
+                 * pasa a ser lo que siempre fue: un numero grande que se compone tocando.
+                 */
+                CifraDeLaHoja(
+                    valor = value,
+                    sufijo = "/ $maxGradeLabel",
+                    etiqueta = stringResource(R.string.grade_obtained),
+                    activo = campoActivo == 0,
+                    error = value.isNotBlank() && !isGradeValid,
+                    onClick = { campoActivo = 0 }
+                )
+
+                if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
+                    CifraDeLaHoja(
+                        valor = percentage,
+                        sufijo = "%",
+                        etiqueta = stringResource(R.string.grade_weight_within_cut, cutDisplayName(selectedPeriod)),
+                        activo = campoActivo == 1,
+                        error = percentage.isNotBlank() && !isPercentageValid,
+                        onClick = { campoActivo = 1 }
                     )
-                    ActivityChip(
-                        label = stringResource(R.string.grade_final_cut_grade),
-                        isSelected = selectedSource == GradeSource.PERIOD_FINAL,
-                        onClick = {
-                            selectedSource = GradeSource.PERIOD_FINAL
-                            weightUnknown = false
-                            percentage = "100"
-                            if (name.isBlank()) name = cutFinalName
-                            error = null
+                    Text(
+                        text = when {
+                            percentage.isNotBlank() && !isPercentageValid ->
+                                stringResource(R.string.grade_weight_exceeds, cutDisplayName(selectedPeriod), formatPercent(remainingWeight))
+                            remainingWeight <= 0.05 ->
+                                stringResource(R.string.grade_weight_already_full, cutDisplayName(selectedPeriod))
+                            else ->
+                                stringResource(R.string.grade_weight_remaining, formatPercent(remainingWeight), cutDisplayName(selectedPeriod))
+                        },
+                        color = if (percentage.isNotBlank() && !isPercentageValid) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                    /*
+                     * **Cuanto del corte llevas repartido, viendolo.**
+                     *
+                     * El texto de abajo ya decia cuanto queda, pero en numero: para saber si
+                     * un 40 % es mucho o poco en ese corte habia que restar de cabeza. La
+                     * barra lo ensena de un vistazo, con la parte apagada siendo lo que ya
+                     * estaba repartido y la viva lo que se lleva esta nota.
+                     *
+                     * Es la misma `EvaluationBar` de la materia y del corte, asi que respeta
+                     * la forma —ondulada o recta— que este elegida en Apariencia.
+                     */
+                    val pesoEscrito = percentage.comoNumero() ?: 0.0
+                    val yaRepartido = (100.0 - remainingWeight).coerceIn(0.0, 100.0)
+                    val conEsta = (yaRepartido + pesoEscrito).coerceIn(0.0, 100.0)
+                    EvaluationBar(
+                        fraction = conEsta / 100.0,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (percentage.isNotBlank() && !isPercentageValid) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
                         }
                     )
                 }
-                Text(
-                    if (selectedSource == GradeSource.PERIOD_FINAL) {
-                        stringResource(R.string.grade_final_cut_grade_desc)
-                    } else {
-                        stringResource(R.string.grade_activity_desc)
+
+                TecladoDeLaHoja(
+                    onDigito = { d ->
+                        error = null
+                        if (campoActivo == 0) {
+                            val t = value + d
+                            // Una nota no pasa del maximo ni tiene mas de una cifra entera.
+                            if ((t.comoNumero() ?: 0.0) <= maxGrade && t.replace(",", "").length <= 2) {
+                                value = t
+                            }
+                        } else {
+                            val t = percentage + d
+                            if ((t.comoNumero() ?: 0.0) <= 100.0) percentage = t
+                        }
                     },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp
+                    onComa = {
+                        // El peso es entero: no hay pesos con decimales en ningun corte.
+                        if (campoActivo == 0 && value.isNotEmpty() && !value.contains(",")) {
+                            value += ","
+                        }
+                    },
+                    comaActiva = campoActivo == 0,
+                    onBorrar = {
+                        error = null
+                        if (campoActivo == 0) value = value.dropLast(1) else percentage = percentage.dropLast(1)
+                    }
                 )
+
+                /*
+                 * Un solo toque para lo que casi nadie toca.
+                 *
+                 * Los dos interruptores de aqui dentro redefinen lo de arriba, asi que no
+                 * pueden estar sueltos en el camino; pero tampoco escondidos del todo, porque
+                 * cuando hacen falta hacen mucha falta. Un pliegue con su nombre es el termino
+                 * medio: se ve que hay algo, y no estorba.
+                 */
+                TextButton(
+                    onClick = { avanzado = !avanzado },
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        if (avanzado) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.grade_more_options),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 13.sp
+                    )
+                }
+
+                /*
+                 * Los dos que cambian las reglas, juntos y detras del pliegue.
+                 *
+                 * Uno retira el peso del calculo y el otro lo pone al 100 % sustituyendo el
+                 * corte entero: los dos redefinen el campo que hay justo encima. Sueltos en el
+                 * camino se activan sin querer —y eso costaba entender por que la nota no
+                 * contaba—; escondidos del todo no se encuentran cuando hacen falta. Un pliegue
+                 * con su nombre es el termino medio.
+                 */
+                if (avanzado) {
+                if (selectedSource == GradeSource.ACTIVITY) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.grade_unknown_weight),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = stringResource(R.string.grade_unknown_weight_hint),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        UniSwitch(
+                            checked = weightUnknown,
+                            onCheckedChange = {
+                                weightUnknown = it
+                                error = null
+                            }
+                        )
+                    }
+                }
+                }
+            }
+
+            if (paso == 2 || isEditing) FormBlock(
+                title = if (isEditing) {
+                    stringResource(R.string.grade_what_recording)
+                } else {
+                    stringResource(R.string.grade_what_recording) + " \u00b7 " +
+                        stringResource(R.string.grade_tab_optional)
+                },
+                icon = Icons.AutoMirrored.Rounded.Assignment,
+                accent = MaterialTheme.colorScheme.primary
+            ) {
                 if (!isEditing && lockedCut == null && cutByDate != null && !changingCut) {
                     // Lo eligio la fecha. Se dice cual y por que, y se deja salida a mano.
                     UniCard(
@@ -470,110 +966,7 @@ fun AddGradeScreen(
                         }
                     }
                 }
-            }
 
-            FormBlock(
-                title = stringResource(R.string.grade_value_section),
-                icon = Icons.Rounded.BarChart,
-                accent = MaterialTheme.colorScheme.primary
-            ) {
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = {
-                        value = it
-                        error = null
-                    },
-                    label = { Text(stringResource(R.string.grade_obtained)) },
-                    placeholder = { Text("0") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = FormCardShape,
-                    isError = value.isNotBlank() && !isGradeValid,
-                    trailingIcon = {
-                        Text(
-                            text = "/ $maxGradeLabel",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                    },
-                    colors = formFieldColors()
-                )
-
-                if (selectedSource == GradeSource.ACTIVITY) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.grade_unknown_weight),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = stringResource(R.string.grade_unknown_weight_hint),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                                lineHeight = 16.sp
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        UniSwitch(
-                            checked = weightUnknown,
-                            onCheckedChange = {
-                                weightUnknown = it
-                                error = null
-                            }
-                        )
-                    }
-                }
-
-                if (selectedSource == GradeSource.ACTIVITY && !weightUnknown) {
-                    OutlinedTextField(
-                        value = percentage,
-                        onValueChange = {
-                            percentage = it
-                            error = null
-                        },
-                        label = { Text(stringResource(R.string.grade_weight_within_cut, cutDisplayName(selectedPeriod))) },
-                        placeholder = { Text("0") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = FormCardShape,
-                        isError = percentage.isNotBlank() && !isPercentageValid,
-                        trailingIcon = {
-                            Text(
-                                text = "%",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                        },
-                        supportingText = {
-                            // Antes decía «la suma de pesos debe ser 100%», que es la regla
-                            // pero no el dato: la pantalla sabe cuánto queda libre y no lo
-                            // decía, así que había que ir a mirarlo a otra parte.
-                            Text(
-                                text = when {
-                                    percentage.isNotBlank() && !isPercentageValid ->
-                                        stringResource(R.string.grade_weight_exceeds, cutDisplayName(selectedPeriod), formatPercent(remainingWeight))
-                                    remainingWeight <= 0.05 ->
-                                        stringResource(R.string.grade_weight_already_full, cutDisplayName(selectedPeriod))
-                                    else ->
-                                        stringResource(R.string.grade_weight_remaining, formatPercent(remainingWeight), cutDisplayName(selectedPeriod))
-                                },
-                                color = if (percentage.isNotBlank() && !isPercentageValid) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        },
-                        colors = formFieldColors()
-                    )
-                }
             }
 
             error?.let {
@@ -603,6 +996,11 @@ fun AddGradeScreen(
             },
             shadowElevation = 8.dp
         ) {
+            Column(
+                modifier = Modifier
+                    .bottomActionInsets()
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
+            ) {
             Button(
                 shapes = UniStackButtonDefaults.shapes,
                 onClick = {
@@ -663,8 +1061,6 @@ fun AddGradeScreen(
                 ),
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
-                    .bottomActionInsets()
-                    .padding(horizontal = 20.dp, vertical = 12.dp)
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
@@ -675,7 +1071,10 @@ fun AddGradeScreen(
                     color = if (isValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+
+            }
         }
+    }
     }
 
 
@@ -746,3 +1145,13 @@ private fun ActivityChip(
 private fun cutDisplayName(cut: GradingCut): String = cut.name.takeIf { it.isNotBlank() } ?: stringResource(R.string.subject_cut_order, cut.order)
 
 private fun formatPercent(value: Double): String = String.format(Locale.US, "%.0f", value)
+
+/*
+ * **Un 5,0 es un 5,0.**
+ *
+ * `toDoubleOrNull` solo entiende el punto, asi que quien escribia la coma —que es lo que pone
+ * el teclado en espanol, y lo que la propia app usa al mostrar la nota en varios sitios— veia
+ * el campo en rojo y no sabia por que. Aqui se aceptan las dos y no se elige por el idioma del
+ * telefono: en un campo de una sola cifra no hay separador de miles con el que confundirse.
+ */
+private fun String.comoNumero(): Double? = trim().replace(',', '.').toDoubleOrNull()

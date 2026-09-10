@@ -89,6 +89,7 @@ import com.unistack.app.feature_grades.presentation.SubjectDetailScreen
 import com.unistack.app.feature_grades.presentation.SubjectFormMode
 import com.unistack.app.feature_grades.presentation.SubjectFormScreen
 import com.unistack.app.feature_grades.presentation.SubjectCutDetailScreen
+import com.unistack.app.feature_grades.presentation.SubjectStatsScreen
 import com.unistack.app.feature_home.presentation.HomeScreen
 import com.unistack.app.feature_home.presentation.HomeViewModel
 import com.unistack.app.feature_notifications.presentation.NotificationDetailScreen
@@ -895,6 +896,7 @@ fun MainNavGraph(
                         navController.navigateBackOr(AppRoutes.academic(AppRoutes.AcademicTabSubjects), enabledModules)
                     },
                     onCutClick = { id, cutId -> navController.navigateIfModuleEnabled(AppRoutes.subjectCutDetail(id, cutId), enabledModules) },
+                    onStatsClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.subjectStats(id), enabledModules) },
                     onEditSubjectClick = { id -> navController.navigateIfModuleEnabled(AppRoutes.editSubject(id), enabledModules) },
                     onEditGradeClick = { id, gradeId -> navController.navigateIfModuleEnabled(AppRoutes.editGrade(id, gradeId), enabledModules) },
                     onCompleteHistoryClick = { id ->
@@ -927,6 +929,15 @@ fun MainNavGraph(
                             AppRoutes.addGradeFromHistory(id, cutId),
                             enabledModules
                         )
+                    }
+                )
+            }
+            screen("${AppRoutes.SubjectStats}/{subjectId}") { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId").orEmpty()
+                SubjectStatsScreen(
+                    subjectId = subjectId,
+                    onBackClick = {
+                        navController.navigateBackOr(AppRoutes.subjectDetail(subjectId), enabledModules)
                     }
                 )
             }
@@ -1210,6 +1221,7 @@ internal fun bottomRouteFor(route: String?): String? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppRoutes.Academic
+        routeBelongsTo(route, AppRoutes.SubjectStats) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.SubjectCutDetail) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppRoutes.Academic
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppRoutes.Academic
@@ -1284,6 +1296,7 @@ internal fun moduleForRoute(route: String?): AppModule? {
         routeBelongsTo(route, AppRoutes.AddSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddSubjectFromTask) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectDetail) -> AppModule.GRADES
+        routeBelongsTo(route, AppRoutes.SubjectStats) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.SubjectCutDetail) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.EditSubject) -> AppModule.GRADES
         routeBelongsTo(route, AppRoutes.AddGrade) -> AppModule.GRADES
