@@ -347,11 +347,58 @@ class GradeCalculatorTest {
     }
 
     @Test
-    fun `being below the passing grade is critical, not just behind`() {
+    fun `being below the passing grade early on is a warning, not an alarm`() {
         val cuts = listOf(
-            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
-            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.20, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.80, order = 2)
         )
+        // 40 de 100 con el 20 % evaluado: el promedio de hoy no aprueba, pero el techo es
+        // 8 + 80 = 88 y queda el 80 % del semestre por delante. Es un aviso, no una alarma.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 80.0,
+            maxGrade = 100.0,
+            passingGrade = 60.0
+        )
+
+        assertEquals(88.0, result.bestPossible!!, 0.0001)
+        assertEquals(GradeAlertLevel.BEHIND, result.alertLevel)
+    }
+
+    @Test
+    fun `being below the passing grade early on is still critical if it can no longer be passed`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.20, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.80, order = 2)
+        )
+        // Mismo 20 % evaluado, pero con el aprobado en 95: ni sacando todo lo que queda se llega.
+        val grades = listOf(
+            GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, cutId = "period-1")
+        )
+
+        val result = GradeCalculator.calculateSubject(
+            grades = grades,
+            cuts = cuts,
+            targetAverage = 98.0,
+            maxGrade = 100.0,
+            passingGrade = 95.0
+        )
+
+        assertEquals(GradeAlertLevel.CRITICAL, result.alertLevel)
+    }
+
+    @Test
+    fun `being below the passing grade late in the term is critical`() {
+        val cuts = listOf(
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.70, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.30, order = 2)
+        )
+        // 70 % evaluado: queda menos de medio semestre para levantar un 40.
         val grades = listOf(
             GradeItem(id = "1", name = "Corte 1", value = 40.0, percentage = 1.0, cutId = "period-1")
         )
@@ -392,10 +439,10 @@ class GradeCalculatorTest {
     }
 
     @Test
-    fun `without a passing grade the alert stays as strict as the goal`() {
+    fun `without a passing grade the goal takes its place`() {
         val cuts = listOf(
-            GradingCut(id = "period-1", name = "Corte 1", weight = 0.50, order = 1),
-            GradingCut(id = "period-2", name = "Corte 2", weight = 0.50, order = 2)
+            GradingCut(id = "period-1", name = "Corte 1", weight = 0.70, order = 1),
+            GradingCut(id = "period-2", name = "Corte 2", weight = 0.30, order = 2)
         )
         val grades = listOf(
             GradeItem(id = "1", name = "Corte 1", value = 78.0, percentage = 1.0, cutId = "period-1")

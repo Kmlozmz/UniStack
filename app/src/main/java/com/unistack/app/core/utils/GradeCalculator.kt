@@ -84,7 +84,10 @@ enum class GradeAlertLevel {
     /** Por debajo de la meta, pero aprobando y con el aprobado a salvo. Es un aviso, no una alarma. */
     BEHIND,
 
-    /** El aprobado está en juego: o ya se va por debajo de él, o ya no se alcanza. */
+    /**
+     * El aprobado está en juego de verdad: o ya no se alcanza, o se va por debajo de él y
+     * queda menos de medio semestre para arreglarlo.
+     */
     CRITICAL
 }
 
@@ -251,19 +254,31 @@ object GradeCalculator {
             else -> TargetOutlook.AT_RISK
         }
         /*
-         * El aviso se gradúa aquí, con el aprobado delante.
+         * El aviso se gradúa aquí, con el aprobado delante y el calendario detrás.
          *
-         * Rojo cuando el aprobado está en juego —ya no se alcanza, o ahora mismo se va por
-         * debajo de él— y ámbar cuando lo único que falta es la meta. Es la diferencia entre
-         * «apura» y «esto se pierde», y es la que faltaba en la lista de materias.
+         * Rojo cuando el aprobado está en juego y ámbar cuando lo único que falta es la meta.
+         * Es la diferencia entre «apura» y «esto se pierde», y es la que faltaba en la lista
+         * de materias.
+         *
+         * **Ir por debajo del aprobado no basta por sí solo.** La primera nota de un semestre
+         * pesa poco y baja el promedio entero: un 2.0 con el 20 % evaluado deja el techo en
+         * 4.4 —la materia no está ni cerca de perderse— y aun así el promedio de hoy está
+         * bajo el aprobado. Pintar eso de rojo es la misma sobrealarma que este nivel vino a
+         * quitar, corrida al principio del semestre.
+         *
+         * Así que el rojo por promedio pide además que quede **menos de medio semestre**: con
+         * más por delante hay sitio de sobra para darle la vuelta y el aviso se queda en
+         * ámbar. Lo que no espera a nadie es el techo: si el aprobado ya no se alcanza, es
+         * rojo el primer día igual que el último.
          */
         val passing = passingGrade ?: targetAverage
+        val quedaPoco = remaining < 0.5 - 0.0001
         val alertLevel = when {
             outlook == TargetOutlook.NO_DATA ||
                 outlook == TargetOutlook.SECURED ||
                 outlook == TargetOutlook.ON_TRACK -> GradeAlertLevel.NONE
             ceiling != null && ceiling < passing - 0.0001 -> GradeAlertLevel.CRITICAL
-            current != null && current < passing - 0.0001 -> GradeAlertLevel.CRITICAL
+            current != null && current < passing - 0.0001 && quedaPoco -> GradeAlertLevel.CRITICAL
             else -> GradeAlertLevel.BEHIND
         }
         return SubjectGradeCalculation(
