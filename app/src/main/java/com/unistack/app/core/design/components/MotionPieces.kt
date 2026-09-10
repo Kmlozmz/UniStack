@@ -46,7 +46,6 @@ import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.muelleDeMovimiento
 import com.unistack.app.core.design.theme.tweenDeMovimiento
-import com.unistack.app.feature_user.domain.ErrorMotion
 import com.unistack.app.feature_user.domain.ListEntry
 import com.unistack.app.feature_user.domain.LoadingStyle
 import com.unistack.app.feature_user.domain.OverdueBeat
@@ -399,8 +398,7 @@ fun numeroQueCuenta(objetivo: Float, etiqueta: String = "numero"): Float {
  */
 @Composable
 fun Modifier.avisoDeError(hayError: Boolean): Modifier {
-    val estilo = motionActual().errorHint
-    if (estilo == ErrorMotion.ROJO || !hayMovimiento()) return this
+    if (!hayMovimiento()) return this
 
     // Se reinicia cada vez que se entra en error, y no cada recomposicion: escribiendo, el
     // campo recompone en cada tecla y el aviso no puede repetirse en cada una.
@@ -413,18 +411,8 @@ fun Modifier.avisoDeError(hayError: Boolean): Modifier {
     )
     if (avance <= 0.01f) return this
 
-    return when (estilo) {
-        // Tres idas y venidas que se apagan: un temblor que no decae se lee como un fallo.
-        ErrorMotion.SACUDE -> this.graphicsLayer {
-            translationX = sin(avance * 6f * Math.PI.toFloat()) * 9f * (1f - avance)
-        }
-        ErrorMotion.PARPADEA -> this.alpha(
-            if (avance >= 1f) 1f else 0.45f + 0.55f * abs(sin(avance * 4f * Math.PI.toFloat()))
-        )
-        // El texto de ayuda entra desde arriba en vez de aparecer: el campo no se mueve.
-        ErrorMotion.ENTRA -> this.graphicsLayer {
-            translationY = -6f * (1f - avance)
-        }
-        ErrorMotion.ROJO -> this
+    // Tres idas y venidas que se apagan: un temblor que no decae se lee como un fallo.
+    return this.graphicsLayer {
+        translationX = sin(avance * 6f * Math.PI.toFloat()) * 9f * (1f - avance)
     }
 }

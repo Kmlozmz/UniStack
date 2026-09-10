@@ -69,6 +69,7 @@ import com.unistack.app.core.design.components.UniDivider
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -912,6 +913,7 @@ fun AddGradeScreen(
                         }
                     }
                 }
+                var nombreEnfocado by remember { mutableStateOf(false) }
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
@@ -921,9 +923,20 @@ fun AddGradeScreen(
                     label = { Text(stringResource(R.string.grade_activity_name)) },
                     placeholder = { Text(stringResource(R.string.grade_activity_name_placeholder)) },
                     singleLine = true,
-                    // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto
-                    // anade lo que el rojo no dice, que es que **acaba** de pasar.
-                    modifier = Modifier.fillMaxWidth().avisoDeError(!isNameValid),
+                    /*
+                     * **Sacude al salir del campo, no en cada tecla.**
+                     *
+                     * Colgaba de `!isNameValid` a secas, y ese valor cambia con cada letra:
+                     * al empezar a escribir el nombre todavia no vale, asi que el campo
+                     * temblaba **mientras** escribias, antes de que hubieras terminado.
+                     *
+                     * Mientras el dedo esta dentro, el rojo y el texto de ayuda bastan. El
+                     * temblor dice «lo has dejado mal», y eso solo se sabe cuando lo dejas.
+                     */
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { nombreEnfocado = it.isFocused }
+                        .avisoDeError(!isNameValid && !nombreEnfocado),
                     shape = FormCardShape,
                     isError = !isNameValid,
                     colors = formFieldColors(),

@@ -62,6 +62,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import com.unistack.app.core.utils.toColorIntOrNull
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -288,6 +289,7 @@ fun SubjectFormScreen(
                 // así el acento se ve aplicado antes de guardar.
                 tinted = true
             ) {
+                var nombreEnfocado by remember { mutableStateOf(false) }
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
@@ -298,9 +300,20 @@ fun SubjectFormScreen(
                     placeholder = { Text(stringResource(R.string.subject_form_name_placeholder)) },
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
-                    // El aviso de error de Movimiento: el rojo lo pone `isError`, y esto anade
-                    // lo que el rojo no dice, que es que **acaba** de pasar.
-                    modifier = Modifier.fillMaxWidth().avisoDeError(!isNameValid),
+                    /*
+                     * **Sacude al salir del campo, no en cada tecla.**
+                     *
+                     * Colgaba de `!isNameValid` a secas, y ese valor cambia con cada letra:
+                     * al empezar a escribir el nombre todavia no vale, asi que el campo
+                     * temblaba **mientras** escribias, antes de que hubieras terminado.
+                     *
+                     * Mientras el dedo esta dentro, el rojo y el texto de ayuda bastan. El
+                     * temblor dice «lo has dejado mal», y eso solo se sabe cuando lo dejas.
+                     */
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onFocusChanged { nombreEnfocado = it.isFocused }
+                        .avisoDeError(!isNameValid && !nombreEnfocado),
                     isError = !isNameValid,
                     supportingText = {
                         if (!isNameValid) {

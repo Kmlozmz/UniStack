@@ -33,7 +33,6 @@ data class MotionPreferences(
     // ------------------------------------------------------------------ académico
     val attendance: AttendanceMotion = AttendanceMotion.TRAZO,
     val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
-    val gradeUp: GradeUpMotion = GradeUpMotion.SALTO,
     val recovery: RecoveryMotion = RecoveryMotion.VIAJE,
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
@@ -49,7 +48,6 @@ data class MotionPreferences(
     // ------------------------------------------------------------------ gastos y avisos
     val overBudget: OverBudgetMotion = OverBudgetMotion.ALERTA,
     val classNow: ClassNowMotion = ClassNowMotion.RESPIRA,
-    val errorHint: ErrorMotion = ErrorMotion.SACUDE,
 
     // ------------------------------------------------------------------ generales
     val greeting: GreetingMotion = GreetingMotion.ESCALONADO,
@@ -231,13 +229,6 @@ enum class NewGradeMotion(override val id: String, override val label: String) :
     ABRE("abre", "Se abre hueco")
 }
 
-enum class GradeUpMotion(override val id: String, override val label: String) : MotionChoice {
-    NINGUNA("ninguna", "Nada"),
-    SALTO("salto", "Salto"),
-    FLECHA("flecha", "Flecha"),
-    BRILLO("brillo", "Brillo")
-}
-
 enum class RecoveryMotion(override val id: String, override val label: String) : MotionChoice {
     /** Cambia de color y ya. */
     SECO("seco", "Seco"),
@@ -257,7 +248,6 @@ enum class CutSealMotion(override val id: String, override val label: String) : 
     NINGUNA("ninguna", "Nada"),
     ESTAMPA("estampa", "Estampado"),
     TINTA("tinta", "Tinta"),
-    LACRE("lacre", "Lacre"),
     CINTA("cinta", "Cinta")
 }
 
@@ -358,13 +348,6 @@ enum class ClassNowMotion(override val id: String, override val label: String) :
     PUNTO("punto", "Punto que late"),
     RECORRE("recorre", "Borde que recorre"),
     BARRE("barre", "Brillo que barre")
-}
-
-enum class ErrorMotion(override val id: String, override val label: String) : MotionChoice {
-    ROJO("rojo", "Solo rojo"),
-    SACUDE("sacude", "Sacude"),
-    PARPADEA("parpadea", "Parpadea"),
-    ENTRA("entra", "Texto que entra")
 }
 
 // ---------------------------------------------------------------------- generales
@@ -536,11 +519,6 @@ object MotionCatalog {
             "Cuando entra una nota nueva al corte.",
             { it.newGrade }, { p, v -> p.copy(newGrade = v) }
         ),
-        gesto<GradeUpMotion>(
-            "subeNota", GROUP_ACADEMIC, "Nota que sube",
-            "Cuando el promedio mejora.",
-            { it.gradeUp }, { p, v -> p.copy(gradeUp = v) }
-        ),
         gesto<RecoveryMotion>(
             "recupera", GROUP_ACADEMIC, "Materia que se recupera",
             "Cuando sale del rojo.",
@@ -587,11 +565,6 @@ object MotionCatalog {
             "claseAhora", GROUP_ALERTS, "Clase en curso",
             "La clase que está pasando ahora. En verde: dice «activo».",
             { it.classNow }, { p, v -> p.copy(classNow = v) }
-        ),
-        gesto<ErrorMotion>(
-            "errorShake", GROUP_ALERTS, "Aviso de error",
-            "Un campo mal rellenado.",
-            { it.errorHint }, { p, v -> p.copy(errorHint = v) }
         ),
 
         gesto<GreetingMotion>(
