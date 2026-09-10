@@ -65,6 +65,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import com.unistack.app.core.design.components.PildoraEnCurso
 import com.unistack.app.core.design.components.claseEnCurso
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1086,6 +1087,8 @@ private fun WeekDayClassList(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    // La píldora solo cuando la clase está pasando: es un estado, no un adorno.
+                    if (enCurso) PildoraEnCurso()
                     Text(
                         text = subject?.name ?: "Clase",
                         color = MaterialTheme.colorScheme.onSurface,

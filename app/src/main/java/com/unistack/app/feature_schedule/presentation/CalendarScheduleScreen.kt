@@ -727,7 +727,6 @@ private fun ClassDetailsSheet(
      * lejos de la mano. Una clase que todavia no ha ocurrido no pregunta nada, asi que ahi
      * el orden de siempre sigue siendo el bueno.
      */
-    val preguntaPrimero = !date.isAfter(LocalDate.now()) && status == ClassAttendanceStatus.PENDING
 
     // El detalle vive aqui y no en el modelo guardado porque se escribe despues de guardar.
     val modalidad = occurrence?.modality ?: ClassModality.IN_PERSON
@@ -803,105 +802,18 @@ private fun ClassDetailsSheet(
                 )
             }
 
-            if (!preguntaPrimero) fichas()
-
-            if (preguntaPrimero) {
-                // Lo imprescindible en una linea, para no perder el contexto al subir la pregunta.
-                Text(
-                    text = listOf(
-                        "${formatMinute(session.startMinute, use24Hour)} - ${formatMinute(session.endMinute, use24Hour)}",
-                        session.place.room.takeIf { it.isNotBlank() }
-                    ).filterNotNull().joinToString(" · "),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            SheetGroupLabel(stringResource(R.string.schedule_log_attendance_action))
-            // Un grupo conectado, como el de Horario y Calendario arriba: tres piezas que se
-            // tocan y una sola elegida. Eran tres rectángulos sueltos con borde, que es la
-            // forma que tenía la app antes de este diseño.
-            // La sobrecarga obsoleta, por el mismo motivo que en `UniSegmentedControl`: la
-            // nueva cambia el contenido a un ámbito con `customItem` y resuelve un
-            // desbordamiento que aquí, con tres estados, no ocurre.
-            @Suppress("DEPRECATION")
-            ButtonGroup(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)
-            ) {
-                statusOptions.forEachIndexed { index, option ->
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val selected = occurrence?.status == option
-                    val shapes = when (index) {
-                        0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                        statusOptions.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                        else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                    }
-                    ToggleButton(
-                        // Volver a tocar el estado marcado lo deshace: si te equivocas de
-                        // botón, antes no había forma de volver a «pendiente».
-                        checked = selected,
-                        onCheckedChange = {
-                            onStatus(
-                                if (selected) ClassAttendanceStatus.PENDING else option,
-                                modalidad,
-                                // Cambiar de estado tira el motivo: el de una falta no vale
-                                // para una asistencia, y arrastrarlo guardaria una mentira.
-                                if (option == ClassAttendanceStatus.ABSENT) motivo else null,
-                                nota
-                            )
-                        },
-                        shapes = shapes,
-                        colors = ToggleButtonDefaults.toggleButtonColors(
-                            checkedContainerColor = option.color(),
-                            checkedContentColor = contentColorOn(option.color())
-                        ),
-                        interactionSource = interactionSource,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .defaultMinSize(minHeight = 58.dp)
-                            .animateWidth(interactionSource)
-                            /*
-                             * El gesto de «Marcar asistencia», solo en el boton de «Asisti».
-                             *
-                             * Es el momento que el ajuste describe —confirmar que fuiste— y no
-                             * cualquier cambio de estado: marcar una falta no se celebra.
-                             */
-                            .marcaDeAsistencia(
-                                marcada = selected && option == ClassAttendanceStatus.ATTENDED,
-                                color = option.color()
-                            )
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(option.icon(), contentDescription = null, modifier = Modifier.size(18.dp))
-                            // Sin ajuste de línea: mientras el vecino se ensancha, «Cancelada»
-                            // cabría en menos de lo que mide y se partiría en dos.
-                            Text(
-                                option.label(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                softWrap = false
-                            )
-                        }
-                    }
-                }
-            }
-
-            AttendanceDetail(
-                status = status,
-                modality = modalidad,
-                absenceReason = motivo,
-                note = nota,
-                onModalityChange = { onStatus(status, it, motivo, nota) },
-                onReasonChange = { onStatus(status, modalidad, it, nota) },
-                onNoteChange = { onStatus(status, modalidad, motivo, it) }
-            )
-
-            if (preguntaPrimero) fichas()
+            /*
+             * **Aqui ya no se marca asistencia.**
+             *
+             * Se marcaba en dos sitios con dos formas distintas: este panel, con un grupo
+             * segmentado de tres estados y su detalle debajo, y «Ponerse al dia», con dos
+             * botones planos y sin gesto ninguno. Dos caminos para lo mismo, uno de ellos a
+             * medio hacer, y encima este obligaba a abrir la clase para responder por ella.
+             *
+             * Ahora el panel es lo que dice su titulo: la ficha de la clase. Marcar —una o
+             * catorce— vive entero en «Ponerse al dia», que es la pantalla que existe para eso.
+             */
+            fichas()
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
             SheetActionRow(

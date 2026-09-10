@@ -13,7 +13,6 @@ import com.unistack.app.feature_user.domain.AttendanceMotion
 import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
-import com.unistack.app.feature_user.domain.GreetingMotion
 import com.unistack.app.feature_user.domain.ListEntry
 import com.unistack.app.feature_user.domain.LoadingStyle
 import com.unistack.app.feature_user.domain.MotionPreference
@@ -65,7 +64,6 @@ fun motionActual(): MotionPreferences {
             screenTransition = ScreenTransition.FUNDIDO,
             listEntry = ListEntry.FUNDIDO,
             celebration = CelebrationMotion.NINGUNA,
-            greeting = GreetingMotion.GOLPE,
             press = PressEffect.ONDA
         )
         MotionPreference.NONE -> MotionPreferences(
@@ -81,7 +79,6 @@ fun motionActual(): MotionPreferences {
             strikeThrough = StrikeMotion.LINEA,
             overdueBeat = OverdueBeat.NINGUNA,
             classNow = ClassNowMotion.QUIETA,
-            greeting = GreetingMotion.GOLPE,
             fabOnScroll = FabScrollMotion.FIJO,
             animatedBottomBar = false,
             countingNumbers = false,

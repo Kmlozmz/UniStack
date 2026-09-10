@@ -3,6 +3,9 @@
 package com.unistack.app.core.design.components
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,11 +14,19 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
@@ -38,6 +51,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.PathMeasure
@@ -52,7 +68,11 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import com.unistack.app.R
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import com.unistack.app.core.utils.performSafely
+import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.theme.duracion
 import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
@@ -66,7 +86,6 @@ import com.unistack.app.feature_user.domain.FabScrollMotion
 import com.unistack.app.feature_user.domain.NewGradeMotion
 import com.unistack.app.feature_user.domain.OverBudgetMotion
 import com.unistack.app.feature_user.domain.PinMotion
-import com.unistack.app.feature_user.domain.RecoveryMotion
 import com.unistack.app.feature_user.domain.TermCloseMotion
 import com.unistack.app.feature_user.domain.UndoMotion
 import kotlin.math.PI
@@ -104,41 +123,18 @@ import kotlin.random.Random
  * día con la última pendiente.
  */
 @Composable
-fun Modifier.selloDeCorte(
-    disparado: Boolean,
-    onTerminado: () -> Unit,
-    /**
-     * Si el corte **está** cerrado, no si acaba de cerrarse.
-     *
-     * Cerrar un corte no es un momento que pasa y se olvida: es un estado en el que la
-     * tarjeta se queda. El sello aterriza una vez y después se queda ahí de marca de agua,
-     * como el «PAGADO» de una factura, en vez de irse y dejar la tarjeta igual que una
-     * abierta.
-     */
-    cerrado: Boolean = false
-): Modifier {
+fun Modifier.selloDeCorte(cerrado: Boolean): Modifier {
     val estilo = motionActual().cutSeal
-    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
-        LaunchedEffect(disparado) { if (disparado) onTerminado() }
-        return this
-    }
+    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento() || !cerrado) return this
 
     /*
-     * **La vuelta es un salto, no una animación.**
+     * **Aqui solo queda la marca de agua.**
      *
-     * Con el mismo `tween` en las dos direcciones, al acabar el sello el disparo se apagaba
-     * y el valor se animaba de 1 a 0 otros 1200 ms: el sello se **desdibujaba, volvía a
-     * aparecer** —porque el desvanecido del final se recorría al revés— y se iba haciendo
-     * la entrada hacia atrás. Se veía como un parpadeo y una segunda animación que nadie
-     * había pedido.
+     * El momento de cerrar se lo lleva [SelloSuperpuesto], que se pinta sobre la pantalla
+     * entera. Esto es lo que se queda despues: el corte cerrado sigue sellado mientras lo
+     * este, como el «PAGADO» de una factura.
      */
-    val avance by animateFloatAsState(
-        targetValue = if (disparado) 1f else 0f,
-        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 1200) else snap(),
-        label = "sello",
-        finishedListener = { if (it >= 1f) onTerminado() }
-    )
-    if (avance <= 0f && !cerrado) return this
+    val avance = 0f
 
     val medidor = rememberTextMeasurer()
     val leyenda = stringResource(R.string.subject_cut_seal)
@@ -373,12 +369,13 @@ fun Modifier.marcaDeAsistencia(marcada: Boolean, color: Color): Modifier {
     val estilo = motionActual().attendance
     if (estilo == AttendanceMotion.NINGUNA || !hayMovimiento()) return this
 
+    // 250 ms las cuatro, que es lo que se decidio mirandolas: mas largo se nota como espera.
     val avance by animateFloatAsState(
         targetValue = if (marcada) 1f else 0f,
         animationSpec = if (estilo == AttendanceMotion.REBOTE) {
             muelleDeMovimiento()
         } else {
-            tweenDeMovimiento(baseMs = 420)
+            tweenDeMovimiento(baseMs = 250)
         },
         label = "asistencia"
     )
@@ -448,42 +445,259 @@ fun Modifier.marcaDeAsistencia(marcada: Boolean, color: Color): Modifier {
 // ------------------------------------------------------------------ materia que se recupera
 
 /**
- * El color de una materia que acaba de salir del rojo.
+ * La materia que acaba de salir del rojo, barriendo la barra del hero.
  *
- * Devuelve el color que toca pintar **ahora mismo**: con «viaje» pasa por el ámbar antes de
- * llegar al verde, y con «seco» cambia de golpe. Quien lo llama pinta con lo que reciba y no
- * tiene que saber qué variante hay puesta.
+ * **Antes tenia un rotulo de once pixeles en la lista de materias.** Cinco variantes para
+ * cambiar el color de una palabra: no habia forma de distinguirlas ni de llegar a verlas, y
+ * tres de las cinco compartian la misma linea de codigo.
+ *
+ * Ahora vive donde el viaje ya estaba dibujado: la barra del hero va de rojo a verde sobre la
+ * escala entera, con el punto en donde vas. Recuperarse **es** ese punto cruzando hacia la
+ * derecha, y el barrido lo acompana. De cinco variantes queda una, asi que el gesto sale de
+ * Movimiento: con una sola forma no hay nada que elegir.
+ *
+ * @param recuperada si ahora mismo se aprueba. El barrido salta al **cruzar**, no cada vez que
+ *   sube una decima: recuperarse es salir del rojo, no mejorar.
  */
 @Composable
-fun colorDeRecuperacion(recuperada: Boolean, riesgo: Color, aviso: Color, alDia: Color): Color {
-    val estilo = motionActual().recovery
-    if (estilo == RecoveryMotion.SECO || !hayMovimiento()) {
-        return if (recuperada) alDia else riesgo
-    }
-    val avance by animateFloatAsState(
-        targetValue = if (recuperada) 1f else 0f,
-        animationSpec = tweenDeMovimiento(baseMs = 700),
-        label = "recuperacion"
-    )
-    // El viaje pasa por el ámbar: es un degradado en el tiempo, no un corte.
-    return if (estilo == RecoveryMotion.VIAJE) {
-        if (avance < 0.5f) mezclarColor(riesgo, aviso, avance * 2f) else mezclarColor(aviso, alDia, (avance - 0.5f) * 2f)
-    } else {
-        mezclarColor(riesgo, alDia, avance)
-    }
-}
+fun Modifier.barridoDeRecuperacion(recuperada: Boolean): Modifier {
+    if (!hayMovimiento()) return this
 
-private fun mezclarColor(desde: Color, hasta: Color, f: Float): Color {
-    val p = f.coerceIn(0f, 1f)
-    return Color(
-        red = desde.red + (hasta.red - desde.red) * p,
-        green = desde.green + (hasta.green - desde.green) * p,
-        blue = desde.blue + (hasta.blue - desde.blue) * p,
-        alpha = desde.alpha + (hasta.alpha - desde.alpha) * p
+    /*
+     * `visto` arranca en nulo para que entrar a una materia que **ya** estaba aprobada no
+     * barra nada: no acaba de pasar. Es el mismo guardian que el sello del corte.
+     */
+    var visto by remember { mutableStateOf<Boolean?>(null) }
+    var corre by remember { mutableStateOf(false) }
+    LaunchedEffect(recuperada) {
+        if (visto == false && recuperada) corre = true
+        visto = recuperada
+    }
+
+    val avance by animateFloatAsState(
+        targetValue = if (corre) 1f else 0f,
+        // La vuelta es un salto: animarla al reves repetiria el barrido de derecha a izquierda.
+        animationSpec = if (corre) tweenDeMovimiento(baseMs = 1275) else snap(),
+        label = "recuperacion",
+        finishedListener = { if (it >= 1f) corre = false }
     )
+    if (avance <= 0f || avance >= 1f) return this
+
+    return this.drawWithContent {
+        drawContent()
+        clipRect(0f, 0f, size.width, size.height) {
+            val ancho = size.width * 0.44f
+            val x = -ancho + (size.width + ancho * 2f) * avance
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.White.copy(alpha = 0.75f),
+                        Color.Transparent
+                    ),
+                    startX = x,
+                    endX = x + ancho
+                ),
+                topLeft = Offset(x, 0f),
+                size = Size(ancho, size.height)
+            )
+        }
+    }
 }
 
 // ------------------------------------------------------------------ fijar una nota
+
+/**
+ * El aviso de haberse pasado del presupuesto, arriba de la pantalla.
+ *
+ * Es la variante «Aviso arriba» de [avisoDePresupuesto], y era la unica de las siete que no
+ * existia: elegirla en Movimiento no hacia absolutamente nada. Va aparte del modificador
+ * porque no es un efecto sobre la tarjeta —es una franja propia, encima de todo lo demas— y
+ * un `Modifier` no puede anadir contenido.
+ *
+ * Se queda mientras siga pasado, como el resto: un aviso de dinero que se apaga solo deja de
+ * avisar justo cuando mas falta hace.
+ */
+@Composable
+fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
+    if (!pasado || motionActual().overBudget != OverBudgetMotion.BANNER) return
+    val rojo = LocalSectionColors.current.expenses
+
+    AnimatedVisibility(
+        visible = true,
+        modifier = modifier,
+        enter = slideInVertically(
+            animationSpec = tweenDeMovimiento(baseMs = 225)
+        ) { -it } + fadeIn(animationSpec = tweenDeMovimiento(baseMs = 225))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(rojo)
+                .padding(horizontal = 15.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.WarningAmber,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(9.dp))
+            Text(
+                text = stringResource(R.string.expenses_over_budget_banner),
+                color = Color.White,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+/**
+ * El sello de cerrar un corte, sobre la pantalla entera.
+ *
+ * **Estaba dentro de la tarjeta y se le quedaba pequeno.** Cerrar un corte es de las pocas
+ * cosas irreversibles de la app —las notas quedan fijadas— y merece que la pantalla se pare a
+ * decirlo. Atenuar solo la tarjeta dejaba el resto de la pantalla como si no hubiera pasado
+ * nada; atenuando todo, el sello es lo unico que queda encendido.
+ *
+ * Dura 2200 ms y no 1200: era «todo muy rapido», y en un momento que ocurre tres veces por
+ * semestre no hay prisa ninguna.
+ *
+ * Va con haptica: el cierre se confirma con el pulgar en la pantalla, asi que la mano esta ahi
+ * para notarlo.
+ */
+@Composable
+fun SelloSuperpuesto(disparado: Boolean, onTerminado: () -> Unit) {
+    val estilo = motionActual().cutSeal
+    if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
+        LaunchedEffect(disparado) { if (disparado) onTerminado() }
+        return
+    }
+
+    val haptica = LocalHapticFeedback.current
+    LaunchedEffect(disparado) {
+        if (disparado) haptica.performSafely(HapticFeedbackType.Confirm)
+    }
+
+    val avance by animateFloatAsState(
+        targetValue = if (disparado) 1f else 0f,
+        // La vuelta es un salto: animarla al reves repetiria la entrada hacia atras.
+        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 2200) else snap(),
+        label = "selloSuperpuesto",
+        finishedListener = { if (it >= 1f) onTerminado() }
+    )
+    if (avance <= 0f) return
+
+    val medidor = rememberTextMeasurer()
+    val leyenda = stringResource(R.string.subject_cut_seal)
+    val verde = Color(0xFF11C045)
+
+    // El velo entra, se queda y se va: el sello aterriza dentro de esa ventana.
+    val velo = when {
+        avance < 0.12f -> avance / 0.12f
+        avance > 0.82f -> 1f - (avance - 0.82f) / 0.18f
+        else -> 1f
+    }
+    val posado = (avance / 0.30f).coerceAtMost(1f)
+    val vida = if (avance < 0.80f) 1f else 1f - (avance - 0.80f) / 0.20f
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawWithContent {
+                drawContent()
+                drawRect(color = Color.Black.copy(alpha = 0.62f * velo))
+                val centro = Offset(size.width / 2f, size.height / 2f)
+                val ancho = minOf(size.width * 0.72f, size.height * 0.9f)
+                val alto = ancho * 0.30f
+                val escala = 1.6f - 0.6f * posado
+                val a = ancho * escala
+                val h = alto * escala
+                rotate(degrees = -14f, pivot = centro) {
+                    drawRoundRect(
+                        color = verde.copy(alpha = vida),
+                        topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
+                        size = Size(a, h),
+                        cornerRadius = CornerRadius(h * 0.26f, h * 0.26f),
+                        style = Stroke(h * 0.09f)
+                    )
+                    val tipo = TextStyle(
+                        color = verde.copy(alpha = vida),
+                        fontSize = (h * 0.40f).toSp(),
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (h * 0.07f).toSp()
+                    )
+                    val medida = medidor.measure(leyenda, tipo)
+                    drawText(
+                        textLayoutResult = medida,
+                        topLeft = Offset(
+                            centro.x - medida.size.width / 2f,
+                            centro.y - medida.size.height / 2f
+                        )
+                    )
+                }
+            }
+    )
+}
+
+/**
+ * La píldora de «clase en curso», con su luz.
+ *
+ * **La fila no decía que la clase estaba pasando: lo insinuaba con un borde verde.** Quien no
+ * hubiera aprendido que el verde significa eso veía una fila de otro color y ya. La píldora lo
+ * dice con palabras, y la luz de al lado es lo que lo hace presente.
+ *
+ * Aquí vive la variante «Punto que late» de [claseEnCurso]: latir **esta** luz es el gesto. Se
+ * dibujaba pegado al borde izquierdo de la fila, donde no significaba nada y además chocaba con
+ * la franja de color de la materia.
+ */
+@Composable
+fun PildoraEnCurso(modifier: Modifier = Modifier) {
+    val verde = LocalSectionColors.current.onTrack
+    val late = motionActual().classNow == ClassNowMotion.PUNTO && hayMovimiento()
+
+    val ciclo = rememberInfiniteTransition(label = "pildora")
+    val t by ciclo.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(duracion(1950), easing = LinearEasing)),
+        label = "pildora"
+    )
+    // Crece y se apaga en su sitio: es un latido, no un punto que aparece y desaparece.
+    val escala = if (late) 1f + 0.9f * abs(sin(t * PI.toFloat())) else 1f
+    val opacidad = if (late) 1f - 0.55f * abs(sin(t * PI.toFloat())) else 1f
+
+    Row(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(verde.copy(alpha = 0.16f))
+            .padding(horizontal = 9.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .graphicsLayer {
+                    scaleX = escala
+                    scaleY = escala
+                    alpha = opacidad
+                }
+                .clip(CircleShape)
+                .background(verde)
+        )
+        Spacer(Modifier.width(5.dp))
+        Text(
+            text = stringResource(R.string.schedule_class_now),
+            color = verde,
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.08.em
+        )
+    }
+}
 
 /** Cómo se mueve una nota al subir a las fijadas, o al bajar de ellas. */
 @Composable
@@ -605,25 +819,69 @@ fun Modifier.avisoDePresupuesto(pasado: Boolean): Modifier {
     val estilo = motionActual().overBudget
     if (!pasado || estilo == OverBudgetMotion.SECO || !hayMovimiento()) return this
 
+    val rojoDeAviso = LocalSectionColors.current.expenses
+
+    /*
+     * **Un aviso fuerte, una sola vez.**
+     *
+     * Pasarse del presupuesto es de las pocas cosas de la app que conviene notar sin estar
+     * mirando. Va al cruzarlo y no mientras sigas pasado: si no, cada gasto del mes
+     * vibraria.
+     */
+    val haptica = LocalHapticFeedback.current
+    LaunchedEffect(pasado) { if (pasado) haptica.performSafely(HapticFeedbackType.LongPress) }
+
+    /*
+     * **Cada variante lleva su compas dentro.**
+     *
+     * Las tres compartian un ciclo de 1800 ms y a ninguna le sentaba bien: la sacudida
+     * llegaba tarde y el parpadeo iba nervioso. Estos cuatro numeros se eligieron mirandolos
+     * uno al lado del otro, y son parte del gesto, no un ajuste.
+     */
+    val periodo = when (estilo) {
+        OverBudgetMotion.ALERTA -> 1620
+        OverBudgetMotion.SACUDE -> 1260
+        OverBudgetMotion.PARPADEO -> 2340
+        else -> 1800
+    }
     val ciclo = rememberInfiniteTransition(label = "presupuesto")
     val t by ciclo.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(duracion(1800), easing = LinearEasing)),
+        animationSpec = infiniteRepeatable(tween(duracion(periodo), easing = LinearEasing)),
         label = "presupuesto"
     )
 
+    /*
+     * **La alarma es la alarma; la variante es como se anuncia.**
+     *
+     * Cada una traia solo su movimiento, asi que «Sacude» y «Parpadeo» eran una tarjeta
+     * moviendose sin nada que dijera **por que**. El contorno rojo y el halo son la base
+     * que llevan todas: encima va lo que las distingue.
+     */
+    val base = this.drawBehind {
+        val radio = CornerRadius(16.dp.toPx(), 16.dp.toPx())
+        drawRoundRect(
+            color = rojoDeAviso.copy(alpha = 0.16f),
+            topLeft = Offset(-5.dp.toPx(), -5.dp.toPx()),
+            size = Size(size.width + 10.dp.toPx(), size.height + 10.dp.toPx()),
+            cornerRadius = CornerRadius(21.dp.toPx(), 21.dp.toPx())
+        )
+        drawRoundRect(color = rojoDeAviso, cornerRadius = radio, style = Stroke(2.dp.toPx()))
+    }
+
     return when (estilo) {
         // Sacude una vez cada vuelta y se queda quieta: temblar sin parar cansa y deja de avisar.
-        OverBudgetMotion.SACUDE -> this.graphicsLayer {
+        OverBudgetMotion.SACUDE -> base.graphicsLayer {
             translationX = if (t < 0.2f) sin(t * 30f * PI.toFloat()) * 6f * (1f - t / 0.2f) else 0f
         }
-        OverBudgetMotion.PARPADEO -> this.alpha(if ((t * 6f).toInt() % 2 == 0) 1f else 0.45f)
-        OverBudgetMotion.ALERTA -> this.graphicsLayer {
+        OverBudgetMotion.PARPADEO -> base.alpha(if ((t * 6f).toInt() % 2 == 0) 1f else 0.45f)
+        OverBudgetMotion.ALERTA -> base.graphicsLayer {
             scaleX = 1f + 0.015f * abs(sin(t * 2f * PI.toFloat()))
             scaleY = 1f + 0.03f * abs(sin(t * 2f * PI.toFloat()))
         }
-        else -> this
+        // «Aviso arriba» no se pinta aqui: es un banner, y lo pone la pantalla de Gastos.
+        else -> base
     }
 }
 
@@ -640,11 +898,24 @@ fun Modifier.claseEnCurso(enCurso: Boolean, verde: Color): Modifier {
     val estilo = motionActual().classNow
     if (!enCurso || estilo == ClassNowMotion.QUIETA || !hayMovimiento()) return this
 
+    /*
+     * **Cada variante con su compas, elegido mirandolas juntas.**
+     *
+     * Las cuatro iban a 2400 ms y no les venia bien el mismo: un halo que respira necesita
+     * mas aire que una luz que da la vuelta. Van anclados al gesto y no se ajustan.
+     */
+    val periodo = when (estilo) {
+        ClassNowMotion.RESPIRA -> 3600
+        ClassNowMotion.PUNTO -> 1950
+        ClassNowMotion.RECORRE -> 2340
+        ClassNowMotion.BARRE -> 3360
+        ClassNowMotion.QUIETA -> 2400
+    }
     val ciclo = rememberInfiniteTransition(label = "claseAhora")
     val t by ciclo.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(duracion(2400), easing = LinearEasing), RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(tween(duracion(periodo), easing = LinearEasing), RepeatMode.Restart),
         label = "claseAhora"
     )
 
@@ -656,14 +927,14 @@ fun Modifier.claseEnCurso(enCurso: Boolean, verde: Color): Modifier {
                 cornerRadius = CornerRadius(14.dp.toPx(), 14.dp.toPx())
             )
         }
-        ClassNowMotion.PUNTO -> this.clipToBounds().drawWithContent {
-            drawContent()
-            val late = 0.5f + 0.5f * sin(t * 4f * PI.toFloat())
-            val r = 3.dp.toPx()
-            val centro = Offset(8.dp.toPx(), size.height / 2f)
-            drawCircle(verde.copy(alpha = 0.35f * late), radius = r * 2f, center = centro)
-            drawCircle(verde, radius = r, center = centro)
-        }
+        /*
+         * **El punto que late es la luz de la pildora, y la pinta ella.**
+         *
+         * Aqui se dibujaba pegado al borde izquierdo de la fila, donde no significaba nada
+         * y competia con la franja de color de la materia. La pildora «CLASE EN CURSO» ya
+         * tiene una luz que dice exactamente eso: latir esa es el gesto.
+         */
+        ClassNowMotion.PUNTO -> this
         // Un punto de luz recorre el perímetro interior, esquinas incluidas e inset para no salirse.
         ClassNowMotion.RECORRE -> this.clipToBounds().drawWithContent {
             drawContent()

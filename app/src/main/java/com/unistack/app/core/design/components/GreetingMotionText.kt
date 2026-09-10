@@ -26,7 +26,6 @@ import com.unistack.app.core.design.theme.duracion
 import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.motionActual
 import com.unistack.app.core.design.theme.tweenDeMovimiento
-import com.unistack.app.feature_user.domain.GreetingMotion
 import kotlinx.coroutines.delay
 
 /**
@@ -48,7 +47,6 @@ fun SaludoAnimado(
     estiloNombre: TextStyle,
     modifier: Modifier = Modifier
 ) {
-    val estilo = motionActual().greeting
     val animar = hayMovimiento()
 
     /*
@@ -80,108 +78,38 @@ fun SaludoAnimado(
         targetValue = if (lanzado) 1f else 0f,
         // El nombre entra después del rótulo: los 140 ms son lo que separa «escalonado» de
         // «de golpe», donde los dos llegan a la vez.
-        animationSpec = tweenDeMovimiento(
-            baseMs = 520,
-            retrasoMs = if (estilo == GreetingMotion.ESCALONADO) 140 else 0
-        ),
+        animationSpec = tweenDeMovimiento(baseMs = 520, retrasoMs = 140),
         label = "saludoNombre"
     )
 
+    /*
+     * **Una sola forma, y ya no se elige.**
+     *
+     * Eran siete variantes para algo que se ve **una vez al dia**: el saludo solo se anima al
+     * arrancar la app, no cada vez que se vuelve a Inicio. Siete formas de entrar para un
+     * momento que casi nadie llega a comparar es catalogo por catalogo.
+     *
+     * Se queda la que venia de fabrica: el rotulo entra y el nombre justo despues. El escalon
+     * de 140 ms es lo unico que hay que acertar aqui, y es lo que separa «llegan los dos» de
+     * «llega uno y detras el otro».
+     */
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-        when (estilo) {
-            GreetingMotion.GOLPE -> {
-                Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                NombreLlano(nombre, estiloNombre)
+        Text(
+            rotulo,
+            style = estiloRotulo,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.graphicsLayer {
+                alpha = avance
+                translationY = 18f * (1f - avance)
             }
-
-            GreetingMotion.ESCALONADO -> {
-                Text(
-                    rotulo,
-                    style = estiloRotulo,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.graphicsLayer {
-                        alpha = avance
-                        translationY = 18f * (1f - avance)
-                    }
-                )
-                NombreLlano(
-                    nombre, estiloNombre,
-                    Modifier.graphicsLayer {
-                        alpha = avanceNombre
-                        translationY = 22f * (1f - avanceNombre)
-                    }
-                )
+        )
+        NombreLlano(
+            nombre, estiloNombre,
+            Modifier.graphicsLayer {
+                alpha = avanceNombre
+                translationY = 22f * (1f - avanceNombre)
             }
-
-            // Máquina de escribir: revela caracteres del nombre y deja el cursor al final
-            // mientras escribe. Termina con el nombre entero y sin cursor.
-            GreetingMotion.MAQUINA -> {
-                Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                val letras = (nombre.length * avanceNombre).toInt().coerceIn(0, nombre.length)
-                val escribiendo = avanceNombre < 1f
-                NombreLlano(nombre.take(letras) + if (escribiendo) "|" else "", estiloNombre)
-            }
-
-            // La cortina no mueve nada: recorta de arriba abajo lo que ya está puesto.
-            GreetingMotion.CORTINA -> {
-                Column(
-                    modifier = Modifier
-                        .clipToBounds()
-                        .graphicsLayer {
-                            // Se recorta con escala vertical desde arriba, que es lo más
-                            // parecido a una cortina sin medir el alto a mano.
-                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
-                            scaleY = avance
-                        }
-                ) {
-                    Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                    NombreLlano(nombre, estiloNombre)
-                }
-            }
-
-            GreetingMotion.LATERAL -> Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avance
-                    translationX = -120f * (1f - avance)
-                }
-            ) {
-                Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                NombreLlano(nombre, estiloNombre)
-            }
-
-            // El desenfoque real necesitaría un `RenderEffect`, que pide API 31. Aquí se hace
-            // con escala y opacidad: se lee como algo que se enfoca, y funciona en todas.
-            GreetingMotion.DESENFOQUE -> Column(
-                modifier = Modifier.graphicsLayer {
-                    alpha = avance * avance
-                    scaleX = 1.06f - 0.06f * avance
-                    scaleY = 1.06f - 0.06f * avance
-                }
-            ) {
-                Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                NombreLlano(nombre, estiloNombre)
-            }
-
-            // Letra a letra: cada carácter tiene su turno y sube a su sitio. Nada de cursor,
-            // que es lo que la separa de la máquina de escribir.
-            GreetingMotion.LETRAS -> {
-                Text(rotulo, style = estiloRotulo, color = MaterialTheme.colorScheme.primary)
-                Row {
-                    nombre.forEachIndexed { indice, caracter ->
-                        val propio = ((avanceNombre * nombre.length) - indice).coerceIn(0f, 1f)
-                        Text(
-                            text = caracter.toString(),
-                            style = estiloNombre,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.graphicsLayer {
-                                alpha = propio
-                                translationY = 20f * (1f - propio)
-                            }
-                        )
-                    }
-                }
-            }
-        }
+        )
     }
 }
 

@@ -916,6 +916,7 @@
     <string name="schedule_detail_repetition">Repeat</string>
     <string name="schedule_detail_reminder">Reminder</string>
     <string name="schedule_log_attendance_action">LOG ATTENDANCE</string>
+    <string name="schedule_class_now">CLASS IN PROGRESS</string>
     <string name="schedule_view_history">View history</string>
     <string name="schedule_view_history_desc">Your attendance record for this subject</string>
     <string name="schedule_add_class_subtitle">Add a schedule to an existing subject, or create a new one.</string>
@@ -2016,4 +2017,5 @@ your course catalog.</string>
     <string name="setup_term_month_january">January</string>
     <string name="setup_term_month_december">December</string>
     <string name="setup_term_choose">Choose</string>
+    <string name="expenses_over_budget_banner">You have gone over the budget for this month.</string>
 </resources>

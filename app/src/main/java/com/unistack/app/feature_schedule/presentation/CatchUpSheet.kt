@@ -27,6 +27,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import com.unistack.app.R
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.utils.performSafely
+import com.unistack.app.core.design.components.marcaDeAsistencia
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
@@ -155,19 +160,40 @@ private fun FilaPendiente(
                 fontSize = 11.sp
             )
         }
+        /*
+         * **El gesto de «Marcar asistencia» vive aqui, y en las dos respuestas.**
+         *
+         * Estaba en el panel de la clase y no aqui, que es la pantalla que existe para
+         * marcar: quien venia con atraso —el caso para el que se hizo esto— no veia nada.
+         *
+         * Y solo animaba «Asisti». El argumento era que una falta no se celebra, pero
+         * marcarla tambien es cerrar el asunto: dejarla muda hacia que la mitad del flujo
+         * se sintiera a medio hacer. Cambia el color, no el movimiento.
+         */
+        var respuesta by remember(entrada.session.id, entrada.date) {
+            mutableStateOf<ClassAttendanceStatus?>(null)
+        }
         Spacer(Modifier.width(10.dp))
         BotonRedondo(
             icono = Icons.Rounded.Check,
             descripcion = stringResource(R.string.schedule_status_attended),
             tono = ScheduleAccent,
-            onClick = { onMark(ClassAttendanceStatus.ATTENDED) }
+            marcado = respuesta == ClassAttendanceStatus.ATTENDED,
+            onClick = {
+                respuesta = ClassAttendanceStatus.ATTENDED
+                onMark(ClassAttendanceStatus.ATTENDED)
+            }
         )
         Spacer(Modifier.width(7.dp))
         BotonRedondo(
             icono = Icons.Rounded.Close,
             descripcion = stringResource(R.string.schedule_status_absent),
             tono = MaterialTheme.colorScheme.error,
-            onClick = { onMark(ClassAttendanceStatus.ABSENT) }
+            marcado = respuesta == ClassAttendanceStatus.ABSENT,
+            onClick = {
+                respuesta = ClassAttendanceStatus.ABSENT
+                onMark(ClassAttendanceStatus.ABSENT)
+            }
         )
     }
 }
@@ -177,6 +203,7 @@ private fun BotonRedondo(
     icono: androidx.compose.ui.graphics.vector.ImageVector,
     descripcion: String,
     tono: Color,
+    marcado: Boolean,
     onClick: () -> Unit
 ) {
     Box(
@@ -184,6 +211,7 @@ private fun BotonRedondo(
             .size(38.dp)
             .clip(CircleShape)
             .background(tono.copy(alpha = 0.18f))
+            .marcaDeAsistencia(marcada = marcado, color = tono)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {

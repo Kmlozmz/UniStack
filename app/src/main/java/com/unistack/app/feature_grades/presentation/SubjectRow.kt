@@ -6,7 +6,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.shape.CircleShape
-import com.unistack.app.core.design.components.colorDeRecuperacion
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.runtime.getValue
+import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.feature_user.domain.BadgeShape
 import com.unistack.app.core.design.theme.LocalAppearancePreferences
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
@@ -147,15 +149,24 @@ fun SubjectRow(
      * El rotulo del pronostico es donde mas se lee, porque es el que dice el estado con
      * palabras; el fondo de la tarjeta se queda como estaba para no marear la lista entera.
      */
-    val colorDelPronostico = colorDeRecuperacion(
-        recuperada = !atRisk,
-        // De dónde se vuelve: del rojo si el aprobado estaba en juego, del ámbar si solo
-        // faltaba la meta. El destino y el paso intermedio no cambian.
-        // `onErrorContainer` y no `error`: el rótulo va **encima** del contenedor rojo, y el
-        // rojo puro sobre él no se lee.
-        riesgo = if (critico) MaterialTheme.colorScheme.onErrorContainer else sections.onAtRiskContainer,
-        aviso = sections.atRisk,
-        alDia = sections.onTrack
+    /*
+     * El color del pronóstico, sin gesto propio.
+     *
+     * «Materia que se recupera» vivia aqui, tinendo esta palabra de once pixeles, y se
+     * mudo a la barra del hero, que es donde el viaje de rojo a verde ya estaba dibujado.
+     * Lo que queda es el color correcto y un cruce suave para que no de un salto.
+     *
+     * `onErrorContainer` y no `error`: el rotulo va **encima** del contenedor rojo, y el
+     * rojo puro sobre el no se lee.
+     */
+    val colorDelPronostico by animateColorAsState(
+        targetValue = when {
+            !atRisk -> sections.onTrack
+            critico -> MaterialTheme.colorScheme.onErrorContainer
+            else -> sections.onAtRiskContainer
+        },
+        animationSpec = tweenDeMovimiento(baseMs = 700),
+        label = "pronostico"
     )
 
     Surface(

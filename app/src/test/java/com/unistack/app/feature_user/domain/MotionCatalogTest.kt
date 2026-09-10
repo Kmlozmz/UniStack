@@ -100,10 +100,10 @@ class MotionCatalogTest {
      * no distinguirse de la linea normal.
      */
     @Test
-    fun `el catalogo cubre los dieciseis gestos y las noventa y dos variantes`() {
-        assertEquals(16, MotionCatalog.gestures.size)
+    fun `el catalogo cubre los catorce gestos y las setenta y ocho variantes`() {
+        assertEquals(14, MotionCatalog.gestures.size)
         assertEquals(0, MotionCatalog.toggles.size)
-        assertEquals(92, MotionCatalog.variantCount)
+        assertEquals(78, MotionCatalog.variantCount)
     }
 
     @Test
@@ -115,8 +115,9 @@ class MotionCatalogTest {
                 MotionCatalog.GROUP_TRANSITIONS,
                 MotionCatalog.GROUP_ACADEMIC,
                 MotionCatalog.GROUP_TASKS,
-                MotionCatalog.GROUP_ALERTS,
-                MotionCatalog.GROUP_GENERAL
+                // «Generales» salio de la lista al irse el saludo, que era su unico gesto:
+                // `grouped()` agrupa lo que hay, y un grupo sin nada dentro no existe.
+                MotionCatalog.GROUP_ALERTS
             ),
             grupos
         )

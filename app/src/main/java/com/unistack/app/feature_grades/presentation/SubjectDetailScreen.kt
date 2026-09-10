@@ -56,6 +56,8 @@ import androidx.compose.material.icons.rounded.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.unistack.app.core.design.components.barridoDeRecuperacion
+import com.unistack.app.core.design.components.SelloSuperpuesto
 import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.design.components.notaRecienRegistrada
@@ -355,7 +357,8 @@ fun SubjectDetailScreen(
                     targetGrade = subject.targetAverage,
                     evaluated = evaluatedSubjectPercentage,
                     maxGrade = maxGrade,
-                    scale = scale
+                    scale = scale,
+                    passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
                 )
             }
             item {
@@ -454,11 +457,7 @@ fun SubjectDetailScreen(
                                 needsHistory = false,
                                 onClick = { onCutClick(subject.id, summary.cut.id) },
                                 dimmed = true,
-                                modifier = Modifier.selloDeCorte(
-                                    disparado = summary.cut.id == selloEn,
-                                    onTerminado = { selloEn = null },
-                                    cerrado = true
-                                )
+                                modifier = Modifier.selloDeCorte(cerrado = true)
                             )
                             // Reabrir tiene que existir y costar lo mismo que cerrar: si al
                             // cerrarlo ves que una nota estaba mal, el camino de vuelta no
@@ -480,6 +479,9 @@ fun SubjectDetailScreen(
             }
         }
 
+        // Cerrar un corte desde aqui sella igual que hacerlo desde dentro: es el mismo
+        // momento, y la pantalla desde la que se provoca no deberia cambiarlo.
+        SelloSuperpuesto(disparado = selloEn != null, onTerminado = { selloEn = null })
     }
 
     cortePorReabrir?.let { cutId ->
@@ -761,11 +763,7 @@ fun SubjectCutDetailScreen(
                     scale = scale,
                     passingGrade = profile?.passingGrade ?: (maxGrade * 0.6),
                     cerrado = estaCerrado,
-                    modifier = Modifier.selloDeCorte(
-                        disparado = sello,
-                        onTerminado = { sello = false },
-                        cerrado = estaCerrado
-                    ),
+                    modifier = Modifier.selloDeCorte(cerrado = estaCerrado),
                     onAgregar = { hojaDeNota = true },
                     onCerrar = { confirmarCierre = true },
                     onReabrir = { confirmarReapertura = true },
@@ -775,6 +773,14 @@ fun SubjectCutDetailScreen(
             }
         }
 
+        /*
+         * **El sello se pinta sobre todo, no dentro de la tarjeta.**
+         *
+         * Cerrar un corte fija sus notas: es de las pocas cosas de la app que no se
+         * deshacen solas, y merece que la pantalla se pare a decirlo. Atenuando solo la
+         * tarjeta, el resto seguia encendido y el momento no llegaba a ninguna parte.
+         */
+        SelloSuperpuesto(disparado = sello, onTerminado = { sello = false })
     }
 
     if (confirmarCierre) {
@@ -1199,7 +1205,9 @@ private fun SubjectOverviewCard(
     targetGrade: Double,
     evaluated: Double,
     maxGrade: Double,
-    scale: GradingScale
+    scale: GradingScale,
+    /** Con cuanto se aprueba: la barra lo necesita para saber cuando sales del rojo. */
+    passingGrade: Double
 ) {
     val average = calculation.currentAverage
     // La tarjeta de arriba va rellena con el color de la app, no en gris sobre gris.
@@ -1360,11 +1368,19 @@ private fun SubjectOverviewCard(
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)
                 )
+                /*
+                 * **Aqui vive «materia que se recupera».**
+                 *
+                 * La barra ya dibuja el viaje entero: va de rojo a verde sobre la escala
+                 * completa, con el punto en donde vas. Salir del rojo **es** ese punto
+                 * cruzando hacia la derecha, y el barrido lo acompana.
+                 */
                 OutcomeRangeBar(
                     target = targetGrade,
                     maxGrade = maxGrade,
                     actual = average,
-                    scale = scale
+                    scale = scale,
+                    aprobado = passingGrade
                 )
             }
         }
@@ -1411,7 +1427,9 @@ private fun OutcomeRangeBar(
     maxGrade: Double,
     /** Donde estas ahora mismo, para el punto. Nulo si todavia no hay nada evaluado. */
     actual: Double?,
-    scale: GradingScale
+    scale: GradingScale,
+    /** Con cuanto se aprueba: es lo que decide si la materia acaba de salir del rojo. */
+    aprobado: Double
 ) {
     if (maxGrade <= 0.0) return
     val targetAt = (target / maxGrade).coerceIn(0.0, 1.0).toFloat()
@@ -1421,6 +1439,7 @@ private fun OutcomeRangeBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(14.dp)
+            .barridoDeRecuperacion(recuperada = actual != null && actual >= aprobado)
     ) {
         val fullWidth = maxWidth
         /*

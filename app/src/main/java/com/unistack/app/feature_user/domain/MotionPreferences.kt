@@ -33,7 +33,6 @@ data class MotionPreferences(
     // ------------------------------------------------------------------ académico
     val attendance: AttendanceMotion = AttendanceMotion.TRAZO,
     val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
-    val recovery: RecoveryMotion = RecoveryMotion.VIAJE,
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
 
@@ -50,7 +49,6 @@ data class MotionPreferences(
     val classNow: ClassNowMotion = ClassNowMotion.RESPIRA,
 
     // ------------------------------------------------------------------ generales
-    val greeting: GreetingMotion = GreetingMotion.ESCALONADO,
     val fabOnScroll: FabScrollMotion = FabScrollMotion.ENCOGE,
 
     // ------------------------------------------------------------------ otros
@@ -229,21 +227,6 @@ enum class NewGradeMotion(override val id: String, override val label: String) :
     ABRE("abre", "Se abre hueco")
 }
 
-enum class RecoveryMotion(override val id: String, override val label: String) : MotionChoice {
-    /** Cambia de color y ya. */
-    SECO("seco", "Seco"),
-
-    /** El color viaja del rojo al verde pasando por el ámbar. */
-    VIAJE("viaje", "Viaje de color"),
-    PULSO("pulso", "Pulso verde"),
-
-    /** Una franja verde barre la fila de izquierda a derecha. */
-    BARRIDO("barrido", "Barrido"),
-
-    /** El rojo se encoge por la izquierda mientras el verde crece por la derecha. */
-    RELEVO("relevo", "Relevo")
-}
-
 enum class CutSealMotion(override val id: String, override val label: String) : MotionChoice {
     NINGUNA("ninguna", "Nada"),
     ESTAMPA("estampa", "Estampado"),
@@ -330,9 +313,6 @@ enum class OverBudgetMotion(override val id: String, override val label: String)
     SACUDE("sacude", "Sacude"),
     PARPADEO("parpadeo", "Parpadeo"),
 
-    /** La barra se pasa del final y lo que sobra se derrama por debajo. */
-    DESBORDA("desborda", "Se desborda"),
-    GRIETA("grieta", "Se llena de rojo"),
     BANNER("banner", "Aviso arriba")
 }
 
@@ -348,20 +328,6 @@ enum class ClassNowMotion(override val id: String, override val label: String) :
     PUNTO("punto", "Punto que late"),
     RECORRE("recorre", "Borde que recorre"),
     BARRE("barre", "Brillo que barre")
-}
-
-// ---------------------------------------------------------------------- generales
-
-enum class GreetingMotion(override val id: String, override val label: String) : MotionChoice {
-    GOLPE("golpe", "De golpe"),
-
-    /** El rótulo entra, y el nombre justo después. */
-    ESCALONADO("escalonado", "Escalonado"),
-    MAQUINA("maquina", "Máquina de escribir"),
-    CORTINA("cortina", "Cortina"),
-    LATERAL("lateral", "Lateral"),
-    DESENFOQUE("desenfoque", "Desenfoque"),
-    LETRAS("letras", "Letra a letra")
 }
 
 enum class FabScrollMotion(override val id: String, override val label: String) : MotionChoice {
@@ -519,11 +485,6 @@ object MotionCatalog {
             "Cuando entra una nota nueva al corte.",
             { it.newGrade }, { p, v -> p.copy(newGrade = v) }
         ),
-        gesto<RecoveryMotion>(
-            "recupera", GROUP_ACADEMIC, "Materia que se recupera",
-            "Cuando sale del rojo.",
-            { it.recovery }, { p, v -> p.copy(recovery = v) }
-        ),
         gesto<CutSealMotion>(
             "sello", GROUP_ACADEMIC, "Sello al cerrar un corte",
             "Al dar un corte por cerrado.",
@@ -565,12 +526,6 @@ object MotionCatalog {
             "claseAhora", GROUP_ALERTS, "Clase en curso",
             "La clase que está pasando ahora. En verde: dice «activo».",
             { it.classNow }, { p, v -> p.copy(classNow = v) }
-        ),
-
-        gesto<GreetingMotion>(
-            "saludo", GROUP_GENERAL, "Saludo al abrir",
-            "El saludo y tu nombre en Inicio.",
-            { it.greeting }, { p, v -> p.copy(greeting = v) }
         )
     )
 

@@ -916,6 +916,7 @@
     <string name="schedule_detail_repetition">Repetición</string>
     <string name="schedule_detail_reminder">Recordatorio</string>
     <string name="schedule_log_attendance_action">REGISTRAR ASISTENCIA</string>
+    <string name="schedule_class_now">CLASE EN CURSO</string>
     <string name="schedule_view_history">Ver historial</string>
     <string name="schedule_view_history_desc">Las asistencias que llevas de esta materia</string>
     <string name="schedule_add_class_subtitle">Ponle horario a una materia que ya tienes, o crea una nueva.</string>
@@ -2015,4 +2016,5 @@ a tu medida</string>
     <string name="setup_term_month_january">enero</string>
     <string name="setup_term_month_december">diciembre</string>
     <string name="setup_term_choose">Elegir</string>
+    <string name="expenses_over_budget_banner">Te pasaste del presupuesto de este mes.</string>
 </resources>

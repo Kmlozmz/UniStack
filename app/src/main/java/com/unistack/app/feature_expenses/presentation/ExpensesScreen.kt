@@ -4,6 +4,7 @@ package com.unistack.app.feature_expenses.presentation
 
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.FilaDeslizable
+import com.unistack.app.core.design.components.AvisoDePresupuestoArriba
 import com.unistack.app.core.design.components.avisoDePresupuesto
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
@@ -603,6 +604,9 @@ private fun ExpensesHeroCard(
              * porque un aviso de dinero que se apaga solo deja de avisar justo cuando mas
              * falta hace.
              */
+            // «Aviso arriba» no cabe en un modificador: es una franja propia, no un efecto
+            // sobre la fila. Se pinta encima y solo si esa es la variante elegida.
+            AvisoDePresupuestoArriba(pasado = budget > 0 && budgetProgress >= 1f)
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
