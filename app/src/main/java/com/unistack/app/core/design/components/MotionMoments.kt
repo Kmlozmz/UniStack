@@ -117,61 +117,87 @@ fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier
     return this.drawWithContent {
         drawContent()
         val centro = Offset(size.width / 2f, size.height / 2f)
+        /*
+         * **La unidad no puede ser el lado corto.**
+         *
+         * Era `size.minDimension`, y en una tarjeta ancha y baja el lado corto es el **ancho**:
+         * multiplicarlo por 1,8 y luego por una escala de 2,2 daba un sello casi cuatro veces
+         * mas ancho que lo que venia a sellar. De el solo se veian dos franjas verdes cruzando
+         * la pantalla entera, que es como se rompio en la tarjeta del corte.
+         *
+         * Ahora cada figura se mide contra la tarjeta y se le pone tope con la otra dimension,
+         * asi que cabe sea cual sea la forma del sitio donde se estampe.
+         */
         val corto = size.minDimension
         // Se apaga en el último cuarto: el sello marca el momento y despues deja ver la
         // tarjeta, que es lo que se ha venido a consultar.
         val vida = if (avance < 0.75f) 1f else 1f - (avance - 0.75f) / 0.25f
         val verde = Color(0xFF11C045)
 
-        when (estilo) {
-            CutSealMotion.ESTAMPA, CutSealMotion.TINTA -> {
-                val posado = (avance / 0.35f).coerceAtMost(1f)
-                if (estilo == CutSealMotion.TINTA) {
-                    drawCircle(
-                        color = verde.copy(alpha = 0.16f * vida),
-                        radius = corto * 1.1f * posado,
-                        center = centro
+        /*
+         * Y se recorta a la tarjeta.
+         *
+         * `drawWithContent` no recorta nada: lo que se salga de la tarjeta se pinta sobre la
+         * pantalla, sobre la barra de abajo y sobre lo que haya. Un sello que se sale deja de
+         * ser un sello, asi que aunque la figura sobre por un lado —la cinta lo hace a
+         * proposito, como el precinto de una caja— lo que se ve queda dentro.
+         */
+        clipRect {
+            when (estilo) {
+                CutSealMotion.ESTAMPA, CutSealMotion.TINTA -> {
+                    val posado = (avance / 0.35f).coerceAtMost(1f)
+                    if (estilo == CutSealMotion.TINTA) {
+                        drawCircle(
+                            color = verde.copy(alpha = 0.16f * vida),
+                            radius = corto * 0.75f * posado,
+                            center = centro
+                        )
+                    }
+                    // Dos tercios del ancho, con tope por si la tarjeta es mas baja que ancha.
+                    val ancho = minOf(size.width * 0.66f, size.height * 2f)
+                    val alto = ancho * 0.34f
+                    // Baja de vez y media a su tamano: lo justo para que se lea como algo que
+                    // aterriza, sin empezar tan grande que solo se le vean los bordes.
+                    val escala = 1.5f - 0.5f * posado
+                    val a = ancho * escala
+                    val h = alto * escala
+                    rotate(degrees = -14f, pivot = centro) {
+                        drawRoundRect(
+                            color = verde.copy(alpha = vida),
+                            topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
+                            size = Size(a, h),
+                            cornerRadius = CornerRadius(h * 0.28f, h * 0.28f),
+                            style = Stroke(h * 0.10f)
+                        )
+                    }
+                }
+                // El lacre cae, se aplasta al llegar y se recupera.
+                CutSealMotion.LACRE -> {
+                    val caida = (avance / 0.45f).coerceAtMost(1f)
+                    val aplaste = 1f + 0.3f * ((avance - 0.45f) / 0.13f).coerceIn(0f, 1f) -
+                        0.3f * ((avance - 0.58f) / 0.17f).coerceIn(0f, 1f)
+                    val y = size.height * (0.1f + 0.4f * caida)
+                    val r = corto * 0.16f
+                    drawOval(
+                        color = Color(0xFFD81C00).copy(alpha = vida),
+                        topLeft = Offset(size.width * 0.78f - r * aplaste, y - r / aplaste),
+                        size = Size(r * 2f * aplaste, r * 2f / aplaste)
                     )
                 }
-                val escala = 2.2f - 1.2f * posado
-                rotate(degrees = -14f, pivot = centro) {
-                    drawRoundRect(
-                        color = verde.copy(alpha = vida),
-                        topLeft = Offset(
-                            centro.x - corto * 0.9f * escala,
-                            centro.y - corto * 0.30f * escala
-                        ),
-                        size = Size(corto * 1.8f * escala, corto * 0.60f * escala),
-                        cornerRadius = CornerRadius(corto * 0.14f, corto * 0.14f),
-                        style = Stroke(corto * 0.06f)
-                    )
+                // La cinta cruza la tarjeta entera, como el precinto de una caja.
+                CutSealMotion.CINTA -> {
+                    val largo = size.width * 1.3f * (avance / 0.55f).coerceAtMost(1f)
+                    val grosor = minOf(size.width, size.height) * 0.22f
+                    rotate(degrees = -10f, pivot = centro) {
+                        drawRect(
+                            color = verde.copy(alpha = 0.85f * vida),
+                            topLeft = Offset(-size.width * 0.15f, centro.y - grosor / 2f),
+                            size = Size(largo, grosor)
+                        )
+                    }
                 }
+                CutSealMotion.NINGUNA -> Unit
             }
-            // El lacre cae, se aplasta al llegar y se recupera.
-            CutSealMotion.LACRE -> {
-                val caida = (avance / 0.45f).coerceAtMost(1f)
-                val aplaste = 1f + 0.3f * ((avance - 0.45f) / 0.13f).coerceIn(0f, 1f) -
-                    0.3f * ((avance - 0.58f) / 0.17f).coerceIn(0f, 1f)
-                val y = size.height * (0.1f + 0.4f * caida)
-                val r = corto * 0.32f
-                drawOval(
-                    color = Color(0xFFD81C00).copy(alpha = vida),
-                    topLeft = Offset(size.width * 0.78f - r * aplaste, y - r / aplaste),
-                    size = Size(r * 2f * aplaste, r * 2f / aplaste)
-                )
-            }
-            // La cinta cruza la tarjeta entera, como el precinto de una caja.
-            CutSealMotion.CINTA -> {
-                val largo = size.width * 1.3f * (avance / 0.55f).coerceAtMost(1f)
-                rotate(degrees = -10f, pivot = centro) {
-                    drawRect(
-                        color = verde.copy(alpha = 0.85f * vida),
-                        topLeft = Offset(-size.width * 0.15f, centro.y - corto * 0.22f),
-                        size = Size(largo, corto * 0.44f)
-                    )
-                }
-            }
-            CutSealMotion.NINGUNA -> Unit
         }
     }
 }
