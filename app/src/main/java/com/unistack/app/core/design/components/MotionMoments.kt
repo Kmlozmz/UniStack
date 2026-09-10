@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import com.unistack.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unistack.app.core.design.theme.duracion
@@ -99,20 +105,44 @@ import kotlin.random.Random
  * día con la última pendiente.
  */
 @Composable
-fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier {
+fun Modifier.selloDeCorte(
+    disparado: Boolean,
+    onTerminado: () -> Unit,
+    /**
+     * Si el corte **está** cerrado, no si acaba de cerrarse.
+     *
+     * Cerrar un corte no es un momento que pasa y se olvida: es un estado en el que la
+     * tarjeta se queda. El sello aterriza una vez y después se queda ahí de marca de agua,
+     * como el «PAGADO» de una factura, en vez de irse y dejar la tarjeta igual que una
+     * abierta.
+     */
+    cerrado: Boolean = false
+): Modifier {
     val estilo = motionActual().cutSeal
     if (estilo == CutSealMotion.NINGUNA || !hayMovimiento()) {
         LaunchedEffect(disparado) { if (disparado) onTerminado() }
         return this
     }
 
+    /*
+     * **La vuelta es un salto, no una animación.**
+     *
+     * Con el mismo `tween` en las dos direcciones, al acabar el sello el disparo se apagaba
+     * y el valor se animaba de 1 a 0 otros 1200 ms: el sello se **desdibujaba, volvía a
+     * aparecer** —porque el desvanecido del final se recorría al revés— y se iba haciendo
+     * la entrada hacia atrás. Se veía como un parpadeo y una segunda animación que nadie
+     * había pedido.
+     */
     val avance by animateFloatAsState(
         targetValue = if (disparado) 1f else 0f,
-        animationSpec = tweenDeMovimiento(baseMs = 1200),
+        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 1200) else snap(),
         label = "sello",
         finishedListener = { if (it >= 1f) onTerminado() }
     )
-    if (avance <= 0f) return this
+    if (avance <= 0f && !cerrado) return this
+
+    val medidor = rememberTextMeasurer()
+    val leyenda = stringResource(R.string.subject_cut_seal)
 
     return this.drawWithContent {
         drawContent()
@@ -129,9 +159,20 @@ fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier
          * asi que cabe sea cual sea la forma del sitio donde se estampe.
          */
         val corto = size.minDimension
-        // Se apaga en el último cuarto: el sello marca el momento y despues deja ver la
-        // tarjeta, que es lo que se ha venido a consultar.
-        val vida = if (avance < 0.75f) 1f else 1f - (avance - 0.75f) / 0.25f
+        /*
+         * Aterriza entero y se asienta en marca de agua.
+         *
+         * Antes se apagaba del todo en el último cuarto: el momento se veía y después la
+         * tarjeta quedaba exactamente igual que una abierta. Ahora baja hasta un 22 % y ahí
+         * se queda mientras el corte siga cerrado, que es lo suficiente para leerse a
+         * través de él y no tan poco como para no verlo.
+         */
+        // Parado, el sello esta terminado: `t` vale 1 y cada figura se dibuja como queda
+        // al final, no como empieza.
+        val t = if (avance > 0f) avance else 1f
+        val posado = (t / 0.35f).coerceAtMost(1f)
+        val asentado = ((t - 0.55f) / 0.45f).coerceIn(0f, 1f)
+        val vida = 1f - 0.78f * asentado
         val verde = Color(0xFF11C045)
 
         /*
@@ -145,7 +186,6 @@ fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier
         clipRect {
             when (estilo) {
                 CutSealMotion.ESTAMPA, CutSealMotion.TINTA -> {
-                    val posado = (avance / 0.35f).coerceAtMost(1f)
                     if (estilo == CutSealMotion.TINTA) {
                         drawCircle(
                             color = verde.copy(alpha = 0.16f * vida),
@@ -169,13 +209,34 @@ fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier
                             cornerRadius = CornerRadius(h * 0.28f, h * 0.28f),
                             style = Stroke(h * 0.10f)
                         )
+                        /*
+                         * Y dentro, la palabra.
+                         *
+                         * Un recuadro vacío no es un sello: es un recuadro. El del prototipo
+                         * llevaba su leyenda dentro, y sin ella lo único que se veía era un
+                         * marco verde en diagonal que no decía de qué iba.
+                         */
+                        val tipo = TextStyle(
+                            color = verde.copy(alpha = vida),
+                            fontSize = (h * 0.40f).toSp(),
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (h * 0.07f).toSp()
+                        )
+                        val medida = medidor.measure(leyenda, tipo)
+                        drawText(
+                            textLayoutResult = medida,
+                            topLeft = Offset(
+                                centro.x - medida.size.width / 2f,
+                                centro.y - medida.size.height / 2f
+                            )
+                        )
                     }
                 }
                 // El lacre cae, se aplasta al llegar y se recupera.
                 CutSealMotion.LACRE -> {
-                    val caida = (avance / 0.45f).coerceAtMost(1f)
-                    val aplaste = 1f + 0.3f * ((avance - 0.45f) / 0.13f).coerceIn(0f, 1f) -
-                        0.3f * ((avance - 0.58f) / 0.17f).coerceIn(0f, 1f)
+                    val caida = (t / 0.45f).coerceAtMost(1f)
+                    val aplaste = 1f + 0.3f * ((t - 0.45f) / 0.13f).coerceIn(0f, 1f) -
+                        0.3f * ((t - 0.58f) / 0.17f).coerceIn(0f, 1f)
                     val y = size.height * (0.1f + 0.4f * caida)
                     val r = corto * 0.16f
                     drawOval(
@@ -186,7 +247,7 @@ fun Modifier.selloDeCorte(disparado: Boolean, onTerminado: () -> Unit): Modifier
                 }
                 // La cinta cruza la tarjeta entera, como el precinto de una caja.
                 CutSealMotion.CINTA -> {
-                    val largo = size.width * 1.3f * (avance / 0.55f).coerceAtMost(1f)
+                    val largo = size.width * 1.3f * (t / 0.55f).coerceAtMost(1f)
                     val grosor = minOf(size.width, size.height) * 0.22f
                     rotate(degrees = -10f, pivot = centro) {
                         drawRect(

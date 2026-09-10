@@ -261,6 +261,9 @@ fun SubjectDetailScreen(
      */
     var cerradosVistos by remember { mutableStateOf<Set<String>?>(null) }
     var selloEn by remember { mutableStateOf<String?>(null) }
+    // Reabrir suelta las notas de un corte que ya estaba decidido: pregunta antes, igual
+    // que dentro del propio corte.
+    var cortePorReabrir by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(cerrados) {
         val previos = cerradosVistos
         if (previos != null) (cerrados - previos).firstOrNull()?.let { selloEn = it }
@@ -453,14 +456,15 @@ fun SubjectDetailScreen(
                                 dimmed = true,
                                 modifier = Modifier.selloDeCorte(
                                     disparado = summary.cut.id == selloEn,
-                                    onTerminado = { selloEn = null }
+                                    onTerminado = { selloEn = null },
+                                    cerrado = true
                                 )
                             )
                             // Reabrir tiene que existir y costar lo mismo que cerrar: si al
                             // cerrarlo ves que una nota estaba mal, el camino de vuelta no
                             // puede ser borrar el corte.
                             TextButton(
-                                onClick = { viewModel.setCutClosed(subject.id, summary.cut.id, false) },
+                                onClick = { cortePorReabrir = summary.cut.id },
                                 modifier = Modifier.align(Alignment.End)
                             ) {
                                 Text(
@@ -476,6 +480,47 @@ fun SubjectDetailScreen(
             }
         }
 
+    }
+
+    cortePorReabrir?.let { cutId ->
+        AlertDialog(
+            onDismissRequest = { cortePorReabrir = null },
+            title = {
+                Text(
+                    stringResource(R.string.subject_reopen_cut_title),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.subject_reopen_cut_message),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.setCutClosed(subject.id, cutId, false)
+                        cortePorReabrir = null
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.subject_reopen_cut),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { cortePorReabrir = null }) {
+                    Text(
+                        stringResource(R.string.action_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     }
 
     if (showDeleteSubjectDialog) {
@@ -573,6 +618,16 @@ fun SubjectCutDetailScreen(
     val cutScheme = subject?.cutScheme ?: profile?.gradingCutScheme ?: GradingCutScheme.default()
     val cut = cutScheme.cuts.firstOrNull { it.id == cutId }
     var gradeIdPendingDelete by remember { mutableStateOf<String?>(null) }
+    /*
+     * **Cerrar y reabrir preguntan antes.**
+     *
+     * Cerrar fija las notas del corte y reabrir las suelta: las dos cambian el estado de
+     * algo que ya estaba decidido, y las dos estaban a un toque sin red. El boton de
+     * cerrar aparece justo cuando acabas de repartir el 100 %, que es cuando el dedo ya
+     * viene bajando de registrar la ultima nota.
+     */
+    var confirmarCierre by remember { mutableStateOf(false) }
+    var confirmarReapertura by remember { mutableStateOf(false) }
     // La misma hoja que en la materia: si esta pantalla se destruyera para escribir la nota,
     // la fila nueva volveria a aparecer sin entrar.
     var hojaDeNota by rememberSaveable { mutableStateOf(false) }
@@ -708,17 +763,100 @@ fun SubjectCutDetailScreen(
                     cerrado = estaCerrado,
                     modifier = Modifier.selloDeCorte(
                         disparado = sello,
-                        onTerminado = { sello = false }
+                        onTerminado = { sello = false },
+                        cerrado = estaCerrado
                     ),
                     onAgregar = { hojaDeNota = true },
-                    onCerrar = { viewModel.setCutClosed(subject.id, cut.id, true) },
-                    onReabrir = { viewModel.setCutClosed(subject.id, cut.id, false) },
+                    onCerrar = { confirmarCierre = true },
+                    onReabrir = { confirmarReapertura = true },
                     onEditar = { onEditGradeClick(subject.id, it) },
                     onBorrar = { gradeIdPendingDelete = it }
                 )
             }
         }
 
+    }
+
+    if (confirmarCierre) {
+        AlertDialog(
+            onDismissRequest = { confirmarCierre = false },
+            title = {
+                Text(
+                    stringResource(R.string.subject_close_cut_title),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.subject_close_cut_message),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.setCutClosed(subject.id, cut.id, true)
+                        confirmarCierre = false
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.subject_close_cut_short),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarCierre = false }) {
+                    Text(
+                        stringResource(R.string.action_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
+    }
+
+    if (confirmarReapertura) {
+        AlertDialog(
+            onDismissRequest = { confirmarReapertura = false },
+            title = {
+                Text(
+                    stringResource(R.string.subject_reopen_cut_title),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Text(
+                    stringResource(R.string.subject_reopen_cut_message),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.setCutClosed(subject.id, cut.id, false)
+                        confirmarReapertura = false
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.subject_reopen_cut),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmarReapertura = false }) {
+                    Text(
+                        stringResource(R.string.action_cancel),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        )
     }
 
     gradeIdPendingDelete?.let { gradeId ->
@@ -1824,8 +1962,21 @@ private fun TarjetaDelCorte(
         vistasAntes.value = notas.map { it.id }.toSet()
     }
 
+    /*
+     * **Un corte cerrado se ve cerrado, no solo lo dice.**
+     *
+     * La tarjeta quedaba identica a la de un corte abierto: el unico aviso eran la
+     * insignia y una linea de texto al pie, y se seguia leyendo como algo con lo que hay
+     * cosas que hacer. Atenuada dice de un vistazo que ahi ya no toca nada, y es la misma
+     * atenuacion que la lista de la materia ya aplica a sus cortes cerrados.
+     *
+     * Con contraste alto se queda entera: bajar la opacidad es justo lo que esa
+     * preferencia viene a evitar.
+     */
+    val contrasteAlto = LocalAccessibilityPreferences.current.highContrastEnabled
+    val atenuada = if (cerrado && !contrasteAlto) 0.62f else 1f
     UniCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().alpha(atenuada),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = LargeCardShape,
         tonalElevation = 0.dp,

@@ -498,6 +498,11 @@
     <string name="subject_cut_full_hint">El 100 % está repartido. Revisa las notas y ciérralo cuando quieras.</string>
     <string name="subject_close_cut_short">Cerrar corte</string>
     <string name="subject_add_grade_short">Agregar nota</string>
+    <string name="subject_cut_seal">CERRADO</string>
+    <string name="subject_close_cut_title">¿Cerrar el corte?</string>
+    <string name="subject_close_cut_message">Las notas quedan fijadas y el corte deja de aceptar nuevas. Puedes reabrirlo cuando quieras.</string>
+    <string name="subject_reopen_cut_title">¿Reabrir el corte?</string>
+    <string name="subject_reopen_cut_message">Vuelve a aceptar notas y su resultado deja de estar fijado.</string>
     <string name="subject_cut_closed_hint">Corte cerrado · las notas quedan fijadas.</string>
     <string name="subject_close_cut">Cerrar %1$s</string>
     <string name="subject_completed_cuts">Completados</string>

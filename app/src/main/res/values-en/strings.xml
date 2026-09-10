@@ -498,6 +498,11 @@
     <string name="subject_cut_full_hint">The full 100% is distributed. Review the grades and close it whenever you want.</string>
     <string name="subject_close_cut_short">Close cut</string>
     <string name="subject_add_grade_short">Add grade</string>
+    <string name="subject_cut_seal">CLOSED</string>
+    <string name="subject_close_cut_title">Close the cut?</string>
+    <string name="subject_close_cut_message">The grades are locked in and the cut stops taking new ones. You can reopen it whenever you want.</string>
+    <string name="subject_reopen_cut_title">Reopen the cut?</string>
+    <string name="subject_reopen_cut_message">It takes grades again and its result stops being locked in.</string>
     <string name="subject_cut_closed_hint">Cut closed · the grades are locked in.</string>
     <string name="subject_close_cut">Close %1$s</string>
     <string name="subject_completed_cuts">Completed</string>
