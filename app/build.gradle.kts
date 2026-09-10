@@ -743,7 +743,10 @@ fun registerTelegramApkTask(variant: String) = tasks.register("send${variant.rep
         val numero = nextTelegramCount(tipo)
         // Bloque de codigo, no monospace suelto: es lo que Telegram pinta con la barra
         // vertical al lado, como iba el changelog.
-        val caption = "<pre>($tipo) #$numero</pre>"
+        // La version va delante: el numero suelto se confundia con ella —«alpha.61» enviada
+        // como «#63»— porque los dos parecen el mismo contador y no lo son. Este cuenta envios
+        // desde esta maquina; el de verdad esta en el nombre del fichero.
+        val caption = "<pre>($tipo) $generatedVersionName · envio #$numero</pre>"
 
         /*
          * El chat recibe el APK y nada mas.
