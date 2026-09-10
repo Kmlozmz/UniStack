@@ -661,9 +661,9 @@
     <string name="subject_unreachable_prefix">Tu meta de %1$s ya no es alcanzable: aun sacando </string>
     <string name="subject_unreachable_mid">%1$s en todo lo que falta, terminarías con </string>
     <string name="subject_weight_of_subject_simple">%1$s%% de la materia</string>
-    <string name="subject_color_select_accessibility">Seleccionar color %1</string>
-    <string name="subject_color_desc_accessibility">Color %1, %2</string>
-    <string name="schedule_reminder_min">Aviso %1 min</string>
+    <string name="subject_color_select_accessibility">Seleccionar color %1$s</string>
+    <string name="subject_color_desc_accessibility">Color %1$s, %2$s</string>
+    <string name="schedule_reminder_min">Aviso %1$d min</string>
     <string name="schedule_start_hour_label">Hora inicio</string>
     <string name="schedule_end_hour_label">Hora fin</string>
     <string name="schedule_room_placeholder">Aula 301</string>

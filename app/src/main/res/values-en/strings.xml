@@ -661,9 +661,9 @@
     <string name="subject_unreachable_prefix">Your goal of %1$s is no longer reachable: even with </string>
     <string name="subject_unreachable_mid">%1$s in the rest, you would finish with </string>
     <string name="subject_weight_of_subject_simple">%1$s%% of subject</string>
-    <string name="subject_color_select_accessibility">Select color %1</string>
-    <string name="subject_color_desc_accessibility">Color %1, %2</string>
-    <string name="schedule_reminder_min">Reminder %1 min</string>
+    <string name="subject_color_select_accessibility">Select color %1$s</string>
+    <string name="subject_color_desc_accessibility">Color %1$s, %2$s</string>
+    <string name="schedule_reminder_min">Reminder %1$d min</string>
     <string name="schedule_start_hour_label">Start time</string>
     <string name="schedule_end_hour_label">End time</string>
     <string name="schedule_room_placeholder">Room 301</string>
