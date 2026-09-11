@@ -2,6 +2,11 @@
 
 package com.unistack.app.feature_home.presentation
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +32,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -60,6 +66,8 @@ import com.unistack.app.feature_profile.presentation.AccountAvatar
 import com.unistack.app.core.design.components.UniIconButton
 import com.unistack.app.core.design.components.UniStackButtonDefaults
 import com.unistack.app.core.design.components.UniStackFabMenu
+import com.unistack.app.core.design.theme.duracion
+import com.unistack.app.core.design.theme.hayMovimiento
 import com.unistack.app.core.design.theme.LocalSectionColors
 import com.unistack.app.core.design.components.UniStackLogoMark
 import com.unistack.app.core.design.components.UniStackWordmark
@@ -79,6 +87,9 @@ import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.utils.greetingForNow
 import com.unistack.app.core.utils.CurrencyFormatter
 import com.unistack.app.core.utils.formatCurrency
+import kotlin.math.abs
+import kotlin.math.sin
+import kotlin.math.PI
 import kotlin.math.roundToInt
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -502,12 +513,7 @@ private fun HomePriorityCard(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.onPrimaryContainer)
-                    )
+                    PuntoDelHero(enCurso = priority.timeframe == HomePriorityTimeframe.NOW)
                     Text(text = heroLabel(priority.timeframe), style = SectionLabelStyle)
                 }
                 Text(
@@ -532,7 +538,13 @@ private fun HomePriorityCard(
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        // Un «+» delante de «Ver horario» prometia crear algo. El icono va con la
+                        // accion, no fijo.
+                        Icon(
+                            imageVector = if (priority.action == HomePriorityAction.SCHEDULE) Icons.Rounded.Schedule else Icons.Rounded.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
                         Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                         Text(primaryActionLabel(priority.action))
                     }
@@ -545,6 +557,39 @@ private fun HomePriorityCard(
             }
         }
     }
+}
+
+/**
+ * La luz del rotulo del hero.
+ *
+ * Con una clase en curso se pone en verde y late, con el mismo compas que la pildora «CLASE EN
+ * CURSO» del horario: es la misma cosa dicha en dos sitios, y tiene que moverse igual. El resto
+ * del tiempo es el punto quieto de siempre.
+ */
+@Composable
+private fun PuntoDelHero(enCurso: Boolean) {
+    val verde = LocalSectionColors.current.onTrack
+    val late = enCurso && hayMovimiento()
+    val ciclo = rememberInfiniteTransition(label = "hero-punto")
+    val t by ciclo.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(duracion(1950).coerceAtLeast(1), easing = LinearEasing)),
+        label = "hero-punto"
+    )
+    val escala = if (late) 1f + 0.7f * abs(sin(t * PI.toFloat())) else 1f
+    val opacidad = if (late) 1f - 0.45f * abs(sin(t * PI.toFloat())) else 1f
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .graphicsLayer {
+                scaleX = escala
+                scaleY = escala
+                alpha = opacidad
+            }
+            .clip(CircleShape)
+            .background(if (enCurso) verde else MaterialTheme.colorScheme.onPrimaryContainer)
+    )
 }
 
 @Composable
@@ -983,6 +1028,7 @@ private fun HomeTile(
  */
 @Composable
 private fun heroLabel(timeframe: HomePriorityTimeframe): String = when (timeframe) {
+    HomePriorityTimeframe.NOW -> stringResource(R.string.home_hero_now)
     HomePriorityTimeframe.TODAY -> stringResource(R.string.home_hero_today)
     HomePriorityTimeframe.TOMORROW -> stringResource(R.string.home_hero_tomorrow)
     HomePriorityTimeframe.LATER -> stringResource(R.string.home_hero_later)

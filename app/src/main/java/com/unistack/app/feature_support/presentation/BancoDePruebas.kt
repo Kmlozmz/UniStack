@@ -234,8 +234,8 @@ private fun LazyListScope.caraSimular(
     palanca("Deshacer lo de Horario", "Solo las clases fabricadas", suave = true) { vm.recogerHorario() }
 
     seccion("Gastos")
-    palanca("Pasarse del presupuesto", "Lo pone justo por debajo de lo gastado") { vm.presupuestoPasado() }
-    palanca("Presupuesto holgado", "La misma fila sin alarma") { vm.presupuestoHolgado() }
+    palanca("Pasarse del presupuesto", "Lo pone justo por debajo de lo gastado: sale el aviso arriba") { vm.presupuestoPasado() }
+    palanca("Presupuesto holgado", "La misma fila sin aviso") { vm.presupuestoHolgado() }
     palanca("Registrar un gasto", "Para cruzarlo en vivo y ver el momento") { vm.gastoDePrueba() }
     palanca("Deshacer lo de Gastos", "Gastos falsos y presupuesto", suave = true) { vm.recogerGastos() }
 
@@ -252,7 +252,7 @@ private fun LazyListScope.caraSimular(
 // ==================================================================== movimiento
 
 /**
- * Los catorce gestos con sus variantes, cambiables sin salir de aquí.
+ * Los trece gestos con sus variantes, cambiables sin salir de aquí.
  *
  * Se recorre [MotionCatalog] en vez de escribirlos a mano: un gesto que se añada mañana
  * aparece solo, y uno que se retire desaparece. Es la misma lista que pinta Ajustes.
@@ -313,7 +313,7 @@ private fun LazyListScope.caraMovimiento(vm: BancoDePruebasViewModel) {
         }
     }
     seccion("Deshacer")
-    palanca("Movimiento de fábrica", "Las catorce variantes a su valor original", suave = true) {
+    palanca("Movimiento de fábrica", "Los trece gestos a su valor original", suave = true) {
         vm.movimientoDeFabrica()
     }
 }

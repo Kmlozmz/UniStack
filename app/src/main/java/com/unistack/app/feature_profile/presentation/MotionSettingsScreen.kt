@@ -553,7 +553,7 @@ private fun InterruptorMaestro(
  * dominio, y el dominio no tiene por qué saber qué es un `ImageVector`.
  */
 private fun iconoDe(id: String): ImageVector = when (id) {
-    "velocidad", "latido", "presupuesto" -> Icons.Rounded.Bolt
+    "velocidad", "latido" -> Icons.Rounded.Bolt
     "rebote", "transicion", "deshacer", "fijar", "saludo", "parallax" -> Icons.Rounded.Animation
     "pulsacion" -> Icons.Rounded.TouchApp
     "carga", "refresco" -> Icons.Rounded.Refresh
@@ -578,7 +578,7 @@ private fun colorDe(id: String): Color = when (id) {
     "listas", "asistencia", "tachar", "claseAhora", "gestos" -> Color(0xFF5FC96E)
     "refresco" -> Color(0xFF3FC7B4)
     "subeNota", "barraAnim" -> Color(0xFFE062A8)
-    "latido", "presupuesto", "errorShake" -> Color(0xFFEA5A52)
+    "latido", "errorShake" -> Color(0xFFEA5A52)
     "guardado" -> Color(0xFF8C93A8)
     "fijar", "haptica" -> Color(0xFFC08BE0)
     else -> Color(0xFF7F77DD)

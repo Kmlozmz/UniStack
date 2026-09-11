@@ -90,7 +90,7 @@ internal object HomeSummaryFactory {
             subjects = heroSubjects,
             tasks = heroTasks
         )
-        val schedulePriority = schedulePrioritySummary(
+        val clase = classPriorityCandidate(
             sessions = classSessions,
             subjects = subjects
         )
@@ -106,7 +106,21 @@ internal object HomeSummaryFactory {
             riskSubject = riskSubject,
             subjectNameById = subjects.associate { it.id to it.name }
         )
-        val priority = academicDataPriority ?: schedulePriority ?: prioritySummary(
+        /*
+         * **La clase compite; no manda.**
+         *
+         * Estaba `academicDataPriority ?: schedulePriority ?: prioritySummary(...)`, o sea:
+         * habiendo cualquier clase en los proximos siete dias, el hero era esa clase. Una
+         * tarea vencida, una materia en rojo o el presupuesto pasado no llegaban a
+         * ensenarse nunca mientras hubiera horario, que es siempre. Y encima la clase
+         * elegida ignoraba la que **esta pasando**: en plena clase decia «manana».
+         *
+         * Ahora la clase entra en la misma clasificacion que lo demas con una puntuacion
+         * segun lo cerca que este: la que esta en curso por encima de todo, la de dentro
+         * de una hora por debajo de lo que vence hoy, la de manana por debajo de casi
+         * todo.
+         */
+        val priority = academicDataPriority ?: prioritySummary(
             subjects = heroSubjects,
             pendingTasks = heroTasks,
             works = heroWorks,
@@ -114,7 +128,8 @@ internal object HomeSummaryFactory {
             weeklyExpenseTotal = heroExpenseTotal,
             profile = profile,
             enabledModules = enabledModules,
-            academicFocus = academicFocus
+            academicFocus = academicFocus,
+            clase = clase
         )
         val generatedFocusItems = DailyPriorityEngine.dailyFocusPlan(
             subjectsCount = subjects.size,
@@ -269,8 +284,12 @@ internal object HomeSummaryFactory {
         weeklyExpenseTotal: Int,
         profile: UserProfile?,
         enabledModules: Set<AppModule>,
-        academicFocus: AcademicFocusSummary?
+        academicFocus: AcademicFocusSummary?,
+        clase: Pair<Int, HomePrioritySummary>? = null
     ): HomePrioritySummary {
+        // Con los tres interruptores del hero apagados `subjects` llega vacio y el motor
+        // no puntua nada: entonces se queda con la clase, que es lo que promete el ajuste.
+        if (subjects.isEmpty() && clase != null) return clase.second
         DailyPriorityEngine.primaryPriority(
             subjectsCount = subjects.size,
             pendingTasks = pendingTasks,
@@ -278,7 +297,8 @@ internal object HomeSummaryFactory {
             riskSubject = riskSubject,
             weeklyExpenseTotal = weeklyExpenseTotal,
             profile = profile,
-            enabledModules = enabledModules
+            enabledModules = enabledModules,
+            extra = listOfNotNull(clase)
         )?.let { return it }
 
         if (subjects.isEmpty()) {
@@ -368,45 +388,88 @@ internal object HomeSummaryFactory {
         return null
     }
 
-    private fun schedulePrioritySummary(
+    /**
+     * La clase de ahora mismo, o la siguiente, puntuada para competir con lo demas.
+     *
+     * **El texto dice algo.** Decia «Materia a las 15:30» y debajo «Tienes clase manana.
+     * Revisa aula, asistencia y recordatorio», que es relleno: no hay nada ahi que no se
+     * supiera ya. Ahora el titulo es la materia y la linea de abajo es lo que hace falta
+     * para actuar: «Hasta las 21:30 · 505D» si estas dentro, «Empieza en 40 min · 103F» si
+     * viene, «Manana a las 15:30» si es manana.
+     *
+     * La puntuacion es lo que la sienta en la mesa con las tareas (vencida 940, hoy 900,
+     * manana 760) y las materias (critica 870, cerca de la meta 680):
+     * - en curso, 960: lo que esta pasando gana a lo que vence;
+     * - dentro de una hora, 890: por debajo de lo que vence hoy, por encima de una materia
+     *   en rojo;
+     * - mas tarde hoy, 720; manana, 560; despues, 450.
+     */
+    private fun classPriorityCandidate(
         sessions: List<ClassSession>,
         subjects: List<Subject>
-    ): HomePrioritySummary? {
+    ): Pair<Int, HomePrioritySummary>? {
         if (sessions.isEmpty()) return null
         val today = LocalDate.now()
-        val nowMinute = LocalTime.now().hour * 60 + LocalTime.now().minute
+        val nowMinute = LocalTime.now().let { it.hour * 60 + it.minute }
+
+        fun nombre(s: ClassSession): String = subjects.firstOrNull { it.id == s.subjectId }?.name
+            ?: if (isEnglish) "Your next class" else "Tu próxima clase"
+        // El aula va delante del profesor en `location`, separados por el punto medio.
+        fun conAula(texto: String, s: ClassSession): String {
+            val aula = s.location.split('•', limit = 2).first().trim()
+            return if (aula.isBlank()) texto else "$texto · $aula"
+        }
+
+        val enCurso = sessions
+            .filter { it.occursOn(today.toEpochDay(), today.dayOfWeek.value) }
+            .filter { nowMinute >= it.startMinute && nowMinute < it.endMinute }
+            .minByOrNull { it.endMinute }
+        if (enCurso != null) {
+            val hasta = formatClassMinute(enCurso.endMinute)
+            return 960 to HomePrioritySummary(
+                title = nombre(enCurso),
+                shortDescription = conAula(if (isEnglish) "Until $hasta" else "Hasta las $hasta", enCurso),
+                action = HomePriorityAction.SCHEDULE,
+                subjectId = enCurso.subjectId,
+                timeframe = HomePriorityTimeframe.NOW
+            )
+        }
+
         val next = (0..7)
             .flatMap { offset ->
                 val date = today.plusDays(offset.toLong())
                 sessions
-                    .filter { date.dayOfWeek.value in it.daysOfWeek }
+                    .filter { it.occursOn(date.toEpochDay(), date.dayOfWeek.value) }
                     .filter { offset > 0 || it.startMinute >= nowMinute }
                     .map { date to it }
             }
             .sortedWith(compareBy<Pair<LocalDate, ClassSession>> { it.first }.thenBy { it.second.startMinute })
             .firstOrNull() ?: return null
         val (date, session) = next
-        val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: if (isEnglish) "Your next class" else "Tu proxima clase"
-        val dayText = when (date) {
-            today -> if (isEnglish) "today" else "hoy"
-            today.plusDays(1) -> if (isEnglish) "tomorrow" else "mañana"
-            else -> (if (isEnglish) "on " else "el ") + date.dayOfWeek.getDisplayName(
-                java.time.format.TextStyle.FULL,
-                if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")
-            )
+        val hora = formatClassMinute(session.startMinute)
+        val faltan = session.startMinute - nowMinute
+        val diaDeLaSemana = date.dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.FULL,
+            if (isEnglish) java.util.Locale.ENGLISH else java.util.Locale.forLanguageTag("es")
+        )
+        val (puntos, texto, cuando) = when {
+            date == today && faltan <= 0 ->
+                Triple(890, if (isEnglish) "Starting now" else "Empieza ahora mismo", HomePriorityTimeframe.TODAY)
+            date == today && faltan <= 60 ->
+                Triple(890, if (isEnglish) "Starts in $faltan min" else "Empieza en $faltan min", HomePriorityTimeframe.TODAY)
+            date == today ->
+                Triple(720, if (isEnglish) "Today at $hora" else "Hoy a las $hora", HomePriorityTimeframe.TODAY)
+            date == today.plusDays(1) ->
+                Triple(560, if (isEnglish) "Tomorrow at $hora" else "Mañana a las $hora", HomePriorityTimeframe.TOMORROW)
+            else ->
+                Triple(450, if (isEnglish) "On $diaDeLaSemana at $hora" else "El $diaDeLaSemana a las $hora", HomePriorityTimeframe.LATER)
         }
-        val timeframe = when (date) {
-            today -> HomePriorityTimeframe.TODAY
-            today.plusDays(1) -> HomePriorityTimeframe.TOMORROW
-            else -> HomePriorityTimeframe.LATER
-        }
-        val timeText = formatClassMinute(session.startMinute)
-        return HomePrioritySummary(
-            title = if (isEnglish) "$subjectName at $timeText" else "$subjectName a las $timeText",
-            shortDescription = if (isEnglish) "You have class $dayText. Check classroom, attendance, and reminders." else "Tienes clase $dayText. Revisa aula, asistencia y recordatorio.",
+        return puntos to HomePrioritySummary(
+            title = nombre(session),
+            shortDescription = conAula(texto, session),
             action = HomePriorityAction.SCHEDULE,
             subjectId = session.subjectId,
-            timeframe = timeframe
+            timeframe = cuando
         )
     }
 

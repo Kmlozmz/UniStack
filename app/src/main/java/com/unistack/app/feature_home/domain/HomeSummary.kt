@@ -66,6 +66,8 @@ data class HomePrioritySummary(
 
 /** Para cuándo es la prioridad que enseña el hero. */
 enum class HomePriorityTimeframe {
+    /** Esta pasando ahora mismo: una clase en curso. El hero lo dice con su luz verde. */
+    NOW,
     TODAY,
     TOMORROW,
     LATER

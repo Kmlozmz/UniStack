@@ -31,7 +31,7 @@ data class MotionPreferences(
     val refresh: RefreshStyle = RefreshStyle.ONDA_CIRCULAR,
 
     // ------------------------------------------------------------------ académico
-    val attendance: AttendanceMotion = AttendanceMotion.TRAZO,
+    val attendance: AttendanceMotion = AttendanceMotion.RELLENO,
     val newGrade: NewGradeMotion = NewGradeMotion.LATERAL,
     val cutSeal: CutSealMotion = CutSealMotion.TINTA,
     val termClose: TermCloseMotion = TermCloseMotion.APILADO,
@@ -45,7 +45,12 @@ data class MotionPreferences(
     val pinNote: PinMotion = PinMotion.SALTA,
 
     // ------------------------------------------------------------------ gastos y avisos
-    val overBudget: OverBudgetMotion = OverBudgetMotion.ALERTA,
+    /*
+     * Pasarse del presupuesto ya no es un gesto con variantes: es **el aviso arriba**, y
+     * siempre. Las otras cuatro —contorno, sacudida, parpadeo, seco— se miraron juntas en
+     * Gastos y todas se veian igual: una fila con un halo rojo que no decia nada que la
+     * franja de arriba no dijera mejor. Se quitaron a proposito, con su apartado.
+     */
     val classNow: ClassNowMotion = ClassNowMotion.RESPIRA,
 
     // ------------------------------------------------------------------ generales
@@ -92,7 +97,6 @@ interface MotionChoice {
             "desliza" -> "Slide"
             "escalonada" -> "Staggered"
             "cascada" -> "Waterfall"
-            "trazo" -> "Trace"
             "pulso" -> "Pulse"
             "cae" -> "Drop"
             "rebota" -> "Bounce"
@@ -204,11 +208,14 @@ enum class RefreshStyle(override val id: String, override val label: String) : M
 
 // ---------------------------------------------------------------------- académico
 
+/**
+ * Como se llena la rueda al marcar una clase.
+ *
+ * «Trazo» —el visto dibujandose de una linea— se retiro: sobre una rueda de 44 dp el trazo
+ * es tan corto que no se distingue de aparecer, y al lado de las otras tres no hacia nada.
+ */
 enum class AttendanceMotion(override val id: String, override val label: String) : MotionChoice {
     NINGUNA("ninguna", "Nada"),
-
-    /** El visto se dibuja de un trazo. */
-    TRAZO("trazo", "Trazo"),
     RELLENO("relleno", "Relleno"),
     REBOTE("rebote", "Rebote"),
     BARRIDO("barrido", "Barrido")
@@ -302,21 +309,6 @@ enum class PinMotion(override val id: String, override val label: String) : Moti
 // ---------------------------------------------------------------------- gastos y avisos
 
 /**
- * Pasarse del presupuesto **es un aviso**, no un adorno.
- *
- * Por eso ninguna variante es decorativa: la más callada cambia el color y ya, y el resto
- * suben desde ahí hasta ocupar la parte de arriba de la pantalla.
- */
-enum class OverBudgetMotion(override val id: String, override val label: String) : MotionChoice {
-    SECO("seco", "Seco"),
-    ALERTA("alerta", "Alerta"),
-    SACUDE("sacude", "Sacude"),
-    PARPADEO("parpadeo", "Parpadeo"),
-
-    BANNER("banner", "Aviso arriba")
-}
-
-/**
  * La clase que está pasando ahora mismo. **En verde**, que es lo que dice «activo».
  *
  * Estuvo en el color de acento, y ahí competía con todo lo demás que va del color de acento:
@@ -375,7 +367,6 @@ data class MotionGesture(
             "latido" -> "Overdue heartbeat"
             "guardado" -> "Autosave"
             "fijar" -> "Pin note"
-            "presupuesto" -> "Over budget"
             "claseAhora" -> "Class in session"
             "errorShake" -> "Error alert"
             "saludo" -> "Greeting on open"
@@ -400,7 +391,6 @@ data class MotionGesture(
             "latido" -> "For items open for multiple days."
             "guardado" -> "Notice that changes were saved."
             "fijar" -> "When moving note to pinned section."
-            "presupuesto" -> "When crossing limit. An alert, not a decoration."
             "claseAhora" -> "Class currently ongoing. Green indicates «active»."
             "errorShake" -> "When a field is filled incorrectly."
             "saludo" -> "Greeting and your name on Home."
@@ -517,11 +507,6 @@ object MotionCatalog {
             { it.pinNote }, { p, v -> p.copy(pinNote = v) }
         ),
 
-        gesto<OverBudgetMotion>(
-            "presupuesto", GROUP_ALERTS, "Pasarse del presupuesto",
-            "Al cruzar el límite. Es un aviso, no un adorno.",
-            { it.overBudget }, { p, v -> p.copy(overBudget = v) }
-        ),
         gesto<ClassNowMotion>(
             "claseAhora", GROUP_ALERTS, "Clase en curso",
             "La clase que está pasando ahora. En verde: dice «activo».",

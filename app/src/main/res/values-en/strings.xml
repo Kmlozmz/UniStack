@@ -135,6 +135,7 @@
     <string name="greeting_morning">☀️ Good morning</string>
     <string name="greeting_afternoon">🌤️ Good afternoon</string>
     <string name="greeting_night">🌙 Good evening</string>
+    <string name="home_hero_now">IN CLASS NOW</string>
     <string name="home_hero_today">FIRST FOR TODAY</string>
     <string name="home_hero_tomorrow">FIRST FOR TOMORROW</string>
     <string name="home_hero_later">UP NEXT</string>
@@ -499,6 +500,12 @@
     <string name="subject_close_cut_short">Close cut</string>
     <string name="subject_add_grade_short">Add grade</string>
     <string name="subject_cut_seal">CLOSED</string>
+    <string name="subject_close_verdict_goal_title">You hit your goal!</string>
+    <string name="subject_close_verdict_goal_body">You closed %1$s with %2$s. Your goal was %3$s.</string>
+    <string name="subject_close_verdict_pass_title">Cut closed, passed</string>
+    <string name="subject_close_verdict_pass_body">You passed with %2$s, below your goal of %3$s. Whatever is missing can be made up in the remaining cuts.</string>
+    <string name="subject_close_verdict_fail_title">Cut closed below passing</string>
+    <string name="subject_close_verdict_fail_body">You closed with %2$s and passing is %3$s. The remaining cuts will have to lift the average.</string>
     <string name="subject_close_cut_title">Close the cut?</string>
     <string name="subject_close_cut_message">The grades are locked in and the cut stops taking new ones. You can reopen it whenever you want.</string>
     <string name="subject_reopen_cut_title">Reopen the cut?</string>
@@ -931,6 +938,7 @@
     <string name="schedule_reminder_none">No reminder</string>
     <string name="schedule_reminder_hours_before">%1$d h before</string>
     <string name="catch_up_unmarked_count">%1$d unmarked</string>
+    <string name="catch_up_days_ago">%1$d days ago</string>
     <string name="catch_up_empty_title">You have no pending classes.</string>
     <string name="catch_up_empty_desc">They disappear as you respond.</string>
     <string name="full_schedule_close">Close full schedule</string>
@@ -2018,7 +2026,6 @@ your course catalog.</string>
     <string name="setup_term_month_december">December</string>
     <string name="setup_term_choose">Choose</string>
     <string name="expenses_over_budget_banner">You have gone over the budget for this month.</string>
-    <string name="catch_up_unmarked_chip">Unmarked</string>
     <string name="expenses_budget_over">Over budget</string>
     <string name="schedule_overlap_one">Two classes overlap on this day</string>
     <string name="schedule_overlap_many">There are %1$d schedule clashes on this day</string>

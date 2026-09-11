@@ -97,13 +97,14 @@ class MotionCatalogTest {
      * querer, aqui salta; si lo anade queriendo, cambia el numero y ya.
      *
      * Bajo de 102 a 101 al retirarse «Doble linea» del tachado, que se quito a proposito por
-     * no distinguirse de la linea normal.
+     * no distinguirse de la linea normal. De 78 a 72 al irse «Pasarse del presupuesto» entero
+     * (cinco variantes: queda el aviso arriba, fijo) y «Trazo» de la asistencia.
      */
     @Test
-    fun `el catalogo cubre los catorce gestos y las setenta y ocho variantes`() {
-        assertEquals(14, MotionCatalog.gestures.size)
+    fun `el catalogo cubre los trece gestos y las setenta y dos variantes`() {
+        assertEquals(13, MotionCatalog.gestures.size)
         assertEquals(0, MotionCatalog.toggles.size)
-        assertEquals(78, MotionCatalog.variantCount)
+        assertEquals(72, MotionCatalog.variantCount)
     }
 
     @Test

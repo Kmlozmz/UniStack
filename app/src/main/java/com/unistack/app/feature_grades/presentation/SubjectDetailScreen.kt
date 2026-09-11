@@ -57,6 +57,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import com.unistack.app.core.design.components.barridoDeRecuperacion
+import com.unistack.app.core.design.components.celebracionDelDia
 import com.unistack.app.core.design.components.selloDeCorte
 import com.unistack.app.core.design.components.numeroQueCuenta
 import com.unistack.app.core.design.components.notaRecienRegistrada
@@ -110,6 +111,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.EvaluationBar
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -127,6 +130,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.rotate
 import com.unistack.app.core.design.components.UniStackButton
 import com.unistack.app.core.design.components.UniCard
+import com.unistack.app.core.design.theme.muelleDeMovimiento
+import com.unistack.app.core.design.theme.hayMovimiento
+import com.unistack.app.core.design.theme.duracion
+import com.unistack.app.core.design.theme.tweenDeMovimiento
 import com.unistack.app.core.design.theme.scrollBottomRoom
 import com.unistack.app.core.design.components.bottomActionInsets
 import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
@@ -150,6 +157,8 @@ import kotlin.math.round
 
 import com.unistack.app.core.design.theme.LocalSectionColors
 import androidx.compose.material.icons.rounded.Percent
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Flag
 import com.unistack.app.core.design.theme.contentColorOn
 import com.unistack.app.core.design.components.MetricCard
@@ -698,8 +707,30 @@ fun SubjectCutDetailScreen(
     val estaCerrado = cut.id in subject.closedCutIds
     var cierreVisto by remember { mutableStateOf<Boolean?>(null) }
     var sello by remember { mutableStateOf(false) }
+    /*
+     * **Cerrar dice como fue.**
+     *
+     * El sello caia y la pantalla se quedaba igual: el corte cambiaba de estado y nadie
+     * decia si con esa nota ibas bien o mal. Cerrar un corte es un momento de balance
+     * —como cerrar la ultima pendiente del dia, que se celebra— y el balance tiene que
+     * decirse con palabras: cumpliste la meta, aprobaste por debajo de ella, o quedo en
+     * rojo. Sale cuando el sello ya ha pegado, y si la meta se cumplio lo acompana la
+     * misma celebracion que la ultima tarea del dia.
+     */
+    var veredicto by remember { mutableStateOf(false) }
+    var celebrar by remember { mutableStateOf(false) }
+    val passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
+    val comoFue = veredictoDelCierre(summary.average, subject.targetAverage, passingGrade)
+    val esperaDelSello = duracion(2200)
     LaunchedEffect(estaCerrado) {
-        if (cierreVisto == false && estaCerrado) sello = true
+        if (cierreVisto == false && estaCerrado) {
+            sello = true
+            veredicto = false
+            kotlinx.coroutines.delay((esperaDelSello * 0.45f).toLong())
+            veredicto = comoFue != null
+            if (comoFue == Veredicto.META) celebrar = true
+        }
+        if (!estaCerrado) veredicto = false
         cierreVisto = estaCerrado
     }
 
@@ -707,6 +738,7 @@ fun SubjectCutDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .celebracionDelDia(disparada = celebrar, onTerminada = { celebrar = false })
     ) {
         LazyColumn(
             modifier = Modifier
@@ -740,8 +772,28 @@ fun SubjectCutDetailScreen(
                     summary = resumenMostrado,
                     maxGrade = maxGrade,
                     scale = scale,
-                    passingGrade = profile?.passingGrade ?: (maxGrade * 0.6)
+                    passingGrade = passingGrade
                 )
+            }
+            item {
+                AnimatedVisibility(
+                    visible = veredicto && comoFue != null,
+                    enter = expandVertically(animationSpec = tweenDeMovimiento(360)) +
+                        fadeIn(animationSpec = tweenDeMovimiento(360, 120)),
+                    exit = shrinkVertically(animationSpec = tweenDeMovimiento(220)) +
+                        fadeOut(animationSpec = tweenDeMovimiento(160))
+                ) {
+                    comoFue?.let {
+                        TarjetaDeVeredicto(
+                            veredicto = it,
+                            corte = cutDisplayName(cut),
+                            nota = summary.average?.let { n -> GradingScaleUtils.formatGrade(n, scale) }.orEmpty(),
+                            meta = GradingScaleUtils.formatGrade(subject.targetAverage, scale),
+                            aprobado = GradingScaleUtils.formatGrade(passingGrade, scale),
+                            onCerrar = { veredicto = false }
+                        )
+                    }
+                }
             }
             item {
                 /*
@@ -1431,10 +1483,40 @@ private fun OutcomeRangeBar(
     val targetAt = (target / maxGrade).coerceIn(0.0, 1.0).toFloat()
     val actualAt = actual?.let { (it / maxGrade).coerceIn(0.0, 1.0).toFloat() }
 
+    /*
+     * **El punto se mueve; no se teletransporta.**
+     *
+     * Registrar una nota cambiaba `actual` y el punto aparecia en su sitio nuevo en el mismo
+     * fotograma: se quitaba de un lado y salia en otro, sin que nada dijera hacia donde ni
+     * cuanto. Ahora va con muelle desde donde estaba, y la primera vez entra desde cero,
+     * que es la unica forma de que se vea que la barra **mide** algo.
+     *
+     * El rotulo «Llevas» cuelga del valor animado, asi que viaja con el punto.
+     */
+    val muelle = muelleDeMovimiento<Float>()
+    val conMovimiento = hayMovimiento()
+    val punto = remember { Animatable(0f) }
+    LaunchedEffect(actualAt, conMovimiento) {
+        if (actualAt == null) return@LaunchedEffect
+        if (conMovimiento) punto.animateTo(actualAt, muelle) else punto.snapTo(actualAt)
+    }
+    val metaAnimada by animateFloatAsState(
+        targetValue = targetAt,
+        animationSpec = if (conMovimiento) muelle else snap(),
+        label = "meta"
+    )
+    val puntoEn = if (actualAt == null) null else punto.value
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(14.dp)
+            /*
+             * 16 dp, que es lo que mide el punto. Con 14 el `size(16.dp)` del punto se
+             * apretaba a lo que cabia y salia un ovalo de 16 por 14: el «circulo
+             * compactado» que se veia. `size` cede ante lo que le dejen; la caja tiene
+             * que dejarle sitio.
+             */
+            .height(16.dp)
             .barridoDeRecuperacion(recuperada = actual != null && actual >= aprobado)
     ) {
         val fullWidth = maxWidth
@@ -1474,18 +1556,18 @@ private fun OutcomeRangeBar(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
-                .padding(start = (fullWidth * targetAt - 1.5.dp).coerceAtLeast(0.dp))
+                .padding(start = (fullWidth * metaAnimada - 1.5.dp).coerceAtLeast(0.dp))
                 .width(3.dp)
                 .fillMaxHeight()
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.onSurface)
         )
         // Donde estas: lo unico que la barra no puede decir sola.
-        if (actualAt != null) {
+        if (puntoEn != null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = (fullWidth * actualAt - 8.dp).coerceAtLeast(0.dp))
+                    .padding(start = (fullWidth * puntoEn - 8.dp).coerceIn(0.dp, fullWidth - 16.dp))
                     .size(16.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.onSurface)
@@ -1516,20 +1598,22 @@ private fun OutcomeRangeBar(
         val anchoTotal = constraints.maxWidth
         // Si las dos marcas caen cerca, se calla la de la meta: dos rotulos encimados no se
         // leen ninguno, y el que interesa es el de donde vas.
+        // Se decide con los valores finales, no con los animados: si no, el rotulo de la
+        // meta parpadearia mientras el punto pasa por delante.
         val juntas = actualAt != null && kotlin.math.abs(actualAt - targetAt) < 0.16f
         if (!juntas) {
             MarcaDeLaBanda(
                 texto = stringResource(R.string.subject_mark_goal, GradingScaleUtils.formatGrade(target, scale)),
                 fuerte = false,
-                fraccion = targetAt,
+                fraccion = metaAnimada,
                 anchoTotal = anchoTotal
             )
         }
-        if (actualAt != null && actual != null) {
+        if (puntoEn != null && actual != null) {
             MarcaDeLaBanda(
                 texto = stringResource(R.string.subject_mark_you, GradingScaleUtils.formatGrade(actual, scale)),
                 fuerte = true,
-                fraccion = actualAt,
+                fraccion = puntoEn,
                 anchoTotal = anchoTotal
             )
         }
@@ -1867,6 +1951,97 @@ private fun SubjectInsightCard(
  * Lo que conserva su color es [FlechaDeCambio]: ahi el verde y el rojo **significan** subir
  * o bajar, no son decoracion del contenedor.
  */
+/** Como quedo el corte al cerrarse, medido contra la meta y el aprobado. */
+private enum class Veredicto { META, APROBADO, ROJO }
+
+/** Nulo si no hay nota: un corte cerrado vacio no tiene balance que dar. */
+private fun veredictoDelCierre(nota: Double?, meta: Double, aprobado: Double): Veredicto? = when {
+    nota == null -> null
+    nota >= meta -> Veredicto.META
+    nota >= aprobado -> Veredicto.APROBADO
+    else -> Veredicto.ROJO
+}
+
+/**
+ * El balance del corte que se acaba de cerrar, en una tarjeta que se puede quitar.
+ *
+ * Misma forma que los avisos de la app —icono, titulo, un parrafo— y el color del estado:
+ * verde si se cumplio la meta, ambar si se aprobo por debajo, rojo si quedo en rojo. Se puede
+ * cerrar porque es un momento, no un dato: al volver a entrar ya no esta, y el estado del corte
+ * lo siguen diciendo el sello y la cabecera.
+ */
+@Composable
+private fun TarjetaDeVeredicto(
+    veredicto: Veredicto,
+    corte: String,
+    nota: String,
+    meta: String,
+    aprobado: String,
+    onCerrar: () -> Unit
+) {
+    val tono = when (veredicto) {
+        Veredicto.META -> LocalSectionColors.current.onTrack
+        Veredicto.APROBADO -> LocalSectionColors.current.atRisk
+        Veredicto.ROJO -> LocalSectionColors.current.expenses
+    }
+    val icono = when (veredicto) {
+        Veredicto.META -> Icons.Rounded.EmojiEvents
+        Veredicto.APROBADO -> Icons.Rounded.Flag
+        Veredicto.ROJO -> Icons.Rounded.PriorityHigh
+    }
+    val titulo = when (veredicto) {
+        Veredicto.META -> stringResource(R.string.subject_close_verdict_goal_title)
+        Veredicto.APROBADO -> stringResource(R.string.subject_close_verdict_pass_title)
+        Veredicto.ROJO -> stringResource(R.string.subject_close_verdict_fail_title)
+    }
+    val cuerpo = when (veredicto) {
+        Veredicto.META -> stringResource(R.string.subject_close_verdict_goal_body, corte, nota, meta)
+        Veredicto.APROBADO -> stringResource(R.string.subject_close_verdict_pass_body, corte, nota, meta)
+        Veredicto.ROJO -> stringResource(R.string.subject_close_verdict_fail_body, corte, nota, aprobado)
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(tono.copy(alpha = 0.13f))
+            .padding(start = 14.dp, end = 6.dp, top = 12.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(tono.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icono, contentDescription = null, tint = tono, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                titulo,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold
+            )
+            Text(
+                cuerpo,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                lineHeight = 18.sp
+            )
+        }
+        IconButton(onClick = onCerrar) {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = stringResource(R.string.action_close),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
 @Composable
 private fun HeroDelCorte(
     summary: CutSummary,
@@ -2257,7 +2432,7 @@ private fun NotasDelCorte(
 @Composable
 private fun entradaDeNota(): androidx.compose.animation.EnterTransition {
     val estilo = com.unistack.app.core.design.theme.motionActual().newGrade
-    if (!com.unistack.app.core.design.theme.hayMovimiento()) {
+    if (!hayMovimiento()) {
         return androidx.compose.animation.EnterTransition.None
     }
     val hueco = expandVertically(
@@ -2292,7 +2467,7 @@ private fun entradaDeNota(): androidx.compose.animation.EnterTransition {
  */
 @Composable
 private fun salidaDeNota(): androidx.compose.animation.ExitTransition {
-    if (!com.unistack.app.core.design.theme.hayMovimiento()) {
+    if (!hayMovimiento()) {
         return androidx.compose.animation.ExitTransition.None
     }
     return shrinkVertically(

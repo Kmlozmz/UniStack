@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -41,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,14 +52,40 @@ import com.unistack.app.core.design.components.reacomodoDeLista
 import kotlinx.coroutines.launch
 import com.unistack.app.core.utils.performSafely
 import com.unistack.app.core.design.components.RuedaDeAsistencia
+import com.unistack.app.core.design.theme.LocalAccessibilityPreferences
 import com.unistack.app.feature_grades.domain.Subject
 import com.unistack.app.feature_schedule.domain.AttendanceHistoryEntry
 import com.unistack.app.feature_schedule.domain.ClassAttendanceStatus
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-private val Espanol: Locale = Locale.forLanguageTag("es")
-private val DiaCorto = DateTimeFormatter.ofPattern("d MMM", Espanol)
+/**
+ * La fecha entera, con su dia de la semana: es lo que hay que leer para acordarse de si
+ * fuiste. Un «2 sept» en gris de once puntos no le dice nada a nadie.
+ */
+private val DiaEntero: DateTimeFormatter
+    get() = if (Locale.getDefault().language == "en") {
+        DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH)
+    } else {
+        DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.forLanguageTag("es"))
+    }
+
+private fun LocalDate.diaEntero(): String = format(DiaEntero).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+
+private fun hora(minuto: Int, en24: Boolean): String {
+    val h = minuto / 60
+    val m = minuto % 60
+    if (en24) return "%02d:%02d".format(h, m)
+    val h12 = (h % 12).takeIf { it != 0 } ?: 12
+    val sufijo = if (Locale.getDefault().language == "en") {
+        if (h < 12) "AM" else "PM"
+    } else {
+        if (h < 12) "a. m." else "p. m."
+    }
+    return "%d:%02d %s".format(h12, m, sufijo)
+}
 
 /**
  * Resolver de una vez todo lo que se quedó sin marcar.
@@ -65,6 +93,13 @@ private val DiaCorto = DateTimeFormatter.ofPattern("d MMM", Espanol)
  * Los avisos se ignoran —una semana de exámenes y hay seis clases pendientes— y marcarlas una
  * a una, entrando y saliendo de cada panel, es lo que hace que se abandone el registro entero.
  * Aquí cada fila tiene sus dos botones y la lista se vacía sola según se responde.
+ *
+ * **Agrupada por dia, y el dia en grande.** Era una pila de tarjetas iguales con el nombre
+ * de la materia como titulo y la fecha en gris pequeno debajo: siete veces «Sexo anal liko
+ * liko» seguidas y habia que buscar la fecha con lupa para saber de que clase se hablaba. Lo
+ * que uno recuerda es **el dia** —«el lunes estaba enfermo»—, asi que el dia manda: es la
+ * cabecera de cada grupo, y dentro cada clase dice su hora, su aula y lleva el color de la
+ * materia, que es lo que la distingue de un vistazo.
  *
  * No hay «marcar todas como asistidas»: eso sería la app inventándose el dato, que es justo lo
  * que llevamos toda esta parte quitando.
@@ -138,28 +173,39 @@ internal fun CatchUpSheet(
             }
             val alcance = rememberCoroutineScope()
 
+            val en24 = LocalAccessibilityPreferences.current.use24HourTime
+            val hoy = LocalDate.now()
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(7.dp),
                 contentPadding = PaddingValues(bottom = 6.dp)
             ) {
-                items(mostradas.toList(), key = { claveDe(it) }) { entrada ->
-                    val materia = subjects.firstOrNull { it.id == entrada.session.subjectId }
-                    FilaPendiente(
-                        modifier = reacomodoDeLista(),
-                        entrada = entrada,
-                        nombre = materia?.name ?: stringResource(R.string.schedule_detail_class),
-                        respuesta = respondidas[claveDe(entrada)],
-                        onMark = { estado ->
-                            haptics.performSafely(HapticFeedbackType.SegmentTick)
-                            respondidas[claveDe(entrada)] = estado
-                            onMark(entrada, estado)
-                            alcance.launch {
-                                kotlinx.coroutines.delay(520)
-                                mostradas.removeAll { claveDe(it) == claveDe(entrada) }
-                                respondidas.remove(claveDe(entrada))
+                // Se agrupa lo pintado, no lo pendiente: asi la cabecera de un dia se va
+                // con su ultima fila y no un segundo antes.
+                mostradas.toList().groupBy { it.date }.forEach { (dia, clases) ->
+                    item(key = "dia:${dia.toEpochDay()}") {
+                        CabeceraDeDia(dia = dia, hoy = hoy, modifier = reacomodoDeLista())
+                    }
+                    items(clases, key = { claveDe(it) }) { entrada ->
+                        val materia = subjects.firstOrNull { it.id == entrada.session.subjectId }
+                        FilaPendiente(
+                            modifier = reacomodoDeLista(),
+                            entrada = entrada,
+                            nombre = materia?.name ?: stringResource(R.string.schedule_detail_class),
+                            color = materia.scheduleBlockColor(ScheduleAccent),
+                            en24 = en24,
+                            respuesta = respondidas[claveDe(entrada)],
+                            onMark = { estado ->
+                                haptics.performSafely(HapticFeedbackType.SegmentTick)
+                                respondidas[claveDe(entrada)] = estado
+                                onMark(entrada, estado)
+                                alcance.launch {
+                                    kotlinx.coroutines.delay(520)
+                                    mostradas.removeAll { claveDe(it) == claveDe(entrada) }
+                                    respondidas.remove(claveDe(entrada))
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -170,12 +216,42 @@ internal fun CatchUpSheet(
 private fun claveDe(e: AttendanceHistoryEntry): String = "${e.session.id}:${e.date.toEpochDay()}"
 
 /**
- * Una clase sin marcar, con la forma que la vista previa de Movimiento siempre dibujo.
+ * El dia, como cabecera del grupo: nombre y fecha en grande, y a la derecha cuanto hace.
  *
- * **Eran dos botones redondos a la derecha y nada mas.** El preview de «Marcar asistencia»
- * lleva anos ensenando otra cosa: una fila con su rueda, su visto y una chapa que pasa de «Sin
- * marcar» a «Asisti». Eso es lo que hay aqui ahora, asi que lo que se elige en Ajustes es lo
- * que se ve al marcar.
+ * «Hace 4 dias» es lo que de verdad ayuda a acordarse; la fecha exacta es para confirmarlo.
+ */
+@Composable
+private fun CabeceraDeDia(dia: LocalDate, hoy: LocalDate, modifier: Modifier = Modifier) {
+    val hace = ChronoUnit.DAYS.between(dia, hoy).toInt()
+    Row(
+        modifier = modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = dia.diaEntero(),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = when (hace) {
+                0 -> stringResource(R.string.date_today)
+                1 -> stringResource(R.string.date_yesterday)
+                else -> stringResource(R.string.catch_up_days_ago, hace)
+            },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+/**
+ * Una clase sin marcar de ese dia: la materia con su color, la hora y el aula, y la rueda.
+ *
+ * Sin la chapa «Sin marcar» de antes: en una lista donde **todas** estan sin marcar, repetirlo en
+ * cada fila era ruido. El estado lo dicen la rueda y los botones cuando respondes.
  *
  * El gesto va en la rueda, que es la pieza que cambia de estado. Los dos botones de abajo son
  * la respuesta; la rueda es lo que pasa cuando respondes.
@@ -184,6 +260,8 @@ private fun claveDe(e: AttendanceHistoryEntry): String = "${e.session.id}:${e.da
 private fun FilaPendiente(
     entrada: AttendanceHistoryEntry,
     nombre: String,
+    color: Color,
+    en24: Boolean,
     respuesta: ClassAttendanceStatus?,
     onMark: (ClassAttendanceStatus) -> Unit,
     modifier: Modifier = Modifier
@@ -192,54 +270,44 @@ private fun FilaPendiente(
     val rojo = MaterialTheme.colorScheme.error
     val asistio = respuesta == ClassAttendanceStatus.ATTENDED
     val tono = if (asistio) verde else rojo
+    val aula = entrada.session.location.split('•', limit = 2).first().trim()
+        .ifBlank { stringResource(R.string.schedule_detail_no_room) }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .padding(horizontal = 12.dp, vertical = 11.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+            .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 11.dp),
+        verticalArrangement = Arrangement.spacedBy(11.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // La franja del color de la materia, como en el horario: es lo que la distingue.
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(color)
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     text = nombre,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 13.5.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = entrada.date.format(DiaCorto),
+                    text = hora(entrada.session.startMinute, en24) + " – " +
+                        hora(entrada.session.endMinute, en24) + "  ·  " + aula,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                // La chapa dice el estado en palabras: la rueda sola no distingue «sin marcar»
-                // de «marcada hace un momento».
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            if (respuesta == null) {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-                            } else {
-                                tono.copy(alpha = 0.22f)
-                            }
-                        )
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = when (respuesta) {
-                            ClassAttendanceStatus.ATTENDED -> stringResource(R.string.schedule_status_attended)
-                            ClassAttendanceStatus.ABSENT -> stringResource(R.string.schedule_status_absent)
-                            else -> stringResource(R.string.catch_up_unmarked_chip)
-                        },
-                        color = if (respuesta == null) MaterialTheme.colorScheme.onSurfaceVariant else tono,
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
             }
             Spacer(Modifier.width(12.dp))
             // La rueda nace gris y el gesto la llena: verde sobre verde no se veia.

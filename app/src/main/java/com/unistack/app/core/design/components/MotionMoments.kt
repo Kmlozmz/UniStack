@@ -2,6 +2,11 @@
 
 package com.unistack.app.core.design.components
 
+import androidx.compose.animation.core.EaseInCubic
+import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.EaseOutCubic
+import androidx.compose.animation.core.EaseOutExpo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -12,6 +17,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
@@ -58,13 +64,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -86,10 +96,10 @@ import com.unistack.app.feature_user.domain.CelebrationMotion
 import com.unistack.app.feature_user.domain.ClassNowMotion
 import com.unistack.app.feature_user.domain.FabScrollMotion
 import com.unistack.app.feature_user.domain.NewGradeMotion
-import com.unistack.app.feature_user.domain.OverBudgetMotion
 import com.unistack.app.feature_user.domain.PinMotion
 import com.unistack.app.feature_user.domain.TermCloseMotion
 import com.unistack.app.feature_user.domain.UndoMotion
+import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -145,18 +155,33 @@ fun Modifier.selloDeCorte(
      * aterriza sobre lo que sella y se queda de marca de agua mientras el corte siga
      * cerrado, que es lo que hace que el corte **se vea** cerrado al volver a entrar.
      *
-     * De aquella vuelta se quedan los 2200 ms y la haptica: lo unico que sobraba era el
-     * velo.
+     * **Y con golpe.** La version anterior era un tween de 2200 ms con la curva de siempre:
+     * el sello bajaba flotando, sin peso, y se iba apagando. Un sello no flota: cae rapido,
+     * **pega**, y la tarjeta lo acusa. Por eso el reloj es lineal y cada variante reparte
+     * sus fases a mano —caida, golpe, onda, asentado—, y por eso la tarjeta entera baja tres
+     * puntos en el golpe y la vibracion va con el, no con el aviso de que algo va a pasar.
      */
     val haptica = LocalHapticFeedback.current
+    // Cuando pega cada una, en fraccion del reloj: la estampa nada mas caer, la tinta al tocar
+    // la gota, la cinta cuando queda tirante.
+    val golpeEn = when (estilo) {
+        CutSealMotion.ESTAMPA -> 0.16f
+        CutSealMotion.TINTA -> 0.12f
+        CutSealMotion.CINTA -> 0.45f
+        CutSealMotion.NINGUNA -> 0f
+    }
+    val total = duracion(2200)
     LaunchedEffect(disparado) {
-        if (disparado) haptica.performSafely(HapticFeedbackType.Confirm)
+        if (!disparado) return@LaunchedEffect
+        delay((total * golpeEn).toLong())
+        haptica.performSafely(HapticFeedbackType.LongPress)
     }
 
     val avance by animateFloatAsState(
         targetValue = if (disparado) 1f else 0f,
-        // La vuelta es un salto: animarla al reves repetiria la entrada hacia atras.
-        animationSpec = if (disparado) tweenDeMovimiento(baseMs = 2200) else snap(),
+        // Lineal a proposito: las curvas van dentro de cada fase. Y la vuelta es un salto,
+        // que animarla al reves repetiria la entrada hacia atras.
+        animationSpec = if (disparado) tween(total.coerceAtLeast(1), easing = LinearEasing) else snap(),
         label = "sello",
         finishedListener = { if (it >= 1f) onTerminado() }
     )
@@ -164,8 +189,22 @@ fun Modifier.selloDeCorte(
 
     val medidor = rememberTextMeasurer()
     val leyenda = stringResource(R.string.subject_cut_seal)
+    val encima = MaterialTheme.colorScheme.surface
+    // Parado, el sello esta terminado: `t` vale 1 y cada figura se dibuja como queda al
+    // final, no como empieza.
+    val t = if (avance > 0f) avance else 1f
+    // El golpe, como impulso: sube y baja alrededor del instante en que pega.
+    val golpe = if (avance > 0f) impulso(t, golpeEn, 0.14f) else 0f
 
-    return this.drawWithContent {
+    return this
+        .graphicsLayer {
+            // La tarjeta acusa el golpe: baja y se encoge un pelo, y vuelve.
+            translationY = 3.dp.toPx() * golpe
+            val encogida = 1f - 0.012f * golpe
+            scaleX = encogida
+            scaleY = encogida
+        }
+        .drawWithContent {
         drawContent()
         val centro = Offset(size.width / 2f, size.height / 2f)
         /*
@@ -173,28 +212,37 @@ fun Modifier.selloDeCorte(
          *
          * Era `size.minDimension`, y en una tarjeta ancha y baja el lado corto es el **ancho**:
          * multiplicarlo por 1,8 y luego por una escala de 2,2 daba un sello casi cuatro veces
-         * mas ancho que lo que venia a sellar. De el solo se veian dos franjas verdes cruzando
-         * la pantalla entera, que es como se rompio en la tarjeta del corte.
-         *
-         * Ahora cada figura se mide contra la tarjeta y se le pone tope con la otra dimension,
-         * asi que cabe sea cual sea la forma del sitio donde se estampe.
+         * mas ancho que lo que venia a sellar. Ahora cada figura se mide contra la tarjeta y
+         * se le pone tope con la otra dimension, asi que cabe sea cual sea la forma del sitio
+         * donde se estampe.
          */
         val corto = size.minDimension
+        // Dos tercios del ancho, con tope por si la tarjeta es mas baja que ancha.
+        val ancho = minOf(size.width * 0.66f, size.height * 2f)
+        val alto = ancho * 0.34f
         /*
-         * Aterriza entero y se asienta en marca de agua.
-         *
-         * Antes se apagaba del todo en el último cuarto: el momento se veía y después la
-         * tarjeta quedaba exactamente igual que una abierta. Ahora baja hasta un 22 % y ahí
-         * se queda mientras el corte siga cerrado, que es lo suficiente para leerse a
-         * través de él y no tan poco como para no verlo.
+         * Aterriza entero y se asienta en marca de agua: baja hasta un 22 % y ahi se queda
+         * mientras el corte siga cerrado, que es lo suficiente para leerse a traves de el y
+         * no tan poco como para no verlo.
          */
-        // Parado, el sello esta terminado: `t` vale 1 y cada figura se dibuja como queda
-        // al final, no como empieza.
-        val t = if (avance > 0f) avance else 1f
-        val posado = (t / 0.35f).coerceAtMost(1f)
-        val asentado = ((t - 0.55f) / 0.45f).coerceIn(0f, 1f)
+        val asentado = EaseInOutCubic.transform(((t - 0.62f) / 0.38f).coerceIn(0f, 1f))
         val vida = 1f - 0.78f * asentado
         val verde = Color(0xFF11C045)
+
+        fun palabra(tono: Color, tamano: Float, espacio: Float): TextLayoutResult = medidor.measure(
+            leyenda,
+            TextStyle(
+                color = tono,
+                fontSize = tamano.toSp(),
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = espacio.toSp()
+            )
+        )
+
+        fun DrawScope.centrada(medida: TextLayoutResult) = drawText(
+            textLayoutResult = medida,
+            topLeft = Offset(centro.x - medida.size.width / 2f, centro.y - medida.size.height / 2f)
+        )
 
         /*
          * Y se recorta a la tarjeta.
@@ -206,83 +254,155 @@ fun Modifier.selloDeCorte(
          */
         clipRect {
             when (estilo) {
-                CutSealMotion.ESTAMPA, CutSealMotion.TINTA -> {
-                    if (estilo == CutSealMotion.TINTA) {
-                        drawCircle(
-                            color = verde.copy(alpha = 0.16f * vida),
-                            radius = corto * 0.75f * posado,
-                            center = centro
-                        )
+                /*
+                 * **Estampado: cae, pega, y la onda se va.**
+                 *
+                 * Cae acelerando —como algo que pesa— de casi el doble a su tamano en el
+                 * primer 16 %, girando de -22 a -14 grados para asentarse. Al pegar, el
+                 * hueco del sello se ilumina un instante y una onda con su misma forma se
+                 * expande y se apaga: es lo que dice que ha golpeado algo. El marco es
+                 * doble, grueso fuera y fino dentro, como un sello de goma de verdad.
+                 */
+                CutSealMotion.ESTAMPA -> {
+                    val caida = (t / 0.16f).coerceAtMost(1f)
+                    val cae = EaseInCubic.transform(caida)
+                    val escala = 1.9f - 0.9f * cae
+                    val giro = -22f + 8f * cae
+                    val alfa = (caida / 0.35f).coerceAtMost(1f) * vida
+                    val onda = ((t - 0.16f) / 0.30f).coerceIn(0f, 1f)
+
+                    if (onda > 0f && onda < 1f) {
+                        val e = EaseOutCubic.transform(onda)
+                        rotate(degrees = -14f, pivot = centro) {
+                            // El destello del hueco.
+                            drawRoundRect(
+                                color = verde.copy(alpha = 0.28f * (1f - e)),
+                                topLeft = Offset(centro.x - ancho / 2f, centro.y - alto / 2f),
+                                size = Size(ancho, alto),
+                                cornerRadius = CornerRadius(alto * 0.28f, alto * 0.28f)
+                            )
+                            // La onda que se expande.
+                            val a = ancho * (1f + 0.42f * e)
+                            val h = alto * (1f + 0.42f * e)
+                            drawRoundRect(
+                                color = verde.copy(alpha = 0.55f * (1f - e)),
+                                topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
+                                size = Size(a, h),
+                                cornerRadius = CornerRadius(h * 0.28f, h * 0.28f),
+                                style = Stroke(1f + h * 0.05f * (1f - e))
+                            )
+                        }
                     }
-                    // Dos tercios del ancho, con tope por si la tarjeta es mas baja que ancha.
-                    val ancho = minOf(size.width * 0.66f, size.height * 2f)
-                    val alto = ancho * 0.34f
-                    // Baja de vez y media a su tamano: lo justo para que se lea como algo que
-                    // aterriza, sin empezar tan grande que solo se le vean los bordes.
-                    val escala = 1.5f - 0.5f * posado
-                    val a = ancho * escala
-                    val h = alto * escala
-                    rotate(degrees = -14f, pivot = centro) {
+                    rotate(degrees = giro, pivot = centro) {
+                        val a = ancho * escala
+                        val h = alto * escala
+                        val esquina = Offset(centro.x - a / 2f, centro.y - h / 2f)
                         drawRoundRect(
-                            color = verde.copy(alpha = vida),
-                            topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
+                            color = verde.copy(alpha = alfa),
+                            topLeft = esquina,
                             size = Size(a, h),
                             cornerRadius = CornerRadius(h * 0.28f, h * 0.28f),
                             style = Stroke(h * 0.10f)
                         )
-                        /*
-                         * Y dentro, la palabra.
-                         *
-                         * Un recuadro vacío no es un sello: es un recuadro. El del prototipo
-                         * llevaba su leyenda dentro, y sin ella lo único que se veía era un
-                         * marco verde en diagonal que no decía de qué iba.
-                         */
-                        val tipo = TextStyle(
-                            color = verde.copy(alpha = vida),
-                            fontSize = (h * 0.40f).toSp(),
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (h * 0.07f).toSp()
+                        val margen = h * 0.17f
+                        drawRoundRect(
+                            color = verde.copy(alpha = alfa * 0.8f),
+                            topLeft = esquina + Offset(margen, margen),
+                            size = Size(a - 2f * margen, h - 2f * margen),
+                            cornerRadius = CornerRadius(h * 0.14f, h * 0.14f),
+                            style = Stroke(h * 0.03f)
                         )
-                        val medida = medidor.measure(leyenda, tipo)
-                        drawText(
-                            textLayoutResult = medida,
-                            topLeft = Offset(
-                                centro.x - medida.size.width / 2f,
-                                centro.y - medida.size.height / 2f
-                            )
-                        )
+                        centrada(palabra(verde.copy(alpha = alfa), h * 0.36f, h * 0.08f))
                     }
                 }
-                // La cinta cruza la tarjeta entera, como el precinto de una caja.
-                CutSealMotion.CINTA -> {
-                    val largo = size.width * 1.3f * (t / 0.55f).coerceAtMost(1f)
-                    val grosor = minOf(size.width, size.height) * 0.22f
-                    rotate(degrees = -10f, pivot = centro) {
-                        drawRect(
-                            color = verde.copy(alpha = 0.85f * vida),
-                            topLeft = Offset(-size.width * 0.15f, centro.y - grosor / 2f),
-                            size = Size(largo, grosor)
-                        )
-                        /*
-                         * La cinta tambien lleva la palabra, en hueco sobre el verde.
-                         *
-                         * Sin ella era una franja verde y ya: la del precinto de una caja
-                         * dice lo que precinta, y esta no decia nada.
-                         */
-                        val tipo = TextStyle(
-                            color = Color.White.copy(alpha = vida),
-                            fontSize = (grosor * 0.42f).toSp(),
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (grosor * 0.07f).toSp()
-                        )
-                        val medida = medidor.measure(leyenda, tipo)
-                        drawText(
-                            textLayoutResult = medida,
-                            topLeft = Offset(
-                                centro.x - medida.size.width / 2f,
-                                centro.y - medida.size.height / 2f
+
+                /*
+                 * **Tinta: una gota que se corre y de la que sube la palabra.**
+                 *
+                 * Cae una gota oscura al centro, la tinta se extiende desde ahi en una
+                 * mancha de bordes suaves —cinco circulos fijos, que un solo circulo es una
+                 * moneda y no una mancha— y la palabra emerge del charco como bloque
+                 * relleno, que es lo que hace la tinta de verdad al empaparse.
+                 */
+                CutSealMotion.TINTA -> {
+                    val gota = EaseOutCubic.transform((t / 0.12f).coerceAtMost(1f))
+                    val mancha = EaseOutExpo.transform(((t - 0.10f) / 0.45f).coerceIn(0f, 1f))
+                    val sube = EaseOutCubic.transform(((t - 0.22f) / 0.38f).coerceIn(0f, 1f))
+
+                    manchaDeTinta.forEach { (desplaza, radio) ->
+                        val c = centro + Offset(desplaza.x * corto, desplaza.y * corto)
+                        val rr = radio * corto * (0.12f + 0.88f * mancha)
+                        if (rr > 0f) {
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    0f to verde.copy(alpha = 0.20f * vida),
+                                    0.7f to verde.copy(alpha = 0.12f * vida),
+                                    1f to verde.copy(alpha = 0f),
+                                    center = c,
+                                    radius = rr
+                                ),
+                                radius = rr,
+                                center = c
                             )
-                        )
+                        }
+                    }
+                    // La gota: oscura al caer, y se difumina segun la tinta se corre.
+                    drawCircle(
+                        color = verde.copy(alpha = 0.9f * gota * (1f - mancha)),
+                        radius = corto * 0.06f * gota,
+                        center = centro
+                    )
+                    if (sube > 0f) {
+                        rotate(degrees = -8f, pivot = centro) {
+                            scale(scale = 0.9f + 0.1f * sube, pivot = centro) {
+                                drawRoundRect(
+                                    color = verde.copy(alpha = sube * vida),
+                                    topLeft = Offset(centro.x - ancho / 2f, centro.y - alto / 2f),
+                                    size = Size(ancho, alto),
+                                    cornerRadius = CornerRadius(alto * 0.28f, alto * 0.28f)
+                                )
+                                centrada(palabra(encima.copy(alpha = sube * (0.45f + 0.55f * vida)), alto * 0.40f, alto * 0.07f))
+                            }
+                        }
+                    }
+                }
+
+                /*
+                 * **Cinta: se desenrolla, queda tirante y destapa la palabra.**
+                 *
+                 * Cruza la tarjeta de izquierda a derecha con un poco de rebote al final
+                 * —el tiron de dejarla tirante—, con las puntas cortadas en diagonal y una
+                 * veta de luz a lo largo: eso es lo que la hace cinta y no una franja. La
+                 * palabra no aparece: se **destapa**, solo lo que la cinta ya cubre.
+                 */
+                CutSealMotion.CINTA -> {
+                    val tira = EaseOutBack.transform((t / 0.45f).coerceAtMost(1f))
+                    val grosor = corto * 0.22f
+                    val largo = size.width * 1.3f * tira
+                    rotate(degrees = -10f, pivot = centro) {
+                        val x0 = -size.width * 0.15f
+                        val y0 = centro.y - grosor / 2f
+                        val corte = grosor * 0.35f
+                        val tirita = Path().apply {
+                            moveTo(x0, y0)
+                            lineTo(x0 + largo, y0)
+                            lineTo(x0 + largo - corte, y0 + grosor)
+                            lineTo(x0 + corte, y0 + grosor)
+                            close()
+                        }
+                        drawPath(tirita, color = verde.copy(alpha = 0.88f * vida))
+                        if (largo > corte) {
+                            drawLine(
+                                color = Color.White.copy(alpha = 0.22f * vida),
+                                start = Offset(x0 + corte * 0.6f, y0 + grosor * 0.27f),
+                                end = Offset(x0 + largo - corte * 0.6f, y0 + grosor * 0.27f),
+                                strokeWidth = grosor * 0.06f,
+                                cap = StrokeCap.Round
+                            )
+                        }
+                        clipRect(right = x0 + largo - corte) {
+                            centrada(palabra(Color.White.copy(alpha = vida), grosor * 0.42f, grosor * 0.07f))
+                        }
                     }
                 }
                 CutSealMotion.NINGUNA -> Unit
@@ -290,6 +410,30 @@ fun Modifier.selloDeCorte(
         }
     }
 }
+
+/**
+ * Un impulso alrededor de [centro]: sube de 0 a 1 y vuelve a 0 en [ancho] de reloj.
+ *
+ * Es la forma del golpe: la tarjeta que baja y vuelve, el punto de vibracion. Fuera del tramo
+ * vale cero, asi que quien lo use no tiene que preguntar si ya paso.
+ */
+private fun impulso(t: Float, centro: Float, ancho: Float): Float {
+    val p = (t - centro) / ancho
+    if (p <= 0f || p >= 1f) return 0f
+    return sin(p * PI.toFloat())
+}
+
+/**
+ * La mancha de tinta: cinco circulos con desplazamientos y radios fijos, en fraccion del lado
+ * corto. Fijos a proposito: sorteados, la mancha cambiaria de forma cada vez que se sella.
+ */
+private val manchaDeTinta = listOf(
+    Offset(0f, 0f) to 0.52f,
+    Offset(-0.26f, -0.11f) to 0.30f,
+    Offset(0.29f, 0.07f) to 0.34f,
+    Offset(-0.09f, 0.27f) to 0.28f,
+    Offset(0.17f, -0.27f) to 0.26f
+)
 
 // ------------------------------------------------------------------ celebrar al terminar
 
@@ -384,90 +528,6 @@ private val paletaDeConfeti = listOf(
 
 // ------------------------------------------------------------------ marcar asistencia
 
-/**
- * Lo que hace la marca de asistencia al confirmarse.
- *
- * Se aplica al círculo o a la fila que se marca; el trazo del visto lo sigue dibujando quien lo
- * pinte, y esto pone lo que rodea: el rebote, el relleno que sube o el barrido.
- */
-@Composable
-fun Modifier.marcaDeAsistencia(marcada: Boolean, color: Color): Modifier {
-    val estilo = motionActual().attendance
-    if (estilo == AttendanceMotion.NINGUNA || !hayMovimiento()) return this
-
-    // 250 ms las cuatro, que es lo que se decidio mirandolas: mas largo se nota como espera.
-    val avance by animateFloatAsState(
-        targetValue = if (marcada) 1f else 0f,
-        animationSpec = if (estilo == AttendanceMotion.REBOTE) {
-            muelleDeMovimiento()
-        } else {
-            tweenDeMovimiento(baseMs = 250)
-        },
-        label = "asistencia"
-    )
-    if (avance <= 0f) return this
-
-    /*
-     * **Las cuatro se pintan por delante, y «trazo» existe.**
-     *
-     * Aqui habia dos fallos que dejaban el gesto en nada. «Trazo», que es el que viene puesto
-     * de fabrica, caia en un `else` vacio: marcar asistencia no hacia absolutamente nada para
-     * quien no hubiera cambiado el ajuste. Y «relleno» y «barrido» pintaban con `drawBehind`,
-     * o sea **por detras** del boton, que cuando queda elegido es opaco: el color se dibujaba
-     * donde no se puede ver.
-     *
-     * Ahora las tres que pintan lo hacen sobre el contenido y con transparencia, que deja leer
-     * el rotulo por debajo, y «trazo» dibuja el contorno del boton recorriendolo: es la unica
-     * de las cuatro que no tapa nada, y por eso es la de casa.
-     */
-    return when (estilo) {
-        AttendanceMotion.REBOTE -> this.scale(avance.coerceAtLeast(0.01f))
-
-        // El trazo recorre el contorno hasta cerrarlo.
-        AttendanceMotion.TRAZO -> this.drawWithContent {
-            drawContent()
-            val radio = size.height / 2f
-            val camino = Path().apply {
-                addRoundRect(
-                    androidx.compose.ui.geometry.RoundRect(
-                        rect = androidx.compose.ui.geometry.Rect(
-                            Offset(1.5f, 1.5f),
-                            Size(size.width - 3f, size.height - 3f)
-                        ),
-                        cornerRadius = CornerRadius(radio, radio)
-                    )
-                )
-            }
-            val medida = PathMeasure().apply { setPath(camino, false) }
-            val trozo = Path()
-            medida.getSegment(0f, medida.length * avance, trozo, true)
-            drawPath(trozo, color = color, style = Stroke(3f, cap = StrokeCap.Round))
-        }
-
-        // El relleno sube por dentro, como un vaso que se llena.
-        AttendanceMotion.RELLENO -> this.drawWithContent {
-            drawContent()
-            drawRect(
-                color = color.copy(alpha = 0.30f),
-                topLeft = Offset(0f, size.height * (1f - avance)),
-                size = Size(size.width, size.height * avance)
-            )
-        }
-
-        // Una franja cruza de izquierda a derecha.
-        AttendanceMotion.BARRIDO -> this.drawWithContent {
-            drawContent()
-            drawRoundRect(
-                color = color.copy(alpha = 0.26f),
-                size = Size(size.width * avance, size.height),
-                cornerRadius = CornerRadius(size.height * 0.5f, size.height * 0.5f)
-            )
-        }
-
-        AttendanceMotion.NINGUNA -> this
-    }
-}
-
 // ------------------------------------------------------------------ materia que se recupera
 
 /**
@@ -536,17 +596,26 @@ fun Modifier.barridoDeRecuperacion(recuperada: Boolean): Modifier {
 /**
  * El aviso de haberse pasado del presupuesto, arriba de la pantalla.
  *
- * Es la variante «Aviso arriba» de [avisoDePresupuesto], y era la unica de las siete que no
- * existia: elegirla en Movimiento no hacia absolutamente nada. Va aparte del modificador
- * porque no es un efecto sobre la tarjeta —es una franja propia, encima de todo lo demas— y
- * un `Modifier` no puede anadir contenido.
+ * **Es la unica forma que queda de avisar, y va siempre.** Hubo cinco variantes —contorno
+ * rojo, sacudida, parpadeo, seco y esta— y mirandolas en Gastos las cuatro de la fila se
+ * veian iguales: un halo rojo alrededor del presupuesto que no decia nada que esta franja
+ * no dijera mejor y antes. Se quitaron con su apartado de Movimiento; lo que hay es esto.
  *
- * Se queda mientras siga pasado, como el resto: un aviso de dinero que se apaga solo deja de
- * avisar justo cuando mas falta hace.
+ * Se queda mientras siga pasado: un aviso de dinero que se apaga solo deja de avisar justo
+ * cuando mas falta hace. Y al cruzar —no al abrir la pantalla ya pasado— vibra fuerte una
+ * vez: es de las pocas cosas de la app que conviene notar sin estar mirando.
  */
 @Composable
 fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
-    if (!pasado || motionActual().overBudget != OverBudgetMotion.BANNER) return
+    val haptica = LocalHapticFeedback.current
+    // Lo que habia en la composicion anterior: nulo al entrar, asi que abrir Gastos ya
+    // pasado no vibra; solo vibra el momento de cruzar.
+    var antes by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(pasado) {
+        if (antes == false && pasado) haptica.performSafely(HapticFeedbackType.LongPress)
+        antes = pasado
+    }
+    if (!pasado) return
     val rojo = LocalSectionColors.current.expenses
 
     AnimatedVisibility(
@@ -592,6 +661,12 @@ fun AvisoDePresupuestoArriba(pasado: Boolean, modifier: Modifier = Modifier) {
  * Aqui la rueda **nace neutra** y es el gesto el que la llena de color, que es exactamente lo
  * que la vista previa de Movimiento lleva dibujando desde siempre. La preferencia y lo que
  * pasa al marcar son por fin la misma imagen.
+ *
+ * **El rebote se pasa de largo por fuera de la rueda.** Antes escalaba el circulo de color
+ * *dentro* del recorte de 44 dp, asi que todo lo que pasaba de 1 se cortaba: el muelle
+ * rebotaba y no se veia rebotar, que es de donde salia lo de «muy suave». Ahora escala la
+ * rueda entera, recorte incluido, con un muelle propio mas vivo que el general: lo que se ve
+ * es la rueda saltando hasta un 20 % mas grande y volviendo.
  */
 @Composable
 fun RuedaDeAsistencia(
@@ -607,7 +682,9 @@ fun RuedaDeAsistencia(
     val avance by animateFloatAsState(
         targetValue = if (marcada) 1f else 0f,
         animationSpec = if (estilo == AttendanceMotion.REBOTE) {
-            muelleDeMovimiento()
+            // Muelle propio, no el general: aqui el rebote **es** el gesto, y con el
+            // amortiguado de «Suave» no rebotaria nada. Rigido para que sea rapido.
+            spring(dampingRatio = 0.28f, stiffness = 900f / motionActual().speed.factor.coerceAtLeast(0.2f))
         } else {
             tweenDeMovimiento(baseMs = 250)
         },
@@ -616,10 +693,19 @@ fun RuedaDeAsistencia(
     val sinMovimiento = !hayMovimiento() || estilo == AttendanceMotion.NINGUNA
     // Sin gesto, el color aparece de golpe: eso es lo que significa «Nada».
     val p = if (sinMovimiento) (if (marcada) 1f else 0f) else avance
+    val rebota = !sinMovimiento && estilo == AttendanceMotion.REBOTE
 
     Box(
         modifier = modifier
             .size(44.dp)
+            // La escala va **antes** del recorte: asi el rebote se pasa de largo por fuera de
+            // los 44 dp en vez de cortarse en el borde. Arranca desde un 40 % —una rueda que
+            // nace de dentro— y el muelle la lleva mas alla del 100 % antes de asentarla.
+            .graphicsLayer {
+                val escala = if (rebota && marcada) 0.4f + 0.6f * p else 1f
+                scaleX = escala
+                scaleY = escala
+            }
             .clip(CircleShape)
             .background(neutro)
             .drawWithContent {
@@ -627,38 +713,25 @@ fun RuedaDeAsistencia(
                 val centro = Offset(size.width / 2f, size.height / 2f)
                 when {
                     p <= 0f -> Unit
-                    sinMovimiento || estilo == AttendanceMotion.TRAZO ->
-                        // Trazo deja la rueda tenue y dibuja el signo; el resto la llena.
-                        drawCircle(
-                            color = if (estilo == AttendanceMotion.TRAZO) color.copy(alpha = 0.22f) else color,
-                            radius = r,
-                            center = centro
-                        )
                     // El relleno sube por dentro, como un vaso que se llena.
-                    estilo == AttendanceMotion.RELLENO -> clipRect(
-                        top = size.height - size.height * p
+                    !sinMovimiento && estilo == AttendanceMotion.RELLENO -> clipRect(
+                        top = size.height - size.height * p.coerceAtMost(1f)
                     ) { drawCircle(color = color, radius = r, center = centro) }
-                    // El rebote entra entera, con muelle.
-                    estilo == AttendanceMotion.REBOTE -> scale(p.coerceAtLeast(0.01f), pivot = centro) {
-                        drawCircle(color = color, radius = r, center = centro)
-                    }
                     // El barrido la cruza de izquierda a derecha.
-                    estilo == AttendanceMotion.BARRIDO -> clipRect(right = size.width * p) {
-                        drawCircle(color = color, radius = r, center = centro)
-                    }
+                    !sinMovimiento && estilo == AttendanceMotion.BARRIDO -> clipRect(
+                        right = size.width * p.coerceAtMost(1f)
+                    ) { drawCircle(color = color, radius = r, center = centro) }
+                    // Rebote y «nada»: la rueda entera de color; el rebote lo pone la capa.
                     else -> drawCircle(color = color, radius = r, center = centro)
                 }
                 // El contenido —el icono— por encima de todo lo pintado.
-                val visible = when (estilo) {
-                    AttendanceMotion.TRAZO -> p
-                    AttendanceMotion.BARRIDO -> if (p > 0.75f) 1f else 0f
-                    else -> if (p > 0.5f) 1f else 0f
+                val visible = when {
+                    sinMovimiento -> p > 0f
+                    estilo == AttendanceMotion.BARRIDO -> p > 0.75f
+                    estilo == AttendanceMotion.REBOTE -> p > 0.15f
+                    else -> p > 0.5f
                 }
-                if (visible > 0f) {
-                    scale(if (estilo == AttendanceMotion.REBOTE) p.coerceAtLeast(0.01f) else 1f, pivot = centro) {
-                        this@drawWithContent.drawContent()
-                    }
-                }
+                if (visible) this@drawWithContent.drawContent()
             },
         contentAlignment = Alignment.Center
     ) {
@@ -666,7 +739,7 @@ fun RuedaDeAsistencia(
             Icon(
                 imageVector = icono,
                 contentDescription = null,
-                tint = if (estilo == AttendanceMotion.TRAZO) color else encima,
+                tint = encima,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -838,81 +911,25 @@ fun AvisoDeGuardado(marca: Int, modifier: Modifier = Modifier) {
 
 // ------------------------------------------------------------------ pasarse del presupuesto
 
+
 /**
- * Lo que hace la barra de presupuesto al cruzar el límite.
+ * El pincel del cometa que da la vuelta a un contorno.
  *
- * `pasado` es la condición, no un disparo: mientras se esté por encima, el aviso sigue puesto.
- * Un aviso de dinero que se apaga solo deja de avisar justo cuando más falta hace.
+ * Es un degradado en abanico con el frente en `t` (fraccion de vuelta, 0 a 1) y una cola de
+ * un 40 % de circunferencia que se apaga hacia atras. Se construye por muestras y no con tres
+ * paradas porque las paradas de un `sweepGradient` tienen que ir de 0 a 1 en orden: un frente
+ * que cruza el cero partiria el degradado en dos y se veria un corte.
  */
-@Composable
-fun Modifier.avisoDePresupuesto(pasado: Boolean): Modifier {
-    val estilo = motionActual().overBudget
-    if (!pasado || estilo == OverBudgetMotion.SECO || !hayMovimiento()) return this
-
-    val rojoDeAviso = LocalSectionColors.current.expenses
-
-    /*
-     * **Un aviso fuerte, una sola vez.**
-     *
-     * Pasarse del presupuesto es de las pocas cosas de la app que conviene notar sin estar
-     * mirando. Va al cruzarlo y no mientras sigas pasado: si no, cada gasto del mes
-     * vibraria.
-     */
-    val haptica = LocalHapticFeedback.current
-    LaunchedEffect(pasado) { if (pasado) haptica.performSafely(HapticFeedbackType.LongPress) }
-
-    /*
-     * **Cada variante lleva su compas dentro.**
-     *
-     * Las tres compartian un ciclo de 1800 ms y a ninguna le sentaba bien: la sacudida
-     * llegaba tarde y el parpadeo iba nervioso. Estos cuatro numeros se eligieron mirandolos
-     * uno al lado del otro, y son parte del gesto, no un ajuste.
-     */
-    val periodo = when (estilo) {
-        OverBudgetMotion.ALERTA -> 1620
-        OverBudgetMotion.SACUDE -> 1260
-        OverBudgetMotion.PARPADEO -> 2340
-        else -> 1800
+fun pincelDeCometa(color: Color, t: Float, centro: Offset, cola: Float = 0.40f): Brush {
+    val muestras = 36
+    val paradas = Array(muestras + 1) { i ->
+        val pos = i / muestras.toFloat()
+        // Cuanto queda por detras del frente, en fraccion de vuelta.
+        val detras = ((t - pos) % 1f + 1f) % 1f
+        val fuerza = if (detras < cola) 1f - detras / cola else 0f
+        pos to color.copy(alpha = color.alpha * fuerza * fuerza)
     }
-    val ciclo = rememberInfiniteTransition(label = "presupuesto")
-    val t by ciclo.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(duracion(periodo), easing = LinearEasing)),
-        label = "presupuesto"
-    )
-
-    /*
-     * **La alarma es la alarma; la variante es como se anuncia.**
-     *
-     * Cada una traia solo su movimiento, asi que «Sacude» y «Parpadeo» eran una tarjeta
-     * moviendose sin nada que dijera **por que**. El contorno rojo y el halo son la base
-     * que llevan todas: encima va lo que las distingue.
-     */
-    val base = this.drawBehind {
-        val radio = CornerRadius(16.dp.toPx(), 16.dp.toPx())
-        drawRoundRect(
-            color = rojoDeAviso.copy(alpha = 0.16f),
-            topLeft = Offset(-5.dp.toPx(), -5.dp.toPx()),
-            size = Size(size.width + 10.dp.toPx(), size.height + 10.dp.toPx()),
-            cornerRadius = CornerRadius(21.dp.toPx(), 21.dp.toPx())
-        )
-        drawRoundRect(color = rojoDeAviso, cornerRadius = radio, style = Stroke(2.dp.toPx()))
-    }
-
-    return when (estilo) {
-        // Sacude una vez cada vuelta y se queda quieta: temblar sin parar cansa y deja de avisar.
-        OverBudgetMotion.SACUDE -> base.graphicsLayer {
-            translationX = if (t < 0.2f) sin(t * 30f * PI.toFloat()) * 6f * (1f - t / 0.2f) else 0f
-        }
-        OverBudgetMotion.PARPADEO -> base.alpha(if ((t * 6f).toInt() % 2 == 0) 1f else 0.45f)
-        OverBudgetMotion.ALERTA -> base.graphicsLayer {
-            scaleX = 1f + 0.015f * abs(sin(t * 2f * PI.toFloat()))
-            scaleY = 1f + 0.03f * abs(sin(t * 2f * PI.toFloat()))
-        }
-        // «Aviso arriba» no se pinta aqui: es un banner, y lo pone la pantalla de Gastos.
-        else -> base
-    }
+    return Brush.sweepGradient(colorStops = paradas, center = centro)
 }
 
 // ------------------------------------------------------------------ clase en curso
@@ -965,24 +982,36 @@ fun Modifier.claseEnCurso(enCurso: Boolean, verde: Color): Modifier {
          * tiene una luz que dice exactamente eso: latir esa es el gesto.
          */
         ClassNowMotion.PUNTO -> this
-        // Un punto de luz recorre el perímetro interior, esquinas incluidas e inset para no salirse.
-        ClassNowMotion.RECORRE -> this.clipToBounds().drawWithContent {
-            drawContent()
-            clipRect(0f, 0f, size.width, size.height) {
-                val r = 2.5.dp.toPx()
-                val inset = 3.dp.toPx()
-                val w = (size.width - 2 * inset).coerceAtLeast(1f)
-                val h = (size.height - 2 * inset).coerceAtLeast(1f)
-                val perimetro = 2f * (w + h)
-                val d = (t * perimetro) % perimetro
-                val punto = when {
-                    d < w -> Offset(inset + d, inset)
-                    d < w + h -> Offset(size.width - inset, inset + (d - w))
-                    d < 2f * w + h -> Offset(size.width - inset - (d - w - h), size.height - inset)
-                    else -> Offset(inset, size.height - inset - (d - 2f * w - h))
+        /*
+         * **Una luz que da la vuelta al borde**, no un punto por dentro.
+         *
+         * Era un punto de 2,5 dp recorriendo un rectangulo metido 3 dp hacia dentro: se
+         * veia pequeno, descentrado del borde verde de la fila y sin relacion con el. Lo
+         * que se pidio es el efecto de los bordes que «recorren» —esa luz que da la vuelta a
+         * un marco—, y eso se pinta con un degradado en abanico girando sobre el propio
+         * contorno de la fila: un frente brillante con una cola que se apaga.
+         *
+         * El contorno sale de la forma del tema (`shapes.medium`), asi que sigue a las
+         * esquinas que el usuario haya elegido y se pinta justo encima del borde verde
+         * fijo, que es donde tiene que ir.
+         */
+        ClassNowMotion.RECORRE -> {
+            val forma = MaterialTheme.shapes.medium
+            this.clipToBounds().drawWithContent {
+                drawContent()
+                val grosor = 2.dp.toPx()
+                val pincel = pincelDeCometa(verde, t, Offset(size.width / 2f, size.height / 2f))
+                // Metido medio trazo: un trazo centrado en el borde pierde la mitad fuera.
+                translate(grosor / 2f, grosor / 2f) {
+                    val contorno = forma.createOutline(
+                        Size(size.width - grosor, size.height - grosor),
+                        layoutDirection,
+                        this
+                    )
+                    // El halo ancho y tenue debajo, y el filo encima: es lo que lo hace luz.
+                    drawOutline(contorno, pincel, style = Stroke(grosor * 3f), alpha = 0.35f)
+                    drawOutline(contorno, pincel, style = Stroke(grosor))
                 }
-                drawCircle(verde.copy(alpha = 0.35f), radius = r * 1.8f, center = punto)
-                drawCircle(verde, radius = r, center = punto)
             }
         }
         ClassNowMotion.BARRE -> this.clipToBounds().drawWithContent {

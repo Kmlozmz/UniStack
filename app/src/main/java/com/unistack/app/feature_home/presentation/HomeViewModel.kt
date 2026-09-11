@@ -16,7 +16,9 @@ import com.unistack.app.feature_user.domain.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -45,11 +47,27 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    /*
+     * **El hero se recalcula cada minuto mientras Inicio este a la vista.**
+     *
+     * El resumen solo se rehacia cuando cambiaban los datos, y «la clase esta en curso»
+     * no es un dato: es la hora. Sin esto, la clase de las diez se marcaba como en curso
+     * cuando alguien registrara algo, no a las diez. `WhileSubscribed` apaga el reloj
+     * con la pantalla.
+     */
+    private val minuto = flow {
+        while (true) {
+            emit(System.currentTimeMillis() / 60_000)
+            delay(60_000 - System.currentTimeMillis() % 60_000)
+        }
+    }
+
     val uiState: StateFlow<HomeUiState> = combine(
         homeContent,
         userRepository.userProfile,
-        userRepository.currentUser
-    ) { content, profile, user ->
+        userRepository.currentUser,
+        minuto
+    ) { content, profile, user, _ ->
         HomeUiState(
             summary = HomeSummaryFactory.create(
                 content = content,

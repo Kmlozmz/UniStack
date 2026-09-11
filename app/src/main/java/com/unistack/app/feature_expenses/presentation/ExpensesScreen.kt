@@ -5,7 +5,6 @@ package com.unistack.app.feature_expenses.presentation
 import com.unistack.app.core.design.components.reacomodoDeLista
 import com.unistack.app.core.design.components.FilaDeslizable
 import com.unistack.app.core.design.components.AvisoDePresupuestoArriba
-import com.unistack.app.core.design.components.avisoDePresupuesto
 import com.unistack.app.core.design.components.UniDivider
 import com.unistack.app.core.design.components.UniDropdownMenu
 import com.unistack.app.core.utils.DayLabels
@@ -378,10 +377,10 @@ private fun ExpensesContent(
             /*
              * «Aviso arriba» va **arriba de la pantalla**, no dentro de la tarjeta.
              *
-             * Metido en la tarjeta quedaba pegado a la fila del presupuesto, que ya lleva
-             * su contorno rojo: dos avisos rojos apilados diciendo lo mismo, uno encima
-             * del otro. Aqui es lo primero que se ve al abrir Gastos, que es lo que su
-             * nombre promete.
+             * Metido en la tarjeta quedaba pegado a la fila del presupuesto: dos avisos
+             * rojos apilados diciendo lo mismo. Aqui es lo primero que se ve al abrir
+             * Gastos, que es lo que su nombre promete. Y es el unico: las variantes sobre
+             * la fila se quitaron.
              */
             item {
                 AvisoDePresupuestoArriba(
@@ -609,21 +608,16 @@ private fun ExpensesHeroCard(
             )
             Spacer(modifier = Modifier.height(13.dp))
             /*
-             * El aviso de haberse pasado, con la variante elegida en Movimiento.
-             *
-             * Va sobre la fila entera y no solo sobre la barra: pasarse del presupuesto es algo
-             * que le pasa **al presupuesto**, y lo que hay que mirar es la cifra junto a la
-             * barra. Es condicion y no disparo —mientras se este por encima, el aviso sigue—
-             * porque un aviso de dinero que se apaga solo deja de avisar justo cuando mas
-             * falta hace.
+             * Pasada, la fila se pone en rojo y ya: el aviso es la franja de arriba de la
+             * pantalla. Llevo un tiempo un contorno rojo con halo y variantes que lo sacudian
+             * o lo hacian parpadear, y las cuatro se veian igual de mal. Un aviso en la
+             * pantalla; no dos.
              */
             BudgetRow(
                 budget = budget,
                 progress = budgetProgress,
                 onClick = onBudgetClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .avisoDePresupuesto(pasado = budget > 0 && budgetProgress >= 1f)
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

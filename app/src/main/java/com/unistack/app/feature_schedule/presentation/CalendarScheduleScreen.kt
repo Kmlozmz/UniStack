@@ -48,7 +48,6 @@ import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import com.unistack.app.core.design.components.marcaDeAsistencia
 import com.unistack.app.core.design.components.EvaluationRing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider

@@ -16,6 +16,15 @@ import java.time.temporal.ChronoUnit
 
 object DailyPriorityEngine {
     private val isEnglish: Boolean get() = java.util.Locale.getDefault().language == "en"
+    /**
+     * Lo mas urgente de todo, o nulo si no hay nada que reclame.
+     *
+     * [extra] son candidatos que el motor no sabe calcular —la clase en curso o la
+     * siguiente, que salen del horario— con su puntuacion ya puesta, para que compitan en
+     * la misma mesa que las tareas y las materias. Antes la clase ganaba **siempre**, por
+     * delante de una tarea vencida o de una materia en rojo, y el hero era el horario con
+     * otro nombre.
+     */
     fun primaryPriority(
         subjectsCount: Int,
         pendingTasks: List<StudentTask>,
@@ -23,17 +32,21 @@ object DailyPriorityEngine {
         riskSubject: SubjectRiskSummary?,
         weeklyExpenseTotal: Int,
         profile: UserProfile?,
-        enabledModules: Set<AppModule>
+        enabledModules: Set<AppModule>,
+        extra: List<Pair<Int, HomePrioritySummary>> = emptyList()
     ): HomePrioritySummary? {
         if (subjectsCount == 0) return null
-        return rankedCandidates(
+        val candidatos = rankedCandidates(
             pendingTasks = pendingTasks,
             works = works,
             riskSubject = riskSubject,
             weeklyExpenseTotal = weeklyExpenseTotal,
             profile = profile,
             enabledModules = enabledModules
-        ).firstOrNull()?.summary
+        ) + extra.map { (puntos, resumen) ->
+            PriorityCandidate(score = puntos, title = resumen.title, minutes = 5, summary = resumen)
+        }
+        return candidatos.maxByOrNull { it.score }?.summary
     }
 
     fun dailyFocusPlan(

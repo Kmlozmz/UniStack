@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
+import com.unistack.app.core.design.components.pincelDeCometa
 import com.unistack.app.core.design.theme.LocalSectionColors
 import kotlin.math.PI
 import kotlin.math.abs
@@ -471,7 +472,6 @@ internal fun DrawScope.pintarVariante(gesto: String, variante: String, t: Float,
         "deshacer" -> deshacer(variante, t, tinta)
         "guardado" -> guardado(variante, t, tinta)
         "fijar" -> fijar(variante, t, tinta)
-        "presupuesto" -> presupuesto(variante, t, tinta)
         "claseAhora" -> claseAhora(variante, t, tinta)
         "fabScroll" -> fabScroll(variante, t, tinta)
         "haptica" -> haptica(variante, t, tinta)
@@ -870,7 +870,6 @@ private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
      * una declara cuando queda marcada y el rotulo sale de ahi.
      */
     val marcado = when (v) {
-        "trazo" -> p > 0.72f
         "barrido" -> p > 0.75f
         else -> p > 0.5f
     }
@@ -881,10 +880,6 @@ private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
             drawCircle(if (marcado) c.verde else c.pieza, radius = r, center = centro)
             visto(centro, r, if (marcado) 1f else 0f, c.fondo, grosor = 2.4f)
         }
-        "trazo" -> {
-            drawCircle(c.verde.copy(alpha = 0.22f), radius = r, center = centro)
-            visto(centro, r, p, c.verde, grosor = 2.6f)
-        }
         // El relleno sube por dentro, como un vaso que se llena.
         "relleno" -> {
             drawCircle(c.pieza, radius = r, center = centro)
@@ -893,8 +888,10 @@ private fun DrawScope.asistencia(v: String, t: Float, c: TintaDemo) {
             }
             visto(centro, r, 1f, c.fondo.copy(alpha = p), grosor = 2.4f)
         }
+        // Nace de dentro y se pasa de largo antes de asentarse: es el mismo muelle vivo
+        // que lleva la rueda de verdad, sin el amortiguado general.
         "rebote" -> {
-            val escala = if (avance < 1f) muelle(avance, 0.9f) else 1f
+            val escala = if (avance < 1f) 0.4f + 0.6f * muelle(avance, 1.1f) else 1f
             scale(escala.coerceAtLeast(0f), pivot = centro) {
                 drawCircle(c.verde, radius = r, center = centro)
                 visto(centro, r, 1f, c.fondo, grosor = 2.4f)
@@ -1041,65 +1038,142 @@ private fun DrawScope.sello(v: String, t: Float, c: TintaDemo) {
     texto("4,25", 17f, 38f, c, c.tinta.copy(alpha = 0.5f), tamano = 14f)
 
     val centro = Offset(56f, 36f)
-    val golpe = tramo(t, 0.15f, 0.55f)
-    val asentado = suave(golpe)
+    /*
+     * **Las mismas fases que el sello de verdad.**
+     *
+     * La demo iba con una curva suave de principio a fin, y la pieza ya no: cae rapido, pega
+     * y la onda se va. Si la vista previa flotara y la tarjeta golpeara, se elegiria una cosa
+     * y se veria otra. El reloj de la demo tiene un tramo muerto al principio y al final para
+     * que el bucle no empalme el asentado con la caida siguiente.
+     */
+    val reloj = tramo(t, 0.08f, 0.86f)
+    val asentado = suave(tramo(reloj, 0.62f, 1f))
+    val vida = 1f - 0.78f * asentado
+    val ancho = 60f
+    val alto = 22f
 
-    fun estampa(escala: Float, alfa: Float, giro: Float = -14f) {
+    fun palabra(color: Color, alfa: Float, tamano: Float = 7f) =
+        texto("CERRADO", centro.x, centro.y, c, color, tamano = tamano, centrado = true, alfa = alfa)
+
+    fun marco(escala: Float, alfa: Float, giro: Float) {
         rotate(degrees = giro, pivot = centro) {
             scale(escala, pivot = centro) {
-                // El sello, mas ancho y con la letra mas pequena: «CERRADO» a 8,5 no cabia en
-                // cincuenta y dos y salia partido por la mitad.
                 drawRoundRect(
                     color = c.verde.copy(alpha = alfa),
-                    topLeft = Offset(centro.x - 30f, centro.y - 11f),
-                    size = Size(60f, 22f),
+                    topLeft = Offset(centro.x - ancho / 2f, centro.y - alto / 2f),
+                    size = Size(ancho, alto),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f),
                     style = Stroke(2.2f)
                 )
-                texto("CERRADO", centro.x, centro.y, c, c.verde.copy(alpha = alfa), tamano = 7f, centrado = true)
+                // El marco interior fino: lo que lo hace sello de goma y no un recuadro.
+                drawRoundRect(
+                    color = c.verde.copy(alpha = alfa * 0.8f),
+                    topLeft = Offset(centro.x - ancho / 2f + 3.6f, centro.y - alto / 2f + 3.6f),
+                    size = Size(ancho - 7.2f, alto - 7.2f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f),
+                    style = Stroke(0.7f)
+                )
+                palabra(c.verde, alfa)
             }
         }
     }
 
     when (v) {
-        "ninguna" -> estampa(1f, 1f)
-        // Baja desde muy arriba y aterriza: la escala grande al principio es la profundidad.
-        "estampa" -> estampa(2.4f - 1.4f * asentado, suave(tramo(t, 0.15f, 0.4f)))
-        // La tinta se corre por debajo al golpear.
+        "ninguna" -> marco(1f, 1f, -14f)
+        // Cae acelerando, pega, y una onda con su forma se expande y se apaga.
+        "estampa" -> {
+            val caida = tramo(reloj, 0f, 0.16f)
+            val cae = caida * caida * caida
+            val onda = tramo(reloj, 0.16f, 0.46f)
+            if (onda > 0f && onda < 1f) {
+                val e = 1f - (1f - onda) * (1f - onda) * (1f - onda)
+                rotate(degrees = -14f, pivot = centro) {
+                    drawRoundRect(
+                        color = c.verde.copy(alpha = 0.28f * (1f - e)),
+                        topLeft = Offset(centro.x - ancho / 2f, centro.y - alto / 2f),
+                        size = Size(ancho, alto),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
+                    )
+                    val a = ancho * (1f + 0.42f * e)
+                    val h = alto * (1f + 0.42f * e)
+                    drawRoundRect(
+                        color = c.verde.copy(alpha = 0.55f * (1f - e)),
+                        topLeft = Offset(centro.x - a / 2f, centro.y - h / 2f),
+                        size = Size(a, h),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
+                        style = Stroke(0.6f + 1.4f * (1f - e))
+                    )
+                }
+            }
+            marco(1.9f - 0.9f * cae, tramo(caida, 0f, 0.35f) * vida, -22f + 8f * cae)
+        }
+        // Una gota, la mancha que se corre y la palabra que sube de ella como bloque.
         "tinta" -> {
-            drawCircle(c.verde.copy(alpha = 0.20f * asentado), radius = 34f * asentado, center = centro)
-            estampa(1f, asentado)
-        }
-        // El lacre cae, se aplasta y se recupera: por eso el ovalo cambia de proporcion.
-        // El lacre cae a la esquina libre del corte, se aplasta y se recupera.
-        //
-        // Caia justo encima de la nota y tapaba lo unico que hay que ver debajo: el sello
-        // protege esa cifra, no la esconde. Ahora aterriza a la derecha, sobre el hueco.
-        "lacre" -> {
-            val caida = suave(tramo(t, 0.1f, 0.45f))
-            val aplaste = 1f + 0.35f * tramo(t, 0.45f, 0.58f) - 0.35f * tramo(t, 0.58f, 0.75f)
-            val cx = 71f
-            val y = 8f + 26f * caida
-            drawOval(
-                color = c.rojo,
-                topLeft = Offset(cx - 13f * aplaste, y - 13f / aplaste),
-                size = Size(26f * aplaste, 26f / aplaste)
-            )
-            // El visto va con trazo, como los demas: la palomita escrita salia con la fuente
-            // que hubiera en el movil y no encajaba nunca dentro del ovalo.
-            visto(Offset(cx, y), 8f, tramo(t, 0.5f, 0.75f), c.fondo, grosor = 2.4f)
-        }
-        // La cinta cruza el corte entero y el sello llega despues.
-        "cinta" -> {
-            val ancho = 104f * suave(golpe)
-            rotate(degrees = -12f, pivot = Offset(50f, 32f)) {
-                drawRoundRect(
-                    color = c.verde,
-                    topLeft = Offset(-2f, 25f),
-                    size = Size(ancho, 15f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
+            val gota = 1f - (1f - tramo(reloj, 0f, 0.12f)).let { it * it * it }
+            val mancha = tramo(reloj, 0.10f, 0.55f).let { 1f - (1f - it) * (1f - it) * (1f - it) * (1f - it) }
+            val sube = tramo(reloj, 0.22f, 0.60f).let { 1f - (1f - it) * (1f - it) * (1f - it) }
+            listOf(
+                Offset(0f, 0f) to 26f,
+                Offset(-13f, -5f) to 15f,
+                Offset(14f, 4f) to 17f,
+                Offset(-4f, 13f) to 14f
+            ).forEach { (d, radio) ->
+                val rr = radio * (0.12f + 0.88f * mancha)
+                drawCircle(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        0f to c.verde.copy(alpha = 0.22f * vida),
+                        0.7f to c.verde.copy(alpha = 0.13f * vida),
+                        1f to c.verde.copy(alpha = 0f),
+                        center = centro + d,
+                        radius = rr.coerceAtLeast(0.5f)
+                    ),
+                    radius = rr,
+                    center = centro + d
                 )
-                texto("CERRADO", 50f, 32f, c, c.fondo, tamano = 8.5f, centrado = true, alfa = tramo(golpe, 0.6f, 1f))
+            }
+            drawCircle(c.verde.copy(alpha = 0.9f * gota * (1f - mancha)), radius = 3f * gota, center = centro)
+            if (sube > 0f) {
+                rotate(degrees = -8f, pivot = centro) {
+                    scale(0.9f + 0.1f * sube, pivot = centro) {
+                        drawRoundRect(
+                            color = c.verde.copy(alpha = sube * vida),
+                            topLeft = Offset(centro.x - ancho / 2f, centro.y - alto / 2f),
+                            size = Size(ancho, alto),
+                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
+                        )
+                        palabra(c.fondo, sube * (0.45f + 0.55f * vida), tamano = 8f)
+                    }
+                }
+            }
+        }
+        // Se desenrolla con un tiron al final, con las puntas en diagonal, y destapa la palabra.
+        "cinta" -> {
+            val tira = muelle(tramo(reloj, 0f, 0.45f), 0f)
+            val grosor = 15f
+            val largo = 108f * tira
+            rotate(degrees = -12f, pivot = Offset(50f, 32f)) {
+                val x0 = -4f
+                val y0 = 32f - grosor / 2f
+                val corte = grosor * 0.35f
+                val camino = Path().apply {
+                    moveTo(x0, y0)
+                    lineTo(x0 + largo, y0)
+                    lineTo(x0 + largo - corte, y0 + grosor)
+                    lineTo(x0 + corte, y0 + grosor)
+                    close()
+                }
+                drawPath(camino, c.verde.copy(alpha = 0.9f * vida))
+                if (largo > corte) {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.22f * vida),
+                        start = Offset(x0 + corte * 0.6f, y0 + grosor * 0.27f),
+                        end = Offset(x0 + largo - corte * 0.6f, y0 + grosor * 0.27f),
+                        strokeWidth = 0.9f
+                    )
+                }
+                clipRect(right = x0 + largo - corte) {
+                    texto("CERRADO", 50f, 32f, c, c.fondo, tamano = 8.5f, centrado = true, alfa = vida)
+                }
             }
         }
     }
@@ -1662,108 +1736,6 @@ private fun DrawScope.fijar(v: String, t: Float, c: TintaDemo) {
 
 // ---------------------------------------------------------------------- gastos y avisos
 
-private fun DrawScope.presupuesto(v: String, t: Float, c: TintaDemo) {
-    /*
-     * **Las cifras a la vista, y el color diciendo lo que pasa.**
-     *
-     * Era una barra que crecia y nada mas. Pasarse del presupuesto no es «una barra larga»: es
-     * «$61.000 de $50.000», y esa resta es lo unico que lo explica. Por eso las dos cifras van
-     * escritas y el limite queda marcado en la pista con su linea.
-     *
-     * El color tambien cambia de significado a mitad: **ambar mientras vas justo, rojo cuando
-     * te pasaste**. Antes iba todo del mismo tono, y con eso el aviso no avisaba de nada.
-     */
-    val avance = suave(tramo(t, 0.1f, 0.55f))
-    val pista = Rect(12f, 33f, 88f, 43f)
-    val lleno = 0.72f + 0.45f * avance
-    val pasado = lleno > 1f
-    val tono = if (pasado) c.rojo else c.ambar
-
-    // El limite va **debajo** y no al lado: en una caja de dos centimetros, «$61.000» y
-    // «de $50.000» en la misma linea se pisan, que es justo lo que pasaba.
-    texto("Esta semana", 12f, 12f, c, c.tinta.copy(alpha = 0.6f), tamano = 7f, negrita = false)
-    texto(
-        if (pasado) "$61.000" else "$48.500",
-        12f, 24f, c, tono, tamano = 13f
-    )
-    texto("límite $50.000", 12f, 51f, c, c.tinta.copy(alpha = 0.45f), tamano = 7f, negrita = false)
-
-    drawRoundRect(
-        color = c.pieza,
-        topLeft = Offset(pista.left, pista.top),
-        size = Size(pista.width, pista.height),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-    )
-
-    val temblor = when (v) {
-        "sacude" -> sin(t * 26f * PI.toFloat()) * 3.5f * (1f - avance)
-        "alerta" -> if (avance > 0.85f) sin(t * 40f * PI.toFloat()) * 2f else 0f
-        else -> 0f
-    }
-    translate(left = temblor) {
-        when (v) {
-            // Se pasa del final de verdad: el sobrante se sale de la pista y gotea.
-            "desborda" -> clipRect(pista.left, pista.top - 16f, pista.right + 18f, pista.bottom + 18f) {
-                drawRoundRect(
-                    color = tono,
-                    topLeft = Offset(pista.left, pista.top),
-                    size = Size(pista.width * lleno, pista.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-                )
-                if (pasado) {
-                    val derrame = (lleno - 1f) * pista.width
-                    drawCircle(tono, radius = 3.5f, center = Offset(pista.right + 3f, pista.bottom + derrame * 0.5f))
-                    drawCircle(tono, radius = 2.5f, center = Offset(pista.right + 8f, pista.bottom + derrame))
-                }
-            }
-            "grieta" -> drawRoundRect(
-                color = tono.copy(alpha = 0.25f + 0.75f * avance),
-                topLeft = Offset(pista.left, pista.top),
-                size = Size(pista.width, pista.height),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-            )
-            "parpadeo" -> drawRoundRect(
-                color = tono.copy(alpha = if ((t * 6f).toInt() % 2 == 0) 1f else 0.3f),
-                topLeft = Offset(pista.left, pista.top),
-                size = Size(pista.width * min(lleno, 1f), pista.height),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-            )
-            else -> drawRoundRect(
-                color = tono,
-                topLeft = Offset(pista.left, pista.top),
-                size = Size(pista.width * min(lleno, 1f), pista.height),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-            )
-        }
-    }
-
-    // El limite, marcado en la pista: sin esta linea no se ve donde estaba el tope.
-    drawLine(
-        color = c.tinta.copy(alpha = 0.55f),
-        start = Offset(pista.right, pista.top - 3f),
-        end = Offset(pista.right, pista.bottom + 3f),
-        strokeWidth = 1.5f
-    )
-
-    when (v) {
-        "alerta" -> if (avance > 0.5f) {
-            triangulo(Offset(80f, 20f), 8f, c.rojo)
-            texto("!", 80f, 22f, c, c.fondo, tamano = 8f, centrado = true)
-        }
-        "banner" -> {
-            val baja = suave(tramo(t, 0.1f, 0.45f))
-            drawRoundRect(
-                color = c.rojo,
-                topLeft = Offset(8f, -16f + 20f * baja),
-                size = Size(84f, 16f),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(5f, 5f)
-            )
-            texto("Te pasaste $11.000", 50f, -8f + 20f * baja, c, c.fondo, tamano = 7f, centrado = true, alfa = baja)
-        }
-        else -> Unit
-    }
-}
-
 private fun DrawScope.triangulo(centro: Offset, radio: Float, color: Color) {
     val camino = Path().apply {
         moveTo(centro.x, centro.y - radio)
@@ -1826,19 +1798,25 @@ private fun DrawScope.claseAhora(v: String, t: Float, c: TintaDemo) {
             drawCircle(c.verde.copy(alpha = 0.35f), radius = 4f + 5f * late, center = Offset(19f, 37f))
             drawCircle(c.verde, radius = 4f, center = Offset(19f, 37f))
         }
-        // Un punto de luz recorre el perimetro, esquinas incluidas.
+        // Una luz que da la vuelta al contorno: el mismo pincel que lleva la fila de verdad.
         "recorre" -> {
             drawCircle(c.verde, radius = 4f, center = Offset(19f, 37f))
-            val perimetro = 2f * (caja.width + caja.height)
-            val d = (t * perimetro) % perimetro
-            val punto = when {
-                d < caja.width -> Offset(caja.left + d, caja.top)
-                d < caja.width + caja.height -> Offset(caja.right, caja.top + (d - caja.width))
-                d < 2f * caja.width + caja.height ->
-                    Offset(caja.right - (d - caja.width - caja.height), caja.bottom)
-                else -> Offset(caja.left, caja.bottom - (d - 2f * caja.width - caja.height))
-            }
-            drawCircle(c.verde, radius = 3.5f, center = punto)
+            val pincel = pincelDeCometa(c.verde, t, caja.center)
+            drawRoundRect(
+                brush = pincel,
+                topLeft = Offset(caja.left, caja.top),
+                size = Size(caja.width, caja.height),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
+                style = Stroke(5f),
+                alpha = 0.35f
+            )
+            drawRoundRect(
+                brush = pincel,
+                topLeft = Offset(caja.left, caja.top),
+                size = Size(caja.width, caja.height),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f),
+                style = Stroke(2f)
+            )
         }
         "barre" -> {
             drawCircle(c.verde, radius = 4f, center = Offset(19f, 37f))

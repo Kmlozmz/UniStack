@@ -135,6 +135,7 @@
     <string name="greeting_morning">☀️ Buenos días</string>
     <string name="greeting_afternoon">🌤️ Buenas tardes</string>
     <string name="greeting_night">🌙 Buenas noches</string>
+    <string name="home_hero_now">EN CLASE AHORA</string>
     <string name="home_hero_today">LO PRIMERO DE HOY</string>
     <string name="home_hero_tomorrow">LO PRIMERO DE MAÑANA</string>
     <string name="home_hero_later">LO SIGUIENTE</string>
@@ -499,6 +500,12 @@
     <string name="subject_close_cut_short">Cerrar corte</string>
     <string name="subject_add_grade_short">Agregar nota</string>
     <string name="subject_cut_seal">CERRADO</string>
+    <string name="subject_close_verdict_goal_title">¡Cumpliste tu meta!</string>
+    <string name="subject_close_verdict_goal_body">Cerraste %1$s con %2$s. Tu meta era %3$s.</string>
+    <string name="subject_close_verdict_pass_title">Corte cerrado, aprobado</string>
+    <string name="subject_close_verdict_pass_body">Aprobaste con %2$s, por debajo de tu meta de %3$s. Lo que falte se compensa en los cortes que quedan.</string>
+    <string name="subject_close_verdict_fail_title">Corte cerrado por debajo del aprobado</string>
+    <string name="subject_close_verdict_fail_body">Cerraste con %2$s y se aprueba con %3$s. Los cortes que quedan tendrán que subir el promedio.</string>
     <string name="subject_close_cut_title">¿Cerrar el corte?</string>
     <string name="subject_close_cut_message">Las notas quedan fijadas y el corte deja de aceptar nuevas. Puedes reabrirlo cuando quieras.</string>
     <string name="subject_reopen_cut_title">¿Reabrir el corte?</string>
@@ -931,6 +938,7 @@
     <string name="schedule_reminder_none">Sin recordatorio</string>
     <string name="schedule_reminder_hours_before">%1$d h antes</string>
     <string name="catch_up_unmarked_count">%1$d sin marcar</string>
+    <string name="catch_up_days_ago">Hace %1$d días</string>
     <string name="catch_up_empty_title">No te queda ninguna pendiente.</string>
     <string name="catch_up_empty_desc">Van desapareciendo según respondes.</string>
     <string name="full_schedule_close">Cerrar horario completo</string>
@@ -2017,7 +2025,6 @@ a tu medida</string>
     <string name="setup_term_month_december">diciembre</string>
     <string name="setup_term_choose">Elegir</string>
     <string name="expenses_over_budget_banner">Te pasaste del presupuesto de este mes.</string>
-    <string name="catch_up_unmarked_chip">Sin marcar</string>
     <string name="expenses_budget_over">Te pasaste</string>
     <string name="schedule_overlap_one">Dos clases se pisan este día</string>
     <string name="schedule_overlap_many">Hay %1$d cruces de horario este día</string>

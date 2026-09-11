@@ -5,6 +5,8 @@ package com.unistack.app.core.design.components
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -67,6 +69,13 @@ import kotlin.math.sin
  * Se aplica al `Modifier` de la fila y ya está: el escalonado, la cascada y el abanico salen
  * del índice, y las tres que no dependen de él lo ignoran. Con el movimiento apagado devuelve
  * el modificador tal cual, sin animación que arrancar ni estado que recordar.
+ *
+ * **Nunca habia llegado a verse, y era por como arrancaba.** Estaba hecho con
+ * `animateFloatAsState(targetValue = 1f)`, y ese estado **nace ya en su objetivo**: solo anima
+ * cuando el objetivo cambia, y aqui no cambia nunca. Cada fila entraba con el avance en 1
+ * desde el primer fotograma, o sea, sin entrar. Seis variantes guardandose y leyendose
+ * durante meses para un gesto que no ocurria. Ahora el avance nace en 0 y se lleva a 1 al
+ * componerse la fila, que es lo que siempre quiso decir.
  */
 @Composable
 fun Modifier.entradaDeLista(indice: Int): Modifier {
@@ -82,14 +91,15 @@ fun Modifier.entradaDeLista(indice: Int): Modifier {
         // entrando segundo y medio después de abrir la pantalla.
     } * indice.coerceAtMost(8)
 
-    val avance by animateFloatAsState(
-        targetValue = 1f,
-        animationSpec = when (estilo) {
-            ListEntry.RESORTE -> muelleDeMovimiento()
-            else -> tweenDeMovimiento(baseMs = 300, retrasoMs = retardoMs)
-        },
-        label = "entrada"
-    )
+    val especificacion: AnimationSpec<Float> = when (estilo) {
+        ListEntry.RESORTE -> muelleDeMovimiento()
+        else -> tweenDeMovimiento(baseMs = 300, retrasoMs = retardoMs)
+    }
+    // Nace en cero: es lo que hace que haya entrada. Con la clave de la fila, una que se
+    // recicle al desplazarse vuelve a entrar, que es lo que hace iOS y lo que se espera.
+    val entrada = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { entrada.animateTo(1f, especificacion) }
+    val avance = entrada.value
 
     return when (estilo) {
         ListEntry.FUNDIDO -> this.alpha(avance)
