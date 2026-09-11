@@ -38,6 +38,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import com.unistack.app.core.utils.Textos
 
 /* El canal viejo nace con IMPORTANCE_DEFAULT, que en Android nunca muestra
    ventana emergente. La importancia de un canal ya creado no se puede subir
@@ -125,7 +126,7 @@ class LocalReminderScheduler(private val context: Context) {
                     // El nombre de la materia va en el subtítulo, junto al de la
                     // app: se lee de un vistazo sin robarle sitio al título, que
                     // se reserva para lo único que identifica el aviso.
-                    val subjectLabel = subjects.firstOrNull { it.id == task.subjectId }?.name ?: "Tarea"
+                    val subjectLabel = subjects.firstOrNull { it.id == task.subjectId }?.name ?: Textos.get(R.string.notif_sub_task)
                     scheduleReminder(
                         profile = currentProfile,
                         requestCode = task.id.stableRequestCode("task-lead"),
@@ -142,8 +143,8 @@ class LocalReminderScheduler(private val context: Context) {
                             requestCode = task.id.stableRequestCode("task-overdue"),
                             triggerAtMillis = task.dueDateMillis + 60L * 60L * 1000L,
                             subText = subjectLabel,
-                            title = "Venció: ${task.title}",
-                            body = "Márcala como hecha o muévela de fecha.",
+                            title = Textos.get(R.string.notif_overdue_title, task.title),
+                            body = Textos.get(R.string.notif_task_overdue_body),
                             targetRoute = AppRoutes.editTask(task.id)
                         )
                     }
@@ -164,9 +165,9 @@ class LocalReminderScheduler(private val context: Context) {
                         profile = currentProfile,
                         requestCode = task.id.stableRequestCode("task-grade-pending"),
                         triggerAtMillis = requireNotNull(task.completedAt) + 24L * 60L * 60L * 1000L,
-                        subText = "Nota pendiente",
-                        title = "¿Ya te dieron la nota de ${task.title}?",
-                        body = "Regístrala para que tu promedio deje de ser una proyección.",
+                        subText = Textos.get(R.string.notif_sub_pending_grade),
+                        title = Textos.get(R.string.notif_pending_grade_title, task.title),
+                        body = Textos.get(R.string.notif_pending_grade_body),
                         targetRoute = AppRoutes.Tasks,
                         channelId = CHANNEL_ID_DIGEST
                     )
@@ -183,7 +184,7 @@ class LocalReminderScheduler(private val context: Context) {
                         profile = currentProfile,
                         requestCode = work.id.stableRequestCode("work-lead"),
                         triggerAtMillis = dueDateMillis - leadMillis,
-                        subText = "Trabajo",
+                        subText = Textos.get(R.string.notif_sub_work),
                         title = work.title,
                         body = "${TaskDateUtils.dueText(dueDateMillis).sentenceCase()}.",
                         targetRoute = AppRoutes.AcademicTemplates,
@@ -194,9 +195,9 @@ class LocalReminderScheduler(private val context: Context) {
                             profile = currentProfile,
                             requestCode = work.id.stableRequestCode("work-overdue"),
                             triggerAtMillis = dueDateMillis + 60L * 60L * 1000L,
-                            subText = "Trabajo",
-                            title = "Venció: ${work.title}",
-                            body = "Revisa su checklist y actualiza en qué estado quedó.",
+                            subText = Textos.get(R.string.notif_sub_work),
+                            title = Textos.get(R.string.notif_overdue_title, work.title),
+                            body = Textos.get(R.string.notif_work_overdue_body),
                             targetRoute = AppRoutes.AcademicTemplates
                         )
                     }
@@ -228,8 +229,8 @@ class LocalReminderScheduler(private val context: Context) {
                     minute = currentProfile.dailyDigestMinute.coerceIn(0, 59),
                     daysFromNow = 0
                 ),
-                subText = "Resumen",
-                title = "¡Buenos días!",
+                subText = Textos.get(R.string.notif_sub_digest),
+                title = Textos.get(R.string.notif_digest_title),
                 body = smartDigestBody(currentProfile, tasks, works, subjects),
                 targetRoute = AppRoutes.Home,
                 channelId = CHANNEL_ID_DIGEST
@@ -282,15 +283,15 @@ class LocalReminderScheduler(private val context: Context) {
             }
             .sortedBy { (_, _, trigger) -> trigger }
             .forEach { (session, comienzo, trigger) ->
-                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "Tu clase"
+                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: Textos.get(R.string.notif_your_class)
                 scheduleReminder(
                     profile = profile,
                     requestCode = session.id.stableRequestCode("class-reminder"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                    subText = "Clase",
+                    subText = Textos.get(R.string.notif_sub_class),
                     // Los minutos van en el título: es el dato que decide si te
                     // levantas ya o no, y así se ve sin desplegar el aviso.
-                    title = "$subjectName empieza en ${session.reminderMinutes} min",
+                    title = Textos.get(R.string.notif_class_starts_in, subjectName, session.reminderMinutes),
                     // `location` es "aula•profesor" en crudo -- concatenarlo tal cual dejaba un
                     // punto suelto cuando faltaba el profesor ("Nos vemos en 103F•."). Se arma
                     // la frase a partir de `place`, que ya sabe cuál de los dos falta.
@@ -299,7 +300,7 @@ class LocalReminderScheduler(private val context: Context) {
                     eventAtMillis = comienzo.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
                     // Si sale con retraso, los minutos del titulo se cuentan de nuevo: el
                     // numero es justo el dato por el que se lee este aviso.
-                    lateTitle = { minutos -> "$subjectName empieza en $minutos min" }
+                    lateTitle = { minutos -> Textos.get(R.string.notif_class_starts_in, subjectName, minutos) }
                 )
             }
 
@@ -319,7 +320,7 @@ class LocalReminderScheduler(private val context: Context) {
             }
             .sortedBy { it.second }
             .forEach { (session, start, epochDay) ->
-                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: "tu clase"
+                val subjectName = subjects.firstOrNull { it.id == session.subjectId }?.name ?: Textos.get(R.string.notif_your_class_lower)
                 /*
                  * Veinte minutos despues de acabar, no diez.
                  *
@@ -334,9 +335,9 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = "${session.id}:$epochDay".stableRequestCode("class-attendance"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                    subText = "Asistencia",
-                    title = "¿Asististe a $subjectName?",
-                    body = "Contesta aquí mismo, o toca para abrir la clase.",
+                    subText = Textos.get(R.string.notif_sub_attendance),
+                    title = Textos.get(R.string.notif_did_you_attend, subjectName),
+                    body = Textos.get(R.string.notif_attend_body),
                     targetRoute = AppRoutes.Calendar,
                     channelId = CHANNEL_ID_DIGEST,
                     /*
@@ -386,13 +387,13 @@ class LocalReminderScheduler(private val context: Context) {
                 profile = profile,
                 requestCode = ATTENDANCE_CATCHUP_REQUEST_CODE,
                 triggerAtMillis = triggerCatchup.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                subText = "Asistencia",
-                title = if (cantidad == 1) "Tienes 1 clase sin marcar hoy"
-                        else "Tienes $cantidad clases sin marcar hoy",
+                subText = Textos.get(R.string.notif_sub_attendance),
+                title = if (cantidad == 1) Textos.get(R.string.notif_unmarked_one_today)
+                        else Textos.get(R.string.notif_unmarked_many_today, cantidad),
                 body = when {
-                    nombres.isEmpty() -> "Abre el calendario para revisar."
-                    nombres.size <= 2 -> "${nombres.joinToString(" y ")}. Toca para marcar."
-                    else -> "${nombres.take(2).joinToString(", ")} y ${nombres.size - 2} más. Toca para marcar."
+                    nombres.isEmpty() -> Textos.get(R.string.notif_unmarked_open_calendar)
+                    nombres.size <= 2 -> Textos.get(R.string.notif_unmarked_tap_to_mark, nombres.joinToString(Textos.get(R.string.notif_joiner_and)))
+                    else -> Textos.get(R.string.notif_unmarked_and_more, nombres.take(2).joinToString(", "), nombres.size - 2)
                 },
                 targetRoute = AppRoutes.Calendar,
                 channelId = CHANNEL_ID_DIGEST
@@ -424,11 +425,11 @@ class LocalReminderScheduler(private val context: Context) {
                     profile = profile,
                     requestCode = event.id.stableRequestCode("agenda-event"),
                     triggerAtMillis = trigger.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                    subText = "Agenda",
+                    subText = Textos.get(R.string.notif_sub_agenda),
                     title = event.title,
                     body = event.location.takeIf(String::isNotBlank)
-                        ?.let { "Empieza en ${event.reminderMinutes} min, en $it." }
-                        ?: "Empieza en ${event.reminderMinutes} min.",
+                        ?.let { Textos.get(R.string.notif_event_starts_in_at, event.reminderMinutes, it) }
+                        ?: Textos.get(R.string.notif_event_starts_in, event.reminderMinutes),
                     targetRoute = AppRoutes.Calendar
                 )
             }
@@ -527,37 +528,37 @@ class LocalReminderScheduler(private val context: Context) {
                     subject = subject,
                     kind = SubjectHintKind.MISSING_PERIODS,
                     severity = 3,
-                    message = "Falta ${if (missingPriorCuts == 1) "un corte anterior" else "$missingPriorCuts cortes anteriores"} en ${subject.name}. Complétalo para afinar tu meta."
+                    message = if (missingPriorCuts == 1) Textos.get(R.string.notif_hint_missing_cut_one, subject.name) else Textos.get(R.string.notif_hint_missing_cut_many, missingPriorCuts, subject.name)
                 )
                 unknownWeights > 0 -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.UNKNOWN_WEIGHTS,
                     severity = 2,
-                    message = "${subject.name} tiene $unknownWeights ${if (unknownWeights == 1) "nota sin porcentaje" else "notas sin porcentaje"}. La proyección seguirá provisional."
+                    message = if (unknownWeights == 1) Textos.get(R.string.notif_hint_unknown_weight_one, subject.name) else Textos.get(R.string.notif_hint_unknown_weight_many, subject.name, unknownWeights)
                 )
                 subject.grades.isEmpty() -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.NO_GRADES,
                     severity = 1,
-                    message = "Aún no tienes notas en ${subject.name}. Agrega la primera para activar tu promedio real."
+                    message = Textos.get(R.string.notif_hint_no_grades, subject.name)
                 )
                 average != null && average < profile.passingGrade -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.BELOW_PASSING,
                     severity = 4,
-                    message = "${subject.name} está bajo la nota mínima con ${GradingScaleUtils.formatGrade(average, profile.gradingScale)}. Revisa el siguiente corte."
+                    message = Textos.get(R.string.notif_hint_below_passing, subject.name, GradingScaleUtils.formatGrade(average, profile.gradingScale))
                 )
                 neededGrade != null && neededGrade > maxGrade -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.TARGET_UNREACHABLE,
                     severity = 3,
-                    message = "La meta de ${subject.name} está difícil con lo restante. Ajusta estrategia o pesos de notas."
+                    message = Textos.get(R.string.notif_hint_target_unreachable, subject.name)
                 )
                 average != null && average < subject.targetAverage -> SubjectNotificationHint(
                     subject = subject,
                     kind = SubjectHintKind.BELOW_TARGET,
                     severity = 2,
-                    message = "${subject.name} va en ${GradingScaleUtils.formatGrade(average, profile.gradingScale)}. Tu meta es ${GradingScaleUtils.formatGrade(subject.targetAverage, profile.gradingScale)}."
+                    message = Textos.get(R.string.notif_hint_below_target, subject.name, GradingScaleUtils.formatGrade(average, profile.gradingScale), GradingScaleUtils.formatGrade(subject.targetAverage, profile.gradingScale))
                 )
                 else -> null
             }
@@ -590,13 +591,13 @@ class LocalReminderScheduler(private val context: Context) {
         val dueTodayTotal = dueTodayTasks + dueTodayWorks
 
         return when {
-            overdueTotal > 0 -> "Tienes $overdueTotal pendiente${if (overdueTotal == 1) "" else "s"} vencido${if (overdueTotal == 1) "" else "s"}. Prioriza uno antes de seguir."
-            dueTodayTotal > 0 -> "Hoy tienes $dueTodayTotal entrega${if (dueTodayTotal == 1) "" else "s"}. Mantén el ritmo y cierra lo urgente primero."
+            overdueTotal > 0 -> if (overdueTotal == 1) Textos.get(R.string.notif_digest_overdue_one) else Textos.get(R.string.notif_digest_overdue_many, overdueTotal)
+            dueTodayTotal > 0 -> if (dueTodayTotal == 1) Textos.get(R.string.notif_digest_due_one) else Textos.get(R.string.notif_digest_due_many, dueTodayTotal)
             pendingGradeResults > 0 && profile.pendingGradeRemindersEnabled ->
-                "Tienes $pendingGradeResults ${if (pendingGradeResults == 1) "actividad esperando nota" else "actividades esperando nota"}. Actualízalas cuando recibas el resultado."
+                if (pendingGradeResults == 1) Textos.get(R.string.notif_digest_pending_grade_one) else Textos.get(R.string.notif_digest_pending_grade_many, pendingGradeResults)
             risk != null -> risk.message
-            subjects.isEmpty() -> "Crea tus materias para activar promedios, metas y avisos académicos inteligentes."
-            else -> "Día despejado. Buen momento para repasar una materia o adelantar una tarea corta."
+            subjects.isEmpty() -> Textos.get(R.string.notif_digest_no_subjects)
+            else -> Textos.get(R.string.notif_digest_clear_day)
         }
     }
 
@@ -630,7 +631,7 @@ class LocalReminderScheduler(private val context: Context) {
     ) {
         notes.filter { it.reminderAt != null }.forEach { note ->
             val plano = NoteMarkdown.strip(note.body)
-            val titulo = note.title.trim().ifBlank { NoteText.title(plano) }.ifBlank { "Nota" }
+            val titulo = note.title.trim().ifBlank { NoteText.title(plano) }.ifBlank { Textos.get(R.string.notif_sub_note) }
             val cuerpo = NoteText.preview(plano, maxLines = 2)
                 .replace(10.toChar(), ' ')
                 .trim()
@@ -638,9 +639,9 @@ class LocalReminderScheduler(private val context: Context) {
                 profile = profile,
                 requestCode = note.id.stableRequestCode("note-reminder"),
                 triggerAtMillis = note.reminderAt!!,
-                subText = subjects.firstOrNull { it.id == note.subjectId }?.name ?: "Nota",
+                subText = subjects.firstOrNull { it.id == note.subjectId }?.name ?: Textos.get(R.string.notif_sub_note),
                 title = titulo,
-                body = cuerpo.ifBlank { "Lo apuntaste para ahora." },
+                body = cuerpo.ifBlank { Textos.get(R.string.notif_note_body_fallback) },
                 targetRoute = AppRoutes.noteEditor(note.id),
                 eventAtMillis = note.reminderAt
             )
@@ -777,7 +778,7 @@ class LocalReminderScheduler(private val context: Context) {
             CHANNEL_NAME_ALERTS,
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Avisos con hora: entregas próximas o vencidas, clases y eventos de tu agenda."
+            description = Textos.get(R.string.notif_channel_alerts_desc)
             setShowBadge(true)
             enableVibration(true)
             enableLights(true)
@@ -789,7 +790,7 @@ class LocalReminderScheduler(private val context: Context) {
             CHANNEL_NAME_DIGEST,
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Tu resumen de la mañana, notas pendientes de registrar y avisos sobre tus promedios."
+            description = Textos.get(R.string.notif_channel_digest_desc)
             setShowBadge(true)
         }
 
@@ -870,19 +871,19 @@ class LocalReminderScheduler(private val context: Context) {
                 reminderIntent(
                     requestCode = marca.stableRequestCode("absence-limit"),
                     title = if (restantes <= 0) {
-                        "Te pasaste del tope en ${subject.name}"
+                        Textos.get(R.string.notif_limit_over_title, subject.name)
                     } else {
-                        "Te queda una falta en ${subject.name}"
+                        Textos.get(R.string.notif_limit_one_left_title, subject.name)
                     },
                     body = if (restantes <= 0) {
-                        "Llevas $faltas de $tope. Habla con tu profesor si crees que hay un error."
+                        Textos.get(R.string.notif_limit_over_body, faltas, tope)
                     } else {
                         // «La siguiente ya no cabe» sonaba a error de formulario. Lo que
                         // hay que decir es la consecuencia: una mas y pierdes la materia.
-                        "Llevas $faltas de $tope. Una mas y rompes tu tope de faltas."
+                        Textos.get(R.string.notif_limit_one_left_body, faltas, tope)
                     },
                     targetRoute = AppRoutes.Calendar,
-                    subText = "Asistencia",
+                    subText = Textos.get(R.string.notif_sub_attendance),
                     channelId = CHANNEL_ID_ALERTS
                 )
             )
@@ -923,10 +924,10 @@ class LocalReminderScheduler(private val context: Context) {
         val room = place.room.takeIf(String::isNotBlank)
         val professor = place.professor.takeIf(String::isNotBlank)
         return when {
-            room != null && professor != null -> "Nos vemos en $room, con $professor."
-            room != null -> "Nos vemos en $room."
-            professor != null -> "Con $professor."
-            else -> "Alista lo que necesites antes de entrar."
+            room != null && professor != null -> Textos.get(R.string.notif_class_body_room_prof, room, professor)
+            room != null -> Textos.get(R.string.notif_class_body_room, room)
+            professor != null -> Textos.get(R.string.notif_class_body_prof, professor)
+            else -> Textos.get(R.string.notif_class_body_plain)
         }
     }
 
@@ -955,12 +956,12 @@ class LocalReminderScheduler(private val context: Context) {
            el título se queda solo con el qué: dicho de corrido se lee
            «Cálculo III · Vas por debajo de tu meta». */
         fun notificationTitle(): String = when (kind) {
-            SubjectHintKind.MISSING_PERIODS -> "Te faltan cortes por registrar"
-            SubjectHintKind.UNKNOWN_WEIGHTS -> "Faltan porcentajes"
-            SubjectHintKind.NO_GRADES -> "Aún sin notas"
-            SubjectHintKind.BELOW_PASSING -> "Vas por debajo de la nota mínima"
-            SubjectHintKind.TARGET_UNREACHABLE -> "Tu meta está en riesgo"
-            SubjectHintKind.BELOW_TARGET -> "Vas por debajo de tu meta"
+            SubjectHintKind.MISSING_PERIODS -> Textos.get(R.string.notif_hint_title_missing_cuts)
+            SubjectHintKind.UNKNOWN_WEIGHTS -> Textos.get(R.string.notif_hint_title_weights)
+            SubjectHintKind.NO_GRADES -> Textos.get(R.string.notif_hint_title_no_grades)
+            SubjectHintKind.BELOW_PASSING -> Textos.get(R.string.notif_hint_title_below_passing)
+            SubjectHintKind.TARGET_UNREACHABLE -> Textos.get(R.string.notif_hint_title_target_risk)
+            SubjectHintKind.BELOW_TARGET -> Textos.get(R.string.notif_hint_title_below_target)
         }
     }
 
@@ -1041,7 +1042,7 @@ class LocalReminderScheduler(private val context: Context) {
             if (sessionId != null && epochDay >= 0L) {
                 builder.addAction(
                     0,
-                    "Asistí",
+                    Textos.get(R.string.schedule_status_attended),
                     accionDeAsistencia(
                         context, notificationId, sessionId, epochDay,
                         ClassAttendanceStatus.ATTENDED
@@ -1049,7 +1050,7 @@ class LocalReminderScheduler(private val context: Context) {
                 )
                 builder.addAction(
                     0,
-                    "Falta",
+                    Textos.get(R.string.schedule_status_absent),
                     accionDeAsistencia(
                         context, notificationId, sessionId, epochDay,
                         ClassAttendanceStatus.ABSENT

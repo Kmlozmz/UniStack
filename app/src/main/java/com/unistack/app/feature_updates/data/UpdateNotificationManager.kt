@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.unistack.app.MainActivity
 import com.unistack.app.R
+import com.unistack.app.core.utils.Textos
 
 class UpdateNotificationManager(private val context: Context) {
 
@@ -50,11 +51,10 @@ class UpdateNotificationManager(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val message = "UniStack tiene una nueva versión lista para instalar. " +
-            "Actualiza ahora para disfrutar de mejoras y nuevas funciones."
+        val message = Textos.get(R.string.update_notif_body)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Nueva versión disponible")
+            .setContentTitle(Textos.get(R.string.update_notif_title))
             .setContentText(message)
             // Con el texto largo, la notificación plegada lo corta a una línea. El estilo
             // extendido deja leerlo entero al desplegarla.

@@ -33,6 +33,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import com.unistack.app.core.utils.BuildStage
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 private const val APK_FILE_NAME = "unistack-update.apk"
 private const val PREFS_NAME = "unistack_update_checker"
@@ -139,13 +141,12 @@ class GitHubReleaseUpdateRepository(
             when (val code = connection.responseCode) {
                 HttpURLConnection.HTTP_OK -> Unit
                 HttpURLConnection.HTTP_NOT_FOUND -> throw IOException(
-                    "No se encontró ninguna publicación en ${BuildConfig.GITHUB_REPO}. " +
-                        "Si el repositorio es privado, sus publicaciones no son visibles sin iniciar sesión."
+                    Textos.get(R.string.update_err_not_found, BuildConfig.GITHUB_REPO)
                 )
                 HttpURLConnection.HTTP_FORBIDDEN -> throw IOException(
-                    "GitHub rechazó la consulta, probablemente por exceso de peticiones. Inténtalo más tarde."
+                    Textos.get(R.string.update_err_forbidden)
                 )
-                else -> throw IOException("GitHub respondió $code al consultar las publicaciones.")
+                else -> throw IOException(Textos.get(R.string.update_err_code, code))
             }
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             val releases = JSONArray(body)
@@ -181,7 +182,7 @@ class GitHubReleaseUpdateRepository(
 
         return UpdateInfo(
             versionName = versionName,
-            releaseNotes = json.optString("body").trim().ifBlank { "Sin notas de la versión." },
+            releaseNotes = json.optString("body").trim().ifBlank { Textos.get(R.string.update_no_notes) },
             releaseDate = json.optString("published_at").take(10),
             downloadUrl = downloadUrl,
             sizeMb = sizeBytes / 1024.0 / 1024.0
@@ -234,7 +235,7 @@ class GitHubReleaseUpdateRepository(
                                 apkFile().delete()
                                 refreshPendingApks()
                                 _state.value = UpdateState.Error(
-                                    "La actualización descargada no está firmada por UniStack."
+                                    Textos.get(R.string.update_err_unsigned)
                                 )
                             }
                             shouldStop = true
@@ -251,7 +252,7 @@ class GitHubReleaseUpdateRepository(
                             if (_state.value is UpdateState.ReadyToInstall && canInstallPackages()) installUpdate()
                         }
                         DownloadManager.STATUS_FAILED -> {
-                            _state.value = UpdateState.Error("La descarga falló. Intenta de nuevo.")
+                            _state.value = UpdateState.Error(Textos.get(R.string.update_err_download))
                             shouldStop = true
                         }
                         else -> {
