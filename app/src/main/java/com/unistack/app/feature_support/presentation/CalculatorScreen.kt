@@ -39,23 +39,15 @@ import com.unistack.app.R
 import com.unistack.app.feature_user.domain.GradingScale
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.unistack.app.core.utils.Textos
 
 /** Las tres preguntas que sabe responder la calculadora. */
-enum class CalculatorTab(private val spanishLabel: String) {
-    SUBJECT("Materia"),
-    SEMESTER("Semestre"),
-    NEEDED("Me falta");
+enum class CalculatorTab(private val labelRes: Int) {
+    SUBJECT(R.string.calc_tab_subject),
+    SEMESTER(R.string.calc_tab_semester),
+    NEEDED(R.string.calc_tab_needed);
 
-    val label: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                SUBJECT -> "Course"
-                SEMESTER -> "Semester"
-                NEEDED -> "Target"
-            }
-        } else {
-            spanishLabel
-        }
+    val label: String get() = Textos.get(labelRes)
 }
 
 /**

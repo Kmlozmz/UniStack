@@ -2641,4 +2641,23 @@ a tu medida</string>
     <string name="motion_group_base">BASE</string>
     <string name="motion_window_anything">AL ENTRAR CUALQUIER COSA</string>
     <string name="motion_window_list">AL ABRIR UNA LISTA</string>
+
+    <!-- Bloque H: canales, ticket, calculadora, nube -->
+    <string name="notif_channel_alerts_name">Entregas y clases</string>
+    <string name="notif_channel_digest_name">Resumen y seguimiento</string>
+    <string name="ticket_kind_bug">Fallo</string>
+    <string name="ticket_kind_idea">Sugerencia</string>
+    <string name="ticket_kind_other">Otro</string>
+    <string name="ticket_contact">Contacto: %1$s</string>
+    <string name="calc_tab_subject">Materia</string>
+    <string name="calc_tab_semester">Semestre</string>
+    <string name="calc_tab_needed">Me falta</string>
+    <string name="calc_target_need">Necesitas sacar %1$s en el %2$s %% que te queda.</string>
+    <string name="cloud_backup_updated">Copia en la nube actualizada.</string>
+    <string name="cloud_backup_update_failed">No se pudo actualizar la copia en la nube.</string>
+    <string name="cloud_backup_none">No hay copia en la nube para restaurar.</string>
+    <string name="cloud_backup_restored">Copia en la nube restaurada en este dispositivo.</string>
+    <string name="cloud_backup_restore_failed">No se pudo restaurar la copia en la nube.</string>
+    <string name="cloud_backup_link_first">Conecta una cuenta de Google antes de usar la copia en la nube.</string>
+    <string name="cloud_backup_no_config">Falta app/google-services.json para inicializar Firebase.</string>
 </resources>

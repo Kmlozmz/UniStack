@@ -2642,4 +2642,23 @@ your course catalog.</string>
     <string name="motion_group_base">BASE</string>
     <string name="motion_window_anything">WHEN ANYTHING ENTERS</string>
     <string name="motion_window_list">WHEN OPENING A LIST</string>
+
+    <!-- Bloque H: canales, ticket, calculadora, nube -->
+    <string name="notif_channel_alerts_name">Deliveries and classes</string>
+    <string name="notif_channel_digest_name">Digest and follow-up</string>
+    <string name="ticket_kind_bug">Bug</string>
+    <string name="ticket_kind_idea">Suggestion</string>
+    <string name="ticket_kind_other">Other</string>
+    <string name="ticket_contact">Contact: %1$s</string>
+    <string name="calc_tab_subject">Course</string>
+    <string name="calc_tab_semester">Semester</string>
+    <string name="calc_tab_needed">Target</string>
+    <string name="calc_target_need">You need to score %1$s on the remaining %2$s%%.</string>
+    <string name="cloud_backup_updated">Cloud backup updated.</string>
+    <string name="cloud_backup_update_failed">The cloud backup could not be updated.</string>
+    <string name="cloud_backup_none">There is no cloud backup to restore.</string>
+    <string name="cloud_backup_restored">Cloud backup restored on this device.</string>
+    <string name="cloud_backup_restore_failed">The cloud backup could not be restored.</string>
+    <string name="cloud_backup_link_first">Link a Google account before using the cloud backup.</string>
+    <string name="cloud_backup_no_config">app/google-services.json is missing to initialise Firebase.</string>
 </resources>

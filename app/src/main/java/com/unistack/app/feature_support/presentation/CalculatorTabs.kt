@@ -663,11 +663,7 @@ internal fun NeededCalculator(
                         needed == null -> stringResource(R.string.calculator_target_all_evaluated)
                         already -> stringResource(R.string.calculator_target_already_achieved)
                         impossible -> stringResource(R.string.calculator_target_impossible, GradingScaleUtils.formatGrade(maxGrade, scale))
-                        else -> if (java.util.Locale.getDefault().language == "en") {
-                            "You need to score ${GradingScaleUtils.formatGrade(needed, scale)} on the remaining ${percentText(remaining)}%."
-                        } else {
-                            "Necesitas sacar ${GradingScaleUtils.formatGrade(needed, scale)} en el ${percentText(remaining)} % que te queda."
-                        }
+                        else -> stringResource(R.string.calc_target_need, GradingScaleUtils.formatGrade(needed, scale), percentText(remaining))
                     },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     style = MaterialTheme.typography.bodyMedium,

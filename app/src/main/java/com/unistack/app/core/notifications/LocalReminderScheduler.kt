@@ -48,11 +48,9 @@ private const val LEGACY_CHANNEL_ID = "unistack_reminders"
 
 /* Lo que tiene hora y se puede perder: entregas, clases, vencidos. Asoma. */
 private const val CHANNEL_ID_ALERTS = "unistack_alerts_v2"
-private const val CHANNEL_NAME_ALERTS = "Entregas y clases"
 
 /* Lo que solo informa: resumen del día, avisos de notas. No interrumpe. */
 private const val CHANNEL_ID_DIGEST = "unistack_digest_v2"
-private const val CHANNEL_NAME_DIGEST = "Resumen y seguimiento"
 
 private const val BRAND_COLOR = 0xFF5B46E0.toInt()
 
@@ -775,7 +773,7 @@ class LocalReminderScheduler(private val context: Context) {
 
         val alerts = NotificationChannel(
             CHANNEL_ID_ALERTS,
-            CHANNEL_NAME_ALERTS,
+            Textos.get(R.string.notif_channel_alerts_name),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = Textos.get(R.string.notif_channel_alerts_desc)
@@ -787,7 +785,7 @@ class LocalReminderScheduler(private val context: Context) {
 
         val digest = NotificationChannel(
             CHANNEL_ID_DIGEST,
-            CHANNEL_NAME_DIGEST,
+            Textos.get(R.string.notif_channel_digest_name),
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = Textos.get(R.string.notif_channel_digest_desc)

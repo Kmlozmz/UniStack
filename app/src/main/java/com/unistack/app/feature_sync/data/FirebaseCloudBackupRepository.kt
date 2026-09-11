@@ -47,6 +47,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.tasks.await
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
 
 class FirebaseCloudBackupRepository(
     private val context: Context,
@@ -100,7 +102,7 @@ class FirebaseCloudBackupRepository(
             it.copy(
                 inProgress = false,
                 lastBackupAt = now,
-                message = "Backup cloud actualizado.",
+                message = Textos.get(R.string.cloud_backup_updated),
                 errorMessage = null
             )
         }
@@ -109,7 +111,7 @@ class FirebaseCloudBackupRepository(
             it.copy(
                 inProgress = false,
                 message = null,
-                errorMessage = throwable.message ?: "No se pudo actualizar el backup."
+                errorMessage = throwable.message ?: Textos.get(R.string.cloud_backup_update_failed)
             )
         }
     }
@@ -127,7 +129,7 @@ class FirebaseCloudBackupRepository(
             .get()
             .await()
 
-        check(snapshot.exists()) { "No hay backup cloud para restaurar." }
+        check(snapshot.exists()) { Textos.get(R.string.cloud_backup_none) }
         val data = snapshot.data.orEmpty()
 
         parseSubjects(data["subjects"]).forEach { subject ->
@@ -149,7 +151,7 @@ class FirebaseCloudBackupRepository(
             it.copy(
                 inProgress = false,
                 lastRestoreAt = now,
-                message = "Backup cloud restaurado en este dispositivo.",
+                message = Textos.get(R.string.cloud_backup_restored),
                 errorMessage = null
             )
         }
@@ -158,7 +160,7 @@ class FirebaseCloudBackupRepository(
             it.copy(
                 inProgress = false,
                 message = null,
-                errorMessage = throwable.message ?: "No se pudo restaurar el backup."
+                errorMessage = throwable.message ?: Textos.get(R.string.cloud_backup_restore_failed)
             )
         }
     }
@@ -167,7 +169,7 @@ class FirebaseCloudBackupRepository(
         val user = userRepository.currentUser.value
         val providerUserId = user.providerUserId
         check(user.isLinked && !providerUserId.isNullOrBlank()) {
-            "Conecta una cuenta de Google antes de usar backup cloud."
+            Textos.get(R.string.cloud_backup_link_first)
         }
         return providerUserId
     }
@@ -177,7 +179,7 @@ class FirebaseCloudBackupRepository(
             FirebaseApp.initializeApp(context)
         }
         check(FirebaseApp.getApps(context).isNotEmpty()) {
-            "Falta app/google-services.json para inicializar Firebase."
+            Textos.get(R.string.cloud_backup_no_config)
         }
     }
 

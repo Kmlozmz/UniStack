@@ -1,5 +1,8 @@
 package com.unistack.app.feature_support.domain
 
+import com.unistack.app.core.utils.Textos
+import com.unistack.app.R
+
 /**
  * Por qué alguien escribe.
  *
@@ -8,21 +11,12 @@ package com.unistack.app.feature_support.domain
  * un fallo o una petición, y obligarle a elegir antes de contar nada dejaba fuera todo lo que
  * no era ninguna de las dos.
  */
-enum class TicketKind(private val spanishLabel: String, val emoji: String) {
-    BUG("Fallo", "🐞"),
-    IDEA("Sugerencia", "💡"),
-    OTHER("Otro", "💬");
+enum class TicketKind(private val labelRes: Int, val emoji: String) {
+    BUG(R.string.ticket_kind_bug, "🐞"),
+    IDEA(R.string.ticket_kind_idea, "💡"),
+    OTHER(R.string.ticket_kind_other, "💬");
 
-    val label: String
-        get() = if (java.util.Locale.getDefault().language == "en") {
-            when (this) {
-                BUG -> "Bug"
-                IDEA -> "Suggestion"
-                OTHER -> "Other"
-            }
-        } else {
-            spanishLabel
-        }
+    val label: String get() = Textos.get(labelRes)
 }
 
 /**
@@ -111,5 +105,5 @@ fun buildTicket(
     appendLine("---")
     appendLine("UniStack ${context.appVersion}")
     appendLine("Android ${context.androidVersion} (SDK ${context.androidSdk}) · ${context.device}")
-    contact?.trim()?.takeIf { it.isNotEmpty() }?.let { append("Contacto: $it") }
+    contact?.trim()?.takeIf { it.isNotEmpty() }?.let { append(Textos.get(R.string.ticket_contact, it)) }
 }

@@ -566,7 +566,9 @@ internal object HomeSummaryFactory {
     }
 
     private fun List<DailyFocusItem>.isGenericCalmPlan(): Boolean {
-        return any { it.title == "Repaso breve" || it.title == "Ordenar pendientes" || it.title == "Quick review" || it.title == "Sort out pending tasks" }
+        // Se compara con el recurso resuelto: asi vale en cualquier idioma, no solo en dos.
+        val genericos = setOf(Textos.get(R.string.home_repaso_breve), Textos.get(R.string.home_ordenar_pendientes))
+        return any { it.title in genericos }
     }
 
     private fun AcademicFocusSummary.toPrioritySummary(): HomePrioritySummary {
